@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DASHBOARD INHAL</title>
+  <link rel="icon" href="https://i.imgur.com/VDy2lSE.png" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #eee;
+      overflow: hidden; /* Kunci body, biarkan container yang mengatur layout */
+    }
+
+    .iframe-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden; 
+      /* Memberikan ruang ekstra di bawah agar tombol tidak "mepet" atau tertutup browser bar di HP */
+      padding-bottom: 80px; 
+      box-sizing: border-box; /* Pastikan padding dihitung dalam tinggi elemen */
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="iframe-container">
+    <iframe
+      id="app"
+      src="https://script.google.com/macros/s/AKfycbxCs-xl6ka8WjjjL8LZfU56zMtNcHSFz8eh_lVeISPTHSKtW6NqQ1hxE7QmvrkPuU2lcw/exec?page=dashboard"
+      scrolling="yes"
+      allowfullscreen="true"
+      webkitallowfullscreen="true"
+      mozallowfullscreen="true"
+      allow="fullscreen; camera; microphone; display-capture; geolocation;">
+    </iframe>
+  </div>
+</body>
+</html>
