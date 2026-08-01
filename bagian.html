@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin Bagian - INHAL FKIK UMSU</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-light: #e0e7ff;
+            --primary-50: #eef2ff;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --content-bg: #f8fafc;
+        }
+
+        body {
+            background-color: var(--content-bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--gray-800);
+            min-height: 100vh;
+        }
+
+        .login-container {
+            max-width: 480px;
+            margin: 80px auto;
+        }
+
+        .card-custom {
+            background: #ffffff;
+            border: 1px solid var(--gray-200);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            padding: 24px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        .navbar-custom {
+            background-color: white;
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modern-table thead th {
+            background: var(--gray-50);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 12px 16px;
+        }
+
+        .table-responsive .modern-table {
+            min-width: 1120px;
+        }
+
+        .modern-table tbody td {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 14px 16px;
+            vertical-align: middle;
+        }
+
+        .modern-table tbody tr {
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .modern-table tbody tr:hover {
+            box-shadow: inset 4px 0 0 rgba(79, 70, 229, 0.18);
+        }
+
+        .table-col-mahasiswa {
+            min-width: 220px;
+        }
+
+        .table-col-kegiatan {
+            min-width: 240px;
+        }
+
+        .table-col-status {
+            min-width: 170px;
+        }
+
+        .student-name {
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1.35;
+        }
+
+        .student-meta {
+            color: var(--gray-500);
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .kegiatan-title {
+            font-weight: 600;
+            color: var(--gray-800);
+            line-height: 1.35;
+        }
+
+        .kegiatan-detail {
+            color: var(--gray-500);
+            font-size: 0.8rem;
+            margin-top: 4px;
+            line-height: 1.45;
+        }
+
+        .blok-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--gray-200);
+            background: #fff;
+            color: var(--gray-700);
+            font-size: 0.78rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+
+        .status-stack {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 138px;
+            justify-content: center;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .status-chip-neutral {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border-color: var(--gray-200);
+        }
+
+        .status-chip-success {
+            background: var(--success-light);
+            color: #047857;
+            border-color: rgba(16, 185, 129, 0.18);
+        }
+
+        .status-chip-info {
+            background: var(--primary-50);
+            color: var(--primary-dark);
+            border-color: rgba(79, 70, 229, 0.14);
+        }
+
+        .status-chip-warning {
+            background: var(--warning-light);
+            color: #b45309;
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .status-chip-danger {
+            background: var(--danger-light);
+            color: #b91c1c;
+            border-color: rgba(239, 68, 68, 0.18);
+        }
+
+        .status-subtext {
+            font-size: 0.74rem;
+            color: var(--gray-500);
+            line-height: 1.35;
+            text-align: center;
+            max-width: 180px;
+        }
+
+        /* STATS CARD WIDGETS */
+        .stat-card {
+            border-radius: 14px;
+            padding: 18px 20px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* STATUS ROW COLORS */
+        .row-disetujui {
+            background-color: #f0fdf4 !important;
+        }
+        .row-disetujui:hover {
+            background-color: #dcfce7 !important;
+        }
+
+        .row-ditolak {
+            background-color: #fef2f2 !important;
+        }
+        .row-ditolak:hover {
+            background-color: #fee2e2 !important;
+        }
+
+        .row-menunggu {
+            background-color: #fffbeb !important;
+        }
+        .row-menunggu:hover {
+            background-color: #fef3c7 !important;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid var(--gray-300);
+            padding: 10px 14px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .acc-final-link {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--primary-50);
+            color: var(--primary);
+            border: 1px solid var(--primary-light);
+            transition: all 0.2s;
+        }
+
+        .acc-final-link:hover {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .card-custom {
+                border: none !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN AREA -->
+    <div id="login-area" class="container login-container">
+        <div class="card-custom">
+            <div class="header-gradient text-center">
+                <i class="bi bi-building-fill-check mb-2" style="font-size: 2.5rem;"></i>
+                <h4 class="fw-bold m-0">Login Admin Bagian</h4>
+                <p class="small opacity-75 m-0 mt-1">Sistem Pendaftaran & Monitoring Inhal/Remediasi</p>
+            </div>
+            <div class="p-4">
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="login-kategori" class="form-label fw-semibold small text-uppercase text-muted">1. Pilih Kategori Kegiatan</label>
+                        <select id="login-kategori" class="form-select" required onchange="handleKategoriChange()">
+                            <option value="">Pilih Kategori...</option>
+                            <option value="SGD">SGD (Small Group Discussion)</option>
+                            <option value="KKD">KKD (Keterampilan Klinik Dasar)</option>
+                            <option value="Ujian">Ujian (CBT / OSCE)</option>
+                            <option value="Praktikum">Praktikum Laboratorium</option>
+                        </select>
+                    </div>
+
+                    <!-- SUB LAB SELECTOR (HANYA DITAMPILKAN JIKA MEMILIH PRAKTIKUM) -->
+                    <div id="sub-lab-wrapper" class="mb-3 hidden">
+                        <label for="login-sublab" class="form-label fw-semibold small text-uppercase text-muted">2. Pilih Sub-Lab Praktikum</label>
+                        <select id="login-sublab" class="form-select">
+                            <option value="">Pilih Laboratorium...</option>
+                            <option value="Anatomi">Lab Anatomi</option>
+                            <option value="Fisiologi">Lab Fisiologi</option>
+                            <option value="Histologi">Lab Histologi</option>
+                            <option value="Mikrobiologi">Lab Mikrobiologi</option>
+                            <option value="Farmakologi">Lab Farmakologi</option>
+                            <option value="Patologi Anatomi">Lab Patologi Anatomi</option>
+                            <option value="Patologi Klinik">Lab Patologi Klinik</option>
+                            <option value="Parasitologi">Lab Parasitologi</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2.5 mt-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Masuk ke Panel Bagian
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTAINER (DITAMPILKAN SETELAH LOGIN) -->
+    <div id="app-area" class="hidden">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-custom py-3 no-print">
+            <div class="container-fluid px-4">
+                <span class="navbar-brand fw-bold text-gray-900 d-flex align-items-center gap-2">
+                    <span class="bg-primary text-white p-2 rounded-3 d-inline-flex"><i class="bi bi-building"></i></span>
+                    <div>
+                        <div class="lh-1 text-dark" style="font-size: 1rem;">Panel Admin Bagian</div>
+                        <div class="lh-1 small text-primary fw-bold mt-1" id="display-bagian-name">Bagian: -</div>
+                    </div>
+                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="badge-login-context" class="badge bg-primary-light text-primary fs-7 px-3 py-2 rounded-pill me-2"></span>
+                    <button class="btn btn-outline-primary btn-sm rounded-3 px-3" onclick="openBeritaAcaraModal()">
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i>Upload Berita Acara
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm rounded-3 px-3" onclick="logoutBagian()">
+                        <i class="bi bi-box-arrow-left me-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            <!-- REKAPITULASI STATISTIK WIDGET (TOP CARDS) -->
+            <div class="row g-3 mb-4 no-print">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-muted small fw-semibold text-uppercase">Total Peserta</div>
+                                <h3 class="fw-extrabold m-0 text-dark mt-1" id="stat-total">0</h3>
+                            </div>
+                            <div class="stat-icon bg-primary-light text-primary">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-muted small fw-semibold text-uppercase">Diterima</div>
+                                <h3 class="fw-extrabold m-0 text-success mt-1" id="stat-disetujui">0</h3>
+                            </div>
+                            <div class="stat-icon bg-success-light text-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-muted small fw-semibold text-uppercase">Menunggu</div>
+                                <h3 class="fw-extrabold m-0 text-warning mt-1" id="stat-menunggu">0</h3>
+                            </div>
+                            <div class="stat-icon bg-warning-light text-warning">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-muted small fw-semibold text-uppercase">Ditolak</div>
+                                <h3 class="fw-extrabold m-0 text-danger mt-1" id="stat-ditolak">0</h3>
+                            </div>
+                            <div class="stat-icon bg-danger-light text-danger">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- FORM PENGAJUAN / INPUT PESERTA INHAL OLEH ADMIN -->
+                <div id="pengajuan-panel" class="col-lg-4 no-print hidden">
+                    <div class="card-custom p-4">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bi bi-person-plus-fill text-primary fs-4"></i>
+                            <h5 class="fw-bold m-0">Input Peserta Inhal Baru</h5>
+                        </div>
+                        <p class="text-muted small mb-3">Daftarkan mahasiswa yang akan mengikuti inhal di bagian ini.</p>
+                        
+                        <form id="pengajuan-form">
+                            <!-- NPM & NAMA MAHASISWA -->
+                            <div class="mb-3">
+                                <label for="input-npm" class="form-label small fw-bold">NPM Mahasiswa</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-card-heading text-muted"></i></span>
+                                    <input type="text" id="input-npm" class="form-control" placeholder="Ketik NPM Mahasiswa..." required autocomplete="off">
+                                </div>
+                                <div id="npm-status" class="form-text small mt-1"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="input-nama" class="form-label small fw-bold">Nama Mahasiswa</label>
+                                <input type="text" id="input-nama" class="form-control bg-light" readonly placeholder="Nama Mahasiswa terdeteksi otomatis..." required>
+                            </div>
+
+                            <!-- BLOK -->
+                            <div class="mb-3">
+                                <label for="input-blok" class="form-label small fw-bold">Pilih Blok</label>
+                                <select id="input-blok" class="form-select" required>
+                                    <option value="">Pilih Blok...</option>
+                                </select>
+                            </div>
+
+                            <!-- KATEGORI & BAGIAN (READONLY / LOCKED ACCORDING TO LOGIN) -->
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Kategori & Bagian Terkunci</label>
+                                <div class="p-2 bg-light border rounded-3 d-flex align-items-center justify-content-between">
+                                    <span id="lock-kat-label" class="fw-bold text-dark small">-</span>
+                                    <span class="badge bg-secondary"><i class="bi bi-lock-fill me-1"></i>Otomatis</span>
+                                </div>
+                            </div>
+
+                            <!-- DETAIL KEGIATAN -->
+                            <div class="mb-3">
+                                <label for="input-detail" class="form-label small fw-bold">Detail Kegiatan / Topik</label>
+                                <select id="input-detail" class="form-select" required>
+                                    <option value="">Pilih Detail Kegiatan...</option>
+                                </select>
+                            </div>
+
+                            <!-- KETERANGAN / CATATAN ADMIN -->
+                            <div class="mb-3">
+                                <label for="input-keterangan" class="form-label small fw-bold">Keterangan Tambahan (Opsional)</label>
+                                <textarea id="input-keterangan" class="form-control" rows="2" placeholder="Catatan atau keterangan bagian..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2.5 mt-2" id="submit-btn">
+                                <span class="spinner-border spinner-border-sm me-1 hidden" id="submit-spinner" role="status"></span>
+                                <i class="bi bi-check-circle me-1"></i> Daftarkan Peserta Inhal
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MONITORING DATA BAGIAN -->
+                <div id="monitoring-panel" class="col-lg-12">
+                    <div class="card-custom p-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                            <div>
+                                <h5 class="fw-bold mb-1"><i class="bi bi-table me-2 text-primary"></i>Daftar Peserta Inhal / Remediasi</h5>
+                                <p class="text-muted small m-0">Monitoring status dan berkas bukti ACC final peserta.</p>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 align-items-center no-print">
+                                <!-- FILTER BLOK -->
+                                <select id="filter-blok-table" class="form-select form-select-sm" style="max-width: 140px;" onchange="filterTable()">
+                                    <option value="">Semua Blok</option>
+                                </select>
+                                <!-- SEARCH INPUT -->
+                                <input type="text" id="search-table" class="form-control form-control-sm" placeholder="Cari NPM / Nama..." style="max-width: 160px;" onkeyup="filterTable()">
+                                <!-- TOMBOL EXPORT & CETAK -->
+                                <button class="btn btn-sm btn-outline-success rounded-3" title="Export Excel" onclick="exportToExcel()">
+                                    <i class="bi bi-file-earmark-excel"></i> Excel
+                                </button>
+                                <button class="btn btn-sm btn-outline-dark rounded-3" title="Cetak Laporan" onclick="window.print()">
+                                    <i class="bi bi-printer"></i> Cetak
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="loadBagianData()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button id="toggle-pengajuan-btn" class="btn btn-sm btn-outline-primary rounded-3" onclick="togglePengajuanPanel()">
+                                    <i class="bi bi-person-plus me-1"></i>Tampilkan Input Peserta
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- LEGEND WARNA STATUS -->
+                        <div class="d-flex gap-3 mb-3 p-2 bg-light rounded-3 small no-print">
+                            <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle bg-success" style="width: 10px; height: 10px;"></span> Diterima</span>
+                            <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle bg-danger" style="width: 10px; height: 10px;"></span> Ditolak</span>
+                            <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle bg-warning" style="width: 10px; height: 10px;"></span> Menunggu Process</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table align-middle modern-table mb-0" id="bagian-data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="table-col-mahasiswa">Mahasiswa</th>
+                                        <th>Blok</th>
+                                        <th class="table-col-kegiatan">Detail Kegiatan</th>
+                                        <th class="text-center table-col-status">ACC Final</th>
+                                        <th class="text-center table-col-status">Info Final ke Bagian</th>
+                                        <th class="text-center table-col-status">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bagian-data-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">Memuat data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- DAFTAR BERITA ACARA TERUNGGAH -->
+                    <div class="card-custom p-4 mt-4 no-print">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Berita Acara Kegiatan Terunggah</h6>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openBeritaAcaraModal()">
+                                <i class="bi bi-plus-lg me-1"></i>Tambah Berita Acara
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Waktu Upload</th>
+                                        <th>Blok</th>
+                                        <th>Nama Kegiatan</th>
+                                        <th class="text-center">Jml Peserta</th>
+                                        <th class="text-end">Berkas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="berita-acara-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">Belum ada Berita Acara yang diunggah.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL UPLOAD BERITA ACARA PER-KEGIATAN -->
+    <div class="modal fade" id="modalBeritaAcara" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Upload Berita Acara Kegiatan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-berita-acara" onsubmit="handleBeritaAcaraSubmit(event)">
+                    <div class="modal-body py-3">
+                        <p class="text-muted small mb-3">Unggah berkas Berita Acara pelaksanaan inhal/remediasi per kegiatan agar dapat dipantau oleh Admin Dashboard.</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Pilih Blok</label>
+                            <select id="ba-blok" class="form-select" required>
+                                <option value="">Pilih Blok...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nama Kegiatan / Topik</label>
+                            <input type="text" id="ba-nama" class="form-control" placeholder="Contoh: Berita Acara Inhal Praktikum 1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Jumlah Peserta Inhal/Remediasi</label>
+                            <input type="number" id="ba-jumlah" class="form-control" min="1" placeholder="Masukkan total peserta..." required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Upload File Berita Acara (PDF / JPG)</label>
+                            <input type="file" id="ba-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Catatan / Keterangan (Opsional)</label>
+                            <textarea id="ba-catatan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4" id="ba-submit-btn">
+                            <span class="spinner-border spinner-border-sm me-1 hidden" id="ba-spinner"></span>
+                            Unggah Berita Acara
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JS SCRIPTS & INTEGRATION -->
+    <script>
+        let currentSession = {
+            category: '',
+            subBagian: '',
+            displayName: ''
+        };
+
+        let loadedRowsData = [];
+        let modalBeritaAcaraInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            modalBeritaAcaraInstance = new bootstrap.Modal(document.getElementById('modalBeritaAcara'));
+
+            // Cek session login dari localStorage
+            const savedSession = localStorage.getItem('bagian_session_data');
+            if (savedSession) {
+                try {
+                    currentSession = JSON.parse(savedSession);
+                    initApp();
+                } catch(e) {
+                    localStorage.removeItem('bagian_session_data');
+                }
+            }
+
+            // Real-time lookup NPM
+            setupNpmLookup();
+
+            // Login submission handler
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+
+            // Form Pengajuan submission handler
+            document.getElementById('pengajuan-form').addEventListener('submit', handlePengajuanSubmit);
+        });
+
+        function handleKategoriChange() {
+            const kat = document.getElementById('login-kategori').value;
+            const subWrapper = document.getElementById('sub-lab-wrapper');
+            const subSelect = document.getElementById('login-sublab');
+
+            if (kat === 'Praktikum') {
+                subWrapper.classList.remove('hidden');
+                subSelect.required = true;
+            } else {
+                subWrapper.classList.add('hidden');
+                subSelect.required = false;
+                subSelect.value = '';
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const kat = document.getElementById('login-kategori').value;
+            const sub = document.getElementById('login-sublab').value;
+
+            if (!kat) return;
+            if (kat === 'Praktikum' && !sub) {
+                Swal.fire('Peringatan', 'Silakan pilih Sub-Lab Praktikum terlebih dahulu!', 'warning');
+                return;
+            }
+
+            currentSession.category = kat;
+            currentSession.subBagian = (kat === 'Praktikum') ? sub : kat;
+            currentSession.displayName = (kat === 'Praktikum') ? `Praktikum ${sub}` : kat;
+
+            localStorage.setItem('bagian_session_data', JSON.stringify(currentSession));
+            initApp();
+        }
+
+        function initApp() {
+            document.getElementById('login-area').classList.add('hidden');
+            document.getElementById('app-area').classList.remove('hidden');
+
+            document.getElementById('display-bagian-name').textContent = currentSession.displayName;
+            document.getElementById('badge-login-context').textContent = currentSession.category + (currentSession.category === 'Praktikum' ? ` (${currentSession.subBagian})` : '');
+            document.getElementById('lock-kat-label').textContent = currentSession.displayName;
+
+            // Load dropdown data
+            loadFormDropdowns();
+
+            // Load monitoring table data
+            loadBagianData();
+
+            // Load Berita Acara list
+            loadBeritaAcaraData();
+        }
+
+        function logoutBagian() {
+            localStorage.removeItem('bagian_session_data');
+            currentSession = { category: '', subBagian: '', displayName: '' };
+            document.getElementById('app-area').classList.add('hidden');
+            document.getElementById('login-area').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+            handleKategoriChange();
+        }
+
+        function togglePengajuanPanel() {
+            const panel = document.getElementById('pengajuan-panel');
+            const monitoringPanel = document.getElementById('monitoring-panel');
+            const toggleButton = document.getElementById('toggle-pengajuan-btn');
+            const isHidden = panel.classList.toggle('hidden');
+
+            monitoringPanel.classList.toggle('col-lg-12', isHidden);
+            monitoringPanel.classList.toggle('col-lg-8', !isHidden);
+            toggleButton.innerHTML = isHidden
+                ? '<i class="bi bi-person-plus me-1"></i>Tampilkan Input Peserta'
+                : '<i class="bi bi-person-dash me-1"></i>Sembunyikan Input Peserta';
+        }
+
+        function setupNpmLookup() {
+            const npmInput = document.getElementById('input-npm');
+            let timeout = null;
+
+            npmInput.addEventListener('input', () => {
+                clearTimeout(timeout);
+                const npm = npmInput.value.trim();
+                const statusEl = document.getElementById('npm-status');
+                const namaEl = document.getElementById('input-nama');
+
+                if (!npm) {
+                    statusEl.textContent = '';
+                    namaEl.value = '';
+                    return;
+                }
+
+                statusEl.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1" role="status"></span>Mencari data NPM...</span>';
+
+                timeout = setTimeout(() => {
+                    if (window.google && google.script && google.script.run) {
+                        google.script.run
+                            .withSuccessHandler(name => {
+                                if (name) {
+                                    statusEl.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Mahasiswa ditemukan</span>';
+                                    namaEl.value = name;
+                                } else {
+                                    statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>NPM tidak ditemukan</span>';
+                                    namaEl.value = '';
+                                }
+                            })
+                            .withFailureHandler(() => {
+                                statusEl.innerHTML = '<span class="text-danger">Gagal verifikasi NPM</span>';
+                                namaEl.value = '';
+                            })
+                            .getStudentNameByNpm(npm);
+                    } else {
+                        // Demo mode untuk pengujian lokal
+                        statusEl.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Mahasiswa Terverifikasi (Mode Demo)</span>';
+                        namaEl.value = "Mahasiswa UMSU Demo";
+                    }
+                }, 500);
+            });
+        }
+
+        function loadFormDropdowns() {
+            const selectBlok = document.getElementById('input-blok');
+            const filterBlokSelect = document.getElementById('filter-blok-table');
+            const baBlokSelect = document.getElementById('ba-blok');
+            const selectDetail = document.getElementById('input-detail');
+
+            const populateBlokOptions = (bloks) => {
+                selectBlok.innerHTML = '<option value="">Pilih Blok...</option>';
+                filterBlokSelect.innerHTML = '<option value="">Semua Blok</option>';
+                baBlokSelect.innerHTML = '<option value="">Pilih Blok...</option>';
+                bloks.forEach(b => {
+                    selectBlok.innerHTML += `<option value="${b}">${b}</option>`;
+                    filterBlokSelect.innerHTML += `<option value="${b}">${b}</option>`;
+                    baBlokSelect.innerHTML += `<option value="${b}">${b}</option>`;
+                });
+            };
+
+            // Set opsi Blok
+            if (window.google && google.script && google.script.run && google.script.run.getUniqueBloks) {
+                google.script.run.withSuccessHandler(bloks => {
+                    populateBlokOptions(bloks);
+                }).getUniqueBloks();
+            } else {
+                const defaultBloks = ["Blok 1.1", "Blok 1.2", "Blok 2.1", "Blok 2.2", "Blok 3.1", "Blok 3.2"];
+                populateBlokOptions(defaultBloks);
+            }
+
+            // Set opsi Detail Kegiatan berdasarkan Kategori Login
+            selectDetail.innerHTML = '<option value="">Pilih Detail Kegiatan...</option>';
+            let details = [];
+
+            if (currentSession.category === 'SGD') {
+                details = ["SGD 1", "SGD 2", "SGD 3", "SGD 4", "Pleno SGD"];
+            } else if (currentSession.category === 'KKD') {
+                details = ["Skill Lab 1", "Skill Lab 2", "OSCE Lokal KKD"];
+            } else if (currentSession.category === 'Ujian') {
+                details = ["Ujian Blok CBT", "Ujian Remedial CBT", "Ujian OSCE Sesi 1", "Ujian OSCE Sesi 2"];
+            } else if (currentSession.category === 'Praktikum') {
+                details = [
+                    `Praktikum ${currentSession.subBagian} 1`,
+                    `Praktikum ${currentSession.subBagian} 2`,
+                    `Praktikum ${currentSession.subBagian} 3`,
+                    `Ujian Praktikum ${currentSession.subBagian}`
+                ];
+            }
+
+            details.forEach(d => {
+                selectDetail.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+        }
+
+        function loadBagianData() {
+            const tbody = document.getElementById('bagian-data-body');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengambil data peserta bagian...</td></tr>';
+
+            if (window.google && google.script && google.script.run && google.script.run.getLogDataForAdmin) {
+                google.script.run
+                    .withSuccessHandler(payload => {
+                        console.log("Data mentah dari getLogDataForAdmin:", payload);
+                        loadedRowsData = payload.rows || payload || [];
+                        renderTableRows(loadedRowsData);
+                    })
+                    .getLogDataForAdmin();
+            } else {
+                // Demo Rows jika dijalankan di preview lokal
+                loadedRowsData = [
+                    { 
+                        NPM: "2108260001", 
+                        "Nama Lengkap": "Ahmad Dani", 
+                        Blok: "Blok 1.1", 
+                        "Jenis Kegiatan": `${currentSession.category} - ${currentSession.displayName}`,
+                        "Detail Kegiatan": `Topik 1 ${currentSession.displayName}`,
+                        Status: "Disetujui", 
+                        "Bukti ACC Final": "https://example.com/acc_final_demo.pdf",
+                        "Status Info Bagian": "Terkirim",
+                        originalRowIndex: 2 
+                    },
+                    { 
+                        NPM: "2108260002", 
+                        "Nama Lengkap": "Budi Santoso", 
+                        Blok: "Blok 1.2", 
+                        "Jenis Kegiatan": `${currentSession.category} - ${currentSession.displayName}`,
+                        "Detail Kegiatan": `Topik 2 ${currentSession.displayName}`,
+                        Status: "Ditolak", 
+                        "Bukti ACC Final": "",
+                        "Status Info Bagian": "",
+                        originalRowIndex: 3 
+                    },
+                    { 
+                        NPM: "2108260003", 
+                        "Nama Lengkap": "Citra Dewi", 
+                        Blok: "Blok 1.1", 
+                        "Jenis Kegiatan": `${currentSession.category} - ${currentSession.displayName}`,
+                        "Detail Kegiatan": `Topik 1 ${currentSession.displayName}`,
+                        Status: "Menunggu", 
+                        "Bukti ACC Final": "",
+                        "Status Info Bagian": "Gagal",
+                        originalRowIndex: 4 
+                    }
+                ];
+                renderTableRows(loadedRowsData);
+            }
+        }
+
+        function renderTableRows(rows) {
+            const tbody = document.getElementById('bagian-data-body');
+            tbody.innerHTML = '';
+
+            // Filter data yang sesuai dengan Bagian/Kategori aktif
+            const filteredRows = rows.filter(row => {
+                const rowValuesString = Object.values(row).map(v => String(v || '')).join(' ').toLowerCase();
+                const subStr = currentSession.subBagian.toLowerCase().trim();
+
+                if (!subStr) return false;
+                return rowValuesString.includes(subStr);
+            });
+
+            // HITUNG REKAPITULASI STATISTIK
+            let totalCount = filteredRows.length;
+            let disetujuiCount = 0;
+            let ditolakCount = 0;
+            let menungguCount = 0;
+
+            if (filteredRows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada data peserta inhal untuk bagian ini.</td></tr>';
+            } else {
+                filteredRows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    const st = String(row.Status || '').toLowerCase();
+
+                    // PEWARNAAN BARIS DENGAN HIGHLIGHT CLASS & STATISTIK COUNT
+                    if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
+                        tr.className = 'row-disetujui';
+                        disetujuiCount++;
+                    } else if (st.includes('tolak')) {
+                        tr.className = 'row-ditolak';
+                        ditolakCount++;
+                    } else {
+                        tr.className = 'row-menunggu';
+                        menungguCount++;
+                    }
+
+                    // Attach attributes for quick filtering
+                    tr.setAttribute('data-blok', row.Blok || '');
+
+                    // Membaca Kolom O "Link Final" dari sheet CheckData
+                    const accUrl = row['Link Final'] || row['LinkFinal'] || row['link_final'] || row['Bukti ACC Final'] || row['File ACC Final'] || row['buktiAccFinal'] || row['Link ACC INHAL'] || row['accInhal'] || '';
+                    const accReady = !!String(accUrl || '').trim();
+
+                    // Bukti ACC Final
+                    let accFinalHtml = `
+                        <div class="status-stack">
+                            <span class="status-chip status-chip-neutral">
+                                <i class="bi bi-clock-history"></i> Belum tersedia
+                            </span>
+                        </div>
+                    `;
+                    if (accUrl) {
+                        accFinalHtml = `
+                            <div class="status-stack">
+                                <a href="${accUrl}" target="_blank" class="acc-final-link">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Lihat
+                                </a>
+                            </div>
+                        `;
+                    }
+
+                    const infoStatus = String(row['Status Info Bagian'] || '').trim().toLowerCase();
+                    const bagianInfoHtml = infoStatus === 'terkirim'
+                        ? `
+                            <div class="status-stack">
+                                <span class="status-chip status-chip-info">
+                                    <i class="bi bi-envelope-check-fill"></i> Sudah masuk
+                                </span>
+                            </div>
+                        `
+                        : `
+                            <div class="status-stack">
+                                <span class="status-chip status-chip-neutral">
+                                    <i class="bi bi-envelope-x-fill"></i> ${infoStatus === 'gagal' ? 'Gagal dikirim' : 'Belum dikirim'}
+                                </span>
+                            </div>
+                        `;
+
+                    // Status Badge
+                    let statusBadge = `
+                        <div class="status-stack">
+                            <span class="status-chip ${st.includes('tolak') ? 'status-chip-danger' : 'status-chip-neutral'}">
+                                <i class="bi bi-hourglass-split"></i> Menunggu
+                            </span>
+                        </div>
+                    `;
+                    if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
+                        statusBadge = `
+                            <div class="status-stack">
+                                <span class="status-chip status-chip-success">
+                                    <i class="bi bi-check-circle-fill"></i> Diterima
+                                </span>
+                            </div>
+                        `;
+                    } else if (st.includes('tolak')) {
+                        statusBadge = `
+                            <div class="status-stack">
+                                <span class="status-chip status-chip-danger">
+                                    <i class="bi bi-x-circle-fill"></i> Ditolak
+                                </span>
+                                
+                            </div>
+                        `;
+                    }
+
+                    const jenisTxt = String(row['Jenis Kegiatan'] || '').trim();
+                    const detailTxt = String(row['Detail Kegiatan'] || '').trim();
+                    let displayDetail = '-';
+
+                    if (detailTxt) {
+                        // Jika ada Detail Kegiatan, prioritaskan itu
+                        displayDetail = detailTxt;
+                    } else if (jenisTxt) {
+                        // Jika tidak, gunakan Jenis Kegiatan
+                        displayDetail = jenisTxt;
+                    }
+                    
+                    // Hapus nama bagian utama (sesi login) dari string yang ditampilkan
+                    // Pengecualian untuk SGD: "SGD" adalah bagian dari nama kegiatan (cth: "SGD 1"), bukan kategori yang perlu di-strip.
+                    const sessionSub = currentSession.subBagian.toLowerCase();
+                    if (currentSession.category !== 'SGD' && displayDetail.toLowerCase().includes(sessionSub)) {
+                        const regex = new RegExp(currentSession.subBagian, 'gi');
+                        displayDetail = displayDetail.replace(regex, '').replace(/^-| -/g, '').trim();
+                    }
+
+                    tr.innerHTML = `
+                        <td>
+                            <div class="student-name">${row['Nama Lengkap'] || '-'}</div>
+                            <div class="student-meta">NPM: ${row.NPM || '-'}</div>
+                        </td>
+                        <td><span class="blok-badge">${row.Blok || '-'}</span></td>
+                        <td>
+                            <div class="kegiatan-detail fw-semibold text-dark">${displayDetail || '-'}</div>
+                        </td>
+                        <td class="text-center">${accFinalHtml}</td>
+                        <td class="text-center">${bagianInfoHtml}</td>
+                        <td class="text-center">${statusBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // UPDATE WIDGET STATISTIK CARDS
+            document.getElementById('stat-total').textContent = totalCount;
+            document.getElementById('stat-disetujui').textContent = disetujuiCount;
+            document.getElementById('stat-menunggu').textContent = menungguCount;
+            document.getElementById('stat-ditolak').textContent = ditolakCount;
+
+            // Re-apply filter
+            filterTable();
+        }
+
+        function filterTable() {
+            const query = document.getElementById('search-table').value.toLowerCase();
+            const selectedBlok = document.getElementById('filter-blok-table').value.toLowerCase();
+            const rows = document.querySelectorAll('#bagian-data-body tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowBlok = (row.getAttribute('data-blok') || '').toLowerCase();
+
+                const matchesQuery = !query || text.includes(query);
+                const matchesBlok = !selectedBlok || rowBlok.includes(selectedBlok);
+
+                if (matchesQuery && matchesBlok) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function updateStatus(rowIndex, status) {
+            Swal.fire({
+                title: 'Konfirmasi Status ACC',
+                text: `Apakah Anda yakin ingin memproses status data ini menjadi "${status}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Proses'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (window.google && google.script && google.script.run && google.script.run.updateStatusRowIndex) {
+                        Swal.showLoading();
+                        google.script.run
+                            .withSuccessHandler(() => {
+                                Swal.fire('Berhasil!', `Status pengajuan telah diubah menjadi ${status}.`, 'success');
+                                loadBagianData();
+                            })
+                            .withFailureHandler(err => {
+                                Swal.fire('Gagal!', err.message || 'Gagal mengubah status', 'error');
+                            })
+                            .updateStatusRowIndex(rowIndex, status);
+                    } else {
+                        Swal.fire('Demo Mode', `Status diubah ke ${status} (Simulasi lokal)`, 'success');
+                    }
+                }
+            });
+        }
+
+        function handlePengajuanSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const spinner = document.getElementById('submit-spinner');
+
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+
+            const npm = document.getElementById('input-npm').value.trim();
+            const nama = document.getElementById('input-nama').value.trim();
+            const blok = document.getElementById('input-blok').value;
+            const detail = document.getElementById('input-detail').value;
+            const keterangan = document.getElementById('input-keterangan').value;
+
+            const payload = {
+                npm: npm,
+                namaLengkap: nama,
+                blok: blok,
+                kategori: currentSession.category,
+                subBagian: currentSession.subBagian,
+                bagianDisplay: currentSession.displayName,
+                detailKegiatan: detail,
+                keterangan: keterangan,
+                createdBy: 'Admin Bagian'
+            };
+
+            if (window.google && google.script && google.script.run && google.script.run.submitPendaftaranBagian) {
+                google.script.run
+                    .withSuccessHandler(() => {
+                        btn.disabled = false;
+                        spinner.classList.add('hidden');
+                        document.getElementById('pengajuan-form').reset();
+                        document.getElementById('npm-status').textContent = '';
+                        Swal.fire('Tersimpan!', 'Data peserta inhal berhasil ditambahkan ke sistem.', 'success');
+                        loadBagianData();
+                    })
+                    .withFailureHandler(err => {
+                        btn.disabled = false;
+                        spinner.classList.add('hidden');
+                        Swal.fire('Gagal!', err.message || 'Gagal menyimpan data.', 'error');
+                    })
+                    .submitPendaftaranBagian(payload);
+            } else {
+                // Demo Mode
+                setTimeout(() => {
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                    document.getElementById('pengajuan-form').reset();
+                    document.getElementById('npm-status').textContent = '';
+                    Swal.fire('Demo Berhasil!', 'Data peserta berhasil diinput secara lokal (Simulasi).', 'success');
+                    loadBagianData();
+                }, 800);
+            }
+        }
+
+        // EXPORT EXCEL FUNCTION
+        function exportToExcel() {
+            let csvContent = "data:text/csv;charset=utf-8,NPM,Nama Mahasiswa,Blok,Kegiatan,Detail Kegiatan,ACC Final,Info Final ke Bagian,Status\n";
+            const visibleRows = document.querySelectorAll('#bagian-data-body tr');
+            
+            visibleRows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cols = row.querySelectorAll('td');
+                    if (cols.length >= 5) {
+                        const namaNpm = cols[0].innerText.split('\n');
+                        const nama = `"${(namaNpm[0] || '').replace(/"/g, '""')}"`;
+                        const npm = `"${(namaNpm[1] || '').replace(/"/g, '""')}"`;
+                        const blok = `"${(cols[1].innerText || '').replace(/"/g, '""')}"`;
+                        const kegDetail = cols[2].innerText.split('\n');
+                        const keg = `"${(kegDetail[0] || '').replace(/"/g, '""')}"`;
+                        const detail = `"${(kegDetail[1] || '').replace(/"/g, '""')}"`;
+                        const accFinal = `"${(cols[3].innerText || '').replace(/"/g, '""')}"`;
+                        const infoBagian = `"${(cols[4].innerText || '').replace(/"/g, '""')}"`;
+                        const status = `"${(cols[5].innerText || '').replace(/"/g, '""')}"`;
+                        csvContent += `${npm},${nama},${blok},${keg},${detail},${accFinal},${infoBagian},${status}\n`;
+                    }
+                }
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Peserta_Inhal_${currentSession.displayName}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // BERITA ACARA MODAL & DATA HANDLERS
+        function openBeritaAcaraModal() {
+            document.getElementById('form-berita-acara').reset();
+            modalBeritaAcaraInstance.show();
+        }
+
+        function handleBeritaAcaraSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('ba-submit-btn');
+            const spinner = document.getElementById('ba-spinner');
+
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+
+            const blok = document.getElementById('ba-blok').value;
+            const nama = document.getElementById('ba-nama').value.trim();
+            const jumlah = document.getElementById('ba-jumlah').value;
+            const catatan = document.getElementById('ba-catatan').value;
+            const fileInput = document.getElementById('ba-file').files[0];
+
+            if (!fileInput) {
+                Swal.fire('Peringatan', 'Silakan pilih berkas Berita Acara terlebih dahulu!', 'warning');
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                const base64Data = reader.result.split(',')[1];
+                const payload = {
+                    bagianDisplay: currentSession.displayName,
+                    blok: blok,
+                    namaKegiatan: nama,
+                    jumlahPeserta: jumlah,
+                    catatan: catatan,
+                    file: {
+                        data: base64Data,
+                        mimeType: fileInput.type,
+                        fileName: fileInput.name
+                    }
+                };
+
+                if (window.google && google.script && google.script.run && google.script.run.uploadBeritaAcaraBagian) {
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            btn.disabled = false;
+                            spinner.classList.add('hidden');
+                            modalBeritaAcaraInstance.hide();
+                            Swal.fire('Berhasil!', 'Berita Acara Kegiatan berhasil diunggah ke Drive & Spreadsheet.', 'success');
+                            loadBeritaAcaraData();
+                        })
+                        .withFailureHandler(err => {
+                            btn.disabled = false;
+                            spinner.classList.add('hidden');
+                            Swal.fire('Gagal!', err.message || 'Gagal mengunggah Berita Acara.', 'error');
+                        })
+                        .uploadBeritaAcaraBagian(payload);
+                } else {
+                    // Demo Mode
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        spinner.classList.add('hidden');
+                        modalBeritaAcaraInstance.hide();
+                        Swal.fire('Demo Berhasil!', 'Berita Acara tersimpan secara simulasi.', 'success');
+                        loadBeritaAcaraData();
+                    }, 800);
+                }
+            };
+            reader.readAsDataURL(fileInput);
+        }
+
+        function loadBeritaAcaraData() {
+            const tbody = document.getElementById('berita-acara-body');
+
+            if (window.google && google.script && google.script.run && google.script.run.getBeritaAcaraList) {
+                google.script.run
+                    .withSuccessHandler(payload => {
+                        renderBeritaAcaraRows(payload.rows || []);
+                    })
+                    .getBeritaAcaraList(currentSession.displayName);
+            } else {
+                // Demo Rows
+                const demoBA = [
+                    { 
+                        Timestamp: new Date().toLocaleDateString('id-ID'), 
+                        Blok: "Blok 1.1", 
+                        "Nama Kegiatan": `Berita Acara Inhal ${currentSession.displayName} 1`, 
+                        "Jumlah Peserta": 12, 
+                        "File URL": "https://example.com/berita_acara_demo.pdf" 
+                    }
+                ];
+                renderBeritaAcaraRows(demoBA);
+            }
+        }
+
+        function renderBeritaAcaraRows(rows) {
+            const tbody = document.getElementById('berita-acara-body');
+            tbody.innerHTML = '';
+
+            if (!rows || rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada Berita Acara yang diunggah.</td></tr>';
+                return;
+            }
+
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const tgl = r.Timestamp ? new Date(r.Timestamp).toLocaleDateString('id-ID') : '-';
+                const link = r['File URL'] ? `<a href="${r['File URL']}" target="_blank" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>Buka PDF</a>` : '-';
+
+                tr.innerHTML = `
+                    <td>${tgl}</td>
+                    <td><span class="badge bg-light text-dark border">${r.Blok || '-'}</span></td>
+                    <td class="fw-semibold text-dark">${r['Nama Kegiatan'] || '-'}</td>
+                    <td class="text-center"><span class="badge bg-primary-light text-primary">${r['Jumlah Peserta'] || 0} Mahasiswa</span></td>
+                    <td class="text-end">${link}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

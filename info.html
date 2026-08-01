@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Mahasiswa - INHAL FKIK UMSU</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: '#1e3a8a',   /* Blue deep like in image */
+                            secondary: '#3b82f6', /* Blue bright */
+                            accent: '#10b981',    /* Green success */
+                            dark: '#172554',
+                        },
+                        status: {
+                            approved: '#dcfce7',
+                            approvedText: '#15803d',
+                            pending: '#fef9c3',
+                            pendingText: '#a16207',
+                            rejected: '#fee2e2',
+                            rejectedText: '#b91c1c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .timeline-line {
+            position: absolute;
+            left: 7px;
+            top: 24px;
+            bottom: 0;
+            width: 2px;
+            background-color: #e5e7eb;
+            z-index: 0;
+        }
+
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans text-slate-800 min-h-screen flex flex-col text-[14px]">
+
+    <!-- ================= LOGIN VIEW ================= -->
+    <div id="login-view" class="flex-grow flex items-center justify-center p-4">
+        <div
+            class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
+            <div class="bg-brand-primary p-6 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 text-white mb-4">
+                    <i class="fas fa-user-graduate text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">INHAL FKIK UMSU</h1>
+                <p class="text-blue-200 text-sm mt-1">Pengajuan Mahasiswa</p>
+            </div>
+
+            <div class="p-8">
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-6">
+                    <div>
+                        <label for="npm" class="block text-sm font-medium text-gray-700 mb-2">NPM (Nomor Pokok
+                            Mahasiswa)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-id-card text-gray-400"></i>
+                            </div>
+                            <input type="text" id="npm" name="npm"
+                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-secondary focus:border-brand-secondary transition-colors"
+                                placeholder="Contoh: 2108260xxx" required maxlength="15">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="loginSubmitBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all duration-200">
+                        <i id="loginBtnSpinner" class="fas fa-spinner fa-spin mr-2 hidden"></i>
+                        <span id="loginBtnText">Periksa Pengajuan INHAL</span>
+                        <i id="loginBtnArrow" class="fas fa-arrow-right ml-2 mt-0.5"></i>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <a href="<?= ScriptApp.getService().getUrl() ?>"
+                        class="text-sm text-brand-primary hover:text-brand-dark font-medium hover:underline">
+                        <i class="fas fa-arrow-left mr-1"></i> Kembali ke Form Pendaftaran
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP VIEW ================= -->
+    <div id="app-view" class="hidden flex-col min-h-screen">
+        <!-- Navbar -->
+        <nav class="bg-brand-primary text-white shadow-lg sticky top-0 z-50">
+            <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 lg:max-w-5xl">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <span class="font-bold text-xl tracking-wide">INHAL FKIK UMSU</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="logout()"
+                            class="flex items-center px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-white text-sm font-medium">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Keluar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+            <div class="w-full mx-auto space-y-6 lg:max-w-5xl">
+
+                <!-- DASHBOARD VIEW -->
+                <div id="dashboard-content">
+                    <!-- User Profile Card -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-brand-primary text-2xl font-bold">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div>
+                                <h2 id="welcome-name" class="text-xl font-bold text-gray-900">Mahasiswa</h2>
+                                <p class="text-gray-500 text-sm mt-1">NPM: <span id="welcome-npm">20061100XX</span> •
+                                    Kedokteran Umum</p>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" onclick="openRegistrationModal()"
+                                class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">
+                                <i class="fas fa-plus mr-2"></i> Ajuan Inhal Baru
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- History Section -->
+                    <div class="mb-4">
+                        <h3 class="font-bold text-gray-800 text-lg flex items-center mb-4">
+                            <i class="fas fa-history mr-2 text-gray-500"></i> Riwayat Pengajuan
+                        </h3>
+
+                        <!-- List Container -->
+                        <div id="history-list" class="space-y-4">
+                            <!-- Items will be injected here -->
+                            <div class="p-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DETAIL VIEW -->
+                <div id="detail-content" class="hidden">
+                    <!-- Back Button -->
+                    <button onclick="showDashboard()"
+                        class="mb-6 flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i> Kembali ke Daftar
+                    </button>
+
+                    <!-- Detail Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <!-- Header -->
+                        <div class="p-6 border-b border-gray-100 bg-blue-50/50">
+                            <h2 id="detail-title" class="text-xl font-bold text-gray-900 mb-2">Inhal Praktikum Anatomi
+                            </h2>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Status:</span>
+                                <span id="detail-status-badge"
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                    DISETUJUI
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Rejection Banner (Hidden by default) -->
+                        <div id="rejection-banner"
+                            class="hidden mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 mt-0.5 mr-3 text-lg"></i>
+                            <div>
+                                <h4 class="text-sm font-bold text-red-800">Pengajuan Ditolak</h4>
+                                <p id="rejection-reason-text" class="text-sm text-red-600 mt-1">Mohon maaf, pengajuan
+                                    Anda tidak dapat diproses.</p>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Content -->
+                        <div class="p-8 pt-6">
+                            <!-- Step 1: Pengajuan Diterima -->
+                            <div class="timeline-item relative pl-8 pb-8">
+                                <div class="timeline-line"></div>
+                                <div
+                                    class="absolute left-0 top-1 w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm z-10">
+                                </div>
+                                <div>
+                                    <h4 class="text-base font-bold text-gray-900">Pengajuan dikonfirmasi</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Data Anda sedang diproses admin.</p>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Instruksi Pembayaran & Berkas -->
+                            <div class="timeline-item relative pl-8 pb-8">
+                                <div class="timeline-line"></div>
+                                <div id="step-2-dot"
+                                    class="absolute left-0 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm z-10">
+                                </div>
+
+                                <div>
+                                    <h4 id="step-2-title" class="text-base font-bold text-gray-900 mb-2">Instruksi
+                                        Pembayaran & Berkas</h4>
+
+                                    <!-- Upload Box -->
+                                    <div id="upload-section-container"
+                                        class="bg-blue-50 border border-blue-100 rounded-lg p-6 mt-3">
+                                        <p id="upload-instruction-text" class="text-sm text-blue-800 mb-4">
+                                            Silakan lakukan pembayaran sesuai tagihan dan unggah bukti bayar (PDF/JPG).
+                                        </p>
+                                        <div class="space-y-3">
+                                            <button id="detail-upload-btn" type="button"
+                                                class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm"
+                                                onclick="openUploadModalById(currentDetailId)">
+                                                Upload Bukti
+                                            </button>
+                                            <div id="detail-upload-info" class="text-xs text-blue-700"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Info jika ditolak (text alternative if banner is not enough, or just leave empty as banner covers it) -->
+                                    <div id="rejected-text-placeholder" class="hidden text-sm text-gray-500 mt-2">
+                                        Proses dihentikan.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Validasi Akhir -->
+                            <div id="step-3-container" class="timeline-item relative pl-8">
+                                <div id="step-3-dot"
+                                    class="absolute left-0 top-1 w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow-sm z-10">
+                                </div>
+                                <div>
+                                    <h4 class="text-base font-bold text-gray-400" id="step-3-title">Validasi Akhir</h4>
+                                    <p class="text-sm text-gray-400 mt-1" id="step-3-desc">Menunggu admin memverifikasi
+                                        bukti unggahan Anda.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Modals moved outside main content container to avoid stacking context issues -->
+        <div id="upload-modal" class="hidden fixed inset-0 z-50 items-center justify-center">
+            <div class="absolute inset-0 bg-black/50"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900">Upload Bukti</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600"
+                        onclick="closeUploadModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="px-6 py-5 space-y-4">
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
+                        Unggahan hanya bisa dilakukan satu kali. Pastikan file sudah benar sebelum mengirim.
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <div class="text-gray-500">NPM</div>
+                            <div id="upload-info-npm" class="font-semibold text-gray-900"></div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500">Blok</div>
+                            <div id="upload-info-blok" class="font-semibold text-gray-900"></div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="text-gray-500">Kegiatan</div>
+                            <div id="upload-info-kegiatan" class="font-semibold text-gray-900"></div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500">Tanggal</div>
+                            <div id="upload-info-tanggal" class="font-semibold text-gray-900"></div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500">Status</div>
+                            <div id="upload-info-status" class="font-semibold text-gray-900"></div>
+                        </div>
+                    </div>
+                    <form id="upload-modal-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload ACC INHAL</label>
+                            <input type="file" id="upload-file-acc" accept=".pdf,.jpg,.jpeg,.png"
+                                class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Bukti
+                                Bayar</label>
+                            <input type="file" id="upload-file-bukti" accept=".pdf,.jpg,.jpeg,.png"
+                                class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                    </form>
+                </div>
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+                    <button type="button"
+                        class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                        onclick="closeUploadModal()">Batal</button>
+                    <button id="upload-modal-submit" type="button"
+                        class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700"
+                        onclick="submitUploadModal()">Kirim</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="registration-modal" class="hidden fixed inset-0 z-50 items-center justify-center">
+            <div class="absolute inset-0 bg-black/50"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900">Ajuan Inhal Baru</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600"
+                        onclick="closeRegistrationModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="px-6 py-5">
+                    <iframe id="registration-iframe" src="about:blank"
+                        class="w-full h-[80vh] rounded-xl border border-gray-200"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <footer class="bg-white border-t border-gray-200 mt-auto py-6">
+            <div class="w-full mx-auto px-4 text-center lg:max-w-5xl">
+                <p class="text-gray-500 text-sm">© 2025 Fakultas Kedokteran - INHAL FKIK UMSU</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Javascript Logic -->
+    <script>
+        // --- State Management ---
+        let currentUser = null;
+        let currentDetailId = null;
+        let currentUploadItem = null;
+        let lastRegistrationSignal = 0;
+        let registrationPollTimer = null;
+        let lastRegistrationHandledAt = 0;
+
+        // --- Mock Data ---
+        const MOCK_DATA = {
+            '2108260001': {
+                nama: 'Budi Santoso',
+                npm: '2108260001',
+                history: [
+                    {
+                        id: 1,
+                        tanggalAjuan: '10 Feb 2025',
+                        tanggalKegiatan: '20 Jan 2026',
+                        blok: 'Psikiatri',
+                        jenis: 'SGD',
+                        detail: 'S G D 1 - Inhal',
+                        status: 'Menunggu Konfirmasi',
+                        statusCode: 'pending',
+                        step: 2
+                    },
+                    {
+                        id: 2,
+                        tanggalAjuan: '15 Jan 2025',
+                        tanggalKegiatan: '25 Jan 2025',
+                        blok: 'Muskuloskeletal',
+                        jenis: 'Praktikum',
+                        detail: 'Anatomi',
+                        status: 'Disetujui',
+                        statusCode: 'approved',
+                        step: 3
+                    },
+                    {
+                        id: 3,
+                        tanggalAjuan: '05 Jan 2025',
+                        tanggalKegiatan: '10 Jan 2025',
+                        blok: 'Kardiovaskular',
+                        jenis: 'KKD',
+                        detail: 'Skill Lab 1',
+                        status: 'Ditolak',
+                        statusCode: 'rejected',
+                        reason: 'Kuota kelas sudah penuh. Silakan pilih jadwal lain atau hubungi admin.',
+                        step: 1
+                    }
+                ]
+            }
+        };
+
+        // --- Functions ---
+
+        function hasAppsScript() {
+            return typeof google !== 'undefined' && google.script && google.script.run;
+        }
+
+        function normalizeStatusLabel(status) {
+            const raw = (status || '').toString().trim();
+            if (!raw) return 'Menunggu';
+            return raw;
+        }
+
+        function mapStatusCode(status) {
+            const s = (status || '').toString().toLowerCase();
+            if (s.includes('diterima') || s.includes('acc') || s.includes('disetujui')) return 'approved';
+            if (s.includes('ditolak')) return 'rejected';
+            return 'pending';
+        }
+
+        function formatDateTime(v) {
+            if (!v) return '';
+            const d = new Date(v);
+            if (isNaN(d.getTime())) return String(v);
+            return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+        }
+
+        function formatUploadStatus(v) {
+            const raw = (v || '').toString().trim().toLowerCase();
+            if (!raw) return '';
+            if (raw === 'uploaded') return 'Sukses';
+            return formatDateTime(v);
+        }
+
+        function getHistoryIdentity(item) {
+            if (!item) return '';
+            return item.idPengajuan || item.id || item.ID || item.rowIndex || '';
+        }
+
+        function upsertLocalHistoryItem(item) {
+            if (!item || !currentUser) return;
+            const normalized = normalizeHistoryItem(item);
+            const identity = getHistoryIdentity(normalized);
+            if (!identity) return;
+            if (!Array.isArray(currentUser.history)) currentUser.history = [];
+            const existingIndex = currentUser.history.findIndex(x => getHistoryIdentity(x) === identity);
+            if (existingIndex >= 0) {
+                currentUser.history[existingIndex] = Object.assign({}, currentUser.history[existingIndex], normalized);
+            } else {
+                currentUser.history.unshift(normalized);
+            }
+            renderHistoryList(currentUser.history);
+        }
+
+        function normalizeHistoryItem(item) {
+            const statusLabel = normalizeStatusLabel(item.status || item.Status);
+            return {
+                id: item.id || item.ID || item.idPengajuan || item.IdPengajuan || item['ID Pengajuan'] || item.rowIndex || Date.now(),
+                idPengajuan: item.idPengajuan || item.IdPengajuan || item['ID Pengajuan'] || '', // ← kunci unik
+                tanggalAjuan: item.tanggalAjuan || item.tanggal || '',
+                tanggalKegiatan: item.tanggalKegiatan || '',
+                blok: item.blok || '',
+                jenis: item.jenis || item.Jenis || item['Jenis Kegiatan'] || item.JenisKegiatan || '',
+                detail: item.detail || item.Detail || item.DetailKegiatan || '',
+                status: statusLabel,
+                statusCode: item.statusCode || mapStatusCode(statusLabel),
+                reason: item.reason || item.Reason || item.Keterangan || item.Catatan || '',
+                linkFinal: item.linkFinal || item.LinkFinal || item.fileFinal || '',
+                hasUpload: !!(item.hasUpload || item.HasUpload),
+                uploadTimestamp: item.uploadTimestamp || item.UploadTimestamp || ''
+            };
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const npm = document.getElementById('npm').value.trim();
+            if (!npm) return;
+
+            setLoginButtonLoading(true);
+            // Initiate fetch with 1 retry attempt (total 2 tries)
+            fetchStudentDataWithRetry(npm, 1);
+        }
+
+        function fetchStudentDataWithRetry(npm, retriesLeft) {
+            if (hasAppsScript()) {
+                google.script.run
+                    .withSuccessHandler((resp) => {
+                        if (!resp || resp.error) {
+                            if (retriesLeft > 0) {
+                                // If it fails, wait 1.5s and try again
+                                setTimeout(() => {
+                                    fetchStudentDataWithRetry(npm, retriesLeft - 1);
+                                }, 1500);
+                                return; // Don't do anything else yet
+                            }
+                            // No retries left, show the final error
+                            setLoginButtonLoading(false);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Data Tidak Ditemukan',
+                                text: (resp && resp.error) ? resp.error : 'Pastikan NPM sudah benar dan Anda memiliki riwayat pengajuan.',
+                                confirmButtonColor: '#1e3a8a'
+                            });
+                            return;
+                        }
+                        
+                        // Success
+                        setLoginButtonLoading(false);
+                        const userData = {
+                            nama: resp.nama || 'Mahasiswa',
+                            npm: resp.npm || npm,
+                            history: (resp.history || []).map(normalizeHistoryItem)
+                        };
+                        loginSuccess(userData);
+                    })
+                    .withFailureHandler((err) => {
+                         if (retriesLeft > 0) {
+                            // Also retry on communication failure
+                            setTimeout(() => {
+                                fetchStudentDataWithRetry(npm, retriesLeft - 1);
+                            }, 1500);
+                            return;
+                        }
+
+                        setLoginButtonLoading(false);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Terhubung',
+                            text: (err && err.message) ? err.message : 'Terjadi kesalahan koneksi ke server.',
+                            confirmButtonColor: '#1e3a8a'
+                        });
+                    })
+                    .getStudentPortalData(npm, { fresh: true });
+                return;
+            }
+
+            // Mock data logic for local testing (remains unchanged)
+            setTimeout(() => {
+                const userData = MOCK_DATA[npm] || {
+                    nama: 'Mahasiswa Demo',
+                    npm: npm,
+                    history: []
+                };
+
+                if (!MOCK_DATA[npm]) {
+                     setLoginButtonLoading(false);
+                     Swal.fire({
+                        icon: 'error',
+                        title: 'Data Tidak Ditemukan',
+                        text: 'Pastikan NPM sudah benar.',
+                        confirmButtonColor: '#1e3a8a'
+                    });
+                    return;
+                }
+
+                userData.history = (userData.history || []).map(normalizeHistoryItem);
+                loginSuccess(userData);
+                setLoginButtonLoading(false);
+            }, 800);
+        }
+
+        function setLoginButtonLoading(isLoading) {
+            const btn = document.getElementById('loginSubmitBtn');
+            const btnText = document.getElementById('loginBtnText');
+            const spinner = document.getElementById('loginBtnSpinner');
+            const arrow = document.getElementById('loginBtnArrow');
+
+            if (btn) {
+                btn.disabled = !!isLoading;
+                if (isLoading) {
+                    btn.classList.add('opacity-90', 'cursor-wait');
+                } else {
+                    btn.classList.remove('opacity-90', 'cursor-wait');
+                }
+            }
+            if (btnText) {
+                btnText.innerText = isLoading ? 'Memeriksa...' : 'Periksa Pengajuan INHAL';
+            }
+            if (spinner) {
+                spinner.classList.toggle('hidden', !isLoading);
+            }
+            if (arrow) {
+                arrow.classList.toggle('hidden', !!isLoading);
+            }
+        }
+
+        function loginSuccess(user) {
+            currentUser = user;
+
+            document.getElementById('welcome-name').innerText = user.nama;
+            document.getElementById('welcome-npm').innerText = user.npm;
+
+            renderHistoryList(user.history);
+
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('app-view').classList.add('flex');
+
+            showDashboard();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginForm').reset();
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('flex');
+            document.getElementById('login-view').classList.remove('hidden');
+        }
+
+        function showDashboard() {
+            currentDetailId = null;
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            document.getElementById('detail-content').classList.add('hidden');
+        }
+
+        function renderHistoryList(history) {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            if (!history || history.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
+                        <i class="fas fa-folder-open text-4xl mb-3 text-gray-300 block"></i>
+                        <span class="text-gray-500">Belum ada riwayat pengajuan.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            history.forEach(item => {
+                // Determine Badge Color
+                let badgeClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+                if (item.statusCode === 'approved') badgeClass = 'bg-green-100 text-green-800 border border-green-200';
+                if (item.statusCode === 'rejected') badgeClass = 'bg-red-100 text-red-800 border border-red-200';
+
+                const canUpload = item.statusCode === 'approved' && !item.hasUpload;
+                const uploadTimestampLabel = item.hasUpload ? formatUploadStatus(item.uploadTimestamp) : '';
+
+                const card = document.createElement('div');
+                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group";
+                card.onclick = () => showDetail(item);
+
+                card.innerHTML = `
+                    <div class="flex-grow">
+                        <div class="text-base font-bold text-gray-800 mb-1">${item.blok}</div>
+                        <div class="text-base font-semibold text-brand-primary group-hover:text-blue-700 transition-colors mb-1">
+                            ${item.jenis} - ${item.detail}
+                        </div>
+                        <div class="text-sm font-medium text-gray-700 mb-2">
+                             ${item.tanggalKegiatan}
+                        </div>
+                        <div class="flex items-center text-gray-400 text-xs mt-1">
+                            <i class="far fa-calendar-alt mr-1.5"></i> Diajukan: ${item.tanggalAjuan}
+                        </div>
+                        ${item.hasUpload ? `<div class="mt-2 text-xs text-green-700 font-semibold">Upload: ${uploadTimestampLabel}</div>` : ''}
+                    </div>
+                    <div class="flex items-center justify-between w-full md:w-auto gap-3 mt-3 md:mt-0">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${badgeClass}">
+                            ${item.status}
+                        </span>
+                        <i class="fas fa-chevron-right text-gray-300 group-hover:text-gray-500 transition-colors"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function showDetail(item) {
+            currentDetailId = getHistoryIdentity(item);
+
+            // Populate Detail Header
+            document.getElementById('detail-title').innerText = `${item.jenis} - ${item.detail}`;
+
+            const badge = document.getElementById('detail-status-badge');
+            badge.innerText = item.status.toUpperCase();
+
+            // Reset Badge classes
+            badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold";
+            if (item.statusCode === 'approved') {
+                badge.classList.add('bg-green-100', 'text-green-800');
+            } else if (item.statusCode === 'rejected') {
+                badge.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                badge.classList.add('bg-yellow-100', 'text-yellow-800');
+            }
+
+            // --- REJECTION UI LOGIC ---
+            const rejectionBanner = document.getElementById('rejection-banner');
+            const uploadSection = document.getElementById('upload-section-container');
+            const step2Title = document.getElementById('step-2-title');
+            const step2Dot = document.getElementById('step-2-dot');
+            const step3Container = document.getElementById('step-3-container');
+            const step3Title = document.getElementById('step-3-title');
+            const step3Desc = document.getElementById('step-3-desc');
+            const step3Dot = document.getElementById('step-3-dot');
+            const rejectedTextPlaceholder = document.getElementById('rejected-text-placeholder');
+            const detailUploadBtn = document.getElementById('detail-upload-btn');
+            const detailUploadInfo = document.getElementById('detail-upload-info');
+            const instructionText = document.getElementById('upload-instruction-text');
+
+            if (item.statusCode === 'rejected') {
+                // Show Rejection Banner
+                rejectionBanner.classList.remove('hidden');
+                document.getElementById('rejection-reason-text').innerText = item.reason || 'Mohon maaf, pengajuan Anda ditolak oleh admin.';
+
+                // Modify Timeline for Rejected State
+                uploadSection.classList.add('hidden'); // Hide upload form
+                rejectedTextPlaceholder.classList.remove('hidden');
+
+                step2Title.innerText = "Instruksi Pembayaran & Berkas";
+                step2Title.className = "text-base font-bold text-gray-400 mb-2";
+                if (instructionText) instructionText.classList.add('hidden');
+
+                step2Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow-sm z-10";
+
+                // Dim Step 3
+                step3Container.classList.add('opacity-40');
+                step3Title.className = "text-base font-bold text-gray-400";
+                step3Desc.innerHTML = "Menunggu admin memverifikasi bukti unggahan Anda.";
+                step3Desc.className = "text-sm text-gray-400 mt-1";
+                step3Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow-sm z-10";
+
+            } else {
+                // Reset to Normal State
+                rejectionBanner.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+                rejectedTextPlaceholder.classList.add('hidden');
+
+                if (item.statusCode === 'approved') {
+                    step2Title.innerText = "Instruksi Pembayaran & Berkas";
+                    step2Title.className = "text-base font-bold text-gray-900 mb-2";
+                    if (instructionText) instructionText.classList.remove('hidden');
+                } else {
+                    step2Title.innerText = "Instruksi Pembayaran & Berkas";
+                    step2Title.className = "text-base font-bold text-gray-400 mb-2";
+                    if (instructionText) instructionText.classList.add('hidden');
+                }
+
+                if (item.statusCode === 'approved') {
+                    step2Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm z-10";
+                } else {
+                    step2Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow-sm z-10";
+                }
+
+                // Logic for Step 3
+                step3Container.classList.remove('opacity-40');
+                const canUpload = item.statusCode === 'approved' && !item.hasUpload;
+                if (detailUploadBtn) {
+                    if (canUpload) {
+                        detailUploadBtn.disabled = false;
+                        detailUploadBtn.className = "w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm";
+                        detailUploadBtn.innerText = "Upload Bukti";
+                        detailUploadBtn.classList.remove('hidden');
+                    } else if (item.hasUpload && item.statusCode === 'approved') {
+                        detailUploadBtn.classList.add('hidden');
+                    } else {
+                        detailUploadBtn.classList.add('hidden');
+                    }
+                }
+                if (detailUploadInfo) {
+                    if (item.hasUpload && item.statusCode === 'approved') {
+                        detailUploadInfo.innerText = `Upload: ${formatUploadStatus(item.uploadTimestamp)}`;
+                    } else if (item.statusCode === 'approved' && !item.hasUpload) {
+                        detailUploadInfo.innerText = "Unggahan hanya bisa dilakukan satu kali.";
+                    } else {
+                        detailUploadInfo.innerText = "";
+                    }
+                }
+
+                if (item.statusCode === 'approved' && item.linkFinal) {
+                    // Success State with Download Link
+                    step3Title.className = "text-base font-bold text-green-700";
+                    step3Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm z-10";
+
+                    step3Desc.innerHTML = `<a href="${item.linkFinal}" target="_blank" class="text-green-600 hover:text-green-800 hover:underline flex items-center gap-2 transition-colors font-bold" style="font-size: 1.3em;">
+                        <i class="fas fa-file-download"></i> Bukti ACC Final
+                    </a>`;
+                    step3Desc.className = "mt-2 block";
+                } else if (item.hasUpload) {
+                    step3Title.className = "text-base font-bold text-gray-700";
+                    step3Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm z-10";
+                    step3Desc.innerHTML = `Berkas sudah berhasil diupload. Menunggu verifikasi admin.`;
+                    step3Desc.className = "text-sm text-gray-700 mt-1";
+                } else {
+                    // Pending State
+                    step3Title.className = "text-base font-bold text-gray-400";
+                    step3Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow-sm z-10";
+                    step3Desc.innerHTML = "Menunggu admin memverifikasi bukti unggahan Anda.";
+                    step3Desc.className = "text-sm text-gray-400 mt-1";
+                }
+            }
+
+            // Switch view
+            document.getElementById('dashboard-content').classList.add('hidden');
+            document.getElementById('detail-content').classList.remove('hidden');
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function openUploadModalById(id) {
+            if (!currentUser || !currentUser.history) return;
+            const item = currentUser.history.find(x => getHistoryIdentity(x) === id);
+            if (!item) return;
+            openUploadModal(item);
+        }
+
+        function openRegistrationModal() {
+            const modal = document.getElementById('registration-modal');
+            if (!modal) return;
+            // Reload iframe setiap kali modal dibuka agar index.html selalu fresh
+            const iframe = document.getElementById('registration-iframe');
+            if (iframe) {
+                const baseUrl = '<?= ScriptApp.getService().getUrl() ?>';
+                iframe.src = baseUrl + '?page=index';
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            startRegistrationPolling();
+        }
+
+        function closeRegistrationModal() {
+            const modal = document.getElementById('registration-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            stopRegistrationPolling();
+        }
+
+        function startRegistrationPolling() {
+            stopRegistrationPolling();
+            registrationPollTimer = setInterval(() => {
+                let ts = 0;
+                try {
+                    ts = parseInt(localStorage.getItem('inhal_registration_submitted') || '0', 10);
+                } catch (e) {
+                    ts = 0;
+                }
+                if (ts && ts > lastRegistrationSignal) {
+                    lastRegistrationSignal = ts;
+                    handleRegistrationSubmitted();
+                }
+            }, 600);
+        }
+
+        function stopRegistrationPolling() {
+            if (registrationPollTimer) {
+                clearInterval(registrationPollTimer);
+                registrationPollTimer = null;
+            }
+        }
+
+        function handleRegistrationSubmitted(portalItem) {
+            const now = Date.now();
+            if (now - lastRegistrationHandledAt < 1200) return;
+            lastRegistrationHandledAt = now;
+            closeRegistrationModal();
+            showDashboard();
+            if (currentUser && currentUser.npm) {
+                const previousHistoryCount = Array.isArray(currentUser.history) ? currentUser.history.length : 0;
+                if (portalItem) {
+                    upsertLocalHistoryItem(portalItem);
+                }
+                const expectedHistoryCount = Math.max(previousHistoryCount + 1, Array.isArray(currentUser.history) ? currentUser.history.length : 0);
+                refreshHistory({
+                    silent: true,
+                    fresh: true,
+                    retriesLeft: 4,
+                    retryDelayMs: 1000,
+                    showLoading: false,
+                    retryOnEmpty: true,
+                    minHistoryCount: expectedHistoryCount
+                });
+            }
+            try { localStorage.removeItem('inhal_registration_submitted'); } catch (e) { }
+        }
+
+        window.addEventListener('message', (event) => {
+            const data = event && event.data ? event.data : null;
+            if (data === 'inhal_registration_submitted') {
+                handleRegistrationSubmitted();
+                return;
+            }
+            if (data && data.type === 'inhal_registration_submitted') {
+                handleRegistrationSubmitted(data.portalItem || null);
+            }
+        });
+
+        window.addEventListener('storage', (event) => {
+            if (!event || event.key !== 'inhal_registration_submitted') return;
+            const ts = parseInt(event.newValue || '0', 10);
+            if (ts && ts > lastRegistrationSignal) {
+                lastRegistrationSignal = ts;
+                handleRegistrationSubmitted();
+            }
+        });
+
+        function openUploadModal(item) {
+            currentUploadItem = item;
+            console.log('openUploadModal:', item);
+
+            document.getElementById('upload-info-npm').innerText = currentUser.npm || item.npm || '';
+            document.getElementById('upload-info-blok').innerText = item.blok || '-';
+            document.getElementById('upload-info-kegiatan').innerText = `${item.jenis || ''} - ${item.detail || ''}`;
+            document.getElementById('upload-info-tanggal').innerText = item.tanggalKegiatan || '-';
+
+            document.getElementById('upload-file-acc').value = '';
+            document.getElementById('upload-file-bukti').value = '';
+
+            document.getElementById('upload-modal').classList.remove('hidden');
+            document.getElementById('upload-modal').classList.add('flex');
+        }
+
+        function closeUploadModal() {
+            var modal = document.getElementById('upload-modal');
+            var form = document.getElementById('upload-modal-form');
+
+            if (form) {
+                form.reset();
+            }
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+            resetSubmitButton();
+            currentUploadItem = null;
+        }
+
+function submitUploadModal() {
+            const accFile = document.getElementById('upload-file-acc').files[0];
+            const buktiFile = document.getElementById('upload-file-bukti').files[0];
+
+            if (!accFile || !buktiFile) {
+                return Swal.fire({icon:'warning', text:'Upload kedua file'});
+            }
+
+            setUploadSubmitButtonLoading(true);
+
+            const uploadData = {
+                npm: currentUser.npm,
+                namaLengkap: currentUser.nama || '',
+                blok: currentUploadItem.blok || '',
+                jenisKegiatan: currentUploadItem.jenis || '',
+                detail: currentUploadItem.detail || '',
+                tanggal: currentUploadItem.tanggalKegiatan || '',
+                idPengajuan: currentUploadItem.idPengajuan || ''
+            };
+
+            console.log('uploadData siap kirim:', uploadData);
+
+            const readerAcc = new FileReader();
+            readerAcc.onload = e => {
+                uploadData.fileAcc = {name: accFile.name, type: accFile.type, base64: e.target.result.split(',')[1]};
+
+                const readerBukti = new FileReader();
+                readerBukti.onload = ev => {
+                    uploadData.fileBukti = {name: buktiFile.name, type: buktiFile.type, base64: ev.target.result.split(',')[1]};
+
+                    google.script.run
+                        .withSuccessHandler(r => {
+                            if (r && r.success) {
+                                const targetDetailId = getHistoryIdentity(currentUploadItem);
+                                closeUploadModal();
+                                refreshHistory({
+                                    silent: true,
+                                    fresh: true,
+                                    preserveDetailId: targetDetailId,
+                                    waitForUpload: true,
+                                    retriesLeft: 4,
+                                    retryDelayMs: 1000,
+                                    showLoading: true,
+                                    retryOnEmpty: true
+                                });
+                            } else {
+                                resetSubmitButton();
+                                Swal.fire({icon:'error', title:'Gagal', text: r?.message || 'Error'});
+                            }
+                        })
+                        .withFailureHandler(err => {
+                            resetSubmitButton();
+                            console.error(err);
+                            Swal.fire({icon:'error', title:'Gagal', text: err.message || 'Access denied'});
+                        })
+                        .processUpload(uploadData);
+                };
+                readerBukti.readAsDataURL(buktiFile);
+            };
+            readerAcc.readAsDataURL(accFile);
+        }
+
+        function onUploadSuccess(resp) {
+            resetSubmitButton();
+            console.log('Server Response:', resp);
+            if (resp?.success) {
+                const targetDetailId = getHistoryIdentity(currentUploadItem);
+                closeUploadModal();
+                refreshHistory({
+                    silent: true,
+                    fresh: true,
+                    preserveDetailId: targetDetailId,
+                    waitForUpload: true,
+                    retriesLeft: 4,
+                    retryDelayMs: 1000,
+                    showLoading: true,
+                    retryOnEmpty: true
+                });
+            } else {
+                Swal.fire({icon:'error', title:'Gagal', text: resp?.message || 'Terjadi kesalahan'});
+            }
+        }
+
+        function uploadFailure(error) {
+            isSubmitting = false;
+            hideLoading();
+            console.error('❌ Upload failed:', error);
+            // Tambahkan baris ini untuk melihat pesan error asli dari server di console browser
+            Swal.fire({
+                title: 'Upload gagal',
+                text: error.message || 'Access denied atau error server',
+                icon: 'error'
+            });
+        }
+
+        function resetSubmitButton() {
+            const btn = document.getElementById('upload-modal-submit');
+            if (!btn) return;
+            btn.disabled = false;
+            btn.classList.remove('opacity-90', 'cursor-wait');
+            btn.innerHTML = 'Kirim';
+        }
+
+        function setUploadSubmitButtonLoading(isLoading) {
+            const btn = document.getElementById('upload-modal-submit');
+            if (!btn) return;
+            btn.disabled = !!isLoading;
+            if (isLoading) {
+                btn.classList.add('opacity-90', 'cursor-wait');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Mengupload...';
+            } else {
+                btn.classList.remove('opacity-90', 'cursor-wait');
+                btn.innerHTML = 'Kirim';
+            }
+        }
+
+        function refreshHistory(options) {
+            if (!currentUser || !currentUser.npm) return;
+            var silent = !!(options && options.silent);
+            var fresh = !!(options && options.fresh);
+            var waitForUpload = !!(options && options.waitForUpload);
+            var retriesLeft = options && typeof options.retriesLeft === 'number' ? options.retriesLeft : 0;
+            var retryDelayMs = options && typeof options.retryDelayMs === 'number' ? options.retryDelayMs : 1200;
+            var preserveDetailId = options && options.preserveDetailId ? options.preserveDetailId : currentDetailId;
+            var showLoading = !!(options && options.showLoading);
+            var retryOnEmpty = options && Object.prototype.hasOwnProperty.call(options, 'retryOnEmpty') ? !!options.retryOnEmpty : false;
+            var minHistoryCount = options && typeof options.minHistoryCount === 'number' ? options.minHistoryCount : 0;
+            const container = document.getElementById('history-list');
+            if (container) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-400">
+                        <i class="fas fa-spinner fa-spin text-2xl"></i>
+                    </div>
+                `;
+            }
+            if (showLoading) {
+                Swal.fire({
+                    title: 'Memuat data terbaru...',
+                    text: 'Mohon tunggu sebentar.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+            function retryRefresh() {
+                setTimeout(() => {
+                    refreshHistory({
+                        silent: silent,
+                        fresh: true,
+                        preserveDetailId: preserveDetailId,
+                        waitForUpload: waitForUpload,
+                        retriesLeft: retriesLeft - 1,
+                        retryDelayMs: Math.min(retryDelayMs * 2, 5000),
+                        showLoading: showLoading,
+                        retryOnEmpty: retryOnEmpty,
+                        minHistoryCount: minHistoryCount
+                    });
+                }, retryDelayMs);
+            }
+            google.script.run
+                .withSuccessHandler((resp) => {
+                    if (!resp) {
+                        if (retryOnEmpty && retriesLeft > 0) {
+                            retryRefresh();
+                            return;
+                        }
+                        if (showLoading) Swal.close();
+                        renderHistoryList(currentUser.history || []);
+                        if (!silent) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Riwayat belum tampil',
+                                text: 'Server tidak mengembalikan data riwayat.',
+                                confirmButtonColor: '#1e3a8a'
+                            });
+                        }
+                        return;
+                    }
+
+                    if (resp.error) {
+                        if (retryOnEmpty && retriesLeft > 0) {
+                            retryRefresh();
+                            return;
+                        }
+                        if (showLoading) Swal.close();
+                        renderHistoryList(currentUser.history || []);
+                        if (!silent) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Riwayat belum tampil',
+                                text: resp.error,
+                                confirmButtonColor: '#1e3a8a'
+                            });
+                        }
+                        return;
+                    }
+
+                    currentUser.history = (resp.history || []).map(normalizeHistoryItem);
+                    if (minHistoryCount > 0 && retriesLeft > 0 && currentUser.history.length < minHistoryCount) {
+                        retryRefresh();
+                        return;
+                    }
+                    if (resp.nama) {
+                        currentUser.nama = resp.nama;
+                        document.getElementById('welcome-name').innerText = resp.nama;
+                    }
+                    renderHistoryList(currentUser.history);
+                    if (preserveDetailId) {
+                        const item = currentUser.history.find(x => getHistoryIdentity(x) === preserveDetailId);
+                        if (waitForUpload && retriesLeft > 0 && (!item || !item.hasUpload)) {
+                            retryRefresh();
+                            return;
+                        }
+                        if (showLoading) Swal.close();
+                        if (item) {
+                            showDetail(item);
+                        } else {
+                            showDashboard();
+                        }
+                    } else if (showLoading) {
+                        Swal.close();
+                    }
+                })
+                .withFailureHandler((err) => {
+                    if (retryOnEmpty && retriesLeft > 0) {
+                        retryRefresh();
+                        return;
+                    }
+                    if (showLoading) Swal.close();
+                    renderHistoryList(currentUser.history || []);
+                    if (!silent) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal memuat riwayat',
+                            text: err && err.message ? err.message : 'Terjadi kesalahan saat memuat riwayat pengajuan.',
+                            confirmButtonColor: '#1e3a8a'
+                        });
+                    }
+                })
+                .getStudentPortalData(currentUser.npm, { fresh: fresh });
+        }
+
+    </script>
+</body>
+
+</html>

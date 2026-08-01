@@ -1,0 +1,2278 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Form Kegiatan Mahasiswa</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: none;
+            width: 100%;
+            min-height: 100vh;
+            margin: 0;
+            background: transparent;
+            padding: 12px;
+            border-radius: 0;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .filters-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-container {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .refresh-btn:hover {
+            background: #218838;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow: auto;
+            overflow-x: auto;
+            margin-top: 20px;
+            flex: 1;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Paksa tabel melebar sesuai konten sehingga scrollbar horizontal muncul di resolusi rendah */
+        table {
+            width: 100%;
+            min-width: 1100px;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            table-layout: auto;
+        }
+
+        th,
+        td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        /* Seluruh header tabel rata tengah */
+        thead th {
+            text-align: center;
+        }
+
+        /* Kolom 6: Link Surat Keterangan (paksa pecah URL panjang) */
+        tbody td:nth-child(6) {
+            word-break: break-all;
+        }
+
+        /* Pemisah antar header (vertikal) */
+        thead th {
+            border-right: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        thead th:last-child {
+            border-right: none;
+        }
+
+        /* Lebar kolom berbasis karakter */
+        table thead th:nth-child(1),
+        table tbody td:nth-child(1) {
+            width: 20ch;
+            min-width: 20ch;
+        }
+
+        /* Kolom fleksibel: Nama Lengkap akan menyesuaikan lebar */
+        table thead th:nth-child(2),
+        table tbody td:nth-child(2) {
+            width: auto;
+            min-width: 28ch;
+        }
+
+        table thead th:nth-child(3),
+        table tbody td:nth-child(3) {
+            width: 30ch;
+            min-width: 30ch;
+        }
+
+        table thead th:nth-child(4),
+        table tbody td:nth-child(4) {
+            width: 12ch;
+            min-width: 12ch;
+        }
+
+        /* Kolom fleksibel: Keterangan & Catatan akan menyesuaikan lebar */
+        table thead th:nth-child(5),
+        table tbody td:nth-child(5) {
+            width: auto;
+            min-width: 20ch;
+        }
+
+        table thead th:nth-child(7),
+        table tbody td:nth-child(7) {
+            width: auto;
+            min-width: 20ch;
+        }
+
+        /* Link SK menjadi 12ch */
+        table thead th:nth-child(6),
+        table tbody td:nth-child(6) {
+            width: 12ch;
+            min-width: 12ch;
+        }
+
+        /* Header Aksi tetap, tombol sejajar; lebar dikunci untuk 4 ikon */
+        table thead th:nth-child(8) {
+            text-align: center;
+            width: 160px;
+            min-width: 160px;
+        }
+
+        table tbody td:nth-child(8) {
+            white-space: nowrap;
+            width: 160px;
+            min-width: 160px;
+        }
+
+        table tbody td:nth-child(8) .action-buttons {
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-approved {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .missing-data {
+            background-color: #fff3cd;
+            font-style: italic;
+            color: #856404;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #138496;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        /* Icon sizing and contrast: icons inherit button text color */
+        .btn .bi {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .truncate {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 1001;
+            display: none;
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        /* Badge styles for Report tab status display */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+        }
+
+        .badge-status {
+            font-size: 12px;
+        }
+
+        .badge-status.approved {
+            background: var(--status-approved-bg, #d4edda);
+            color: var(--status-approved-fg, #155724);
+            border: 1px solid #c3e6cb;
+        }
+
+        .badge-status.pending {
+            background: var(--status-pending-bg, #fff3cd);
+            color: var(--status-pending-fg, #856404);
+            border: 1px solid #ffeaa7;
+        }
+
+        .badge-status.rejected {
+            background: var(--status-rejected-bg, #f8d7da);
+            color: var(--status-rejected-fg, #721c24);
+            border: 1px solid #f5c6cb;
+        }
+
+        .badge-indicator {
+            font-size: 10px;
+            margin-left: 4px;
+            background: #e9ecef;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            padding: 2px 6px;
+        }
+
+        /* Tab System Styles */
+        .tab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 12px 0;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab-header h1 {
+            margin: 0;
+            font-size: clamp(18px, 2.5vw, 24px);
+            color: #2c3e50;
+            border: none;
+            padding: 0;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .tab-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+            transform: translateY(-1px);
+        }
+
+        .tab-btn.active {
+            background: var(--brand-secondary);
+            color: white;
+            border-color: var(--brand-secondary);
+            box-shadow: 0 2px 8px rgba(21, 170, 191, 0.3);
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+            flex: 1;
+            /* isi seluruh tinggi container */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .report-container {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Report table column striping */
+
+
+        /* Report table column widths */
+        #reportTable thead th:nth-child(1),
+        #reportTable tbody td:nth-child(1) {
+            min-width: 130px;
+        }
+
+        #reportTable thead th:nth-child(2),
+        #reportTable tbody td:nth-child(2) {
+            min-width: 240px;
+        }
+
+        #reportTable thead th:nth-child(3),
+        #reportTable tbody td:nth-child(3) {
+            min-width: 140px;
+        }
+
+        table.dataTable thead th.sticky-1 {
+            z-index: 5;
+        }
+
+        /* Clinical Light overrides */
+        :root {
+            --brand-primary: #0b7285;
+            /* Teal deep */
+            --brand-secondary: #15aabf;
+            /* Cyan accent */
+            --brand-accent: #2f9e44;
+            /* Calm green */
+            --bg-soft: #f8f9fa;
+            /* Soft near-white */
+            --status-approved-bg: #eaf8ef;
+            /* Soft green bg */
+            --status-approved-fg: #2f9e44;
+            /* Calm green text */
+            --status-pending-bg: #fff4e6;
+            /* Soft amber bg */
+            --status-pending-fg: #8a5d00;
+            /* Amber text */
+            --status-rejected-bg: #fdecea;
+            /* Soft red bg */
+            --status-rejected-fg: #c92a2a;
+            /* Accessible red text */
+        }
+
+        body {
+            background: var(--bg-soft) !important;
+            color: #2c3e50 !important;
+        }
+
+        h1 {
+            border-bottom-color: var(--brand-secondary) !important;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%) !important;
+        }
+
+        .filters-container {
+            background: #fff !important;
+            border-left-color: var(--brand-secondary) !important;
+        }
+
+        th {
+            background-color: var(--brand-primary) !important;
+            color: #ffffff !important;
+        }
+
+        thead th {
+            background-color: var(--brand-primary) !important;
+            color: #ffffff !important;
+        }
+
+        .status-pending {
+            background-color: var(--status-pending-bg) !important;
+            color: var(--status-pending-fg) !important;
+        }
+
+        .status-approved {
+            background-color: var(--status-approved-bg) !important;
+            color: var(--status-approved-fg) !important;
+        }
+
+        .status-rejected {
+            background-color: var(--status-rejected-bg) !important;
+            color: var(--status-rejected-fg) !important;
+        }
+
+        .missing-data {
+            background-color: var(--status-pending-bg) !important;
+            color: var(--status-pending-fg) !important;
+        }
+
+        .refresh-btn {
+            background: var(--brand-accent) !important;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f1fbfe !important;
+        }
+
+        tbody tr:hover {
+            background-color: #e8f6f9 !important;
+        }
+
+        /* Admin tab: force strong header contrast overriding injected striping */
+        #adminTab .table-container.table-colstriped thead th {
+            background-color: var(--brand-primary) !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+            filter: none !important;
+            font-weight: 700;
+        }
+
+        #adminTab .table-container.table-colstriped thead th:nth-child(even),
+        #adminTab .table-container.table-colstriped thead th:nth-child(odd) {
+            background-color: var(--brand-primary) !important;
+            color: #ffffff !important;
+        }
+
+        #adminTab .table-container.table-colstriped thead th {
+            border-right: 1px solid rgba(255, 255, 255, 0.35) !important;
+        }
+
+        /* Expandable NPM and child detail row */
+        .npm-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chevron {
+            font-weight: bold;
+        }
+
+        .child-row {
+            display: none;
+            background: #f9fcff;
+        }
+
+        .child-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .hide-mobile {
+                display: none;
+            }
+
+            .child-row {
+                display: table-row;
+            }
+        }
+
+        /* Enhanced child row styling for Report tab */
+        .report-child-row {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid var(--brand-secondary, #15aabf);
+        }
+
+        .report-child-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.4;
+            justify-content: flex-start;
+        }
+
+        .report-child-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            flex: 0 1 auto;
+            min-width: 150px;
+            max-width: 200px;
+        }
+
+        .report-child-label {
+            font-weight: 600;
+            color: var(--brand-primary, #0b7285);
+            margin-bottom: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .report-child-value {
+            color: #495057;
+            word-break: break-word;
+        }
+
+        .npm-expand-icon {
+            transition: transform 0.2s ease;
+            color: var(--brand-secondary, #15aabf);
+            font-size: 14px;
+        }
+
+        .npm-expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        /* ===== Report tab full width & header alignment fixes ===== */
+        #reportTab .dataTables_wrapper {
+            width: 100% !important;
+        }
+
+        #reportTable {
+            width: 100% !important;
+        }
+
+        #reportTable th {
+            position: static !important;
+        }
+
+        #reportTable th,
+        #reportTable td {
+            box-sizing: border-box;
+        }
+    </style>
+    <style>
+        /* Minimal navbar layout to mirror check.html without Bootstrap */
+        .navbar {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(90deg, var(--brand-primary), #264a6f);
+        }
+
+        .navbar .container-fluid {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff !important;
+        }
+
+        .navbar-text {
+            color: #fff !important;
+        }
+    </style>
+    <script>
+        (function () {
+            var isGas = location.pathname.includes('/exec') || location.hostname.includes('googleusercontent');
+            var injectCss = function (css) { var s = document.createElement('style'); s.textContent = css; document.head.appendChild(s); };
+            if (isGas) {
+                // Apps Script: fetch CSS via server function to avoid MIME issues
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    try {
+                        google.script.run.withSuccessHandler(function (css) { injectCss(css); }).getThemeCss();
+                    } catch (e) { /* noop */ }
+                }
+            } else {
+                // Local preview: fetch check.html and extract its <style> content
+                fetch('check.html').then(function (r) { return r.text(); }).then(function (html) {
+                    var m = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+                    if (m && m[1]) { injectCss(m[1]); }
+                }).catch(function () { /* fallback: do nothing */ });
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg mb-4" id="adminNavbar">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">📊 Admin Dashboard</a>
+            <span class="navbar-text">INHAL — Corporate Theme</span>
+        </div>
+    </nav>
+    <div id="notification" class="notification"></div>
+    <div id="app" class="container">
+        <!-- Hilangkan judul dan tombol Admin di header -->
+
+        <!-- Tab Content -->
+        <div id="adminTab" class="tab-content active">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRegistrations">0</div>
+                    <div class="stat-label">Total Pendaftaran</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingCount">0</div>
+                    <div class="stat-label">Menunggu Review</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="approvedCount">0</div>
+                    <div class="stat-label">Diterima/ACC</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="rejectedCount">0</div>
+                    <div class="stat-label">Ditolak</div>
+                </div>
+            </div>
+            <!-- Toolbar filter rata (tanpa kotak) -->
+            <div class="filter-toolbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;">
+                <select id="filterStatus"
+                    style="min-width:160px;padding:8px;border:1px solid #dee2e6;border-radius:6px;">
+                    <option value="">Semua Status</option>
+                    <option value="pending">Menunggu</option>
+                    <option value="approved">Diterima</option>
+                    <option value="rejected">Ditolak</option>
+                </select>
+                <select id="filterBlok" style="min-width:140px;padding:8px;border:1px solid #dee2e6;border-radius:6px;">
+                    <option value="">Semua Blok</option>
+                </select>
+                <select id="filterJenisKegiatan"
+                    style="min-width:170px;padding:8px;border:1px solid #dee2e6;border-radius:6px;">
+                    <option value="">Semua Jenis</option>
+                </select>
+                <input type="text" id="searchInput"
+                    style="min-width:240px;flex:1;padding:8px;border:1px solid #dee2e6;border-radius:6px;"
+                    placeholder="Cari NPM/Nama/Email" />
+                <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+            </div>
+            <div class="table-container table-colstriped">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">NPM</th>
+                            <th scope="col">Nama Lengkap</th>
+                            <th scope="col">Detail Kegiatan</th>
+                            <th scope="col">Tanggal</th>
+                            <th scope="col">Keterangan</th>
+                            <th scope="col">Link SK</th>
+                            <th scope="col">Catatan</th>
+                            <th scope="col">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+                <!-- Pagination Controls -->
+                <div id="paginationControls"
+                    style="display:none; margin-top:15px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div id="emptyState" class="empty-state" style="display: none;">
+                            <h3>📝 Belum Ada Data Pendaftaran</h3>
+                            <p>Belum ada mahasiswa yang mendaftar INHAL atau data sedang dimuat.</p>
+                            <button class="refresh-btn" onclick="loadData()">Muat Ulang</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <script>
+                let allData = [];
+                let lastDisplayedData = [];
+                // Pagination State
+                let currentPage = 1;
+                const pageSize = 20;
+                let totalPages = 1;
+                let totalRecords = 0;
+                let currentFilters = { search: '', status: '', blok: '', jenis: '' };
+
+                // SweetAlert2 helpers (ensure exists)
+                function ensureSwalLoaded(callback) {
+                    if (typeof Swal === 'undefined') { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11'; s.onload = () => callback && callback(); document.head.appendChild(s); } else { callback && callback(); }
+                }
+                function swalSuccess(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'success', title: 'Berhasil', text })) }
+                function swalError(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'error', title: 'Gagal', text })) }
+                function swalInfo(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'info', title: 'Info', text })) }
+
+                // Auth utilities
+                const AUTH_TTL_MS = 60 * 60 * 1000; // 1 jam
+                const AUTH_KEYS = { admin: 'auth_admin', check: 'auth_check' };
+                const EXPECTED = { admin: 'aW5oYWxwcm9kaQ==', check: 'aW5oYWxkZXZp' };
+                function b64Encode(str) { try { return btoa(unescape(encodeURIComponent(str || ''))); } catch (e) { return btoa(str || ''); } }
+                function isAuth(role) { try { const raw = localStorage.getItem(AUTH_KEYS[role]); if (!raw) return false; const { ts } = JSON.parse(raw); return ts && (Date.now() - ts) < AUTH_TTL_MS; } catch (e) { localStorage.removeItem(AUTH_KEYS[role]); return false; } }
+                function grantAuth(role) { localStorage.setItem(AUTH_KEYS[role], JSON.stringify({ ts: Date.now() })); }
+                async function requireAuth(role) {
+                    await new Promise(resolve => ensureSwalLoaded(resolve));
+                    if (isAuth(role)) return true;
+                    let attempts = 0; while (attempts < 3) {
+                        const { value: pwd, isConfirmed } = await Swal.fire({ title: role === 'admin' ? 'Masukkan password admin' : 'Masukkan password', input: 'password', inputLabel: 'Password', inputPlaceholder: 'Ketik password...', confirmButtonText: 'Masuk', allowOutsideClick: false, allowEscapeKey: false });
+                        if (!isConfirmed) { swalInfo('Autentikasi dibatalkan'); return false; }
+                        attempts++; const ok = b64Encode(pwd) === (role === 'admin' ? EXPECTED.admin : EXPECTED.check);
+                        if (ok) { grantAuth(role); swalSuccess('Autentikasi berhasil'); return true; }
+                        swalError('Password salah');
+                    }
+                    swalInfo('Percobaan melebihi 3 kali. Silakan coba lagi.');
+                    return false;
+                }
+
+                // URL helpers & gating
+                function getQueryParam(name) { const u = new URL(location.href); return u.searchParams.get(name); }
+                function isAppsScript() { return location.pathname.includes('/exec') || location.hostname.includes('googleusercontent'); }
+                function buildTargetUrl(page, opts) { const bypass = opts && opts.bypass; if (isAppsScript()) { const p = new URLSearchParams(); p.set('page', page); if (bypass) p.set('bypass', '1'); return location.origin + location.pathname + '?' + p.toString(); } else { return page + '.html' + (bypass ? '?bypass=1' : ''); } }
+                function showApp() { const el = document.getElementById('app'); if (el) el.style.display = ''; }
+                function hideApp() { const el = document.getElementById('app'); if (el) el.style.display = 'none'; }
+
+
+
+                document.addEventListener('DOMContentLoaded', () => {
+                    hideApp();
+
+                    ensureSwalLoaded(async () => {
+                        const ok = await requireAuth('admin');
+                        if (!ok) return;
+                        showApp();
+                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                        if (hasAppsScript) {
+                            loadData();
+                            loadFilterOptions();
+                        } else {
+                            loadMockDataForPreview();
+                        }
+                        setupEventListeners();
+                    });
+                });
+                function setupEventListeners() {
+                    // Debounced search
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        let debounceTimer;
+                        searchInput.addEventListener('input', () => {
+                            clearTimeout(debounceTimer);
+                            debounceTimer = setTimeout(() => {
+                                currentPage = 1;
+                                loadData();
+                            }, 500);
+                        });
+                    }
+                    // Filter change listeners
+                    ['filterStatus', 'filterBlok', 'filterJenisKegiatan'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.addEventListener('change', () => {
+                            currentPage = 1;
+                            loadData();
+                        });
+                    });
+                    // Debounce pencarian global agar tidak memanggil server terlalu sering saat mengetik
+                    const searchEl = document.getElementById('searchInput');
+                    let searchDebounceTimer = null;
+                    if (searchEl) {
+                        searchEl.addEventListener('input', () => {
+                            clearTimeout(searchDebounceTimer);
+                            searchDebounceTimer = setTimeout(() => {
+                                currentPage = 1;
+                                loadData();
+                            }, 250);
+                        });
+                    }
+                    // NPM toggle functionality
+                    document.getElementById('tableBody').addEventListener('click', (e) => {
+                        const toggle = e.target.closest('.npm-toggle');
+                        if (toggle) {
+                            const tr = toggle.closest('tr');
+                            const child = tr && tr.nextElementSibling;
+                            const chev = toggle.querySelector('.chevron');
+                            if (child && child.classList.contains('child-row')) {
+                                const isOpen = child.style.display === 'table-row';
+                                child.style.display = isOpen ? 'none' : 'table-row';
+                                if (chev) chev.textContent = isOpen ? '▶' : '▼';
+                                return;
+                            }
+                            // Lazy-create child row if not exists
+                            const npm = tr ? tr.getAttribute('data-npm') : '';
+                            const source = (Array.isArray(lastDisplayedData) && lastDisplayedData.length) ? lastDisplayedData : (Array.isArray(allData) ? allData : []);
+                            const item = source.find(r => String(r.NPM || '') === String(npm || '')) || null;
+                            if (item) {
+                                const childHtml = createAdminChildRowContent(item);
+                                const row = document.createElement('tr');
+                                row.className = 'child-row';
+                                row.style.display = 'table-row';
+                                const td = document.createElement('td');
+                                td.colSpan = 8;
+                                td.innerHTML = childHtml;
+                                row.appendChild(td);
+                                tr.parentNode.insertBefore(row, tr.nextSibling);
+                                if (chev) chev.textContent = '▼';
+                            }
+                            return;
+                        }
+                    });
+                }
+                // Helper normalisasi dan key komposit (selaras dengan check.html)
+                function normText(s) {
+                    return String(s || '')
+                        .toLowerCase()
+                        .normalize('NFKD')
+                        .replace(/\p{Diacritic}/gu, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+                function normDate(v) {
+                    try {
+                        if (v && Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) {
+                            const y = v.getFullYear();
+                            const m = String(v.getMonth() + 1).padStart(2, '0');
+                            const d = String(v.getDate()).padStart(2, '0');
+                            return `${y}-${m}-${d}`;
+                        }
+                        const s = String(v || '').trim();
+                        if (!s) return '';
+                        let mIso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                        if (mIso) {
+                            const y = Number(mIso[1]);
+                            const mo = Number(mIso[2]);
+                            const d = Number(mIso[3]);
+                            return `${String(y)}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        }
+                        let mDMY = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+                        if (mDMY) {
+                            let d = Number(mDMY[1]);
+                            let mo = Number(mDMY[2]);
+                            let y = Number(mDMY[3]);
+                            if (y < 100) y += 2000;
+                            return `${String(y)}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        }
+                        const d2 = new Date(s);
+                        if (!isNaN(d2.getTime())) {
+                            const y = d2.getFullYear();
+                            const mo = String(d2.getMonth() + 1).padStart(2, '0');
+                            const day = String(d2.getDate()).padStart(2, '0');
+                            return `${y}-${mo}-${day}`;
+                        }
+                    } catch (e) { }
+                    return normText(v);
+                }
+                function makeKeyFromItem(item) {
+                    const npm = item.NPM || '';
+                    const blok = item.Blok || '';
+                    const jenis = item.JenisKegiatan || '';
+                    const detail = item.DetailKegiatan || item.DetailKKD || item.DetailSGD || item.DetailUjian || '';
+                    const tanggal = item.TanggalKegiatan || item.Tanggal || '';
+                    return `${normText(npm)}|${normText(blok)}|${normText(jenis)}|${normText(detail)}|${normDate(tanggal)}`;
+                }
+                function formatDateId(tanggalRaw) {
+                    const val = String(tanggalRaw || '').trim();
+                    if (!val) return '-';
+                    const parts = val.includes(',') ? val.split(/\s*,\s*/) : [val];
+                    const out = parts.map(p => {
+                        const ymd = normDate(p);
+                        if (!ymd) return '';
+                        const [y, m, d] = ymd.split('-');
+                        const dt = new Date(Number(y), Number(m) - 1, Number(d));
+                        if (isNaN(dt.getTime())) return p; // fallback
+                        return dt.toLocaleDateString('id-ID');
+                    }).filter(Boolean);
+                    return out.length ? out.join(', ') : '-';
+                }
+                function formatCurrencyID(v) {
+                    const num = Number(String(v).replace(/[^0-9.-]/g, ''));
+                    if (!isFinite(num) || num === 0) return '-';
+                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+                }
+                function loadData() {
+                    // Show loading state
+                    const tbody = document.getElementById('tableBody');
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;"><span>Memuat data...</span></td></tr>';
+                    // Collect filters
+                    const searchInput = document.getElementById('searchInput');
+                    const statusInput = document.getElementById('filterStatus');
+                    const blokInput = document.getElementById('filterBlok');
+                    const jenisInput = document.getElementById('filterJenisKegiatan');
+                    currentFilters = {
+                        search: searchInput ? searchInput.value : '',
+                        status: statusInput ? statusInput.value : '',
+                        blok: blokInput ? blokInput.value : '',
+                        jenis: jenisInput ? jenisInput.value : ''
+                    };
+                    // Fetch data with single combined endpoint (paginated + overlay)
+                    if (typeof google !== 'undefined' && google.script && google.script.run) {
+                        google.script.run
+                            .withSuccessHandler((response) => handleDataLoaded(response))
+                            .withFailureHandler(handleLoadError)
+                            .getAdminCombinedPaged(currentPage, 20, currentFilters);
+                    } else {
+                        loadMockDataForPreview();
+                    }
+                }
+                function loadFilterOptions() {
+                    google.script.run.withSuccessHandler(populateBlokFilter).getUniqueBloks();
+                    google.script.run.withSuccessHandler(populateJenisKegiatanFilter).getUniqueJenisKegiatan();
+                }
+                function populateBlokFilter(bloks) {
+                    const select = document.getElementById('filterBlok');
+                    bloks.forEach(blok => {
+                        const opt = document.createElement('option');
+                        opt.value = blok; opt.textContent = blok;
+                        select.appendChild(opt);
+                    });
+                }
+                function populateJenisKegiatanFilter(jenisList) {
+                    const select = document.getElementById('filterJenisKegiatan');
+                    jenisList.forEach(jenis => {
+                        const opt = document.createElement('option');
+                        opt.value = jenis; opt.textContent = jenis;
+                        select.appendChild(opt);
+                    });
+                }
+                function handleDataLoaded(response) {
+                    const { data, total, totalPages: pages, currentPage: page, stats } = response || {};
+                    if (!data || data.length === 0) {
+                        allData = [];
+                        document.getElementById('emptyState').style.display = 'block';
+                        document.querySelector('.table-container').style.display = 'none';
+                        totalRecords = 0;
+                        totalPages = 0;
+                        updateStatistics(stats);
+                        updatePaginationControls();
+                        return;
+                    }
+                    totalRecords = total || 0;
+                    totalPages = pages || 1;
+                    currentPage = page || 1;
+                    allData = data;
+                    document.getElementById('emptyState').style.display = 'none';
+                    document.querySelector('.table-container').style.display = 'block';
+                    updateStatistics(stats);
+                    displayData(allData);
+                    updatePaginationControls();
+                }
+                function handleLoadError(err) {
+                    console.error(err);
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.querySelector('.table-container').style.display = 'none';
+                }
+                function updateStatistics(stats) {
+                    if (stats) {
+                        // Use stats from server (based on filtered data)
+                        document.getElementById('totalRegistrations').textContent = stats.total || 0;
+                        document.getElementById('pendingCount').textContent = stats.pending || 0;
+                        document.getElementById('approvedCount').textContent = stats.accepted || 0;
+                        document.getElementById('rejectedCount').textContent = stats.rejected || 0;
+                    } else {
+                        // Fallback: calculate from allData
+                        const total = allData.length;
+                        const pending = allData.filter(i => !i.Status).length;
+                        const approved = allData.filter(i => i.Status && (i.Status.includes('Diterima') || i.Status.includes('ACC'))).length;
+                        const rejected = allData.filter(i => i.Status && (i.Status.includes('Ditolak') || i.Status.includes('Tidak ACC'))).length;
+                        document.getElementById('totalRegistrations').textContent = total;
+                        document.getElementById('pendingCount').textContent = pending;
+                        document.getElementById('approvedCount').textContent = approved;
+                        document.getElementById('rejectedCount').textContent = rejected;
+                    }
+                }
+                function loadMockDataForPreview() {
+                    allData = [
+                        {
+                            NPM: '123456789', NamaLengkap: 'Contoh Mahasiswa', Blok: 'III', JenisKegiatan: 'SGD',
+                            DetailKegiatan: 'SGD - Kasus 1', Tanggal: '2025-10-20', Email: 'mhs@example.com', 'No. HP/WA': '08123456789',
+                            LinkSuratKeterangan: 'https://example.com/surat.pdf', CatatanAdmin: 'Perlu verifikasi dokumen', Status: ''
+                        },
+                        {
+                            NPM: '987654321', NamaLengkap: 'Mahasiswa Dua', Blok: 'II', JenisKegiatan: 'Ujian',
+                            DetailKegiatan: 'Ujian - OSCE', Tanggal: '2025-10-22', Email: 'dua@example.com', NoHP: '08987654321',
+                            LinkSuratKeterangan: '', CatatanAdmin: '', Status: 'Diterima'
+                        }
+                    ];
+                    updateStatistics();
+                    filterAndDisplayData();
+                }
+                // removed duplicate updatePaginationControls (keep single definition below)
+
+                // Pagination functions
+                function changePage(newPage) {
+                    if (newPage < 1 || newPage > totalPages) return;
+                    currentPage = newPage;
+                    loadData();
+                }
+
+                function updatePaginationControls() {
+                    const container = document.getElementById('paginationControls');
+                    if (!container) return;
+
+                    if (totalPages <= 1) {
+                        container.style.display = 'none';
+                        return;
+                    }
+
+                    container.style.display = 'flex';
+                    container.innerHTML = `
+    <span class="text-muted small">
+      Halaman ${currentPage} dari ${totalPages} (Total ${totalRecords} data)
+    </span>
+    <div>
+      <button 
+        class="btn btn-sm btn-secondary me-1" 
+        onclick="changePage(${currentPage - 1})"
+        ${currentPage === 1 ? 'disabled' : ''}
+      >
+        Sebelumnya
+      </button>
+      <button 
+        class="btn btn-sm btn-secondary" 
+        onclick="changePage(${currentPage + 1})"
+        ${currentPage === totalPages ? 'disabled' : ''}
+      >
+        Selanjutnya
+      </button>
+    </div>
+  `;
+                }
+
+                function filterAndDisplayData() {
+                    let filtered = allData;
+                    const sf = document.getElementById('filterStatus').value;
+                    if (sf) filtered = filtered.filter(i => {
+                        if (sf === 'pending') return !i.Status;
+                        if (sf === 'approved') return i.Status && (i.Status.includes('Diterima') || i.Status.includes('ACC'));
+                        if (sf === 'rejected') return i.Status && (i.Status.includes('Ditolak') || i.Status.includes('Tidak ACC'));
+                    });
+                    const bf = document.getElementById('filterBlok').value;
+                    if (bf) filtered = filtered.filter(i => i.Blok === bf);
+                    const jf = document.getElementById('filterJenisKegiatan').value;
+                    if (jf) filtered = filtered.filter(i => i.JenisKegiatan === jf);
+                    const term = document.getElementById('searchInput').value.toLowerCase();
+                    if (term) filtered = filtered.filter(i =>
+                        (i.NPM || '').toString().toLowerCase().includes(term) ||
+                        (i.NamaLengkap || '').toLowerCase().includes(term) ||
+                        (i.Email || '').toLowerCase().includes(term)
+                    );
+                    displayData(filtered);
+                }
+                function displayData(data) {
+                    const tbody = document.getElementById('tableBody');
+                    if (!data.length) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Tidak ada data sesuai filter</td></tr>';
+                        lastDisplayedData = [];
+                        return;
+                    }
+                    lastDisplayedData = data;
+                    tbody.innerHTML = data.map(item => {
+                        const detail = item.DetailKegiatan || item.DetailKKD || item.DetailSGD || item.DetailUjian || item.Detail || '-';
+                        const tanggalRaw = item.TanggalKegiatan || item.Tanggal || '-';
+                        const tanggalDisplay = tanggalRaw && tanggalRaw !== '-' ? formatDateId(tanggalRaw) : '-';
+                        const jenis = item.JenisKegiatan || item['Jenis Kegiatan'] || '-';
+                        const ket = item.Keterangan || '-';
+                        const linkSurat = item.LinkSuratKeterangan || '';
+                        const linkSuratHtml = linkSurat ? `<a href="${linkSurat}" target="_blank" rel="noopener noreferrer" title="Link SK" aria-label="Buka Link SK">Link</a>` : '-';
+                        const catatan = item.CatatanAdmin || item.Catatan || '-';
+                        return `
+      <tr data-npm="${item.NPM}">
+        <td><span class="npm-toggle"><span class="chevron">▶</span><strong>${item.NPM || '-'}</strong></span></td>
+        <td class="truncate hide-mobile" title="${item.NamaLengkap || '-'}">${item.NamaLengkap || '-'}</td>
+        <td class="truncate hide-mobile" title="${detail}">${detail}</td>
+        <td class="hide-mobile">${tanggalDisplay}</td>
+        <td class="truncate hide-mobile" title="${ket}">${ket}</td>
+        <td class="hide-mobile">${linkSuratHtml}</td>
+        <td class="truncate hide-mobile" title="${catatan}">${catatan}</td>
+        <td>${getActionButtons(item)}</td>
+      </tr>
+      `;
+                    }).join('');
+                }
+
+                // Helper: Build child row content for Admin table on demand
+                function createAdminChildRowContent(item) {
+                    const jenis = item.JenisKegiatan || item['Jenis Kegiatan'] || '-';
+                    const lampiranUrl = item.LampiranEmail || item.LinkLampiranEmail || '';
+                    const noHp = item.NoHP || item['No. HP/WA'] || '-';
+                    return `
+        <div class="child-content">
+          <div><strong>Tanggal Ajuan:</strong> ${item.Timestamp || '-'}</div>
+          <div><strong>Blok:</strong> ${item.Blok || '-'}</div>
+          <div><strong>Jenis Kegiatan:</strong> ${jenis}</div>
+          <div><strong>Email:</strong> ${item.Email || '-'}</div>
+          <div>${lampiranUrl ? `<a href="${lampiranUrl}" target="_blank" rel="noopener noreferrer">${lampiranUrl}</a>` : '-'}</div>
+          <div><strong>No. HP/WA:</strong> ${noHp}</div>
+        </div>
+      `;
+                }
+
+                function getStatusInfo(s) {
+                    if (!s) return { class: 'pending', text: 'Menunggu' };
+                    if ((s || '').includes('Diterima') || s.includes('ACC')) return { class: 'approved', text: 'Diterima' };
+                    if ((s || '').includes('Ditolak') || s.includes('Tidak ACC')) return { class: 'rejected', text: 'Ditolak' };
+                    return { class: 'pending', text: s };
+                }
+                function renderStatusCell(item) {
+                    const info = getStatusInfo(item.Status || '');
+                    const rowIdx = item.rowIndex;
+                    if (info.class === 'pending') {
+                        return `<span class="status-${info.class}">${info.text}</span>
+      <div class="action-buttons" style="margin-top:4px">
+        <button type="button" class="btn btn-success" title="Terima" aria-label="Terima baris" onclick="updateStatus(${rowIdx}, 'Diterima')"><i class="bi bi-check-lg" aria-hidden="true"></i></button>
+        <button type="button" class="btn btn-danger" title="Tolak" aria-label="Tolak baris" onclick="updateStatus(${rowIdx}, 'Ditolak')"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+      </div>`;
+                    }
+                    return `<span class="status-${info.class}">${info.text}</span>`;
+                }
+                function getActionButtons(item) {
+                    const rowIdx = item.rowIndex;
+                    const s = item.Status || '';
+                    const editBtn = `<button type="button" class="btn btn-warning" title="Edit Catatan" aria-label="Edit Catatan" onclick="editCatatan(${rowIdx})"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>`;
+                    const deleteBtn = `<button type="button" class="btn btn-danger" title="Hapus" aria-label="Hapus" onclick="deleteLogRowAdmin(${rowIdx})"><i class="bi bi-trash" aria-hidden="true"></i></button>`;
+                    if (s.includes('Diterima') || s.includes('ACC')) {
+                        return `<button type="button" class="btn btn-info" title="Kirim Ulang Email" aria-label="Kirim Ulang Email" onclick="resendNotification(${rowIdx}, 'Diterima')"><i class="bi bi-envelope" aria-hidden="true"></i></button> ${editBtn} ${deleteBtn}`;
+                    }
+                    if (s.includes('Ditolak') || s.includes('Tidak ACC')) {
+                        return `<button type="button" class="btn btn-info" title="Kirim Ulang Email" aria-label="Kirim Ulang Email" onclick="resendNotification(${rowIdx}, 'Ditolak')"><i class="bi bi-envelope" aria-hidden="true"></i></button> ${editBtn} ${deleteBtn}`;
+                    }
+                    return `
+    <button type="button" class="btn btn-success" title="Terima" aria-label="Terima baris" onclick="updateStatus(${rowIdx}, 'Diterima')"><i class="bi bi-check-lg" aria-hidden="true"></i></button>
+    <button type="button" class="btn btn-danger" title="Tolak" aria-label="Tolak baris" onclick="updateStatus(${rowIdx}, 'Ditolak')"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    ${editBtn} ${deleteBtn}
+  `;
+                }
+                // SweetAlert2 helpers
+                function ensureSwalLoaded(callback) {
+                    if (typeof Swal === 'undefined') {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                        s.onload = () => callback && callback();
+                        document.head.appendChild(s);
+                    } else {
+                        callback && callback();
+                    }
+                }
+                function swalConfirm(text) {
+                    return new Promise(resolve => {
+                        ensureSwalLoaded(() => {
+                            Swal.fire({
+                                title: 'Konfirmasi',
+                                text,
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Ya',
+                                cancelButtonText: 'Batal'
+                            }).then(r => resolve(!!r.isConfirmed));
+                        });
+                    });
+                }
+                function swalSuccess(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'success', title: 'Berhasil', text })); }
+                function swalError(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'error', title: 'Gagal', text })); }
+                function swalInfo(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'info', title: 'Info', text })); }
+                async function updateStatus(rowIdx, status) {
+                    const message = status === 'Diterima'
+                        ? `Setujui baris #${rowIdx + 1}?`
+                        : status === 'Ditolak'
+                            ? `Tolak baris #${rowIdx + 1}?`
+                            : `Ubah status baris #${rowIdx + 1} ke ${status}?`;
+                    const proceed = await swalConfirm(message);
+                    if (!proceed) return;
+                    const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                    if (hasAppsScript) {
+                        google.script.run
+                            .withSuccessHandler(() => { swalSuccess(`Status diubah ke ${status}`); loadData(); })
+                            .withFailureHandler(err => swalError('Gagal update status: ' + (err && err.message ? err.message : 'Unknown error')))
+                            .updateStatusAndSendEmail(rowIdx, status);
+                    } else {
+                        // Fallback lokal untuk preview tanpa Apps Script
+                        const source = (Array.isArray(lastDisplayedData) && lastDisplayedData.length) ? lastDisplayedData : (Array.isArray(allData) ? allData : []);
+                        const found = source.find(r => r && r.rowIndex === rowIdx);
+                        if (found) {
+                            found.Status = status;
+                            found.NotifikasiTerkirimPada = new Date().toISOString();
+                            displayData(source);
+                            swalInfo(`Pratinjau lokal: status diset ke '${status}'`);
+                        } else {
+                            swalError('Baris tidak ditemukan untuk pratinjau lokal');
+                        }
+                    }
+                }
+                // Resend notification: ganti confirm native dengan SweetAlert2
+                async function resendNotification(rowIdx, status) {
+                    const confirmed = await swalConfirm(`Kirim ulang notifikasi ${status}?`);
+                    if (!confirmed) return;
+                    const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                    if (hasAppsScript) {
+                        google.script.run
+                            .withSuccessHandler(() => { swalSuccess('Notifikasi dikirim ulang'); loadData(); })
+                            .withFailureHandler(err => swalError('Gagal mengirim ulang: ' + (err && err.message ? err.message : 'Unknown error')))
+                            .updateStatusAndSendEmail(rowIdx, status);
+                    } else {
+                        const source = (Array.isArray(lastDisplayedData) && lastDisplayedData.length) ? lastDisplayedData : (Array.isArray(allData) ? allData : []);
+                        const found = source.find(r => r && r.rowIndex === rowIdx);
+                        if (found) {
+                            found.NotifikasiTerkirimPada = new Date().toISOString();
+                            displayData(source);
+                            swalInfo(`Pratinjau lokal: notifikasi '${status}' ditandai terkirim`);
+                        } else {
+                            swalError('Baris tidak ditemukan untuk pratinjau lokal');
+                        }
+                    }
+                }
+                function editCatatan(idx) {
+                    try {
+                        const source = (Array.isArray(lastDisplayedData) && lastDisplayedData.length) ? lastDisplayedData : (Array.isArray(allData) ? allData : []);
+                        const found = source.find(r => r && r.rowIndex === idx) || null;
+                        const current = found ? (found.CatatanAdmin || found.Catatan || '') : '';
+                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+
+                        const showPrompt = () => {
+                            Swal.fire({
+                                title: 'Edit Catatan Admin',
+                                input: 'textarea',
+                                inputValue: current,
+                                inputAttributes: { 'aria-label': 'Catatan Admin' },
+                                showCancelButton: true,
+                                confirmButtonText: 'Simpan',
+                                cancelButtonText: 'Batal'
+                            }).then((result) => {
+                                if (!result.isConfirmed) return;
+                                const newVal = (result.value || '').toString();
+                                if (hasAppsScript) {
+                                    google.script.run
+                                        .withSuccessHandler(() => loadData())
+                                        .withFailureHandler(err => swalError('Gagal update catatan: ' + (err && err.message ? err.message : 'Unknown error')))
+                                        .updateCatatanAdmin(idx, newVal);
+                                } else {
+                                    if (found) found.CatatanAdmin = newVal;
+                                    displayData(source);
+                                }
+                            });
+                        };
+
+                        if (typeof Swal === 'undefined') {
+                            const s = document.createElement('script');
+                            s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                            s.onload = showPrompt;
+                            document.head.appendChild(s);
+                        } else {
+                            showPrompt();
+                        }
+                    } catch (e) {
+                        swalError('Terjadi kesalahan saat mengubah catatan: ' + (e && e.message ? e.message : e));
+                    }
+                }
+                function sendFinal(row) {
+                    const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                    if (hasAppsScript) {
+                        google.script.run.withSuccessHandler(res => {
+                            if (res && res.ok) {
+                                swalSuccess('Email final dikirim ke mahasiswa' + (res.emailBagian ? ' dan Bagian.' : '.'));
+                            } else {
+                                swalError('Gagal kirim email: ' + (res && res.error ? res.error : 'Unknown error'));
+                            }
+                        }).withFailureHandler(err => {
+                            swalError('Gagal kirim email: ' + (err && err.message ? err.message : 'Unknown error'));
+                        }).sendFinalEmail(row);
+                    } else {
+                        swalInfo('Pratinjau lokal: simulasi Kirim Final untuk ' + (row.Email || row.NamaLengkap || 'mahasiswa'));
+                        console.log('Simulate sendFinalEmail payload:', row);
+                    }
+                }
+                async function deleteLogRowAdmin(rowIdx) {
+                    try {
+                        const proceed = await swalConfirm(`Anda yakin ingin menghapus baris #${rowIdx + 1}?`);
+                        if (!proceed) return;
+                        // Minta alasan penghapusan untuk audit
+                        const getReason = () => new Promise(resolve => {
+                            ensureSwalLoaded(() => {
+                                Swal.fire({
+                                    title: 'Alasan Penghapusan',
+                                    input: 'textarea',
+                                    inputPlaceholder: 'Tuliskan alasan singkat...',
+                                    inputAttributes: { 'aria-label': 'Alasan' },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Kirim',
+                                    cancelButtonText: 'Batal'
+                                }).then(r => {
+                                    if (!r.isConfirmed) return resolve(null);
+                                    resolve((r.value || '').toString());
+                                });
+                            });
+                        });
+                        const reason = await getReason();
+                        if (reason === null) return; // dibatalkan
+                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                        if (hasAppsScript) {
+                            google.script.run
+                                .withSuccessHandler(res => {
+                                    if (res && res.success) {
+                                        swalSuccess('Baris berhasil dihapus');
+                                        loadData();
+                                    } else {
+                                        swalError('Gagal menghapus: ' + (res && res.message ? res.message : 'Unknown error'));
+                                    }
+                                })
+                                .withFailureHandler(err => swalError('Gagal menghapus: ' + (err && err.message ? err.message : 'Unknown error')))
+                                .deleteLogRow(rowIdx, { reason });
+                        } else {
+                            // Fallback lokal: hapus dari tampilan pratinjau
+                            const source = (Array.isArray(lastDisplayedData) && lastDisplayedData.length) ? lastDisplayedData : (Array.isArray(allData) ? allData : []);
+                            const idx = source.findIndex(r => r && r.rowIndex === rowIdx);
+                            if (idx >= 0) {
+                                source.splice(idx, 1);
+                                displayData(source);
+                                swalInfo('Pratinjau lokal: baris dihapus (audit lokal tidak direkam)');
+                            } else {
+                                swalError('Baris tidak ditemukan untuk pratinjau lokal');
+                            }
+                        }
+                    } catch (e) {
+                        swalError('Terjadi kesalahan saat menghapus: ' + (e && e.message ? e.message : e));
+                    }
+                }
+
+                // Tab System Functions
+                function switchTab(tabName) {
+                    // Selalu arahkan ke tab Admin (tab Report dihapus)
+                    window.location.hash = '';
+
+                    // Update tombol tab: pastikan hanya Admin aktif
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    const adminBtn = document.querySelector('[data-tab="admin"]');
+                    if (adminBtn) adminBtn.classList.add('active');
+
+                    // Update konten tab: aktifkan hanya adminTab
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    const adminTab = document.getElementById('adminTab');
+                    if (adminTab) adminTab.classList.add('active');
+                }
+
+                // Report Module Variables
+                let reportApp = null;
+                let reportInitialized = false;
+
+                // Report Module Initialization
+                function initReportModule() {
+                    if (reportInitialized) return;
+
+                    // Load required libraries if not already loaded
+                    loadReportDependencies().then(() => {
+                        // Ensure the reportApp element exists and is visible
+                        const reportAppElement = document.getElementById('reportApp');
+                        const reportTab = document.getElementById('reportTab');
+                        if (!reportAppElement) {
+                            console.error('reportApp element not found');
+                            return;
+                        }
+                        if (!reportTab || !reportTab.classList.contains('active')) {
+                            console.log('Report tab not active, delaying Vue initialization');
+                            // Retry after a short delay when tab becomes active
+                            setTimeout(() => {
+                                if (reportTab && reportTab.classList.contains('active')) {
+                                    initReportModule();
+                                }
+                            }, 100);
+                            return;
+                        }
+
+                        // Check if already initialized
+                        if (reportApp && reportInitialized) {
+                            console.log('Vue app already initialized');
+                            return;
+                        }
+
+                        // Cleanup any existing instance
+                        if (reportApp) {
+                            try {
+                                reportApp.unmount();
+                            } catch (e) {
+                                console.log('No existing app to unmount');
+                            }
+                            reportApp = null;
+                        }
+
+                        // Initialize Vue app for Report
+                        try {
+                            const { createApp } = Vue;
+                            reportApp = createApp({
+                                data() {
+                                    return {
+                                        reportRows: [],
+                                        reportStats: { total: 0, pending: 0, accepted: 0, rejected: 0 },
+                                        reportOptions: { blok: [], jenis: [], status: [] },
+                                        reportFilters: { status: '', blok: '', jenis: '' },
+                                        reportDt: null,
+                                        reportLoading: true,
+                                        reportError: '',
+                                        // Modal & edit state
+                                        reportOptionsDosen: [],
+                                        reportEditEnabled: false,
+                                        reportForm: { npm: '', namaLengkap: '', dosen: '', tanggalPelaksanaan: '', biaya: '', keterangan: '' },
+                                        reportModal: null,
+                                        // Peta email Bagian
+                                        reportBagianEmailMap: {}
+                                    };
+                                },
+                                mounted() {
+                                    this.fetchReportDosenOptions();
+                                    this.fetchReportBagianEmailMap();
+                                    this.fetchReportData();
+                                },
+                                methods: {
+                                    fetchReportDosenOptions() {
+                                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                                        if (hasAppsScript) {
+                                            google.script.run.withSuccessHandler(list => {
+                                                this.reportOptionsDosen = Array.isArray(list) ? list.filter(v => v && v !== '') : [];
+                                            }).withFailureHandler(() => {
+                                                // Abaikan, tetap gunakan derivasi lokal bila gagal
+                                            }).getDosenOptions();
+                                        }
+                                    },
+                                    createReportChildRowContent(rowData) {
+                                        const fields = [
+                                            { label: 'Blok', key: 'Blok' },
+                                            { label: 'Jenis Kegiatan', key: 'Jenis Kegiatan' },
+                                            { label: 'Dosen', key: 'Dosen' },
+                                            { label: 'Tanggal Pelaksanaan', key: 'Tanggal Pelaksanaan', formatter: this.formatReportDateID },
+                                            { label: 'Biaya', key: 'Biaya', formatter: this.formatReportCurrencyID },
+                                            { label: 'Keterangan', key: 'Keterangan' }
+                                        ];
+
+                                        return fields.map(field => {
+                                            let value = rowData[field.key] || '-';
+                                            if (field.formatter && value !== '-') {
+                                                value = field.formatter(value);
+                                            }
+                                            return `
+              <div class="report-child-item">
+                <div class="report-child-label">${field.label}</div>
+                <div class="report-child-value">${value}</div>
+              </div>
+            `;
+                                        }).join('');
+                                    },
+                                    fetchReportBagianEmailMap() {
+                                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                                        if (hasAppsScript) {
+                                            google.script.run
+                                                .withSuccessHandler(map => { this.reportBagianEmailMap = map || {}; })
+                                                .withFailureHandler(() => { /* gunakan default kosong */ })
+                                                .getBagianEmailMap();
+                                        } else {
+                                            // Fallback lokal untuk preview
+                                            this.reportBagianEmailMap = {
+                                                'sgd': 'bagian.sgd@example.com',
+                                                'kkd': 'bagian.kkd@example.com',
+                                                'ujian': 'bagian.ujian@example.com',
+                                                'anatomi': 'anatomi@example.com',
+                                                'biokimia': 'biokimia@example.com'
+                                            };
+                                        }
+                                    },
+                                    reportNormKey(s) {
+                                        return String(s || '')
+                                            .toLowerCase()
+                                            .normalize('NFKD')
+                                            .replace(/\p{Diacritic}/gu, '')
+                                            .replace(/\s+/g, ' ')
+                                            .trim();
+                                    },
+                                    fetchReportData() {
+                                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                                        if (hasAppsScript) {
+                                            google.script.run.withSuccessHandler(this.onReportDataLoaded).withFailureHandler(err => {
+                                                this.reportError = err && err.message ? err.message : 'Gagal memuat data';
+                                                this.reportLoading = false;
+                                                this.bootstrapReportDataTable([]);
+                                            }).getCheckMatchedData();
+                                        } else {
+                                            // Fallback data untuk pratinjau lokal
+                                            const sampleRows = [
+                                                { NPM: '22123456', 'Nama Lengkap': 'Andi', Email: 'andi@example.com', Blok: 'A', 'Jenis Kegiatan': 'Ujian', 'Detail Kegiatan': 'Ujian OSCE', Tanggal: '2025-10-01', Dosen: 'dr. Budi', 'Tanggal Pelaksanaan': '2025-10-05', Biaya: 150000, 'ACC INHAL': 'https://example.com/acc1', 'Bukti Bayar': 'https://example.com/bukti1', Status: 'Diterima', Keterangan: 'Lengkap' },
+                                                { NPM: '23123457', 'Nama Lengkap': 'Siti', Email: 'siti@example.com', Blok: 'B', 'Jenis Kegiatan': 'SGD', 'Detail Kegiatan': 'Diskusi Kasus', Tanggal: '2025-09-28', Dosen: '', 'Tanggal Pelaksanaan': '', Biaya: '', 'ACC INHAL': '', 'Bukti Bayar': '', Status: 'Menunggu', Keterangan: 'Perlu melengkapi data' }
+                                            ];
+                                            this.onReportDataLoaded(sampleRows);
+                                        }
+                                    },
+                                    onReportDataLoaded(resp) {
+                                        const rows = Array.isArray(resp) ? resp : ((resp && resp.rows) || []);
+                                        this.reportRows = rows;
+
+                                        const uniq = (arr) => [...new Set(arr.filter(v => v && v !== ''))];
+                                        this.reportOptionsDosen = uniq(rows.map(r => r.Dosen || ''));
+
+                                        const statusVals = rows.map(r => String(r.Status || ''));
+                                        const total = rows.length;
+                                        const accepted = statusVals.filter(s => s.toLowerCase().includes('diterima')).length;
+                                        const rejected = statusVals.filter(s => s.toLowerCase().includes('ditolak')).length;
+                                        const pending = statusVals.filter(s => s.toLowerCase().includes('menunggu') || s === '').length;
+                                        this.reportStats = { total, accepted, rejected, pending };
+
+                                        this.reportOptions = {
+                                            blok: uniq(rows.map(r => r.Blok)),
+                                            jenis: uniq(rows.map(r => r.JenisKegiatan || r['Jenis Kegiatan'])),
+                                            status: uniq(statusVals)
+                                        };
+
+                                        this.reportLoading = false;
+                                        this.bootstrapReportDataTable(this.reportRows);
+                                    },
+                                    bootstrapReportDataTable(data) {
+                                        if ($.fn.DataTable.isDataTable('#reportTable')) {
+                                            $('#reportTable').DataTable().destroy();
+                                        }
+                                        const columns = [
+                                            {
+                                                title: 'NPM', data: 'NPM', responsivePriority: 1, render: (v, type, row) => {
+                                                    const t = String(v || '');
+                                                    if (type === 'display') {
+                                                        const truncated = t.length > 20 ? t.slice(0, 20) + '…' : t;
+                                                        return `<div class="npm-toggle" data-npm="${t}">
+                  <span class="npm-expand-icon">▶</span>
+                  <span title="${t}">${truncated}</span>
+                </div>`;
+                                                    }
+                                                    return t;
+                                                }
+                                            },
+                                            {
+                                                title: 'Nama Lengkap', data: 'Nama Lengkap', responsivePriority: 2, render: (v, type) => {
+                                                    const t = String(v || '');
+                                                    if (type === 'display') {
+                                                        const truncated = t.length > 20 ? t.slice(0, 20) + '…' : t;
+                                                        return `<span title="${t}">${truncated}</span>`;
+                                                    }
+                                                    return t;
+                                                }
+                                            },
+                                            {
+                                                title: 'Detail Kegiatan', data: 'Detail Kegiatan', responsivePriority: 3, render: (v, type) => {
+                                                    const t = String(v || '-');
+                                                    if (type === 'display') {
+                                                        const truncated = t.length > 30 ? t.slice(0, 30) + '…' : t;
+                                                        return `<span title="${t}">${truncated}</span>`;
+                                                    }
+                                                    return t;
+                                                }
+                                            },
+                                            {
+                                                title: 'Tanggal', data: 'Tanggal', responsivePriority: 4, render: (v, type) => {
+                                                    const formatted = this.formatReportDateID(v);
+                                                    const raw = String(v || '');
+                                                    if (type === 'display') return `<span title="${raw}">${formatted}</span>`;
+                                                    return formatted;
+                                                }
+                                            },
+                                            { title: 'Status', data: 'Status', responsivePriority: 5, render: (s, type, row) => this.renderReportStatusWithIndicators(s, row) },
+                                            {
+                                                title: 'Dokumen', data: null, responsivePriority: 6, orderable: false, searchable: false, render: (v, type, row) => {
+                                                    const acc = String(row['ACC INHAL'] || '').trim();
+                                                    const bukti = String(row['Bukti Bayar'] || '').trim();
+                                                    const accHtml = acc ? `<a href="${acc}" target="_blank" rel="noopener noreferrer" title="ACC INHAL" class="btn btn-sm btn-outline-success">ACC</a>` : '<span class="text-muted">-</span>';
+                                                    const buktiHtml = bukti ? `<a href="${bukti}" target="_blank" rel="noopener noreferrer" title="Bukti Bayar" class="btn btn-sm btn-outline-primary">Bukti</a>` : '<span class="text-muted">-</span>';
+                                                    return `<div class="d-flex gap-1">${accHtml}${buktiHtml}</div>`;
+                                                }
+                                            },
+                                            { title: 'Kirim Final', data: null, className: 'kirim-final', responsivePriority: 7, orderable: false, searchable: false, render: () => '<button class="btn btn-sm btn-primary btn-send-final">Kirim Final</button>' }
+                                        ];
+
+                                        if (this.reportDt) {
+                                            this.reportDt.clear().rows.add(data).draw();
+                                            return;
+                                        }
+
+                                        this.reportDt = $('#reportTable').DataTable({
+                                            dom: 'rtip',
+                                            data,
+                                            columns,
+                                            autoWidth: true,
+                                            pageLength: 25,
+                                            lengthMenu: [10, 25, 50, 100],
+                                            scrollY: '60vh',
+                                            scrollX: true,
+                                            scrollCollapse: true,
+                                            responsive: {
+                                                details: {
+                                                    type: 'inline',
+                                                    renderer: function (api, rowIdx, columns) {
+                                                        const rowData = api.row(rowIdx).data() || {};
+                                                        let html = columns
+                                                            .filter(c => c.hidden)
+                                                            .map(c => {
+                                                                const title = c.title;
+                                                                const value = rowData[c.data] !== undefined ? rowData[c.data] : '';
+                                                                return `<tr data-dt-row="${c.rowIndex}" data-dt-column="${c.columnIndex}"><td>${title}:</td><td>${value}</td></tr>`;
+                                                            })
+                                                            .join('');
+                                                        const emailVal = (rowData.Email || '').toString().trim();
+                                                        const emailRow = emailVal ? `<tr><td>Email:</td><td>${emailVal}</td></tr>` : '';
+                                                        const noteVal = (rowData.Catatan || rowData.CatatanAdmin || '').toString().trim();
+                                                        const noteRow = noteVal ? `<tr><td>Catatan:</td><td>${noteVal}</td></tr>` : '';
+                                                        const combined = html + emailRow + noteRow;
+                                                        return combined ? `<table class="table table-sm mb-0">${combined}</table>` : false;
+                                                    }
+                                                }
+                                            },
+                                            columnDefs: [
+                                                { targets: 0, className: 'sticky-1' }
+                                            ],
+                                            headerCallback: function (thead) {
+                                                const $ths = $(thead).find('th');
+                                                $ths.eq(0).addClass('sticky-1');
+                                            },
+                                            processing: true,
+                                            deferRender: true,
+                                            order: [[0, 'asc']],
+                                            scrollX: true
+                                        });
+
+                                        this.computeReportStickyOffsets();
+                                        this.reportDt.on('draw', () => this.computeReportStickyOffsets());
+                                        window.addEventListener('resize', () => this.computeReportStickyOffsets());
+
+                                        const self = this;
+                                        $('#reportTable tbody').off('dblclick').on('dblclick', 'tr', function () {
+                                            const rowData = self.reportDt.row(this).data();
+                                            if (rowData) self.openReportEditModal(rowData);
+                                        });
+
+                                        $('#reportTable tbody').off('click', '.btn-send-final').on('click', '.btn-send-final', function (e) {
+                                            e.stopPropagation();
+                                            const btn = this;
+                                            const rowData = self.reportDt.row($(btn).closest('tr')).data();
+                                            if (rowData) self.sendReportFinal(rowData, btn);
+                                        });
+
+                                        // Handle NPM toggle for child rows
+                                        $('#reportTable tbody').off('click', '.npm-toggle').on('click', '.npm-toggle', function (e) {
+                                            e.stopPropagation();
+                                            const $tr = $(this).closest('tr');
+                                            const row = self.reportDt.row($tr);
+                                            const rowData = row.data();
+                                            const $icon = $(this).find('.npm-expand-icon');
+
+                                            // Check if child row already exists
+                                            const nextTr = $tr.next('tr.report-child-row');
+                                            if (nextTr.length > 0) {
+                                                // Toggle existing child row
+                                                nextTr.toggle();
+                                                $icon.toggleClass('expanded');
+                                            } else {
+                                                // Create new child row
+                                                const childContent = self.createReportChildRowContent(rowData);
+                                                const $childRow = $(`
+                <tr class="report-child-row">
+                  <td colspan="${self.reportDt.columns().count()}" class="report-child-content">
+                    ${childContent}
+                  </td>
+                </tr>
+              `);
+                                                $tr.after($childRow);
+                                                $icon.addClass('expanded');
+                                            }
+                                        });
+                                    },
+                                    applyReportFilters() {
+                                        const st = (this.reportFilters.status || '').toLowerCase();
+                                        const bk = this.reportFilters.blok || '';
+                                        const jk = this.reportFilters.jenis || '';
+
+                                        const filtered = this.reportRows.filter(r => {
+                                            const okStatus = !st || (String(r.Status || '').toLowerCase().includes(st));
+                                            const okBlok = !bk || (String(r.Blok || '') === bk);
+                                            const okJenis = !jk || (String(r['Jenis Kegiatan'] || r.JenisKegiatan || '') === jk);
+                                            return okStatus && okBlok && okJenis;
+                                        });
+                                        this.bootstrapReportDataTable(filtered);
+                                    },
+                                    applyReportGlobalSearch(e) {
+                                        const term = e.target.value || '';
+                                        if (this.reportDt) {
+                                            this.reportDt.search(term).draw();
+                                        }
+                                    },
+                                    downloadReportExcel() {
+                                        if (!this.reportDt) return;
+                                        const allCols = [...Array(this.reportDt.columns().count()).keys()];
+
+                                        if (!this._reportExcelButtonInit) {
+                                            const buttons = new $.fn.dataTable.Buttons(this.reportDt, {
+                                                buttons: [
+                                                    {
+                                                        extend: 'excelHtml5',
+                                                        title: 'Report Dashboard',
+                                                        filename: 'report_dashboard',
+                                                        exportOptions: {
+                                                            columns: allCols,
+                                                            modifier: { search: 'applied' },
+                                                            format: {
+                                                                body: function (data, row, column, node) {
+                                                                    try {
+                                                                        if (typeof data === 'string') {
+                                                                            const text = data.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                                                                            return text;
+                                                                        }
+                                                                        return data;
+                                                                    } catch (e) { return data; }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            });
+                                            $(buttons.container()).appendTo('#report-dt-hidden-buttons');
+                                            this._reportExcelButtonInit = true;
+                                            // Penyesuaian kolom untuk memastikan header dan isi rata
+                                            try { this.reportDt.columns.adjust(); } catch (e) { }
+                                            this.reportDt.on('draw.dt', () => { try { this.reportDt.columns.adjust(); } catch (e) { } });
+                                        }
+                                        this.reportDt.button('.buttons-excel').trigger();
+                                    },
+                                    computeReportStickyOffsets() {
+                                        const cont = document.querySelector('#reportTab .table-container');
+                                        const head = document.querySelector('#reportTable thead');
+                                        if (!cont || !head) return;
+                                        const th1 = head.querySelector('th.sticky-1') || head.querySelector('th:nth-child(1)');
+                                        const w1 = th1 ? th1.offsetWidth : 140;
+                                        cont.style.setProperty('--sticky-left-1', '0px');
+                                        cont.style.setProperty('--sticky-left-2', w1 + 'px');
+                                    },
+                                    openReportEditModal(row) {
+                                        this.fetchReportDosenOptions();
+                                        this.reportForm = {
+                                            npm: row.NPM || '',
+                                            namaLengkap: row['Nama Lengkap'] || '',
+                                            dosen: row.Dosen || '',
+                                            tanggalPelaksanaan: this.normalizeReportDateForInput(row['Tanggal Pelaksanaan'] || ''),
+                                            biaya: this.normalizeReportBiayaForInput(row.Biaya),
+                                            keterangan: row.Keterangan || ''
+                                        };
+                                        this.reportEditEnabled = false;
+                                        const modalEl = document.getElementById('reportEditModal');
+                                        this.reportModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                                        this.reportModal.show();
+                                    },
+                                    toggleReportEdit(val) {
+                                        this.reportEditEnabled = !!val;
+                                    },
+                                    saveReportEdit() {
+                                        const payload = {
+                                            NPM: this.reportForm.npm,
+                                            'Nama Lengkap': this.reportForm.namaLengkap,
+                                            Dosen: this.reportForm.dosen || '',
+                                            'Tanggal Pelaksanaan': this.reportForm.tanggalPelaksanaan || '',
+                                            Biaya: this.reportForm.biaya != null ? this.reportForm.biaya : '',
+                                            Keterangan: this.reportForm.keterangan || ''
+                                        };
+
+                                        const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                                        if (hasAppsScript) {
+                                            google.script.run.withSuccessHandler(res => {
+                                                const idx = this.reportRows.findIndex(r => (r.NPM || '') === payload.NPM);
+                                                if (idx >= 0) {
+                                                    this.reportRows[idx].Dosen = payload.Dosen;
+                                                    this.reportRows[idx]['Tanggal Pelaksanaan'] = payload['Tanggal Pelaksanaan'];
+                                                    this.reportRows[idx].Biaya = payload.Biaya;
+                                                    this.reportRows[idx].Keterangan = payload.Keterangan;
+                                                    this.bootstrapReportDataTable(this.reportRows);
+                                                }
+                                                this.reportModal.hide();
+                                            }).withFailureHandler(err => {
+                                                swalError('Gagal menyimpan: ' + (err && err.message ? err.message : 'Unknown error'));
+                                            }).processCheck(payload);
+                                        } else {
+                                            const idx = this.reportRows.findIndex(r => (r.NPM || '') === payload.NPM);
+                                            if (idx >= 0) {
+                                                this.reportRows[idx].Dosen = payload.Dosen;
+                                                this.reportRows[idx]['Tanggal Pelaksanaan'] = payload['Tanggal Pelaksanaan'];
+                                                this.reportRows[idx].Biaya = payload.Biaya;
+                                                this.reportRows[idx].Keterangan = payload.Keterangan;
+                                                this.bootstrapReportDataTable(this.reportRows);
+                                            }
+                                            this.reportModal.hide();
+                                        }
+                                    },
+                                    clearReportEdit() {
+                                        this.reportForm.dosen = '';
+                                        this.reportForm.tanggalPelaksanaan = '';
+                                        this.reportForm.biaya = '';
+                                        this.reportForm.keterangan = '';
+                                        this.saveReportEdit();
+                                    },
+                                    formatReportCurrencyID(v) {
+                                        const num = Number(String(v).replace(/[^0-9.-]/g, ''));
+                                        if (!isFinite(num) || num === 0) return '-';
+                                        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+                                    },
+                                    normalizeReportBiayaForInput(v) {
+                                        const num = Number(String(v).replace(/[^0-9.-]/g, ''));
+                                        return isFinite(num) ? num : '';
+                                    },
+                                    formatReportDateID(v) {
+                                        const s = String(v || '').trim();
+                                        if (!s) return '-';
+                                        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                                            const [y, m, d] = s.split('-');
+                                            return `${d}/${m}/${y}`;
+                                        }
+                                        const m = s.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+                                        if (m) { return `${m[1]}/${m[2]}/${m[3]}`; }
+                                        return s;
+                                    },
+                                    normalizeReportDateForInput(v) {
+                                        const s = String(v || '').trim();
+                                        if (!s) return '';
+                                        const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                                        if (ymd) return s;
+                                        const dmy = s.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+                                        if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+                                        return s;
+                                    },
+                                    renderReportStatus(s) {
+                                        const v = (s || '').toLowerCase();
+                                        if (v.includes('diterima')) return '<span class="badge badge-status approved">Diterima</span>';
+                                        if (v.includes('ditolak')) return '<span class="badge badge-status rejected">Ditolak</span>';
+                                        if (v.includes('menunggu') || v === '') return '<span class="badge badge-status pending">Menunggu</span>';
+                                        return `<span class="badge badge-status pending">${s}</span>`;
+                                    },
+                                    renderReportStatusWithIndicators(status, row) {
+                                        const base = this.renderReportStatus(status);
+                                        const indicators = [];
+                                        const needDosen = !String(row.Dosen || '').trim();
+                                        const tgl = String(row['Tanggal Pelaksanaan'] || '').trim();
+                                        const needTanggal = !tgl;
+                                        const biayaStr = String(row.Biaya || '').trim();
+                                        const biayaNum = Number(biayaStr.replace(/[^0-9.-]/g, ''));
+                                        const needBiaya = !(isFinite(biayaNum) && biayaNum > 0);
+                                        if (needDosen) indicators.push('<span class="badge badge-indicator">Perlu Dosen</span>');
+                                        if (needTanggal) indicators.push('<span class="badge badge-indicator">Perlu Tgl</span>');
+                                        if (needBiaya) indicators.push('<span class="badge badge-indicator">Perlu Biaya</span>');
+                                        return base + (indicators.length ? ' ' + indicators.join(' ') : '');
+                                    },
+                                    sendReportFinal(row, btnEl) {
+                                        try {
+                                            const acc = String(row['ACC INHAL'] || '').trim();
+                                            const bukti = String(row['Bukti Bayar'] || '').trim();
+                                            const missing = [];
+                                            if (!acc) missing.push('ACC INHAL');
+                                            if (!bukti) missing.push('Bukti Bayar');
+                                            if (missing.length) {
+                                                swalError('Tidak bisa kirim final. Lengkapi: ' + missing.join(', '));
+                                                return;
+                                            }
+
+                                            const emailMhs = String(row.Email || '').trim() || '-';
+                                            const jenisRaw = String(row['Jenis Kegiatan'] || row.JenisKegiatan || '').trim();
+                                            const detailRaw = String(row['Detail Kegiatan'] || row.DetailKegiatan || '').trim();
+                                            const ketRaw = String(row.Keterangan || row['Keterangan'] || '').trim();
+                                            const jenisNorm = this.reportNormKey(jenisRaw);
+                                            const detailNorm = this.reportNormKey(detailRaw);
+                                            let bagianKey = '';
+                                            if (jenisNorm === 'praktikum') {
+                                                const keys = Object.keys(this.reportBagianEmailMap || {});
+                                                bagianKey = keys.find(k => detailNorm.includes(k)) || '';
+                                            } else {
+                                                bagianKey = jenisNorm;
+                                            }
+                                            const emailBagian = (this.reportBagianEmailMap || {})[this.reportNormKey(bagianKey)] || '';
+
+                                            if (!emailBagian) {
+                                                swalError('Email Bagian belum terdaftar untuk jenis/detail ini. Silakan hubungi admin untuk menambahkan pemetaan.');
+                                                return;
+                                            }
+
+                                            ensureSwalLoaded(async () => {
+                                                const { isConfirmed } = await Swal.fire({
+                                                    title: 'Kirim Final?',
+                                                    html: `
+                  <div class="text-start">
+                    <div><strong>NPM:</strong> ${row.NPM || '-'}</div>
+                    <div><strong>Nama:</strong> ${row['Nama Lengkap'] || '-'}</div>
+                    <div><strong>Jenis/Detail:</strong> ${(jenisRaw || '-')} / ${(detailRaw || '-')}</div>
+                    <div><strong>Email Mahasiswa:</strong> ${emailMhs}</div>
+                    <div><strong>Email Bagian:</strong> ${emailBagian}</div>
+                    <div><strong>Keterangan:</strong> ${ketRaw || '-'}</div>
+                    <div class="mt-2 text-muted">Email akan dikirim ke alamat-alamat di atas.</div>
+                  </div>
+                `,
+                                                    icon: 'question',
+                                                    confirmButtonText: 'Kirim',
+                                                    cancelButtonText: 'Batal',
+                                                    showCancelButton: true
+                                                });
+                                                if (!isConfirmed) return;
+
+                                                if (btnEl) {
+                                                    btnEl.disabled = true;
+                                                    btnEl.setAttribute('aria-busy', 'true');
+                                                    btnEl.textContent = 'Mengirim...';
+                                                }
+
+                                                const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+                                                if (hasAppsScript) {
+                                                    google.script.run
+                                                        .withSuccessHandler(res => {
+                                                            if (res && res.ok) {
+                                                                if (btnEl) {
+                                                                    btnEl.disabled = true;
+                                                                    btnEl.removeAttribute('aria-busy');
+                                                                    btnEl.textContent = 'Terkirim';
+                                                                    btnEl.classList.remove('btn-primary');
+                                                                    btnEl.classList.add('btn-success');
+                                                                }
+                                                                swalSuccess('Email final dikirim ke mahasiswa dan Bagian.');
+                                                            } else {
+                                                                if (btnEl) {
+                                                                    btnEl.disabled = false;
+                                                                    btnEl.removeAttribute('aria-busy');
+                                                                    btnEl.textContent = 'Kirim Final';
+                                                                }
+                                                                swalError('Gagal kirim email: ' + (res && res.error ? res.error : 'Unknown error'));
+                                                            }
+                                                        })
+                                                        .withFailureHandler(err => {
+                                                            if (btnEl) {
+                                                                btnEl.disabled = false;
+                                                                btnEl.removeAttribute('aria-busy');
+                                                                btnEl.textContent = 'Kirim Final';
+                                                            }
+                                                            swalError('Gagal kirim email: ' + (err && err.message ? err.message : 'Unknown error'));
+                                                        })
+                                                        .sendFinalEmail(row);
+                                                } else {
+                                                    setTimeout(() => {
+                                                        if (btnEl) {
+                                                            btnEl.disabled = true;
+                                                            btnEl.removeAttribute('aria-busy');
+                                                            btnEl.textContent = 'Terkirim';
+                                                            btnEl.classList.remove('btn-primary');
+                                                            btnEl.classList.add('btn-success');
+                                                        }
+                                                        swalInfo(`Pratinjau lokal: email akan dikirim ke ${emailMhs} dan ${emailBagian}`);
+                                                        console.log('Simulate sendFinalEmail payload:', row);
+                                                    }, 600);
+                                                }
+                                            });
+                                        } catch (e) {
+                                            if (btnEl) {
+                                                btnEl.disabled = false;
+                                                btnEl.removeAttribute('aria-busy');
+                                                btnEl.textContent = 'Kirim Final';
+                                            }
+                                            swalError('Terjadi kesalahan: ' + (e && e.message ? e.message : e));
+                                        }
+                                    }
+                                },
+                                watch: {
+                                    'reportFilters.status': function () { this.applyReportFilters(); },
+                                    'reportFilters.blok': function () { this.applyReportFilters(); },
+                                    'reportFilters.jenis': function () { this.applyReportFilters(); }
+                                }
+                            });
+
+                            // Mount Vue app with additional error handling
+                            reportApp.mount('#reportApp');
+                            reportInitialized = true;
+                            console.log('Vue app mounted successfully to #reportApp');
+
+                        } catch (e) {
+                            console.error('Vue app initialization error:', e);
+                        }
+
+                        reportInitialized = true;
+                    });
+                }
+
+                // Load Report Dependencies
+                function loadReportDependencies() {
+                    return new Promise((resolve) => {
+                        // Check if all dependencies are already loaded
+                        const dtReady = typeof jQuery !== 'undefined' && typeof Vue !== 'undefined' && typeof $.fn.DataTable !== 'undefined';
+                        const bsReady = typeof bootstrap !== 'undefined';
+                        if (dtReady && bsReady) {
+                            resolve();
+                            return;
+                        }
+
+                        // Helpers to load assets
+                        const loadScript = (url) => {
+                            return new Promise((scriptResolve) => {
+                                const script = document.createElement('script');
+                                script.src = url;
+                                script.async = true;
+                                script.onload = scriptResolve;
+                                script.onerror = scriptResolve; // Continue even if script fails
+                                document.head.appendChild(script);
+                            });
+                        };
+                        const loadStyle = (url) => {
+                            return new Promise((styleResolve) => {
+                                const link = document.createElement('link');
+                                link.rel = 'stylesheet';
+                                link.href = url;
+                                link.onload = styleResolve;
+                                link.onerror = styleResolve; // Continue even if style fails
+                                document.head.appendChild(link);
+                            });
+                        };
+
+                        // Load assets sequentially with robust ordering
+                        const loadSequence = async () => {
+                            // Styles first (non-blocking)
+                            await loadStyle('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css');
+                            await loadStyle('https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css');
+                            await loadStyle('https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css');
+
+                            // Core libraries
+                            if (typeof jQuery === 'undefined') {
+                                await loadScript('https://code.jquery.com/jquery-3.7.1.min.js');
+                            }
+                            // Bootstrap (bundle includes Popper)
+                            if (typeof bootstrap === 'undefined') {
+                                await loadScript('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js');
+                            }
+                            // Vue
+                            if (typeof Vue === 'undefined') {
+                                await loadScript('https://unpkg.com/vue@3/dist/vue.global.prod.js');
+                            }
+                            // DataTables and Buttons
+                            if (typeof $.fn.DataTable === 'undefined') {
+                                await loadScript('https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js');
+                                await loadScript('https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js');
+                                await loadScript('https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js');
+                                await loadScript('https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js');
+                                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+                                await loadScript('https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js');
+                            }
+                            resolve();
+                        };
+
+                        loadSequence();
+                    });
+                }
+
+                function loadReportTab() {
+                    // Initialize report module directly instead of using iframe
+                    if (typeof initReportModule === 'function') {
+                        initReportModule();
+                    } else {
+                        console.log('Report module not loaded yet');
+                    }
+                }
+
+                // Initialize tab system on page load
+                document.addEventListener('DOMContentLoaded', () => {
+                    // Inisialisasi selalu ke Admin
+                    switchTab('admin');
+
+                    // Perubahan hash diarahkan ke Admin (Report dihapus)
+                    window.addEventListener('hashchange', () => {
+                        switchTab('admin');
+                    });
+                });
+            </script>
+</body>
+
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form INHAL - ACC | FKIK UMSU</title>
+  <style>
+    /* ============================================================
+       TEMPLATE SURAT / FORM INHAL - ACC (Diterima / Ditolak)
+       Sumber: Google Docs
+       https://docs.google.com/document/d/1L_Ayv4SSB_9pnet-xTbZnzHDOIxBJMlg5DSDsSv6rPU
+       Placeholder:
+         {{TanggalPengajuan}} {{NomorSurat}}
+         {{NPM}} {{Nama Lengkap}} {{Email}} {{No. HP/WA}} {{Blok}}
+         {{Jenis Kegiatan}} {{DetailKegiatan}} {{TanggalKegiatan}}
+         {{Keterangan}} {{Status}} {{Catatan Admin}} {{TanggalSurat}}
+       ============================================================ */
+
+    @page {
+      size: A4;
+      margin: 16mm 18mm 16mm 18mm;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      line-height: 1.4;
+      color: #111;
+      background: #e5e7eb;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 16px auto;
+      padding: 10mm 14mm 14mm 14mm;
+      background: #fff;
+      box-shadow: 0 2px 14px rgba(0,0,0,.12);
+      position: relative;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        width: auto;
+        min-height: auto;
+        padding: 0;
+      }
+      .no-print { display: none !important; }
+    }
+
+    /* ----- KOP ----- */
+    .kop {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 2.5px solid #0f3d2e;
+      padding-bottom: 8px;
+      margin-bottom: 0;
+      position: relative;
+    }
+
+    .kop::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 1.5px;
+      background: #c9a227;
+    }
+
+    .logo-box {
+      width: 118px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-box img {
+      width: 118px;
+      height: 118px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .kop-text {
+      flex: 1;
+      text-align: center;
+    }
+
+    .kop-text .fakultas {
+      font-size: 14pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #0f3d2e;
+      line-height: 1.2;
+    }
+
+    .kop-text .univ {
+      font-size: 13pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: #1a1a1a;
+      margin-top: 1px;
+      line-height: 1.2;
+    }
+
+    .kop-text .prodi {
+      font-size: 11.5pt;
+      font-weight: 600;
+      margin-top: 2px;
+      color: #334155;
+      line-height: 1.2;
+    }
+
+    .kop-text .alamat {
+      font-size: 8.5pt;
+      margin-top: 3px;
+      color: #64748b;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.3;
+    }
+
+    .kop-line {
+      margin-top: 4px;
+      margin-bottom: 14px;
+      height: 0;
+    }
+
+    /* ----- JUDUL ----- */
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+      gap: 12px;
+    }
+
+    .title-row .form-name {
+      font-size: 13pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .title-row .tgl-ajuan {
+      font-size: 11pt;
+      white-space: nowrap;
+    }
+
+    .nomor-surat {
+      font-size: 11pt;
+      margin-bottom: 14px;
+    }
+
+    /* ----- DATA ----- */
+    .data-list {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 12pt;
+    }
+
+    .data-list td {
+      padding: 3px 0;
+      vertical-align: top;
+    }
+
+    .data-list td.lbl {
+      width: 150px;
+      white-space: nowrap;
+    }
+
+    .data-list td.colon {
+      width: 18px;
+      text-align: center;
+    }
+
+    .data-list td.val {
+      border-bottom: 1px dotted #999;
+      padding-left: 4px;
+    }
+
+    /* ----- STATUS ----- */
+    .status-block {
+      margin: 14px 0 16px;
+      border: 1.5px solid #222;
+      padding: 10px 12px;
+      background: #fafafa;
+    }
+
+    .status-block .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .status-block .row:last-child { margin-bottom: 0; }
+
+    .status-block .lbl {
+      min-width: 130px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-block .val {
+      flex: 1;
+      font-weight: 700;
+      font-size: 12.5pt;
+    }
+
+    .status-block .val.status-diterima { color: #166534; }
+    .status-block .val.status-ditolak { color: #991b1b; }
+
+    .status-block .catatan-val {
+      font-weight: 400;
+      font-size: 12pt;
+    }
+
+    /* ============================================================
+       TTD — nama HARUS terlihat penuh di bawah tanda tangan
+       Ukuran TTD tetap 200px (tidak diperkecil)
+       ============================================================ */
+    .ttd-wrap {
+      margin-top: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .ttd {
+      width: 280px;
+      text-align: center;
+    }
+
+    .ttd .tempat-tgl {
+      font-size: 11pt;
+      line-height: 1.2;
+      margin-bottom: 0;
+    }
+
+    .ttd .space {
+      display: block;
+      margin: 0;
+      padding: 0;
+      line-height: 0;
+    }
+
+    .ttd .space img.ttd-img {
+      width: 200px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      object-fit: contain;
+    }
+
+    /* Jarak kecil setelah gambar, nama di BAWAH gambar (tidak overlap) */
+    .ttd .nama {
+      display: block;
+      font-weight: 700;
+      font-size: 11.5pt;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      color: #0f3d2e;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .ttd .role {
+      display: block;
+      font-size: 10pt;
+      color: #475569;
+      margin-top: 1px;
+      line-height: 1.2;
+    }
+
+    /* ----- INSTRUKSI ----- */
+    .instruksi {
+      margin-top: 28px;
+      border-top: 1px dashed #666;
+      padding-top: 12px;
+    }
+
+    .instruksi h3 {
+      font-size: 11.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 8px;
+    }
+
+    .instruksi ol {
+      padding-left: 20px;
+      font-size: 11pt;
+      line-height: 1.5;
+    }
+
+    .instruksi ol li { margin-bottom: 4px; }
+
+    .instruksi.ditolak { display: none; }
+
+    body.show-ditolak .instruksi.diterima { display: none; }
+    body.show-ditolak .instruksi.ditolak { display: block; }
+    body.show-diterima .instruksi.ditolak { display: none; }
+
+    body.show-ditolak .status-block .val.status-diterima { display: none; }
+    body.show-diterima .status-block .val.status-ditolak { display: none; }
+
+    /* ----- TOOLBAR ----- */
+    .preview-bar {
+      max-width: 210mm;
+      margin: 12px auto 0;
+      padding: 10px 14px;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 8px;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .preview-bar label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .preview-bar button {
+      margin-left: auto;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .preview-bar button:hover { background: #1d4ed8; }
+
+    .hint {
+      max-width: 210mm;
+      margin: 8px auto 0;
+      font-family: system-ui, sans-serif;
+      font-size: 12px;
+      color: #475569;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+<body class="show-diterima">
+
+  <div class="preview-bar no-print">
+    <strong>Preview · Form INHAL – ACC</strong>
+    <label><input type="radio" name="status" value="diterima" checked onchange="setStatus(this.value)" /> Diterima</label>
+    <label><input type="radio" name="status" value="ditolak" onchange="setStatus(this.value)" /> Ditolak</label>
+    <button type="button" onclick="window.print()">Cetak / PDF</button>
+  </div>
+  <p class="hint no-print">
+    Nama pejabat harus tampil penuh di bawah tanda tangan. Ukuran TTD = 200px.
+  </p>
+
+  <div class="page">
+
+    <!-- KOP -->
+    <div class="kop">
+      <div class="logo-box">
+        <img
+          src="https://drive.google.com/thumbnail?id=10fwZMVQFir7zu9uVQ6tWvxIIIVQ0ccrH&sz=w300"
+          alt="Logo UMSU"
+          width="118"
+          height="118"
+          referrerpolicy="no-referrer"
+          onerror="this.onerror=null;this.src='https://lh3.googleusercontent.com/d/10fwZMVQFir7zu9uVQ6tWvxIIIVQ0ccrH=s300';"
+        />
+      </div>
+      <div class="kop-text">
+        <div class="fakultas">Fakultas Kedokteran dan Ilmu Kesehatan</div>
+        <div class="univ">Universitas Muhammadiyah Sumatera Utara</div>
+        <div class="prodi">Program Studi Pendidikan Dokter</div>
+        <div class="alamat">
+          Jl. Gedung Arca No. 53 Medan 20217 · Telp. (061) 7362265 / 7362267<br />
+          fk.umsu.ac.id · fk@umsu.ac.id
+        </div>
+      </div>
+    </div>
+    <div class="kop-line"></div>
+
+    <!-- JUDUL -->
+    <div class="title-row">
+      <div class="form-name">Form INHAL</div>
+      <div class="tgl-ajuan">Tanggal Pengajuan : {{TanggalPengajuan}}</div>
+    </div>
+    <div class="nomor-surat">Nomor Surat : {{NomorSurat}}</div>
+
+    <!-- DATA -->
+    <table class="data-list">
+      <tr>
+        <td class="lbl">NPM</td>
+        <td class="colon">:</td>
+        <td class="val">{{NPM}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Nama Lengkap</td>
+        <td class="colon">:</td>
+        <td class="val">{{Nama Lengkap}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Email</td>
+        <td class="colon">:</td>
+        <td class="val">{{Email}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">No. HP/WA</td>
+        <td class="colon">:</td>
+        <td class="val">{{No. HP/WA}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Blok / Non Blok</td>
+        <td class="colon">:</td>
+        <td class="val">{{Blok}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Jenis Kegiatan</td>
+        <td class="colon">:</td>
+        <td class="val">{{Jenis Kegiatan}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Detail Kegiatan</td>
+        <td class="colon">:</td>
+        <td class="val">{{DetailKegiatan}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Tanggal Kegiatan</td>
+        <td class="colon">:</td>
+        <td class="val">{{TanggalKegiatan}}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Keterangan</td>
+        <td class="colon">:</td>
+        <td class="val">{{Keterangan}}</td>
+      </tr>
+    </table>
+
+    <!-- STATUS -->
+    <div class="status-block">
+      <div class="row">
+        <div class="lbl">Status INHAL</div>
+        <div class="val status-diterima">: &nbsp; {{Status}}</div>
+        <div class="val status-ditolak">: &nbsp; {{Status}}</div>
+      </div>
+      <div class="row">
+        <div class="lbl">Catatan</div>
+        <div class="val catatan-val">: &nbsp; {{Catatan Admin}}</div>
+      </div>
+    </div>
+
+    <!-- TTD: urutan tegas — tanggal → gambar → nama → jabatan -->
+    <div class="ttd-wrap">
+      <div class="ttd">
+        <div class="tempat-tgl">Medan, {{TanggalSurat}}</div>
+        <div class="space">
+          <img
+            class="ttd-img"
+            src="https://drive.google.com/thumbnail?id=1arFwU1RKEySg_sN6oAEcMG22W4yfu_I6&sz=w400"
+            alt="Tanda tangan"
+            width="200"
+            referrerpolicy="no-referrer"
+            onerror="this.onerror=null;this.src='https://lh3.googleusercontent.com/d/1arFwU1RKEySg_sN6oAEcMG22W4yfu_I6=s400';"
+          />
+        </div>
+        <div class="nama">dr. Desi Isnayanti, M.Pd. Ked</div>
+        <div class="role">Ka. Prodi FKIK UMSU</div>
+      </div>
+    </div>
+
+    <!-- INSTRUKSI DITERIMA -->
+    <div class="instruksi diterima">
+      <h3>Instruksi Selanjutnya:</h3>
+      <ol>
+        <li>Pengajuan inhal anda telah diterima dan disetujui oleh Prodi FKIK UMSU.</li>
+        <li>
+          Silakan upload dokumen berikut melalui form Upload INHAL di Link:
+          <ul style="margin-top:4px; padding-left:18px;">
+            <li>Surat ACC INHAL (PDF)</li>
+            <li>Bukti pembayaran INHAL (PDF/JPG/PNG)</li>
+          </ul>
+        </li>
+        <li>Dokumen harus diupload dalam waktu maksimal <strong>7 (tujuh) hari kerja</strong>.</li>
+        <li>Pastikan dokumen yang diupload jelas dan dapat dibaca.</li>
+      </ol>
+    </div>
+
+    <!-- INSTRUKSI DITOLAK -->
+    <div class="instruksi ditolak">
+      <h3>Instruksi Selanjutnya:</h3>
+      <ol>
+        <li>Pengajuan inhal anda <strong>belum dapat disetujui</strong> oleh Prodi FKIK UMSU.</li>
+        <li>Silakan perhatikan catatan admin di atas (jika ada).</li>
+        <li>Anda dapat mengajukan kembali setelah memperbaiki kekurangan sesuai ketentuan yang berlaku.</li>
+        <li>Apabila memerlukan klarifikasi, hubungi Admin Prodi FKIK UMSU.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <script>
+    function setStatus(value) {
+      document.body.classList.remove('show-diterima', 'show-ditolak');
+      document.body.classList.add(value === 'ditolak' ? 'show-ditolak' : 'show-diterima');
+    }
+  </script>
+</body>
+</html>

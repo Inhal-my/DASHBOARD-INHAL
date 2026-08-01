@@ -1,53 +1,2036 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DASHBOARD INHAL</title>
-  <link rel="icon" href="https://i.imgur.com/VDy2lSE.png" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #eee;
-      overflow: hidden; /* Kunci body, biarkan container yang mengatur layout */
-    }
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Kegiatan Mahasiswa INHAL</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+        }
 
-    .iframe-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden; 
-      /* Memberikan ruang ekstra di bawah agar tombol tidak "mepet" atau tertutup browser bar di HP */
-      padding-bottom: 80px; 
-      box-sizing: border-box; /* Pastikan padding dihitung dalam tinggi elemen */
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f8fafc;
+            font-size: 14px;
+            color: #0f172a;
+            padding: 12px; /* Reduced padding for mobile */
+        }
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
-  </style>
+        .container {
+            width: 100%; /* Changed from max-width to width */
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 24px; /* Restore original padding for larger screens */
+            }
+
+            .container {
+                max-width: 720px; /* Restore max-width for larger screens */
+            }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            color: #111827;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            margin: 6px 0 0;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 16px;
+        }
+
+        /* Tab Styles */
+        .tab {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .tab button {
+            background-color: #e0e7ff;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 8px 14px;
+            transition: 0.2s;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e3a8a;
+            border-radius: 999px;
+        }
+
+        .tab button:hover {
+            background-color: #c7d2fe;
+        }
+
+        .tab button.active {
+            background-color: #1e3a8a;
+            color: white;
+        }
+
+        .tab button.disabled {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .tab button.disabled:hover {
+            background-color: #e5e7eb;
+        }
+
+        /* Tab Content */
+        .tabcontent {
+            display: none;
+            padding: 0;
+            border: none;
+            background: white;
+        }
+
+        .tabcontent.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        select,
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 14px;
+            background: #fff;
+            color: #111827;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        select:focus,
+        input[type="date"]:focus,
+        textarea:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            background: #fff;
+            font-size: 14px;
+            color: #111827;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 12px;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: #dbeafe;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-success {
+            background-color: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .btn:disabled {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Dynamic sections */
+        .dynamic-section {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .dynamic-section.show {
+            display: block;
+        }
+
+        .praktikum-item {
+            background-color: #f8fafc;
+            padding: 14px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .praktikum-header {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .add-praktikum {
+            background-color: #3b82f6;
+            color: white;
+            padding: 8px 14px;
+            margin-top: 10px;
+            width: auto;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+
+        .add-praktikum:hover {
+            background-color: #2563eb;
+        }
+
+        .remove-praktikum {
+            background-color: #ef4444;
+            color: white;
+            padding: 4px 8px;
+            margin-left: 10px;
+            width: auto;
+            font-size: 11px;
+            border-radius: 999px;
+        }
+
+        /* Status messages */
+        .status-info {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .status-info.hidden {
+            display: none;
+        }
+
+        .success-info {
+            background-color: #ecfdf3;
+            color: #166534;
+            border: 1px solid #d1fae5;
+        }
+
+        .warning-info {
+            background-color: #fff7ed;
+            color: #9a3412;
+            border: 1px solid #fed7aa;
+        }
+
+        .error-info {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Loading Overlays */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 24px 28px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .spinner.blue {
+            border-top: 8px solid #3b82f6;
+        }
+
+        .spinner.green {
+            border-top: 8px solid #22c55e;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Success Alert */
+        .success-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            text-align: center;
+            display: none;
+            border: 1px solid #e5e7eb;
+        }
+
+        .success-alert.show {
+            display: block;
+        }
+
+        .success-alert h3 {
+            color: #16a34a;
+            margin: 0 0 12px 0;
+        }
+
+        .success-alert button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: auto;
+        }
+
+        /* Upload info display */
+        .info-display {
+            background-color: #eff6ff;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .info-display h4 {
+            margin: 0 0 8px;
+            color: #1e3a8a;
+            font-size: 14px;
+        }
+
+        .info-display p {
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .kegiatan-item {
+            border: 1px solid #dbeafe;
+            padding: 12px;
+            margin-bottom: 12px;
+            background-color: #f8fafc;
+            border-radius: 10px;
+        }
+
+        .kegiatan-item strong {
+            color: #1e3a8a;
+            font-size: 14px;
+        }
+
+        body.embedded-mode {
+            padding: 0;
+            background: transparent;
+        }
+
+        body.embedded-mode .container {
+            max-width: none;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        body.embedded-mode .modal-header {
+            display: none;
+        }
+
+        body.embedded-mode .modal-body {
+            padding: 0;
+        }
+
+        body.embedded-mode #daftar {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: visible;
+        }
+
+        body.embedded-mode #registrationForm {
+            padding: 0;
+            background: transparent;
+        }
+
+        body.embedded-mode .form-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        body.embedded-mode .form-panel + .form-panel {
+            margin-top: 20px;
+        }
+
+        body.embedded-mode .form-panel-soft {
+            background: transparent;
+        }
+
+        body.embedded-mode .form-panel-inner {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid #eef2f7;
+        }
+
+        body.embedded-mode .tab {
+            display: none;
+            margin-bottom: 0;
+        }
+
+        body.embedded-mode .section-title {
+            margin-bottom: 16px;
+            padding-bottom: 0;
+            border-bottom: none;
+            font-size: 15px;
+            text-transform: none;
+            letter-spacing: 0;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        body.embedded-mode label {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        body.embedded-mode .form-group {
+            margin-bottom: 16px;
+        }
+
+        body.embedded-mode input[type="text"],
+        body.embedded-mode input[type="email"],
+        body.embedded-mode input[type="tel"],
+        body.embedded-mode select,
+        body.embedded-mode input[type="date"],
+        body.embedded-mode textarea,
+        body.embedded-mode input[type="file"] {
+            border-color: #e2e8f0;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 13px 14px;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        body.embedded-mode input[readonly] {
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        body.embedded-mode input[type="text"]:focus,
+        body.embedded-mode input[type="email"]:focus,
+        body.embedded-mode input[type="tel"]:focus,
+        body.embedded-mode select:focus,
+        body.embedded-mode input[type="date"]:focus,
+        body.embedded-mode textarea:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+        }
+
+        body.embedded-mode #detail-section {
+            margin-top: 6px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+        }
+
+        body.embedded-mode #detail-section:empty {
+            display: none;
+        }
+
+        body.embedded-mode #common-fields {
+            margin-top: 18px;
+        }
+
+        body.embedded-mode small {
+            display: inline-block;
+            margin-top: 6px;
+            color: #64748b !important;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        body.embedded-mode .praktikum-item,
+        body.embedded-mode .info-display,
+        body.embedded-mode .kegiatan-item {
+            padding: 14px;
+            border-radius: 16px;
+            border-color: #e2e8f0;
+            background: #f8fafc;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        body.embedded-mode .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+            border-radius: 14px;
+            padding: 13px 16px;
+            letter-spacing: 0.01em;
+        }
+
+        body.embedded-mode .btn-secondary {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            box-shadow: none;
+            border-radius: 14px;
+            padding: 12px 16px;
+        }
+
+        body.embedded-mode .btn-primary:hover,
+        body.embedded-mode .btn-secondary:hover {
+            transform: translateY(-1px);
+        }
+
+        body.embedded-mode .btn-primary:active,
+        body.embedded-mode .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        body.embedded-mode .praktikum-header {
+            font-size: 12px;
+            color: #334155;
+            margin-bottom: 12px;
+        }
+
+        body.embedded-mode .add-praktikum,
+        body.embedded-mode .remove-praktikum {
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 8px;
+            }
+
+            .container {
+                border-radius: 14px;
+            }
+
+            .modal-header {
+                padding: 16px 16px 14px;
+            }
+
+            .modal-title {
+                font-size: 18px;
+            }
+
+            .modal-subtitle {
+                font-size: 12px;
+                margin-top: 4px;
+            }
+
+            .modal-body {
+                padding: 16px;
+            }
+
+            .tab {
+                margin-bottom: 12px;
+            }
+
+            .tab button {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+                padding: 10px 14px;
+            }
+
+            .form-group {
+                margin-bottom: 14px;
+            }
+
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"],
+            select,
+            input[type="date"],
+            textarea,
+            input[type="file"] {
+                padding: 11px 12px;
+                font-size: 14px;
+            }
+
+            .praktikum-item,
+            .info-display,
+            .kegiatan-item {
+                padding: 12px;
+            }
+
+            .loading-content,
+            .success-alert {
+                width: calc(100% - 32px);
+                max-width: 340px;
+                box-sizing: border-box;
+            }
+        }
+
+        @media (max-width: 767px) {
+            body.embedded-mode {
+                padding: 0;
+            }
+
+            body.embedded-mode #daftar {
+                border-radius: 0;
+            }
+
+            body.embedded-mode #registrationForm {
+                padding: 0;
+            }
+
+            body.embedded-mode .form-panel {
+                padding: 0;
+                border-radius: 0;
+            }
+
+            body.embedded-mode .tab {
+                margin-bottom: 0;
+            }
+
+            body.embedded-mode .section-title {
+                font-size: 14px;
+                margin-bottom: 12px;
+            }
+
+            body.embedded-mode .modal-body {
+                padding: 0 0 4px;
+            }
+
+            body.embedded-mode #detail-section {
+                padding: 0;
+                border-radius: 0;
+            }
+
+            body.embedded-mode label {
+                font-size: 12px;
+                margin-bottom: 7px;
+            }
+
+            body.embedded-mode input[type="text"],
+            body.embedded-mode input[type="email"],
+            body.embedded-mode input[type="tel"],
+            body.embedded-mode select,
+            body.embedded-mode input[type="date"],
+            body.embedded-mode textarea,
+            body.embedded-mode input[type="file"] {
+                font-size: 15px;
+                padding: 12px 13px;
+                border-radius: 13px;
+            }
+
+            body.embedded-mode .form-group {
+                margin-bottom: 14px;
+            }
+
+            body.embedded-mode .praktikum-item,
+            body.embedded-mode .info-display,
+            body.embedded-mode .kegiatan-item {
+                padding: 12px;
+                border-radius: 14px;
+            }
+
+            body.embedded-mode .btn-primary,
+            body.embedded-mode .btn-secondary {
+                padding: 12px 14px;
+                border-radius: 13px;
+                font-size: 14px;
+            }
+
+            body.embedded-mode small {
+                font-size: 11px;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
-  <div class="iframe-container">
-    <iframe
-      id="app"
-      src="https://script.google.com/macros/s/AKfycbxCs-xl6ka8WjjjL8LZfU56zMtNcHSFz8eh_lVeISPTHSKtW6NqQ1hxE7QmvrkPuU2lcw/exec?page=dashboard"
-      scrolling="yes"
-      allowfullscreen="true"
-      webkitallowfullscreen="true"
-      mozallowfullscreen="true"
-      allow="fullscreen; camera; microphone; display-capture; geolocation;">
-    </iframe>
-  </div>
+    <div class="container">
+        <div class="modal-header">
+            <h1 class="modal-title">Form Pendaftaran INHAL</h1>
+            <p class="modal-subtitle">Lengkapi data pendaftaran kegiatan INHAL</p>
+        </div>
+        <div class="modal-body">
+            <div id="daftar" class="tabcontent active">
+                <form id="registrationForm">
+                    <div class="form-panel">
+                        <div class="section-title">Data Mahasiswa</div>
+                        <div class="form-group">
+                            <label for="npm">NPM <span style="color: red;">*</span></label>
+                            <input type="text" id="npm" name="npm" placeholder="Masukkan NPM (10 digit)" required
+                                maxlength="10">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="namaLengkap">Nama Lengkap <span style="color: red;">*</span></label>
+                            <input type="text" id="namaLengkap" name="namaLengkap" placeholder="Nama akan terisi otomatis"
+                                readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email <span style="color: red;">*</span></label>
+                            <input type="email" id="email" name="email" placeholder="Masukkan email aktif" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="noHp">No. HP/WA <span style="color: red;">*</span></label>
+                            <input type="tel" id="noHp" name="noHp" placeholder="Contoh: 08123456789" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="blok">Blok <span style="color: red;">*</span></label>
+                            <select id="blok" name="blok" required>
+                                <option value="">Pilih Blok</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" id="btnTambahKegiatan" class="btn-secondary hidden">Tambah
+                                Kegiatan</button>
+                        </div>
+                    </div>
+
+                    <!-- Section Kegiatan -->
+                    <div id="kegiatan-section" class="hidden form-panel form-panel-soft">
+                        <div class="section-title">Detail Kegiatan</div>
+                        <div class="form-group">
+                            <label for="jenisKegiatan">Jenis Kegiatan <span style="color: red;">*</span></label>
+                            <select id="jenisKegiatan" name="jenisKegiatan" required>
+                                <option value="">Pilih Jenis Kegiatan</option>
+                                <option value="Ujian">Ujian</option>
+                                <option value="SGD">SGD</option>
+                                <option value="KKD">KKD</option>
+                                <option value="Praktikum">Praktikum</option>
+                            </select>
+                        </div>
+
+                        <div id="detail-section"></div>
+
+
+
+                        <!-- Fields umum untuk semua jenis kegiatan -->
+                        <div id="common-fields" class="hidden form-panel-inner">
+                            <div class="form-group">
+                                <label for="suratKeterangan">Upload Surat Keterangan (Opsional)</label>
+                                <input type="file" id="suratKeterangan" name="suratKeterangan" accept=".pdf">
+                                <small style="color: #6c757d;">Format: PDF (Max: 5MB)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="keterangan">Keterangan <span style="color: red;">*</span></label>
+                                <textarea id="keterangan" name="keterangan" rows="3" placeholder="Masukkan keterangan"
+                                    required></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="submit" id="btnSubmit" class="btn-primary">Submit Pendaftaran</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlays -->
+    <div id="loadingDaftar" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner blue"></div>
+            <div class="loading-text">Memproses pendaftaran...</div>
+        </div>
+    </div>
+
+    <div id="loadingUpload" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner green"></div>
+            <div class="loading-text">Memproses upload...</div>
+        </div>
+    </div>
+
+    <div id="dataLoading" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner green"></div>
+            <div class="loading-text">Memuat data...</div>
+        </div>
+    </div>
+
+    <!-- Loader khusus NPM -->
+    <div id="loadingNpm" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner blue"></div>
+            <div class="loading-text">Memeriksa NPM....</div>
+        </div>
+    </div>
+
+    <!-- Success Alert -->
+    <div id="successAlert" class="success-alert">
+        <h3>✅ Berhasil!</h3>
+        <p id="successMessage">Data telah diproses</p>
+        <button onclick="hideSuccessAlert()">OK</button>
+    </div>
+
+    <script>
+        // Global variables
+        let acceptedStudentData = {};
+        let studentData = {};
+        let tabsLocked = false;
+        let activeTabLock = '';
+        let isSubmitting = false;
+        let submittedKeys = new Set();
+
+        let npmInputTimeout;
+        // Tambahan: timeout untuk pemeriksaan NPM
+        let npmCheckTimeout;
+
+        // Helper: tampilkan/sembunyikan loader NPM + watchdog 10 detik
+        function showNpmLoading() {
+            const overlay = document.getElementById('loadingNpm');
+            if (overlay) overlay.style.display = 'flex';
+            clearTimeout(npmCheckTimeout);
+            npmCheckTimeout = setTimeout(() => {
+                const namaFilled = document.getElementById('namaLengkap-upload').value.trim() !== '';
+                const blokFilled = document.getElementById('blok-upload').value.trim() !== '';
+                if (!namaFilled || !blokFilled) {
+                    hideNpmLoading();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'error', title: 'form anda sedang diproses' });
+                    } else {
+                        alert('form anda sedang diproses');
+                    }
+                }
+            }, 10000);
+        }
+        function hideNpmLoading() {
+            const overlay = document.getElementById('loadingNpm');
+            if (overlay) overlay.style.display = 'none';
+            clearTimeout(npmCheckTimeout);
+        }
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("🚀 Application initializing...");
+
+            if (window.parent && window.parent !== window) {
+                document.body.classList.add('embedded-mode');
+            }
+
+            // Show data loading
+            showDataLoading();
+
+            // Load student data for registration tab
+            google.script.run
+                .withSuccessHandler((data) => {
+                    if (data && typeof data === 'object' && !data.error) {
+                        studentData = data;
+                        console.log('✅ Student data loaded:', Object.keys(studentData).length);
+                    }
+                })
+                .withFailureHandler((error) => {
+                    console.error("Error loading student data:", error);
+                })
+                .getStudentData();
+
+            // Load accepted student data for upload tab - PERBAIKAN
+            google.script.run
+                .withSuccessHandler((data) => {
+                    hideDataLoading();
+                    console.log('📋 Raw accepted data received:', data);
+                    populateAcceptedStudentData(data);
+                })
+                .withFailureHandler((error) => {
+                    hideDataLoading();
+                    console.error("❌ Error loading accepted student data:", error);
+                    acceptedStudentData = {};
+                })
+                .getAcceptedStudentData();
+
+            // Load dropdown options
+            loadDropdownOptions();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            console.log("✅ Application initialization complete");
+        });
+
+        // Tab functions
+        function openTab(evt, tabName) {
+            console.log(`📂 Opening tab: ${tabName}`);
+
+            // Don't allow tab switch if tabs are locked
+            if (tabsLocked && activeTabLock !== tabName) {
+                console.log("🔒 Tab switching blocked - tabs are locked");
+                return;
+            }
+
+            // Hide all tab contents
+            const tabcontents = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontents.length; i++) {
+                if (tabcontents[i]) {
+                    tabcontents[i].classList.remove("active");
+                }
+            }
+
+            // Remove active class from all tab buttons
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                if (tablinks[i]) {
+                    tablinks[i].classList.remove("active");
+                }
+            }
+
+            // Show selected tab and mark button as active
+            const tabElement = document.getElementById(tabName);
+            if (tabElement) {
+                tabElement.classList.add("active");
+            }
+            if (evt.currentTarget) {
+                evt.currentTarget.classList.add("active");
+            }
+        }
+
+        function lockTabs(activeTab) {
+            if (tabsLocked) return;
+
+            tabsLocked = true;
+            activeTabLock = activeTab;
+
+            const tabDaftar = document.getElementById('tabDaftar');
+            const tabUpload = document.getElementById('tabUpload');
+
+            if (activeTab === 'daftar') {
+                if (tabUpload) {
+                    tabUpload.classList.add('disabled');
+                }
+            } else if (activeTab === 'upload') {
+                if (tabDaftar) {
+                    tabDaftar.classList.add('disabled');
+                }
+            }
+
+            console.log(`🔒 Tabs locked - Active: ${activeTab}`);
+        }
+
+        // PERBAIKAN - Data population functions
+        function populateAcceptedStudentData(data) {
+            console.log("📚 Processing accepted student data:", typeof data, data);
+
+            if (data === null || data === undefined) {
+                console.error("🚨 Accepted student data is null/undefined!");
+                acceptedStudentData = {};
+                return;
+            }
+
+            if (data && data.error) {
+                console.error("Error in accepted student data:", data.error);
+                acceptedStudentData = {};
+                return;
+            }
+
+            if (data && data.message) {
+                console.warn("No ACC data found:", data.message);
+                acceptedStudentData = {};
+                return;
+            }
+
+            // PERBAIKAN: Handle array response from Apps Script
+            if (Array.isArray(data) && data.length > 0) {
+                console.log("📋 Converting array to object format");
+                const convertedData = {};
+                data.forEach(student => {
+                    if (student.npm) {
+                        convertedData[student.npm] = student;
+                    }
+                });
+                acceptedStudentData = convertedData;
+                console.log(`✅ Accepted student data converted: ${Object.keys(acceptedStudentData).length} students`);
+            } else if (typeof data === 'object' && data !== null && !data.error && !data.message) {
+                acceptedStudentData = data;
+                const studentCount = Object.keys(acceptedStudentData).length;
+                console.log(`✅ Accepted student data loaded: ${studentCount} students`);
+            } else {
+                console.error("🚨 Unexpected data format:", typeof data, data);
+                acceptedStudentData = {};
+            }
+
+            console.log('👥 Final accepted students:', Object.keys(acceptedStudentData));
+        }
+
+        function loadDropdownOptions() {
+            // Load dropdown options from backend
+            const dropdowns = [
+                'Blok', 'Ujian', 'Sgd', 'DetailSgd', 'Kkd', 'DetailKkd',
+                'Lab', 'KegiatanLab'
+            ];
+
+            dropdowns.forEach(type => {
+                const functionName = `get${type}Options`;
+                if (google.script.run[functionName]) {
+                    google.script.run
+                        .withSuccessHandler(populateDropdown(type.toLowerCase()))
+                        .withFailureHandler((error) => {
+                            console.error(`Error loading ${type} options:`, error);
+                        })
+                    [functionName]();
+                }
+            });
+        }
+
+        function populateDropdown(selectId) {
+            return function (options) {
+                const select = document.getElementById(selectId);
+                if (select && Array.isArray(options)) {
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        select.appendChild(optionElement);
+                    });
+                }
+            };
+        }
+
+        // Event listeners setup
+        function setupEventListeners() {
+            // NPM autofill for registration
+            const npmInput = document.getElementById('npm');
+            if (npmInput) {
+                npmInput.addEventListener('input', (e) => {
+                    lockTabs('daftar');
+                    autofillNama('npm', 'namaLengkap');
+                    checkDataDiri();
+                });
+            }
+
+            // NPM validation for upload
+            const npmUploadInput = document.getElementById('npm-upload');
+            if (npmUploadInput) {
+                npmUploadInput.addEventListener('input', (e) => {
+                    lockTabs('upload');
+                    handleUploadNpmInput();
+                });
+            }
+
+            // Dynamic form sections
+            const jenisKegiatan = document.getElementById('jenisKegiatan');
+            if (jenisKegiatan) {
+                jenisKegiatan.addEventListener('change', showDynamicSection);
+            }
+
+            // Tambah kegiatan button
+            const btnTambah = document.getElementById('btnTambahKegiatan');
+            if (btnTambah) {
+                btnTambah.addEventListener('click', showKegiatanSection);
+            }
+
+            // Form submissions
+            const registrationForm = document.getElementById('registrationForm');
+            if (registrationForm) {
+                registrationForm.addEventListener('submit', handleRegistrationSubmit);
+            }
+            const uploadForm = document.getElementById('uploadForm');
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', handleUploadSubmit);
+            }
+
+            // Check forms on input
+            if (registrationForm) {
+                registrationForm.addEventListener('input', checkDataDiri);
+            }
+            if (uploadForm) {
+                uploadForm.addEventListener('input', checkUploadForm);
+            }
+        }
+
+        function checkDataDiri() {
+            const requiredFields = ['npm', 'namaLengkap', 'email', 'noHp', 'blok'];
+            const allFilled = requiredFields.every(id =>
+                document.getElementById(id).value.trim() !== ''
+            );
+            const btn = document.getElementById('btnTambahKegiatan');
+            if (btn) {
+                if (allFilled) {
+                    btn.classList.remove('hidden');
+                } else {
+                    btn.classList.add('hidden');
+                }
+            }
+        }
+
+        function autofillNama(npmFieldId, namaFieldId) {
+            const npm = document.getElementById(npmFieldId).value.trim();
+            const namaField = document.getElementById(namaFieldId);
+
+            if (npm.length >= 8 && studentData && studentData[npm]) {
+                const student = studentData[npm];
+                if (student.namaLengkap) {
+                    namaField.value = student.namaLengkap;
+                    namaField.style.backgroundColor = '#e8f5e8';
+                } else {
+                    namaField.value = '';
+                    namaField.style.backgroundColor = '';
+                }
+            } else {
+                namaField.value = '';
+                namaField.style.backgroundColor = '';
+            }
+            // Always check data diri to update button state
+            checkDataDiri();
+        }
+
+        function showKegiatanSection() {
+            document.getElementById('kegiatan-section').classList.remove('hidden');
+            document.getElementById('btnTambahKegiatan').classList.add('hidden');
+        }
+
+        function handleUploadNpmInput() {
+            const npmInput = document.getElementById('npm-upload');
+            const npm = (npmInput ? npmInput.value.trim() : '').replace(/[^0-9]/g, '');
+            clearUploadForm();
+            clearTimeout(window.npmInputTimeout);
+            if (npm.length >= 6) {
+                // Tampilkan loader segera saat mulai memeriksa NPM
+                if (typeof showNpmLoading === 'function') {
+                    showNpmLoading();
+                }
+                window.npmInputTimeout = setTimeout(() => {
+                    validateAndFillUploadForm(npm);
+                }, 500);
+            }
+        }
+
+        // PERBAIKAN - Upload form validation
+        function validateAndFillUploadForm(npm) {
+            console.log("🔍 Validating NPM:", npm);
+
+            if (!npm || npm.length < 6) {
+                return;
+            }
+
+            // Check if acceptedStudentData exists and is object
+            if (!acceptedStudentData || typeof acceptedStudentData !== 'object') {
+                console.warn("⚠️ acceptedStudentData is not a valid object:", acceptedStudentData);
+
+                if (npm.length >= 10) {
+                    showStatusMessage("Data sedang dimuat. Silakan tunggu sebentar.", "warning");
+                }
+                return;
+            }
+
+            // Check if acceptedStudentData is empty
+            const studentKeys = Object.keys(acceptedStudentData);
+            if (studentKeys.length === 0) {
+                console.warn("⚠️ acceptedStudentData is empty");
+
+                if (npm.length >= 10) {
+                    showStatusMessage("Belum ada mahasiswa yang disetujui. Silakan hubungi admin.", "warning");
+                }
+                return;
+            }
+
+            console.log("📋 Available students:", studentKeys);
+
+            // Check if specific NPM exists
+            if (acceptedStudentData.hasOwnProperty(npm) && acceptedStudentData[npm]) {
+                const studentInfo = acceptedStudentData[npm];
+                console.log("✅ Student found:", studentInfo);
+
+                // Tutup loader NPM dan alert jika ada
+                if (typeof hideNpmLoading === 'function') {
+                    hideNpmLoading();
+                }
+                if (window.Swal && typeof Swal.close === 'function') {
+                    try { Swal.close(); } catch (e) { }
+                }
+                if (typeof hideSuccessAlert === 'function') {
+                    hideSuccessAlert();
+                }
+                if (typeof hideDataLoading === 'function') {
+                    hideDataLoading();
+                }
+
+                // Clear any warning messages
+                const statusDiv = document.getElementById('upload-status-info');
+                if (statusDiv) {
+                    statusDiv.classList.add('hidden');
+                    statusDiv.innerHTML = '';
+                }
+
+                // Fill the form - PERBAIKAN dengan field mapping yang tepat
+                document.getElementById('namaLengkap-upload').value = studentInfo.nama || studentInfo.namaLengkap || '';
+                document.getElementById('blok-upload').value = studentInfo.blok || '';
+                document.getElementById('jenisKegiatan-upload').value = studentInfo.jenisKegiatan || '';
+
+                // Debug detail kegiatan
+                console.log('DEBUG detailKegiatan:', studentInfo.detailKegiatan, 'DEBUG detail:', studentInfo.detail);
+
+                // Isi Detail Kegiatan dari detailKegiatan (fallback ke detail jika ada)
+                document.getElementById('detail-upload').value =
+                    (studentInfo.detailKegiatan || studentInfo.detail || '');
+
+                // Tanggal sudah diformat di backend (dd/mm/yyyy), tampilkan langsung
+                document.getElementById('tanggal-upload').value = (studentInfo.tanggal || '');
+
+                // Panel Data Mahasiswa di tab Upload dihapus, tidak ditampilkan
+                // displayStudentInfo(npm, studentInfo);
+                const infoPanel = document.getElementById('student-info-display');
+                if (infoPanel) { infoPanel.classList.add('hidden'); }
+
+            } else {
+                if (npm.length >= 10) {
+                    showStatusMessage(`NPM ${npm} belum disetujui oleh PRODI. Silakan tunggu atau hubungi admin PRODI.`, "warning");
+                }
+                // Tutup loader saat NPM tidak ditemukan agar form bisa diisi ulang
+                if (typeof hideNpmLoading === 'function') {
+                    hideNpmLoading();
+                }
+                if (window.Swal && typeof Swal.close === 'function') {
+                    try { Swal.close(); } catch (e) { }
+                }
+                if (typeof hideSuccessAlert === 'function') {
+                    hideSuccessAlert();
+                }
+            }
+
+            checkUploadForm();
+        }
+
+        function clearUploadForm() {
+            document.getElementById('namaLengkap-upload').value = '';
+            document.getElementById('blok-upload').value = '';
+            document.getElementById('jenisKegiatan-upload').value = '';
+            document.getElementById('detail-upload').value = '';
+            document.getElementById('tanggal-upload').value = '';
+
+        }
+
+        function displayStudentInfo(npm, studentInfo) {
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = value;
+                } else {
+                    console.warn(`Elemen #${id} tidak ditemukan saat displayStudentInfo`);
+                }
+            };
+
+            setText('display-npm', npm);
+            setText('display-nama', studentInfo.nama || studentInfo.namaLengkap || '-');
+            setText('display-email', studentInfo.email || '-');
+            setText('display-hp', studentInfo.noHp || '-');
+
+            if (studentInfo.timestamp) {
+                try {
+                    const date = new Date(studentInfo.timestamp);
+                    setText('display-tanggal', date.toLocaleDateString('id-ID'));
+                } catch (e) {
+                    setText('display-tanggal', String(studentInfo.timestamp));
+                }
+            } else {
+                setText('display-tanggal', '-');
+            }
+
+            // Display kegiatan details
+            const kegiatanContainer = document.getElementById('kegiatan-details');
+            if (!kegiatanContainer) {
+                console.warn('Elemen #kegiatan-details tidak ditemukan saat displayStudentInfo');
+                return;
+            }
+
+            kegiatanContainer.innerHTML = '';
+
+            if (studentInfo.kegiatan && Array.isArray(studentInfo.kegiatan) && studentInfo.kegiatan.length > 0) {
+                studentInfo.kegiatan.forEach(kegiatan => {
+                    const kegiatanDiv = document.createElement('div');
+                    kegiatanDiv.className = 'kegiatan-item';
+                    kegiatanDiv.innerHTML = `
+                        <strong>${kegiatan.jenis || 'Unknown'}</strong><br>
+                        <small>Detail: ${kegiatan.detail || 'N/A'}</small>
+                    `;
+                    kegiatanContainer.appendChild(kegiatanDiv);
+                });
+            } else {
+                kegiatanContainer.innerHTML = '<p>Tidak ada data kegiatan</p>';
+            }
+        }
+
+        function checkUploadForm() {
+            const npm = document.getElementById('npm-upload').value.trim();
+            const nama = document.getElementById('namaLengkap-upload').value.trim();
+            const fileAcc = document.getElementById('fileAcc').files.length > 0;
+            const fileBukti = document.getElementById('fileBukti').files.length > 0;
+
+            const isAcceptedStudent = npm && acceptedStudentData[npm];
+            const hasRequiredData = npm && nama;
+            const hasFiles = fileAcc && fileBukti;
+
+            const allFilled = isAcceptedStudent && hasRequiredData && hasFiles;
+
+            document.getElementById('btnSubmitUpload').classList.toggle('hidden', !allFilled);
+        }
+
+        // Dynamic form sections
+        function showDynamicSection() {
+            const jenisKegiatan = document.getElementById('jenisKegiatan').value;
+
+            // Hide all sections
+            document.querySelectorAll('.dynamic-section').forEach(section => {
+                section.classList.remove('show');
+            });
+
+            // Clear detail section
+            const detailSection = document.getElementById('detail-section');
+            detailSection.innerHTML = '';
+
+            // Hide common fields and praktikum adder
+            document.getElementById('common-fields').classList.add('hidden');
+
+            if (!jenisKegiatan) {
+                return;
+            }
+
+            // Show common fields
+            document.getElementById('common-fields').classList.remove('hidden');
+
+            let html = '';
+
+            if (jenisKegiatan === 'Ujian') {
+                html = createDropdownSection('detailKegiatan', 'Pilihan Ujian', 'getUjianOptions') +
+                    createDateSection('tanggalKegiatan', 'Tanggal Kegiatan Ujian');
+            } else if (jenisKegiatan === 'SGD') {
+                html = createDropdownSection('pilihanSgd', 'Pilihan SGD', 'getSgdOptions') +
+                    createDropdownSection('detailSgd', 'Detail SGD', 'getDetailSgdOptions') +
+                    createDateSection('tanggalKegiatan', 'Tanggal Kegiatan SGD');
+            } else if (jenisKegiatan === 'KKD') {
+                html = createDropdownSection('pilihanKkd', 'Pilihan KKD', 'getKkdOptions') +
+                    createDropdownSection('detailKkd', 'Detail KKD', 'getDetailKkdOptions') +
+                    createDateSection('tanggalKegiatan', 'Tanggal Kegiatan KKD');
+            } else if (jenisKegiatan === 'Praktikum') {
+                html = createPraktikumEntry();
+            }
+
+            detailSection.innerHTML = html;
+
+            // Load options for dropdowns
+            if (jenisKegiatan === 'Praktikum') {
+                loadPraktikumOptions();
+            } else {
+                detailSection.querySelectorAll('select').forEach(select => {
+                    const fetcher = select.dataset.fetcher;
+                    if (fetcher && google.script.run[fetcher]) {
+                        google.script.run
+                            .withSuccessHandler(populateSelectOptions(select.id))
+                            .withFailureHandler((error) => {
+                                console.error(`Error loading options for ${select.id}:`, error);
+                            })
+                        [fetcher]();
+                    }
+                });
+            }
+        }
+
+        function createDropdownSection(id, label, fetcherFunction) {
+            return `
+                <div class="form-group">
+                    <label for="${id}">${label} <span style="color: red;">*</span></label>
+                    <select id="${id}" name="${id}" data-fetcher="${fetcherFunction}" required>
+                        <option value="">Pilih...</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        function createDateSection(id, label) {
+            return `
+                <div class="form-group">
+                    <label for="${id}">${label} <span style="color: red;">*</span></label>
+                    <input type="date" id="${id}" name="${id}" required>
+                </div>
+            `;
+        }
+
+        function createPraktikumEntry() {
+            return `
+                <div class="praktikum-item" id="praktikum-entry">
+                    <div class="form-group">
+                        <label for="lab">Pilihan LAB <span style="color: red;">*</span></label>
+                        <select id="lab" name="lab" required>
+                            <option value="">Pilih LAB...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="kegiatanLab">Kegiatan LAB <span style="color: red;">*</span></label>
+                        <select id="kegiatanLab" name="kegiatanLab" required>
+                            <option value="">Pilih Kegiatan...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal Praktikum <span style="color: red;">*</span></label>
+                        <input type="date" id="tanggal" name="tanggal" required>
+                    </div>
+                </div>
+            `;
+        }
+
+
+
+        function loadPraktikumOptions() {
+            if (google.script.run.getLabOptions) {
+                google.script.run
+                    .withSuccessHandler((options) => {
+                        populateSelectOptions('lab')(options);
+                    })
+                    .withFailureHandler((error) => {
+                        console.error('Error loading lab options:', error);
+                    })
+                    .getLabOptions();
+            }
+
+            if (google.script.run.getKegiatanLabOptions) {
+                google.script.run
+                    .withSuccessHandler((options) => {
+                        populateSelectOptions('kegiatanLab')(options);
+                    })
+                    .withFailureHandler((error) => {
+                        console.error('Error loading kegiatan lab options:', error);
+                    })
+                    .getKegiatanLabOptions();
+            }
+        }
+
+        function populateSelectOptions(selectId) {
+            return function (options) {
+                const select = document.getElementById(selectId);
+                if (select && Array.isArray(options)) {
+                    // Clear existing options except first
+                    while (select.children.length > 1) {
+                        select.removeChild(select.lastChild);
+                    }
+
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        select.appendChild(optionElement);
+                    });
+                }
+            };
+        }
+
+        // Form submission handlers
+        function handleRegistrationSubmit(e) {
+            e.preventDefault();
+
+            // Helper lokal: normalisasi & pembentuk key
+            const normalize = (s) => String(s || '')
+                .toLowerCase()
+                .normalize('NFKD')
+                .replace(/\p{Diacritic}/gu, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const buildFormKey = (fd) => {
+                const npm = String(fd.npm || '').trim();
+                const nama = normalize(fd.namaLengkap);
+                const blok = normalize(fd.blok);
+                const jenis = normalize(fd.jenisKegiatan);
+                let detail = '';
+                let tanggal = '';
+                if (jenis === 'ujian') {
+                    detail = normalize(fd.detailKegiatan);
+                    tanggal = normalize(fd.tanggalKegiatan);
+                } else if (jenis === 'sgd') {
+                    detail = [normalize(fd.pilihanSgd), normalize(fd.detailSgd)].filter(Boolean).join(' | ');
+                    tanggal = normalize(fd.tanggalKegiatan);
+                } else if (jenis === 'kkd') {
+                    detail = [normalize(fd.pilihanKkd), normalize(fd.detailKkd)].filter(Boolean).join(' | ');
+                    tanggal = normalize(fd.tanggalKegiatan);
+                } else if (jenis === 'praktikum') {
+                    const p = Array.isArray(fd.praktikum) && fd.praktikum.length ? fd.praktikum[0] : {};
+                    detail = [normalize(p.lab), normalize(p.kegiatanLab)].filter(Boolean).join(' | ');
+                    tanggal = normalize(p.tanggal);
+                }
+                return [npm, nama, blok, jenis, detail, tanggal].join('||');
+            };
+
+            const preflightDuplicateCheck = (fd) => {
+                const localKey = buildFormKey(fd);
+
+                // Cek lokal (sesi ini)
+                if (submittedKeys.has(localKey)) {
+                    return Promise.resolve({ isDuplicate: true, message: 'Data yang sama sudah dikirim pada sesi ini.' });
+                }
+
+                // Cek backend jika tersedia
+                if (window.google && google.script && google.script.run && google.script.run.checkExactDuplicate) {
+                    return new Promise((resolve, reject) => {
+                        google.script.run
+                            .withSuccessHandler(resolve)
+                            .withFailureHandler(reject)
+                            .checkExactDuplicate(fd);
+                    });
+                }
+
+                // Fallback: anggap tidak duplikat jika backend tidak tersedia
+                return Promise.resolve({ isDuplicate: false });
+            };
+
+            if (isSubmitting) {
+                console.log('⏳ Already submitting, prevent double submit');
+                return;
+            }
+
+            isSubmitting = true;
+            showLoading('daftar');
+
+            let formData;
+            try {
+                formData = collectFormData();
+                console.log('📊 Form data collected:', JSON.stringify(formData, null, 2));
+            } catch (error) {
+                console.error('❌ Error collecting form data:', error);
+                alert('Gagal mengumpulkan data form: ' + error.message);
+                isSubmitting = false;
+                hideLoading();
+                return;
+            }
+
+            if (!formData || Object.keys(formData).length === 0) {
+                console.warn('⚠️ Form data is empty');
+                alert('Form data tidak lengkap. Silakan isi semua field yang diperlukan.');
+                isSubmitting = false;
+                hideLoading();
+                return;
+            }
+
+            // Preflight cek duplikasi sebelum proses file/upload
+            preflightDuplicateCheck(formData)
+                .then((result) => {
+                    if (result && (result.isDuplicate || result.blocked)) {
+                        const msg = result.message || 'Data yang sama sudah terdaftar. Silakan cek status atau ubah data.';
+                        console.warn('⚠️ Duplicate detected:', result);
+                        isSubmitting = false;
+                        hideLoading();
+                        if (window.Swal) {
+                            Swal.fire({ title: 'Duplikat terdeteksi', text: msg, icon: 'warning' });
+                        } else {
+                            alert(msg);
+                        }
+                        return;
+                    }
+
+                    // Simpan key terakhir untuk penanda lokal setelah sukses
+                    window.__lastSubmitKey = buildFormKey(formData);
+
+                    // Handle file upload jika ada
+                    const fileInput = document.getElementById('suratKeterangan');
+                    if (fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+
+                        // Check file size (5MB max)
+                        if (file.size > 5 * 1024 * 1024) {
+                            console.warn('⚠️ File too large:', file.size);
+                            alert('Ukuran file terlalu besar. Maksimal 5MB.');
+                            isSubmitting = false;
+                            hideLoading();
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            console.log('✅ File read successfully:', file.name);
+                            formData.fileSurat = {
+                                name: file.name,
+                                type: file.type,
+                                base64: e.target.result.split(',')[1]
+                            };
+
+                            submitFormData(formData);
+                        };
+
+                        reader.onerror = function (error) {
+                            console.error('❌ File reading failed:', error);
+                            alert('Gagal membaca file: ' + error.message);
+                            isSubmitting = false;
+                            hideLoading();
+                        };
+
+                        reader.readAsDataURL(file);
+                    } else {
+                        submitFormData(formData);
+                    }
+                })
+                .catch((error) => {
+                    console.error('❌ Duplicate preflight check failed:', error);
+                    // Fallback: lanjutkan submit untuk menghindari blokir palsu
+                    window.__lastSubmitKey = buildFormKey(formData);
+                    const fileInput = document.getElementById('suratKeterangan');
+                    if (fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        if (file.size > 5 * 1024 * 1024) {
+                            console.warn('⚠️ File too large:', file.size);
+                            alert('Ukuran file terlalu besar. Maksimal 5MB.');
+                            isSubmitting = false;
+                            hideLoading();
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            formData.fileSurat = {
+                                name: file.name,
+                                type: file.type,
+                                base64: e.target.result.split(',')[1]
+                            };
+                            submitFormData(formData);
+                        };
+                        reader.onerror = function (err) {
+                            console.error('❌ File reading failed:', err);
+                            alert('Gagal membaca file: ' + err.message);
+                            isSubmitting = false;
+                            hideLoading();
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        submitFormData(formData);
+                    }
+                });
+        }
+
+        function submitFormData(formData) {
+            console.log('🚀 Submitting form data to server');
+
+            const timeoutMs = 30000; // 30 seconds timeout
+
+            const runPromise = new Promise((resolve, reject) => {
+                google.script.run
+                    .withSuccessHandler(resolve)
+                    .withFailureHandler(reject)
+                    .processRegistration(formData);
+            });
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout after ' + timeoutMs + 'ms')), timeoutMs)
+            );
+
+            Promise.race([runPromise, timeoutPromise])
+                .then(response => {
+                    console.log('✅ Server response received');
+                    formSubmitSuccess(response);
+                })
+                .catch(error => {
+                    console.error('❌ Submit error:', error);
+                    formSubmitFailure(error);
+                });
+        }
+
+        function handleUploadSubmit(e) {
+            e.preventDefault();
+
+            if (isSubmitting) {
+                console.log('⏳ Already submitting, prevent double submit');
+                return;
+            }
+
+            // Validate required fields
+            const npm = document.getElementById('npm-upload').value.trim();
+            const fileAcc = document.getElementById('fileAcc').files[0];
+            const fileBukti = document.getElementById('fileBukti').files[0];
+
+            if (!npm) {
+                alert('NPM harus diisi');
+                return;
+            }
+
+            if (!fileAcc) {
+                alert('File ACC INHAL harus diupload');
+                return;
+            }
+
+            if (!fileBukti) {
+                alert('File Bukti Bayar harus diupload');
+                return;
+            }
+
+            isSubmitting = true;
+            showLoading('upload');
+
+            console.log('🔄 Processing upload form...');
+
+            // Prepare upload data
+            const _studentInfo = acceptedStudentData && acceptedStudentData[npm] ? acceptedStudentData[npm] : {};
+            const uploadData = {
+                npm: npm,
+                namaLengkap: document.getElementById('namaLengkap-upload').value || '',
+                blok: document.getElementById('blok-upload').value || '',
+                jenisKegiatan: document.getElementById('jenisKegiatan-upload').value || '',
+                detail: document.getElementById('detail-upload').value || '',
+                tanggal: document.getElementById('tanggal-upload').value || '',
+                idPengajuan: _studentInfo.idPengajuan || '' // ← kunci unik untuk matching baris
+            };
+
+            console.log('📊 Upload data prepared:', uploadData);
+
+            // Handle file ACC INHAL
+            const readerAcc = new FileReader();
+            readerAcc.onload = function (e) {
+                const base64Acc = e.target.result.split(',')[1];
+                uploadData.fileAcc = {
+                    name: fileAcc.name,
+                    type: fileAcc.type,
+                    base64: base64Acc
+                };
+
+                console.log('✅ ACC file prepared:', fileAcc.name);
+
+                // Handle file Bukti Bayar
+                const readerBukti = new FileReader();
+                readerBukti.onload = function (e) {
+                    const base64Bukti = e.target.result.split(',')[1];
+                    uploadData.fileBukti = {
+                        name: fileBukti.name,
+                        type: fileBukti.type,
+                        base64: base64Bukti
+                    };
+
+                    console.log('✅ Bukti file prepared:', fileBukti.name);
+                    console.log('🚀 Sending complete upload data:', uploadData);
+
+                    // Send to backend
+                    google.script.run
+                        .withSuccessHandler(uploadSuccess)
+                        .withFailureHandler(uploadFailure)
+                        .processUpload(uploadData);
+                };
+                readerBukti.readAsDataURL(fileBukti);
+            };
+            readerAcc.readAsDataURL(fileAcc);
+        }
+
+        function collectFormData() {
+            const formData = {
+                npm: document.getElementById('npm').value,
+                namaLengkap: document.getElementById('namaLengkap').value,
+                email: document.getElementById('email').value,
+                noHp: document.getElementById('noHp').value,
+                blok: document.getElementById('blok').value,
+                jenisKegiatan: document.getElementById('jenisKegiatan').value,
+                keterangan: document.getElementById('keterangan').value
+            };
+
+            const jenisKegiatan = formData.jenisKegiatan;
+
+            if (jenisKegiatan === 'Ujian') {
+                formData.detailKegiatan = document.getElementById('detailKegiatan').value;
+                formData.tanggalKegiatan = document.getElementById('tanggalKegiatan').value;
+            } else if (jenisKegiatan === 'SGD') {
+                formData.pilihanSgd = document.getElementById('pilihanSgd').value;
+                formData.detailSgd = document.getElementById('detailSgd').value;
+                formData.tanggalKegiatan = document.getElementById('tanggalKegiatan').value;
+            } else if (jenisKegiatan === 'KKD') {
+                formData.pilihanKkd = document.getElementById('pilihanKkd').value;
+                formData.detailKkd = document.getElementById('detailKkd').value;
+                formData.tanggalKegiatan = document.getElementById('tanggalKegiatan').value;
+            } else if (jenisKegiatan === 'Praktikum') {
+                formData.praktikum = [];
+                const lab = document.querySelector('select[name="lab"]').value;
+                const kegiatanLab = document.querySelector('select[name="kegiatanLab"]').value;
+                const tanggal = document.querySelector('input[name="tanggal"]').value;
+
+                if (lab || kegiatanLab || tanggal) {
+                    formData.praktikum.push({
+                        lab: lab,
+                        kegiatanLab: kegiatanLab,
+                        tanggal: tanggal
+                    });
+                }
+            }
+
+            return formData;
+        }
+
+        // Response handlers
+        function formSubmitSuccess(response) {
+            isSubmitting = false;
+            hideLoading();
+
+            console.log('✅ Registration success:', response);
+
+            if (response && response.success) {
+                if (window.__lastSubmitKey) {
+                    try { submittedKeys.add(window.__lastSubmitKey); } catch (e) { }
+                }
+                showSuccessAlert('Terimakasih, Data anda akan diproses', () => {
+                    if (window.parent && window.parent !== window) {
+                        try { localStorage.setItem('inhal_registration_submitted', String(Date.now())); } catch (e) { }
+                        window.parent.postMessage({
+                            type: 'inhal_registration_submitted',
+                            portalItem: response.portalItem || null
+                        }, '*');
+                    } else {
+                        location.reload();
+                    }
+                });
+            } else {
+                formSubmitFailure({ message: response?.message || "Unknown error occurred" });
+            }
+        }
+
+        function formSubmitFailure(error) {
+            isSubmitting = false;
+            hideLoading();
+
+            console.error('❌ Registration failed:', error);
+            alert('Pendaftaran gagal: ' + error.message);
+        }
+
+        function uploadSuccess(response) {
+            isSubmitting = false;
+            hideLoading();
+
+            console.log('✅ Upload success response:', response);
+
+            if (response && response.success) {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Terimakasih, data anda akan diproses',
+                        icon: 'success'
+                    }).then(() => location.reload());
+                } else {
+                    alert('Terimakasih, data anda akan diproses');
+                    location.reload();
+                }
+            } else {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Upload gagal',
+                        text: response?.message || 'Unknown error',
+                        icon: 'error'
+                    });
+                } else {
+                    alert('Upload gagal: ' + (response?.message || 'Unknown error'));
+                }
+            }
+        }
+
+        function uploadFailure(error) {
+            isSubmitting = false;
+            hideLoading();
+
+            console.error('❌ Upload failed:', error);
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Upload gagal',
+                    text: error?.message || 'Unknown error',
+                    icon: 'error'
+                });
+            } else {
+                alert('Upload gagal: ' + (error?.message || 'Unknown error'));
+            }
+        }
+
+        // UI helper functions
+        function showStatusMessage(message, type = "info") {
+            const statusDiv = document.getElementById('upload-status-info');
+            if (statusDiv) {
+                let className = 'success-info';
+                let icon = '✅';
+
+                if (type === 'warning') {
+                    className = 'warning-info';
+                    icon = '⚠️';
+                } else if (type === 'error') {
+                    className = 'error-info';
+                    icon = '❌';
+                }
+
+                statusDiv.innerHTML = `<div class="${className}"><strong>${icon} ${message}</strong></div>`;
+                statusDiv.classList.remove('hidden');
+
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusDiv.classList.add('hidden');
+                    }, 5000);
+                }
+            }
+        }
+
+        function showLoading(type) {
+            const loadingId = type === 'daftar' ? 'loadingDaftar' : 'loadingUpload';
+            document.getElementById(loadingId).style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingDaftar').style.display = 'none';
+            document.getElementById('loadingUpload').style.display = 'none';
+        }
+
+        function showDataLoading() {
+            document.getElementById('dataLoading').style.display = 'flex';
+            window.dataLoadingTimeout = setTimeout(() => {
+                hideDataLoading();
+                showStatusMessage("Data gagal dimuat. Silakan refresh halaman.", "error");
+            }, 10000); // 10 detik timeout
+        }
+
+        function hideDataLoading() {
+            document.getElementById('dataLoading').style.display = 'none';
+            if (window.dataLoadingTimeout) clearTimeout(window.dataLoadingTimeout);
+        }
+
+        function showSuccessAlert(message, callback) {
+            const alertDiv = document.getElementById('successAlert');
+            const messageDiv = document.getElementById('successMessage');
+
+            messageDiv.textContent = message;
+            alertDiv.classList.add('show');
+
+            // Store callback for later use
+            alertDiv.dataset.callback = callback ? 'true' : 'false';
+            if (callback) {
+                window.successCallback = callback;
+            }
+        }
+
+        function hideSuccessAlert() {
+            const alertDiv = document.getElementById('successAlert');
+            alertDiv.classList.remove('show');
+
+            if (alertDiv.dataset.callback === 'true' && window.successCallback) {
+                window.successCallback();
+                window.successCallback = null;
+            }
+        }
+
+        // duplicate validateAndFillUploadForm removed to avoid override
+    </script>
 </body>
+
 </html>

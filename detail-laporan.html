@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Laporan - INHAL FKIK UMSU</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === CSS VARIABLES === */
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-light: #e0e7ff;
+            --primary-50: #eef2ff;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --info: #06b6d4;
+            --info-light: #cffafe;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --card-shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+            --card-shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+            --content-bg: #f8fafc;
+        }
+
+        body {
+            background-color: var(--content-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--gray-800);
+        }
+
+        /* Navigation Tabs */
+        .nav-pills .nav-link {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            color: var(--gray-600);
+            background: white;
+            margin-right: 8px;
+            border: 1px solid var(--gray-200);
+            transition: all 0.2s;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: var(--card-shadow);
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            background-color: var(--primary-50);
+            color: var(--primary);
+            border-color: var(--primary-light);
+        }
+
+        /* Executive Summary */
+        .exec-card {
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .exec-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow-md);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .bg-teal-light {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        .bg-green-light {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .bg-red-light {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .bg-blue-light {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .bg-orange-light {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .bg-purple-light {
+            background: #f3f0ff;
+            color: #7950f2;
+        }
+
+        /* Dosen Report */
+        .dosen-card {
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .dosen-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left-color: var(--primary);
+        }
+
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .acc-icons {
+            display: grid;
+            grid-template-columns: repeat(5, 22px);
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .acc-icons a,
+        .acc-icons span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+        }
+
+        .stack-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stack-list > div {
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .dosen-table-wrap {
+            overflow-x: auto;
+        }
+
+        .report-table-dosen {
+            width: 100%;
+            min-width: 1160px;
+            table-layout: fixed;
+        }
+
+        .report-table-dosen thead th {
+            white-space: nowrap;
+            vertical-align: middle;
+            font-size: 0.95rem;
+        }
+
+        .report-table-dosen tbody td {
+            vertical-align: middle;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .report-table-dosen col.col-dosen-name { width: 27%; }
+        .report-table-dosen col.col-dosen-total { width: 9%; }
+        .report-table-dosen col.col-dosen-detail { width: 18%; }
+        .report-table-dosen col.col-dosen-blok { width: 18%; }
+        .report-table-dosen col.col-dosen-date { width: 13%; }
+        .report-table-dosen col.col-dosen-acc { width: 5%; }
+        .report-table-dosen col.col-dosen-biaya { width: 10%; }
+
+        .report-table-dosen td:nth-child(2),
+        .report-table-dosen td:nth-child(6),
+        .report-table-dosen td:nth-child(7) {
+            white-space: nowrap;
+        }
+
+        .report-table-dosen td:nth-child(5),
+        .report-table-dosen .tanggal-stack > div {
+            white-space: nowrap;
+        }
+
+        .report-table-dosen .nama-dosen-cell h6 {
+            line-height: 1.35;
+        }
+
+        .report-table-dosen .detail-stack,
+        .report-table-dosen .blok-stack,
+        .report-table-dosen .tanggal-stack {
+            gap: 6px;
+        }
+
+        .report-table-dosen .biaya-cell {
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.01em;
+        }
+
+        .report-table-dosen .total-cell .btn-link {
+            font-variant-numeric: tabular-nums;
+            text-decoration: none;
+        }
+
+        .report-table-dosen .total-cell .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 991.98px) {
+            .report-table-dosen {
+                min-width: 1080px;
+            }
+        }
+
+        /* Bagian Report */
+        .bagian-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 15px 20px;
+        }
+
+        /* Analytical Data */
+        .pivot-table th {
+            background-color: var(--gray-50);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cell-num {
+            text-align: right;
+        }
+
+        .heatmap-high {
+            background-color: var(--success-light);
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .heatmap-med {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .heatmap-low {
+            color: var(--gray-400);
+        }
+
+        /* Modernized Styles */
+        .btn {
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .btn-outline-primary {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        .card {
+            border: 1px solid var(--gray-200) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--card-shadow) !important;
+        }
+        .card-header {
+            background: white !important;
+            border-bottom: 1px solid var(--gray-100) !important;
+        }
+    </style>
+</head>
+
+<body class="p-4">
+
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <h1 class="h3 fw-bold text-gray-900 mb-1">Detail Laporan</h1>
+                <p class="text-muted small mb-0">Analisis mendalam data Inhal mahasiswa, dosen, dan bagian.</p>
+            </div>
+            <a href="#" class="btn btn-outline-primary shadow-sm" id="btn-kembali">
+                <i class="bi bi-arrow-left me-2"></i>Kembali ke Dashboard
+            </a>
+        </div>
+
+        <ul class="nav nav-pills mb-4 justify-content-start" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-exec-tab" data-bs-toggle="pill" data-bs-target="#pills-exec"
+                    type="button" role="tab">
+                    <i class="bi bi-pie-chart-fill me-1"></i>Executive Summary
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-dosen-tab" data-bs-toggle="pill" data-bs-target="#pills-dosen"
+                    type="button" role="tab">
+                    <i class="bi bi-person-badge-fill me-1"></i>Laporan Dosen
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-bagian-tab" data-bs-toggle="pill" data-bs-target="#pills-bagian"
+                    type="button" role="tab">
+                    <i class="bi bi-building-fill me-1"></i>Laporan Bagian
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-data-tab" data-bs-toggle="pill" data-bs-target="#pills-data"
+                    type="button" role="tab">
+                    <i class="bi bi-grid-3x3-gap-fill me-1"></i>Laporan Blok
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="pills-tabContent">
+
+            <!-- 1. EXECUTIVE SUMMARY -->
+            <div class="tab-pane fade show active" id="pills-exec" role="tabpanel">
+                <div class="row g-4">
+                    <!-- Top Stats -->
+                    <div class="col-md-3">
+                        <div class="exec-card p-4 d-flex align-items-center gap-3">
+                            <div class="stat-icon bg-blue-light"><i class="bi bi-people-fill"></i></div>
+                            <div>
+                                <h6 class="text-uppercase text-gray-500 fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Pendaftar</h6>
+                                <h3 class="fw-extrabold mb-0 text-gray-900" id="total-pendaftar">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="exec-card p-4 d-flex align-items-center gap-3">
+                            <div class="stat-icon bg-green-light"><i class="bi bi-check-circle-fill"></i></div>
+                            <div>
+                                <h6 class="text-uppercase text-gray-500 fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Diterima (ACC)</h6>
+                                <h3 class="fw-extrabold mb-0 text-success" id="total-diterima">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="exec-card p-4 d-flex align-items-center gap-3">
+                            <div class="stat-icon bg-teal-light"><i class="bi bi-wallet2"></i></div>
+                            <div>
+                                <h6 class="text-uppercase text-gray-500 fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Pembayaran</h6>
+                                <h3 class="fw-extrabold mb-0 text-info" id="total-biaya">Rp 0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="exec-card p-4 d-flex align-items-center gap-3">
+                            <div class="stat-icon bg-red-light"><i class="bi bi-x-circle-fill"></i></div>
+                            <div>
+                                <h6 class="text-uppercase text-gray-500 fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Ditolak</h6>
+                                <h3 class="fw-extrabold mb-0 text-danger" id="total-ditolak">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart / Breakdown Area -->
+                    <div class="col-md-8">
+                        <div class="exec-card p-4 h-100">
+                            <h5 class="fw-bold mb-4">Tren Pendaftaran per Bulan</h5>
+                            <div style="height: 250px;">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="exec-card p-4 h-100">
+                            <h5 class="fw-bold mb-4">Jenis Kegiatan</h5>
+                            <div style="height: 250px;">
+                                <canvas id="jenisChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. LAPORAN PER DOSEN -->
+            <div class="tab-pane fade" id="pills-dosen" role="tabpanel">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="fw-bold mb-0 text-gray-900"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Laporan Dosen</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success btn-sm d-flex align-items-center"
+                                onclick="exportTableToExcel('dosen-table', 'Laporan_Dosen')">
+                                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                            </button>
+                            <div class="input-group input-group-sm w-auto search-box">
+                                <input type="text" id="dosen-search" class="form-control" placeholder="Cari nama dosen...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Filter Laporan Dosen -->
+                        <div class="p-3 bg-light border-bottom">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-sm-6 col-md-5">
+                                    <label class="form-label small fw-bold text-gray-600">Detail / Jenis Kegiatan</label>
+                                    <select id="dosen-filter-detail" class="form-select form-select-sm">
+                                        <option value="">Semua</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6 col-md-5">
+                                    <label class="form-label small fw-bold text-gray-600">Blok</label>
+                                    <select id="dosen-filter-blok" class="form-select form-select-sm">
+                                        <option value="">Semua</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-12 col-md-2 d-grid">
+                                    <button class="btn btn-sm btn-outline-secondary w-100"
+                                        onclick="resetDosenFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive border-0 dosen-table-wrap">
+                            <table id="dosen-table" class="table table-hover align-middle mb-0 modern-table report-table-dosen">
+                                <colgroup>
+                                    <col class="col-dosen-name">
+                                    <col class="col-dosen-total">
+                                    <col class="col-dosen-detail">
+                                    <col class="col-dosen-blok">
+                                    <col class="col-dosen-date">
+                                    <col class="col-dosen-acc">
+                                    <col class="col-dosen-biaya">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>Nama Dosen</th>
+                                        <th class="text-center">Total Mahasiswa</th>
+                                        <th>Detail / Jenis Kegiatan</th>
+                                        <th>Blok</th>
+                                        <th>Tanggal Pelaksanaan</th>
+                                        <th class="text-center">Bukti ACC</th>
+                                        <th class="text-end">Total Biaya</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">Memuat data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. LAPORAN PER BAGIAN -->
+            <div class="tab-pane fade" id="pills-bagian" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-gray-900"><i class="bi bi-building me-2 text-primary"></i>Laporan Bagian</h5>
+                        <button class="btn btn-sm btn-success d-flex align-items-center"
+                            onclick="exportTableToExcel('bagian-table', 'Laporan_Bagian')">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="p-3 bg-light border-bottom">
+                            <div class="row g-2">
+                                <div class="col-sm-6 col-md-3">
+                                    <label class="form-label small fw-bold text-gray-600">Bagian</label>
+                                    <select id="bagian-filter-bagian" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <label class="form-label small fw-bold text-gray-600">Pilihan</label>
+                                    <select id="bagian-filter-pilihan" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <label class="form-label small fw-bold text-gray-600">Detail/Kegiatan</label>
+                                    <select id="bagian-filter-detail" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <label class="form-label small fw-bold text-gray-600">Blok</label>
+                                    <select id="bagian-filter-blok" class="form-select form-select-sm"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive border-0">
+                            <table id="bagian-table" class="table table-hover align-middle mb-0 modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Bagian</th>
+                                        <th>Blok</th>
+                                        <th class="text-center">Total Mahasiswa</th>
+                                        <th>Jenis Kegiatan</th>
+                                        <th>Tanggal Pelaksanaan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">Memuat data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. REKAP PER BLOK -->
+            <div class="tab-pane fade" id="pills-data" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-gray-900"><i class="bi bi-grid-3x3 me-2 text-primary"></i>Rekapitulasi</h5>
+                        <button class="btn btn-sm btn-success d-flex align-items-center" onclick="exportTableToExcel('blok-table', 'Rekap_Blok')">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive border-0">
+                            <table id="blok-table" class="table table-bordered table-hover mb-0 pivot-table">
+                                <thead class="text-center"></thead>
+                                <tbody></tbody>
+                                <tfoot class="text-center fw-bold"></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="dosen-student-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dosen-student-modal-title">Daftar Mahasiswa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-muted mb-2" id="dosen-student-modal-subtitle"></div>
+                    <ul class="list-group list-group-flush" id="dosen-student-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Chart.js & SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Custom Scripts -->
+    <script>
+        // Sample data for testing - Remove this when using Google Apps Script
+        const sampleData = {
+            summary: { total: 150, accepted: 120, revenue: 75000000, rejected: 30 },
+            trend: { "Jan '25": 45, "Feb '25": 52, "Mar '25": 53 },
+            jenis: { "Ujian": 60, "Praktikum": 40, "SGD": 30, "KKD": 20 },
+            dosen: [
+                {
+                    nama: "Dr. Ahmad",
+                    peran: "Dosen Pengajar",
+                    students: [{ npm: "2001001", nama: "Budi" }, { npm: "2001002", nama: "Ani" }],
+                    detailJenis: "Ujian",
+                    detailList: ["Ujian Blok 1", "Ujian Blok 2"],
+                    blok: "Blok 1",
+                    blokList: ["Blok 1", "Blok 2"],
+                    tanggal: "2025-01-15",
+                    tanggalList: ["2025-01-15", "2025-01-20"],
+                    accItems: ["https://example.com/bukti1.pdf"],
+                    totalBiaya: 5000000
+                }
+            ],
+            bagian: [
+                {
+                    bagian: "Akademik",
+                    blok: "Blok 1",
+                    total: 50,
+                    jenisKegiatan: "Ujian",
+                    tanggalPelaksanaan: "2025-01-15",
+                    pilihan: "Reguler",
+                    detail: "Ujian Tengah Blok"
+                }
+            ],
+            bagianFilters: {
+                bagian: ["Akademik", "Kemahasiswaan"],
+                pilihan: ["Reguler", "Remedial"],
+                detail: ["Ujian Tengah Blok"],
+                blok: ["Blok 1", "Blok 2"]
+            },
+            blok: [
+                { nama: "Blok 1", types: { Ujian: 30, Praktikum: 20 }, total: 50 },
+                { nama: "Blok 2", types: { Ujian: 25, SGD: 15 }, total: 40 }
+            ]
+        };
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadData();
+        });
+
+        function loadData() {
+            // Try Google Apps Script first, fall back to sample data
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                Swal.fire({
+                    title: 'Memuat Data...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                google.script.run
+                    .withSuccessHandler(renderDashboard)
+                    .withFailureHandler(err => {
+                        Swal.fire('Error', 'Gagal memuat data: ' + err.message, 'error');
+                        console.log('Falling back to sample data');
+                        renderDashboard(sampleData);
+                    })
+                    .getDetailLaporanData();
+            } else {
+                // Use sample data when not in Google Apps Script environment
+                console.log('Using sample data (not in Google Apps Script)');
+                renderDashboard(sampleData);
+            }
+        }
+
+        let bagianDataAll = [];
+        let bagianFilterMeta = null;
+        let dosenDataAll = [];
+
+        function renderDashboard(data) {
+            if (typeof Swal !== 'undefined') Swal.close();
+            if (data.error) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', data.error, 'error');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+                return;
+            }
+
+            // 1. Render Summary Cards
+            if (document.getElementById('total-pendaftar')) document.getElementById('total-pendaftar').innerText = data.summary.total;
+            if (document.getElementById('total-diterima')) document.getElementById('total-diterima').innerText = data.summary.accepted;
+            if (document.getElementById('total-biaya')) document.getElementById('total-biaya').innerText = 'Rp ' + data.summary.revenue.toLocaleString('id-ID');
+            if (document.getElementById('total-ditolak')) document.getElementById('total-ditolak').innerText = data.summary.rejected;
+
+            // 2. Render Charts
+            renderTrendChart(data.trend);
+            renderJenisChart(data.jenis);
+
+            // 3. Render Tables
+            renderDosenTable(data.dosen);
+            renderBagianTable(data.bagian, data.bagianFilters);
+            renderRekapBlokTable(data.blok, data.jenis);
+        }
+
+        function formatBiayaDisplay(raw) {
+            if (raw == null || raw === '') return '-';
+            if (typeof raw === 'number') {
+                return 'Rp ' + raw.toLocaleString('id-ID');
+            }
+            const text = String(raw).trim();
+            if (!text) return '-';
+            const hasText = /gratis|praktikum|remediasi|posttest|rp/i.test(text);
+            const dotted = /^\d{1,3}(\.\d{3})+$/.test(text);
+            if (hasText || dotted) return text;
+            if (/^[0-9]+$/.test(text)) {
+                return 'Rp ' + Number(text).toLocaleString('id-ID');
+            }
+            const num = Number(text);
+            if (Number.isFinite(num)) {
+                return 'Rp ' + num.toLocaleString('id-ID');
+            }
+            return text;
+        }
+
+        function renderTrendChart(trendMap) {
+            const canvas = document.getElementById('trendChart');
+            if (!canvas) return;
+
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+
+            const monthMap = { "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "Mei": 4, "Jun": 5, "Jul": 6, "Agt": 7, "Sep": 8, "Okt": 9, "Nov": 10, "Des": 11 };
+            const parseLabel = (label) => {
+                const parts = String(label || '').split(" '");
+                if (parts.length < 2) return new Date();
+                const mon = parts[0];
+                const year = parts[1];
+                const monthIndex = monthMap[mon];
+                if (monthIndex !== undefined && year) {
+                    return new Date(parseInt('20' + year), monthIndex);
+                }
+                return new Date();
+            };
+
+            const labels = Object.keys(trendMap || {}).sort((a, b) => parseLabel(a) - parseLabel(b));
+            const values = labels.map(label => trendMap[label] || 0);
+
+            canvas.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Pendaftaran',
+                        data: values,
+                        borderColor: '#4f46e5',
+                        tension: 0.3,
+                        fill: true,
+                        backgroundColor: 'rgba(79, 70, 229, 0.05)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [2, 2] },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) { if (Math.floor(value) === value) { return value; } }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderJenisChart(jenisMap) {
+            const canvas = document.getElementById('jenisChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const labels = Object.keys(jenisMap);
+            const values = Object.values(jenisMap);
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#4f46e5', '#10b981', '#06b6d4', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function renderDosenTable(dosenList) {
+            dosenDataAll = Array.isArray(dosenList) ? dosenList : [];
+            window.__dosenData = dosenDataAll;
+            bindDosenModal();
+            setupDosenFilters(dosenDataAll);
+            
+            const searchEl = document.getElementById('dosen-search');
+            if (searchEl && !searchEl.dataset.bound) {
+                searchEl.addEventListener('input', applyDosenFilters);
+                searchEl.dataset.bound = '1';
+            }
+            
+            applyDosenFilters();
+        }
+
+        function setupDosenFilters(list) {
+            const detailEl = document.getElementById('dosen-filter-detail');
+            const blokEl = document.getElementById('dosen-filter-blok');
+
+            const allDetails = [];
+            const allBlok = [];
+            (list || []).forEach(d => {
+                (Array.isArray(d.detailList) ? d.detailList : (d.detailJenis ? [d.detailJenis] : [])).forEach(v => allDetails.push(v));
+                (Array.isArray(d.blokList) ? d.blokList : (d.blok ? [d.blok] : [])).forEach(v => allBlok.push(v));
+            });
+
+            setFilterOptions(detailEl, allDetails);
+            setFilterOptions(blokEl, allBlok);
+
+            [detailEl, blokEl].forEach(el => {
+                if (!el || el.dataset.dosenBound) return;
+                el.addEventListener('change', applyDosenFilters);
+                el.dataset.dosenBound = '1';
+            });
+        }
+
+        function applyDosenFilters() {
+            const detailVal = normalizeFilterValue(
+                document.getElementById('dosen-filter-detail') &&
+                document.getElementById('dosen-filter-detail').value
+            );
+            const blokVal = normalizeFilterValue(
+                document.getElementById('dosen-filter-blok') &&
+                document.getElementById('dosen-filter-blok').value
+            );
+            const searchVal = normalizeFilterValue(
+                document.getElementById('dosen-search') &&
+                document.getElementById('dosen-search').value
+            );
+
+            const filtered = (dosenDataAll || []).filter(d => {
+                if (detailVal) {
+                    const details = Array.isArray(d.detailList)
+                        ? d.detailList
+                        : (d.detailJenis ? [d.detailJenis] : []);
+                    if (!details.some(v => normalizeFilterValue(v) === detailVal)) return false;
+                }
+                if (blokVal) {
+                    const bloks = Array.isArray(d.blokList)
+                        ? d.blokList
+                        : (d.blok ? [d.blok] : []);
+                    if (!bloks.some(v => normalizeFilterValue(v) === blokVal)) return false;
+                }
+                if (searchVal) {
+                    const name = normalizeFilterValue(d.nama);
+                    if (!name.includes(searchVal)) return false;
+                }
+                return true;
+            });
+
+            _renderFilteredDosenRows(filtered);
+        }
+
+        function resetDosenFilters() {
+            const detailEl = document.getElementById('dosen-filter-detail');
+            const blokEl = document.getElementById('dosen-filter-blok');
+            const searchEl = document.getElementById('dosen-search');
+            if (detailEl) detailEl.value = '';
+            if (blokEl) blokEl.value = '';
+            if (searchEl) searchEl.value = '';
+            applyDosenFilters();
+        }
+
+        function _renderFilteredDosenRows(dosenList) {
+            const tbody = document.querySelector('#dosen-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!dosenList || dosenList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                return;
+            }
+
+            dosenList.forEach((d, index) => {
+                const originalIndex = dosenDataAll.indexOf(d);
+                const tr = document.createElement('tr');
+                const nama = d.nama || '-';
+                const students = Array.isArray(d.students) ? d.students : [];
+                const total = students.length || (d.total !== undefined && d.total !== null ? d.total : 0);
+                const detailItems = Array.isArray(d.detailList) && d.detailList.length
+                    ? d.detailList
+                    : [d.detailJenis || d.jenis || d.beban || '-'];
+                const detailHtml = detailItems.length
+                    ? `<div class="stack-list">${detailItems.map(item => `<div>${item}</div>`).join('')}</div>`
+                    : '-';
+                const blokItems = Array.isArray(d.blokList) ? d.blokList : (d.blok ? [d.blok] : []);
+                const blokHtml = blokItems.length
+                    ? `<div class="stack-list">${blokItems.map(item => `<div>${item}</div>`).join('')}</div>`
+                    : '-';
+                const tanggalItems = Array.isArray(d.tanggalList) ? d.tanggalList : (d.tanggal ? [d.tanggal] : []);
+                const tanggalHtml = tanggalItems.length
+                    ? `<div class="stack-list">${tanggalItems.map(item => `<div>${item}</div>`).join('')}</div>`
+                    : '-';
+                const accItems = Array.isArray(d.accItems) ? d.accItems : [];
+                const accHtml = accItems.length
+                    ? `<div class="acc-icons">${accItems.map(item => {
+                        const url = typeof item === 'string' && item.trim().startsWith('http') ? item.trim() : '';
+                        return url
+                            ? `<a href="${url}" target="_blank" rel="noopener"><i class="bi bi-check-circle-fill text-success"></i></a>`
+                            : `<span><i class="bi bi-check-circle-fill text-success"></i></span>`;
+                    }).join('')}</div>`
+                    : '-';
+                const rawBiaya = d.totalBiaya !== undefined && d.totalBiaya !== null
+                    ? d.totalBiaya
+                    : (d.biaya !== undefined && d.biaya !== null ? d.biaya : 0);
+                const biayaText = formatBiayaDisplay(rawBiaya);
+                const inisial = nama !== '-' ? nama.charAt(0) : '?';
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="d-flex align-items-center nama-dosen-cell">
+                            <div class="avatar-circle bg-primary text-white me-3">${inisial}</div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">${nama}</h6>
+                                <small class="text-muted">${d.peran || 'Dosen'}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle text-center total-cell">
+                        <button type="button" class="btn btn-link p-0 fw-bold" data-bs-toggle="modal" data-bs-target="#dosen-student-modal" data-dosen-index="${originalIndex}" title="Lihat daftar mahasiswa">${total}</button>
+                    </td>
+                    <td class="align-middle text-muted small">${detailHtml.replace('stack-list', 'stack-list detail-stack')}</td>
+                    <td class="align-middle text-muted small">${blokHtml.replace('stack-list', 'stack-list blok-stack')}</td>
+                    <td class="align-middle text-muted small">${tanggalHtml.replace('stack-list', 'stack-list tanggal-stack')}</td>
+                    <td class="align-middle text-center">${accHtml}</td>
+                    <td class="align-middle text-end fw-bold biaya-cell">${biayaText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function bindDosenModal() {
+            if (window.__dosenModalBound) return;
+            const modalEl = document.getElementById('dosen-student-modal');
+            if (!modalEl) return;
+            modalEl.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const index = button ? Number(button.getAttribute('data-dosen-index')) : -1;
+                const list = Array.isArray(window.__dosenData) ? window.__dosenData : [];
+                const data = index >= 0 ? list[index] : null;
+                const titleEl = document.getElementById('dosen-student-modal-title');
+                const subtitleEl = document.getElementById('dosen-student-modal-subtitle');
+                const listEl = document.getElementById('dosen-student-list');
+                const nama = data && data.nama ? data.nama : 'Dosen';
+                const students = data && Array.isArray(data.students) ? data.students : [];
+                const total = students.length || (data && data.total ? data.total : 0);
+                if (titleEl) titleEl.textContent = `Daftar Mahasiswa - ${nama}`;
+                if (subtitleEl) subtitleEl.textContent = `${total} mahasiswa`;
+                if (listEl) {
+                    if (!students.length) {
+                        listEl.innerHTML = '<li class="list-group-item text-muted">Tidak ada data</li>';
+                    } else {
+                        listEl.innerHTML = students.map(s => {
+                            const npm = s && s.npm ? String(s.npm).trim() : '';
+                            const namaMhs = s && s.nama ? String(s.nama).trim() : '';
+                            const text = [npm, namaMhs].filter(Boolean).join(' - ') || '-';
+                            return `<li class="list-group-item">${text}</li>`;
+                        }).join('');
+                    }
+                }
+            });
+            window.__dosenModalBound = true;
+        }
+
+        function normalizeFilterValue(value) {
+            return String(value || '').toLowerCase().trim();
+        }
+
+        function uniqueFilterOptions(list) {
+            const out = [];
+            const seen = new Set();
+            (list || []).forEach(item => {
+                const key = String(item || '').trim();
+                if (!key || seen.has(key)) return;
+                seen.add(key);
+                out.push(key);
+            });
+            return out;
+        }
+
+        function setFilterOptions(selectEl, options) {
+            if (!selectEl) return;
+            const safeOptions = uniqueFilterOptions(options);
+            selectEl.innerHTML = `<option value="">Semua</option>${safeOptions.map(opt => `<option value="${opt}">${opt}</option>`).join('')}`;
+        }
+
+        function setupBagianFilters(filterMeta, dataList) {
+            const bagianEl = document.getElementById('bagian-filter-bagian');
+            const pilihanEl = document.getElementById('bagian-filter-pilihan');
+            const detailEl = document.getElementById('bagian-filter-detail');
+            const blokEl = document.getElementById('bagian-filter-blok');
+
+            const bagianOptions = filterMeta && filterMeta.bagian ? filterMeta.bagian : dataList.map(r => r.bagian);
+            const pilihanOptions = filterMeta && filterMeta.pilihan ? filterMeta.pilihan : dataList.map(r => r.pilihan);
+            const detailOptions = filterMeta && filterMeta.detail ? filterMeta.detail : dataList.map(r => r.detail);
+            const blokOptions = filterMeta && filterMeta.blok ? filterMeta.blok : dataList.map(r => r.blok);
+
+            setFilterOptions(bagianEl, bagianOptions);
+            setFilterOptions(pilihanEl, pilihanOptions);
+            setFilterOptions(detailEl, detailOptions);
+            setFilterOptions(blokEl, blokOptions);
+
+            [bagianEl, pilihanEl, detailEl, blokEl].forEach(el => {
+                if (!el || el.dataset.bound) return;
+                el.addEventListener('change', applyBagianFilters);
+                el.dataset.bound = '1';
+            });
+        }
+
+        function applyBagianFilters() {
+            const bagianEl = document.getElementById('bagian-filter-bagian');
+            const pilihanEl = document.getElementById('bagian-filter-pilihan');
+            const detailEl = document.getElementById('bagian-filter-detail');
+            const blokEl = document.getElementById('bagian-filter-blok');
+
+            const bagianVal = normalizeFilterValue(bagianEl && bagianEl.value);
+            const pilihanVal = normalizeFilterValue(pilihanEl && pilihanEl.value);
+            const detailVal = normalizeFilterValue(detailEl && detailEl.value);
+            const blokVal = normalizeFilterValue(blokEl && blokEl.value);
+
+            const filtered = (bagianDataAll || []).filter(row => {
+                if (bagianVal && normalizeFilterValue(row.bagian) !== bagianVal) return false;
+                if (pilihanVal && normalizeFilterValue(row.pilihan) !== pilihanVal) return false;
+                if (detailVal && normalizeFilterValue(row.detail) !== detailVal) return false;
+                if (blokVal && normalizeFilterValue(row.blok) !== blokVal) return false;
+                return true;
+            });
+
+            renderBagianRows(filtered);
+        }
+
+        function renderBagianRows(list) {
+            const tbody = document.querySelector('#bagian-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!list || list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                return;
+            }
+
+            list.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-bold text-primary">${b.bagian || '-'}</td>
+                    <td>${b.blok || '-'}</td>
+                    <td class="fw-bold text-center">${b.total || 0}</td>
+                    <td>${b.jenisKegiatan || '-'}</td>
+                    <td>${b.tanggalPelaksanaan || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderBagianTable(bagianList, filterMeta) {
+            bagianDataAll = Array.isArray(bagianList) ? bagianList : [];
+            bagianFilterMeta = filterMeta || null;
+            setupBagianFilters(bagianFilterMeta, bagianDataAll);
+            applyBagianFilters();
+        }
+
+        function buildDosenExportRows(dosenList) {
+            const headers = ['Nama Dosen', 'Total Mahasiswa', 'NPM - Nama Lengkap', 'Detail / Jenis Kegiatan', 'Blok', 'Tanggal Pelaksanaan', 'Bukti ACC', 'Total Biaya'];
+            const rows = [headers];
+            (dosenList || []).forEach(d => {
+                const nama = d.nama || '-';
+                const students = Array.isArray(d.students) ? d.students : [];
+                const total = students.length || (d.total !== undefined && d.total !== null ? d.total : 0);
+                const studentText = students.length
+                    ? students.map(s => {
+                        const npm = s && s.npm ? String(s.npm).trim() : '';
+                        const namaMhs = s && s.nama ? String(s.nama).trim() : '';
+                        return [npm, namaMhs].filter(Boolean).join(' - ') || '-';
+                    }).join('\n')
+                    : '-';
+                const detailItems = Array.isArray(d.detailList) && d.detailList.length
+                    ? d.detailList
+                    : [d.detailJenis || d.jenis || d.beban || '-'];
+                const detailText = detailItems.filter(Boolean).join(' | ');
+                const blokItems = Array.isArray(d.blokList) ? d.blokList : (d.blok ? [d.blok] : []);
+                const blokText = blokItems.length ? blokItems.join(' | ') : '-';
+                const tanggalItems = Array.isArray(d.tanggalList) ? d.tanggalList : (d.tanggal ? [d.tanggal] : []);
+                const tanggalText = tanggalItems.length ? tanggalItems.join(' | ') : '-';
+                const accItems = Array.isArray(d.accItems) ? d.accItems : [];
+                const accText = accItems.length
+                    ? accItems.map(item => {
+                        const val = typeof item === 'string' ? item.trim() : '';
+                        return val || 'ACC';
+                    }).join(' | ')
+                    : '-';
+                const rawBiaya = d.totalBiaya !== undefined && d.totalBiaya !== null
+                    ? d.totalBiaya
+                    : (d.biaya !== undefined && d.biaya !== null ? d.biaya : 0);
+                const biaya = formatBiayaDisplay(rawBiaya);
+                rows.push([nama, total, studentText, detailText, blokText, tanggalText, accText, biaya]);
+            });
+            return rows;
+        }
+
+        function exportTableToExcel(tableId, filename = 'download') {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            if (tableId === 'dosen-table' && Array.isArray(window.__dosenData)) {
+                if (window.__dosenData.length === 0) {
+                    showAlert('Info', 'Tidak ada data untuk diexport.');
+                    return;
+                }
+                const rows = buildDosenExportRows(window.__dosenData);
+                if (window.XLSX && XLSX.utils && XLSX.writeFile) {
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+                    XLSX.writeFile(wb, filename + ".xlsx");
+                    return;
+                }
+                downloadCSV(rows, filename);
+                return;
+            }
+
+            const bodyRows = table.querySelectorAll('tbody tr');
+            if (!bodyRows || bodyRows.length === 0) {
+                showAlert('Info', 'Tidak ada data untuk diexport.');
+                return;
+            }
+
+            if (window.XLSX && XLSX.utils && XLSX.writeFile) {
+                const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+                XLSX.writeFile(wb, filename + ".xlsx");
+                return;
+            }
+
+            const rows = Array.from(table.querySelectorAll('tr')).map(row => {
+                const cols = Array.from(row.children).map(cell => {
+                    const text = (cell.innerText || '').replace(/\n/g, ' ').trim();
+                    return `"${text.replace(/"/g, '""')}"`;
+                });
+                return cols.join(',');
+            });
+            downloadCSV(rows, filename);
+        }
+
+        function downloadCSV(rows, filename) {
+            const csv = Array.isArray(rows) 
+                ? rows.map(row => Array.isArray(row) ? row.map(cell => {
+                    const safeCell = cell !== undefined && cell !== null ? cell : '';
+                    const text = String(safeCell).replace(/\n/g, ' ').trim();
+                    return `"${text.replace(/"/g, '""')}"`;
+                }).join(',') : row).join('\n')
+                : rows;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function showAlert(title, message, type = 'info') {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire(title, message, type);
+            } else {
+                alert(title + ': ' + message);
+            }
+        }
+
+        function renderRekapBlokTable(blokList, jenisMap) {
+            const table = document.getElementById('blok-table');
+            if (!table) return;
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            const tfoot = table.querySelector('tfoot');
+            if (!thead || !tbody || !tfoot) return;
+
+            const prefer = ['Ujian', 'Praktikum', 'SGD', 'KKD'];
+            const keys = Object.keys(jenisMap || {});
+            const order = [...prefer];
+            keys.forEach(k => { if (!order.includes(k)) order.push(k); });
+
+            thead.innerHTML = `<tr>
+                <th class="align-middle" style="width: 30%;">Nama Blok</th>
+                ${order.map(k => `<th class="text-center">${k}</th>`).join('')}
+                <th class="align-middle text-center" style="width: 10%;">Total</th>
+            </tr>`;
+
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            if (!blokList || blokList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="99" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                return;
+            }
+
+            const totals = {};
+            order.forEach(k => { totals[k] = 0; });
+            let grandTotal = 0;
+
+            blokList.forEach(b => {
+                const tr = document.createElement('tr');
+                const rowTotal = order.reduce((sum, k) => sum + (b.types && b.types[k] ? Number(b.types[k]) : 0), 0);
+                const finalTotal = b.total || rowTotal;
+                tr.innerHTML = `
+                    <td>${b.nama}</td>
+                    ${order.map(k => {
+                    const v = b.types && b.types[k] ? Number(b.types[k]) : 0;
+                    totals[k] += v;
+                    return `<td class="text-center cell-num">${v}</td>`;
+                }).join('')}
+                    <td class="text-center fw-bold cell-num">${finalTotal}</td>
+                `;
+                tbody.appendChild(tr);
+                grandTotal += finalTotal;
+            });
+
+            tfoot.innerHTML = `
+                <tr class="table-secondary">
+                    <td>GRAND TOTAL</td>
+                    ${order.map(k => `<td class="text-center">${totals[k]}</td>`).join('')}
+                    <td class="text-center">${grandTotal}</td>
+                </tr>
+            `;
+        }
+    </script>
+</body>
+
+</html>
