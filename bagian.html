@@ -656,6 +656,12 @@
 
     <!-- JS SCRIPTS & INTEGRATION -->
     <script>
+        function escHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         let currentSession = {
             category: '',
             subBagian: '',
@@ -818,9 +824,9 @@
                 filterBlokSelect.innerHTML = '<option value="">Semua Blok</option>';
                 baBlokSelect.innerHTML = '<option value="">Pilih Blok...</option>';
                 bloks.forEach(b => {
-                    selectBlok.innerHTML += `<option value="${b}">${b}</option>`;
-                    filterBlokSelect.innerHTML += `<option value="${b}">${b}</option>`;
-                    baBlokSelect.innerHTML += `<option value="${b}">${b}</option>`;
+                    selectBlok.innerHTML += `<option value="${escHtml(b)}">${escHtml(b)}</option>`;
+                    filterBlokSelect.innerHTML += `<option value="${escHtml(b)}">${escHtml(b)}</option>`;
+                    baBlokSelect.innerHTML += `<option value="${escHtml(b)}">${escHtml(b)}</option>`;
                 });
             };
 
@@ -854,7 +860,7 @@
             }
 
             details.forEach(d => {
-                selectDetail.innerHTML += `<option value="${d}">${d}</option>`;
+                selectDetail.innerHTML += `<option value="${escHtml(d)}">${escHtml(d)}</option>`;
             });
         }
 
@@ -965,9 +971,10 @@
                         </div>
                     `;
                     if (accUrl) {
+                        const safeUrl = /^https?:\/\//i.test(String(accUrl).trim()) ? escHtml(accUrl) : '#';
                         accFinalHtml = `
                             <div class="status-stack">
-                                <a href="${accUrl}" target="_blank" class="acc-final-link">
+                                <a href="${safeUrl}" target="_blank" class="acc-final-link">
                                     <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Lihat
                                 </a>
                             </div>
@@ -1040,12 +1047,12 @@
 
                     tr.innerHTML = `
                         <td>
-                            <div class="student-name">${row['Nama Lengkap'] || '-'}</div>
-                            <div class="student-meta">NPM: ${row.NPM || '-'}</div>
+                            <div class="student-name">${escHtml(row['Nama Lengkap'] || '-')}</div>
+                            <div class="student-meta">NPM: ${escHtml(row.NPM || '-')}</div>
                         </td>
-                        <td><span class="blok-badge">${row.Blok || '-'}</span></td>
+                        <td><span class="blok-badge">${escHtml(row.Blok || '-')}</span></td>
                         <td>
-                            <div class="kegiatan-detail fw-semibold text-dark">${displayDetail || '-'}</div>
+                            <div class="kegiatan-detail fw-semibold text-dark">${escHtml(displayDetail || '-')}</div>
                         </td>
                         <td class="text-center">${accFinalHtml}</td>
                         <td class="text-center">${bagianInfoHtml}</td>
@@ -1310,13 +1317,16 @@
             rows.forEach(r => {
                 const tr = document.createElement('tr');
                 const tgl = r.Timestamp ? new Date(r.Timestamp).toLocaleDateString('id-ID') : '-';
-                const link = r['File URL'] ? `<a href="${r['File URL']}" target="_blank" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>Buka PDF</a>` : '-';
+                const rawUrl = String(r['File URL'] || '').trim();
+                const link = rawUrl && /^https?:\/\//i.test(rawUrl)
+                    ? `<a href="${escHtml(rawUrl)}" target="_blank" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>Buka PDF</a>`
+                    : '-';
 
                 tr.innerHTML = `
                     <td>${tgl}</td>
-                    <td><span class="badge bg-light text-dark border">${r.Blok || '-'}</span></td>
-                    <td class="fw-semibold text-dark">${r['Nama Kegiatan'] || '-'}</td>
-                    <td class="text-center"><span class="badge bg-primary-light text-primary">${r['Jumlah Peserta'] || 0} Mahasiswa</span></td>
+                    <td><span class="badge bg-light text-dark border">${escHtml(r.Blok || '-')}</span></td>
+                    <td class="fw-semibold text-dark">${escHtml(r['Nama Kegiatan'] || '-')}</td>
+                    <td class="text-center"><span class="badge bg-primary-light text-primary">${escHtml(r['Jumlah Peserta'] || 0)} Mahasiswa</span></td>
                     <td class="text-end">${link}</td>
                 `;
                 tbody.appendChild(tr);

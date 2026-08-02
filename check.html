@@ -803,10 +803,13 @@
                 applyPreset(preset) {
                     const dt = this.dt;
                     if (!dt) return;
+                    // Kolom: 0 NPM, 1 Nama, 2 Detail, 3 Tanggal, 4 Status, 5 Dokumen,
+                    //        6 Kirim Final, 7 Blok, 8 Jenis, 9 Dosen, 10 Tgl Pelaksanaan,
+                    //        11 Biaya, 12 Keterangan
                     const sets = {
-                        ringkas: [0, 1, 2, 3, 5, 11, 12, 13],
-                        pelaksanaan: [0, 1, 6, 7, 8, 11, 13],
-                        dokumen: [0, 1, 9, 10, 11, 12, 13],
+                        ringkas: [0, 1, 2, 3, 5, 11, 12],
+                        pelaksanaan: [0, 1, 6, 7, 8, 11],
+                        dokumen: [0, 1, 9, 10, 11, 12],
                         lengkap: [...Array(dt.columns().count()).keys()]
                     };
                     const show = sets[preset] || sets.lengkap;
@@ -885,6 +888,20 @@
                 },
                 toggleEdit(val) { this.editEnabled = !!val; },
                 saveEdit() {
+                    // SweetAlert2 helpers (tersedia untuk success & failure handler)
+                    const ensureSwalLoaded = (callback) => {
+                        if (typeof Swal === 'undefined') {
+                            const s = document.createElement('script');
+                            s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                            s.onload = () => callback && callback();
+                            document.head.appendChild(s);
+                        } else {
+                            callback && callback();
+                        }
+                    };
+                    const swalSuccess = (text) => ensureSwalLoaded(() => Swal.fire({ icon: 'success', title: 'Berhasil', text }));
+                    const swalError = (text) => ensureSwalLoaded(() => Swal.fire({ icon: 'error', title: 'Gagal', text }));
+                    const swalInfo = (text) => ensureSwalLoaded(() => Swal.fire({ icon: 'info', title: 'Info', text }));
                     const payload = {
                         NPM: this.form.npm,
                         'Nama Lengkap': this.form.namaLengkap,
@@ -896,6 +913,11 @@
                     const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
                     if (hasAppsScript) {
                         google.script.run.withSuccessHandler(res => {
+                            if (!res || !res.success) {
+                                const errMsg = (res && res.message) ? res.message : 'Gagal menyimpan data.';
+                                swalError(errMsg);
+                                return;
+                            }
                             // Update baris lokal
                             const idx = this.rows.findIndex(r => (r.NPM || '') === payload.NPM);
                             if (idx >= 0) {
@@ -907,24 +929,6 @@
                             }
                             this.modal.hide();
                         }).withFailureHandler(err => {
-                            // SweetAlert2 helpers
-                            function ensureSwalLoaded(callback) {
-                                if (typeof Swal === 'undefined') {
-                                    const s = document.createElement('script');
-                                    s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
-                                    s.onload = () => callback && callback();
-                                    document.head.appendChild(s);
-                                } else {
-                                    callback && callback();
-                                }
-                            }
-                            function swalSuccess(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'success', title: 'Berhasil', text })); }
-                            function swalError(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'error', title: 'Gagal', text })); }
-                            function swalInfo(text) { ensureSwalLoaded(() => Swal.fire({ icon: 'info', title: 'Info', text })); }
-                            // Ganti alert gagal menyimpan ke SweetAlert2
-                            // swalError('Gagal menyimpan: ' + (err && err.message ? err.message : 'Unknown error'));
-                            // =>
-                            // swalError('Gagal menyimpan: ' + (err && err.message ? err.message : 'Unknown error'));
                             swalError('Gagal menyimpan: ' + (err && err.message ? err.message : 'Unknown error'));
                         }).processCheck(payload);
                     } else {
@@ -941,11 +945,34 @@
                     }
                 },
                 clearEdit() {
-                    this.form.dosen = '';
-                    this.form.tanggalPelaksanaan = '';
-                    this.form.biaya = '';
-                    this.form.keterangan = '';
-                    this.saveEdit();
+                    // "Hapus" = kosongkan nilai Dosen/Tanggal/Biaya/Keterangan pada baris terpilih
+                    // Setelah konfirmasi, simpan sebagai nilai kosong agar data di sheet ikut terhapus.
+                    const swal2 = () => {
+                        if (typeof Swal === 'undefined') {
+                            const s = document.createElement('script');
+                            s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                            s.onload = () => swal2();
+                            document.head.appendChild(s);
+                            return;
+                        }
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Hapus isian?',
+                            text: 'Dosen, Tanggal Pelaksanaan, Biaya, dan Keterangan akan dikosongkan.',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, hapus',
+                            cancelButtonText: 'Batal'
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                this.form.dosen = '';
+                                this.form.tanggalPelaksanaan = '';
+                                this.form.biaya = '';
+                                this.form.keterangan = '';
+                                this.saveEdit();
+                            }
+                        });
+                    };
+                    swal2();
                 },
                 formatCurrencyID(v) {
                     const num = Number(String(v).replace(/[^0-9.-]/g, ''));

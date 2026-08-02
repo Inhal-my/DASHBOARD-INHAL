@@ -777,7 +777,9 @@
                     step3Title.className = "text-base font-bold text-green-700";
                     step3Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm z-10";
 
-                    step3Desc.innerHTML = `<a href="${item.linkFinal}" target="_blank" class="text-green-600 hover:text-green-800 hover:underline flex items-center gap-2 transition-colors font-bold" style="font-size: 1.3em;">
+                    const rawLink = String(item.linkFinal || '').trim();
+                    const safeLink = /^https?:\/\//i.test(rawLink) ? rawLink.replace(/"/g, '&quot;') : '#';
+                    step3Desc.innerHTML = `<a href="${safeLink}" target="_blank" rel="noopener" class="text-green-600 hover:text-green-800 hover:underline flex items-center gap-2 transition-colors font-bold" style="font-size: 1.3em;">
                         <i class="fas fa-file-download"></i> Bukti ACC Final
                     </a>`;
                     step3Desc.className = "mt-2 block";
@@ -881,6 +883,9 @@
         }
 
         window.addEventListener('message', (event) => {
+            // Hanya proses pesan dari origin yang sama (jendela/halaman web app ini)
+            const trusted = window.location.origin || (window.location.protocol + '//' + window.location.host);
+            if (event.origin && event.origin !== trusted) return;
             const data = event && event.data ? event.data : null;
             if (data === 'inhal_registration_submitted') {
                 handleRegistrationSubmitted();
@@ -908,6 +913,12 @@
             document.getElementById('upload-info-blok').innerText = item.blok || '-';
             document.getElementById('upload-info-kegiatan').innerText = `${item.jenis || ''} - ${item.detail || ''}`;
             document.getElementById('upload-info-tanggal').innerText = item.tanggalKegiatan || '-';
+
+            const statusEl = document.getElementById('upload-info-status');
+            if (statusEl) {
+                const statusText = item.status || item.statusText || item.statusCode || '';
+                statusEl.innerText = statusText ? String(statusText).toUpperCase() : 'BELUM DIPROSES';
+            }
 
             document.getElementById('upload-file-acc').value = '';
             document.getElementById('upload-file-bukti').value = '';

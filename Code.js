@@ -26,7 +26,11 @@ function norm(s) {
 
 // Caching
 const CACHE_EXPIRATION = 300; // 5 menit
-const CHUNK_SIZE = 450 * 1024; // 450 KB per chunk
+// Batas aman CacheService adalah 100 KB per entri; gunakan 90 KB per chunk
+const CHUNK_SIZE = 90 * 1024;
+
+// Fallback CSS untuk halaman check (digunakan bila <style> tidak ditemukan di check.html)
+const THEME_CSS = 'body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#f1f5f9;color:#0f172a}.container{max-width:1200px;margin:auto}table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #e2e8f0}th{background:#f8fafc}.badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}.badge-pending{background:#fef3c7;color:#92400e}.badge-approved{background:#d1fae5;color:#065f46}.badge-rejected{background:#fee2e2;color:#991b1b}.btn{border:none;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}.btn-primary{background:#0f766e;color:#fff}.btn-success{background:#10b981;color:#fff}.btn-danger{background:#ef4444;color:#fff}.text-muted{color:#64748b}.small{font-size:12px}';
 
 // =================================================================
 // =================== AUTHORIZATION & UTILITIES ===================
@@ -219,6 +223,12 @@ function processRegistration(formData) {
     try {
         const lock = LockService.getScriptLock();
         lock.waitLock(30000);
+
+        // Cegah duplikat di sisi server (bypass dari cek client)
+        const dupCheck = checkExactDuplicate(formData);
+        if (dupCheck && dupCheck.isDuplicate) {
+            return { success: false, message: dupCheck.message || 'Data identik sudah pernah diajukan.' };
+        }
 
         const sheet = getGlobalSpreadsheet().getSheetByName(LOG_SHEET_NAME);
         if (sheet.getLastRow() === 0) {
@@ -1105,7 +1115,7 @@ function getStudentPortalData(npm, options) {
         };
         if (!forceFresh) {
             try {
-                CacheService.getScriptCache().put(cacheKey, JSON.stringify(payload), 60);
+                setCacheChunked(CacheService.getScriptCache(), cacheKey, JSON.stringify(payload), CACHE_EXPIRATION);
             } catch (e) { }
         }
         return payload;
@@ -1113,11 +1123,6 @@ function getStudentPortalData(npm, options) {
         console.error("Error getStudentPortalData:", e.stack);
         return { error: "Terjadi kesalahan saat mengambil data portal: " + e.message };
     }
-}
-
-
-function norm(s) {
-    return (s || '').toString().toLowerCase().trim();
 }
 
 function saveUploadToCheckData(uploadData, accUrl, buktiUrl) {
@@ -1209,9 +1214,12 @@ function checkExactDuplicate(formData) {
                  detail = [normalize(fd.pilihanKkd), normalize(fd.detailKkd)].filter(Boolean).join(' | ');
                  tanggal = normalize(fd.tanggalKegiatan);
              } else if (jenis === 'praktikum' && fd.praktikum && fd.praktikum.length > 0) {
-                 const p = fd.praktikum[0];
-                 detail = [normalize(p.lab), normalize(p.kegiatanLab)].filter(Boolean).join(' | ');
-                 tanggal = normalize(p.tanggal);
+                 // Gabungkan SEMUA entri praktikum agar duplikat multi-lab terdeteksi
+                 const parts = fd.praktikum.map(p => {
+                     return [normalize(p.lab), normalize(p.kegiatanLab), normalize(p.tanggal)].filter(Boolean).join(' | ');
+                 }).filter(Boolean).sort();
+                 detail = parts.join(' && ');
+                 tanggal = normalize(fd.praktikum[0].tanggal);
              }
              return [npm, jenis, detail, tanggal].join('||');
         };
@@ -1237,11 +1245,18 @@ function checkExactDuplicate(formData) {
                 detailSgd: rowData['Detail SGD'],
                 pilihanKkd: rowData['Pilihan KKD'],
                 detailKkd: rowData['Detail KKD'],
-                praktikum: [{ 
-                    lab: rowData['Pilihan LAB 1'], 
-                    kegiatanLab: rowData['Kegiatan LAB 1'], 
-                    tanggal: rowData['Tanggal Praktikum 1'] 
-                }]
+                praktikum: (function() {
+                    const entries = [];
+                    for (let li = 1; li <= 9; li++) {
+                        const lab = rowData['Pilihan LAB ' + li];
+                        const keg = rowData['Kegiatan LAB ' + li];
+                        const tgl = rowData['Tanggal Praktikum ' + li];
+                        if (lab || keg || tgl) {
+                            entries.push({ lab: lab, kegiatanLab: keg, tanggal: tgl });
+                        }
+                    }
+                    return entries;
+                })()
             });
             if (rowKey === searchKey) {
                 return { isDuplicate: true, message: 'Data identik sudah pernah diajukan.' };
@@ -1837,15 +1852,6 @@ function doGet(e) {
             .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
 
-    if (page === 'monitor') {
-        const email = getCurrentUserEmail();
-        if (!isCoreAdminAuthorized(email)) return renderUnauthorizedPage();
-        return HtmlService.createTemplateFromFile('monitor').evaluate()
-            .setTitle("Monitor Konfigurasi - INHAL FKIK UMSU")
-            .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
-            .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    }
-
     if (page === 'bagian') {
         return HtmlService.createTemplateFromFile('bagian').evaluate()
             .setTitle("Admin Bagian - INHAL FKIK UMSU")
@@ -2160,7 +2166,14 @@ function getUniqueJenisKegiatan() {
         const sheet = getGlobalSpreadsheet().getSheetByName(LOG_SHEET_NAME);
         if (!sheet || sheet.getLastRow() < 2) return [];
 
-        const range = sheet.getRange('G2:G' + sheet.getLastRow()); // Assuming Jenis Kegiatan is in column G of LogData
+        // Cari kolom berdasarkan nama header 'Jenis Kegiatan' agar tidak hardcode
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const normalized = headers.map(h => String(h || '').toLowerCase().trim());
+        let colIdx = normalized.indexOf('jenis kegiatan');
+        if (colIdx === -1) colIdx = normalized.findIndex(h => h.indexOf('jenis') !== -1);
+        if (colIdx === -1) return [];
+        const colLetter = String.fromCharCode('A'.charCodeAt(0) + colIdx);
+        const range = sheet.getRange(colLetter + '2:' + colLetter + sheet.getLastRow());
         const values = range.getValues().flat().filter(String);
         return [...new Set(values)];
     } catch (e) {
@@ -2223,7 +2236,13 @@ function debugSheetStatus() {
             const headers = data.shift(); 
             const firstRow = data[0];
 
-            const getL = (names) => _idx(headers, names);
+            const getL = (names) => {
+                for (let n = 0; n < names.length; n++) {
+                    const idx = headers.indexOf(names[n]);
+                    if (idx !== -1) return idx;
+                }
+                return -1;
+            };
             const iNpm = getL(['NPM', 'NIM', 'Nomor Induk Mahasiswa']);
             const npmVal = iNpm >= 0 ? firstRow[iNpm] : "Column not found";
 
@@ -2232,7 +2251,7 @@ function debugSheetStatus() {
                 firstRowRaw: firstRow,
                 npmIndex: iNpm,
                 npmValue: npmVal,
-                idxFnCheck: typeof _idx
+                idxFnCheck: typeof getL
             };
         }
 
@@ -2627,8 +2646,8 @@ function getCheckPageData(options) {
                 : (indexes.iCatatanAdmin >= 0 ? (logRow[indexes.iCatatanAdmin] || '') : '');
             var linkSuratVal = checks.LinkSurat || (indexes.iLinkSurat >= 0 ? (logRow[indexes.iLinkSurat] || '') : '');
             var combinedJenis = (jenisInfo.detail && jenisInfo.detail !== 'N/A') ? jenis + ' - ' + jenisInfo.detail : jenis;
-            var emailVal = logRow.length > 3 ? stringifyCell(logRow[3]) : (indexes.iEmail >= 0 ? stringifyCell(logRow[indexes.iEmail]) : '');
-            var hpValRaw = logRow.length > 4 ? stringifyCell(logRow[4]) : (indexes.iHp >= 0 ? stringifyCell(logRow[indexes.iHp]) : '');
+            var emailVal = indexes.iEmail >= 0 ? stringifyCell(logRow[indexes.iEmail]) : '';
+            var hpValRaw = indexes.iHp >= 0 ? stringifyCell(logRow[indexes.iHp]) : '';
             var statusVal = 'Menunggu';
             if (indexes.iStatus >= 0 && stringifyCell(logRow[indexes.iStatus]) !== '') {
                 statusVal = stringifyCell(logRow[indexes.iStatus]);
@@ -2648,7 +2667,7 @@ function getCheckPageData(options) {
                 'Link Surat Keterangan': linkSuratVal,
                 Status: statusVal,
                 statusFinal: statusFinal,
-                Detail: logRow.length > 42 ? (logRow[42] || '') : '',
+                Detail: jenisInfo.detail !== 'N/A' ? jenisInfo.detail : (indexes.iKet >= 0 ? (logRow[indexes.iKet] || '') : ''),
                 TanggalKegiatan: formatDateIndo(jenisInfo.tanggalKegiatan, false),
                 Email: emailVal,
                 NoHP: normalizeHp(hpValRaw),
@@ -3238,6 +3257,7 @@ function parseCurrency(str) {
 
 function updateStatusAndSendEmail(rowIndex, newStatus, rejectionReason) {
     try {
+        requireAuthorized();
         const sheet = getGlobalSpreadsheet().getSheetByName(LOG_SHEET_NAME);
         if (!sheet || sheet.getLastRow() < 2) {
             return { success: false, message: 'Sheet LogData tidak tersedia.' };
@@ -3248,7 +3268,14 @@ function updateStatusAndSendEmail(rowIndex, newStatus, rejectionReason) {
 
         let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
-        const colCatatanIdx = 47;
+        let colCatatanIdx = headers.indexOf('Catatan Admin') + 1;
+        if (colCatatanIdx <= 0) {
+            colCatatanIdx = headers.indexOf('Catatan') + 1;
+        }
+        if (colCatatanIdx <= 0) {
+            colCatatanIdx = headers.length + 1;
+            headers.push('Catatan Admin');
+        }
 
         if (sheet.getMaxColumns() < colCatatanIdx) {
             sheet.insertColumnsAfter(sheet.getMaxColumns(), colCatatanIdx - sheet.getMaxColumns());
@@ -3346,10 +3373,14 @@ function updateStatusAndSendEmail(rowIndex, newStatus, rejectionReason) {
                 const folder = DriveApp.getFolderById(FOLDER_ID);
                 const savedFile = folder.createFile(pdfBlob).setName(pdfBlob.getName());
                 attachmentUrl = savedFile.getUrl();
-                const lastCol = sheet.getLastColumn();
-                if (lastCol < 49) sheet.insertColumnsAfter(lastCol, 49 - lastCol);
-                sheet.getRange(1, 49).setValue('Lampiran Email');
-                sheet.getRange(rowIndex, 49).setValue(attachmentUrl);
+                // Resolve kolom 'Lampiran Email' berdasarkan header, bukan hardcode kolom 49
+                headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+                let lampiranCol = headers.indexOf('Lampiran Email') + 1;
+                if (lampiranCol <= 0) {
+                    lampiranCol = headers.length + 1;
+                    sheet.getRange(1, lampiranCol).setValue('Lampiran Email');
+                }
+                sheet.getRange(rowIndex, lampiranCol).setValue(attachmentUrl);
             } catch (eAttach) {
                 warnings.push('Lampiran PDF gagal disimpan ke Drive: ' + (eAttach && eAttach.message ? eAttach.message : eAttach));
                 console.error('Gagal menyimpan lampiran status ke Drive/LogData:', eAttach && eAttach.message ? eAttach.message : eAttach);
@@ -3405,6 +3436,7 @@ function updateStatusAndSendEmail(rowIndex, newStatus, rejectionReason) {
 
 function updateCatatanAdmin(rowIndex, newCatatan) {
     try {
+        requireAuthorized();
         const sheet = getGlobalSpreadsheet().getSheetByName(LOG_SHEET_NAME);
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const prefer = ['Catatan Admin', 'Catatan', 'Keterangan'];
@@ -4156,6 +4188,7 @@ function getBagianEmailMap() {
  */
 function saveBagianEmailMap(mapObj) {
     try {
+        requireAuthorized();
         const ss = getGlobalSpreadsheet();
         const SHEET_NAME = 'EmailBagian';
         let sheet = ss.getSheetByName(SHEET_NAME);
@@ -4183,7 +4216,7 @@ function saveBagianEmailMap(mapObj) {
         }
 
         // Hapus cache agar data terbaru langsung tersedia
-        try { CacheService.getScriptCache().remove('checkPageData'); } catch(e) {}
+        try { removeCacheChunked(CacheService.getScriptCache(), 'checkPageData:v1'); } catch(e) {}
 
         return { success: true };
     } catch (e) {
@@ -4491,6 +4524,328 @@ function getBeritaAcaraList(bagianFilter) {
     } catch (e) {
         console.error("Error getBeritaAcaraList: " + e.message);
         return { rows: [] };
+    }
+}
+
+// =================================================================
+// ========== ADMIN COMBINED PAGINATED DATA (admin.html) ===========
+// =================================================================
+
+/**
+ * Endpoint paginated untuk halaman admin (admin.html).
+ * Menggabungkan data LogData + CheckData + Upload, menerapkan filter,
+ * menghitung statistik, lalu memotong per halaman.
+ * @param {number} page - Halaman saat ini (1-based).
+ * @param {number} pageSize - Jumlah baris per halaman.
+ * @param {Object} filters - { search, status, blok, jenis }
+ * @returns {Object} { data, total, totalPages, currentPage, stats }
+ */
+function getAdminCombinedPaged(page, pageSize, filters) {
+    try {
+        requireAuthorized();
+
+        const p = Math.max(1, parseInt(page, 10) || 1);
+        const size = Math.max(1, Math.min(100, parseInt(pageSize, 10) || 20));
+        const f = filters || {};
+
+        const payload = getCheckPageData({ skipCache: true });
+        const rows = Array.isArray(payload && payload.rows) ? payload.rows : [];
+
+        const term = String(f.search || '').toLowerCase().trim();
+        const sStatus = String(f.status || '').toLowerCase().trim();
+        const sBlok = String(f.blok || '').trim();
+        const sJenis = String(f.jenis || '').trim();
+
+        const matches = (r) => {
+            if (sBlok && String(r.Blok || '').trim() !== sBlok) return false;
+            if (sJenis) {
+                const jenis = String(r.JenisDasar || r['Jenis Kegiatan'] || '').trim();
+                if (jenis !== sJenis) return false;
+            }
+            if (sStatus) {
+                const status = String(r.Status || '').trim();
+                if (sStatus === 'pending') {
+                    if (status && !/diterima|acc|ditolak|tidak acc/i.test(status)) return false;
+                } else if (sStatus === 'approved') {
+                    if (!/diterima|acc/i.test(status)) return false;
+                } else if (sStatus === 'rejected') {
+                    if (!/ditolak|tidak acc/i.test(status)) return false;
+                } else if (status.toLowerCase() !== sStatus) {
+                    return false;
+                }
+            }
+            if (term) {
+                const haystack = [
+                    r.NPM, r['Nama Lengkap'], r.Email, r.Blok,
+                    r.JenisDasar, r['Jenis Kegiatan'], r.DetailKegiatanPortal,
+                    r['Catatan Admin'], r['Keterangan']
+                ].map(v => String(v || '').toLowerCase()).join(' ');
+                if (haystack.indexOf(term) === -1) return false;
+            }
+            return true;
+        };
+
+        const filtered = rows.filter(matches);
+
+        const stats = {
+            total: filtered.length,
+            pending: filtered.filter(r => {
+                const s = String(r.Status || '').trim();
+                return !s || /menunggu/i.test(s);
+            }).length,
+            accepted: filtered.filter(r => /diterima|acc/i.test(String(r.Status || ''))).length,
+            rejected: filtered.filter(r => /ditolak|tidak acc/i.test(String(r.Status || ''))).length
+        };
+
+        const totalPages = Math.max(1, Math.ceil(filtered.length / size));
+        const currentPage = Math.min(p, totalPages);
+        const start = (currentPage - 1) * size;
+        const pageRows = filtered.slice(start, start + size).map(function(r) {
+            return {
+                rowIndex: r.originalRowIndex,
+                NPM: r.NPM || '',
+                NamaLengkap: r['Nama Lengkap'] || '',
+                DetailKegiatan: r.DetailKegiatanPortal || r.Detail || '',
+                TanggalKegiatan: r.TanggalKegiatan || '',
+                Tanggal: r.TanggalKegiatan || '',
+                JenisKegiatan: r.JenisDasar || r['Jenis Kegiatan'] || '',
+                'Jenis Kegiatan': r['Jenis Kegiatan'] || '',
+                Keterangan: r['Keterangan'] || '',
+                LinkSuratKeterangan: r['Link Surat Keterangan'] || '',
+                CatatanAdmin: r['Catatan Admin'] || '',
+                Catatan: r['Catatan Admin'] || '',
+                Status: r.Status || '',
+                Blok: r.Blok || '',
+                Email: r.Email || '',
+                Timestamp: r.Timestamp || '',
+                NoHP: r.NoHP || '',
+                'No. HP/WA': r.NoHP || '',
+                LampiranEmail: r.LampiranEmail || ''
+            };
+        });
+
+        return {
+            data: pageRows,
+            total: filtered.length,
+            totalPages: totalPages,
+            currentPage: currentPage,
+            stats: stats
+        };
+    } catch (e) {
+        console.error('Error getAdminCombinedPaged:', e.message);
+        return {
+            data: [],
+            total: 0,
+            totalPages: 1,
+            currentPage: 1,
+            stats: { total: 0, pending: 0, accepted: 0, rejected: 0 },
+            error: e.message
+        };
+    }
+}
+
+// =================================================================
+// ==================== FINAL EMAIL (PDF ACC Final) ================
+// =================================================================
+
+/**
+ * Helper: menyiapkan PDF ACC Final dan mengirim email ke mahasiswa.
+ * Dipakai oleh sendFinalEmail / sendBulkFinalEmail / sendFinalEmailForCheck.
+ * @param {Object} data - data baris (dari LogData / CheckData / payload frontend).
+ * @returns {Object} { ok, error?, pdfUrl?, emailSent? }
+ */
+function _prepareAndSendFinalPdf(data) {
+    if (!data) return { ok: false, error: 'Data tidak tersedia.' };
+
+    const npm = data.NPM || data['NPM'] || '';
+    const email = String(data.Email || data['Email'] || data['Email Address'] || '').trim();
+    const namaLengkap = data['Nama Lengkap'] || data.NamaLengkap || data.nama || '';
+
+    if (!email) {
+        return { ok: false, error: 'Email mahasiswa tidak tersedia.' };
+    }
+
+    try {
+        const enhanced = enhanceDataForTemplate(data);
+        enhanced.Status = 'Final';
+        enhanced['Catatan Admin'] = data['Catatan Admin'] || data.CatatanAdmin || '';
+        enhanced['Catatan'] = enhanced['Catatan Admin'];
+        enhanced.TanggalPengajuan = data.Timestamp || data['Tanggal Pengajuan']
+            ? formatIndonesianDate(data.Timestamp || data['Tanggal Pengajuan'])
+            : '';
+
+        const pdfBlob = createPdfFromTemplate(TEMPLATE_ACC_ID, enhanced, 'Final');
+        const subject = `Surat Keterangan Final INHAL - ${namaLengkap || npm}`;
+        const body = `Assalamu'alaikum ${namaLengkap || ''} (NPM: ${npm}).
+
+Terlampir adalah surat keterangan final pendaftaran INHAL Anda.
+
+Wassalamu'alaikum
+Admin Prodi`;
+
+        MailApp.sendEmail({
+            to: email,
+            subject: subject,
+            body: body,
+            attachments: [pdfBlob]
+        });
+
+        return { ok: true, pdfUrl: '', emailSent: true, email: email };
+    } catch (e) {
+        console.error('Error _prepareAndSendFinalPdf:', e.message);
+        return { ok: false, error: e.message };
+    }
+}
+
+/**
+ * Kirim email PDF Final ke mahasiswa (dipanggil dashboard.html & admin.html).
+ * @param {Object} payload - minimal berisi NPM/Email/'Nama Lengkap'/data kegiatan.
+ * @returns {Object} { ok, error? }
+ */
+function sendFinalEmail(payload) {
+    try {
+        requireAuthorized();
+
+        if (!payload) return { ok: false, error: 'Payload tidak tersedia.' };
+
+        // Coba dapatkan data lengkap dari LogData berdasarkan ID Pengajuan / NPM
+        let rowData = null;
+        const idPengajuan = payload.idPengajuan || payload.IdPengajuan || payload['ID Pengajuan'] || '';
+        if (idPengajuan) rowData = getFullDataById(idPengajuan);
+
+        if (!rowData && payload.NPM) {
+            const npm = String(payload.NPM).trim();
+            const dataByNpm = getFullDataByNpmLatest(npm);
+            if (dataByNpm) rowData = dataByNpm;
+        }
+
+        const merged = {};
+        if (rowData) {
+            Object.keys(rowData).forEach(function(k) { merged[k] = rowData[k]; });
+        }
+        // Timpa dengan payload frontend agar tetap konsisten
+        Object.keys(payload || {}).forEach(function(k) { merged[k] = payload[k]; });
+        if (!merged['Nama Lengkap']) merged['Nama Lengkap'] = merged.nama || '';
+        if (!merged['Jenis Kegiatan']) merged['Jenis Kegiatan'] = merged.jenis || '';
+        if (!merged['Detail Kegiatan']) merged['Detail Kegiatan'] = merged.detail || '';
+
+        const result = _prepareAndSendFinalPdf(merged);
+        return result.ok ? { ok: true, message: 'Email final terkirim.' } : { ok: false, error: result.error };
+    } catch (e) {
+        console.error('Error sendFinalEmail:', e.message);
+        return { ok: false, error: e.message };
+    }
+}
+
+/**
+ * Kirim email PDF Final massal (dipanggil dashboard.html bagian tab Bagian).
+ * @param {Array} payload - array dari objek baris.
+ * @returns {Object} { ok, sent, failed, errors? }
+ */
+function sendBulkFinalEmail(payload) {
+    try {
+        requireAuthorized();
+
+        if (!Array.isArray(payload) || payload.length === 0) {
+            return { ok: false, sent: 0, failed: 0, error: 'Tidak ada data untuk dikirim.' };
+        }
+
+        let sent = 0;
+        const errors = [];
+        for (let i = 0; i < payload.length; i++) {
+            const item = payload[i] || {};
+            let rowData = null;
+            const idPengajuan = item.idPengajuan || item.IdPengajuan || item['ID Pengajuan'] || '';
+            if (idPengajuan) rowData = getFullDataById(idPengajuan);
+            if (!rowData && item.NPM) rowData = getFullDataByNpmLatest(String(item.NPM).trim());
+
+            const merged = {};
+            if (rowData) Object.keys(rowData).forEach(function(k) { merged[k] = rowData[k]; });
+            Object.keys(item || {}).forEach(function(k) { merged[k] = item[k]; });
+            if (!merged['Nama Lengkap']) merged['Nama Lengkap'] = merged.nama || '';
+            if (!merged['Jenis Kegiatan']) merged['Jenis Kegiatan'] = merged.jenis || '';
+            if (!merged['Detail Kegiatan']) merged['Detail Kegiatan'] = merged.detail || '';
+
+            const res = _prepareAndSendFinalPdf(merged);
+            if (res.ok) {
+                sent++;
+            } else {
+                errors.push((merged['Nama Lengkap'] || item.NPM || '?') + ': ' + res.error);
+            }
+        }
+
+        return {
+            ok: errors.length === 0,
+            sent: sent,
+            failed: errors.length,
+            errors: errors
+        };
+    } catch (e) {
+        console.error('Error sendBulkFinalEmail:', e.message);
+        return { ok: false, sent: 0, failed: (payload && payload.length) || 0, error: e.message };
+    }
+}
+
+/**
+ * Kirim email PDF Final dari halaman check (check.html).
+ * @param {Object} row - baris data dari CheckData.
+ * @returns {Object} { ok, error? }
+ */
+function sendFinalEmailForCheck(row) {
+    try {
+        requireAuthorized();
+        if (!row) return { ok: false, error: 'Data tidak tersedia.' };
+
+        const rowData = {};
+        Object.keys(row || {}).forEach(function(k) { rowData[k] = row[k]; });
+
+        // Lengkapi dari LogData bila perlu
+        const npm = rowData.NPM || rowData.npm || '';
+        if (npm && !rowData['Nama Lengkap']) {
+            const full = getFullDataByNpmLatest(String(npm).trim());
+            if (full) {
+                Object.keys(full).forEach(function(k) {
+                    if (!rowData[k] && !rowData[k.replace(/\s/g, '')]) rowData[k] = full[k];
+                });
+            }
+        }
+
+        const result = _prepareAndSendFinalPdf(rowData);
+        return result.ok ? { ok: true, message: 'Email final terkirim.' } : { ok: false, error: result.error };
+    } catch (e) {
+        console.error('Error sendFinalEmailForCheck:', e.message);
+        return { ok: false, error: e.message };
+    }
+}
+
+/**
+ * Mengambil baris LogData terbaru untuk NPM tertentu.
+ * @param {string} npm - NPM mahasiswa.
+ * @returns {Object|null} baris terbaru sebagai objek.
+ */
+function getFullDataByNpmLatest(npm) {
+    if (!npm) return null;
+    try {
+        const sheet = getGlobalSpreadsheet().getSheetByName(LOG_SHEET_NAME);
+        if (!sheet || sheet.getLastRow() < 2) return null;
+
+        const data = sheet.getDataRange().getValues();
+        const headers = data.shift();
+        const npmCol = headers.indexOf('NPM');
+        if (npmCol === -1) return null;
+
+        const npmVal = String(npm).trim();
+        for (let i = data.length - 1; i >= 0; i--) {
+            if (String(data[i][npmCol] || '').trim() === npmVal) {
+                const result = {};
+                headers.forEach(function(h, ci) { result[h] = data[i][ci]; });
+                return result;
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error('Error getFullDataByNpmLatest:', e.message);
+        return null;
     }
 }
 

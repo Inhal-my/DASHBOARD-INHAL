@@ -897,6 +897,12 @@
     </div>
 
     <script>
+        function escHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         // Global variables
         let acceptedStudentData = {};
         let studentData = {};
@@ -1371,8 +1377,8 @@
                     const kegiatanDiv = document.createElement('div');
                     kegiatanDiv.className = 'kegiatan-item';
                     kegiatanDiv.innerHTML = `
-                        <strong>${kegiatan.jenis || 'Unknown'}</strong><br>
-                        <small>Detail: ${kegiatan.detail || 'N/A'}</small>
+                        <strong>${escHtml(kegiatan.jenis || 'Unknown')}</strong><br>
+                        <small>Detail: ${escHtml(kegiatan.detail || 'N/A')}</small>
                     `;
                     kegiatanContainer.appendChild(kegiatanDiv);
                 });

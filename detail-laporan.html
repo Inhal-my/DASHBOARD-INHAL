@@ -335,7 +335,7 @@
                 <h1 class="h3 fw-bold text-gray-900 mb-1">Detail Laporan</h1>
                 <p class="text-muted small mb-0">Analisis mendalam data Inhal mahasiswa, dosen, dan bagian.</p>
             </div>
-            <a href="#" class="btn btn-outline-primary shadow-sm" id="btn-kembali">
+            <a href="javascript:void(0)" class="btn btn-outline-primary shadow-sm" id="btn-kembali" onclick="goBackToDashboard()">
                 <i class="bi bi-arrow-left me-2"></i>Kembali ke Dashboard
             </a>
         </div>
@@ -602,56 +602,13 @@
 
     <!-- Custom Scripts -->
     <script>
-        // Sample data for testing - Remove this when using Google Apps Script
-        const sampleData = {
-            summary: { total: 150, accepted: 120, revenue: 75000000, rejected: 30 },
-            trend: { "Jan '25": 45, "Feb '25": 52, "Mar '25": 53 },
-            jenis: { "Ujian": 60, "Praktikum": 40, "SGD": 30, "KKD": 20 },
-            dosen: [
-                {
-                    nama: "Dr. Ahmad",
-                    peran: "Dosen Pengajar",
-                    students: [{ npm: "2001001", nama: "Budi" }, { npm: "2001002", nama: "Ani" }],
-                    detailJenis: "Ujian",
-                    detailList: ["Ujian Blok 1", "Ujian Blok 2"],
-                    blok: "Blok 1",
-                    blokList: ["Blok 1", "Blok 2"],
-                    tanggal: "2025-01-15",
-                    tanggalList: ["2025-01-15", "2025-01-20"],
-                    accItems: ["https://example.com/bukti1.pdf"],
-                    totalBiaya: 5000000
-                }
-            ],
-            bagian: [
-                {
-                    bagian: "Akademik",
-                    blok: "Blok 1",
-                    total: 50,
-                    jenisKegiatan: "Ujian",
-                    tanggalPelaksanaan: "2025-01-15",
-                    pilihan: "Reguler",
-                    detail: "Ujian Tengah Blok"
-                }
-            ],
-            bagianFilters: {
-                bagian: ["Akademik", "Kemahasiswaan"],
-                pilihan: ["Reguler", "Remedial"],
-                detail: ["Ujian Tengah Blok"],
-                blok: ["Blok 1", "Blok 2"]
-            },
-            blok: [
-                { nama: "Blok 1", types: { Ujian: 30, Praktikum: 20 }, total: 50 },
-                { nama: "Blok 2", types: { Ujian: 25, SGD: 15 }, total: 40 }
-            ]
-        };
-
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function () {
             loadData();
         });
 
         function loadData() {
-            // Try Google Apps Script first, fall back to sample data
+            // Data hanya dari Google Apps Script (bukan sample)
             if (typeof google !== 'undefined' && google.script && google.script.run) {
                 Swal.fire({
                     title: 'Memuat Data...',
@@ -662,15 +619,24 @@
                 google.script.run
                     .withSuccessHandler(renderDashboard)
                     .withFailureHandler(err => {
-                        Swal.fire('Error', 'Gagal memuat data: ' + err.message, 'error');
-                        console.log('Falling back to sample data');
-                        renderDashboard(sampleData);
+                        Swal.close();
+                        Swal.fire('Error', 'Gagal memuat data: ' + (err && err.message ? err.message : 'Unknown error'), 'error');
                     })
                     .getDetailLaporanData();
             } else {
-                // Use sample data when not in Google Apps Script environment
-                console.log('Using sample data (not in Google Apps Script)');
-                renderDashboard(sampleData);
+                Swal.fire('Info', 'Halaman ini harus diakses melalui Google Apps Script.', 'info');
+            }
+        }
+
+        // Tombol kembali ke dashboard
+        function goBackToDashboard() {
+            const isGAS = typeof google !== 'undefined' && google.script && google.script.run;
+            if (isGAS) {
+                const u = new URL(window.location.href);
+                u.searchParams.set('page', 'dashboard');
+                window.location.href = u.toString();
+            } else {
+                window.location.href = 'dashboard.html';
             }
         }
 
@@ -785,11 +751,16 @@
         function renderJenisChart(jenisMap) {
             const canvas = document.getElementById('jenisChart');
             if (!canvas) return;
+
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+
             const ctx = canvas.getContext('2d');
             const labels = Object.keys(jenisMap);
             const values = Object.values(jenisMap);
 
-            new Chart(ctx, {
+            canvas.chart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,

@@ -1970,6 +1970,10 @@
                                         const hasAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
                                         if (hasAppsScript) {
                                             google.script.run.withSuccessHandler(res => {
+                                                if (!res || !res.success) {
+                                                    swalError((res && res.message) ? res.message : 'Gagal menyimpan data.');
+                                                    return;
+                                                }
                                                 const idx = this.reportRows.findIndex(r => (r.NPM || '') === payload.NPM);
                                                 if (idx >= 0) {
                                                     this.reportRows[idx].Dosen = payload.Dosen;

@@ -104,6 +104,14 @@
             overflow: hidden;
         }
 
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .5);
+            z-index: 999;
+        }
+
         .sidebar-brand {
             height: var(--header-height);
             display: flex;
@@ -240,16 +248,20 @@
 
         /* === TOP HEADER === */
         .top-header {
-            height: var(--header-height);
-            background: white;
-            border-bottom: 1px solid var(--gray-200);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 32px;
+            padding: 14px 24px;
+            background: #fff;
+            border-bottom: 1px solid var(--gray-200);
             position: sticky;
             top: 0;
             z-index: 100;
+            gap: 12px;
+        }
+
+        .sidebar-toggle {
+            display: none;
         }
 
         .header-left {
@@ -1026,6 +1038,29 @@
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                transition: transform .25s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 0 0 0 9999px rgba(15, 23, 42, .5);
+            }
+
+            .sidebar-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 38px;
+                height: 38px;
+                flex-shrink: 0;
+            }
+
+            .sidebar-overlay {
+                display: none;
+            }
+
+            .sidebar.open ~ .sidebar-overlay {
+                display: block;
             }
 
             .main-content {
@@ -1137,11 +1172,16 @@
         </div>
     </aside>
 
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <!-- MAIN CONTENT -->
     <main class="main-content">
         <!-- TOP HEADER -->
         <header class="top-header">
             <div class="header-left">
+                <button class="btn btn-light border sidebar-toggle" id="sidebarToggle" aria-label="Buka menu" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
                 <div>
                     <h1 class="page-title" id="pageTitle">Dashboard Pengajuan</h1>
                     <p class="page-subtitle">Kelola dan validasi data inhal mahasiswa</p>
@@ -2285,7 +2325,7 @@
                 ${item.status !== 'Ditolak' ? `<button class="btn btn-outline-danger" onclick="updateStatus(${item.id},'Ditolak')"><i class="bi bi-x-circle me-1"></i>Tolak</button>` : ''}
                 ${item.status !== 'Diterima' ? `<button class="btn btn-primary" onclick="updateStatus(${item.id},'Diterima')"><i class="bi bi-check-lg me-1"></i>Diterima</button>` : ''}`;
             } else {
-                const isFinalSent = item.pdf_url && item.pdf_url.length > 5;
+                const isFinalSent = item.link_final && item.link_final.length > 5;
                 const btnKirimFinal = isFinalSent
                     ? `<button class="btn btn-outline-secondary" disabled title="Fitur ini sementara dinonaktifkan"><i class="bi bi-check-circle-fill me-1"></i>Terkirim (Kirim Ulang)</button>`
                     : `<button class="btn btn-secondary" disabled title="Fitur ini sementara dinonaktifkan"><i class="bi bi-send-fill me-1"></i>Kirim Final</button>`;
@@ -2368,7 +2408,7 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                             <div class="info-row"><div class="info-label">Dosen Penguji</div><div class="info-value">${item.dosen || '<span class="badge bg-light text-muted border">Belum ditentukan</span>'}</div></div>
                             <div class="info-row"><div class="info-label">Jadwal Pelaksanaan</div><div class="info-value">${item.tgl_pelaksanaan || '-'}</div></div>
                             <div class="info-row"><div class="info-label">Biaya Administrasi</div><div class="info-value fw-bold text-success fs-5">${formatCurrency(item.biaya)}</div></div>
-                            <div class="pt-3 border-top mt-2">${item.pdf_url ? `<div class="mb-2"><div class="info-label mb-1">Dokumen Final</div><a href="${item.pdf_url}" target="_blank" class="btn btn-sm btn-outline-danger w-100 text-start"><i class="bi bi-file-earmark-pdf-fill me-2"></i>Bukti PDF Terkirim</a></div>` : `<div class="info-label">Catatan Admin</div><div class="small bg-light p-2 rounded border mt-1 text-muted">${item.catatan || '-'}</div>`}</div>
+                            <div class="pt-3 border-top mt-2">${item.link_final ? `<div class="mb-2"><div class="info-label mb-1">Dokumen Final</div><a href="${item.link_final}" target="_blank" class="btn btn-sm btn-outline-danger w-100 text-start"><i class="bi bi-file-earmark-pdf-fill me-2"></i>Bukti PDF Terkirim</a></div>` : `<div class="info-label">Catatan Admin</div><div class="small bg-light p-2 rounded border mt-1 text-muted">${item.catatan || '-'}</div>`}</div>
                         </div></div>` : ''}
                     </div>
                 </div>
@@ -2400,12 +2440,59 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             const ids = [];
             $('.row-checkbox:checked').each(function () { ids.push(parseInt($(this).val())); });
             if (ids.length === 0) return;
-            ids.forEach(id => {
-                const idx = mockData.findIndex(x => x.id === id);
-                if (idx > -1) mockData[idx].status = action;
+
+            Swal.fire({
+                title: `Ubah ${ids.length} data menjadi ${action}?`,
+                text: 'Perubahan status akan disimpan dan notifikasi email dapat terkirim.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, simpan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#0d6efd'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                const run = () => {
+                    let done = 0;
+                    const failures = [];
+                    ids.forEach((id, index) => {
+                        const item = mockData.find(x => x.id === id);
+                        const rowIndex = item && item.originalRowIndex ? item.originalRowIndex : id;
+                        if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                            if (item) item.status = action;
+                            done++;
+                            if (done === ids.length) {
+                                renderTable();
+                                showToast(`${done} data berhasil diubah status menjadi ${action} (mode lokal)`, 'success');
+                                updateBulkActionBar();
+                            }
+                            return;
+                        }
+                        google.script.run
+                            .withSuccessHandler(resp => {
+                                if (item) item.status = action;
+                                done++;
+                                if (resp && !resp.success) failures.push(item ? item.nama : id);
+                                if (done === ids.length) {
+                                    renderTable();
+                                    showToast(failures.length ? `${done - failures.length} sukses, ${failures.length} gagal` : `${done} data berhasil diubah status menjadi ${action}`, failures.length ? 'error' : 'success');
+                                    updateBulkActionBar();
+                                    if (typeof loadDataFromServer === 'function') loadDataFromServer(true);
+                                }
+                            })
+                            .withFailureHandler(err => {
+                                done++;
+                                failures.push(item ? item.nama : id);
+                                if (done === ids.length) {
+                                    renderTable();
+                                    showToast(`${done - failures.length} sukses, ${failures.length} gagal`, 'error');
+                                    updateBulkActionBar();
+                                }
+                            })
+                            .updateStatusAndSendEmail(rowIndex, action);
+                    });
+                };
+                run();
             });
-            renderTable();
-            showToast(`${ids.length} data berhasil diubah status menjadi ${action}`, 'success');
         }
 
         function navPaper(dir, currentId) {
@@ -2968,6 +3055,17 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
         }
         
         // === TABS LOGIC ===
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+            sidebar.classList.toggle('open');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.classList.remove('open');
+        }
+
         function switchTab(tabId, el) {
             $('.sidebar-link').removeClass('active');
             if (el) {
@@ -2976,6 +3074,11 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
 
             $('.tab-pane').addClass('d-none').removeClass('active');
             $('#tab-' + tabId).removeClass('d-none').addClass('active');
+
+            // Tutup sidebar otomatis di layar kecil
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
 
             let title = 'Dashboard Pengajuan';
             if (tabId === 'pengajuan') title = 'Pengajuan Mahasiswa';
@@ -3905,7 +4008,7 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                     if (resp && resp.success) {
                         showToast('Email bagian berhasil disimpan.', 'success');
                         // Muat ulang semua data dashboard untuk konsistensi
-                        fetchDashboardData();
+                        if (typeof loadDataFromServer === 'function') loadDataFromServer(true);
                     } else {
                         Swal.fire('Gagal', resp.message || 'Gagal menyimpan email bagian.', 'error');
                     }
