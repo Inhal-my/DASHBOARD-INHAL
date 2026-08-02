@@ -4337,27 +4337,74 @@ function resolveBagianEmailFromCandidates(candidates, bagianMap) {
 function submitPendaftaranBagian(payload) {
     try {
         const ss = getGlobalSpreadsheet();
-        let sheet = ss.getSheetByName(LOG_SHEET_NAME);
+        const sheet = ss.getSheetByName(LOG_SHEET_NAME);
         if (!sheet) {
-            sheet = ss.insertSheet(LOG_SHEET_NAME);
-            sheet.appendRow(["Timestamp", "NPM", "Nama Lengkap", "Blok", "Jenis Kegiatan", "Detail Kegiatan", "Tanggal", "Status", "Keterangan", "Bukti ACC Final"]);
+            throw new Error('Sheet LogData tidak ditemukan.');
         }
 
-        const timestamp = new Date();
-        const jenisKegiatan = (payload.kategori || '') + ' - ' + (payload.bagianDisplay || payload.subBagian || '');
-        
-        sheet.appendRow([
-            timestamp,
-            payload.npm || '',
-            payload.namaLengkap || '',
-            payload.blok || '',
-            jenisKegiatan,
-            payload.detailKegiatan || '',
-            payload.tanggalKegiatan || '',
-            'Menunggu',
-            payload.keterangan || 'Diinput oleh Admin Bagian',
-            ''
-        ]);
+        // Pastikan header sesuai struktur utama (sama dengan processRegistration)
+        if (sheet.getLastRow() === 0) {
+            const headers = [
+                'Timestamp', 'ID Pengajuan', 'Nama Lengkap', 'NPM', 'Email Address', 'No. HP/WA', 'Blok',
+                'Jenis Kegiatan', 'Pilihan Ujian', 'Tanggal Ujian',
+                'Pilihan SGD', 'Detail SGD', 'Tanggal SGD',
+                'Pilihan KKD', 'Detail KKD', 'Tanggal KKD',
+                'Pilihan LAB 1', 'Kegiatan LAB 1', 'Tanggal Praktikum 1',
+                'Pilihan LAB 2', 'Kegiatan LAB 2', 'Tanggal Praktikum 2',
+                'Pilihan LAB 3', 'Kegiatan LAB 3', 'Tanggal Praktikum 3',
+                'Pilihan LAB 4', 'Kegiatan LAB 4', 'Tanggal Praktikum 4',
+                'Pilihan LAB 5', 'Kegiatan LAB 5', 'Tanggal Praktikum 5',
+                'Pilihan LAB 6', 'Kegiatan LAB 6', 'Tanggal Praktikum 6',
+                'Pilihan LAB 7', 'Kegiatan LAB 7', 'Tanggal Praktikum 7',
+                'Pilihan LAB 8', 'Kegiatan LAB 8', 'Tanggal Praktikum 8',
+                'Pilihan LAB 9', 'Kegiatan LAB 9', 'Tanggal Praktikum 9',
+                'Keterangan', 'Link Surat Keterangan', 'Status', 'Catatan Admin',
+                'Notifikasi Terkirim Pada', 'Nomor Surat', 'Lampiran Email'
+            ];
+            sheet.appendRow(headers);
+        }
+
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const newRow = new Array(headers.length).fill('');
+        const headerMap = {};
+        headers.forEach((h, i) => headerMap[h] = i);
+        const setVal = (header, value) => {
+            if (headerMap[header] !== undefined) newRow[headerMap[header]] = value || '';
+        };
+
+        const kategori = payload.kategori || '';
+        const subBagian = payload.subBagian || '';
+        const detailKegiatan = payload.detailKegiatan || '';
+
+        setVal('Timestamp', new Date());
+        setVal('ID Pengajuan', Utilities.getUuid());
+        setVal('NPM', payload.npm || '');
+        setVal('Nama Lengkap', payload.namaLengkap || '');
+        setVal('Blok', payload.blok || '');
+        setVal('Jenis Kegiatan', kategori);
+        setVal('Status', 'Menunggu');
+        setVal('Keterangan', payload.keterangan || 'Diinput oleh Admin Bagian');
+
+        // Simpan detail ke kolom per-jenis (sama seperti processRegistration) agar
+        // getCheckPageData / getLogDataForAdmin bisa me-resolve Detail Kegiatan.
+        if (kategori === 'Ujian') {
+            setVal('Pilihan Ujian', detailKegiatan);
+            if (payload.tanggalKegiatan) setVal('Tanggal Ujian', payload.tanggalKegiatan);
+        } else if (kategori === 'SGD') {
+            setVal('Pilihan SGD', detailKegiatan);
+            if (payload.tanggalKegiatan) setVal('Tanggal SGD', payload.tanggalKegiatan);
+        } else if (kategori === 'KKD') {
+            setVal('Pilihan KKD', detailKegiatan);
+            if (payload.tanggalKegiatan) setVal('Tanggal KKD', payload.tanggalKegiatan);
+        } else if (kategori === 'Praktikum') {
+            setVal('Pilihan LAB 1', subBagian);
+            setVal('Kegiatan LAB 1', detailKegiatan);
+            if (payload.tanggalKegiatan) setVal('Tanggal Praktikum 1', payload.tanggalKegiatan);
+        }
+
+        sheet.appendRow(newRow);
+        clearStudentPortalCache(payload.npm || '');
+        clearCheckPageCache();
 
         return { success: true, message: 'Data peserta inhal berhasil ditambahkan.' };
     } catch (e) {
@@ -4365,6 +4412,7 @@ function submitPendaftaranBagian(payload) {
         throw new Error("Gagal menyimpan data ke Spreadsheet: " + e.message);
     }
 }
+
 
 function getLogDataForAdmin() {
     try {
@@ -4412,6 +4460,13 @@ function getLogDataForAdmin() {
             rowData['Waktu Info Bagian'] = info && info.time instanceof Date ? info.time.toISOString() : (info ? info.time : '');
             rowData['Email Bagian'] = info ? info.email : '';
             if (info && info.linkFinal) rowData['Link Final'] = info.linkFinal;
+
+            // Resolve kolom "Detail Kegiatan" agar sinkron dengan dashboard.html
+            // (LogData menyimpan detail di kolom per-jenis, bukan satu kolom "Detail Kegiatan")
+            const activity = extractCheckActivityFromRowData(rowData);
+            if (!rowData['Detail Kegiatan'] || String(rowData['Detail Kegiatan']).trim() === '') {
+                rowData['Detail Kegiatan'] = activity.detail || '';
+            }
             rows.push(rowData);
         }
 

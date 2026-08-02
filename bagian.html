@@ -922,13 +922,26 @@
             tbody.innerHTML = '';
 
             // Filter data yang sesuai dengan Bagian/Kategori aktif
-            const filteredRows = rows.filter(row => {
-                const rowValuesString = Object.values(row).map(v => String(v || '')).join(' ').toLowerCase();
-                const subStr = currentSession.subBagian.toLowerCase().trim();
+            const subStr = currentSession.subBagian.toLowerCase().trim();
 
+            // Untuk Praktikum, cocokkan lab spesifik pada Detail Kegiatan
+            // (mis. "Anatomi - Inhal 1; Fisiologi - Inhal 2" cocok untuk subBagian "Anatomi").
+            // Untuk selain Praktikum, cocokkan Jenis Kegiatan dengan kategori login.
+            const matchesBagian = (row) => {
                 if (!subStr) return false;
-                return rowValuesString.includes(subStr);
-            });
+                if (currentSession.category === 'Praktikum') {
+                    const detail = String(row['Detail Kegiatan'] || row.detail || '').trim();
+                    if (!detail) return false;
+                    return detail.split(';').some(lab => {
+                        const labName = String(lab.split(' - ')[0] || '').trim().toLowerCase();
+                        return labName === subStr;
+                    });
+                }
+                const jenis = String(row['Jenis Kegiatan'] || row.jenisKegiatan || '').trim().toLowerCase();
+                return jenis === subStr || jenis.includes(subStr);
+            };
+
+            const filteredRows = rows.filter(matchesBagian);
 
             // HITUNG REKAPITULASI STATISTIK
             let totalCount = filteredRows.length;
@@ -1027,22 +1040,24 @@
 
                     const jenisTxt = String(row['Jenis Kegiatan'] || '').trim();
                     const detailTxt = String(row['Detail Kegiatan'] || '').trim();
-                    let displayDetail = '-';
 
-                    if (detailTxt) {
-                        // Jika ada Detail Kegiatan, prioritaskan itu
-                        displayDetail = detailTxt;
-                    } else if (jenisTxt) {
-                        // Jika tidak, gunakan Jenis Kegiatan
-                        displayDetail = jenisTxt;
-                    }
-                    
-                    // Hapus nama bagian utama (sesi login) dari string yang ditampilkan
-                    // Pengecualian untuk SGD: "SGD" adalah bagian dari nama kegiatan (cth: "SGD 1"), bukan kategori yang perlu di-strip.
-                    const sessionSub = currentSession.subBagian.toLowerCase();
-                    if (currentSession.category !== 'SGD' && displayDetail.toLowerCase().includes(sessionSub)) {
-                        const regex = new RegExp(currentSession.subBagian, 'gi');
-                        displayDetail = displayDetail.replace(regex, '').replace(/^-| -/g, '').trim();
+                    // Sinkron dengan dashboard.html tab Bagian:
+                    //  - Praktikum: tampilkan hanya segmen lab yang cocok dengan bagian login
+                    //    (mis. "Anatomi - Inhal 1" untuk bagian "Anatomi").
+                    //  - lainnya: tampilkan Detail Kegiatan penuh (fallback Jenis Kegiatan).
+                    let displayDetail = '-';
+                    if (currentSession.category === 'Praktikum') {
+                        if (detailTxt) {
+                            const segmen = detailTxt.split(';').find(lab => {
+                                const labName = String(lab.split(' - ')[0] || '').trim().toLowerCase();
+                                return labName === subStr;
+                            });
+                            displayDetail = (segmen || detailTxt).trim();
+                        } else if (jenisTxt) {
+                            displayDetail = jenisTxt;
+                        }
+                    } else {
+                        displayDetail = detailTxt || jenisTxt || '-';
                     }
 
                     tr.innerHTML = `
