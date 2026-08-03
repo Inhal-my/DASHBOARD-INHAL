@@ -4616,25 +4616,33 @@ function uploadBeritaAcaraBagian(payload) {
 
         let fileUrl = "";
         let fileName = "";
+        let driveWarnings = [];
 
         if (payload.file && payload.file.data) {
             step = 'upload file ke Drive';
-            let folder;
             try {
-                folder = DriveApp.getFolderById(FOLDER_ID);
-            } catch (fe) {
-                folder = DriveApp.getRootFolder();
-            }
+                let folder;
+                try {
+                    folder = DriveApp.getFolderById(FOLDER_ID);
+                } catch (fe) {
+                    folder = DriveApp.getRootFolder();
+                }
 
-            const blob = Utilities.newBlob(
-                Utilities.base64Decode(payload.file.data),
-                payload.file.mimeType || 'application/pdf',
-                payload.file.fileName || ('BeritaAcara_' + Date.now() + '.pdf')
-            );
-            const createdFile = folder.createFile(blob);
-            createdFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-            fileUrl = createdFile.getUrl();
-            fileName = createdFile.getName();
+                const blob = Utilities.newBlob(
+                    Utilities.base64Decode(payload.file.data),
+                    payload.file.mimeType || 'application/pdf',
+                    payload.file.fileName || ('BeritaAcara_' + Date.now() + '.pdf')
+                );
+                const createdFile = folder.createFile(blob);
+                createdFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+                fileUrl = createdFile.getUrl();
+                fileName = createdFile.getName();
+            } catch (driveErr) {
+                // Upload file gagal (mis. DriveApp tidak terotorisasi) —
+                // Berita Acara tetap disimpan tanpa file, disertai peringatan.
+                driveWarnings.push('File gagal diunggah ke Drive: ' + (driveErr && driveErr.message ? driveErr.message : driveErr));
+                console.error('Drive upload BA gagal (record tetap disimpan): ' + (driveErr && driveErr.stack ? driveErr.stack : driveErr));
+            }
         }
 
         step = 'siapkan data BA';
@@ -4682,7 +4690,7 @@ function uploadBeritaAcaraBagian(payload) {
                 .setValues(rows);
         }
 
-        return { success: true, baId: baId, fileUrl: fileUrl, jumlahPeserta: peserta.length };
+        return { success: true, baId: baId, fileUrl: fileUrl, jumlahPeserta: peserta.length, warnings: driveWarnings };
     } catch (e) {
         console.error("Error uploadBeritaAcaraBagian @ " + step + ": " + (e && e.stack ? e.stack : e));
         throw new Error("Gagal mengunggah Berita Acara (" + step + "): " + (e && e.message ? e.message : e));

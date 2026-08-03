@@ -1494,7 +1494,10 @@
                             btn.disabled = false;
                             spinner.classList.add('hidden');
                             modalBeritaAcaraInstance.hide();
-                            Swal.fire('Berhasil!', `Berita Acara berhasil diunggah (${res.baId || ''} | ${res.jumlahPeserta || peserta.length} peserta).`, 'success');
+                            const warnMsg = (res && res.warnings && res.warnings.length)
+                                ? '<br><span class="text-warning fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>' + res.warnings.map(w => escHtml(w)).join('<br>') + '</span>'
+                                : '';
+                            Swal.fire('Berhasil!', `Berita Acara berhasil diunggah (${res.baId || ''} | ${res.jumlahPeserta || peserta.length} peserta).${warnMsg}`, warnMsg ? 'warning' : 'success');
                             loadBeritaAcaraData();
                         })
                         .withFailureHandler(err => {
