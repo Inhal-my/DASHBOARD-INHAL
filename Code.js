@@ -4499,14 +4499,98 @@ function updateStatusRowIndex(rowIndex, newStatus) {
     }
 }
 
+const BA_SHEET_NAME = "BeritaAcara";
+const BA_PESERTA_SHEET_NAME = "BeritaAcaraPeserta";
+const BA_HEADERS = [
+    'Timestamp', 'BA ID', 'Bagian', 'Blok', 'Nama Kegiatan',
+    'Tanggal Pelaksanaan', 'Jumlah Peserta', 'File Name', 'File URL', 'Catatan'
+];
+const BA_PESERTA_HEADERS = [
+    'Timestamp', 'BA ID', 'NPM', 'Nama Lengkap', 'Blok', 'Bagian', 'Status Pengajuan'
+];
+
+function ensureBaSheets(ss) {
+    let baSheet = ss.getSheetByName(BA_SHEET_NAME);
+    if (!baSheet) {
+        baSheet = ss.insertSheet(BA_SHEET_NAME);
+        baSheet.appendRow(BA_HEADERS);
+    }
+    let pesertaSheet = ss.getSheetByName(BA_PESERTA_SHEET_NAME);
+    if (!pesertaSheet) {
+        pesertaSheet = ss.insertSheet(BA_PESERTA_SHEET_NAME);
+        pesertaSheet.appendRow(BA_PESERTA_HEADERS);
+    }
+    return { baSheet: baSheet, pesertaSheet: pesertaSheet };
+}
+
+function appendMissingHeaders(sheet, expectedHeaders) {
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    const existing = {};
+    headers.forEach(function (h, i) { existing[h] = i; });
+    const missing = expectedHeaders.filter(function (h) { return existing[h] === undefined; });
+    if (missing.length > 0) {
+        sheet.getRange(1, sheet.getLastColumn() + 1, 1, missing.length)
+            .setValues([missing]);
+        missing.forEach(function (h, idx) { existing[h] = headers.length + idx; });
+    }
+    return existing;
+}
+
+function generateBaId(baSheet) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const prefix = 'BA-' + year + '-';
+    let maxSeq = 0;
+    const lastRow = baSheet.getLastRow();
+    if (lastRow > 1) {
+        const ids = baSheet.getRange(2, 2, lastRow - 1, 1).getValues();
+        ids.forEach(function (row) {
+            const id = String(row[0] || '').trim();
+            if (id.indexOf(prefix) === 0) {
+                const num = parseInt(id.substring(prefix.length), 10);
+                if (!isNaN(num) && num > maxSeq) maxSeq = num;
+            }
+        });
+    }
+    return prefix + String(maxSeq + 1).padStart(4, '0');
+}
+
+function normalizeBaPeserta(payload) {
+    const peserta = [];
+    const raw = payload.peserta || [];
+    if (Array.isArray(raw)) {
+        raw.forEach(function (p) {
+            const npm = String((p && p.npm) || '').trim();
+            const nama = String((p && p.namaLengkap) || (p && p.nama) || '').trim();
+            if (npm || nama) {
+                peserta.push({
+                    npm: npm,
+                    namaLengkap: nama,
+                    blok: String((p && p.blok) || '').trim(),
+                    statusPengajuan: String((p && p.statusPengajuan) || (p && p.status) || '').trim()
+                });
+            }
+        });
+    }
+    return peserta;
+}
+
 function uploadBeritaAcaraBagian(payload) {
     try {
         const ss = getGlobalSpreadsheet();
-        let sheet = ss.getSheetByName("BeritaAcara");
-        if (!sheet) {
-            sheet = ss.insertSheet("BeritaAcara");
-            sheet.appendRow(["Timestamp", "Bagian", "Blok", "Nama Kegiatan", "Jumlah Peserta", "File Name", "File URL", "Catatan"]);
-        }
+        const sheets = ensureBaSheets(ss);
+        const baSheet = sheets.baSheet;
+        const pesertaSheet = sheets.pesertaSheet;
+
+        appendMissingHeaders(baSheet, BA_HEADERS);
+        appendMissingHeaders(pesertaSheet, BA_PESERTA_HEADERS);
+
+        const baHeaderMap = {};
+        baSheet.getRange(1, 1, 1, baSheet.getLastColumn()).getValues()[0]
+            .forEach(function (h, i) { baHeaderMap[String(h).trim()] = i; });
+        const pesertaHeaderMap = {};
+        pesertaSheet.getRange(1, 1, 1, pesertaSheet.getLastColumn()).getValues()[0]
+            .forEach(function (h, i) { pesertaHeaderMap[String(h).trim()] = i; });
 
         let fileUrl = "";
         let fileName = "";
@@ -4530,18 +4614,46 @@ function uploadBeritaAcaraBagian(payload) {
             fileName = createdFile.getName();
         }
 
-        sheet.appendRow([
-            new Date(),
-            payload.bagianDisplay || payload.bagian || '',
-            payload.blok || '',
-            payload.namaKegiatan || '',
-            payload.jumlahPeserta || 0,
-            fileName,
-            fileUrl,
-            payload.catatan || ''
-        ]);
+        const baId = generateBaId(baSheet);
+        const peserta = normalizeBaPeserta(payload);
+        const tanggalPelaksanaan = String(payload.tanggalPelaksanaan || '').trim();
 
-        return { success: true, fileUrl: fileUrl };
+        const baRow = new Array(baSheet.getLastColumn()).fill('');
+        const setBa = function (header, value) {
+            if (baHeaderMap[header] !== undefined) baRow[baHeaderMap[header]] = value;
+        };
+        setBa('Timestamp', new Date());
+        setBa('BA ID', baId);
+        setBa('Bagian', payload.bagianDisplay || payload.bagian || '');
+        setBa('Blok', payload.blok || '');
+        setBa('Nama Kegiatan', payload.namaKegiatan || '');
+        setBa('Tanggal Pelaksanaan', tanggalPelaksanaan);
+        setBa('Jumlah Peserta', peserta.length || (payload.jumlahPeserta || 0));
+        setBa('File Name', fileName);
+        setBa('File URL', fileUrl);
+        setBa('Catatan', payload.catatan || '');
+        baSheet.appendRow(baRow);
+
+        if (peserta.length > 0) {
+            const rows = peserta.map(function (p) {
+                const row = new Array(pesertaSheet.getLastColumn()).fill('');
+                const setP = function (header, value) {
+                    if (pesertaHeaderMap[header] !== undefined) row[pesertaHeaderMap[header]] = value;
+                };
+                setP('Timestamp', new Date());
+                setP('BA ID', baId);
+                setP('NPM', p.npm);
+                setP('Nama Lengkap', p.namaLengkap);
+                setP('Blok', p.blok);
+                setP('Bagian', payload.bagianDisplay || payload.bagian || '');
+                setP('Status Pengajuan', p.statusPengajuan || '');
+                return row;
+            });
+            pesertaSheet.getRange(pesertaSheet.getLastRow() + 1, 1, rows.length, rows[0].length)
+                .setValues(rows);
+        }
+
+        return { success: true, baId: baId, fileUrl: fileUrl, jumlahPeserta: peserta.length };
     } catch (e) {
         console.error("Error uploadBeritaAcaraBagian: " + e.message);
         throw new Error("Gagal mengunggah Berita Acara: " + e.message);
@@ -4551,26 +4663,46 @@ function uploadBeritaAcaraBagian(payload) {
 function getBeritaAcaraList(bagianFilter) {
     try {
         const ss = getGlobalSpreadsheet();
-        const sheet = ss.getSheetByName("BeritaAcara");
-        if (!sheet || sheet.getLastRow() < 2) {
+        const baSheet = ss.getSheetByName(BA_SHEET_NAME);
+        if (!baSheet || baSheet.getLastRow() < 2) {
             return { rows: [] };
         }
 
-        const data = sheet.getDataRange().getValues();
+        const data = baSheet.getDataRange().getValues();
         const headers = data[0];
         const rows = [];
 
+        const pesertaSheet = ss.getSheetByName(BA_PESERTA_SHEET_NAME);
+        const pesertaByBa = {};
+        if (pesertaSheet && pesertaSheet.getLastRow() > 1) {
+            const pData = pesertaSheet.getDataRange().getValues();
+            const pHeaders = pData[0];
+            for (let j = 1; j < pData.length; j++) {
+                const pRow = {};
+                pHeaders.forEach(function (header, colIndex) {
+                    let cellValue = pData[j][colIndex];
+                    if (cellValue instanceof Date) cellValue = cellValue.toISOString();
+                    pRow[String(header).trim()] = cellValue;
+                });
+                const baId = String(pRow['BA ID'] || '').trim();
+                if (baId) {
+                    if (!pesertaByBa[baId]) pesertaByBa[baId] = [];
+                    pesertaByBa[baId].push(pRow);
+                }
+            }
+        }
+
         for (let i = 1; i < data.length; i++) {
             const rowData = {};
-            headers.forEach((header, colIndex) => {
+            headers.forEach(function (header, colIndex) {
                 let cellValue = data[i][colIndex];
-                if (cellValue instanceof Date) {
-                    cellValue = cellValue.toISOString();
-                }
+                if (cellValue instanceof Date) cellValue = cellValue.toISOString();
                 rowData[String(header).trim()] = cellValue;
             });
-            
+
             if (!bagianFilter || String(rowData.Bagian || '').toLowerCase().includes(bagianFilter.toLowerCase())) {
+                rowData.peserta = pesertaByBa[String(rowData['BA ID'] || '').trim()] || [];
+                rowData.jumlahPesertaList = rowData.peserta.length;
                 rows.push(rowData);
             }
         }

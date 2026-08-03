@@ -581,6 +581,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Waktu Upload</th>
+                                        <th>Tanggal & Jam Pelaksanaan</th>
                                         <th>Blok</th>
                                         <th>Nama Kegiatan</th>
                                         <th class="text-center">Jml Peserta</th>
@@ -589,7 +590,7 @@
                                 </thead>
                                 <tbody id="berita-acara-body">
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-3">Belum ada Berita Acara yang diunggah.</td>
+                                        <td colspan="6" class="text-center text-muted py-3">Belum ada Berita Acara yang diunggah.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -611,12 +612,18 @@
                 <form id="form-berita-acara" onsubmit="handleBeritaAcaraSubmit(event)">
                     <div class="modal-body py-3">
                         <p class="text-muted small mb-3">Unggah berkas Berita Acara pelaksanaan inhal/remediasi per kegiatan agar dapat dipantau oleh Admin Dashboard.</p>
-                        
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Pilih Blok</label>
-                            <select id="ba-blok" class="form-select" required>
-                                <option value="">Pilih Blok...</option>
-                            </select>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Pilih Blok</label>
+                                <select id="ba-blok" class="form-select" required>
+                                    <option value="">Pilih Blok...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Tanggal & Jam Pelaksanaan</label>
+                                <input type="datetime-local" id="ba-tanggal" class="form-control" required>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -625,8 +632,40 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Jumlah Peserta Inhal/Remediasi</label>
-                            <input type="number" id="ba-jumlah" class="form-control" min="1" placeholder="Masukkan total peserta..." required>
+                            <label class="form-label small fw-bold">Pilih Peserta (NPM / Nama Lengkap)</label>
+                            <div class="border rounded-3 p-2 bg-light">
+                                <div class="d-flex gap-2 mb-2">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="ba-peserta-search" class="form-control" placeholder="Cari NPM / Nama / Blok..." oninput="baRenderPesertaList()">
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="baLoadPesertaCandidates()" title="Muat ulang daftar peserta">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="ba-only-approved" checked onchange="baRenderPesertaList()">
+                                    <label class="form-check-label small text-muted" for="ba-only-approved">Tampilkan hanya peserta berstatus Disetujui</label>
+                                </div>
+                                <div id="ba-peserta-list" class="ba-peserta-list border rounded bg-white" style="max-height: 190px; overflow-y: auto;">
+                                    <div class="text-center text-muted small py-3">Memuat daftar peserta...</div>
+                                </div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <input type="text" id="ba-extra-npm" class="form-control form-control-sm" placeholder="NPM peserta lain (opsional)">
+                                    <input type="text" id="ba-extra-nama" class="form-control form-control-sm" placeholder="Nama peserta lain (opsional)">
+                                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" onclick="baAddExtraPeserta()">
+                                        <i class="bi bi-plus-lg me-1"></i>Tambah
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Peserta Dipilih</label>
+                            <div id="ba-selected-chips" class="border rounded-3 p-2 bg-white">
+                                <span class="text-muted small">Belum ada peserta dipilih.</span>
+                            </div>
+                            <div class="form-text mt-1">Jumlah peserta terpilih: <b id="ba-jumlah" class="text-primary">0</b> mahasiswa</div>
                         </div>
 
                         <div class="mb-3">
@@ -1225,9 +1264,181 @@
         }
 
         // BERITA ACARA MODAL & DATA HANDLERS
+        let baPesertaCandidates = [];
+        let baSelectedPeserta = [];
+
         function openBeritaAcaraModal() {
             document.getElementById('form-berita-acara').reset();
+            baSelectedPeserta = [];
+            renderBaSelectedChips();
+            baLoadPesertaCandidates();
             modalBeritaAcaraInstance.show();
+        }
+
+        function baLoadPesertaCandidates() {
+            const listEl = document.getElementById('ba-peserta-list');
+            listEl.innerHTML = '<div class="text-center text-muted small py-3"><span class="spinner-border spinner-border-sm me-1"></span>Memuat daftar peserta...</div>';
+
+            const buildFromRows = (rows, useFilter) => {
+                const subStr = currentSession.subBagian.toLowerCase().trim();
+                const matches = (row) => {
+                    if (currentSession.category === 'Praktikum') {
+                        const detail = String(row['Detail Kegiatan'] || row.detail || '').trim();
+                        if (!detail) return false;
+                        return detail.split(';').some(lab => {
+                            const labName = String(lab.split(' - ')[0] || '').trim().toLowerCase();
+                            return labName === subStr;
+                        });
+                    }
+                    const jenis = String(row['Jenis Kegiatan'] || row.jenisKegiatan || '').trim().toLowerCase();
+                    return jenis === subStr || jenis.includes(subStr);
+                };
+
+                return (rows || []).filter(row => !useFilter || matches(row)).map(row => ({
+                    npm: String(row.NPM || row.npm || '').trim(),
+                    namaLengkap: String(row['Nama Lengkap'] || row.namaLengkap || '').trim(),
+                    blok: String(row.Blok || '').trim(),
+                    status: String(row.Status || '').trim()
+                })).filter(p => p.npm || p.namaLengkap);
+            };
+
+            const finish = (rows, useFilter) => {
+                baPesertaCandidates = buildFromRows(rows, useFilter);
+                if (baPesertaCandidates.length === 0) {
+                    listEl.innerHTML = '<div class="text-center text-muted small py-3">Belum ada peserta terdaftar untuk bagian ini.</div>';
+                    return;
+                }
+                baRenderPesertaList();
+            };
+
+            const isGAS = window.google && google.script && google.script.run;
+
+            if (loadedRowsData && loadedRowsData.length > 0) {
+                finish(loadedRowsData, isGAS);
+                return;
+            }
+
+            if (isGAS && google.script.run.getLogDataForAdmin) {
+                google.script.run
+                    .withSuccessHandler(payload => {
+                        loadedRowsData = payload.rows || payload || [];
+                        finish(loadedRowsData, true);
+                    })
+                    .withFailureHandler(() => {
+                        listEl.innerHTML = '<div class="text-center text-muted small py-3">Gagal memuat daftar peserta.</div>';
+                    })
+                    .getLogDataForAdmin();
+            } else {
+                finish(loadedRowsData, false);
+            }
+        }
+
+        function baRenderPesertaList() {
+            const listEl = document.getElementById('ba-peserta-list');
+            const q = (document.getElementById('ba-peserta-search').value || '').trim().toLowerCase();
+            const onlyApproved = document.getElementById('ba-only-approved').checked;
+
+            const filtered = baPesertaCandidates.filter(p => {
+                const hay = (p.npm + ' ' + p.namaLengkap + ' ' + p.blok).toLowerCase();
+                if (q && !hay.includes(q)) return false;
+                if (onlyApproved) {
+                    const st = p.status.toLowerCase();
+                    const approved = st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai');
+                    if (!approved) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<div class="text-center text-muted small py-3">Tidak ada peserta yang cocok dengan filter.</div>';
+                return;
+            }
+
+            listEl.innerHTML = '';
+            filtered.forEach(p => {
+                const selected = baSelectedPeserta.some(s => s.npm === p.npm && s.namaLengkap === p.namaLengkap);
+                const st = p.status.toLowerCase();
+                const approved = st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai');
+                const badge = approved
+                    ? '<span class="badge bg-success-subtle text-success">Disetujui</span>'
+                    : '<span class="badge bg-warning-subtle text-warning">' + escHtml(p.status || 'Menunggu') + '</span>';
+
+                const row = document.createElement('label');
+                row.className = 'd-flex align-items-center gap-2 px-2 py-1 mb-0 border-bottom';
+                row.style.cursor = 'pointer';
+                row.innerHTML = `
+                    <input type="checkbox" class="form-check-input m-0" ${selected ? 'checked' : ''}>
+                    <div class="flex-grow-1 lh-sm">
+                        <div class="fw-semibold text-dark">${escHtml(p.namaLengkap || '-')}</div>
+                        <div class="text-muted" style="font-size: .75rem;">${escHtml(p.npm || '-')} &middot; ${escHtml(p.blok || '-')}</div>
+                    </div>
+                    ${badge}
+                `;
+                const cb = row.querySelector('input');
+                cb.addEventListener('change', () => {
+                    if (cb.checked) {
+                        if (!baSelectedPeserta.some(s => s.npm === p.npm && s.namaLengkap === p.namaLengkap)) {
+                            baSelectedPeserta.push({ npm: p.npm, namaLengkap: p.namaLengkap, blok: p.blok, status: p.status, extra: false });
+                        }
+                    } else {
+                        baSelectedPeserta = baSelectedPeserta.filter(s => !(s.npm === p.npm && s.namaLengkap === p.namaLengkap));
+                    }
+                    renderBaSelectedChips();
+                });
+                listEl.appendChild(row);
+            });
+        }
+
+        function baAddExtraPeserta() {
+            const npm = document.getElementById('ba-extra-npm').value.trim();
+            const nama = document.getElementById('ba-extra-nama').value.trim();
+            if (!npm && !nama) {
+                Swal.fire('Peringatan', 'Isi minimal NPM atau Nama peserta tambahan.', 'warning');
+                return;
+            }
+            if (baSelectedPeserta.some(s => s.npm === npm && s.namaLengkap === nama)) {
+                Swal.fire('Info', 'Peserta tersebut sudah ditambahkan.', 'info');
+                return;
+            }
+            baSelectedPeserta.push({ npm: npm, namaLengkap: nama, blok: '', status: 'Tambahan', extra: true });
+            document.getElementById('ba-extra-npm').value = '';
+            document.getElementById('ba-extra-nama').value = '';
+            renderBaSelectedChips();
+            baRenderPesertaList();
+        }
+
+        function renderBaSelectedChips() {
+            const chipsEl = document.getElementById('ba-selected-chips');
+            document.getElementById('ba-jumlah').textContent = baSelectedPeserta.length;
+
+            if (baSelectedPeserta.length === 0) {
+                chipsEl.innerHTML = '<span class="text-muted small">Belum ada peserta dipilih.</span>';
+                return;
+            }
+
+            chipsEl.innerHTML = '';
+            baSelectedPeserta.forEach((p, i) => {
+                const chip = document.createElement('span');
+                chip.className = 'badge rounded-pill bg-primary-light text-primary border d-inline-flex align-items-center gap-1 me-1 mb-1 py-1 px-2 fw-normal';
+                chip.innerHTML = `${escHtml(p.namaLengkap || '-')} <small class="text-muted">${escHtml(p.npm || '-')}</small>
+                    <button type="button" class="border-0 bg-transparent text-danger p-0 ms-1" style="font-size:.9rem; line-height:1;" onclick="baRemoveSelected(${i})" title="Hapus">&times;</button>`;
+                chipsEl.appendChild(chip);
+            });
+        }
+
+        function baRemoveSelected(idx) {
+            baSelectedPeserta.splice(idx, 1);
+            renderBaSelectedChips();
+            baRenderPesertaList();
+        }
+
+        function baFormatTanggal(value) {
+            if (!value) return '-';
+            let d = new Date(String(value).replace('T', ' '));
+            if (isNaN(d.getTime())) d = new Date(value);
+            if (isNaN(d.getTime())) return escHtml(String(value));
+            return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+                ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         }
 
         function handleBeritaAcaraSubmit(e) {
@@ -1235,30 +1446,40 @@
             const btn = document.getElementById('ba-submit-btn');
             const spinner = document.getElementById('ba-spinner');
 
-            btn.disabled = true;
-            spinner.classList.remove('hidden');
-
             const blok = document.getElementById('ba-blok').value;
             const nama = document.getElementById('ba-nama').value.trim();
-            const jumlah = document.getElementById('ba-jumlah').value;
+            const tanggalPelaksanaan = document.getElementById('ba-tanggal').value;
             const catatan = document.getElementById('ba-catatan').value;
             const fileInput = document.getElementById('ba-file').files[0];
 
             if (!fileInput) {
                 Swal.fire('Peringatan', 'Silakan pilih berkas Berita Acara terlebih dahulu!', 'warning');
-                btn.disabled = false;
-                spinner.classList.add('hidden');
                 return;
             }
+            if (baSelectedPeserta.length === 0) {
+                Swal.fire('Peringatan', 'Silakan pilih minimal satu peserta.', 'warning');
+                return;
+            }
+
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
 
             const reader = new FileReader();
             reader.onload = function() {
                 const base64Data = reader.result.split(',')[1];
+                const peserta = baSelectedPeserta.map(p => ({
+                    npm: p.npm,
+                    namaLengkap: p.namaLengkap,
+                    blok: p.blok,
+                    statusPengajuan: p.extra ? 'Tambahan' : p.status
+                }));
                 const payload = {
                     bagianDisplay: currentSession.displayName,
                     blok: blok,
                     namaKegiatan: nama,
-                    jumlahPeserta: jumlah,
+                    tanggalPelaksanaan: tanggalPelaksanaan,
+                    jumlahPeserta: peserta.length,
+                    peserta: peserta,
                     catatan: catatan,
                     file: {
                         data: base64Data,
@@ -1273,7 +1494,7 @@
                             btn.disabled = false;
                             spinner.classList.add('hidden');
                             modalBeritaAcaraInstance.hide();
-                            Swal.fire('Berhasil!', 'Berita Acara Kegiatan berhasil diunggah ke Drive & Spreadsheet.', 'success');
+                            Swal.fire('Berhasil!', `Berita Acara berhasil diunggah (${res.baId || ''} | ${res.jumlahPeserta || peserta.length} peserta).`, 'success');
                             loadBeritaAcaraData();
                         })
                         .withFailureHandler(err => {
@@ -1288,7 +1509,7 @@
                         btn.disabled = false;
                         spinner.classList.add('hidden');
                         modalBeritaAcaraInstance.hide();
-                        Swal.fire('Demo Berhasil!', 'Berita Acara tersimpan secara simulasi.', 'success');
+                        Swal.fire('Demo Berhasil!', `Berita Acara tersimpan secara simulasi (${peserta.length} peserta).`, 'success');
                         loadBeritaAcaraData();
                     }, 800);
                 }
@@ -1309,7 +1530,8 @@
                 // Demo Rows
                 const demoBA = [
                     { 
-                        Timestamp: new Date().toLocaleDateString('id-ID'), 
+                        Timestamp: new Date().toISOString(), 
+                        'Tanggal Pelaksanaan': new Date(Date.now() + 86400000).toISOString().slice(0, 16), 
                         Blok: "Blok 1.1", 
                         "Nama Kegiatan": `Berita Acara Inhal ${currentSession.displayName} 1`, 
                         "Jumlah Peserta": 12, 
@@ -1325,23 +1547,25 @@
             tbody.innerHTML = '';
 
             if (!rows || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada Berita Acara yang diunggah.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Belum ada Berita Acara yang diunggah.</td></tr>';
                 return;
             }
 
             rows.forEach(r => {
                 const tr = document.createElement('tr');
                 const tgl = r.Timestamp ? new Date(r.Timestamp).toLocaleDateString('id-ID') : '-';
+                const tglJam = baFormatTanggal(r['Tanggal Pelaksanaan']);
                 const rawUrl = String(r['File URL'] || '').trim();
                 const link = rawUrl && /^https?:\/\//i.test(rawUrl)
                     ? `<a href="${escHtml(rawUrl)}" target="_blank" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>Buka PDF</a>`
                     : '-';
 
                 tr.innerHTML = `
-                    <td>${tgl}</td>
+                    <td class="text-nowrap">${tgl}</td>
+                    <td class="text-nowrap">${tglJam}</td>
                     <td><span class="badge bg-light text-dark border">${escHtml(r.Blok || '-')}</span></td>
                     <td class="fw-semibold text-dark">${escHtml(r['Nama Kegiatan'] || '-')}</td>
-                    <td class="text-center"><span class="badge bg-primary-light text-primary">${escHtml(r['Jumlah Peserta'] || 0)} Mahasiswa</span></td>
+                    <td class="text-center"><span class="badge bg-primary-light text-primary">${escHtml(r['Jumlah Peserta'] || r.jumlahPesertaList || 0)} Mahasiswa</span></td>
                     <td class="text-end">${link}</td>
                 `;
                 tbody.appendChild(tr);

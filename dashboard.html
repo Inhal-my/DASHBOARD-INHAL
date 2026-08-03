@@ -1502,12 +1502,12 @@
                 </div>
             </div>
 
-            <!-- TAB CONTENT: BERITA ACARA BAGIAN -->
+             <!-- TAB CONTENT: BERITA ACARA BAGIAN -->
             <div id="tab-berita-acara" class="tab-pane d-none">
                 <div class="row mb-4 align-items-center">
                     <div class="col">
                         <h4 class="fw-bold mb-1 text-gray-900">Berita Acara Bagian</h4>
-                        <p class="text-gray-500 mb-0">Daftar Berita Acara Pelaksanaan Inhal/Remediasi dari tiap Bagian/Lab.</p>
+                        <p class="text-gray-500 mb-0">Daftar Berita Acara Pelaksanaan Inhal/Remediasi dari tiap Bagian/Lab beserta daftar peserta.</p>
                     </div>
                     <div class="col-auto">
                         <button class="btn btn-outline-secondary rounded-3 px-3" onclick="loadBeritaAcaraDashboard()">
@@ -1515,7 +1515,86 @@
                         </button>
                     </div>
                 </div>
-                
+
+                <div class="summary-cards mb-4" id="baStatCards">
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <div class="summary-card-title">Total Berita Acara</div>
+                                <div class="summary-card-value" id="baStatTotal">0</div>
+                                <div class="summary-card-subtitle">Dokumen terunggah</div>
+                            </div>
+                            <div class="summary-card-icon primary">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <div class="summary-card-title">Total Peserta</div>
+                                <div class="summary-card-value" id="baStatPeserta">0</div>
+                                <div class="summary-card-subtitle">Seluruh kegiatan</div>
+                            </div>
+                            <div class="summary-card-icon success">
+                                <i class="bi bi-people"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <div class="summary-card-title">Bagian Aktif</div>
+                                <div class="summary-card-value" id="baStatBagian">0</div>
+                                <div class="summary-card-subtitle">Yang mengunggah BA</div>
+                            </div>
+                            <div class="summary-card-icon warning">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <div class="summary-card-title">Berkas Tersedia</div>
+                                <div class="summary-card-value" id="baStatBerkas">0</div>
+                                <div class="summary-card-subtitle">Dengan file terlampir</div>
+                            </div>
+                            <div class="summary-card-icon danger">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body py-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="baSearchInput" class="form-control" placeholder="Cari kegiatan / catatan..." oninput="renderBeritaAcaraDashboard(baRowsCache)">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="baFilterBagian" class="form-select form-select-sm" onchange="renderBeritaAcaraDashboard(baRowsCache)">
+                                    <option value="">Semua Bagian</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="baFilterBlok" class="form-select form-select-sm" onchange="renderBeritaAcaraDashboard(baRowsCache)">
+                                    <option value="">Semua Blok</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="baResetFilter()">
+                                    <i class="bi bi-x-circle me-1"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card shadow-sm border-0 rounded-4">
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -1523,11 +1602,11 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th class="ps-4 py-3">Waktu Upload</th>
+                                        <th>Tanggal &amp; Jam</th>
                                         <th>Bagian</th>
                                         <th>Blok</th>
                                         <th>Nama Kegiatan</th>
-                                        <th class="text-center">Jml Peserta</th>
-                                        <th>Catatan</th>
+                                        <th class="text-center">Peserta</th>
                                         <th class="text-end pe-4">Berkas</th>
                                     </tr>
                                 </thead>
@@ -3100,56 +3179,204 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
         }
 
         // ===================== BERITA ACARA TAB FUNCTIONS =====================
+        let baRowsCache = [];
+
         function loadBeritaAcaraDashboard() {
             const tbody = document.getElementById('berita-acara-dashboard-body');
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengambil data berita acara...</td></tr>';
-            
+
             if (window.google && google.script && google.script.run && google.script.run.getBeritaAcaraList) {
                 google.script.run
                     .withSuccessHandler(payload => {
-                        renderBeritaAcaraDashboard(payload.rows || []);
+                        baRowsCache = payload.rows || [];
+                        baPopulateFilters(baRowsCache);
+                        renderBeritaAcaraDashboard(baRowsCache);
                     })
                     .withFailureHandler(error => {
                         tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Gagal memuat data</td></tr>';
                     })
-                    .getBeritaAcaraList(); // Get all without filter
+                    .getBeritaAcaraList();
             } else {
                 const demoBA = [
-                    { Timestamp: new Date().toISOString(), Bagian: "Praktikum Anatomi", Blok: "Blok 1.1", "Nama Kegiatan": "Praktikum Anatomi 1", "Jumlah Peserta": 15, Catatan: "Lengkap", "File URL": "#" },
-                    { Timestamp: new Date().toISOString(), Bagian: "SGD", Blok: "Blok 1.2", "Nama Kegiatan": "SGD 1", "Jumlah Peserta": 5, Catatan: "", "File URL": "#" }
+                    {
+                        Timestamp: new Date().toISOString(),
+                        'Tanggal Pelaksanaan': new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+                        Bagian: "Praktikum Anatomi", Blok: "Blok 1.1", "Nama Kegiatan": "Praktikum Anatomi 1",
+                        "Jumlah Peserta": 15, Catatan: "Lengkap", "File URL": "#",
+                        peserta: [
+                            { NPM: "2108260001", 'Nama Lengkap': "Ahmad Dani", Blok: "Blok 1.1", 'Status Pengajuan': "Disetujui" },
+                            { NPM: "2108260002", 'Nama Lengkap': "Budi Santoso", Blok: "Blok 1.1", 'Status Pengajuan': "Disetujui" }
+                        ]
+                    },
+                    { Timestamp: new Date().toISOString(), 'Tanggal Pelaksanaan': new Date().toISOString().slice(0, 16), Bagian: "SGD", Blok: "Blok 1.2", "Nama Kegiatan": "SGD 1", "Jumlah Peserta": 5, Catatan: "", "File URL": "#", peserta: [] }
                 ];
+                baRowsCache = demoBA;
+                baPopulateFilters(baRowsCache);
                 renderBeritaAcaraDashboard(demoBA);
             }
         }
-        
+
+        function baPopulateFilters(rows) {
+            const bagianSel = document.getElementById('baFilterBagian');
+            const blokSel = document.getElementById('baFilterBlok');
+            const curBagian = bagianSel.value;
+            const curBlok = blokSel.value;
+            const bagianSet = new Set();
+            const blokSet = new Set();
+            (rows || []).forEach(r => {
+                if (r.Bagian) bagianSet.add(String(r.Bagian).trim());
+                if (r.Blok) blokSet.add(String(r.Blok).trim());
+            });
+            bagianSel.innerHTML = '<option value="">Semua Bagian</option>';
+            Array.from(bagianSet).sort().forEach(b => {
+                bagianSel.innerHTML += `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`;
+            });
+            blokSel.innerHTML = '<option value="">Semua Blok</option>';
+            Array.from(blokSet).sort().forEach(b => {
+                blokSel.innerHTML += `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`;
+            });
+            if (curBagian && bagianSet.has(curBagian)) bagianSel.value = curBagian;
+            if (curBlok && blokSet.has(curBlok)) blokSel.value = curBlok;
+        }
+
+        function baResetFilter() {
+            document.getElementById('baSearchInput').value = '';
+            document.getElementById('baFilterBagian').value = '';
+            document.getElementById('baFilterBlok').value = '';
+            renderBeritaAcaraDashboard(baRowsCache);
+        }
+
+        function baFormatTanggalLengkap(value) {
+            if (!value) return '-';
+            let d = new Date(String(value).replace('T', ' '));
+            if (isNaN(d.getTime())) d = new Date(value);
+            if (isNaN(d.getTime())) return escapeHtml(String(value));
+            return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+                ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function baStatusBadge(status) {
+            const st = String(status || '').toLowerCase();
+            if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
+                return '<span class="badge bg-success-subtle text-success">Disetujui</span>';
+            }
+            if (st.includes('tolak')) {
+                return '<span class="badge bg-danger-subtle text-danger">Ditolak</span>';
+            }
+            if (st === 'tambahan') {
+                return '<span class="badge bg-info-subtle text-info">Tambahan</span>';
+            }
+            return `<span class="badge bg-warning-subtle text-warning">${escapeHtml(String(status) || 'Menunggu')}</span>`;
+        }
+
         function renderBeritaAcaraDashboard(rows) {
             const tbody = document.getElementById('berita-acara-dashboard-body');
             tbody.innerHTML = '';
 
-            if (!rows || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Belum ada Berita Acara yang diunggah.</td></tr>';
-                return;
+            const q = (document.getElementById('baSearchInput').value || '').trim().toLowerCase();
+            const fBagian = document.getElementById('baFilterBagian').value;
+            const fBlok = document.getElementById('baFilterBlok').value;
+
+            let filtered = (rows || []).filter(r => {
+                if (fBagian && String(r.Bagian || '') !== fBagian) return false;
+                if (fBlok && String(r.Blok || '') !== fBlok) return false;
+                if (q) {
+                    const hay = (r['Nama Kegiatan'] + ' ' + (r.Catatan || '') + ' ' + r.Bagian + ' ' + r.Blok).toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                return true;
+            });
+
+            filtered.sort((a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0));
+
+            let totalPeserta = 0;
+            const bagianSet = new Set();
+            let totalBerkas = 0;
+            (rows || []).forEach(r => {
+                const n = Number(r['Jumlah Peserta'] || r.jumlahPesertaList || (r.peserta && r.peserta.length) || 0);
+                totalPeserta += n;
+                if (r.Bagian) bagianSet.add(String(r.Bagian).trim());
+                if (r['File URL']) totalBerkas++;
+            });
+            document.getElementById('baStatTotal').textContent = rows ? rows.length : 0;
+            document.getElementById('baStatPeserta').textContent = totalPeserta;
+            document.getElementById('baStatBagian').textContent = bagianSet.size;
+            document.getElementById('baStatBerkas').textContent = totalBerkas;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Belum ada Berita Acara yang cocok dengan filter.</td></tr>';
             }
 
-            rows.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+            filtered.forEach((r, idx) => {
+                const tgl = r.Timestamp ? new Date(r.Timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+                const tglJam = baFormatTanggalLengkap(r['Tanggal Pelaksanaan']);
+                const rawUrl = String(r['File URL'] || '').trim();
+                const link = rawUrl && /^https?:\/\//i.test(rawUrl)
+                    ? `<a href="${escapeHtml(rawUrl)}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-file-earmark-pdf me-1"></i>Lihat File</a>`
+                    : '<span class="text-muted small">-</span>';
+                const peserta = r.peserta && r.peserta.length ? r.peserta : [];
+                const jml = r['Jumlah Peserta'] || peserta.length || 0;
 
-            rows.forEach(r => {
                 const tr = document.createElement('tr');
-                const tgl = r.Timestamp ? new Date(r.Timestamp).toLocaleDateString('id-ID') : '-';
-                const link = r['File URL'] ? `<a href="${r['File URL']}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-file-earmark-pdf me-1"></i>Lihat File</a>` : '-';
-                const catatan = r.Catatan || '-';
-
                 tr.innerHTML = `
-                    <td class="ps-4 text-muted small">${tgl}</td>
-                    <td class="fw-bold text-dark">${r.Bagian || '-'}</td>
-                    <td><span class="badge bg-light text-dark border shadow-sm">${r.Blok || '-'}</span></td>
-                    <td class="fw-medium">${r['Nama Kegiatan'] || '-'}</td>
-                    <td class="text-center"><span class="badge bg-primary-light text-primary fw-bold px-2 py-1">${r['Jumlah Peserta'] || 0}</span></td>
-                    <td class="small text-muted" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${catatan}">${catatan}</td>
+                    <td class="ps-4 text-muted small text-nowrap">${tgl}</td>
+                    <td class="text-nowrap">${tglJam}</td>
+                    <td><span class="badge rounded-pill bg-primary-light text-primary px-3 py-2 fw-semibold">${escapeHtml(r.Bagian || '-')}</span></td>
+                    <td><span class="badge bg-light text-dark border shadow-sm">${escapeHtml(r.Blok || '-')}</span></td>
+                    <td class="fw-medium">
+                        ${escapeHtml(r['Nama Kegiatan'] || '-')}
+                        ${r.Catatan ? `<div class="text-muted small" style="max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(r.Catatan)}">${escapeHtml(r.Catatan)}</div>` : ''}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-sm rounded-pill ${peserta.length ? 'btn-outline-primary' : 'btn-light text-muted'}" onclick="baTogglePeserta(${idx})" title="Lihat daftar peserta">
+                            <i class="bi bi-people me-1"></i>${jml}
+                        </button>
+                    </td>
                     <td class="text-end pe-4">${link}</td>
                 `;
                 tbody.appendChild(tr);
+
+                const detailTr = document.createElement('tr');
+                detailTr.className = 'd-none';
+                detailTr.id = 'ba-detail-' + idx;
+                let pesertaHtml = '';
+                if (peserta.length) {
+                    const rowsHtml = peserta.map((p, i) => `
+                        <tr>
+                            <td class="text-muted small">${i + 1}</td>
+                            <td class="fw-semibold">${escapeHtml(p['Nama Lengkap'] || p.namaLengkap || '-')}</td>
+                            <td class="text-muted">${escapeHtml(p.NPM || p.npm || '-')}</td>
+                            <td><span class="badge bg-light text-dark border">${escapeHtml(p.Blok || r.Blok || '-')}</span></td>
+                            <td>${baStatusBadge(p['Status Pengajuan'] || p.statusPengajuan || '')}</td>
+                        </tr>`).join('');
+                    pesertaHtml = `
+                        <table class="table table-sm table-borderless align-middle mb-0 w-100">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th style="width:40px;">No</th>
+                                    <th>Nama Lengkap</th>
+                                    <th>NPM</th>
+                                    <th>Blok</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>`;
+                } else {
+                    pesertaHtml = '<div class="text-center text-muted small py-2">Daftar peserta tidak tersedia.</div>';
+                }
+                detailTr.innerHTML = `
+                    <td colspan="7" class="ps-5 pe-4 bg-light-subtle">
+                        <div class="small fw-bold text-muted text-uppercase mb-2"><i class="bi bi-people me-1"></i>Daftar Peserta (${peserta.length})</div>
+                        <div class="table-responsive">${pesertaHtml}</div>
+                    </td>`;
+                tbody.appendChild(detailTr);
             });
+        }
+
+        function baTogglePeserta(idx) {
+            const detailTr = document.getElementById('ba-detail-' + idx);
+            if (detailTr) detailTr.classList.toggle('d-none');
         }
 
         // ===================== BAGIAN TAB FUNCTIONS =====================
