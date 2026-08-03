@@ -4513,25 +4513,42 @@ function ensureBaSheets(ss) {
     let baSheet = ss.getSheetByName(BA_SHEET_NAME);
     if (!baSheet) {
         baSheet = ss.insertSheet(BA_SHEET_NAME);
-        baSheet.appendRow(BA_HEADERS);
     }
     let pesertaSheet = ss.getSheetByName(BA_PESERTA_SHEET_NAME);
     if (!pesertaSheet) {
         pesertaSheet = ss.insertSheet(BA_PESERTA_SHEET_NAME);
-        pesertaSheet.appendRow(BA_PESERTA_HEADERS);
     }
     return { baSheet: baSheet, pesertaSheet: pesertaSheet };
 }
 
 function appendMissingHeaders(sheet, expectedHeaders) {
-    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    const lastRow = sheet.getLastRow();
+    if (lastRow === 0) {
+        // Sheet kosong tanpa header — tulis header penuh langsung
+        sheet.appendRow(expectedHeaders);
+        const map = {};
+        expectedHeaders.forEach(function (h, i) { map[h] = i; });
+        return map;
+    }
+    const lastCol = sheet.getLastColumn();
+    if (lastCol <= 0) {
+        sheet.appendRow(expectedHeaders);
+        const map = {};
+        expectedHeaders.forEach(function (h, i) { map[h] = i; });
+        return map;
+    }
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
     const existing = {};
     headers.forEach(function (h, i) { existing[h] = i; });
     const missing = expectedHeaders.filter(function (h) { return existing[h] === undefined; });
     if (missing.length > 0) {
-        sheet.getRange(1, sheet.getLastColumn() + 1, 1, missing.length)
-            .setValues([missing]);
-        missing.forEach(function (h, idx) { existing[h] = headers.length + idx; });
+        const baseCols = sheet.getLastColumn();
+        const targetCols = baseCols + missing.length;
+        if (sheet.getMaxColumns() < targetCols) {
+            sheet.insertColumnsAfter(sheet.getMaxColumns(), targetCols - sheet.getMaxColumns());
+        }
+        sheet.getRange(1, baseCols + 1, 1, missing.length).setValues([missing]);
+        missing.forEach(function (h, idx) { existing[h] = baseCols + idx; });
     }
     return existing;
 }
@@ -4576,13 +4593,18 @@ function normalizeBaPeserta(payload) {
 }
 
 function uploadBeritaAcaraBagian(payload) {
+    let step = 'inisialisasi';
     try {
+        step = 'buka spreadsheet';
         const ss = getGlobalSpreadsheet();
+        step = 'siapkan sheet';
         const sheets = ensureBaSheets(ss);
         const baSheet = sheets.baSheet;
         const pesertaSheet = sheets.pesertaSheet;
 
+        step = 'pastikan header BA';
         appendMissingHeaders(baSheet, BA_HEADERS);
+        step = 'pastikan header peserta';
         appendMissingHeaders(pesertaSheet, BA_PESERTA_HEADERS);
 
         const baHeaderMap = {};
@@ -4596,6 +4618,7 @@ function uploadBeritaAcaraBagian(payload) {
         let fileName = "";
 
         if (payload.file && payload.file.data) {
+            step = 'upload file ke Drive';
             let folder;
             try {
                 folder = DriveApp.getFolderById(FOLDER_ID);
@@ -4614,11 +4637,13 @@ function uploadBeritaAcaraBagian(payload) {
             fileName = createdFile.getName();
         }
 
+        step = 'siapkan data BA';
         const baId = generateBaId(baSheet);
         const peserta = normalizeBaPeserta(payload);
         const tanggalPelaksanaan = String(payload.tanggalPelaksanaan || '').trim();
 
-        const baRow = new Array(baSheet.getLastColumn()).fill('');
+        const baCols = Math.max(1, baSheet.getLastColumn());
+        const baRow = new Array(baCols).fill('');
         const setBa = function (header, value) {
             if (baHeaderMap[header] !== undefined) baRow[baHeaderMap[header]] = value;
         };
@@ -4632,11 +4657,14 @@ function uploadBeritaAcaraBagian(payload) {
         setBa('File Name', fileName);
         setBa('File URL', fileUrl);
         setBa('Catatan', payload.catatan || '');
+        step = 'tulis baris BA';
         baSheet.appendRow(baRow);
 
         if (peserta.length > 0) {
+            step = 'siapkan baris peserta';
+            const pCols = Math.max(1, pesertaSheet.getLastColumn());
             const rows = peserta.map(function (p) {
-                const row = new Array(pesertaSheet.getLastColumn()).fill('');
+                const row = new Array(pCols).fill('');
                 const setP = function (header, value) {
                     if (pesertaHeaderMap[header] !== undefined) row[pesertaHeaderMap[header]] = value;
                 };
@@ -4649,14 +4677,15 @@ function uploadBeritaAcaraBagian(payload) {
                 setP('Status Pengajuan', p.statusPengajuan || '');
                 return row;
             });
+            step = 'tulis baris peserta';
             pesertaSheet.getRange(pesertaSheet.getLastRow() + 1, 1, rows.length, rows[0].length)
                 .setValues(rows);
         }
 
         return { success: true, baId: baId, fileUrl: fileUrl, jumlahPeserta: peserta.length };
     } catch (e) {
-        console.error("Error uploadBeritaAcaraBagian: " + e.message);
-        throw new Error("Gagal mengunggah Berita Acara: " + e.message);
+        console.error("Error uploadBeritaAcaraBagian @ " + step + ": " + (e && e.stack ? e.stack : e));
+        throw new Error("Gagal mengunggah Berita Acara (" + step + "): " + (e && e.message ? e.message : e));
     }
 }
 
