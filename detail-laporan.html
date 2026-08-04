@@ -40,9 +40,9 @@
             --gray-700: #334155;
             --gray-800: #1e293b;
             --gray-900: #0f172a;
-            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-            --card-shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
-            --card-shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+            --card-shadow: 0 4px 6px -1px rgba(0 0 0  0.05), 0 2px 4px -2px rgba(0 0 0  0.05);
+            --card-shadow-md: 0 10px 15px -3px rgba(0 0 0  0.08), 0 4px 6px -4px rgba(0 0 0  0.04);
+            --card-shadow-lg: 0 20px 25px -5px rgba(0 0 0  0.1), 0 8px 10px -6px rgba(0 0 0  0.05);
             --content-bg: #f8fafc;
         }
 
@@ -515,21 +515,29 @@
                     <div class="card-body p-0">
                         <div class="p-3 bg-light border-bottom">
                             <div class="row g-2">
-                                <div class="col-sm-6 col-md-3">
+                                <div class="col-sm-6 col-md-4 col-xl-2">
+                                    <label class="form-label small fw-bold text-gray-600">Sumber</label>
+                                    <select id="bagian-filter-sumber" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-sm-6 col-md-4 col-xl-2">
                                     <label class="form-label small fw-bold text-gray-600">Bagian</label>
                                     <select id="bagian-filter-bagian" class="form-select form-select-sm"></select>
                                 </div>
-                                <div class="col-sm-6 col-md-3">
+                                <div class="col-sm-6 col-md-4 col-xl-2">
                                     <label class="form-label small fw-bold text-gray-600">Pilihan</label>
                                     <select id="bagian-filter-pilihan" class="form-select form-select-sm"></select>
                                 </div>
-                                <div class="col-sm-6 col-md-3">
+                                <div class="col-sm-6 col-md-4 col-xl-2">
                                     <label class="form-label small fw-bold text-gray-600">Detail/Kegiatan</label>
                                     <select id="bagian-filter-detail" class="form-select form-select-sm"></select>
                                 </div>
-                                <div class="col-sm-6 col-md-3">
+                                <div class="col-sm-6 col-md-4 col-xl-2">
                                     <label class="form-label small fw-bold text-gray-600">Blok</label>
                                     <select id="bagian-filter-blok" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-sm-6 col-md-4 col-xl-2 d-grid">
+                                    <button class="btn btn-sm btn-outline-secondary w-100 align-self-end"
+                                        onclick="resetBagianFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
                                 </div>
                             </div>
                         </div>
@@ -537,6 +545,7 @@
                             <table id="bagian-table" class="table table-hover align-middle mb-0 modern-table">
                                 <thead>
                                     <tr>
+                                        <th>Sumber</th>
                                         <th>Bagian</th>
                                         <th>Blok</th>
                                         <th class="text-center">Total Mahasiswa</th>
@@ -546,7 +555,7 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">Memuat data...</td>
+                                        <td colspan="6" class="text-center text-muted py-4">Memuat data...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -671,6 +680,35 @@
             renderRekapBlokTable(data.blok, data.jenis);
         }
 
+        function containsAnyKeyword(text, keywords) {
+            const lower = String(text || '').toLowerCase();
+            return (keywords || []).some(keyword => lower.includes(String(keyword || '').toLowerCase()));
+        }
+
+        function isDigitsOnly(text) {
+            const value = String(text || '').trim();
+            if (!value) return false;
+            return value.split('').every(ch => ch >= '0' && ch <= '9');
+        }
+
+        function isDottedThousands(text) {
+            const value = String(text || '').trim();
+            const parts = value.split('.');
+            if (parts.length < 2 || parts[0].length < 1 || parts[0].length > 3) return false;
+            if (!isDigitsOnly(parts[0])) return false;
+            return parts.slice(1).every(part => part.length === 3 && isDigitsOnly(part));
+        }
+
+        function isHttpUrl(text) {
+            const value = String(text || '').trim().toLowerCase();
+            return value.startsWith('http://') || value.startsWith('https://');
+        }
+
+        function csvEscape(value) {
+            const text = String(value == null ? '' : value).split('\n').join(' ').trim();
+            return `"${text.split('"').join('""')}"`;
+        }
+
         function formatBiayaDisplay(raw) {
             if (raw == null || raw === '') return '-';
             if (typeof raw === 'number') {
@@ -678,10 +716,10 @@
             }
             const text = String(raw).trim();
             if (!text) return '-';
-            const hasText = /gratis|praktikum|remediasi|posttest|rp/i.test(text);
-            const dotted = /^\d{1,3}(\.\d{3})+$/.test(text);
+            const hasText = containsAnyKeyword(text, ['gratis', 'praktikum', 'remediasi', 'posttest', 'rp']);
+            const dotted = isDottedThousands(text);
             if (hasText || dotted) return text;
-            if (/^[0-9]+$/.test(text)) {
+            if (isDigitsOnly(text)) {
                 return 'Rp ' + Number(text).toLocaleString('id-ID');
             }
             const num = Number(text);
@@ -986,22 +1024,25 @@
         }
 
         function setupBagianFilters(filterMeta, dataList) {
+            const sumberEl = document.getElementById('bagian-filter-sumber');
             const bagianEl = document.getElementById('bagian-filter-bagian');
             const pilihanEl = document.getElementById('bagian-filter-pilihan');
             const detailEl = document.getElementById('bagian-filter-detail');
             const blokEl = document.getElementById('bagian-filter-blok');
 
+            const sumberOptions = filterMeta && filterMeta.sumber ? filterMeta.sumber : dataList.map(r => r.sumber);
             const bagianOptions = filterMeta && filterMeta.bagian ? filterMeta.bagian : dataList.map(r => r.bagian);
             const pilihanOptions = filterMeta && filterMeta.pilihan ? filterMeta.pilihan : dataList.map(r => r.pilihan);
             const detailOptions = filterMeta && filterMeta.detail ? filterMeta.detail : dataList.map(r => r.detail);
             const blokOptions = filterMeta && filterMeta.blok ? filterMeta.blok : dataList.map(r => r.blok);
 
+            setFilterOptions(sumberEl, sumberOptions);
             setFilterOptions(bagianEl, bagianOptions);
             setFilterOptions(pilihanEl, pilihanOptions);
             setFilterOptions(detailEl, detailOptions);
             setFilterOptions(blokEl, blokOptions);
 
-            [bagianEl, pilihanEl, detailEl, blokEl].forEach(el => {
+            [sumberEl, bagianEl, pilihanEl, detailEl, blokEl].forEach(el => {
                 if (!el || el.dataset.bound) return;
                 el.addEventListener('change', applyBagianFilters);
                 el.dataset.bound = '1';
@@ -1009,17 +1050,20 @@
         }
 
         function applyBagianFilters() {
+            const sumberEl = document.getElementById('bagian-filter-sumber');
             const bagianEl = document.getElementById('bagian-filter-bagian');
             const pilihanEl = document.getElementById('bagian-filter-pilihan');
             const detailEl = document.getElementById('bagian-filter-detail');
             const blokEl = document.getElementById('bagian-filter-blok');
 
+            const sumberVal = normalizeFilterValue(sumberEl && sumberEl.value);
             const bagianVal = normalizeFilterValue(bagianEl && bagianEl.value);
             const pilihanVal = normalizeFilterValue(pilihanEl && pilihanEl.value);
             const detailVal = normalizeFilterValue(detailEl && detailEl.value);
             const blokVal = normalizeFilterValue(blokEl && blokEl.value);
 
             const filtered = (bagianDataAll || []).filter(row => {
+                if (sumberVal && normalizeFilterValue(row.sumber) !== sumberVal) return false;
                 if (bagianVal && normalizeFilterValue(row.bagian) !== bagianVal) return false;
                 if (pilihanVal && normalizeFilterValue(row.pilihan) !== pilihanVal) return false;
                 if (detailVal && normalizeFilterValue(row.detail) !== detailVal) return false;
@@ -1030,23 +1074,40 @@
             renderBagianRows(filtered);
         }
 
+        function resetBagianFilters() {
+            ['bagian-filter-sumber', 'bagian-filter-bagian', 'bagian-filter-pilihan', 'bagian-filter-detail', 'bagian-filter-blok'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            applyBagianFilters();
+        }
+
         function renderBagianRows(list) {
             const tbody = document.querySelector('#bagian-table tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
 
             if (!list || list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data</td></tr>';
                 return;
             }
 
             list.forEach(b => {
                 const tr = document.createElement('tr');
+                const isBa = (b.sumber || 'LogData') === 'Berita Acara';
+                const sumberBadge = isBa
+                    ? '<span class="badge bg-primary-light text-primary">Berita Acara</span>'
+                    : '<span class="badge bg-light text-dark border">Log Data</span>';
+                const url = String(b.fileUrl || '').trim();
+                const link = (isBa && isHttpUrl(url))
+                    ? `<a href="${url}" target="_blank" rel="noopener" title="Buka dokumen"><i class="bi bi-file-earmark-pdf-fill text-danger"></i></a>`
+                    : '';
                 tr.innerHTML = `
+                    <td class="align-middle">${sumberBadge}</td>
                     <td class="fw-bold text-primary">${b.bagian || '-'}</td>
                     <td>${b.blok || '-'}</td>
                     <td class="fw-bold text-center">${b.total || 0}</td>
-                    <td>${b.jenisKegiatan || '-'}</td>
+                    <td class="align-middle">${b.jenisKegiatan || '-'} ${link}</td>
                     <td>${b.tanggalPelaksanaan || '-'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -1133,8 +1194,7 @@
 
             const rows = Array.from(table.querySelectorAll('tr')).map(row => {
                 const cols = Array.from(row.children).map(cell => {
-                    const text = (cell.innerText || '').replace(/\n/g, ' ').trim();
-                    return `"${text.replace(/"/g, '""')}"`;
+                    return csvEscape(cell.innerText || '');
                 });
                 return cols.join(',');
             });
@@ -1144,9 +1204,7 @@
         function downloadCSV(rows, filename) {
             const csv = Array.isArray(rows) 
                 ? rows.map(row => Array.isArray(row) ? row.map(cell => {
-                    const safeCell = cell !== undefined && cell !== null ? cell : '';
-                    const text = String(safeCell).replace(/\n/g, ' ').trim();
-                    return `"${text.replace(/"/g, '""')}"`;
+                    return csvEscape(cell);
                 }).join(',') : row).join('\n')
                 : rows;
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
