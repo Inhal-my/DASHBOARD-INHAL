@@ -718,7 +718,14 @@
             if (savedSession) {
                 try {
                     currentSession = JSON.parse(savedSession);
-                    initApp();
+                    restoreSession((ok) => {
+                        if (ok) {
+                            initApp();
+                        } else {
+                            localStorage.removeItem('bagian_session_data');
+                            currentSession = { category: '', subBagian: '', displayName: '' };
+                        }
+                    });
                 } catch(e) {
                     localStorage.removeItem('bagian_session_data');
                 }
@@ -760,12 +767,48 @@
                 return;
             }
 
-            currentSession.category = kat;
-            currentSession.subBagian = (kat === 'Praktikum') ? sub : kat;
-            currentSession.displayName = (kat === 'Praktikum') ? `Praktikum ${sub}` : kat;
+            if (!(window.google && google.script && google.script.run && google.script.run.verifyBaginaAccess)) {
+                Swal.fire('Akses Ditolak', 'Panel Bagian hanya berjalan pada web app INHAL yang ter-deploy. Silakan buka melalui aplikasi utama.', 'error');
+                return;
+            }
 
-            localStorage.setItem('bagian_session_data', JSON.stringify(currentSession));
-            initApp();
+            Swal.fire({
+                title: 'Memverifikasi akses...',
+                text: 'Memeriksa email Anda untuk kategori ' + kat + '...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res && res.ok) {
+                        Swal.close();
+                        currentSession.category = kat;
+                        currentSession.subBagian = (kat === 'Praktikum') ? sub : kat;
+                        currentSession.displayName = (kat === 'Praktikum') ? `Praktikum ${sub}` : kat;
+                        localStorage.setItem('bagian_session_data', JSON.stringify(currentSession));
+                        initApp();
+                    } else {
+                        Swal.fire('Akses Ditolak', (res && res.message) || 'Email Anda belum terdaftar untuk Panel Bagian.', 'error');
+                    }
+                })
+                .withFailureHandler((err) => {
+                    Swal.fire('Akses Ditolak', (err && err.message) || 'Gagal memverifikasi akses.', 'error');
+                })
+                .verifyBaginaAccess(kat);
+        }
+
+        function restoreSession(callback) {
+            if (!(window.google && google.script && google.script.run && google.script.run.verifyBaginaAccess)) {
+                callback(false);
+                return;
+            }
+            const kat = currentSession.category;
+            if (!kat) { callback(false); return; }
+            google.script.run
+                .withSuccessHandler((res) => callback(!!(res && res.ok)))
+                .withFailureHandler(() => callback(false))
+                .verifyBaginaAccess(kat);
         }
 
         function initApp() {
@@ -842,7 +885,7 @@
                                 statusEl.innerHTML = '<span class="text-danger">Gagal verifikasi NPM</span>';
                                 namaEl.value = '';
                             })
-                            .getStudentNameByNpm(npm);
+                            .getStudentNameByNpm(npm, currentSession.category);
                     } else {
                         // Demo mode untuk pengujian lokal
                         statusEl.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Mahasiswa Terverifikasi (Mode Demo)</span>';
@@ -873,7 +916,7 @@
             if (window.google && google.script && google.script.run && google.script.run.getUniqueBloks) {
                 google.script.run.withSuccessHandler(bloks => {
                     populateBlokOptions(bloks);
-                }).getUniqueBloks();
+                }).getUniqueBloks(currentSession.category);
             } else {
                 const defaultBloks = ["Blok 1.1", "Blok 1.2", "Blok 2.1", "Blok 2.2", "Blok 3.1", "Blok 3.2"];
                 populateBlokOptions(defaultBloks);
@@ -910,11 +953,10 @@
             if (window.google && google.script && google.script.run && google.script.run.getLogDataForAdmin) {
                 google.script.run
                     .withSuccessHandler(payload => {
-                        console.log("Data mentah dari getLogDataForAdmin:", payload);
                         loadedRowsData = payload.rows || payload || [];
                         renderTableRows(loadedRowsData);
                     })
-                    .getLogDataForAdmin();
+                    .getLogDataForAdmin(currentSession.category);
             } else {
                 // Demo Rows jika dijalankan di preview lokal
                 loadedRowsData = [
@@ -1167,7 +1209,7 @@
                             .withFailureHandler(err => {
                                 Swal.fire('Gagal!', err.message || 'Gagal mengubah status', 'error');
                             })
-                            .updateStatusRowIndex(rowIndex, status);
+                            .updateStatusRowIndex(rowIndex, status, currentSession.category);
                     } else {
                         Swal.fire('Demo Mode', `Status diubah ke ${status} (Simulasi lokal)`, 'success');
                     }
@@ -1216,7 +1258,7 @@
                         spinner.classList.add('hidden');
                         Swal.fire('Gagal!', err.message || 'Gagal menyimpan data.', 'error');
                     })
-                    .submitPendaftaranBagian(payload);
+                    .submitPendaftaranBagian(payload, currentSession.category);
             } else {
                 // Demo Mode
                 setTimeout(() => {
@@ -1324,10 +1366,7 @@
                         loadedRowsData = payload.rows || payload || [];
                         finish(loadedRowsData, true);
                     })
-                    .withFailureHandler(() => {
-                        listEl.innerHTML = '<div class="text-center text-muted small py-3">Gagal memuat daftar peserta.</div>';
-                    })
-                    .getLogDataForAdmin();
+                    .getLogDataForAdmin(currentSession.category);
             } else {
                 finish(loadedRowsData, false);
             }
@@ -1460,6 +1499,10 @@
                 Swal.fire('Peringatan', 'Silakan pilih minimal satu peserta.', 'warning');
                 return;
             }
+            if (fileInput.size > 10 * 1024 * 1024) {
+                Swal.fire('Peringatan', 'Ukuran berkas maksimal 10 MB. Silakan pilih berkas yang lebih kecil.', 'warning');
+                return;
+            }
 
             btn.disabled = true;
             spinner.classList.remove('hidden');
@@ -1505,7 +1548,7 @@
                             spinner.classList.add('hidden');
                             Swal.fire('Gagal!', err.message || 'Gagal mengunggah Berita Acara.', 'error');
                         })
-                        .uploadBeritaAcaraBagian(payload);
+                        .uploadBeritaAcaraBagian(payload, currentSession.category);
                 } else {
                     // Demo Mode
                     setTimeout(() => {
@@ -1528,7 +1571,7 @@
                     .withSuccessHandler(payload => {
                         renderBeritaAcaraRows(payload.rows || []);
                     })
-                    .getBeritaAcaraList(currentSession.displayName);
+                    .getBeritaAcaraList(currentSession.displayName, currentSession.category);
             } else {
                 // Demo Rows
                 const demoBA = [
