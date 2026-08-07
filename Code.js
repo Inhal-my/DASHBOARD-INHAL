@@ -245,62 +245,7 @@ function getDropdownOptions(columnLetter) {
     }
 }
 
-function getBlokOptions() {
-    try {
-        const sheet = getGlobalSpreadsheet().getSheetByName(NAMA_SHEET_MHS);
-        if (!sheet || sheet.getLastRow() < 2) {
-            console.log('[getBlokOptions] Sheet MHS not found or is empty.');
-            return [];
-        }
-
-        // 1. Find column by header name (case-insensitive)
-        const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        const headers = headerRow.map(h => (h || '').toString().toLowerCase());
-        
-        const getIdx = (names) => {
-            for (const name of names) {
-                const idx = headers.indexOf(name.toLowerCase());
-                if (idx !== -1) return idx;
-            }
-            return -1;
-        };
-
-        const blokColIdx = getIdx(['Blok', 'Block', 'BLOK']); // Search for all variations
-
-        let values = [];
-        if (blokColIdx !== -1) {
-            // Found column by header. Get values from this column.
-            const colLetter = String.fromCharCode('A'.charCodeAt(0) + blokColIdx);
-            console.log(`[getBlokOptions] Found 'Blok' column at index ${blokColIdx} (Column ${colLetter}).`);
-            const range = sheet.getRange(`${colLetter}2:${colLetter}${sheet.getLastRow()}`);
-            values = range.getValues().flat().filter(v => v && v.toString().trim() !== '');
-        } else {
-            // 2. Fallback to hardcoded column 'G' if header not found
-            console.warn("[getBlokOptions] Could not find 'Blok' header. Falling back to column G.");
-            try {
-                const range = sheet.getRange(`G2:G${sheet.getLastRow()}`);
-                const rawValues = range.getValues().flat();
-                console.log(`[getBlokOptions] Raw values from fallback column G: ${rawValues.length} items. Sample: ${rawValues.slice(0, 5).join(', ')}`);
-                values = rawValues.filter(v => v && v.toString().trim() !== '');
-            } catch (fallbackError) {
-                console.error(`[getBlokOptions] Error during fallback to column G: ${fallbackError.message}`);
-                return []; // return empty if fallback also fails
-            }
-        }
-
-        if (values.length === 0) {
-            console.warn('[getBlokOptions] No values found for Blok. Check sheet MHS column G or the "Blok" header. Ensure cells are not empty or just whitespace.');
-        } else {
-            console.log(`[getBlokOptions] Found ${values.length} non-empty values. Unique values will be returned.`);
-        }
-
-        return [...new Set(values)]; // Return unique values
-
-    } catch (e) {
-        console.error(`Error in getBlokOptions:`, e.message, e.stack);
-        return [];
-    }
-}
+function getBlokOptions() { return _getBlokOptions(); }
 function getUjianOptions() { return getDropdownOptions('H'); }
 function getSgdOptions() { return getDropdownOptions('I'); }
 function getKkdOptions() { return getDropdownOptions('J'); }
@@ -309,9 +254,24 @@ function getDetailKkdOptions() { return getDropdownOptions('L'); }
 function getLabOptions() { return getDropdownOptions('M'); }
 function getKegiatanLabOptions() { return getDropdownOptions('N'); }
 function getDosenOptions() { return getDropdownOptions('O'); }
-function getBiayaOptions() { return getDropdownOptions('K'); }
 
 function getStudentData() {
+    // Rate limit publik: maksimal 120 panggilan per jendela 60 detik.
+    if (!_rateLimitAllowed('getStudentData', 120, 60)) {
+        return { error: 'Terlalu banyak permintaan. Silakan coba lagi beberapa saat.' };
+    }
+
+    var cache = CacheService.getScriptCache();
+    var cacheKey = 'mhsStudentData:v1';
+    try {
+        var cached = _getCacheChunked(cache, cacheKey);
+        if (cached) {
+            var parsed = JSON.parse(cached);
+            if (parsed && typeof parsed === 'object' && !parsed.error) return parsed;
+            _removeCacheChunked(cache, cacheKey);
+        }
+    } catch (e) { }
+
     try {
         const ss = getGlobalSpreadsheet();
         const sheet = ss.getSheetByName(NAMA_SHEET_MHS);
@@ -337,6 +297,9 @@ function getStudentData() {
         }
 
         console.log("Loaded student data for", Object.keys(studentData).length, "students");
+        try {
+            _setCacheChunked(cache, cacheKey, JSON.stringify(studentData), CACHE_EXPIRATION);
+        } catch (e) { }
         return studentData;
 
     } catch (e) {
@@ -1458,6 +1421,23 @@ function _getStudentPortalCacheKey(npm) {
     return 'studentPortalData:v1:' + String(npm || '').replace(/[^0-9A-Za-z_-]/g, '');
 }
 
+// ============== RATE LIMITING RINGAN ==============
+// Dipakai untuk endpoint publik yang boros (mis. getStudentData / getStudentNameByNpm)
+// agar tidak mudah disalahgunakan menghabiskan kuota Apps Script.
+// Fail-open: jika CacheService bermasalah, request tetap dilanjutkan.
+function _rateLimitAllowed(token, maxCalls, windowSec) {
+    try {
+        var cache = CacheService.getScriptCache();
+        var key = 'rl:' + String(token || 'anon').replace(/[^0-9A-Za-z_-]/g, '');
+        var current = parseInt(cache.get(key) || '0', 10);
+        if (current >= maxCalls) return false;
+        cache.put(key, String(current + 1), windowSec || 60);
+        return true;
+    } catch (e) {
+        return true;
+    }
+}
+
 function _clearStudentPortalCache(npm) {
     if (!npm) return;
     try {
@@ -1906,25 +1886,6 @@ function updateCheckDataPartial(payload) {
     }
 }
 
-function deleteCheckRow(npm) {
-    try {
-        requireAuthorized();
-        const ss = getGlobalSpreadsheet();
-        const sheet = ss.getSheetByName(CHECK_SHEET_NAME);
-        if (!sheet || sheet.getLastRow() < 2) return { success: false, message: 'Tidak ada data' };
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        const idxNpm = headers.indexOf('NPM');
-        const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
-        for (let i = 0; i < data.length; i++) {
-            if ((data[i][idxNpm] || '') == npm) { sheet.deleteRow(i + 2); _clearCheckPageCache(); return { success: true }; }
-        }
-        return { success: false, message: 'NPM tidak ditemukan' };
-    } catch (e) {
-        console.error('Error deleteCheckRow:', e);
-        return { success: false, message: e.message };
-    }
-}
-
 // ============== FUNGSI UTAMA (ROUTING) ================
 function doGet(e) {
     const page = e && e.parameter && e.parameter.page ? String(e.parameter.page).trim() : '';
@@ -2227,24 +2188,6 @@ function saveMonitorMasterData(payload) {
     };
 }
 
-function saveMonitorBagianData(payload) {
-    requireCoreAdminAuthorized();
-
-    var rows = payload && payload.rows ? payload.rows : [];
-    var ss = getGlobalSpreadsheet();
-    var mhsSheet = ss.getSheetByName(NAMA_SHEET_MHS);
-    if (!mhsSheet) {
-        throw new Error('Sheet MHS tidak ditemukan.');
-    }
-
-    monitorWriteBagianMappings_(mhsSheet, rows);
-    return {
-        success: true,
-        message: 'Pemetaan bagian berhasil diperbarui.',
-        data: getMonitorPageData()
-    };
-}
-
 function saveMonitorBiayaData(payload) {
     requireCoreAdminAuthorized();
 
@@ -2288,9 +2231,50 @@ function saveMonitorBiayaData(payload) {
     };
 }
 
+function _getBlokOptions() {
+    try {
+        const sheet = getGlobalSpreadsheet().getSheetByName(NAMA_SHEET_MHS);
+        if (!sheet || sheet.getLastRow() < 2) {
+            return [];
+        }
+
+        const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const headers = headerRow.map(h => (h || '').toString().toLowerCase());
+
+        const getIdx = (names) => {
+            for (const name of names) {
+                const idx = headers.indexOf(name.toLowerCase());
+                if (idx !== -1) return idx;
+            }
+            return -1;
+        };
+
+        const blokColIdx = getIdx(['Blok', 'Block']);
+
+        let values = [];
+        if (blokColIdx !== -1) {
+            const colLetter = String.fromCharCode('A'.charCodeAt(0) + blokColIdx);
+            const range = sheet.getRange(`${colLetter}2:${colLetter}${sheet.getLastRow()}`);
+            values = range.getValues().flat().filter(v => v && v.toString().trim() !== '');
+        } else {
+            try {
+                const range = sheet.getRange(`G2:G${sheet.getLastRow()}`);
+                values = range.getValues().flat().filter(v => v && v.toString().trim() !== '');
+            } catch (fallbackError) {
+                return [];
+            }
+        }
+
+        return [...new Set(values)];
+    } catch (e) {
+        console.error('Error in _getBlokOptions:', e.message);
+        return [];
+    }
+}
+
 function getUniqueBloks(kategori) {
     requireAuthorizedOrBagina();
-    return getBlokOptions();
+    return _getBlokOptions();
 }
 
 function getUniqueJenisKegiatan() {
@@ -2318,26 +2302,54 @@ function getUniqueJenisKegiatan() {
 
 function getStudentNameByNpm(npm, kategori) {
     requireBaginaSession(kategori);
+    if (!_rateLimitAllowed('npmlookup:' + String(npm || ''), 60, 60)) {
+        return '';
+    }
     return _lookupStudentNameByNpm(npm);
+}
+
+// Membaca peta NPM -> Nama dari sheet MHS, di-cache 5 menit.
+// Menghindari pemindaian seluruh sheet per NPM.
+function _getMhsNameMap() {
+    var cache = CacheService.getScriptCache();
+    var cacheKey = 'mhsNameMap:v1';
+    try {
+        var cached = _getCacheChunked(cache, cacheKey);
+        if (cached) {
+            var parsed = JSON.parse(cached);
+            if (parsed && typeof parsed === 'object') return parsed;
+            _removeCacheChunked(cache, cacheKey);
+        }
+    } catch (e) { }
+
+    var map = {};
+    try {
+        var ss = getGlobalSpreadsheet();
+        var sheet = ss.getSheetByName('MHS');
+        if (sheet && sheet.getLastRow() > 1) {
+            var data = sheet.getDataRange().getValues();
+            for (var i = 1; i < data.length; i++) {
+                var npm = data[i][0] ? String(data[i][0]).trim() : '';
+                if (npm && map[npm] === undefined) {
+                    map[npm] = String(data[i][1] || '');
+                }
+            }
+        }
+        try {
+            _setCacheChunked(cache, cacheKey, JSON.stringify(map), CACHE_EXPIRATION);
+        } catch (e) { }
+    } catch (e) {
+        console.error('Error in _getMhsNameMap: ' + e);
+    }
+    return map;
 }
 
 function _lookupStudentNameByNpm(npm) {
     try {
-        const ss = getGlobalSpreadsheet();
-        const sheet = ss.getSheetByName('MHS');
-        if (!sheet || sheet.getLastRow() < 2) return '';
-
-        const data = sheet.getDataRange().getValues();
         const inputNpm = npm ? String(npm).trim() : '';
         if (!inputNpm) return '';
-
-        for (let i = 1; i < data.length; i++) {
-            const sheetNpm = data[i][0] ? String(data[i][0]).trim() : '';
-            if (sheetNpm === inputNpm) {
-                return String(data[i][1] || '');
-            }
-        }
-        return '';
+        const map = _getMhsNameMap();
+        return map[inputNpm] || '';
     } catch (e) {
         console.error('Error in _lookupStudentNameByNpm: ' + e);
         return '';
@@ -2345,76 +2357,26 @@ function _lookupStudentNameByNpm(npm) {
 }
 
 
-function debugSheetStatus() {
-    try {
-        requireAuthorized();
-        const ss = getGlobalSpreadsheet();
-        const log = ss.getSheetByName(LOG_SHEET_NAME);
-        const upload = ss.getSheetByName(UPLOAD_LOG_SHEET_NAME);
-        const check = ss.getSheetByName(CHECK_SHEET_NAME) || ss.getSheetByName('Check');
-
-        const getHeaders = (sheet) => {
-            if (!sheet || sheet.getLastRow() < 1) return [];
-            return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
-        };
-
-        let probeResult = "LogData kosong";
-        let rawDump = "LogData kosong"; 
-
-        if (log && log.getLastRow() > 1) {
-            const data = log.getDataRange().getDisplayValues();
-            rawDump = data.slice(0, 5); 
-            const headers = data.shift(); 
-            const firstRow = data[0];
-
-            const getL = (names) => {
-                for (let n = 0; n < names.length; n++) {
-                    const idx = headers.indexOf(names[n]);
-                    if (idx !== -1) return idx;
-                }
-                return -1;
-            };
-            const iNpm = getL(['NPM', 'NIM', 'Nomor Induk Mahasiswa']);
-            const npmVal = iNpm >= 0 ? firstRow[iNpm] : "Column not found";
-
-            probeResult = {
-                headersFound: headers,
-                firstRowRaw: firstRow,
-                npmIndex: iNpm,
-                npmValue: npmVal,
-                idxFnCheck: typeof getL
-            };
-        }
-
-        return {
-            log: log ? { name: log.getName(), rows: log.getLastRow(), headers: getHeaders(log) } : 'Missing',
-            upload: upload ? { name: upload.getName(), rows: upload.getLastRow(), headers: getHeaders(upload) } : 'Missing',
-            check: check ? { name: check.getName(), rows: check.getLastRow(), headers: getHeaders(check) } : 'Missing',
-            email: getCurrentUserEmail(),
-            authorized: isAuthorized(getCurrentUserEmail()),
-            probe: probeResult,
-            rawDump: rawDump 
-        };
-    } catch (e) {
-        return { error: e.toString() + " Stack: " + e.stack };
-    }
-}
-
 function clearCheckPageCache() {
     requireAuthorized();
     return _clearCheckPageCache();
 }
 
 function _clearCheckPageCache() {
+    // Bersihkan semua cache data baca (dipanggil setiap kali terjadi operasi tulis).
+    var dataCacheKeys = [
+        'checkPageData:v1',
+        'logDataForAdmin:v1',
+        'detailLaporanData:v1',
+        'mhsNameMap:v1',
+        'mhsStudentData:v1'
+    ];
     try {
-        _removeCacheChunked(CacheService.getScriptCache(), 'checkPageData:v1');
+        var cache = CacheService.getScriptCache();
+        for (var i = 0; i < dataCacheKeys.length; i++) {
+            try { _removeCacheChunked(cache, dataCacheKeys[i]); } catch (e) { }
+        }
     } catch (e) { }
-}
-
-function clearDashboardCache() {
-    requireAuthorized();
-    _clearCheckPageCache();
-    return { success: true };
 }
 
 function getCheckPageDataNoAuth() {
@@ -3015,48 +2977,18 @@ function getCheckMatchedData() {
     }
 }
 
-function getCheckDiagnostics() {
-    return { disabled: true };
-    try {
-        requireAuthorized();
-        const ss = getGlobalSpreadsheet();
-        const logSheet = ss.getSheetByName(LOG_SHEET_NAME);
-        const uploadSheet = ss.getSheetByName(UPLOAD_LOG_SHEET_NAME);
-        const checkSheet = ss.getSheetByName(CHECK_SHEET_NAME) || ss.getSheetByName('Check') || ss.getSheetByName('CheckData');
-
-        const infoFor = (sheet) => {
-            if (!sheet) return { exists: false, rows: 0, headers: [], sample: [] };
-            const rows = sheet.getLastRow();
-            const cols = sheet.getLastColumn();
-            const headers = rows > 0 ? sheet.getRange(1, 1, 1, cols).getValues()[0] : [];
-            let sample = [];
-            if (rows > 1) {
-                const count = Math.min(3, rows - 1);
-                sample = sheet.getRange(2, 1, count, cols).getValues();
-            }
-            return { exists: true, rows, headers, sample };
-        };
-
-        const log = infoFor(logSheet);
-        const upload = infoFor(uploadSheet);
-        const check = infoFor(checkSheet);
-
-        console.log(`[Diagnostics] LogData rows=${log.rows}, Upload rows=${upload.rows}, Check rows=${check.rows}`);
-
-        return {
-            sheetId: SHEET_ID,
-            sheetNames: { LOG_SHEET_NAME, UPLOAD_LOG_SHEET_NAME, CHECK_SHEET_NAME },
-            log,
-            upload,
-            check
-        };
-    } catch (e) {
-        console.error('getCheckDiagnostics error:', e.message);
-        return { error: e.message };
-    }
-}
-
 function getDetailLaporanData() {
+    var cacheKey = 'detailLaporanData:v1';
+    var cache = CacheService.getScriptCache();
+    try {
+        var cached = _getCacheChunked(cache, cacheKey);
+        if (cached) {
+            var parsed = JSON.parse(cached);
+            if (parsed && parsed.summary) return parsed;
+            _removeCacheChunked(cache, cacheKey);
+        }
+    } catch (e) { }
+
     try {
         requireAuthorized();
 
@@ -3438,7 +3370,7 @@ function getDetailLaporanData() {
             };
         }).sort((a, b) => b.total - a.total);
 
-        return {
+        const result = {
             summary: {
                 total: totalPendaftar,
                 accepted: totalDiterima,
@@ -3452,6 +3384,10 @@ function getDetailLaporanData() {
             bagian: bagianRows,
             bagianFilters
         };
+        try {
+            _setCacheChunked(cache, cacheKey, JSON.stringify(result), CACHE_EXPIRATION);
+        } catch (e) { }
+        return result;
 
     } catch (e) {
         console.error("Error getDetailLaporanData: " + e.message);
@@ -3969,14 +3905,6 @@ function _createPdfFromTemplate(templateId, data, status) {
         console.error("❌ Error creating PDF:", e.message);
         throw new Error("Gagal membuat PDF: " + e.message);
     }
-}
-
-function generateSuratNumber(type = 'INHAL') {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(3, '0');
-    const randomNum = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
-    return `${randomNum}/${type}/FKIK-UMSU/${getRomanMonth(date.getMonth() + 1)}/${year}`;
 }
 
 function getRomanMonth(month) {
@@ -4643,6 +4571,17 @@ function getLogDataForAdmin(kategori) {
 }
 
 function _getLogDataForAdminData() {
+    var cacheKey = 'logDataForAdmin:v1';
+    var cache = CacheService.getScriptCache();
+    try {
+        var cached = _getCacheChunked(cache, cacheKey);
+        if (cached) {
+            var parsed = JSON.parse(cached);
+            if (parsed && parsed.rows) return parsed;
+            _removeCacheChunked(cache, cacheKey);
+        }
+    } catch (e) { }
+
     try {
         const ss = getGlobalSpreadsheet();
         const sheet = ss.getSheetByName(LOG_SHEET_NAME);
@@ -4698,7 +4637,11 @@ function _getLogDataForAdminData() {
             rows.push(rowData);
         }
 
-        return { rows: rows };
+        const result = { rows: rows };
+        try {
+            _setCacheChunked(cache, cacheKey, JSON.stringify(result), CACHE_EXPIRATION);
+        } catch (e) { }
+        return result;
     } catch (e) {
         console.error("Error getLogDataForAdmin: " + e.message);
         return { rows: [] };
@@ -4931,6 +4874,143 @@ function uploadBeritaAcaraBagian(payload, kategori) {
         throw new Error("Gagal mengunggah Berita Acara (" + step + "): " + (e && e.message ? e.message : e));
     }
 }
+/**
+ * Mengambil daftar berita acara yang diupload oleh admin
+ */
+function getBeritaAcaraAdminList() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) {
+      console.error("getBeritaAcaraAdminList: Gagal mendapatkan spreadsheet aktif.");
+      return [];
+    }
+    let sheet = ss.getSheetByName("BeritaAcaraAdmin");
+    if (!sheet || sheet.getLastRow() <= 1) {
+      console.log("getBeritaAcaraAdminList: Sheet 'BeritaAcaraAdmin' tidak ditemukan atau kosong.");
+      return [];
+    }
+
+    // Ambil semua data kecuali header
+    const dataValues = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+    
+    const result = dataValues.map(row => {
+      // Fungsi utilitas untuk mengubah nilai menjadi string yang aman
+      const safeString = (val) => {
+        if (val === null || val === undefined) {
+          return '';
+        }
+        if (val instanceof Date) {
+          // Coba format tanggal, jika gagal, kembalikan sebagai string
+          try {
+            return Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+          } catch (e) {
+            return val.toString();
+          }
+        }
+        return String(val);
+      };
+
+      return {
+        id: safeString(row[0]),
+        waktuUpload: safeString(row[1]),
+        blok: safeString(row[2]),
+        jenisKegiatan: safeString(row[3]),
+        detailKegiatan: safeString(row[4]),
+        judulBA: safeString(row[5]),
+        tanggalKegiatan: safeString(row[6]),
+        fileUrl: safeString(row[7])
+      };
+    });
+
+    console.log("getBeritaAcaraAdminList: Sukses memproses dan akan mengirim " + result.length + " baris.");
+    return result;
+
+  } catch (err) {
+    console.error("ERROR BESAR di getBeritaAcaraAdminList: " + err.message + " | Stack: " + err.stack);
+    return []; // Jika ada error tak terduga, kembalikan array kosong.
+  }
+}
+
+/**
+ * Upload berita acara admin (simpan file ke Drive dan catat ke Spreadsheet)
+ */
+function uploadBeritaAcaraAdmin(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("BeritaAcaraAdmin");
+    if (!sheet) {
+      sheet = ss.insertSheet("BeritaAcaraAdmin");
+      sheet.appendRow(["ID", "Waktu Upload", "Blok", "Jenis Kegiatan", "Detail Kegiatan", "Judul BA", "Tanggal Kegiatan", "File URL"]);
+    }
+
+    // Decode base64 file
+    const fileData = payload.file;
+    const split = fileData.data.split(',');
+    const mimeType = fileData.mimeType || 'application/pdf';
+    const decoded = Utilities.base64Decode(split[1]);
+    const blob = Utilities.newBlob(decoded, mimeType, fileData.fileName);
+
+    // Simpan ke Google Drive (sesuaikan ID folder jika perlu, atau simpan di root)
+    // const folder = DriveApp.getFolderById("YOUR_FOLDER_ID");
+    // const driveFile = folder.createFile(blob);
+    const driveFile = DriveApp.createFile(blob);
+    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    const fileUrl = driveFile.getUrl();
+
+    const id = new Date().getTime();
+    const waktuUpload = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+
+    sheet.appendRow([
+      id,
+      waktuUpload,
+      payload.blok,
+      payload.jenisKegiatan,
+      payload.detailKegiatan,
+      payload.judulBA,
+      payload.tanggalKegiatan,
+      fileUrl
+    ]);
+
+    return { success: true, id: id, fileUrl: fileUrl };
+  } catch (err) {
+    console.error("Error uploadBeritaAcaraAdmin: " + err.message);
+    throw new Error(err.message);
+  }
+}
+
+/**
+ * Hapus berita acara admin berdasarkan ID
+ */
+function deleteBeritaAcaraAdmin(id) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("BeritaAcaraAdmin");
+    if (!sheet) return { success: false, message: "Sheet not found" };
+
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(id)) {
+        const fileUrl = rows[i][7];
+        // Hapus file dari Drive jika ada URL-nya
+        try {
+          if (fileUrl && fileUrl.includes("id=")) {
+            const fileId = fileUrl.split("id=")[1].split("&")[0];
+            DriveApp.getFileById(fileId).setTrashed(true);
+          }
+        } catch (e) {
+          console.warn("Could not delete file from drive: " + e.message);
+        }
+
+        sheet.deleteRow(i + 1);
+        return { success: true };
+      }
+    }
+    return { success: false, message: "ID not found" };
+  } catch (err) {
+    console.error("Error deleteBeritaAcaraAdmin: " + err.message);
+    throw new Error(err.message);
+  }
+}
 
 function getBeritaAcaraList(bagianFilter, kategori) {
     try {
@@ -5008,7 +5088,12 @@ function getAdminCombinedPaged(page, pageSize, filters) {
         const size = Math.max(1, Math.min(100, parseInt(pageSize, 10) || 20));
         const f = filters || {};
 
-        const payload = _getCheckPageData({ skipCache: true });
+        // Gunakan cache (5 menit). Tombol "Refresh" di admin.html mengirim fresh:true
+        // agar tetap bisa membaca data terbaru saat diminta eksplisit.
+        // Semua operasi tulis sudah memanggil _clearCheckPageCache() sehingga cache
+        // otomatis tidak akan kedaluwarsa setelah admin mengubah data.
+        if (f.fresh) _clearCheckPageCache();
+        const payload = _getCheckPageData({ skipCache: !!f.fresh });
         const rows = Array.isArray(payload && payload.rows) ? payload.rows : [];
 
         const term = String(f.search || '').toLowerCase().trim();
