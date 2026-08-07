@@ -1406,13 +1406,111 @@
 
             <!-- TAB CONTENT: DOKUMEN -->
             <div id="tab-dokumen" class="tab-pane d-none">
-                <div class="data-card">
-                    <div class="data-card-header">
-                        <h2 class="data-card-title"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Dokumen & Laporan</h2>
+                <!-- Summary Cards -->
+                <div class="summary-cards mb-4" id="baAdminStatCards">
+                    <div class="summary-card">
+                        <div class="summary-card-icon" style="background:var(--primary-50);color:var(--primary);">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="summary-card-content">
+                            <div class="summary-card-value" id="baAdminStatTotal">0</div>
+                            <div class="summary-card-label">Total Berita Acara</div>
+                        </div>
                     </div>
-                    <div class="data-card-body p-4 text-center text-muted">
-                        <i class="bi bi-tools" style="font-size: 3rem;"></i>
-                        <p class="mt-3">Modul Dokumen sedang dalam pengembangan.</p>
+                    <div class="summary-card">
+                        <div class="summary-card-icon" style="background:#fef3c7;color:#b45309;">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                        </div>
+                        <div class="summary-card-content">
+                            <div class="summary-card-value" id="baAdminStatBlok">0</div>
+                            <div class="summary-card-label">Blok Aktif</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-icon" style="background:#dcfce7;color:#16a34a;">
+                            <i class="bi bi-file-earmark-check-fill"></i>
+                        </div>
+                        <div class="summary-card-content">
+                            <div class="summary-card-value" id="baAdminStatBerkas">0</div>
+                            <div class="summary-card-label">Berkas Tersedia</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-icon" style="background:#ede9fe;color:#7c3aed;">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                        </div>
+                        <div class="summary-card-content">
+                            <div class="summary-card-value" id="baAdminStatJenis">0</div>
+                            <div class="summary-card-label">Jenis Kegiatan</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body py-3 px-4">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="baAdminSearch" class="form-control border-start-0"
+                                        placeholder="Cari judul / kegiatan..."
+                                        oninput="filterDokumenTable()">
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <select id="baAdminFilterBlok" class="form-select form-select-sm" onchange="filterDokumenTable()">
+                                    <option value="">Semua Blok</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <select id="baAdminFilterJenis" class="form-select form-select-sm" onchange="filterDokumenTable()">
+                                    <option value="">Semua Kegiatan</option>
+                                    <option value="Ujian">Ujian</option>
+                                    <option value="SGD">SGD</option>
+                                    <option value="KKD">KKD</option>
+                                    <option value="Praktikum">Praktikum</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-2 d-flex gap-2">
+                                <button class="btn btn-sm btn-light border w-100" onclick="resetDokumenFilter()">
+                                    <i class="bi bi-x-circle me-1"></i>Reset
+                                </button>
+                                <button class="btn btn-sm btn-primary w-100" onclick="openDokumenUploadModal()">
+                                    <i class="bi bi-plus-lg me-1"></i>Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel -->
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="baAdminTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Waktu Upload</th>
+                                        <th>Blok</th>
+                                        <th>Judul Berita Acara</th>
+                                        <th>Tanggal Kegiatan</th>
+                                        <th class="text-center">Berkas</th>
+                                        <th class="text-center pe-4">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="baAdminTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <i class="bi bi-file-earmark-text" style="font-size:2rem;"></i>
+                                            <p class="mt-2 mb-0">Belum ada berita acara.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1866,6 +1964,109 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal Upload Berita Acara Admin -->
+<div class="modal fade" id="modalDokumenBeritaAcara" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 560px;">
+        <div class="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
+            <div class="modal-header border-0 px-4 py-3" style="background: var(--sidebar-bg);">
+                <h5 class="modal-title text-white fw-bold mb-0">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Berita Acara
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3 bg-white">
+                <!-- Blok -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Blok <span class="text-danger">*</span></label>
+                    <select id="baAdminBlok" class="form-select form-select-sm" onchange="updateJudulBA(); checkDokumenSubmitReady()">
+                        <option value="">Pilih Blok</option>
+                    </select>
+                </div>
+                <!-- Jenis Kegiatan -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Jenis Kegiatan <span class="text-danger">*</span></label>
+                    <select id="baAdminJenis" class="form-select form-select-sm" onchange="handleDokumenJenisChange()">
+                        <option value="">Pilih Jenis Kegiatan</option>
+                        <option value="Ujian">Ujian</option>
+                        <option value="SGD">SGD</option>
+                        <option value="KKD">KKD</option>
+                        <option value="Praktikum">Praktikum</option>
+                    </select>
+                </div>
+                <!-- Detail Kegiatan Level 1 -->
+                <div class="mb-3 d-none" id="baAdminDetailWrap1">
+                    <label class="form-label fw-semibold small" id="baAdminDetailLabel1">Detail Kegiatan <span class="text-danger">*</span></label>
+                    <select id="baAdminDetail1" class="form-select form-select-sm" onchange="handleDokumenDetail1Change()">
+                        <option value="">Pilih...</option>
+                    </select>
+                </div>
+                <!-- Detail Kegiatan Level 2 (hanya SGD dan KKD dan Praktikum) -->
+                <div class="mb-3 d-none" id="baAdminDetailWrap2">
+                    <label class="form-label fw-semibold small" id="baAdminDetailLabel2">Detail <span class="text-danger">*</span></label>
+                    <select id="baAdminDetail2" class="form-select form-select-sm" onchange="updateJudulBA(); checkDokumenSubmitReady()">
+                        <option value="">Pilih...</option>
+                    </select>
+                </div>
+                <!-- Tanggal & Waktu -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Tanggal & Waktu Kegiatan <span class="text-danger">*</span></label>
+                    <input type="datetime-local" id="baAdminTanggal" class="form-control form-control-sm" onchange="checkDokumenSubmitReady()">
+                </div>
+                <!-- Judul Auto-generate -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-muted">Judul Berita Acara (otomatis)</label>
+                    <div id="baAdminJudulPreview" class="rounded-2 px-3 py-2 small fw-semibold text-primary"
+                        style="background:var(--primary-50);border:1px solid var(--primary-light);min-height:34px;">
+                        —
+                    </div>
+                </div>
+                <!-- Drop Zone Upload -->
+                <div id="baAdminDropZone" class="upload-drop-zone mb-2"
+                    onclick="document.getElementById('baAdminFileInput').click()"
+                    ondragover="handleBAAdminDragOver(event)"
+                    ondragleave="handleBAAdminDragLeave(event)"
+                    ondrop="handleBAAdminDrop(event)">
+                    <i class="bi bi-file-earmark-arrow-up text-secondary" style="font-size:2.5rem;"></i>
+                    <div class="mt-2 text-muted small text-center">
+                        Seret file ke sini atau <span class="text-primary fw-semibold">klik untuk pilih</span>
+                    </div>
+                    <div class="text-muted" style="font-size:.75rem;">Format: PDF / JPG / PNG &middot; Maks 10MB</div>
+                </div>
+                <input type="file" id="baAdminFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="d-none"
+                    onchange="handleBAAdminFileSelect(this.files[0])">
+                <!-- Preview file -->
+                <div id="baAdminFilePreview" class="small text-muted mb-2 d-none">
+                    <i class="bi bi-file-earmark-check-fill text-success me-1"></i>
+                    <span id="baAdminFileName"></span>
+                </div>
+                <!-- Error -->
+                <div id="baAdminError" class="alert alert-danger py-2 small d-none mb-2"></div>
+                <!-- Progress -->
+                <div id="baAdminProgressWrap" class="d-none mb-1">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Mengupload...</span>
+                        <span id="baAdminProgressPct">0%</span>
+                    </div>
+                    <div class="progress" style="height:8px;">
+                        <div id="baAdminProgressBar"
+                            class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                            role="progressbar" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-top px-4 py-2 gap-2">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal"
+                    id="baAdminBatalBtn">Batal</button>
+                <button type="button" class="btn btn-primary px-4" id="baAdminSubmitBtn"
+                    onclick="submitDokumenBeritaAcara()" disabled>
+                    <i class="bi bi-cloud-upload me-1"></i>Upload Berita Acara
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- ACCEPTANCE MODAL -->
     <div class="modal fade" id="acceptanceModal" tabindex="-1" aria-labelledby="acceptanceModalLabel" aria-hidden="true"
@@ -1961,6 +2162,8 @@
         let currentPage = 1;
         const pageSize = 10;
         let filteredData = [];
+        let baAdminData = [];
+        let baAdminFiltered = [];
         let sortState = { key: 'tanggal', dir: 'desc' };
 
         // === 2. INITIALIZATION ===
@@ -1972,6 +2175,7 @@
                 m.removeAttribute('role');
             });
             loadDataFromServer();
+            loadBeritaAcaraAdmin(); // Panggil di sini
         });
 
         function loadDataFromServer(skipCache) {
@@ -2398,7 +2602,9 @@
 
             let actionButtons = '';
             if (currentRole === 'admin') {
+                const baDropdown = buildBeritaAcaraDropdown(item);
                 actionButtons = `<button class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                ${baDropdown}
                 <button class="btn btn-outline-primary" onclick="editEmailAdmin(${item.id})"><i class="bi bi-envelope-pencil me-1"></i>Edit Email</button>
                 <button class="btn btn-outline-danger" onclick="deleteSubmissionAdmin(${item.id})"><i class="bi bi-trash me-1"></i>Hapus Data</button>
                 ${item.status !== 'Ditolak' ? `<button class="btn btn-outline-danger" onclick="updateStatus(${item.id},'Ditolak')"><i class="bi bi-x-circle me-1"></i>Tolak</button>` : ''}
@@ -3162,7 +3368,10 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             let title = 'Dashboard Pengajuan';
             if (tabId === 'pengajuan') title = 'Pengajuan Mahasiswa';
             else if (tabId === 'validasi') title = 'Validasi Berkas';
-            else if (tabId === 'dokumen') title = 'Dokumen & Laporan';
+            else if (tabId === 'dokumen') {
+                title = 'Berita Acara';
+
+            }
             else if (tabId === 'bagian') {
                 title = 'Monitoring PDF Final per Bagian';
                 // Render with slight delay to ensure tab is visible before rendering
@@ -4368,6 +4577,494 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                 })
                 .saveMonitorMasterData({ sections: sections });
         }
+
+
+    // ============================================================
+    // TAB DOKUMEN — BERITA ACARA ADMIN
+    // ============================================================
+
+    // --- Load Data ---
+    function loadBeritaAcaraAdmin() {
+        const tbody = document.getElementById('baAdminTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengambil data berita acara...</td></tr>';
+
+        if (window.google && google.script && google.script.run) {
+            google.script.run
+                .withSuccessHandler(function(rows) {
+                    console.log('Data diterima dari backend:', rows);
+                    baAdminData = Array.isArray(rows) ? rows : [];
+                    baAdminFiltered = [...baAdminData];
+                    populateDokumenFilterBlok();
+                    renderDokumenSummaryCards();
+                    renderDokumenTable();
+                })
+                .withFailureHandler(function(err) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Gagal memuat data: ' + (err.message || '') + '</td></tr>';
+                })
+                .getBeritaAcaraAdminList();
+        } else {
+            // Mode lokal/dummy
+            baAdminData = [
+                { id: 1, blok: 'Blok 1.1', jenisKegiatan: 'SGD', detailKegiatan: 'SGD 1', judulBA: 'Berita Acara SGD - SGD 1', tanggalKegiatan: '2026-01-10T08:00', waktuUpload: '2026-01-11 09:30', fileUrl: '#' },
+                { id: 2, blok: 'Blok 1.2', jenisKegiatan: 'KKD', detailKegiatan: 'LO 1', judulBA: 'Berita Acara KKD - LO 1', tanggalKegiatan: '2026-01-15T10:00', waktuUpload: '2026-01-16 11:00', fileUrl: '' }
+            ];
+            baAdminFiltered = [...baAdminData];
+            populateDokumenFilterBlok();
+            renderDokumenSummaryCards();
+            renderDokumenTable();
+        }
+    }
+
+    // --- Populate filter blok dari data yang sudah ada ---
+    function populateDokumenFilterBlok() {
+        const sel = document.getElementById('baAdminFilterBlok');
+        if (!sel) return;
+        const current = sel.value;
+        const bloks = [...new Set(baAdminData.map(r => r.blok).filter(Boolean))].sort();
+        sel.innerHTML = '<option value="">Semua Blok</option>' + bloks.map(b => `<option value="${b}">${b}</option>`).join('');
+        sel.value = current;
+    }
+
+    // --- Render Summary Cards ---
+    function renderDokumenSummaryCards() {
+        const elStatTotal = document.getElementById('baAdminStatTotal');
+        const elStatBlok = document.getElementById('baAdminStatBlok');
+        const elStatBerkas = document.getElementById('baAdminStatBerkas');
+        const elStatJenis = document.getElementById('baAdminStatJenis');
+        if (elStatTotal) elStatTotal.textContent = baAdminData.length;
+        if (elStatBlok) elStatBlok.textContent = new Set(baAdminData.map(r => r.blok).filter(Boolean)).size;
+        if (elStatBerkas) elStatBerkas.textContent = baAdminData.filter(r => r.fileUrl && r.fileUrl.length > 3).length;
+        if (elStatJenis) elStatJenis.textContent = new Set(baAdminData.map(r => r.jenisKegiatan).filter(Boolean)).size;
+    }
+
+    // --- Render Tabel ---
+    function renderDokumenTable() {
+        console.log('Merender tabel dengan data:', baAdminFiltered);
+        const tbody = document.getElementById('baAdminTableBody');
+        if (!tbody) return;
+        if (!baAdminFiltered || !baAdminFiltered.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-file-earmark-text" style="font-size:2rem;"></i><p class="mt-2 mb-0">Tidak ada berita acara ditemukan.</p></td></tr>';
+            return;
+        }
+        tbody.innerHTML = baAdminFiltered.map(row => {
+            const hasFile = row.fileUrl && row.fileUrl.length > 3;
+            const tglFmt = row.tanggalKegiatan ? row.tanggalKegiatan.replace('T', ' ') : '-';
+            return `<tr>
+                <td class="ps-4 small text-muted">${row.waktuUpload || '-'}</td>
+                <td><span class="badge bg-warning text-dark">${row.blok || '-'}</span></td>
+                <td class="fw-semibold">${row.judulBA || '-'}</td>
+                <td class="small">${tglFmt}</td>
+                <td class="text-center">
+                    ${hasFile
+                        ? `<a href="${row.fileUrl}" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-eye me-1"></i>Lihat</a>`
+                        : `<span class="text-muted small">—</span>`}
+                </td>
+                <td class="text-center pe-4">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDokumenBeritaAcara(${row.id}, '${(row.judulBA || '').replace(/'/g, "\\'")}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // --- Filter Tabel ---
+    function filterDokumenTable() {
+        const q = (document.getElementById('baAdminSearch')?.value || '').toLowerCase();
+        const blok = document.getElementById('baAdminFilterBlok')?.value || '';
+        const jenis = document.getElementById('baAdminFilterJenis')?.value || '';
+        baAdminFiltered = baAdminData.filter(r => {
+            const matchQ = !q || (r.judulBA || '').toLowerCase().includes(q) || (r.jenisKegiatan || '').toLowerCase().includes(q) || (r.detailKegiatan || '').toLowerCase().includes(q);
+            const matchBlok = !blok || r.blok === blok;
+            const matchJenis = !jenis || r.jenisKegiatan === jenis;
+            return matchQ && matchBlok && matchJenis;
+        });
+        renderDokumenTable();
+    }
+
+    // --- Reset Filter ---
+    function resetDokumenFilter() {
+        const searchEl = document.getElementById('baAdminSearch');
+        const blokEl = document.getElementById('baAdminFilterBlok');
+        const jenisEl = document.getElementById('baAdminFilterJenis');
+        if (searchEl) searchEl.value = '';
+        if (blokEl) blokEl.value = '';
+        if (jenisEl) jenisEl.value = '';
+        baAdminFiltered = [...baAdminData];
+        renderDokumenTable();
+    }
+
+    // --- Buka Modal Upload ---
+    function openDokumenUploadModal() {
+        // Reset form
+        const elBlok = document.getElementById('baAdminBlok');
+        const elJenis = document.getElementById('baAdminJenis');
+        const elDetail1 = document.getElementById('baAdminDetail1');
+        const elDetail2 = document.getElementById('baAdminDetail2');
+        const elDetailWrap1 = document.getElementById('baAdminDetailWrap1');
+        const elDetailWrap2 = document.getElementById('baAdminDetailWrap2');
+        const elTanggal = document.getElementById('baAdminTanggal');
+        const elJudulPreview = document.getElementById('baAdminJudulPreview');
+        const elFileInput = document.getElementById('baAdminFileInput');
+        const elFilePreview = document.getElementById('baAdminFilePreview');
+        const elFileName = document.getElementById('baAdminFileName');
+        const elError = document.getElementById('baAdminError');
+        const elProgressWrap = document.getElementById('baAdminProgressWrap');
+        const elProgressBar = document.getElementById('baAdminProgressBar');
+        const elSubmitBtn = document.getElementById('baAdminSubmitBtn');
+
+        if (elBlok) elBlok.value = '';
+        if (elJenis) elJenis.value = '';
+        if (elDetail1) elDetail1.innerHTML = '<option value="">Pilih...</option>';
+        if (elDetail2) elDetail2.innerHTML = '<option value="">Pilih...</option>';
+        if (elDetailWrap1) elDetailWrap1.classList.add('d-none');
+        if (elDetailWrap2) elDetailWrap2.classList.add('d-none');
+        if (elTanggal) elTanggal.value = '';
+        if (elJudulPreview) elJudulPreview.textContent = '—';
+        if (elFileInput) elFileInput.value = '';
+        if (elFilePreview) elFilePreview.classList.add('d-none');
+        if (elFileName) elFileName.textContent = '';
+        if (elError) elError.classList.add('d-none');
+        if (elProgressWrap) elProgressWrap.classList.add('d-none');
+        if (elProgressBar) elProgressBar.style.width = '0%';
+        if (elSubmitBtn) elSubmitBtn.disabled = true;
+
+        // Isi dropdown blok dari resp.blokList yang sudah ada di DOM filter
+        if (elBlok) {
+            const srcBlok = document.getElementById('filterBlok');
+            if (srcBlok) {
+                elBlok.innerHTML = '<option value="">Pilih Blok</option>';
+                Array.from(srcBlok.options).forEach(opt => {
+                    if (opt.value) elBlok.appendChild(new Option(opt.text, opt.value));
+                });
+            }
+        }
+
+        const modalEl = document.getElementById('modalDokumenBeritaAcara');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+        window._baAdminSelectedFile = null;
+    }
+
+    // --- Handle Jenis Kegiatan Change ---
+    function handleDokumenJenisChange() {
+        const jenis = document.getElementById('baAdminJenis')?.value || '';
+        const wrap1 = document.getElementById('baAdminDetailWrap1');
+        const wrap2 = document.getElementById('baAdminDetailWrap2');
+        const label1 = document.getElementById('baAdminDetailLabel1');
+        const label2 = document.getElementById('baAdminDetailLabel2');
+        const sel1 = document.getElementById('baAdminDetail1');
+        const sel2 = document.getElementById('baAdminDetail2');
+
+        // Reset
+        if (wrap1) wrap1.classList.add('d-none');
+        if (wrap2) wrap2.classList.add('d-none');
+        if (sel1) sel1.innerHTML = '<option value="">Pilih...</option>';
+        if (sel2) sel2.innerHTML = '<option value="">Pilih...</option>';
+        updateJudulBA();
+
+        if (!jenis) return;
+
+        if (wrap1) wrap1.classList.remove('d-none');
+
+        const loadOpts = (selEl, fn, labelEl, labelText) => {
+            if (labelEl) labelEl.innerHTML = labelText + ' <span class="text-danger">*</span>';
+            if (selEl) selEl.innerHTML = '<option value="">Memuat...</option>';
+            if (window.google && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(opts => {
+                        if (selEl) selEl.innerHTML = '<option value="">Pilih...</option>' + (opts || []).map(o => `<option value="${o}">${o}</option>`).join('');
+                    })
+                    .withFailureHandler(() => {
+                        if (selEl) selEl.innerHTML = '<option value="">Gagal memuat</option>';
+                    })[fn]();
+            } else {
+                // Demo fallback
+                const demoOpts = {
+                    getUjianOptions: ['Ujian Tulis', 'Ujian Praktik', 'OSCE'],
+                    getSgdOptions: ['SGD 1', 'SGD 2', 'SGD 3'],
+                    getDetailSgdOptions: ['LO 1', 'LO 2', 'LO 3'],
+                    getKkdOptions: ['KKD 1', 'KKD 2'],
+                    getDetailKkdOptions: ['LO 1', 'LO 2'],
+                    getLabOptions: ['Anatomi', 'Fisiologi', 'Biokimia', 'Histologi', 'Patologi Anatomi', 'Patologi Klinik', 'Mikrobiologi', 'Farmakologi', 'Parasitologi'],
+                    getKegiatanLabOptions: ['PreTest', 'Praktikum', 'PostTest']
+                };
+                if (selEl) selEl.innerHTML = '<option value="">Pilih...</option>' + (demoOpts[fn] || []).map(o => `<option value="${o}">${o}</option>`).join('');
+            }
+        };
+
+        if (jenis === 'Ujian') {
+            loadOpts(sel1, 'getUjianOptions', label1, 'Jenis Ujian');
+        } else if (jenis === 'SGD') {
+            loadOpts(sel1, 'getSgdOptions', label1, 'Pilihan SGD');
+        } else if (jenis === 'KKD') {
+            loadOpts(sel1, 'getKkdOptions', label1, 'Pilihan KKD');
+        } else if (jenis === 'Praktikum') {
+            loadOpts(sel1, 'getLabOptions', label1, 'Pilihan Lab');
+        }
+    }
+
+    // --- Handle Detail Level 1 Change ---
+    function handleDokumenDetail1Change() {
+        const jenis = document.getElementById('baAdminJenis')?.value || '';
+        const val1 = document.getElementById('baAdminDetail1')?.value || '';
+        const wrap2 = document.getElementById('baAdminDetailWrap2');
+        const label2 = document.getElementById('baAdminDetailLabel2');
+        const sel2 = document.getElementById('baAdminDetail2');
+
+        if (wrap2) wrap2.classList.add('d-none');
+        if (sel2) sel2.innerHTML = '<option value="">Pilih...</option>';
+        updateJudulBA();
+
+        if (!val1) return;
+
+        const needsLevel2 = ['SGD', 'KKD', 'Praktikum'].includes(jenis);
+        if (!needsLevel2) return;
+
+        if (wrap2) wrap2.classList.remove('d-none');
+
+        const fnMap = { SGD: 'getDetailSgdOptions', KKD: 'getDetailKkdOptions', Praktikum: 'getKegiatanLabOptions' };
+        const labelMap = { SGD: 'Detail SGD', KKD: 'Detail KKD', Praktikum: 'Kegiatan Lab' };
+        const fn = fnMap[jenis];
+        if (label2) label2.innerHTML = labelMap[jenis] + ' <span class="text-danger">*</span>';
+
+        const demoOpts = {
+            getDetailSgdOptions: ['LO 1', 'LO 2', 'LO 3'],
+            getDetailKkdOptions: ['LO 1', 'LO 2'],
+            getKegiatanLabOptions: ['PreTest', 'Praktikum', 'PostTest']
+        };
+
+        if (window.google && google.script && google.script.run) {
+            if (sel2) sel2.innerHTML = '<option value="">Memuat...</option>';
+            google.script.run
+                .withSuccessHandler(opts => {
+                    if (sel2) sel2.innerHTML = '<option value="">Pilih...</option>' + (opts || []).map(o => `<option value="${o}">${o}</option>`).join('');
+                })
+                .withFailureHandler(() => { if (sel2) sel2.innerHTML = '<option value="">Gagal</option>'; })
+                [fn]();
+        } else {
+            if (sel2) sel2.innerHTML = '<option value="">Pilih...</option>' + (demoOpts[fn] || []).map(o => `<option value="${o}">${o}</option>`).join('');
+        }
+    }
+
+    // --- Update Judul Auto-generate ---
+    function updateJudulBA() {
+        const jenis = document.getElementById('baAdminJenis')?.value || '';
+        const det1 = document.getElementById('baAdminDetail1')?.value || '';
+        const det2 = document.getElementById('baAdminDetail2')?.value || '';
+        const preview = document.getElementById('baAdminJudulPreview');
+
+        if (!preview) return;
+        if (!jenis) { preview.textContent = '—'; return; }
+
+        let detail = det1;
+        if (det2) detail = det1 + ' - ' + det2;
+        const judul = detail ? `Berita Acara ${jenis} - ${detail}` : `Berita Acara ${jenis}`;
+        preview.textContent = judul;
+        checkDokumenSubmitReady();
+    }
+
+    // --- Handle File Select ---
+    function handleBAAdminFileSelect(file) {
+        const errEl = document.getElementById('baAdminError');
+        if (errEl) errEl.classList.add('d-none');
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+            if (errEl) {
+                errEl.textContent = 'Ukuran file melebihi 10MB.';
+                errEl.classList.remove('d-none');
+            }
+            return;
+        }
+        window._baAdminSelectedFile = file;
+        const fileNameEl = document.getElementById('baAdminFileName');
+        const filePreviewEl = document.getElementById('baAdminFilePreview');
+        if (fileNameEl) fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+        if (filePreviewEl) filePreviewEl.classList.remove('d-none');
+        checkDokumenSubmitReady();
+    }
+
+    // --- Drag & Drop handlers ---
+    function handleBAAdminDragOver(e) {
+        e.preventDefault();
+        const dropZone = document.getElementById('baAdminDropZone');
+        if (dropZone) dropZone.classList.add('border-primary');
+    }
+    function handleBAAdminDragLeave(e) {
+        const dropZone = document.getElementById('baAdminDropZone');
+        if (dropZone) dropZone.classList.remove('border-primary');
+    }
+    function handleBAAdminDrop(e) {
+        e.preventDefault();
+        const dropZone = document.getElementById('baAdminDropZone');
+        if (dropZone) dropZone.classList.remove('border-primary');
+        const file = e.dataTransfer.files[0];
+        if (file) handleBAAdminFileSelect(file);
+    }
+
+    // --- Cek apakah submit bisa diaktifkan ---
+    function checkDokumenSubmitReady() {
+        const jenis = document.getElementById('baAdminJenis')?.value || '';
+        const det1 = document.getElementById('baAdminDetail1')?.value || '';
+        const blok = document.getElementById('baAdminBlok')?.value || '';
+        const tanggal = document.getElementById('baAdminTanggal')?.value || '';
+        const hasFile = !!window._baAdminSelectedFile;
+
+        const needsLevel2 = ['SGD', 'KKD', 'Praktikum'].includes(jenis);
+        const det2 = needsLevel2 ? (document.getElementById('baAdminDetail2')?.value || '') : 'ok';
+
+        const ready = blok && jenis && det1 && det2 && tanggal && hasFile;
+        const submitBtn = document.getElementById('baAdminSubmitBtn');
+        if (submitBtn) submitBtn.disabled = !ready;
+    }
+
+    // --- Submit Upload ---
+    function submitDokumenBeritaAcara() {
+        const jenis = document.getElementById('baAdminJenis')?.value || '';
+        const det1 = document.getElementById('baAdminDetail1')?.value || '';
+        const needsLevel2 = ['SGD', 'KKD', 'Praktikum'].includes(jenis);
+        const det2 = needsLevel2 ? (document.getElementById('baAdminDetail2')?.value || '') : '';
+        const detailKegiatan = det2 ? det1 + ' - ' + det2 : det1;
+        const judulBA = document.getElementById('baAdminJudulPreview')?.textContent || '';
+        const file = window._baAdminSelectedFile;
+
+        if (!file) return;
+
+        const submitBtn = document.getElementById('baAdminSubmitBtn');
+        const batalBtn = document.getElementById('baAdminBatalBtn');
+        if (submitBtn) submitBtn.disabled = true;
+        if (batalBtn) batalBtn.disabled = true;
+
+        const progressWrap = document.getElementById('baAdminProgressWrap');
+        const progressBar = document.getElementById('baAdminProgressBar');
+        const progressPct = document.getElementById('baAdminProgressPct');
+        if (progressWrap) progressWrap.classList.remove('d-none');
+
+        let pct = 0;
+        const fakeProgress = setInterval(() => {
+            pct = Math.min(pct + Math.random() * 15, 85);
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressPct) progressPct.textContent = Math.round(pct) + '%';
+        }, 300);
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64 = e.target.result;
+            const payload = {
+                blok: document.getElementById('baAdminBlok')?.value || '',
+                jenisKegiatan: jenis,
+                detailKegiatan: detailKegiatan,
+                judulBA: judulBA,
+                tanggalKegiatan: document.getElementById('baAdminTanggal')?.value || '',
+                file: {
+                    data: base64,
+                    mimeType: file.type,
+                    fileName: file.name
+                }
+            };
+
+            const onSuccess = function(result) {
+                clearInterval(fakeProgress);
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressPct) progressPct.textContent = '100%';
+                setTimeout(() => {
+                    const modalEl = document.getElementById('modalDokumenBeritaAcara');
+                    if (modalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
+                    }
+                    if (batalBtn) batalBtn.disabled = false;
+                    if (typeof showToast === 'function') showToast('Berita Acara berhasil diupload!', 'success');
+                    loadBeritaAcaraAdmin();
+                }, 500);
+            };
+
+            const onError = function(err) {
+                clearInterval(fakeProgress);
+                if (progressWrap) progressWrap.classList.add('d-none');
+                if (submitBtn) submitBtn.disabled = false;
+                if (batalBtn) batalBtn.disabled = false;
+                const errEl = document.getElementById('baAdminError');
+                if (errEl) {
+                    errEl.textContent = 'Gagal upload: ' + (err.message || 'Terjadi kesalahan.');
+                    errEl.classList.remove('d-none');
+                }
+            };
+
+            if (window.google && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(onSuccess)
+                    .withFailureHandler(onError)
+                    .uploadBeritaAcaraAdmin(payload);
+            } else {
+                setTimeout(() => onSuccess({ success: true }), 1000);
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // --- Hapus Berita Acara ---
+    function deleteDokumenBeritaAcara(id, judul) {
+        if (!confirm(`Hapus berita acara "${judul}"?\n\nFile akan dihapus permanen dari sistem.`)) return;
+
+        if (window.google && google.script && google.script.run) {
+            google.script.run
+                .withSuccessHandler(function() {
+                    if (typeof showToast === 'function') showToast('Berita acara berhasil dihapus.', 'success');
+                    loadBeritaAcaraAdmin();
+                })
+                .withFailureHandler(function(err) {
+                    if (typeof showToast === 'function') showToast('Gagal hapus: ' + (err.message || ''), 'error');
+                })
+                .deleteBeritaAcaraAdmin(id);
+        } else {
+            baAdminData = baAdminData.filter(r => r.id !== id);
+            baAdminFiltered = baAdminFiltered.filter(r => r.id !== id);
+            renderDokumenSummaryCards();
+            renderDokumenTable();
+            if (typeof showToast === 'function') showToast('Berita acara berhasil dihapus. (mode lokal)', 'success');
+        }
+    }
+
+    // --- Build Tombol Dropdown Berita Acara untuk openPaperView ---
+    function buildBeritaAcaraDropdown(item) {
+        // Fungsi normalisasi untuk perbandingan yang lebih fleksibel
+        const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '');
+
+        const itemDetail = normalize(item.detail);
+        const matched = (window.baAdminData || []).filter(r => {
+            const rDetail = normalize(r.detailKegiatan);
+            return normalize(r.blok) === normalize(item.blok)
+                && normalize(r.jenisKegiatan) === normalize(item.jenis)
+                && rDetail === itemDetail;
+        });
+
+        const hasMatch = matched.length > 0;
+        const btnClass = hasMatch ? 'btn-outline-success' : 'btn-outline-secondary';
+        const dropdownId = 'baDropdown_' + item.id;
+
+        const items = hasMatch
+            ? matched.map(r => {
+                const tgl = (r.tanggalKegiatan || '').replace('T', ' ');
+                const hasFile = r.fileUrl && r.fileUrl.length > 3;
+                return hasFile
+                    ? `<li><a class="dropdown-item small" href="${r.fileUrl}" target="_blank"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>${r.judulBA || r.detailKegiatan} &middot; <span class="text-muted">${tgl}</span></a></li>`
+                    : `<li><span class="dropdown-item small text-muted disabled"><i class="bi bi-file-earmark-x me-2"></i>${r.judulBA || r.detailKegiatan} &middot; Berkas tidak tersedia</span></li>`;
+            }).join('')
+            : '<li><span class="dropdown-item small text-muted disabled"><i class="bi bi-info-circle me-1"></i>Belum ada berita acara yang cocok</span></li>';
+
+        return `<div class="dropdown">
+                <button class="btn ${btnClass} dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-file-earmark-text me-1"></i>Berita Acara${hasMatch ? ` (${matched.length})` : ''}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" id="${dropdownId}">
+                    ${items}
+                </ul>
+            </div>`;
+    }
     </script>
 </body>
 </html>
