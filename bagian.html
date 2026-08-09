@@ -131,206 +131,6 @@
             min-width: 170px;
         }
 
-        .navbar-logout-btn {
-            font-size: 0.7rem;
-            line-height: 1.6;
-            border-width: 1px;
-        }
-
-        /* KARTU DATA BAGIAN (MOBILE) */
-        #bagian-data-cards {
-            display: none;
-        }
-
-        .bagian-card-group {
-            margin-bottom: 1rem;
-        }
-
-        .bagian-card-group-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, var(--gray-100), var(--gray-50));
-            border: 1px solid var(--gray-200);
-            border-left: 4px solid #4f46e5;
-            border-radius: 10px 10px 0 0;
-            padding: 8px 12px;
-        }
-
-        .bagian-card-group-header i {
-            color: #4f46e5;
-        }
-
-        .bagian-card-group-header .group-title {
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: var(--gray-900);
-            line-height: 1.3;
-        }
-
-        .bagian-card-group-header .group-count {
-            margin-left: auto;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--gray-600);
-            background: #fff;
-            border: 1px solid var(--gray-200);
-            border-radius: 999px;
-            padding: 2px 10px;
-            white-space: nowrap;
-        }
-
-        .bagian-card-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: #fff;
-            border: 1px solid var(--gray-200);
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            padding: 10px;
-        }
-
-        .bagian-card {
-            border: 1px solid var(--gray-200);
-            border-radius: 10px;
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .bagian-card.row-disetujui {
-            border-left: 4px solid #22c55e;
-        }
-
-        .bagian-card.row-ditolak {
-            border-left: 4px solid #ef4444;
-        }
-
-        .bagian-card.row-menunggu {
-            border-left: 4px solid #f59e0b;
-        }
-
-        .bagian-card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .bagian-card .student-name {
-            font-size: 0.92rem;
-        }
-
-        .bagian-card-meta {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .bagian-card-cell {
-            background: var(--gray-50);
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 6px 10px;
-        }
-
-        .bagian-card-cell .cell-label {
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 3px;
-        }
-
-        .bagian-card-cell .cell-value {
-            font-size: 0.82rem;
-            color: var(--gray-800);
-            line-height: 1.35;
-        }
-
-        .bagian-card-cell .acc-final-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-weight: 600;
-        }
-
-        @media (max-width: 767.98px) {
-            #bagian-data-table-wrap {
-                display: none;
-            }
-
-            #bagian-data-cards {
-                display: block;
-            }
-
-            .table-responsive.ba-table-responsive {
-                overflow-x: hidden;
-            }
-
-            .ba-table-responsive table,
-            .ba-table-responsive thead,
-            .ba-table-responsive tbody,
-            .ba-table-responsive tr,
-            .ba-table-responsive td {
-                display: block;
-                width: 100%;
-            }
-
-            .ba-table-responsive thead {
-                display: none;
-            }
-
-            .ba-table-responsive tbody tr {
-                border: 1px solid var(--gray-200);
-                border-radius: 10px;
-                margin-bottom: 10px;
-                padding: 10px 12px;
-            }
-
-            .ba-table-responsive tbody td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 10px;
-                border: none;
-                padding: 6px 0;
-                text-align: right;
-            }
-
-            .ba-table-responsive tbody td::before {
-                content: attr(data-label);
-                font-size: 0.68rem;
-                font-weight: 700;
-                color: var(--gray-500);
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                text-align: left;
-            }
-
-            .ba-table-responsive tbody td.text-nowrap {
-                white-space: normal;
-            }
-
-            .ba-table-responsive tbody td .badge {
-                margin-left: auto;
-            }
-
-            .ba-table-responsive tbody tr td[colspan] {
-                display: block;
-                text-align: center;
-            }
-        }
-
-        @media (min-width: 992px) {
-            .navbar-logout-btn {
-                font-size: 0.78rem;
-            }
-        }
-
         .student-name {
             font-weight: 700;
             color: var(--gray-900);
@@ -430,7 +230,99 @@
             max-width: 180px;
         }
 
-        /* STATS CARD WIDGETS */
+        /* CUSTOM GROUP HEADER CARD STYLING */
+        .group-header-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            border-left: 4px solid var(--primary) !important;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+            padding: 12px 16px !important;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .group-header-card:hover {
+            background: #f1f5f9 !important;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .group-header-card .chevron-icon {
+            transition: transform 0.25s ease;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .group-header-card.collapsed .chevron-icon {
+            transform: rotate(-90deg);
+        }
+
+        .group-student-row {
+            transition: all 0.25s ease;
+        }
+
+        .group-student-row.collapsed-row {
+            display: none !important;
+        }
+
+        .group-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .group-badge-blok {
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .group-badge-count {
+            background: var(--primary-50);
+            color: var(--primary);
+            border: 1px solid var(--primary-light);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+        }
+
+        /* PREMIUM PAGINATION */
+        .pagination-custom .page-link {
+            border-radius: 8px;
+            margin: 0 3px;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-600);
+            font-weight: 600;
+            font-size: 0.82rem;
+            padding: 6px 12px;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-custom .page-link:hover {
+            background: var(--primary-50);
+            color: var(--primary);
+            border-color: var(--primary-light);
+        }
+
+        .pagination-custom .page-item.active .page-link {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+        }
+
+        .pagination-custom .page-item.disabled .page-link {
+            background: var(--gray-100);
+            color: var(--gray-400);
+            border-color: var(--gray-200);
+        }
         .stat-card {
             border-radius: 14px;
             padding: 18px 20px;
@@ -505,6 +397,166 @@
             color: var(--primary-dark);
         }
 
+        /* MOBILE & RESPONSIVE OPTIMIZATIONS FOR HANDHELD DEVICES */
+        @media (max-width: 767.98px) {
+            body {
+                font-size: 13.5px;
+            }
+            .login-container {
+                margin: 20px auto;
+                padding: 0 12px;
+            }
+            .navbar-custom {
+                padding: 12px 16px !important;
+            }
+            .navbar-custom .container-fluid {
+                padding: 0 !important;
+            }
+            .mobile-header-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                width: 100%;
+                margin-top: 10px;
+            }
+            .mobile-header-actions .btn {
+                flex: 1 1 auto;
+                font-size: 0.78rem;
+                padding: 6px 10px;
+                text-align: center;
+                justify-content: center;
+            }
+            .container-fluid.p-4 {
+                padding: 12px !important;
+            }
+            .stat-card {
+                padding: 12px 14px;
+                border-radius: 12px;
+            }
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+                border-radius: 10px;
+            }
+            .stat-card h3 {
+                font-size: 1.3rem;
+            }
+            .card-custom {
+                border-radius: 14px;
+                padding: 16px !important;
+            }
+            .mobile-toolbar-row {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 10px !important;
+            }
+            .mobile-toolbar-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                width: 100%;
+            }
+            .mobile-toolbar-actions select,
+            .mobile-toolbar-actions input {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .mobile-toolbar-btns {
+                display: flex;
+                gap: 6px;
+                grid-column: span 2;
+            }
+            .mobile-toolbar-btns .btn {
+                flex: 1;
+                font-size: 0.8rem;
+            }
+            /* Card view switch for table on small screens */
+            .table-responsive {
+                overflow-x: visible !important;
+            }
+            .table-responsive .modern-table {
+                min-width: 0 !important;
+                width: 100% !important;
+            }
+            .modern-table, .modern-table tbody, .modern-table tr, .modern-table td {
+                display: block;
+                width: 100% !important;
+            }
+            .modern-table thead {
+                display: none;
+            }
+            .modern-table tbody tr {
+                margin-bottom: 12px;
+                border: 1px solid var(--gray-200);
+                border-radius: 12px;
+                padding: 12px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            }
+            .modern-table tbody td {
+                padding: 6px 0;
+                border-bottom: 1px dashed rgba(0,0,0,0.06);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+            }
+            .modern-table tbody td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            .modern-table tbody td[data-label]::before {
+                content: attr(data-label);
+                font-weight: 700;
+                font-size: 0.75rem;
+                color: var(--gray-500);
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                text-align: left;
+                padding-right: 12px;
+            }
+            .table-col-mahasiswa, .table-col-kegiatan, .table-col-status {
+                min-width: auto !important;
+            }
+            .status-chip {
+                min-width: auto;
+                padding: 0.35rem 0.65rem;
+            }
+            /* Responsive Card for Berita Acara table */
+            #berita-acara-table thead {
+                display: none;
+            }
+            #berita-acara-body tr {
+                display: block;
+                margin-bottom: 10px;
+                border: 1px solid var(--gray-200);
+                border-radius: 12px;
+                padding: 10px 12px;
+                background: #ffffff;
+            }
+            #berita-acara-body td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 5px 0;
+                border-bottom: 1px dashed rgba(0,0,0,0.06);
+                text-align: right;
+            }
+            #berita-acara-body td:last-child {
+                border-bottom: none;
+            }
+            #berita-acara-body td[data-label]::before {
+                content: attr(data-label);
+                font-weight: 700;
+                font-size: 0.75rem;
+                color: var(--gray-500);
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                text-align: left;
+                padding-right: 12px;
+            }
+        }
+
         @media print {
             .no-print {
                 display: none !important;
@@ -546,7 +598,6 @@
                             <option value="">Pilih Laboratorium...</option>
                             <option value="Anatomi">Lab Anatomi</option>
                             <option value="Fisiologi">Lab Fisiologi</option>
-                            <option value="Biokimia">Lab Biokimia</option>
                             <option value="Histologi">Lab Histologi</option>
                             <option value="Mikrobiologi">Lab Mikrobiologi</option>
                             <option value="Farmakologi">Lab Farmakologi</option>
@@ -567,22 +618,21 @@
     <!-- APP CONTAINER (DITAMPILKAN SETELAH LOGIN) -->
     <div id="app-area" class="hidden">
         <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-custom py-3 no-print">
-            <div class="container-fluid px-4 d-flex flex-wrap gap-2">
-                <span class="navbar-brand fw-bold text-gray-900 d-flex align-items-center gap-2">
+        <nav class="navbar navbar-expand-lg navbar-custom py-2.5 no-print">
+            <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
+                <span class="navbar-brand fw-bold text-gray-900 d-flex align-items-center gap-2 m-0">
                     <span class="bg-primary text-white p-2 rounded-3 d-inline-flex"><i class="bi bi-building"></i></span>
                     <div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-dark" style="font-size: 1rem;">Panel Admin Bagian</span>
-                            <button class="btn btn-outline-danger rounded-3 px-2 py-0 navbar-logout-btn" onclick="logoutBagian()" title="Logout">
-                                <i class="bi bi-box-arrow-left me-1"></i>Logout
-                            </button>
+                        <div class="lh-1 text-dark d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                            <span>Panel Admin Bagian</span>
+                            <span id="display-bagian-name" class="fw-bold text-primary small ms-1"></span>
                         </div>
-                        <div class="lh-1 small text-primary fw-bold mt-1" id="display-bagian-name">Bagian: -</div>
                     </div>
                 </span>
-                <div class="d-flex align-items-center gap-2 ms-auto">
-                    <span id="badge-login-context" class="badge bg-primary-light text-primary fs-7 px-3 py-2 rounded-pill"></span>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-danger btn-xs rounded-3 px-2 py-1" style="font-size: 0.72rem;" onclick="logoutBagian()">
+                        <i class="bi bi-box-arrow-left me-1"></i>Logout
+                    </button>
                 </div>
             </div>
         </nav>
@@ -712,31 +762,33 @@
                 <!-- MONITORING DATA BAGIAN -->
                 <div id="monitoring-panel" class="col-lg-12">
                     <div class="card-custom p-4">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2 mobile-toolbar-row">
                             <div>
                                 <h5 class="fw-bold mb-1"><i class="bi bi-table me-2 text-primary"></i>Daftar Peserta Inhal / Remediasi</h5>
                                 <p class="text-muted small m-0">Monitoring status dan berkas bukti ACC final peserta.</p>
                             </div>
-                            <div class="d-flex flex-wrap gap-2 align-items-center no-print">
+                            <div class="d-flex flex-wrap gap-2 align-items-center no-print mobile-toolbar-actions">
                                 <!-- FILTER BLOK -->
                                 <select id="filter-blok-table" class="form-select form-select-sm" style="max-width: 140px;" onchange="filterTable()">
                                     <option value="">Semua Blok</option>
                                 </select>
                                 <!-- SEARCH INPUT -->
                                 <input type="text" id="search-table" class="form-control form-control-sm" placeholder="Cari NPM / Nama..." style="max-width: 160px;" onkeyup="filterTable()">
-                                <!-- TOMBOL EXPORT & CETAK -->
-                                <button class="btn btn-sm btn-outline-success rounded-3" title="Export Excel" onclick="exportToExcel()">
-                                    <i class="bi bi-file-earmark-excel"></i> Excel
-                                </button>
-                                <button class="btn btn-sm btn-outline-dark rounded-3" title="Cetak Laporan" onclick="window.print()">
-                                    <i class="bi bi-printer"></i> Cetak
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="loadBagianData()">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
-                                <button id="toggle-pengajuan-btn" class="btn btn-sm btn-outline-primary rounded-3" onclick="togglePengajuanPanel()">
-                                    <i class="bi bi-person-plus me-1"></i>Tampilkan Input Peserta
-                                </button>
+                                <div class="mobile-toolbar-btns">
+                                    <!-- TOMBOL EXPORT & CETAK -->
+                                    <button class="btn btn-sm btn-outline-success rounded-3" title="Export Excel" onclick="exportToExcel()">
+                                        <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-dark rounded-3" title="Cetak Laporan" onclick="window.print()">
+                                        <i class="bi bi-printer me-1"></i>Cetak
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="loadBagianData()">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button id="toggle-pengajuan-btn" class="btn btn-sm btn-outline-primary rounded-3 text-nowrap" onclick="togglePengajuanPanel()">
+                                        <i class="bi bi-person-plus me-1"></i>Input Peserta
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -747,7 +799,7 @@
                             <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle bg-warning" style="width: 10px; height: 10px;"></span> Menunggu Process</span>
                         </div>
 
-                        <div class="table-responsive" id="bagian-data-table-wrap">
+                        <div class="table-responsive">
                             <table class="table align-middle modern-table mb-0" id="bagian-data-table">
                                 <thead>
                                     <tr>
@@ -766,10 +818,9 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        <div id="bagian-data-cards">
-                            <div class="text-center py-4 text-muted">Memuat data...</div>
-                        </div>
+                        <nav aria-label="Paginasi tabel monitoring" class="mt-3">
+                            <ul class="pagination pagination-sm justify-content-center mb-0" id="bagian-pagination"></ul>
+                        </nav>
                     </div>
 
                     <!-- DAFTAR BERITA ACARA TERUNGGAH -->
@@ -780,8 +831,8 @@
                                 <i class="bi bi-plus-lg me-1"></i>Tambah Berita Acara
                             </button>
                         </div>
-                        <div class="table-responsive ba-table-responsive">
-                            <table class="table table-hover align-middle small mb-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0" id="berita-acara-table">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Waktu Upload</th>
@@ -912,6 +963,8 @@
         };
 
         let loadedRowsData = [];
+        let bagianPage = 1;
+        const BAGIAN_PAGE_SIZE = 50;
         let modalBeritaAcaraInstance = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -999,7 +1052,7 @@
                 .withFailureHandler((err) => {
                     Swal.fire('Akses Ditolak', (err && err.message) || 'Gagal memverifikasi akses.', 'error');
                 })
-                .verifyBaginaAccess(kat);
+                .verifyBaginaAccess(kat, (kat === 'Praktikum') ? sub : undefined);
         }
 
         function restoreSession(callback) {
@@ -1012,7 +1065,7 @@
             google.script.run
                 .withSuccessHandler((res) => callback(!!(res && res.ok)))
                 .withFailureHandler(() => callback(false))
-                .verifyBaginaAccess(kat);
+                .verifyBaginaAccess(kat, (kat === 'Praktikum') ? (currentSession.subBagian || '') : undefined);
         }
 
         function initApp() {
@@ -1020,7 +1073,6 @@
             document.getElementById('app-area').classList.remove('hidden');
 
             document.getElementById('display-bagian-name').textContent = currentSession.displayName;
-            document.getElementById('badge-login-context').textContent = currentSession.category + (currentSession.category === 'Praktikum' ? ` (${currentSession.subBagian})` : '');
             document.getElementById('lock-kat-label').textContent = currentSession.displayName;
 
             // Load dropdown data
@@ -1152,15 +1204,13 @@
 
         function loadBagianData() {
             const tbody = document.getElementById('bagian-data-body');
-            const cardsEl = document.getElementById('bagian-data-cards');
-            const loadingHtml = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengambil data peserta bagian...</div>';
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengambil data peserta bagian...</td></tr>`;
-            if (cardsEl) cardsEl.innerHTML = loadingHtml;
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengambil data peserta bagian...</td></tr>';
 
             if (window.google && google.script && google.script.run && google.script.run.getLogDataForAdmin) {
                 google.script.run
                     .withSuccessHandler(payload => {
                         loadedRowsData = payload.rows || payload || [];
+                        bagianPage = 1;
                         renderTableRows(loadedRowsData);
                     })
                     .getLogDataForAdmin(currentSession.category);
@@ -1201,22 +1251,18 @@
                         originalRowIndex: 4 
                     }
                 ];
+                bagianPage = 1;
                 renderTableRows(loadedRowsData);
             }
         }
 
         function renderTableRows(rows) {
             const tbody = document.getElementById('bagian-data-body');
-            const cardsEl = document.getElementById('bagian-data-cards');
             tbody.innerHTML = '';
-            if (cardsEl) cardsEl.innerHTML = '';
 
             // Filter data yang sesuai dengan Bagian/Kategori aktif
             const subStr = currentSession.subBagian.toLowerCase().trim();
 
-            // Untuk Praktikum, cocokkan lab spesifik pada Detail Kegiatan
-            // (mis. "Anatomi - Inhal 1; Fisiologi - Inhal 2" cocok untuk subBagian "Anatomi").
-            // Untuk selain Praktikum, cocokkan Jenis Kegiatan dengan kategori login.
             const matchesBagian = (row) => {
                 if (!subStr) return false;
                 if (currentSession.category === 'Praktikum') {
@@ -1233,100 +1279,43 @@
 
             const filteredRows = rows.filter(matchesBagian);
 
-            // HITUNG REKAPITULASI STATISTIK
-            let totalCount = filteredRows.length;
+            // HITUNG STATISTIK DARI SELURUH DATA TERFILTER
             let disetujuiCount = 0;
             let ditolakCount = 0;
             let menungguCount = 0;
 
-            // Bangun representasi per baris (dipakai untuk tabel desktop & kartu mobile)
-            const builtRows = filteredRows.map(row => {
+            filteredRows.forEach(row => {
                 const st = String(row.Status || '').toLowerCase();
-
-                // PEWARNAAN BARIS DENGAN HIGHLIGHT CLASS & STATISTIK COUNT
-                let statusClass = 'row-menunggu';
                 if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
-                    statusClass = 'row-disetujui';
                     disetujuiCount++;
                 } else if (st.includes('tolak')) {
-                    statusClass = 'row-ditolak';
                     ditolakCount++;
                 } else {
                     menungguCount++;
                 }
+            });
 
-                // Membaca Kolom O "Link Final" dari sheet CheckData
-                const accUrl = row['Link Final'] || row['LinkFinal'] || row['link_final'] || row['Bukti ACC Final'] || row['File ACC Final'] || row['buktiAccFinal'] || row['Link ACC INHAL'] || row['accInhal'] || '';
+            // FILTER IN-MEMORY (pencarian NPM/Nama + filter Blok)
+            const query = (document.getElementById('search-table').value || '').toLowerCase().trim();
+            const selectedBlok = (document.getElementById('filter-blok-table').value || '').toLowerCase().trim();
 
-                // Bukti ACC Final
-                let accFinalHtml = `
-                    <div class="status-stack">
-                        <span class="status-chip status-chip-neutral">
-                            <i class="bi bi-clock-history"></i> Belum tersedia
-                        </span>
-                    </div>
-                `;
-                if (accUrl) {
-                    const safeUrl = /^https?:\/\//i.test(String(accUrl).trim()) ? escHtml(accUrl) : '#';
-                    accFinalHtml = `
-                        <div class="status-stack">
-                            <a href="${safeUrl}" target="_blank" class="acc-final-link">
-                                <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Lihat
-                            </a>
-                        </div>
-                    `;
+            const baseRows = filteredRows.filter(row => {
+                const rowBlok = String(row.Blok || '').toLowerCase();
+                if (selectedBlok && !rowBlok.includes(selectedBlok)) return false;
+                if (query) {
+                    const hay = String(row['Nama Lengkap'] || row.nama || '').toLowerCase() + ' ' +
+                        String(row.NPM || row.npm || '').toLowerCase();
+                    if (!hay.includes(query)) return false;
                 }
+                return true;
+            });
 
-                const infoStatus = String(row['Status Info Bagian'] || '').trim().toLowerCase();
-                const bagianInfoHtml = infoStatus === 'terkirim'
-                    ? `
-                        <div class="status-stack">
-                            <span class="status-chip status-chip-info">
-                                <i class="bi bi-envelope-check-fill"></i> Sudah masuk
-                            </span>
-                        </div>
-                    `
-                    : `
-                        <div class="status-stack">
-                            <span class="status-chip status-chip-neutral">
-                                <i class="bi bi-envelope-x-fill"></i> ${infoStatus === 'gagal' ? 'Gagal dikirim' : 'Belum dikirim'}
-                            </span>
-                        </div>
-                    `;
+            // KELOMPOKKAN BERDASARKAN DETAIL KEGIATAN & BLOK
+            const groupsMap = new Map();
 
-                // Status Badge
-                let statusBadge = `
-                    <div class="status-stack">
-                        <span class="status-chip ${st.includes('tolak') ? 'status-chip-danger' : 'status-chip-neutral'}">
-                            <i class="bi bi-hourglass-split"></i> Menunggu
-                        </span>
-                    </div>
-                `;
-                if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
-                    statusBadge = `
-                        <div class="status-stack">
-                            <span class="status-chip status-chip-success">
-                                <i class="bi bi-check-circle-fill"></i> Diterima
-                            </span>
-                        </div>
-                    `;
-                } else if (st.includes('tolak')) {
-                    statusBadge = `
-                        <div class="status-stack">
-                            <span class="status-chip status-chip-danger">
-                                <i class="bi bi-x-circle-fill"></i> Ditolak
-                            </span>
-                        </div>
-                    `;
-                }
-
+            baseRows.forEach(row => {
                 const jenisTxt = String(row['Jenis Kegiatan'] || '').trim();
                 const detailTxt = String(row['Detail Kegiatan'] || '').trim();
-
-                // Sinkron dengan dashboard.html tab Bagian:
-                //  - Praktikum: tampilkan hanya segmen lab yang cocok dengan bagian login
-                //    (mis. "Anatomi - Inhal 1" untuk bagian "Anatomi").
-                //  - lainnya: tampilkan Detail Kegiatan penuh (fallback Jenis Kegiatan).
                 let displayDetail = '-';
                 if (currentSession.category === 'Praktikum') {
                     if (detailTxt) {
@@ -1342,175 +1331,207 @@
                     displayDetail = detailTxt || jenisTxt || '-';
                 }
 
-                return {
-                    row,
-                    st,
-                    statusClass,
-                    blok: String(row.Blok || ''),
-                    accFinalHtml,
-                    bagianInfoHtml,
-                    statusBadge,
-                    displayDetail,
-                    nama: escHtml(row['Nama Lengkap'] || '-'),
-                    npm: escHtml(row.NPM || '-'),
-                    blokHtml: `<span class="blok-badge">${escHtml(row.Blok || '-')}</span>`
-                };
+                const key = `${row.Blok || '-'}||${displayDetail}`;
+                if (!groupsMap.has(key)) {
+                    groupsMap.set(key, {
+                        blok: row.Blok || '-',
+                        detail: displayDetail,
+                        students: []
+                    });
+                }
+                groupsMap.get(key).students.push(row);
             });
 
-            if (builtRows.length === 0) {
+            const groupsArray = Array.from(groupsMap.values());
+
+            // PAGINASI BERDASARKAN KELOMPOK KEGIATAN
+            const totalPages = Math.max(1, Math.ceil(groupsArray.length / BAGIAN_PAGE_SIZE));
+            if (bagianPage > totalPages) bagianPage = totalPages;
+            const pagedGroups = groupsArray.slice((bagianPage - 1) * BAGIAN_PAGE_SIZE, bagianPage * BAGIAN_PAGE_SIZE);
+
+            if (pagedGroups.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada data peserta inhal untuk bagian ini.</td></tr>';
-                if (cardsEl) cardsEl.innerHTML = '<div class="text-center py-4 text-muted">Belum ada data peserta inhal untuk bagian ini.</div>';
             } else {
-                // TABEL (desktop / print)
-                builtRows.forEach(b => {
-                    const tr = document.createElement('tr');
-                    tr.className = b.statusClass;
-                    tr.setAttribute('data-blok', b.blok);
-                    tr.innerHTML = `
-                        <td>
-                            <div class="student-name">${b.nama}</div>
-                            <div class="student-meta">NPM: ${b.npm}</div>
-                        </td>
-                        <td>${b.blokHtml}</td>
-                        <td>
-                            <div class="kegiatan-detail fw-semibold text-dark">${escHtml(b.displayDetail || '-')}</div>
-                        </td>
-                        <td class="text-center">${b.accFinalHtml}</td>
-                        <td class="text-center">${b.bagianInfoHtml}</td>
-                        <td class="text-center">${b.statusBadge}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                pagedGroups.forEach((group, groupIdx) => {
+                    const groupId = `group-item-${groupIdx}`;
+                    const isSearching = !!query;
+                    const isGroupCollapsed = !isSearching;
 
-                // KARTU (mobile) — dikelompokkan per detail kegiatan
-                const groups = new Map();
-                builtRows.forEach(b => {
-                    const key = b.displayDetail || '-';
-                    if (!groups.has(key)) groups.set(key, []);
-                    groups.get(key).push(b);
-                });
-
-                const cardsWrap = document.createElement('div');
-                groups.forEach((items, detail) => {
-                    const group = document.createElement('div');
-                    group.className = 'bagian-card-group';
-                    group.innerHTML = `
-                        <div class="bagian-card-group-header">
-                            <i class="bi bi-folder-fill"></i>
-                            <span class="group-title">${escHtml(detail)}</span>
-                            <span class="group-count">${items.length} peserta</span>
-                        </div>
-                        <div class="bagian-card-list"></div>
-                    `;
-                    const list = group.querySelector('.bagian-card-list');
-                    items.forEach(b => {
-                        const card = document.createElement('div');
-                        card.className = `bagian-card ${b.statusClass}`;
-                        card.setAttribute('data-blok', b.blok);
-                        card.innerHTML = `
-                            <div class="bagian-card-top">
-                                <div class="student-name">${b.nama}</div>
-                                <div class="student-meta">NPM: ${b.npm}</div>
+                    const groupTr = document.createElement('tr');
+                    groupTr.className = 'group-header-row';
+                    groupTr.innerHTML = `
+                        <td colspan="6" class="p-0 border-0 mb-2">
+                            <div id="header-${groupId}" class="group-header-card d-flex align-items-center justify-content-between my-2 ${isGroupCollapsed ? 'collapsed' : ''}" onclick="toggleGroupCollapse('${groupId}')">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <i class="bi bi-chevron-down chevron-icon me-1"></i>
+                                    <span class="group-title mb-0">
+                                        <i class="bi bi-journal-bookmark-fill text-primary me-1"></i>
+                                        ${escHtml(group.detail)}
+                                    </span>
+                                    <span class="group-badge-blok">${escHtml(group.blok)}</span>
+                                </div>
+                                <span class="group-badge-count">
+                                    <i class="bi bi-people-fill me-1"></i>${group.students.length} Mahasiswa
+                                </span>
                             </div>
-                            <div class="bagian-card-meta">
-                                <div class="bagian-card-cell">
-                                    <div class="cell-label">Blok</div>
-                                    <div class="cell-value">${b.blokHtml}</div>
-                                </div>
-                                <div class="bagian-card-cell">
-                                    <div class="cell-label">Status</div>
-                                    <div class="cell-value">${b.statusBadge}</div>
-                                </div>
-                                <div class="bagian-card-cell">
-                                    <div class="cell-label">ACC Final</div>
-                                    <div class="cell-value">${b.accFinalHtml}</div>
-                                </div>
-                                <div class="bagian-card-cell">
-                                    <div class="cell-label">Info ke Bagian</div>
-                                    <div class="cell-value">${b.bagianInfoHtml}</div>
-                                </div>
+                        </td>
+                    `;
+                    tbody.appendChild(groupTr);
+
+                    group.students.forEach(row => {
+                        const tr = document.createElement('tr');
+                        const st = String(row.Status || '').toLowerCase();
+
+                        let rowClasses = `group-student-row ${groupId}`;
+                        if (isGroupCollapsed) {
+                            rowClasses += ' collapsed-row';
+                        }
+
+                        if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
+                            rowClasses += ' row-disetujui';
+                        } else if (st.includes('tolak')) {
+                            rowClasses += ' row-ditolak';
+                        } else {
+                            rowClasses += ' row-menunggu';
+                        }
+
+                        tr.className = rowClasses;
+                        tr.setAttribute('data-blok', row.Blok || '');
+
+                        const accUrl = row['Link Final'] || row['LinkFinal'] || row['link_final'] || row['Bukti ACC Final'] || row['File ACC Final'] || row['buktiAccFinal'] || row['Link ACC INHAL'] || row['accInhal'] || '';
+                        let accFinalHtml = `
+                            <div class="status-stack">
+                                <span class="status-chip status-chip-neutral">
+                                    <i class="bi bi-clock-history"></i> Belum tersedia
+                                </span>
                             </div>
                         `;
-                        list.appendChild(card);
+                        if (accUrl) {
+                            const safeUrl = /^https?:\/\//i.test(String(accUrl).trim()) ? escHtml(accUrl) : '#';
+                            accFinalHtml = `
+                                <div class="status-stack">
+                                    <a href="${safeUrl}" target="_blank" class="acc-final-link">
+                                        <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Lihat
+                                    </a>
+                                </div>
+                            `;
+                        }
+
+                        const infoStatus = String(row['Status Info Bagian'] || '').trim().toLowerCase();
+                        const bagianInfoHtml = infoStatus === 'terkirim'
+                            ? `
+                                <div class="status-stack">
+                                    <span class="status-chip status-chip-info">
+                                        <i class="bi bi-envelope-check-fill"></i> Sudah masuk
+                                    </span>
+                                </div>
+                            `
+                            : `
+                                <div class="status-stack">
+                                    <span class="status-chip status-chip-neutral">
+                                        <i class="bi bi-envelope-x-fill"></i> ${infoStatus === 'gagal' ? 'Gagal dikirim' : 'Belum dikirim'}
+                                    </span>
+                                </div>
+                            `;
+
+                        let statusBadge = `
+                            <div class="status-stack">
+                                <span class="status-chip ${st.includes('tolak') ? 'status-chip-danger' : 'status-chip-neutral'}">
+                                    <i class="bi bi-hourglass-split"></i> Menunggu
+                                </span>
+                            </div>
+                        `;
+                        if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) {
+                            statusBadge = `
+                                <div class="status-stack">
+                                    <span class="status-chip status-chip-success">
+                                        <i class="bi bi-check-circle-fill"></i> Diterima
+                                    </span>
+                                </div>
+                            `;
+                        } else if (st.includes('tolak')) {
+                            statusBadge = `
+                                <div class="status-stack">
+                                    <span class="status-chip status-chip-danger">
+                                        <i class="bi bi-x-circle-fill"></i> Ditolak
+                                    </span>
+                                </div>
+                            `;
+                        }
+
+                        tr.innerHTML = `
+                            <td>
+                                <div class="student-name">${escHtml(row['Nama Lengkap'] || '-')}</div>
+                                <div class="student-meta">${escHtml(row.NPM || '-')}</div>
+                            </td>
+                            <td data-label="Blok"><span class="blok-badge">${escHtml(row.Blok || '-')}</span></td>
+                            <td data-label="Detail Kegiatan">
+                                <div class="kegiatan-detail fw-semibold text-dark">${escHtml(group.detail)}</div>
+                            </td>
+                            <td data-label="ACC Final" class="text-center">${accFinalHtml}</td>
+                            <td data-label="Info Final" class="text-center">${bagianInfoHtml}</td>
+                            <td data-label="Status" class="text-center">${statusBadge}</td>
+                        `;
+                        tbody.appendChild(tr);
                     });
-                    cardsWrap.appendChild(group);
                 });
-                if (cardsEl) cardsEl.appendChild(cardsWrap);
             }
 
             // UPDATE WIDGET STATISTIK CARDS
-            document.getElementById('stat-total').textContent = totalCount;
+            document.getElementById('stat-total').textContent = filteredRows.length;
             document.getElementById('stat-disetujui').textContent = disetujuiCount;
             document.getElementById('stat-menunggu').textContent = menungguCount;
             document.getElementById('stat-ditolak').textContent = ditolakCount;
 
-            // Re-apply filter
-            filterTable();
+            // Render kontrol paginasi
+            renderPagination(groupsArray.length);
+        }
+
+        function toggleGroupCollapse(groupId) {
+            const header = document.getElementById(`header-${groupId}`);
+            if (header) {
+                header.classList.toggle('collapsed');
+            }
+            const rows = document.querySelectorAll(`tr.${groupId}`);
+            rows.forEach(r => {
+                r.classList.toggle('collapsed-row');
+            });
+        }
+
+        function goBaginaPage(page) {
+            if (page < 1) return;
+            bagianPage = page;
+            renderTableRows(loadedRowsData);
+        }
+
+        function renderPagination(totalFiltered) {
+            const container = document.getElementById('bagian-pagination');
+            if (!container) return;
+            container.classList.add('pagination-custom');
+            const totalPages = Math.max(1, Math.ceil(totalFiltered / BAGIAN_PAGE_SIZE));
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            const start = (bagianPage - 1) * BAGIAN_PAGE_SIZE + 1;
+            const end = Math.min(bagianPage * BAGIAN_PAGE_SIZE, totalFiltered);
+            let html = `<li class="page-item disabled align-self-center me-2 small text-muted font-semibold">${start}-${end} dari ${totalFiltered} Kegiatan</li>`;
+            html += `<li class="page-item ${bagianPage === 1 ? 'disabled' : ''}"><button class="page-link" type="button" onclick="goBaginaPage(${bagianPage - 1})"><i class="bi bi-chevron-left"></i></button></li>`;
+
+            const maxBtns = 5;
+            let from = Math.max(1, bagianPage - Math.floor(maxBtns / 2));
+            const to = Math.min(totalPages, from + maxBtns - 1);
+            from = Math.max(1, to - maxBtns + 1);
+            for (let p = from; p <= to; p++) {
+                html += `<li class="page-item ${p === bagianPage ? 'active' : ''}"><button class="page-link" type="button" onclick="goBaginaPage(${p})">${p}</button></li>`;
+            }
+            html += `<li class="page-item ${bagianPage === totalPages ? 'disabled' : ''}"><button class="page-link" type="button" onclick="goBaginaPage(${bagianPage + 1})"><i class="bi bi-chevron-right"></i></button></li>`;
+            container.innerHTML = html;
         }
 
         function filterTable() {
-            const query = document.getElementById('search-table').value.toLowerCase();
-            const selectedBlok = document.getElementById('filter-blok-table').value.toLowerCase();
-            const rows = document.querySelectorAll('#bagian-data-body tr');
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                const rowBlok = (row.getAttribute('data-blok') || '').toLowerCase();
-
-                const matchesQuery = !query || text.includes(query);
-                const matchesBlok = !selectedBlok || rowBlok.includes(selectedBlok);
-
-                row.style.display = (matchesQuery && matchesBlok) ? '' : 'none';
-            });
-
-            // Filter kartu (mobile)
-            const cardsEl = document.getElementById('bagian-data-cards');
-            if (cardsEl) {
-                const groups = cardsEl.querySelectorAll('.bagian-card-group');
-                groups.forEach(group => {
-                    let anyVisible = false;
-                    group.querySelectorAll('.bagian-card').forEach(card => {
-                        const text = card.textContent.toLowerCase();
-                        const cardBlok = (card.getAttribute('data-blok') || '').toLowerCase();
-
-                        const matchesQuery = !query || text.includes(query);
-                        const matchesBlok = !selectedBlok || cardBlok.includes(selectedBlok);
-                        const show = matchesQuery && matchesBlok;
-                        card.style.display = show ? '' : 'none';
-                        if (show) anyVisible = true;
-                    });
-                    group.style.display = anyVisible ? '' : 'none';
-                });
-            }
-        }
-
-        function updateStatus(rowIndex, status) {
-            Swal.fire({
-                title: 'Konfirmasi Status ACC',
-                text: `Apakah Anda yakin ingin memproses status data ini menjadi "${status}"?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#4f46e5',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Proses'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    if (window.google && google.script && google.script.run && google.script.run.updateStatusRowIndex) {
-                        Swal.showLoading();
-                        google.script.run
-                            .withSuccessHandler(() => {
-                                Swal.fire('Berhasil!', `Status pengajuan telah diubah menjadi ${status}.`, 'success');
-                                loadBagianData();
-                            })
-                            .withFailureHandler(err => {
-                                Swal.fire('Gagal!', err.message || 'Gagal mengubah status', 'error');
-                            })
-                            .updateStatusRowIndex(rowIndex, status, currentSession.category);
-                    } else {
-                        Swal.fire('Demo Mode', `Status diubah ke ${status} (Simulasi lokal)`, 'success');
-                    }
-                }
-            });
+            bagianPage = 1;
+            renderTableRows(loadedRowsData);
         }
 
         function handlePengajuanSubmit(e) {
@@ -1568,28 +1589,87 @@
             }
         }
 
-        // EXPORT EXCEL FUNCTION
-        function exportToExcel() {
-            let csvContent = "data:text/csv;charset=utf-8,NPM,Nama Mahasiswa,Blok,Kegiatan,Detail Kegiatan,ACC Final,Info Final ke Bagian,Status\n";
-            const visibleRows = document.querySelectorAll('#bagian-data-body tr');
-            
-            visibleRows.forEach(row => {
-                if (row.style.display !== 'none') {
-                    const cols = row.querySelectorAll('td');
-                    if (cols.length >= 5) {
-                        const namaNpm = cols[0].innerText.split('\n');
-                        const nama = `"${(namaNpm[0] || '').replace(/"/g, '""')}"`;
-                        const npm = `"${(namaNpm[1] || '').replace(/"/g, '""')}"`;
-                        const blok = `"${(cols[1].innerText || '').replace(/"/g, '""')}"`;
-                        const kegDetail = cols[2].innerText.split('\n');
-                        const keg = `"${(kegDetail[0] || '').replace(/"/g, '""')}"`;
-                        const detail = `"${(kegDetail[1] || '').replace(/"/g, '""')}"`;
-                        const accFinal = `"${(cols[3].innerText || '').replace(/"/g, '""')}"`;
-                        const infoBagian = `"${(cols[4].innerText || '').replace(/"/g, '""')}"`;
-                        const status = `"${(cols[5].innerText || '').replace(/"/g, '""')}"`;
-                        csvContent += `${npm},${nama},${blok},${keg},${detail},${accFinal},${infoBagian},${status}\n`;
-                    }
+        // EXPORT EXCEL FUNCTION (ekspor semua baris hasil filter, tidak terpengaruh paginasi)
+        function getFilteredBaginaRows() {
+            const subStr = currentSession.subBagian.toLowerCase().trim();
+            const matchesBagian = (row) => {
+                if (!subStr) return false;
+                if (currentSession.category === 'Praktikum') {
+                    const detail = String(row['Detail Kegiatan'] || row.detail || '').trim();
+                    if (!detail) return false;
+                    return detail.split(';').some(lab => {
+                        const labName = String(lab.split(' - ')[0] || '').trim().toLowerCase();
+                        return labName === subStr;
+                    });
                 }
+                const jenis = String(row['Jenis Kegiatan'] || row.jenisKegiatan || '').trim().toLowerCase();
+                return jenis === subStr || jenis.includes(subStr);
+            };
+
+            const filtered = (loadedRowsData || []).filter(matchesBagian);
+            const query = (document.getElementById('search-table').value || '').toLowerCase().trim();
+            const selectedBlok = (document.getElementById('filter-blok-table').value || '').toLowerCase().trim();
+
+            return filtered.filter(row => {
+                const rowBlok = String(row.Blok || '').toLowerCase();
+                if (selectedBlok && !rowBlok.includes(selectedBlok)) return false;
+                if (query) {
+                    const hay = String(row['Nama Lengkap'] || row.nama || '').toLowerCase() + ' ' +
+                        String(row.NPM || row.npm || '').toLowerCase();
+                    if (!hay.includes(query)) return false;
+                }
+                return true;
+            });
+        }
+
+        function exportToExcel() {
+            const rows = getFilteredBaginaRows();
+            let csvContent = "data:text/csv;charset=utf-8,NPM,Nama Mahasiswa,Blok,Jenis Kegiatan,Detail Kegiatan,ACC Final,Info Final ke Bagian,Status\n";
+
+            const subStr = currentSession.subBagian.toLowerCase().trim();
+            const statusText = (row) => {
+                const st = String(row.Status || '').toLowerCase();
+                if (st.includes('setuju') || st.includes('terima') || st.includes('acc') || st.includes('selesai')) return 'Diterima';
+                if (st.includes('tolak')) return 'Ditolak';
+                return 'Menunggu';
+            };
+            const detailText = (row) => {
+                const jenisTxt = String(row['Jenis Kegiatan'] || '').trim();
+                const detailTxt = String(row['Detail Kegiatan'] || '').trim();
+                if (currentSession.category === 'Praktikum') {
+                    if (detailTxt) {
+                        const segmen = detailTxt.split(';').find(lab => {
+                            const labName = String(lab.split(' - ')[0] || '').trim().toLowerCase();
+                            return labName === subStr;
+                        });
+                        return (segmen || detailTxt).trim();
+                    }
+                    return jenisTxt;
+                }
+                return detailTxt || jenisTxt || '-';
+            };
+            const accText = (row) => {
+                const accUrl = row['Link Final'] || row['LinkFinal'] || row['link_final'] || row['Bukti ACC Final'] || row['File ACC Final'] || row['buktiAccFinal'] || row['Link ACC INHAL'] || row['accInhal'] || '';
+                return String(accUrl || '').trim() ? 'Ada' : 'Belum tersedia';
+            };
+            const infoBagianText = (row) => {
+                const infoStatus = String(row['Status Info Bagian'] || '').trim().toLowerCase();
+                return infoStatus === 'terkirim' ? 'Sudah masuk' : 'Belum dikirim';
+            };
+            const csv = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+
+            rows.forEach(row => {
+                const line = [
+                    csv(row.NPM || row.npm || ''),
+                    csv(row['Nama Lengkap'] || row.nama || ''),
+                    csv(row.Blok || ''),
+                    csv(row['Jenis Kegiatan'] || ''),
+                    csv(detailText(row)),
+                    csv(accText(row)),
+                    csv(infoBagianText(row)),
+                    csv(statusText(row))
+                ].join(',');
+                csvContent += line + '\n';
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -1903,12 +1983,12 @@
                     : '-';
 
                 tr.innerHTML = `
-                    <td class="text-nowrap" data-label="Waktu Upload">${tgl}</td>
-                    <td class="text-nowrap" data-label="Tanggal & Jam">${tglJam}</td>
+                    <td data-label="Waktu Upload" class="text-nowrap">${tgl}</td>
+                    <td data-label="Tanggal & Jam" class="text-nowrap">${tglJam}</td>
                     <td data-label="Blok"><span class="badge bg-light text-dark border">${escHtml(r.Blok || '-')}</span></td>
-                    <td class="fw-semibold text-dark" data-label="Nama Kegiatan">${escHtml(r['Nama Kegiatan'] || '-')}</td>
-                    <td class="text-center" data-label="Jml Peserta"><span class="badge bg-primary-light text-primary">${escHtml(r['Jumlah Peserta'] || r.jumlahPesertaList || 0)} Mahasiswa</span></td>
-                    <td class="text-end" data-label="Berkas">${link}</td>
+                    <td data-label="Nama Kegiatan" class="fw-semibold text-dark">${escHtml(r['Nama Kegiatan'] || '-')}</td>
+                    <td data-label="Jumlah Peserta" class="text-center"><span class="badge bg-primary-light text-primary">${escHtml(r['Jumlah Peserta'] || r.jumlahPesertaList || 0)} Mahasiswa</span></td>
+                    <td data-label="Berkas" class="text-end">${link}</td>
                 `;
                 tbody.appendChild(tr);
             });
