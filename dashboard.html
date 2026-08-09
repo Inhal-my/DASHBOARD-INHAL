@@ -1089,6 +1089,131 @@
             }
         }
 
+        /* === RESPONSIVE TABEL: KARTU DI MOBILE / TABLET PORTRAIT === */
+        @media (max-width: 991.98px) {
+            .card-table > thead {
+                display: none;
+            }
+
+            .card-table > tbody,
+            .card-table > tbody > tr,
+            .card-table > tbody > tr > td {
+                display: block;
+                width: 100%;
+            }
+
+            .card-table > tbody > tr {
+                padding: 10px 14px;
+                margin-bottom: 14px;
+                border: 1px solid var(--gray-200);
+                border-radius: 12px;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+            }
+
+            .card-table > tbody > tr > td {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 8px 0;
+                border: 0 !important;
+                border-bottom: 1px dashed var(--gray-100);
+                text-align: right;
+            }
+
+            .card-table > tbody > tr > td:last-child {
+                border-bottom: none !important;
+            }
+
+            .card-table > tbody > tr > td::before {
+                content: attr(data-label);
+                flex: 0 0 auto;
+                max-width: 45%;
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                color: var(--gray-500);
+                text-align: left;
+                padding-right: 12px;
+            }
+
+            .card-table > tbody > tr > td[colspan] {
+                display: block;
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+                border: 0 !important;
+                padding: 12px 0;
+            }
+
+            .card-table > tbody > tr > td[colspan]::before {
+                content: none;
+            }
+
+            .card-table > tbody > tr:hover {
+                transform: none !important;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .top-header {
+                padding: 10px 16px;
+            }
+
+            .page-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .top-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .header-left {
+                gap: 10px;
+            }
+
+            .page-subtitle {
+                display: none;
+            }
+
+            .role-switcher {
+                padding: 3px;
+            }
+
+            .role-btn {
+                padding: 5px 10px;
+                font-size: 0.72rem;
+            }
+
+            .header-right .btn span {
+                display: none;
+            }
+
+            .header-right .btn {
+                padding: 6px 10px;
+            }
+
+            .data-card-header {
+                padding: 14px 16px;
+            }
+
+            .data-card-footer {
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px 16px;
+            }
+
+            .data-card-footer .pagination {
+                flex-wrap: wrap;
+            }
+        }
+
         /* === SCROLLBAR === */
         ::-webkit-scrollbar {
             width: 6px;
@@ -1342,7 +1467,7 @@
                 <!-- TABLE -->
                 <div class="data-card-body">
                     <div class="table-container">
-                        <table class="modern-table">
+                        <table class="modern-table card-table">
                             <thead>
                                 <tr>
                                     <th width="40" class="text-center">
@@ -1490,7 +1615,7 @@
                 <div class="card shadow-sm border-0 rounded-4">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="baAdminTable">
+                            <table class="table table-hover align-middle mb-0 card-table" id="baAdminTable">
                                 <thead class="table-light">
                                     <tr>
                                         <th class="ps-4">Waktu Upload</th>
@@ -1577,7 +1702,7 @@
                                 <!-- Injected via JS -->
                             </div>
                             <div class="table-container">
-                             <table class="modern-table">
+                             <table class="modern-table card-table">
                                     <thead>
                                     <tr>
                                         <th width="50">#</th>
@@ -1696,7 +1821,7 @@
                 <div class="card shadow-sm border-0 rounded-4">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="berita-acara-dashboard-table">
+                            <table class="table table-hover align-middle mb-0 card-table" id="berita-acara-dashboard-table">
                                 <thead class="table-light">
                                     <tr>
                                         <th class="ps-4 py-3">Waktu Upload</th>
@@ -1762,7 +1887,7 @@
                             </div>
                             <div class="data-card-body">
                                 <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
-                                    <table class="table table-sm align-middle">
+                                    <table class="table table-sm align-middle card-table">
                                         <thead>
                                             <tr>
                                                 <th>Kegiatan</th>
@@ -1778,6 +1903,35 @@
                                 <div class="text-end mt-3">
                                     <button class="btn btn-sm btn-success px-4" id="btnSaveBiaya" onclick="saveBiayaSettings()">
                                         <i class="bi bi-save me-1"></i> Simpan Biaya
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verifikasi Bukti Bayar -->
+                    <div class="col-md-12">
+                        <div class="data-card">
+                            <div class="data-card-header">
+                                <h2 class="data-card-title"><i class="bi bi-shield-check me-2 text-primary"></i>Verifikasi Bukti Bayar</h2>
+                            </div>
+                            <div class="data-card-body">
+                                <div class="alert alert-warning py-2 px-3 small mb-3">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Gunakan <strong>Lenggang</strong> hanya bila mahasiswa kesulitan mendapatkan file PDF dari portal mahasiswa (bypass). File tetap diverifikasi manual oleh admin sebelum ACC Final dikirim.
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="buktiMode" id="buktiModeStrict" value="strict">
+                                    <label class="form-check-label fw-semibold" for="buktiModeStrict">Ketat (Default)</label>
+                                    <div class="form-text mt-0">Wajib bukti bayar PDF asli dari portal mahasiswa dan NPM harus cocok dengan akun.</div>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="buktiMode" id="buktiModeLenggang" value="lenggang">
+                                    <label class="form-check-label fw-semibold" for="buktiModeLenggang">Lenggang (Bypass)</label>
+                                    <div class="form-text mt-0">Terima bukti bayar PDF/JPG/PNG apa pun, tanpa pengecekan NPM.</div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button class="btn btn-sm btn-success px-4" id="btnSaveBuktiMode" onclick="saveBuktiModeSettings()">
+                                        <i class="bi bi-save me-1"></i> Simpan Mode
                                     </button>
                                 </div>
                             </div>
@@ -1800,7 +1954,7 @@
                                     <i class="bi bi-info-circle-fill me-1"></i> Atur alamat email tujuan untuk setiap Bagian/Lab. Email ini digunakan saat mengirim PDF Final ke Bagian terkait.
                                 </div>
                                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                    <table class="table table-sm align-middle">
+                                    <table class="table table-sm align-middle card-table">
                                         <thead>
                                             <tr>
                                                 <th style="width:35%;">Nama Bagian / Lab</th>
@@ -2300,10 +2454,12 @@
 
                 return {
                     id: item.originalRowIndex,
+                    idPengajuan: item.idPengajuan || '',
                     npm: item.NPM || '',
                     nama: item['Nama Lengkap'] || item.NamaLengkap || '',
                     blok: item.Blok || '',
                     jenis: item['Jenis Kegiatan'] || item.JenisKegiatan || '',
+                    jenisDasar: item.JenisDasar || item['Jenis Dasar'] || item.Jenis || '',
                     detail: item.Detail || item['Detail Kegiatan'] || item.DetailKegiatan || '',
                     tanggal: item.TanggalKegiatan || item['Tanggal Kegiatan'] || item.Tanggal || '',
                     status: normalizeStatus(item.Status || item.statusFinal || 'Menunggu'),
@@ -2318,7 +2474,9 @@
                     bukti_bayar_url: item.buktiBayar || item['Bukti Bayar'] || '',
                     surat_url: item['Link Surat Keterangan'] || item['Link Surat'] || item.LinkSurat || item.Surat || '#',
                     link_acc: item.LinkACC || item.accInhal || item['ACC INHAL'] || item['Bukti ACC Final'] || item['buktiAccFinal'] || '',
-                    link_final: item.LinkFinal || item['Bukti ACC Final'] || item['buktiAccFinal'] || item.accInhal || item['ACC INHAL'] || '',
+                    link_final: item.LinkFinal || item['Link Final'] || '',
+                    statusInfoBagian: item.StatusInfoBagian || '',
+                    waktuInfoBagian: item.WaktuInfoBagian || '',
                     // Backend mengirim Praktikum sebagai detail kegiatan praktikum.
                     // Jangan fallback ke Jenis Kegiatan: itu membuat semua kegiatan
                     // non-praktikum masuk ke pilihan filter Praktikum.
@@ -2550,13 +2708,13 @@
                 const avatarColor = colors[charCode % colors.length];
 
                 const row = `<tr style="cursor:pointer; transition: all 0.2s; ${rowBg}" onclick="openPaperView(${item.id})" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='var(--card-shadow)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-                    <td class="text-center" width="40" style="vertical-align: middle;"><input class="form-check-input row-checkbox" type="checkbox" value="${item.id}" onclick="event.stopPropagation(); updateBulkActionBar()"></td>
-                    <td style="vertical-align: middle;"><div class="avatar bg-${avatarColor.split(' ')[0]} text-white ${avatarColor.split(' ')[1] || ''} shadow-sm">${startIndex + index + 1}</div></td>
-                    <td style="vertical-align: middle;"><div class="fw-bold text-dark fs-6">${item.nama}</div><div class="small text-muted"><i class="bi bi-person-badge me-1"></i>${item.npm}</div></td>
-                    <td style="vertical-align: middle;"><div class="fw-semibold text-primary small"><i class="bi bi-journal-bookmark-fill me-1"></i>${item.blok}</div><div class="small text-muted mt-1">${item.jenis}</div></td>
-                    <td class="text-center" style="vertical-align: middle;">${docIcons}</td>
-                    <td class="text-center" style="vertical-align: middle;"><span class="${badgeClass} px-3 py-2 shadow-sm rounded-pill"><i class="bi ${icon} me-1"></i> ${item.status}</span></td>
-                    <td class="text-center" style="vertical-align: middle;"><button class="btn btn-sm btn-light btn-icon border shadow-sm rounded-circle text-primary" style="width:36px;height:36px;" title="Lihat Detail"><i class="bi bi-chevron-right fs-6"></i></button></td>
+                    <td class="text-center" width="40" style="vertical-align: middle;" data-label="Pilih"><input class="form-check-input row-checkbox" type="checkbox" value="${item.id}" onclick="event.stopPropagation(); updateBulkActionBar()"></td>
+                    <td style="vertical-align: middle;" data-label="No"><div class="avatar bg-${avatarColor.split(' ')[0]} text-white ${avatarColor.split(' ')[1] || ''} shadow-sm">${startIndex + index + 1}</div></td>
+                    <td style="vertical-align: middle;" data-label="Mahasiswa"><div class="fw-bold text-dark fs-6">${item.nama}</div><div class="small text-muted"><i class="bi bi-person-badge me-1"></i>${item.npm}</div></td>
+                    <td style="vertical-align: middle;" data-label="Blok / Kegiatan"><div class="fw-semibold text-primary small"><i class="bi bi-journal-bookmark-fill me-1"></i>${item.blok}</div><div class="small text-muted mt-1">${item.jenis}</div></td>
+                    <td class="text-center" style="vertical-align: middle;" data-label="Berkas">${docIcons}</td>
+                    <td class="text-center" style="vertical-align: middle;" data-label="Status"><span class="${badgeClass} px-3 py-2 shadow-sm rounded-pill"><i class="bi ${icon} me-1"></i> ${item.status}</span></td>
+                    <td class="text-center" style="vertical-align: middle;" data-label="Aksi"><button class="btn btn-sm btn-light btn-icon border shadow-sm rounded-circle text-primary" style="width:36px;height:36px;" title="Lihat Detail"><i class="bi bi-chevron-right fs-6"></i></button></td>
                 </tr>`;
                 tbody.append(row);
             });
@@ -2603,8 +2761,16 @@
             let actionButtons = '';
             if (currentRole === 'admin') {
                 const baDropdown = buildBeritaAcaraDropdown(item);
+                const hasUploadFiles = item.bukti_acc_url && item.bukti_bayar_url && item.bukti_acc_url.length > 5 && item.bukti_bayar_url.length > 5;
+                const isFinalSent = item.link_final && item.link_final.length > 5;
+                const kirimAccFinalBtn = hasUploadFiles && !isFinalSent
+                    ? `<button class="btn btn-success" onclick="kirimAccFinalBagian(${item.id})" title="Periksa file upload terlebih dahulu, lalu kirim ACC Final (PDF) ke Bagian & email mahasiswa"><i class="bi bi-send-fill me-1"></i>Kirim ACC Final</button>`
+                    : isFinalSent
+                        ? `<button class="btn btn-outline-success" disabled title="ACC Final sudah terkirim ${item.waktuInfoBagian ? 'pada ' + escapeHtml(item.waktuInfoBagian) : ''}"><i class="bi bi-check-circle-fill me-1"></i>ACC Final Terkirim</button>`
+                        : `<button class="btn btn-outline-secondary" disabled title="Tunggu mahasiswa mengupload ACC & Bukti Bayar"><i class="bi bi-hourglass-split me-1"></i>Menunggu Upload</button>`;
                 actionButtons = `<button class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
                 ${baDropdown}
+                ${kirimAccFinalBtn}
                 <button class="btn btn-outline-primary" onclick="editEmailAdmin(${item.id})"><i class="bi bi-envelope-pencil me-1"></i>Edit Email</button>
                 <button class="btn btn-outline-danger" onclick="deleteSubmissionAdmin(${item.id})"><i class="bi bi-trash me-1"></i>Hapus Data</button>
                 ${item.status !== 'Ditolak' ? `<button class="btn btn-outline-danger" onclick="updateStatus(${item.id},'Ditolak')"><i class="bi bi-x-circle me-1"></i>Tolak</button>` : ''}
@@ -2674,7 +2840,7 @@
                                 <div class="info-row"><div class="info-label">Blok Pembelajaran</div><div class="info-value fw-semibold"><i class="bi bi-journal-bookmark-fill text-warning me-2"></i>${item.blok}</div></div>
                                 <div class="info-row"><div class="info-label">Jenis Kegiatan</div><div class="info-value"><span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1">${item.jenis}</span></div></div>
                                 <div class="info-row"><div class="info-label">Tanggal Pelaksanaan Awal</div><div class="info-value"><i class="bi bi-calendar-event text-muted me-2"></i>${item.tanggal}</div></div>
-                                <div class="info-row"><div class="info-label">Keterangan / Alasan</div><div class="info-value fst-italic p-2 bg-light rounded mt-1 border">"${item.detail}"</div></div>
+                                <div class="info-row"><div class="info-label">Keterangan / Alasan</div><div class="info-value fst-italic p-2 bg-light rounded mt-1 border">"${item.keterangan || '-'}"</div></div>
                                 <div class="mt-4" id="suratBtnContainer_${currentId}">
 <div class="info-label mb-2">Surat Keterangan</div>
 ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-primary w-100 shadow-sm" id="suratBtn_${currentId}"><i class="bi bi-file-earmark-pdf-fill me-2"></i>Lihat Dokumen Surat</a>` : `<button class="btn btn-sm btn-primary w-100 shadow-sm" id="suratBtn_${currentId}" onclick="openUploadSuratModal(${currentId})"><i class="bi bi-cloud-upload me-2"></i>Upload Surat</button>`}
@@ -3055,12 +3221,58 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             }).then(result => { if (result.isConfirmed) Swal.fire({ title: 'Berhasil!', text: `Email final telah dikirim ke ${item.email}`, icon: 'success', confirmButtonText: 'OK' }); }).catch(err => Swal.fire('Gagal', 'Terjadi kesalahan: ' + err.message, 'error'));
         }
 
+        // Kirim ACC Final ke Bagian & mahasiswa (dipicu manual admin setelah cek file upload)
+        function kirimAccFinalBagian(id) {
+            const item = mockData.find(x => x.id === id);
+            if (!item) { Swal.fire('Error', 'Data tidak ditemukan', 'error'); return; }
+            const idPengajuan = item.idPengajuan || '';
+            if (!idPengajuan) { Swal.fire('Error', 'ID Pengajuan tidak tersedia untuk data ini', 'error'); return; }
+
+            const jenisNorm = normText(item.jenis);
+            const detailNorm = normText(item.detail);
+            const combinedNorm = `${jenisNorm} ${detailNorm}`.trim();
+            const keys = Object.keys(globalBagianEmailMap || {});
+            const bagianKey = keys.find(k => combinedNorm.includes(k)) || '';
+            const emailBagian = globalBagianEmailMap[bagianKey] || '';
+
+            Swal.fire({
+                title: 'Kirim ACC Final ke Bagian?',
+                html: `<div class="text-start"><p>PDF ACC Final akan dibuat dan email akan dikirim ke:</p><ul><li><strong>Mahasiswa:</strong> ${escapeHtml(item.nama)} (${escapeHtml(item.email)})</li><li><strong>Bagian:</strong> ${emailBagian ? escapeHtml(emailBagian) : '<span class="text-danger">Tidak ditemukan</span>'}</li></ul><div class="alert alert-warning small mb-0">Pastikan file upload mahasiswa (Form ACC & Bukti Bayar) sudah diperiksa dan benar.</div></div>`,
+                icon: 'question', showCancelButton: true, confirmButtonColor: '#198754', confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Kirim ACC Final', cancelButtonText: 'Batal', showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return new Promise((resolve, reject) => {
+                        google.script.run
+                            .withSuccessHandler(res => { if (res && res.success) resolve(res); else reject(new Error((res && res.message) || 'Gagal mengirim ACC Final')); })
+                            .withFailureHandler(err => reject(err))
+                            .sendAccFinalToBagian(idPengajuan);
+                    });
+                }, allowOutsideClick: () => !Swal.isLoading()
+            }).then(result => {
+                if (result.isConfirmed) {
+                    const res = result.value || {};
+                    if (item && res.linkFinal) item.link_final = res.linkFinal;
+                    const sel = `#paperModal .elegant-footer .d-flex button[onclick*="kirimAccFinalBagian(${id})"]`;
+                    const oldBtn = document.querySelector(sel);
+                    if (oldBtn && oldBtn.parentNode) {
+                        const newBtn = document.createElement('button');
+                        newBtn.className = 'btn btn-outline-success';
+                        newBtn.disabled = true;
+                        newBtn.title = 'ACC Final sudah terkirim';
+                        newBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>ACC Final Terkirim';
+                        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+                    }
+                    Swal.fire({ title: 'Berhasil!', text: 'ACC Final telah dikirim ke Bagian dan email mahasiswa.', icon: 'success', confirmButtonText: 'OK' });
+                    loadDataFromServer(true);
+                }
+            }).catch(err => Swal.fire('Gagal', 'Terjadi kesalahan: ' + err.message, 'error'));
+        }
+
         // === 10. EXCEL EXPORT ===
         function exportToExcel() {
             if (!filteredData || filteredData.length === 0) { Swal.fire('Tidak Ada Data', 'Tidak ada data untuk di-export.', 'warning'); return; }
             const wb = XLSX.utils.book_new();
             const dataSheet = [['No.','NPM','Nama Mahasiswa','Email','HP','Blok','Jenis Kegiatan','Keterangan/Alasan','Tanggal Pengajuan','Status','Dosen Penguji','Jadwal Pelaksanaan','Biaya Administrasi','Catatan Admin']];
-            filteredData.forEach((item, i) => dataSheet.push([i+1, item.npm, item.nama, item.email, item.hp, item.blok, item.jenis, item.detail, item.tanggal, item.status, item.dosen||'-', item.tgl_pelaksanaan||'-', item.biaya||'-', item.catatan||'-']));
+            filteredData.forEach((item, i) => dataSheet.push([i+1, item.npm, item.nama, item.email, item.hp, item.blok, item.jenis, item.keterangan || '-', item.tanggal, item.status, item.dosen||'-', item.tgl_pelaksanaan||'-', item.biaya||'-', item.catatan||'-']));
             const ws = XLSX.utils.aoa_to_sheet(dataSheet);
             ws['!cols'] = [{wch:5},{wch:12},{wch:25},{wch:25},{wch:15},{wch:15},{wch:15},{wch:30},{wch:12},{wch:10},{wch:20},{wch:15},{wch:15},{wch:30}];
             XLSX.utils.book_append_sheet(wb, ws, 'Data Laporan');
@@ -3528,20 +3740,20 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="ps-4 text-muted small text-nowrap">${tgl}</td>
-                    <td class="text-nowrap">${tglJam}</td>
-                    <td><span class="badge rounded-pill bg-primary-light text-primary px-3 py-2 fw-semibold">${escapeHtml(r.Bagian || '-')}</span></td>
-                    <td><span class="badge bg-light text-dark border shadow-sm">${escapeHtml(r.Blok || '-')}</span></td>
-                    <td class="fw-medium">
+                    <td class="ps-4 text-muted small text-nowrap" data-label="Waktu Upload">${tgl}</td>
+                    <td class="text-nowrap" data-label="Tanggal &amp; Jam">${tglJam}</td>
+                    <td data-label="Bagian"><span class="badge rounded-pill bg-primary-light text-primary px-3 py-2 fw-semibold">${escapeHtml(r.Bagian || '-')}</span></td>
+                    <td data-label="Blok"><span class="badge bg-light text-dark border shadow-sm">${escapeHtml(r.Blok || '-')}</span></td>
+                    <td class="fw-medium" data-label="Nama Kegiatan">
                         ${escapeHtml(r['Nama Kegiatan'] || '-')}
                         ${r.Catatan ? `<div class="text-muted small" style="max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(r.Catatan)}">${escapeHtml(r.Catatan)}</div>` : ''}
                     </td>
-                    <td class="text-center">
+                    <td class="text-center" data-label="Peserta">
                         <button class="btn btn-sm rounded-pill ${peserta.length ? 'btn-outline-primary' : 'btn-light text-muted'}" onclick="baTogglePeserta(${idx})" title="Lihat daftar peserta">
                             <i class="bi bi-people me-1"></i>${jml}
                         </button>
                     </td>
-                    <td class="text-end pe-4">${link}</td>
+                    <td class="text-end pe-4" data-label="Berkas">${link}</td>
                 `;
                 tbody.appendChild(tr);
 
@@ -3615,10 +3827,13 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             filtered.forEach(item => {
                 const jenisStr = String(item.jenis || '').trim();
                 const detailStr = String(item.detail || '').trim();
+                // item.jenis dari backend berupa gabungan "Jenis - Detail".
+                // Jenis dasar tersedia di item.jenisDasar (fallback: token pertama sebelum ' - ').
+                const baseJenis = String(item.jenisDasar || jenisStr.split(' - ')[0] || '').trim();
                 
                 let subBagianNames = [];
                 
-                if (jenisStr.toLowerCase() === 'praktikum') {
+                if (baseJenis.toLowerCase() === 'praktikum') {
                     // Pecah detail: "Anatomi - Inhal 1; Fisiologi - Inhal 2" -> ["Anatomi", "Fisiologi"]
                     if (detailStr && detailStr !== 'N/A') {
                         const labs = detailStr.split(';');
@@ -3632,9 +3847,8 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                             }
                         });
                     }
-                    if (subBagianNames.length === 0 && !filterLab) {
-                        // Jangan buat grup umum "Praktikum" jika detail lab tidak spesifik
-                    }
+                    // Jika tidak ada lab yang terdeteksi, item tidak dimasukkan ke grup mana pun.
+                    // Tidak dibuat grup umum "Praktikum" agar card "Praktikum" tidak muncul.
                 } else {
                     // Cek jika ini adalah bagian dari lab (misal untuk Ujian yang spesifik lab)
                     // Mengikuti pola detail-laporan.html dimana nama lab muncul di jenis/detail
@@ -3679,7 +3893,7 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                     
                     // Salin item dan tandai sub-detail lab spesifiknya
                     const clonedItem = { ...item, _displayDetail: detailStr };
-                    if (jenisStr.toLowerCase() === 'praktikum' && detailStr !== 'N/A') {
+                    if (baseJenis.toLowerCase() === 'praktikum' && detailStr !== 'N/A') {
                         // Hanya tampilkan lab yang sesuai dengan bagian ini
                         const matchingLab = detailStr.split(';').find(lab => lab.split(' - ')[0].trim() === bagianName);
                         if (matchingLab) {
@@ -3898,14 +4112,14 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                 const jenisKegiatan = item.jenis || '-';
 
                 const row = `<tr style="transition: all 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='var(--card-shadow)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-                    <td style="vertical-align: middle;" class="text-center fw-bold text-muted">${index + 1}</td>
-                    <td style="vertical-align: middle;"><div class="fw-bold text-dark fs-6">${item.nama || '-'}</div><div class="small text-muted"><i class="bi bi-person-badge me-1"></i>${item.npm || '-'}</div></td>
-                    <td style="vertical-align: middle;"><div class="small text-primary text-break"><i class="bi bi-envelope me-1"></i>${item.email || '-'}</div></td>
-                    <td style="vertical-align: middle;"><div class="fw-semibold small">${item.blok || '-'}</div><div class="small text-muted">${displayDetail}</div></td>
-                    <td style="vertical-align: middle;"><div class="small fw-bold text-secondary">${jenisKegiatan}</div></td>
-                    <td class="text-center" style="vertical-align: middle;">${statusBadge}</td>
-                    <td class="text-center" style="vertical-align: middle;">${linkPdfCol}</td>
-                    <td class="text-center" style="vertical-align: middle;">${aksiHtml}</td>
+                    <td style="vertical-align: middle;" class="text-center fw-bold text-muted" data-label="No">${index + 1}</td>
+                    <td style="vertical-align: middle;" data-label="Mahasiswa"><div class="fw-bold text-dark fs-6">${item.nama || '-'}</div><div class="small text-muted"><i class="bi bi-person-badge me-1"></i>${item.npm || '-'}</div></td>
+                    <td style="vertical-align: middle;" data-label="Email"><div class="small text-primary text-break"><i class="bi bi-envelope me-1"></i>${item.email || '-'}</div></td>
+                    <td style="vertical-align: middle;" data-label="Blok / Detail"><div class="fw-semibold small">${item.blok || '-'}</div><div class="small text-muted">${displayDetail}</div></td>
+                    <td style="vertical-align: middle;" data-label="Jenis Kegiatan"><div class="small fw-bold text-secondary">${jenisKegiatan}</div></td>
+                    <td class="text-center" style="vertical-align: middle;" data-label="Status">${statusBadge}</td>
+                    <td class="text-center" style="vertical-align: middle;" data-label="Link PDF Final">${linkPdfCol}</td>
+                    <td class="text-center" style="vertical-align: middle;" data-label="Aksi">${aksiHtml}</td>
                 </tr>`;
                 tbody.append(row);
             });
@@ -4159,7 +4373,8 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                         folderId: 'MOCK_FOLDER_ID',
                         templateDiterimaId: 'MOCK_TEMPLATE_DITERIMA',
                         templateDitolakId: 'MOCK_TEMPLATE_DITOLAK',
-                        templateAccId: 'MOCK_TEMPLATE_ACC'
+                        templateAccId: 'MOCK_TEMPLATE_ACC',
+                        buktiMode: 'strict'
                     },
                     biayaRows: [
                         { kegiatan: 'Ujian Uts', biaya: 50000 },
@@ -4201,6 +4416,15 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             $('#configTemplateDitolak').val(cfg.templateDitolakId || '');
             $('#configTemplateAcc').val(cfg.templateAccId || '');
 
+            // Bukti Mode
+            const buktiMode = (cfg.buktiMode === 'lenggang') ? 'lenggang' : 'strict';
+            const strictRadio = $('#buktiModeStrict');
+            const lenggangRadio = $('#buktiModeLenggang');
+            if (strictRadio.length && lenggangRadio.length) {
+                strictRadio.prop('checked', buktiMode === 'strict');
+                lenggangRadio.prop('checked', buktiMode === 'lenggang');
+            }
+
             // Biaya Rows
             renderBiayaSettingsTable();
 
@@ -4222,13 +4446,13 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             rows.forEach((item, idx) => {
                 tbody.append(`
                     <tr>
-                        <td>
+                        <td data-label="Kegiatan">
                             <input type="text" class="form-control form-control-sm biaya-kegiatan" value="${escapeHtml(item.kegiatan || '')}" placeholder="Nama Kegiatan">
                         </td>
-                        <td>
+                        <td data-label="Biaya (Rp)">
                             <input type="number" class="form-control form-control-sm biaya-nominal" value="${item.biaya || 0}" placeholder="Nominal Biaya">
                         </td>
-                        <td class="text-center">
+                        <td class="text-center" data-label="Aksi">
                             <button class="btn btn-sm btn-outline-danger" onclick="removeBiayaRow(${idx})">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -4340,16 +4564,16 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             sortedKeys.forEach((key, idx) => {
                 tbody.append(`
                     <tr>
-                        <td>
+                        <td data-label="Nama Bagian / Lab">
                             <input type="text" class="form-control form-control-sm email-bagian-nama" value="${escapeHtml(key)}" placeholder="Nama Bagian / Lab">
                         </td>
-                        <td>
+                        <td data-label="Alamat Email">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
                                 <input type="email" class="form-control form-control-sm email-bagian-alamat" value="${escapeHtml(map[key] || '')}" placeholder="contoh@umsu.ac.id">
                             </div>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center" data-label="Aksi">
                             <button class="btn btn-sm btn-outline-danger" onclick="removeEmailBagianRow(${idx})" title="Hapus">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -4364,16 +4588,16 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             const idx = tbody.find('tr').length;
             tbody.append(`
                 <tr>
-                    <td>
+                    <td data-label="Nama Bagian / Lab">
                         <input type="text" class="form-control form-control-sm email-bagian-nama" value="" placeholder="Nama Bagian / Lab">
                     </td>
-                    <td>
+                    <td data-label="Alamat Email">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
                             <input type="email" class="form-control form-control-sm email-bagian-alamat" value="" placeholder="contoh@umsu.ac.id">
                         </div>
                     </td>
-                    <td class="text-center">
+                    <td class="text-center" data-label="Aksi">
                         <button class="btn btn-sm btn-outline-danger" onclick="$(this).closest('tr').remove()" title="Hapus">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -4455,6 +4679,51 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                     Swal.fire('Error', 'Kesalahan koneksi server: ' + err.message, 'error');
                 })
                 .saveBagianEmailMap(newMap);
+        }
+
+        function saveBuktiModeSettings() {
+            const mode = $('input[name="buktiMode"]:checked').val();
+            if (mode !== 'strict' && mode !== 'lenggang') {
+                Swal.fire('Peringatan', 'Pilih salah satu mode verifikasi.', 'warning');
+                return;
+            }
+
+            const btn = $('#btnSaveBuktiMode');
+            btn.prop('disabled', true);
+            btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+
+            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                setTimeout(() => {
+                    if (currentSettingsData && currentSettingsData.systemConfig) {
+                        currentSettingsData.systemConfig.buktiMode = mode;
+                    }
+                    btn.prop('disabled', false);
+                    btn.html('<i class="bi bi-save me-1"></i> Simpan Mode');
+                    showToast('Mode verifikasi disimpan (mode lokal).', 'success');
+                }, 1000);
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(function (resp) {
+                    btn.prop('disabled', false);
+                    btn.html('<i class="bi bi-save me-1"></i> Simpan Mode');
+                    if (resp && resp.success) {
+                        if (resp.data && resp.data.systemConfig) {
+                            currentSettingsData = resp.data;
+                            renderSettings();
+                        }
+                        showToast(resp.message || 'Mode verifikasi berhasil disimpan.', 'success');
+                    } else {
+                        Swal.fire('Gagal', (resp && resp.message) || 'Gagal menyimpan mode verifikasi.', 'error');
+                    }
+                })
+                .withFailureHandler(function (err) {
+                    btn.prop('disabled', false);
+                    btn.html('<i class="bi bi-save me-1"></i> Simpan Mode');
+                    Swal.fire('Error', 'Kesalahan koneksi server: ' + err.message, 'error');
+                })
+                .saveMonitorBuktiMode({ mode: mode });
         }
 
         // Master Dropdown items
@@ -4651,16 +4920,16 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             const hasFile = row.fileUrl && row.fileUrl.length > 3;
             const tglFmt = row.tanggalKegiatan ? row.tanggalKegiatan.replace('T', ' ') : '-';
             return `<tr>
-                <td class="ps-4 small text-muted">${row.waktuUpload || '-'}</td>
-                <td><span class="badge bg-warning text-dark">${row.blok || '-'}</span></td>
-                <td class="fw-semibold">${row.judulBA || '-'}</td>
-                <td class="small">${tglFmt}</td>
-                <td class="text-center">
+                <td class="ps-4 small text-muted" data-label="Waktu Upload">${row.waktuUpload || '-'}</td>
+                <td data-label="Blok"><span class="badge bg-warning text-dark">${row.blok || '-'}</span></td>
+                <td class="fw-semibold" data-label="Judul Berita Acara">${row.judulBA || '-'}</td>
+                <td class="small" data-label="Tanggal Kegiatan">${tglFmt}</td>
+                <td class="text-center" data-label="Berkas">
                     ${hasFile
                         ? `<a href="${row.fileUrl}" target="_blank" class="btn btn-sm btn-outline-success"><i class="bi bi-eye me-1"></i>Lihat</a>`
                         : `<span class="text-muted small">—</span>`}
                 </td>
-                <td class="text-center pe-4">
+                <td class="text-center pe-4" data-label="Aksi">
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteDokumenBeritaAcara(${row.id}, '${(row.judulBA || '').replace(/'/g, "\\'")}')">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -5034,33 +5303,60 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
         // Fungsi normalisasi untuk perbandingan yang lebih fleksibel
         const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '');
 
-        const itemDetail = normalize(item.detail);
-        const matched = (window.baAdminData || []).filter(r => {
-            const rDetail = normalize(r.detailKegiatan);
-            return normalize(r.blok) === normalize(item.blok)
-                && normalize(r.jenisKegiatan) === normalize(item.jenis)
-                && rDetail === itemDetail;
-        });
+        const itemBlok = normalize(item.blok);
+        // item.jenis diisi "Jenis - Detail" (gabungan) oleh backend; jenis dasar ada di
+        // item.jenisDasar. Fallback: ambil token pertama sebelum ' - ' untuk data lama.
+        const itemJenis = normalize(item.jenisDasar || String(item.jenis || '').split(' - ')[0]);
+        const itemSegments = normalize(item.detail).split(';').filter(Boolean);
 
-        const hasMatch = matched.length > 0;
-        const btnClass = hasMatch ? 'btn-outline-success' : 'btn-outline-secondary';
+        // Kandidat: cocok pada Blok + Jenis Kegiatan (tanpa NPM / Nama Lengkap).
+        // pakai baAdminData langsung (bukan window.baAdminData) karena variabel ini
+        // dideklarasikan dengan let di top-level sehingga tidak menjadi properti window.
+        const candidates = (baAdminData || []).filter(r =>
+            normalize(r.blok) === itemBlok
+            && normalize(r.jenisKegiatan) === itemJenis
+        );
+
+        // Prioritas pencocokan detail:
+        //   2 = detail BA sama persis dengan salah satu segmen detail mahasiswa (pecah ';')
+        //   1 = cocok sebagian (salah satu teks mengandung yang lain)
+        //   0 = longgar, hanya cocok Blok + Jenis, untuk dikonfirmasi manual oleh admin
+        const scored = candidates.map(r => {
+            const rDetail = normalize(r.detailKegiatan);
+            let level = 0;
+            if (rDetail && itemSegments.length) {
+                if (itemSegments.indexOf(rDetail) !== -1) level = 2;
+                else if (itemSegments.some(seg => seg.indexOf(rDetail) !== -1 || rDetail.indexOf(seg) !== -1)) level = 1;
+            }
+            return { r, level };
+        }).sort((a, b) => b.level - a.level);
+
+        const hasExact = scored.some(s => s.level === 2);
+        const hasMatch = scored.length > 0;
+        const btnClass = hasExact ? 'btn-outline-success' : (hasMatch ? 'btn-outline-warning' : 'btn-outline-secondary');
         const dropdownId = 'baDropdown_' + item.id;
 
         const items = hasMatch
-            ? matched.map(r => {
+            ? scored.map(({ r, level }) => {
                 const tgl = (r.tanggalKegiatan || '').replace('T', ' ');
                 const hasFile = r.fileUrl && r.fileUrl.length > 3;
+                const judul = escapeHtml(r.judulBA || r.detailKegiatan || '-');
+                const badge = level === 2
+                    ? '<i class="bi bi-patch-check-fill text-success ms-1" title="Cocok persis"></i>'
+                    : level === 1
+                        ? '<i class="bi bi-check2 text-warning ms-1" title="Cocok sebagian"></i>'
+                        : '<i class="bi bi-question-circle text-secondary ms-1" title="Cocok blok/jenis saja, periksa manual"></i>';
                 return hasFile
-                    ? `<li><a class="dropdown-item small" href="${r.fileUrl}" target="_blank"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>${r.judulBA || r.detailKegiatan} &middot; <span class="text-muted">${tgl}</span></a></li>`
-                    : `<li><span class="dropdown-item small text-muted disabled"><i class="bi bi-file-earmark-x me-2"></i>${r.judulBA || r.detailKegiatan} &middot; Berkas tidak tersedia</span></li>`;
+                    ? `<li><a class="dropdown-item small" href="${escapeHtml(r.fileUrl)}" target="_blank"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>${judul} &middot; <span class="text-muted">${escapeHtml(tgl)}</span>${badge}</a></li>`
+                    : `<li><span class="dropdown-item small text-muted disabled"><i class="bi bi-file-earmark-x me-2"></i>${judul} &middot; Berkas tidak tersedia${badge}</span></li>`;
             }).join('')
             : '<li><span class="dropdown-item small text-muted disabled"><i class="bi bi-info-circle me-1"></i>Belum ada berita acara yang cocok</span></li>';
 
         return `<div class="dropdown">
                 <button class="btn ${btnClass} dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-file-earmark-text me-1"></i>Berita Acara${hasMatch ? ` (${matched.length})` : ''}
+                    <i class="bi bi-file-earmark-text me-1"></i>Berita Acara${hasMatch ? ` (${scored.length})` : ''}
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow" id="${dropdownId}">
+                <ul class="dropdown-menu dropdown-menu-end shadow" id="${dropdownId}" style="max-height:320px;overflow-y:auto;">
                     ${items}
                 </ul>
             </div>`;

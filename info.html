@@ -9,6 +9,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- pdf.js untuk validasi bukti bayar PDF dari portal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -226,7 +233,7 @@
                                     <div id="upload-section-container"
                                         class="bg-blue-50 border border-blue-100 rounded-lg p-6 mt-3">
                                         <p id="upload-instruction-text" class="text-sm text-blue-800 mb-4">
-                                            Silakan lakukan pembayaran sesuai tagihan dan unggah bukti bayar (PDF/JPG).
+                                            Silakan lakukan pembayaran sesuai tagihan dan unggah bukti bayar (PDF dari portal mahasiswa).
                                         </p>
                                         <div class="space-y-3">
                                             <button id="detail-upload-btn" type="button"
@@ -308,10 +315,11 @@
                                 class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Bukti
-                                Bayar</label>
-                            <input type="file" id="upload-file-bukti" accept=".pdf,.jpg,.jpeg,.png"
+                            <label class="block text-sm font-medium text-gray-700 mb-2" id="bukti-label">Upload Bukti
+                                Bayar (PDF Portal)</label>
+                            <input type="file" id="upload-file-bukti" accept=".pdf,application/pdf"
                                 class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <div id="bukti-validasi-status" class="hidden text-sm mt-2"></div>
                         </div>
                     </form>
                 </div>
@@ -511,6 +519,9 @@
                         
                         // Success
                         setLoginButtonLoading(false);
+                        if (resp.buktiMode) {
+                            applyBuktiMode(resp.buktiMode);
+                        }
                         const userData = {
                             nama: resp.nama || 'Mahasiswa',
                             npm: resp.npm || npm,
@@ -786,8 +797,9 @@
                 } else if (item.hasUpload) {
                     step3Title.className = "text-base font-bold text-gray-700";
                     step3Dot.className = "absolute left-0 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm z-10";
-                    step3Desc.innerHTML = `Berkas sudah berhasil diupload. Menunggu verifikasi admin.`;
-                    step3Desc.className = "text-sm text-gray-700 mt-1";
+                    step3Desc.innerHTML = `<span class="text-gray-600 font-bold" style="font-size:1.3em; filter:blur(4px); user-select:none;" title="Masih dalam proses review oleh admin">Bukti ACC Final</span>
+                        <span class="block text-xs text-gray-400 mt-2">Berkas sudah berhasil diupload. Masih dalam proses review oleh admin. Link akan aktif setelah ACC Final disetujui dan dikirim.</span>`;
+                    step3Desc.className = "mt-2 block";
                 } else {
                     // Pending State
                     step3Title.className = "text-base font-bold text-gray-400";
@@ -923,6 +935,9 @@
             document.getElementById('upload-file-acc').value = '';
             document.getElementById('upload-file-bukti').value = '';
 
+            window._buktiBayarValid = false;
+            showBuktiStatus('', '');
+
             document.getElementById('upload-modal').classList.remove('hidden');
             document.getElementById('upload-modal').classList.add('flex');
         }
@@ -942,13 +957,147 @@
             currentUploadItem = null;
         }
 
-function submitUploadModal() {
+        // --- Validasi Bukti Bayar (PDF Portal) ---
+        window._buktiBayarValid = false;
+
+        function readFileHeader(file, bytes) {
+            return new Promise(function (resolve, reject) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    const arr = new Uint8Array(reader.result);
+                    let s = '';
+                    for (let i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+                    resolve(s);
+                };
+                reader.onerror = function () { reject(new Error('Gagal membaca file')); };
+                reader.readAsArrayBuffer(file.slice(0, bytes));
+            });
+        }
+
+        async function validateBuktiBayar(file) {
+            if (!file) return { ok: false, msg: 'Pilih file bukti bayar terlebih dahulu.' };
+            if (window._buktiMode === 'lenggang') {
+                return { ok: true };
+            }
+            if (!window.pdfjsLib) return { ok: false, msg: 'Library PDF belum tersedia, silakan muat ulang halaman.' };
+
+            const head = await readFileHeader(file, 5).catch(function () { return ''; });
+            if (head !== '%PDF-') {
+                return { ok: false, msg: 'Maaf, Gunakan bukti pembayaran (PDF) dari portal mahasiswa' };
+            }
+
+            let text = '';
+            try {
+                const buffer = await file.arrayBuffer();
+                const pdf = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+                for (let p = 1; p <= pdf.numPages; p++) {
+                    const page = await pdf.getPage(p);
+                    const content = await page.getTextContent();
+                    for (const it of (content.items || [])) {
+                        text += (it.str || '');
+                        if (it.hasEOL) text += '\n';
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal memparse PDF:', e);
+                return { ok: false, msg: 'Maaf, Gunakan bukti pembayaran (PDF) dari portal mahasiswa' };
+            }
+
+            if (!text.trim()) {
+                return { ok: false, msg: 'Maaf, Gunakan bukti pembayaran (PDF) dari portal mahasiswa' };
+            }
+
+            const m = text.match(/NPM[\s:：]*(\d{10})/);
+            if (!m) {
+                return { ok: false, msg: 'Maaf, Gunakan bukti pembayaran (PDF) dari portal mahasiswa' };
+            }
+
+            const npmLogin = String((typeof currentUser !== 'undefined' && currentUser && currentUser.npm) || '').trim();
+            if (npmLogin && m[1] !== npmLogin) {
+                return { ok: false, msg: 'NPM pada bukti pembayaran tidak sesuai dengan akun Anda.' };
+            }
+            return { ok: true };
+        }
+
+        function showBuktiStatus(type, msg) {
+            const el = document.getElementById('bukti-validasi-status');
+            if (!el) return;
+            el.classList.remove('hidden', 'text-red-600', 'text-green-600', 'text-gray-600');
+            el.classList.add('text-sm', 'mt-2', type === 'ok' ? 'text-green-600' : (type === 'err' ? 'text-red-600' : 'text-gray-600'));
+            el.innerText = msg;
+        }
+
+        const buktiInputEl = document.getElementById('upload-file-bukti');
+        if (buktiInputEl) {
+            buktiInputEl.addEventListener('change', async function () {
+                const file = this.files && this.files[0];
+                if (!file) {
+                    window._buktiBayarValid = false;
+                    showBuktiStatus('', '');
+                    return;
+                }
+                showBuktiStatus('', 'Memeriksa bukti bayar...');
+                const res = await validateBuktiBayar(file);
+                window._buktiBayarValid = res.ok;
+                if (res.ok) {
+                    showBuktiStatus('ok', window._buktiMode === 'lenggang'
+                        ? 'File bukti bayar diterima (mode lenggang).'
+                        : 'Bukti bayar valid (PDF portal, NPM cocok).');
+                } else {
+                    showBuktiStatus('err', res.msg);
+                    Swal.fire({ icon: 'warning', text: res.msg });
+                }
+            });
+        }
+
+        function applyBuktiMode(mode) {
+            window._buktiMode = (mode === 'lenggang') ? 'lenggang' : 'strict';
+            window._buktiBayarValid = false;
+            showBuktiStatus('', '');
+
+            const input = document.getElementById('upload-file-bukti');
+            if (input) {
+                input.accept = (window._buktiMode === 'lenggang')
+                    ? '.pdf,.jpg,.jpeg,.png'
+                    : '.pdf,application/pdf';
+            }
+
+            const instr = document.getElementById('upload-instruction-text');
+            if (instr) {
+                instr.innerText = (window._buktiMode === 'lenggang')
+                    ? 'Silakan lakukan pembayaran sesuai tagihan dan unggah bukti bayar (PDF/JPG/PNG).'
+                    : 'Silakan lakukan pembayaran sesuai tagihan dan unggah bukti bayar (PDF dari portal mahasiswa).';
+            }
+
+            const label = document.getElementById('bukti-label');
+            if (label) {
+                label.innerText = (window._buktiMode === 'lenggang')
+                    ? 'Upload Bukti Bayar'
+                    : 'Upload Bukti Bayar (PDF Portal)';
+            }
+        }
+
+        applyBuktiMode('strict');
+
+async function submitUploadModal() {
             const accFile = document.getElementById('upload-file-acc').files[0];
             const buktiFile = document.getElementById('upload-file-bukti').files[0];
 
             if (!accFile || !buktiFile) {
                 return Swal.fire({icon:'warning', text:'Upload kedua file'});
             }
+
+            showBuktiStatus('', 'Memeriksa bukti bayar...');
+            const validasi = await validateBuktiBayar(buktiFile);
+            if (!validasi.ok) {
+                window._buktiBayarValid = false;
+                showBuktiStatus('err', validasi.msg);
+                return Swal.fire({icon:'warning', text: validasi.msg});
+            }
+            window._buktiBayarValid = true;
+            showBuktiStatus('ok', window._buktiMode === 'lenggang'
+                ? 'File bukti bayar diterima (mode lenggang).'
+                : 'Bukti bayar valid (PDF portal, NPM cocok).');
 
             setUploadSubmitButtonLoading(true);
 
@@ -1141,6 +1290,9 @@ function submitUploadModal() {
                     }
 
                     currentUser.history = (resp.history || []).map(normalizeHistoryItem);
+                    if (resp.buktiMode) {
+                        applyBuktiMode(resp.buktiMode);
+                    }
                     if (minHistoryCount > 0 && retriesLeft > 0 && currentUser.history.length < minHistoryCount) {
                         retryRefresh();
                         return;

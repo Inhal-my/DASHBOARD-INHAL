@@ -8,6 +8,9 @@ const UPLOAD_LOG_SHEET_NAME = 'LogUpload';
 const CHECK_SHEET_NAME = 'CheckData';
 const NAMA_SHEET_MHS = 'MHS';
 const MASTER_BIAYA_SHEET_NAME = 'MasterBiaya';
+const CONFIG_SHEET_NAME = 'Config';
+const BUKTI_MODE_STRICT = 'strict';
+const BUKTI_MODE_LENGGANG = 'lenggang';
 const CORE_ADMIN_EMAILS = [
     'yudhasudira@umsu.ac.id',
     'devisyafriani@umsu.ac.id',
@@ -561,6 +564,7 @@ function _sendAccNotificationAndGetUrl(studentData) {
         const attachmentUrl = savedFile.getUrl();
 
         const studentName = studentData['Nama Lengkap'];
+        const studentEmail = String(studentData['Email'] || studentData['Email Address'] || studentData.Email || '').trim();
 
         // Email untuk Bagian
         const bagianMap = getBagianEmailMap();
@@ -568,6 +572,9 @@ function _sendAccNotificationAndGetUrl(studentData) {
         const bagianMatch = resolveBagianEmailFromCandidates(bagianCandidates, bagianMap);
         const bagianName = bagianMatch.name || (bagianCandidates.length ? bagianCandidates[0] : '');
         const bagianEmail = bagianMatch.email || '';
+
+        let bagianEmailSent = false;
+        let studentEmailSent = false;
 
         if (bagianEmail) {
             const bagianSubject = `Pemberitahuan ACC Final INHAL Mahasiswa - ${studentName}`;
@@ -584,27 +591,51 @@ Terimakasih,
 
 Wassalamu'alaikum
 Admin Prodi`;
-            MailApp.sendEmail({ to: bagianEmail, subject: bagianSubject, body: bagianBody, attachments: [pdfBlob] });
-            console.log('✅ Final ACC email sent to Bagian:', bagianEmail);
-            return {
-                success: true,
-                pdfUrl: attachmentUrl,
-                emailSent: true,
-                bagianEmail: bagianEmail,
-                bagianName: bagianName,
-                message: ''
-            };
+            try {
+                MailApp.sendEmail({ to: bagianEmail, subject: bagianSubject, body: bagianBody, attachments: [pdfBlob] });
+                bagianEmailSent = true;
+                console.log('✅ Final ACC email sent to Bagian:', bagianEmail);
+            } catch (e) {
+                console.error('❌ Gagal kirim email ke Bagian:', e.message);
+            }
         } else {
             console.warn(`Email untuk Bagian '${bagianName}' tidak ditemukan.`);
-            return {
-                success: false,
-                pdfUrl: attachmentUrl,
-                emailSent: false,
-                bagianEmail: '',
-                bagianName: bagianName,
-                message: "Email untuk Bagian '" + (bagianName || '-') + "' tidak ditemukan."
-            };
         }
+
+        // Email untuk mahasiswa (lampiran PDF ACC final)
+        if (studentEmail) {
+            const studentSubject = `Surat Keterangan Final INHAL - ${studentName || ''}`;
+            const studentBody = `Assalamu'alaikum ${studentName || ''} (NPM: ${studentData.NPM}).
+
+Terlampir adalah surat keterangan final pendaftaran INHAL Anda.
+Berkas Anda telah diperiksa dan ACC final telah disetujui oleh Admin Prodi.
+
+Wassalamu'alaikum
+Admin Prodi`;
+            try {
+                MailApp.sendEmail({ to: studentEmail, subject: studentSubject, body: studentBody, attachments: [pdfBlob] });
+                studentEmailSent = true;
+                console.log('✅ Final ACC email sent to mahasiswa:', studentEmail);
+            } catch (e) {
+                console.error('❌ Gagal kirim email ke mahasiswa:', e.message);
+            }
+        } else {
+            console.warn('Email mahasiswa tidak tersedia, PDF final tidak dikirim ke mahasiswa.');
+        }
+
+        const notes = [];
+        if (!bagianEmailSent) notes.push("Email untuk Bagian '" + (bagianName || '-') + "' tidak ditemukan/tidak terkirim.");
+        if (!studentEmailSent) notes.push('Email mahasiswa tidak terkirim.');
+
+        return {
+            success: true,
+            pdfUrl: attachmentUrl,
+            emailSent: bagianEmailSent,
+            studentEmailSent: studentEmailSent,
+            bagianEmail: bagianEmail,
+            bagianName: bagianName,
+            message: notes.join('. ')
+        };
     } catch (e) {
         console.error('❌ Error in _sendAccNotificationAndGetUrl:', e.stack);
         return {
@@ -705,6 +736,54 @@ function _updateFinalLinkInCheckData(idPengajuan, url) {
         console.warn(`ID Pengajuan ${idPengajuan} not found in CheckData to save final link.`);
     } catch(e) {
         console.error('❌ Error in _updateFinalLinkInCheckData:', e.stack);
+    }
+}
+
+/**
+ * Dipicu manual oleh admin (dashboard.html) SETELAH memeriksa file upload mahasiswa.
+ * Membuat PDF ACC final, mengirim email ke Bagian dan ke mahasiswa, lalu
+ * menyimpan Link Final + Status Info Bagian di CheckData.
+ * @param {string} idPengajuan - ID unik pengajuan.
+ * @returns {Object} { success, message, linkFinal, emailSent, studentEmailSent }
+ */
+function sendAccFinalToBagian(idPengajuan) {
+    try {
+        requireAuthorized();
+        if (!idPengajuan) {
+            return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+        }
+        const id = String(idPengajuan).trim();
+        const rowData = _getFullDataById(id);
+        if (!rowData) {
+            return { success: false, message: 'Data pengajuan tidak ditemukan di LogData.' };
+        }
+
+        const result = _sendAccNotificationAndGetUrl(rowData);
+
+        _updateBagianNotificationStatus(
+            id,
+            result && result.emailSent ? 'Terkirim' : 'Gagal',
+            (result && result.bagianEmail) || '',
+            (result && result.message) || ''
+        );
+        if (result && result.pdfUrl) {
+            _updateFinalLinkInCheckData(id, result.pdfUrl);
+        }
+
+        const npm = rowData['NPM'] || '';
+        if (npm) _clearStudentPortalCache(String(npm).trim());
+        _clearCheckPageCache();
+
+        return {
+            success: !!(result && result.pdfUrl),
+            message: (result && result.message) || 'ACC Final berhasil diproses.',
+            linkFinal: (result && result.pdfUrl) || '',
+            emailSent: !!(result && result.emailSent),
+            studentEmailSent: !!(result && result.studentEmailSent)
+        };
+    } catch (e) {
+        console.error('Error sendAccFinalToBagian:', e.stack);
+        return { success: false, message: e && e.message ? e.message : String(e) };
     }
 }
 
@@ -1005,8 +1084,21 @@ function processUpload(uploadData) {
 
         // Bukti Bayar
         if (uploadData.fileBukti && uploadData.fileBukti.base64) {
+            const rawBytes = Utilities.base64Decode(uploadData.fileBukti.base64);
+            // Validasi bukti bayar hanya pada mode ketat:
+            // wajib PDF asli dari portal mahasiswa (cek magic bytes %PDF-).
+            // Pada mode lenggang (bypass dari tab Pengaturan), file PDF/JPG/PNG diterima.
+            if (_getBuktiMode_() === BUKTI_MODE_STRICT) {
+                const headStr = Utilities.newBlob(rawBytes.slice(0, 5)).getDataAsString();
+                if (headStr.indexOf('%PDF') !== 0) {
+                    return {
+                        success: false,
+                        message: 'Maaf, Gunakan bukti pembayaran (PDF) dari portal mahasiswa'
+                    };
+                }
+            }
             const blob = Utilities.newBlob(
-                Utilities.base64Decode(uploadData.fileBukti.base64),
+                rawBytes,
                 uploadData.fileBukti.type,
                 uploadData.fileBukti.name
             );
@@ -1027,60 +1119,16 @@ function processUpload(uploadData) {
             };
         }
 
-        var finalUrl = '';
-        var finalMessage = '';
-        var finalData = _getFullDataForUpload(uploadData);
-        var finalIdPengajuan = '';
-
-        if (!finalData || !finalData.data) {
-            _clearStudentPortalCache(uploadData.npm);
-            _clearCheckPageCache();
-            return {
-                success: false,
-                message: 'File berhasil diupload, tetapi data pengajuan untuk membuat ACC final tidak ditemukan. ' + (finalData && finalData.reason ? finalData.reason : '')
-            };
-        }
-
-        finalIdPengajuan = finalData.data['ID Pengajuan'] || uploadData.idPengajuan || uploadData.IdPengajuan || '';
-        if (!finalIdPengajuan) {
-            _clearStudentPortalCache(uploadData.npm);
-            _clearCheckPageCache();
-            return {
-                success: false,
-                message: 'File berhasil diupload, tetapi ID Pengajuan untuk ACC final tidak ditemukan.'
-            };
-        }
-
-        var finalResult = _sendAccNotificationAndGetUrl(finalData.data);
-        _updateBagianNotificationStatus(
-            finalIdPengajuan,
-            finalResult && finalResult.emailSent ? 'Terkirim' : 'Gagal',
-            finalResult && finalResult.bagianEmail,
-            finalResult && finalResult.message
-        );
-        if (finalResult && finalResult.pdfUrl) {
-            finalUrl = finalResult.pdfUrl;
-            _updateFinalLinkInCheckData(finalIdPengajuan, finalUrl);
-        }
-
-        if (!finalResult || !finalResult.success) {
-            finalMessage = finalResult && finalResult.message ? finalResult.message : 'PDF final atau email ke Bagian gagal diproses.';
-            _clearStudentPortalCache(uploadData.npm);
-            _clearCheckPageCache();
-            return {
-                success: false,
-                message: 'File berhasil diupload, tetapi ACC final belum selesai diproses. ' + finalMessage,
-                linkFinal: finalUrl || ''
-            };
-        }
-
+        // ACC final TIDAK lagi dibuat/dikirim otomatis di sini.
+        // Mahasiswa bisa salah upload; admin harus memeriksa file terlebih dahulu,
+        // lalu memicu pengiriman ACC final ke Bagian & mahasiswa via sendAccFinalToBagian().
         _clearStudentPortalCache(uploadData.npm);
         _clearCheckPageCache();
 
         return {
             success: true,
             message: uploadWarnings.length ? ('Upload berhasil. ' + uploadWarnings.join('. ')) : 'Upload berhasil',
-            linkFinal: finalUrl || ''
+            linkFinal: ''
         };
 
     } catch (e) {
@@ -1205,6 +1253,7 @@ function getStudentPortalData(npm, options) {
         var payload = {
             nama: namaLengkap || 'Mahasiswa',
             npm: npmVal,
+            buktiMode: _getBuktiMode_(),
             history: history.sort(function(a, b) { return (b.rowIndex || 0) - (a.rowIndex || 0); })
         };
         if (!forceFresh) {
@@ -2134,7 +2183,8 @@ function getMonitorPageData() {
         folderId: FOLDER_ID,
         templateDiterimaId: TEMPLATE_DITERIMA_ID,
         templateDitolakId: TEMPLATE_DITOLAK_ID,
-        templateAccId: TEMPLATE_ACC_ID
+        templateAccId: TEMPLATE_ACC_ID,
+        buktiMode: _getBuktiMode_()
     };
 
     return {
@@ -2184,6 +2234,73 @@ function saveMonitorMasterData(payload) {
     return {
         success: true,
         message: 'Master kegiatan berhasil diperbarui.',
+        data: getMonitorPageData()
+    };
+}
+
+function _getBuktiMode_() {
+    try {
+        var cache = CacheService.getScriptCache();
+        var cached = cache.get('bukti_mode');
+        if (cached === BUKTI_MODE_STRICT || cached === BUKTI_MODE_LENGGANG) return cached;
+        var ss = getGlobalSpreadsheet();
+        var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+        var mode = BUKTI_MODE_STRICT;
+        if (sheet && sheet.getLastRow() >= 2) {
+            var values = sheet.getRange(1, 1, Math.min(sheet.getLastRow(), 100), 2).getDisplayValues();
+            for (var i = 0; i < values.length; i++) {
+                if (String(values[i][0] || '').trim() === 'BUKTI_MODE') {
+                    var v = String(values[i][1] || '').trim().toLowerCase();
+                    if (v === BUKTI_MODE_LENGGANG) mode = BUKTI_MODE_LENGGANG;
+                    break;
+                }
+            }
+        }
+        try { cache.put('bukti_mode', mode, CACHE_EXPIRATION); } catch (e) { }
+        return mode;
+    } catch (e) {
+        return BUKTI_MODE_STRICT;
+    }
+}
+
+function saveMonitorBuktiMode(payload) {
+    requireCoreAdminAuthorized();
+
+    var mode = String((payload && payload.mode) || '').trim().toLowerCase();
+    if (mode !== BUKTI_MODE_STRICT && mode !== BUKTI_MODE_LENGGANG) {
+        throw new Error('Mode tidak valid. Gunakan "strict" atau "lenggang".');
+    }
+
+    var ss = getGlobalSpreadsheet();
+    var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+    if (!sheet) {
+        sheet = ss.insertSheet(CONFIG_SHEET_NAME);
+        sheet.getRange(1, 1, 1, 2).setValues([['Key', 'Value']]);
+    } else if (sheet.getLastRow() === 0) {
+        sheet.getRange(1, 1, 1, 2).setValues([['Key', 'Value']]);
+    }
+
+    var data = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 2).getDisplayValues();
+    var found = false;
+    for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0] || '').trim() === 'BUKTI_MODE') {
+            sheet.getRange(i + 1, 2).setValue(mode);
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        var nextRow = Math.max(sheet.getLastRow() + 1, 2);
+        sheet.getRange(nextRow, 1, 1, 2).setValues([['BUKTI_MODE', mode]]);
+    }
+
+    try { CacheService.getScriptCache().remove('bukti_mode'); } catch (e) { }
+
+    return {
+        success: true,
+        message: mode === BUKTI_MODE_LENGGANG
+            ? 'Mode verifikasi lenggang diaktifkan: mahasiswa dapat mengunggah PDF/JPG/PNG tanpa pengecekan NPM.'
+            : 'Mode verifikasi ketat diaktifkan: bukti bayar wajib PDF portal dengan NPM yang sesuai.',
         data: getMonitorPageData()
     };
 }
@@ -2632,6 +2749,8 @@ function _getCheckPageData(options) {
             var checkIdxDetail = findHeaderIndex(checkHeaderMap, ['Detail Kegiatan', 'Detail']);
             var checkIdxLinkSurat = findHeaderIndex(checkHeaderMap, ['Link Surat', 'Link Surat Keterangan']);
             var checkIdxLinkFinal = findHeaderIndex(checkHeaderMap, ['Link Final', 'Link Final PDF', 'Final PDF Link']);
+            var checkIdxStatusBagian = findHeaderIndex(checkHeaderMap, ['Status Info Bagian']);
+            var checkIdxWaktuBagian = findHeaderIndex(checkHeaderMap, ['Waktu Info Bagian']);
             for (var c = 0; c < checkData.length; c++) {
                 var checkRow = checkData[c];
                 var checkNpm = checkIdxNpm >= 0 ? stringifyCell(checkRow[checkIdxNpm]) : '';
@@ -2651,7 +2770,9 @@ function _getCheckPageData(options) {
                     Tanggal: checkIdxTanggal >= 0 ? (checkRow[checkIdxTanggal] || '') : '',
                     DetailKegiatan: checkIdxDetail >= 0 ? (checkRow[checkIdxDetail] || '') : '',
                     LinkSurat: checkIdxLinkSurat >= 0 ? (checkRow[checkIdxLinkSurat] || '') : '',
-                    LinkFinal: checkIdxLinkFinal >= 0 ? (checkRow[checkIdxLinkFinal] || '') : ''
+                    LinkFinal: checkIdxLinkFinal >= 0 ? (checkRow[checkIdxLinkFinal] || '') : '',
+                    StatusInfoBagian: checkIdxStatusBagian >= 0 ? stringifyCell(checkRow[checkIdxStatusBagian]) : '',
+                    WaktuInfoBagian: checkIdxWaktuBagian >= 0 ? stringifyCell(checkRow[checkIdxWaktuBagian]) : ''
                 };
                 if (checkIdxKet >= 0 && stringifyCell(checkRow[checkIdxKet]) !== '') checkEntry.Keterangan = checkRow[checkIdxKet];
                 if (checkIdxCatatanAdmin >= 0 && stringifyCell(checkRow[checkIdxCatatanAdmin]) !== '') checkEntry['Catatan Admin'] = checkRow[checkIdxCatatanAdmin];
@@ -2784,6 +2905,8 @@ function _getCheckPageData(options) {
                 BiayaKegiatan: checks.BiayaKegiatan !== null && checks.BiayaKegiatan !== undefined ? checks.BiayaKegiatan : '',
                 LinkACC: accInhalVal,
                 LinkFinal: checks.LinkFinal || '',
+                StatusInfoBagian: checks.StatusInfoBagian || '',
+                WaktuInfoBagian: checks.WaktuInfoBagian || '',
                 uploadTimestamp: uploads.timestamp || ''
             });
         }
