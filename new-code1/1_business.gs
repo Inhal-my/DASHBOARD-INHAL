@@ -52,6 +52,21 @@ function logoutSession(token) {
     return { success: true, message: 'Anda telah keluar.' };
 }
 
+function adminBagianBypass(kategori, subBagian) {
+    const admin = requireAuthorized(arguments[arguments.length - 1]);
+    const kat = String(kategori || '').trim();
+    const allowedCats = ['SGD', 'KKD', 'Ujian', 'Praktikum'];
+    if (allowedCats.indexOf(kat) === -1) {
+        return { ok: false, message: 'Pilih kategori kegiatan terlebih dahulu.' };
+    }
+    const sub = String(subBagian || '').trim();
+    if (kat === 'Praktikum' && !sub) {
+        return { ok: false, message: 'Untuk Praktikum, pilih sub bagian / lab terlebih dahulu.' };
+    }
+    const token = createSession({ role: 'bagian', nama: admin.nama || 'Admin', kategori: kat, subBagian: sub, kategoris: [kat] });
+    return { ok: true, token: token, nama: admin.nama || 'Admin', kategori: kat, subBagian: sub };
+}
+
 function requireAuthorized(token) {
     _CURRENT_SESSION = requireAdmin(token);
 }
