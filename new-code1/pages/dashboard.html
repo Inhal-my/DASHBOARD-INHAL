@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= PAGE_TITLES.dashboard ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+        body { background: #f5f6fa; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .bg-sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%); }
+        .fade-enter-active, .fade-leave-active { transition: opacity .18s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .pop-enter-active { transition: opacity .18s ease, transform .18s ease; }
+        .pop-leave-active { transition: opacity .12s ease; }
+        .pop-enter-from { opacity: 0; transform: scale(.96) translateY(8px); }
+        .pop-leave-to { opacity: 0; }
+        [v-cloak] { display: none; }
+        .input { width: 100%; border-radius: .75rem; border: 0; background: #fff; padding: .625rem .875rem; font-size: .875rem; color: #0f172a; outline: none; box-shadow: inset 0 0 0 1px #e2e8f0; transition: box-shadow .15s ease; }
+        .input:focus { box-shadow: inset 0 0 0 2px #4f46e5; }
+        .input::placeholder { color: #94a3b8; }
+        .label { display: block; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: #94a3b8; margin-bottom: .35rem; }
+        .value { font-size: .9rem; color: #334155; }
+        .check { height: 1rem; width: 1rem; accent-color: #4f46e5; border-radius: .375rem; cursor: pointer; }
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #4f46e5; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #fff; transition: background .15s ease; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #475569; box-shadow: inset 0 0 0 1px #e2e8f0; transition: all .15s ease; }
+        .btn-soft:hover { background: #f1f5f9; }
+        .btn-danger-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff1f2; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #e11d48; box-shadow: inset 0 0 0 1px #fecdd3; transition: all .15s ease; }
+        .btn-danger-soft:hover { background: #ffe4e6; }
+        .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        @media (min-width: 1024px) {
+            .ba-align-card { margin-top: 1.625rem; }
+        }
+        .master-stat {
+            display: flex; align-items: center; gap: .75rem; width: 100%;
+            border-radius: 1rem; background: #fff; padding: .875rem 1rem; text-align: left;
+            cursor: pointer; box-shadow: 0 1px 2px rgba(15,23,42,.06), inset 0 0 0 1px #e2e8f0;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .master-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15,23,42,.10), inset 0 0 0 1px #e2e8f0; }
+        .master-stat.active { box-shadow: 0 8px 22px rgba(79,70,229,.16), inset 0 0 0 2px #4f46e5; }
+        .master-stat-icon {
+            display: flex; flex-shrink: 0; align-items: center; justify-content: center;
+            width: 2.25rem; height: 2.25rem; border-radius: .75rem;
+            background: #eef2ff; color: #4f46e5; font-size: 1.05rem;
+        }
+        .master-table-scroll { max-height: 520px; overflow-y: auto; }
+        .master-table thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; }
+        .master-table tbody tr:hover { background: #f8fafc; }
+        .master-search { position: relative; }
+        .master-search i { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .875rem; pointer-events: none; }
+        .master-search .input { padding-left: 2.4rem; }
+        .ba-toggle { position: relative; display: inline-flex; width: 2.75rem; height: 1.6rem; border-radius: 999px; background: #cbd5e1; transition: background .18s ease; cursor: pointer; }
+        .ba-toggle.on { background: #4f46e5; }
+        .ba-toggle-knob { position: absolute; top: .2rem; left: .2rem; height: 1.2rem; width: 1.2rem; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.25); transition: transform .18s ease; }
+        .ba-toggle.on .ba-toggle-knob { transform: translateX(1.15rem); }
+    </style>
+    <style>
+*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.inset-x-0{left:0;right:0}.inset-y-0{top:0;bottom:0}.-left-10{left:-2.5rem}.-right-16{right:-4rem}.-top-16{top:-4rem}.bottom-0{bottom:0}.bottom-6{bottom:1.5rem}.left-0{left:0}.left-3\.5{left:.875rem}.left-4{left:1rem}.right-6{right:1.5rem}.top-0{top:0}.top-1\/2{top:50%}.z-10{z-index:10}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[100\]{z-index:100}.z-\[110\]{z-index:110}.z-\[120\]{z-index:120}.col-span-2{grid-column:span 2/span 2}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-5{margin-top:1.25rem;margin-bottom:1.25rem}.\!mb-0{margin-bottom:0!important}.-mt-10{margin-top:-2.5rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.ml-3{margin-left:.75rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-4{height:1rem}.h-40{height:10rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-full{height:100%}.h-px{height:1px}.max-h-\[88vh\]{max-height:88vh}.max-h-\[92vh\]{max-height:92vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-20{width:5rem}.w-24{width:6rem}.w-36{width:9rem}.w-4{width:1rem}.w-40{width:10rem}.w-5{width:1.25rem}.w-56{width:14rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-9{width:2.25rem}.w-\[268px\]{width:268px}.w-full{width:100%}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-5xl{max-width:64rem}.max-w-7xl{max-width:80rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-full{--tw-translate-x:-100%}.-translate-x-full,.-translate-y-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%}.translate-x-0{--tw-translate-x:0px}.transform,.translate-x-0{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-3{-moz-column-gap:.75rem;column-gap:.75rem}.gap-x-4{-moz-column-gap:1rem;column-gap:1rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-1{row-gap:.25rem}.gap-y-3{row-gap:.75rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-slate-50>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(248 250 252/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-t-3xl{border-top-left-radius:1.5rem;border-top-right-radius:1.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-brand-300{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-50{--tw-border-opacity:1;border-color:rgb(248 250 252/var(--tw-border-opacity,1))}.border-white\/10{border-color:hsla(0,0%,100%,.1)}.bg-amber-400\/90{background-color:rgba(251,191,36,.9)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.bg-brand-400\/20{background-color:rgba(129,140,248,.2)}.bg-brand-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-brand-500\/25{background-color:rgba(99,102,241,.25)}.bg-brand-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.bg-rose-600{--tw-bg-opacity:1;background-color:rgb(225 29 72/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-50\/60{background-color:rgba(248,250,252,.6)}.bg-slate-50\/70{background-color:rgba(248,250,252,.7)}.bg-slate-50\/80{background-color:rgba(248,250,252,.8)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/30{background-color:rgba(15,23,42,.3)}.bg-slate-900\/40{background-color:rgba(15,23,42,.4)}.bg-slate-900\/45{background-color:rgba(15,23,42,.45)}.bg-teal-50{--tw-bg-opacity:1;background-color:rgb(240 253 250/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/10{background-color:hsla(0,0%,100%,.1)}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.bg-white\/70{background-color:hsla(0,0%,100%,.7)}.bg-white\/80{background-color:hsla(0,0%,100%,.8)}.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-brand-400{--tw-gradient-from:#818cf8 var(--tw-gradient-from-position);--tw-gradient-to:rgba(129,140,248,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50\/60{--tw-gradient-from:rgba(238,242,255,.6) var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-600{--tw-gradient-from:#4f46e5 var(--tw-gradient-from-position);--tw-gradient-to:rgba(79,70,229,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-700{--tw-gradient-from:#4338ca var(--tw-gradient-from-position);--tw-gradient-to:rgba(67,56,202,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.via-brand-800{--tw-gradient-to:rgba(55,48,163,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#3730a3 var(--tw-gradient-via-position),var(--tw-gradient-to)}.to-brand-800{--tw-gradient-to:#3730a3 var(--tw-gradient-to-position)}.to-brand-900{--tw-gradient-to:#312e81 var(--tw-gradient-to-position)}.to-brand-950{--tw-gradient-to:#1e1b4b var(--tw-gradient-to-position)}.to-violet-500{--tw-gradient-to:#8b5cf6 var(--tw-gradient-to-position)}.to-white{--tw-gradient-to:#fff var(--tw-gradient-to-position)}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.\!px-3{padding-left:.75rem!important;padding-right:.75rem!important}.\!py-1{padding-top:.25rem!important;padding-bottom:.25rem!important}.\!py-1\.5{padding-top:.375rem!important;padding-bottom:.375rem!important}.\!py-2{padding-top:.5rem!important;padding-bottom:.5rem!important}.\!py-2\.5{padding-top:.625rem!important;padding-bottom:.625rem!important}.\!py-3{padding-top:.75rem!important;padding-bottom:.75rem!important}.\!py-3\.5{padding-top:.875rem!important;padding-bottom:.875rem!important}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-12{padding-top:3rem;padding-bottom:3rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-16{padding-top:4rem;padding-bottom:4rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.\!pl-11{padding-left:2.75rem!important}.pb-2{padding-bottom:.5rem}.pb-20{padding-bottom:5rem}.pb-24{padding-bottom:6rem}.pb-8{padding-bottom:2rem}.pl-10{padding-left:2.5rem}.pt-14{padding-top:3.5rem}.pt-5{padding-top:1.25rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.font-sans{font-family:Plus Jakarta Sans,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3/var(--tw-text-opacity,1))}.text-brand-100{--tw-text-opacity:1;color:rgb(224 231 255/var(--tw-text-opacity,1))}.text-brand-200{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.text-brand-300{--tw-text-opacity:1;color:rgb(165 180 252/var(--tw-text-opacity,1))}.text-brand-400{--tw-text-opacity:1;color:rgb(129 140 248/var(--tw-text-opacity,1))}.text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}.text-brand-600{--tw-text-opacity:1;color:rgb(79 70 229/var(--tw-text-opacity,1))}.text-brand-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-brand-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153/var(--tw-text-opacity,1))}.text-emerald-500{--tw-text-opacity:1;color:rgb(16 185 129/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-ink{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-rose-400{--tw-text-opacity:1;color:rgb(251 113 133/var(--tw-text-opacity,1))}.text-rose-500{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-700{--tw-text-opacity:1;color:rgb(190 18 60/var(--tw-text-opacity,1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-transparent{color:transparent}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-indigo-600{accent-color:#4f46e5}.opacity-25{opacity:.25}.opacity-75{opacity:.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lift{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color)}.shadow-lift,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.shadow-soft{--tw-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06);--tw-shadow-colored:0 1px 2px var(--tw-shadow-color),0 10px 28px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-indigo-200\/50{--tw-shadow-color:rgba(199,210,254,.5);--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950\/50{--tw-shadow-color:rgba(30,27,75,.5);--tw-shadow:var(--tw-shadow-colored)}.outline{outline-style:solid}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-600\/20{--tw-ring-color:rgba(217,119,6,.2)}.ring-brand-100{--tw-ring-opacity:1;--tw-ring-color:rgb(224 231 255/var(--tw-ring-opacity,1))}.ring-brand-600\/20{--tw-ring-color:rgba(79,70,229,.2)}.ring-emerald-100{--tw-ring-opacity:1;--tw-ring-color:rgb(209 250 229/var(--tw-ring-opacity,1))}.ring-emerald-600\/20{--tw-ring-color:rgba(5,150,105,.2)}.ring-rose-100{--tw-ring-opacity:1;--tw-ring-color:rgb(255 228 230/var(--tw-ring-opacity,1))}.ring-rose-600\/20{--tw-ring-color:rgba(225,29,72,.2)}.ring-slate-100{--tw-ring-opacity:1;--tw-ring-color:rgb(241 245 249/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.ring-slate-500\/20{--tw-ring-color:rgba(100,116,139,.2)}.ring-slate-900{--tw-ring-opacity:1;--tw-ring-color:rgb(15 23 42/var(--tw-ring-opacity,1))}.ring-white\/20{--tw-ring-color:hsla(0,0%,100%,.2)}.blur{--tw-blur:blur(8px)}.blur,.blur-2xl{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.blur-2xl{--tw-blur:blur(40px)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.duration-500{transition-duration:.5s}.hover\:border-slate-200:hover{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.hover\:bg-brand-50\/40:hover{background-color:rgba(238,242,255,.4)}.hover\:bg-brand-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202/var(--tw-bg-opacity,1))}.hover\:bg-rose-50:hover{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/20:hover{background-color:hsla(0,0%,100%,.2)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:text-rose-500:hover{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.hover\:ring-slate-300:hover{--tw-ring-opacity:1;--tw-ring-color:rgb(203 213 225/var(--tw-ring-opacity,1))}.active\:scale-\[\.98\]:active{--tw-scale-x:.98;--tw-scale-y:.98}.active\:scale-\[\.98\]:active,.active\:scale-\[\.99\]:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[\.99\]:active{--tw-scale-x:.99;--tw-scale-y:.99}.group:hover .group-hover\:text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:col-span-1{grid-column:span 1/span 1}.sm\:col-span-2{grid-column:span 2/span 2}.sm\:col-span-3{grid-column:span 3/span 3}.sm\:col-span-4{grid-column:span 4/span 4}.sm\:my-0{margin-top:0;margin-bottom:0}.sm\:inline{display:inline}.sm\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:items-end{align-items:flex-end}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width:768px){.md\:col-span-2{grid-column:span 2/span 2}.md\:col-span-3{grid-column:span 3/span 3}.md\:col-span-4{grid-column:span 4/span 4}.md\:inline{display:inline}.md\:flex{display:flex}.md\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:p-6{padding:1.5rem}.md\:px-8{padding-left:2rem;padding-right:2rem}}@media (min-width:1024px){.lg\:ml-\[268px\]{margin-left:268px}.lg\:hidden{display:none}.lg\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg\:p-8{padding:2rem}}@media (min-width:1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.xl\:grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}}
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak class="font-sans text-ink antialiased">
+
+        <!-- ============ LOADING OVERLAY ============ -->
+        <transition name="fade">
+            <div v-if="loading" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
+                <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 shadow-lift">
+                    <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-slate-700">Memuat data...</span>
+                </div>
+            </div>
+        </transition>
+
+        <!-- ============ LOGIN ============ -->
+        <transition name="fade">
+            <div v-if="!loggedIn" class="fixed inset-0 z-[150] flex items-center justify-center bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950 p-4">
+                <div class="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-lift">
+                    <div class="bg-gradient-to-br from-brand-600 to-violet-500 px-6 pb-8 pt-6 text-center text-white">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+                            <i class="bi bi-shield-lock text-2xl"></i>
+                        </div>
+                        <h1 class="mt-3 text-xl font-extrabold tracking-tight">Dashboard Admin</h1>
+                        <p class="mt-1 text-sm text-brand-100">Masukkan password untuk melanjutkan</p>
+                    </div>
+                    <form class="px-6 py-5" @submit.prevent="login">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Password Admin</label>
+                        <input v-model="loginPwd" type="password" class="mt-1.5 w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-inset ring-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-600" placeholder="••••••••" autocomplete="current-password">
+                        <p v-if="loginError" class="mt-2 text-xs font-semibold text-rose-500">{{ loginError }}</p>
+                        <button type="submit" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-brand-600 to-violet-500 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-95" :disabled="loginLoading">
+                            <svg v-if="loginLoading" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <i v-else class="bi bi-box-arrow-in-right"></i>
+                            {{ loginLoading ? 'Memeriksa...' : 'Masuk' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </transition>
+
+        <!-- ============ TOAST ============ -->
+        <transition name="pop">
+            <div v-if="toast.show" class="fixed bottom-6 right-6 z-[120] flex max-w-sm items-start gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lift">
+                <i :class="toast.icon" class="mt-0.5 text-lg"></i>
+                <div class="text-sm">{{ toast.msg }}</div>
+                <button class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </transition>
+
+        <!-- ============ MOBILE BACKDROP ============ -->
+        <transition name="fade">
+            <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden" @click="sidebarOpen=false"></div>
+        </transition>
+
+        <!-- ============ SIDEBAR ============ -->
+        <aside v-if="loggedIn" class="bg-sidebar fixed inset-y-0 left-0 z-50 flex w-[268px] flex-col transition-transform duration-300 lg:translate-x-0"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            <div class="flex h-16 items-center gap-3 border-b border-white/10 px-6">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-lg shadow-indigo-950/50">
+                    <i class="bi bi-shield-check text-lg"></i>
+                </div>
+                <div>
+                    <div class="text-[15px] font-bold tracking-tight text-white">INHAL Admin</div>
+                    <div class="text-[11px] text-slate-400">Manajemen Pendaftaran</div>
+                </div>
+            </div>
+
+            <div class="px-3 pt-5">
+                <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Menu</div>
+                <nav class="space-y-1">
+                    <a v-for="n in navItems" href="#" @click.prevent="switchTab(n.key)"
+                       :class="tab===n.key ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+                       class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition">
+                        <i :class="n.icon" class="w-5 text-base"></i>
+                        <span class="flex-1">{{ n.label }}</span>
+                        <span v-if="n.badge && stats.perStatus && stats.perStatus['Menunggu']"
+                              class="rounded-full bg-amber-400/90 px-1.5 py-0.5 text-[10px] font-bold text-amber-950">{{ stats.perStatus['Menunggu'] }}</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="mt-auto border-t border-white/10 p-4">
+                <div class="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="truncate text-xs font-semibold text-white">{{ session.nama || 'Admin' }}</div>
+                        <div class="text-[11px] text-slate-400">Administrator</div>
+                    </div>
+                </div>
+                <div class="mt-2 grid grid-cols-2 gap-2">
+                    <a :href="appUrl + '?page=detail-laporan'" target="_blank" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
+                        <i class="bi bi-file-earmark-text"></i> Laporan
+                    </a>
+                    <a :href="appUrl" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
+                        <i class="bi bi-house"></i> Beranda
+                    </a>
+                </div>
+                <button @click="logout()" class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-rose-500/15 hover:text-rose-300 transition">
+                    <i class="bi bi-box-arrow-right"></i> Keluar
+                </button>
+            </div>
+        </aside>
+
+        <!-- ============ MAIN ============ -->
+        <main v-if="loggedIn" class="min-h-screen lg:ml-[268px]">
+            <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur md:px-8">
+                <div class="flex items-center gap-3">
+                    <button class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" @click="sidebarOpen = !sidebarOpen">
+                        <i class="bi bi-list text-xl"></i>
+                    </button>
+                    <div>
+                        <div class="text-[15px] font-bold text-slate-900">{{ pageTitle }}</div>
+                        <div class="text-[11px] text-slate-400">Dashboard Admin INHAL</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a :href="appUrl + '?page=detail-laporan'" target="_blank" class="btn-soft"><i class="bi bi-file-earmark-text"></i><span class="hidden md:inline">Laporan Detail</span></a>
+                    <a :href="appUrl" class="btn-soft"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
+                    <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
+                </div>
+            </header>
+
+            <div class="p-4 md:p-6 lg:p-8">
+
+                <!-- ============ TAB: PENGAJUAN ============ -->
+                <section v-if="tab==='pengajuan'">
+                    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Telaah Pengajuan</h1>
+                            <p class="mt-0.5 text-sm text-slate-500">Periksa dan tentukan pengajuan diterima, ditolak, atau ACC.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="btn-soft" @click="openDetailReport()"><i class="bi bi-file-earmark-text"></i>Laporan Detail</button>
+                            <button class="btn-soft" @click="exportCsv()"><i class="bi bi-download"></i>Rekap (CSV)</button>
+                            <button class="btn-soft" @click="runDiagnostic()"><i class="bi bi-bug"></i>Diagnostik</button>
+                            <button class="btn-soft" @click="syncLogData()"><i class="bi bi-arrow-repeat"></i>Sinkronkan</button>
+                        </div>
+                    </div>
+
+                    <!-- status chips -->
+                    <div class="mb-4 flex flex-wrap items-center gap-2">
+                        <button v-for="c in statusChips" @click="setStatusChip(c.key)"
+                                :class="filters.status===c.key ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'"
+                                class="rounded-full px-3.5 py-1.5 text-xs font-semibold ring-1 transition">
+                            {{ c.label }}
+                            <span :class="filters.status===c.key ? 'text-slate-300' : 'text-slate-400'">{{ c.count }}</span>
+                        </button>
+                        <button v-if="selectedIds.length" class="ml-auto inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-brand-700 transition" @click="bulkFinalEmail()">
+                            <i class="bi bi-envelope-paper"></i> Kirim Email Final ({{ selectedIds.length }} terpilih)
+                        </button>
+                    </div>
+
+                    <!-- filter bar -->
+                    <div class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="grid gap-3 md:grid-cols-12">
+                            <div class="md:col-span-4">
+                                <div class="relative">
+                                    <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                    <input v-model="filters.search" class="input pl-10" placeholder="Cari NPM / nama..." @keyup.enter="applyFilter()">
+                                </div>
+                            </div>
+                            <div class="md:col-span-3">
+                                <select v-model="filters.jenis" class="input">
+                                    <option value="">Semua Jenis Kegiatan</option>
+                                    <option>Ujian</option><option>SGD</option><option>KKD</option><option>Praktikum</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <select v-model="filters.blok" class="input">
+                                    <option value="">Semua Blok</option>
+                                    <option v-for="b in blokOptions" :value="b">{{ b }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2 flex gap-2">
+                                <button class="btn-primary flex-1" @click="applyFilter()"><i class="bi bi-funnel"></i><span class="hidden sm:inline">Terapkan</span></button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- tabel pengajuan -->
+                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div v-if="sectionLoading.pengajuan" class="flex items-center justify-center gap-3 py-12 text-slate-400">
+                            <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span class="text-sm font-semibold">Memuat pengajuan...</span>
+                        </div>
+                        <div v-else-if="!pengajuanRows.length" class="px-4 py-12 text-center text-sm text-slate-400">
+                            <i class="bi bi-inbox mb-2 block text-3xl text-slate-300"></i> Belum ada data.
+                        </div>
+                        <div v-else class="master-table-scroll overflow-x-auto">
+                            <table class="master-table w-full text-left text-sm">
+                                <thead>
+                                    <tr class="text-[11px] uppercase tracking-wider text-slate-400">
+                                        <th class="w-10 px-4 py-3">
+                                            <input type="checkbox" class="check" :checked="allChecked" @change="toggleAll">
+                                        </th>
+                                        <th class="px-4 py-3 font-semibold">NPM</th>
+                                        <th class="px-4 py-3 font-semibold">Nama Lengkap</th>
+                                        <th class="px-4 py-3 font-semibold">Blok</th>
+                                        <th class="px-4 py-3 font-semibold">Jenis Kegiatan</th>
+                                        <th class="px-4 py-3 font-semibold">Tanggal Daftar</th>
+                                        <th class="px-4 py-3 font-semibold">Status</th>
+                                        <th class="px-4 py-3 font-semibold">Bukti Bayar</th>
+                                        <th class="px-4 py-3 font-semibold">Link Final</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="r in pengajuanRows" :key="r['ID Pengajuan']"
+                                        class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/80"
+                                        @click="openDetail(r['ID Pengajuan'])">
+                                        <td class="px-4 py-2.5" @click.stop>
+                                            <input type="checkbox" class="check" v-model="r.checked">
+                                        </td>
+                                        <td class="px-4 py-2.5 font-mono text-xs text-slate-500">{{ r.NPM }}</td>
+                                        <td class="px-4 py-2.5 font-semibold text-slate-800">{{ r['Nama Lengkap'] }}</td>
+                                        <td class="px-4 py-2.5 text-slate-600">{{ r.Blok }}</td>
+                                        <td class="px-4 py-2.5 text-slate-600">{{ r['Jenis Kegiatan'] }}</td>
+                                        <td class="px-4 py-2.5 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
+                                        <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
+                                        <td class="px-4 py-2.5">
+                                            <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" class="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
+                                            <span v-else class="text-xs text-slate-300">—</span>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <a v-if="r['Link Final']" :href="r['Link Final']" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Final</a>
+                                            <span v-else class="text-xs text-slate-300">—</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ PANEL DIAGNOSTIK ============ -->
+                <section v-if="diagnostic" class="mb-6">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+                        <div class="mb-3 flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-slate-800"><i class="bi bi-bug mr-1.5"></i>Hasil Diagnostik</h2>
+                            <button class="btn-soft !px-3 !py-1 text-xs" @click="diagnostic=''">Tutup</button>
+                        </div>
+                        <pre class="overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-xs leading-relaxed text-slate-700">{{ diagnostic }}</pre>
+                    </div>
+                </section>
+
+                <!-- ============ TAB: STATISTIK ============ -->
+                <section v-if="tab==='stats'">
+                    <div class="mb-5">
+                        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Statistik Pendaftaran</h1>
+                        <p class="mt-0.5 text-sm text-slate-500">Ringkasan keseluruhan data pengajuan INHAL.</p>
+                    </div>
+
+                    <div v-if="sectionLoading.stats" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                        <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Memuat statistik...</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-7">
+                        <div v-for="c in statCards" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
+                                <i :class="c.icon" class="text-base" :style="{color:c.color}"></i>
+                            </div>
+                            <div class="text-xl font-extrabold tracking-tight text-slate-900" :class="c.money ? 'text-[15px] leading-tight' : ''">{{ c.num }}</div>
+                            <div class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ c.label }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid gap-5 lg:grid-cols-2">
+                        <div v-for="ch in statCharts" class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i :class="ch.icon" class="text-brand-500"></i>
+                                <h3 class="text-sm font-bold text-slate-800">{{ ch.title }}</h3>
+                            </div>
+                            <div v-if="!ch.bars.length" class="py-6 text-center text-xs text-slate-400">Belum ada data.</div>
+                            <div v-else class="space-y-3">
+                                <div v-for="b in ch.bars" class="flex items-center gap-3">
+                                    <div class="w-36 shrink-0 truncate text-right text-xs font-medium text-slate-500">{{ b.label }}</div>
+                                    <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                                        <div class="h-full rounded-full transition-all duration-500" :style="{width: b.pct + '%', background: ch.grad}"></div>
+                                    </div>
+                                    <div class="w-10 text-xs font-bold text-slate-700">{{ b.value }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ TAB: LAPORAN BAGIAN ============ -->
+                <section v-if="tab==='bagian'">
+                    <div class="mb-5">
+                        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Laporan Bagian</h1>
+                        <p class="mt-0.5 text-sm text-slate-500">Rekapitulasi peserta per bagian kegiatan.</p>
+                    </div>
+
+                    <div v-if="sectionLoading.bagian" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                        <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Memuat laporan bagian...</span>
+                    </div>
+
+                    <div class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="grid gap-3 md:grid-cols-12">
+                            <div class="md:col-span-3">
+                                <select v-model="bagian.fBlok" class="input" @change="applyBagianFilter()">
+                                    <option value="">Semua Blok</option>
+                                    <option v-for="b in bagianBlokOptions" :key="b" :value="b">{{ b }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <select v-model="bagian.fBagian" class="input" @change="applyBagianFilter()">
+                                    <option value="">Semua Bagian</option>
+                                    <option v-for="o in bagian.options" :key="o" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <select v-model="bagian.fSumber" class="input" @change="applyBagianFilter()">
+                                    <option value="">Semua Sumber</option>
+                                    <option>Pengajuan</option><option>Berita Acara</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3 flex items-center text-xs text-slate-400">
+                                {{ bagian.rows.length }} baris data
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div v-if="!bagian.rows.length" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</div>
+                        <div v-else class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div v-for="r in bagian.rows" class="rounded-2xl border border-slate-100 p-4 transition hover:border-slate-200">
+                                <div class="flex items-start justify-between gap-2">
+                                    <span class="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ r.bagian }}</span>
+                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ r.sumber }}</span>
+                                </div>
+                                <div class="mt-2 text-sm font-bold text-slate-900">{{ r.jenisKegiatan }}</div>
+                                <div class="mt-2 space-y-1 text-xs text-slate-500">
+                                    <div class="flex items-center gap-1.5"><i class="bi bi-grid"></i> {{ r.blok }}</div>
+                                    <div class="flex items-center gap-1.5"><i class="bi bi-calendar3"></i> {{ formatTanggal(r.tanggalPelaksanaan) }}</div>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <span class="text-sm font-extrabold text-slate-800">{{ r.total }} peserta</span>
+                                    <a v-if="r.fileUrl" :href="r.fileUrl" target="_blank" class="link text-xs">Lihat File</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ TAB: BERITA ACARA BAGIAN ============ -->
+                <section v-if="tab==='baBagian'">
+                    <div class="mb-5">
+                        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Berita Acara Bagian</h1>
+                        <p class="mt-0.5 text-sm text-slate-500">Isi berita acara atas nama bagian (tampil di Laporan Bagian &amp; Laporan Detail).</p>
+                    </div>
+
+                    <div v-if="!bab.active" class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="grid gap-3 md:grid-cols-12">
+                            <div class="md:col-span-4">
+                                <label class="label">Kategori</label>
+                                <select v-model="bab.kategori" class="input" @change="bab.subBagian=''">
+                                    <option value="">(Pilih Kategori)</option>
+                                    <option>SGD</option><option>KKD</option><option>Ujian</option><option>Praktikum</option>
+                                </select>
+                            </div>
+                            <div v-if="bab.kategori==='Praktikum'" class="md:col-span-4">
+                                <label class="label">Sub Bagian / Lab</label>
+                                <select v-model="bab.subBagian" class="input">
+                                    <option value="">(Pilih Lab)</option>
+                                    <option v-for="l in babLabOptions" :value="l">{{ l }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-4 flex items-end">
+                                <button class="btn-primary w-full" :disabled="bab.loading" @click="babStart">
+                                    <svg v-if="bab.loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <i v-else class="bi bi-play-circle"></i>
+                                    Mulai Sesi Bagian
+                                </button>
+                            </div>
+                        </div>
+                        <p v-if="bab.kategori==='Praktikum' && !babLabOptions.length" class="mt-2 text-xs text-amber-600">Lab praktikum belum terisi di Master Data.</p>
+                    </div>
+
+                    <template v-else>
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-50 px-4 py-3 text-sm ring-1 ring-brand-100">
+                            <div class="min-w-0">
+                                <div class="truncate font-semibold text-brand-800">{{ bab.kategori }}<template v-if="bab.subBagian"> / {{ bab.subBagian }}</template></div>
+                                <div class="truncate text-xs text-slate-500">Sesi bagian sebagai {{ bab.nama }} (admin)</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="btn-soft !py-2 text-xs" :disabled="bab.loading" @click="babLoad"><i class="bi bi-arrow-clockwise"></i> Muat Ulang</button>
+                                <button class="btn-danger-soft !py-2 text-xs" @click="babEnd"><i class="bi bi-box-arrow-right"></i> Akhiri Sesi</button>
+                            </div>
+                        </div>
+
+                        <div v-if="bab.loading && !bab.rows.length" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                            <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span class="text-sm font-semibold">Memuat data bagian...</span>
+                        </div>
+
+                        <div v-else class="grid items-start gap-5 lg:grid-cols-2">
+                            <!-- kegiatan + upload + daftar BA diisi Task 5 -->
+                        </div>
+                    </template>
+                </section>
+
+                <!-- ============ TAB: BERITA ACARA ============ -->
+                <section v-if="tab==='ba'">
+                    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Berita Acara</h1>
+                            <p class="mt-0.5 text-sm text-slate-500">Dokumen berita acara kegiatan yang telah diunggah.</p>
+                        </div>
+                        <button class="btn-primary" @click="openBaUpload()"><i class="bi bi-upload"></i>Upload Berita Acara</button>
+                    </div>
+
+                    <div class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="grid gap-3 md:grid-cols-12">
+                            <div class="md:col-span-3">
+                                <select v-model="ba.fBlok" class="input" @change="applyBaFilter()">
+                                    <option value="">Semua Blok</option>
+                                    <option v-for="b in baBlokOptions" :key="b" :value="b">{{ b }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <select v-model="ba.fBagian" class="input" @change="applyBaFilter()">
+                                    <option value="">Semua Bagian</option>
+                                    <option v-for="o in bagian.options" :key="o" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-6 flex items-center text-xs text-slate-400">
+                                {{ ba.rows.length }} berita acara
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div v-if="sectionLoading.ba" class="flex items-center justify-center gap-3 py-12 text-slate-400">
+                            <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span class="text-sm font-semibold">Memuat berita acara...</span>
+                        </div>
+                        <div v-else-if="!ba.rows.length" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</div>
+                        <div v-else class="divide-y divide-slate-50">
+                            <div v-for="r in ba.rows" class="p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                                            <span class="font-mono">{{ r['BA ID'] }}</span>
+                                            <span>·</span>
+                                            <span>{{ formatTanggal(r.Timestamp) }}</span>
+                                        </div>
+                                        <div class="mt-1 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
+                                        <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                            <i class="bi bi-calendar3"></i>
+                                            <span>{{ formatTanggalWaktu(r['Tanggal Pelaksanaan']) }}</span>
+                                        </div>
+                                        <div class="mt-1.5"><span class="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ r.Bagian }}</span></div>
+                                    </div>
+                                    <button class="btn-danger-soft shrink-0 !px-3 !py-1.5 text-xs" @click="deleteBa(r['BA ID'])"><i class="bi bi-trash"></i>Hapus</button>
+                                </div>
+                                <div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600"><i class="bi bi-people"></i> {{ r['Jumlah Peserta'] }} peserta</span>
+                                    <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link"><i class="bi bi-eye"></i> Lihat File</a>
+                                    <button v-if="r.peserta && r.peserta.length" class="ml-auto flex items-center gap-1 font-semibold text-brand-600" @click="toggleBaExpand(r['BA ID'])">
+                                        {{ expandedBa[r['BA ID']] ? 'Sembunyikan' : 'Lihat Peserta' }}
+                                        <i :class="expandedBa[r['BA ID']] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                    </button>
+                                </div>
+                                <div v-if="expandedBa[r['BA ID']] && r.peserta && r.peserta.length" class="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3">
+                                    <div v-for="(p, j) in r.peserta" :key="j" class="flex items-center gap-2 text-xs text-slate-600">
+                                        <i class="bi bi-person"></i>
+                                        <span class="font-semibold">{{ p.namaLengkap }}</span>
+                                        <span class="font-mono text-[11px] text-slate-400">({{ p.npm }})</span>
+                                        <span v-if="p.blok" class="ml-auto text-[11px] text-slate-400">{{ p.blok }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ TAB: MASTER DATA ============ -->
+                <section v-if="tab==='master'">
+                    <div class="mb-5">
+                        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Master Data</h1>
+                        <p class="mt-0.5 text-sm text-slate-500">Kelola referensi kegiatan, bagian, biaya, dan akses pengguna.</p>
+                    </div>
+
+                    <div v-if="sectionLoading.master" class="flex items-center justify-center gap-3 rounded-2xl bg-white py-16 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                        <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Memuat master data...</span>
+                    </div>
+                    <div v-else class="grid gap-5 lg:grid-cols-[280px_1fr]">
+                        <aside>
+                            <div class="space-y-2.5">
+                                <button
+                                    v-for="m in masterCards"
+                                    :key="m.key"
+                                    @click="master.tab = m.key; master.search = ''"
+                                    class="master-stat"
+                                    :class="{ active: master.tab === m.key }"
+                                >
+                                    <span class="master-stat-icon"><i :class="m.icon"></i></span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate text-sm font-semibold text-slate-800">{{ m.title }}</span>
+                                        <span class="block text-xs text-slate-500">{{ masterCount(m) }}</span>
+                                    </span>
+                                    <i class="bi bi-chevron-right text-slate-300"></i>
+                                </button>
+                            </div>
+                        </aside>
+
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="master-stat-icon"><i :class="activeMasterCard.icon"></i></span>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-800">{{ activeMasterCard.title }}</h3>
+                                        <p class="text-xs text-slate-500">{{ activeMasterCard.desc }}</p>
+                                    </div>
+                                </div>
+                                <div v-if="!activeMasterCard.settings" class="flex items-center gap-2">
+                                    <div class="master-search">
+                                        <i class="bi bi-search"></i>
+                                        <input v-model="master.search" type="text" class="input" placeholder="Cari..." />
+                                    </div>
+                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" @click="editMaster(activeMasterCard.key)"><i class="bi bi-pencil"></i>Edit</button>
+                                </div>
+                            </div>
+                            <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
+                                <table class="master-table w-full text-left text-sm">
+                                    <thead>
+                                        <tr class="text-[11px] uppercase tracking-wider text-slate-400">
+                                            <th v-for="c in activeMasterCard.cols" class="px-5 py-3 font-semibold">{{ c }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-if="!activeMasterRows.length">
+                                            <td :colspan="activeMasterCard.cols.length" class="px-5 py-12 text-center text-xs text-slate-400">
+                                                {{ master.search ? 'Tidak ada hasil untuk pencarian.' : 'Belum ada data.' }}
+                                            </td>
+                                        </tr>
+                                        <tr v-for="(r,i) in activeMasterRows" class="border-t border-slate-50">
+                                            <td v-for="c in activeMasterCard.cols" class="px-5 py-2.5 text-slate-600">{{ r[c] === undefined || r[c] === null ? '—' : r[c] }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div v-else class="p-6">
+                                <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-100">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm"><i class="bi bi-file-earmark-check"></i></div>
+                                        <div class="min-w-0 flex-1">
+                                            <h4 class="text-sm font-bold text-slate-800">Aturan Berita Acara Panel Bagian</h4>
+                                            <p class="mt-0.5 text-xs text-slate-500">Berlaku saat staf bagian membuat Berita Acara melalui Panel Bagian.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-5">
+                                        <div class="flex items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1 ring-slate-100">
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-semibold text-slate-800">Hanya kegiatan final</div>
+                                                <div class="text-xs text-slate-500">Sembunyikan kegiatan yang masih memiliki peserta berstatus Menunggu.</div>
+                                            </div>
+                                            <button type="button" class="ba-toggle shrink-0" :class="{ on: master.baSettings.finalOnly }" @click="master.baSettings.finalOnly = !master.baSettings.finalOnly" aria-label="Toggle hanya kegiatan final">
+                                                <span class="ba-toggle-knob"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-5">
+                                        <div class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Status Peserta yang Boleh di-BA-kan</div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <label v-for="s in baStatusOptions" :key="s.value"
+                                                class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 transition"
+                                                :class="master.baSettings.statuses.includes(s.value) ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                <input type="checkbox" class="h-4 w-4 accent-indigo-600"
+                                                    :checked="master.baSettings.statuses.includes(s.value)"
+                                                    @change="toggleBaStatus(s.value)">
+                                                <span class="text-sm font-medium" :class="master.baSettings.statuses.includes(s.value) ? 'text-slate-800' : 'text-slate-500'">{{ s.label }}</span>
+                                            </label>
+                                        </div>
+                                        <p class="mt-2 text-[11px] text-slate-400">Peserta dengan status lain otomatis dikecualikan dari daftar kelompok kegiatan di Panel Bagian.</p>
+                                    </div>
+
+                                    <button class="btn-primary mt-6 w-full" :disabled="master.saving" @click="saveBaSettings">
+                                        <svg v-if="master.saving" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
+                                        <i v-else class="bi bi-save"></i>
+                                        {{ master.saving ? 'Menyimpan...' : 'Simpan Pengaturan' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- ============ MODAL: DETAIL PENGAJUAN ============ -->
+        <transition name="fade">
+            <div v-if="detail.open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="detail.open=false"></div>
+                <transition name="pop" appear>
+                    <div class="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-lift">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-person-badge"></i></div>
+                                <div>
+                                    <div class="text-sm font-bold text-slate-900">Detail Pengajuan</div>
+                                    <div class="font-mono text-[11px] text-slate-400">{{ detail.p && detail.p['ID Pengajuan'] }}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span v-if="detail.p" :class="statusBadge(detail.p.Status)">{{ detail.p.Status }}</span>
+                                <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="detail.open=false"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                        </div>
+
+                        <div v-if="detail.loading" class="flex flex-1 items-center justify-center py-16">
+                            <svg class="h-6 w-6 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span class="ml-3 text-sm font-semibold text-slate-500">Memuat detail...</span>
+                        </div>
+                        <div v-else-if="detail.p" class="flex-1 overflow-y-auto px-6 py-5">
+                            <div class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <div><div class="label">NPM</div><div class="value">{{ detail.p.NPM }}</div></div>
+                                <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
+                                <div><div class="label">Tanggal Daftar</div><div class="value">{{ formatTanggal(detail.p.Timestamp) }}</div></div>
+                                <div><div class="label">Blok</div><div class="value">{{ detail.p.Blok }}</div></div>
+                                <div><div class="label">Jenis Kegiatan</div><div class="value">{{ detail.p['Jenis Kegiatan'] }}</div></div>
+                                <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
+                                <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
+                                <div><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
+                            </div>
+
+                            <!-- links -->
+                            <div v-if="detail.p['Link Surat Keterangan'] || detail.p['Link ACC INHAL'] || detail.p['Link Bukti Bayar']" class="mt-4 grid gap-3 sm:grid-cols-3">
+                                <a v-if="detail.p['Link Surat Keterangan']" :href="detail.p['Link Surat Keterangan']" target="_blank" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
+                                <a v-if="detail.p['Link ACC INHAL']" :href="detail.p['Link ACC INHAL']" target="_blank" class="btn-soft justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
+                                <a v-if="detail.p['Link Bukti Bayar']" :href="detail.p['Link Bukti Bayar']" target="_blank" class="btn-soft justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
+                            </div>
+
+                            <!-- editable -->
+                            <div class="mt-5 rounded-2xl bg-slate-50/70 p-4">
+                                <button type="button" class="flex w-full items-center justify-between" @click="detail.showLengkap = !detail.showLengkap">
+                                    <span class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-pencil-square text-base text-brand-600"></i> Keterangan Dosen</span>
+                                    <i :class="detail.showLengkap ? 'bi-chevron-up' : 'bi-chevron-down'" class="text-slate-400"></i>
+                                </button>
+                                <div v-if="detail.showLengkap" class="mt-3 grid gap-3 sm:grid-cols-2">
+                                    <div><label class="label">Dosen</label><input v-model="detail.dForm.dosen" class="input" list="dosenList"></div>
+                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.dForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
+                                    <div class="mt-1 flex gap-2 sm:col-span-2">
+                                        <button class="btn-primary" @click="saveFields()"><i class="bi bi-save"></i>Simpan Perubahan</button>
+                                        <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- detail kegiatan + berita acara -->
+                            <div v-if="(detail.p.details && detail.p.details.length) || (detail.baList && detail.baList.length)" class="mt-5 grid items-start gap-5 lg:grid-cols-2">
+                                <div v-if="detail.p.details && detail.p.details.length">
+                                    <div class="label mb-2"><i class="bi bi-list-check"></i> Detail Kegiatan</div>
+                                    <div class="grid gap-2">
+                                        <div v-for="d in detail.p.details" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                                            <div class="text-sm font-bold text-slate-800">{{ d.Pilihan }}</div>
+                                            <div class="mt-1 text-xs text-slate-500">{{ d.Detail }}</div>
+                                            <div class="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-400">
+                                                <span><i class="bi bi-calendar3"></i> {{ formatTanggal(d['Tanggal Pelaksanaan']) }}</span>
+                                                <span><i class="bi bi-diagram-3"></i> {{ d.Bagian }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="detail.baList && detail.baList.length" class="ba-align-card rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                    <div class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-pdf text-base text-rose-600"></i> Berita Acara</div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="b['File URL']" target="_blank" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- status update -->
+                            <div class="mt-5 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="label mb-3"><i class="bi bi-check2-circle"></i> Perbarui Status Pengajuan</div>
+                                <div class="grid gap-3 sm:grid-cols-3">
+                                    <div class="sm:col-span-1">
+                                        <label class="label">Status</label>
+                                        <select v-model="detail.status" class="input">
+                                            <option>Diterima</option>
+                                            <option>Ditolak</option>
+                                            <option>Dibatalkan</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak'">(wajib)</span></label>
+                                        <input v-model="detail.catatan" class="input" placeholder="Catatan keputusan...">
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
+                                    <button class="btn-soft" @click="quickStatus('Diterima')"><i class="bi bi-hand-thumbs-up"></i>Terima</button>
+                                    <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
+                                </div>
+                            </div>
+
+                            <!-- email actions -->
+                            <div class="mt-5">
+                                <div class="label mb-2"><i class="bi bi-envelope-check"></i> Email Notifikasi</div>
+                                <div class="mb-3 grid gap-3 rounded-xl bg-slate-50/70 p-3 text-xs sm:grid-cols-3">
+                                    <div><span class="label">Status Email:</span> <span :class="notifBadge(detail.p['Status Notifikasi Email'])">{{ detail.p['Status Notifikasi Email'] || 'Belum dikirim' }}</span></div>
+                                    <div><span class="label">Terkirim Pada:</span> <span class="text-slate-600">{{ formatTanggal(detail.p['Notifikasi Terkirim Pada']) }}</span></div>
+                                    <div><span class="label">Email Bagian:</span> <span class="text-slate-600">{{ detail.p['Email Bagian'] || '—' }}</span></div>
+                                    <div class="sm:col-span-3"><span class="label">Error:</span> <span class="text-slate-600">{{ detail.p['Error Notifikasi Email'] || '—' }}</span></div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button v-if="detail.p.Status==='Diterima' || detail.p.Status==='Ditolak'" class="btn-soft" @click="sendStatusEmail()"><i class="bi bi-send"></i>Kirim Ulang Email Notifikasi</button>
+                                    <button v-if="detail.p.Status!=='ACC' && detail.p['Link ACC INHAL']" class="btn-primary" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Email ACC Final</button>
+                                    <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
+                                    <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                </div>
+                            </div>
+                        </div>
+                        <datalist id="dosenList">
+                            <option v-for="d in dosenOptions" :value="d"></option>
+                        </datalist>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
+        <!-- ============ MODAL: MASTER EDITOR ============ -->
+        <transition name="fade">
+            <div v-if="master.modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.modal=false"></div>
+                <transition name="pop" appear>
+                    <div class="relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-lift">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h3 class="text-sm font-bold text-slate-900">Edit {{ master.title }}</h3>
+                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.modal=false"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto px-6 py-4">
+                            <div class="overflow-x-auto rounded-xl ring-1 ring-slate-100">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-400">
+                                        <tr>
+                                            <th v-for="c in master.cols" class="px-3 py-2.5 font-semibold">{{ c }}</th>
+                                            <th class="w-12 px-2 py-2.5"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(row, i) in master.rows" :key="i" class="border-t border-slate-50">
+                                            <td v-for="c in master.cols" class="px-2 py-2">
+                                                <input v-model="row[c]" class="input !py-2 text-xs">
+                                            </td>
+                                            <td class="px-2 py-2 text-center">
+                                                <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500" @click="removeMasterRow(i)"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button class="btn-soft mt-3" @click="addMasterRow()"><i class="bi bi-plus-lg"></i>Tambah Baris</button>
+                        </div>
+                        <div class="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="master.modal=false">Batal</button>
+                            <button class="btn-primary" @click="saveEdit()"><i class="bi bi-save"></i>Simpan</button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
+        <!-- ============ MODAL: UPLOAD BA ============ -->
+        <transition name="fade">
+            <div v-if="ba.modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="ba.modal=false"></div>
+                <transition name="pop" appear>
+                    <div class="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-lift">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h3 class="text-sm font-bold text-slate-900">Upload Berita Acara</h3>
+                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="ba.modal=false"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label class="label">Blok</label>
+                                    <select v-model="ba.form.blok" class="input" :disabled="ba.loadingOptions" @change="onBaBlokChange">
+                                        <option value="">(Pilih Blok)</option>
+                                        <option v-for="b in ba.opts.blok" :value="b">{{ b }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label">Detail Kegiatan</label>
+                                    <select v-model="ba.form.detailKey" class="input" :disabled="!ba.form.blok || ba.loadingOptions" @change="onBaDetailChange">
+                                        <option value="">(Pilih Kegiatan)</option>
+                                        <option v-for="(d, i) in baDetailOptions" :value="i">{{ d.label }}<span v-if="d.count"> ({{ d.count }} mhs)</span></option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label">Bagian</label>
+                                    <select v-model="ba.form.bagian" class="input">
+                                        <option value="">(Pilih Bagian)</option>
+                                        <option>Admin</option><option>SGD</option><option>KKD</option><option>Ujian</option><option>Praktikum</option>
+                                        <optgroup label="Lab Praktikum">
+                                            <option v-for="l in ba.opts.labs" :value="l">{{ l }}</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div><label class="label">Nama Kegiatan</label><input v-model="ba.form.nama" class="input" placeholder="cth: Praktikum Anatomi"></div>
+                                <div><label class="label">Tanggal Pelaksanaan</label><input v-model="ba.form.tanggal" type="date" class="input"></div>
+                                <div><label class="label">Jam Pelaksanaan <span style="text-transform:none;font-weight:400;color:#94a3b8">(opsional)</span></label><input v-model="ba.form.jam" type="time" class="input"></div>
+                                <div class="sm:col-span-2">
+                                    <label class="label">File BA (PDF / JPG / PNG)</label>
+                                    <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
+                                        <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
+                                        <div class="text-xs text-slate-500">
+                                            <span v-if="!ba.form.file">Pilih file berita acara...</span>
+                                            <span v-else class="font-semibold text-slate-700">{{ ba.form.file.name }}</span>
+                                        </div>
+                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onBaFile">
+                                    </div>
+                                </div>
+                                <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="ba.form.catatan" rows="2" class="input"></textarea></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="ba.modal=false">Batal</button>
+                            <button class="btn-primary" @click="submitBaAdmin()"><i class="bi bi-upload"></i>Upload</button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+        const APP_URL = '<?= appUrl ?>';
+        const USER_EMAIL = '<?= userEmail ?>';
+
+        const SESSION_STORE_KEY = 'inhal_admin_session';
+        function readSession() {
+            try {
+                const s = JSON.parse(localStorage.getItem(SESSION_STORE_KEY));
+                return s && s.token ? s : null;
+            } catch (e) { return null; }
+        }
+        function saveSession(s) {
+            try { localStorage.setItem(SESSION_STORE_KEY, JSON.stringify(s)); } catch (e) {}
+        }
+        function clearSession() {
+            try { localStorage.removeItem(SESSION_STORE_KEY); } catch (e) {}
+        }
+        function isAuthError(msg) {
+            return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
+        }
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    sectionLoading: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
+                    loaded: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
+                    tab: 'pengajuan',
+                    sidebarOpen: false,
+                    appUrl: APP_URL,
+                    userEmail: USER_EMAIL,
+                    session: null,
+                    loginPwd: '',
+                    loginError: '',
+                    loginLoading: false,
+                    toast: { show: false, msg: '', icon: 'bi-check-circle' },
+                    stats: { total: 0, totalBiaya: 0, perStatus: {}, trend: {}, perJenis: {}, perBlok: {}, perBagian: {} },
+                    diagnostic: '',
+                    pengajuanRows: [],
+                    detailMap: {},
+                    filters: { search: '', jenis: '', blok: '', status: '' },
+                    dosenOptions: [],
+                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '' },
+                    bagian: { rows: [], all: [], fBagian: '', fSumber: '', fBlok: '', options: [], labs: [], bloks: [] },
+                    ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
+                    expandedBa: {},
+                    bab: {
+                        kategori: '',
+                        subBagian: '',
+                        token: null,
+                        nama: '',
+                        active: false,
+                        loading: false,
+                        rows: [],
+                        baList: [],
+                        fBlok: '',
+                        baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
+                        ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false }
+                    },
+                    master: {
+                        modal: false,
+                        data: {},
+                        baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
+                        saving: false,
+                        editKey: '',
+                        rows: [],
+                        cols: [],
+                        title: '',
+                        saveFn: '',
+                        tab: 'masterKegiatan',
+                        search: '',
+                        cards: [
+                            { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], saveFn: 'saveMasterKegiatan', icon: 'bi-clipboard-check' },
+                            { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], saveFn: 'saveMasterBagian', icon: 'bi-diagram-3' },
+                            { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], saveFn: 'saveMasterBiaya', icon: 'bi-cash-stack' },
+                            { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], saveFn: 'saveConfig', icon: 'bi-gear' },
+                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], saveFn: 'saveBagianStaff', icon: 'bi-people' },
+                            { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan Bagian', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
+                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B).', cols: ['Password', 'Nama'], saveFn: 'saveAdminList', icon: 'bi-shield-lock' }
+                        ]
+                    }
+                };
+            },
+            computed: {
+                loggedIn() {
+                    return !!(this.session && this.session.token);
+                },
+                pageTitle() {
+                    return { pengajuan: 'Telaah Pengajuan', stats: 'Statistik', bagian: 'Laporan Bagian', baBagian: 'Berita Acara Bagian', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
+                },
+                navItems() {
+                    return [
+                        { key: 'pengajuan', icon: 'bi-inbox', label: 'Pengajuan', badge: true },
+                        { key: 'stats', icon: 'bi-bar-chart-line', label: 'Statistik' },
+                        { key: 'bagian', icon: 'bi-diagram-3', label: 'Laporan Bagian' },
+                        { key: 'baBagian', icon: 'bi-journal-check', label: 'Berita Acara Bagian' },
+                        { key: 'ba', icon: 'bi-file-earmark-pdf', label: 'Berita Acara' },
+                        { key: 'master', icon: 'bi-sliders', label: 'Master Data' }
+                    ];
+                },
+                statusChips() {
+                    const s = this.stats.perStatus || {};
+                    return [
+                        { key: '', label: 'Semua', count: this.stats.total || 0 },
+                        { key: 'Menunggu', label: 'Menunggu', count: s.Menunggu || 0 },
+                        { key: 'Diterima', label: 'Diterima', count: s.Diterima || 0 },
+                        { key: 'ACC', label: 'ACC', count: s.ACC || 0 },
+                        { key: 'Ditolak', label: 'Ditolak', count: s.Ditolak || 0 },
+                        { key: 'Dibatalkan', label: 'Dibatalkan', count: s.Dibatalkan || 0 }
+                    ];
+                },
+                blokOptions() {
+                    const set = {};
+                    this.pengajuanRows.forEach(r => { if (r.Blok) set[r.Blok] = 1; });
+                    return Object.keys(set);
+                },
+                baBlokOptions() {
+                    const set = {};
+                    (this.ba.all || []).forEach(b => { if (b.Blok) set[String(b.Blok).trim()] = 1; });
+                    return Object.keys(set).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+                },
+                babLabOptions() {
+                    return this.bagian.labs || [];
+                },
+                bagianBlokOptions() {
+                    return (this.bagian.bloks || []).filter(b => b && b !== '-');
+                },
+                baDetailOptions() {
+                    const blok = this.ba.form.blok;
+                    if (!blok) return [];
+                    return this.ba.opts.details.filter(d => d.blok === blok);
+                },
+                selectedBaDetail() {
+                    const i = Number(this.ba.form.detailKey);
+                    const list = this.baDetailOptions;
+                    return (Number.isFinite(i) && i >= 0 && i < list.length) ? list[i] : null;
+                },
+                allChecked() {
+                    return this.pengajuanRows.length > 0 && this.pengajuanRows.every(r => r.checked);
+                },
+                selectedIds() {
+                    return this.pengajuanRows.filter(r => r.checked).map(r => r['ID Pengajuan']);
+                },
+                statCards() {
+                    const s = this.stats.perStatus || {};
+                    return [
+                        { label: 'Total Pendaftar', num: this.stats.total || 0, icon: 'bi-people-fill', color: '#4f46e5', tint: 'bg-brand-50' },
+                        { label: 'Menunggu', num: s.Menunggu || 0, icon: 'bi-hourglass-split', color: '#d97706', tint: 'bg-amber-50' },
+                        { label: 'Diterima', num: s.Diterima || 0, icon: 'bi-check2-circle', color: '#059669', tint: 'bg-emerald-50' },
+                        { label: 'ACC', num: s.ACC || 0, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'bg-indigo-50' },
+                        { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-circle', color: '#e11d48', tint: 'bg-rose-50' },
+                        { label: 'Dibatalkan', num: s.Dibatalkan || 0, icon: 'bi-x-octagon', color: '#64748b', tint: 'bg-slate-100' },
+                        { label: 'Total Biaya', num: this.formatRupiah(this.stats.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'bg-teal-50' }
+                    ];
+                },
+                statCharts() {
+                    return [
+                        { title: 'Trend Pengajuan per Bulan', icon: 'bi-graph-up', grad: 'linear-gradient(90deg,#6366f1,#a78bfa)', bars: this.barsOf(this.stats.trend) },
+                        { title: 'Per Jenis Kegiatan', icon: 'bi-tags', grad: 'linear-gradient(90deg,#0ea5e9,#38bdf8)', bars: this.barsOf(this.stats.perJenis) },
+                        { title: 'Per Blok', icon: 'bi-layers', grad: 'linear-gradient(90deg,#f59e0b,#fbbf24)', bars: this.barsOf(this.stats.perBlok) },
+                        { title: 'Per Bagian', icon: 'bi-diagram-3', grad: 'linear-gradient(90deg,#8b5cf6,#c084fc)', bars: this.barsOf(this.stats.perBagian) }
+                    ];
+                },
+                masterCards() {
+                    return this.master.cards;
+                },
+                baStatusOptions() {
+                    return [
+                        { value: 'Menunggu', label: 'Menunggu' },
+                        { value: 'Diterima', label: 'Diterima' },
+                        { value: 'ACC', label: 'ACC' },
+                        { value: 'Ditolak', label: 'Ditolak' },
+                        { value: 'Dibatalkan', label: 'Dibatalkan' }
+                    ];
+                },
+                activeMasterCard() {
+                    return this.master.cards.find(c => c.key === this.master.tab) || this.master.cards[0];
+                },
+                activeMasterRows() {
+                    const card = this.activeMasterCard;
+                    const rows = this.master.data[card.key] || [];
+                    const q = String(this.master.search || '').toLowerCase().trim();
+                    if (!q) return rows;
+                    return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
+                }
+            },
+            methods: {
+                // ---------- helpers ----------
+                run(fn, ...args) {
+                    if (this.session && this.session.token) args.push(this.session.token);
+                    return new Promise((resolve, reject) => {
+                        google.script.run
+                            .withSuccessHandler(r => resolve(r))
+                            .withFailureHandler(e => {
+                                const msg = (e && e.message) ? e.message : String(e);
+                                if (isAuthError(msg)) {
+                                    clearSession();
+                                    this.session = null;
+                                }
+                                reject(msg);
+                            })
+                            [fn](...args);
+                    });
+                },
+                runAsBab(fn, ...args) {
+                    if (this.bab && this.bab.token) args.push(this.bab.token);
+                    return new Promise((resolve, reject) => {
+                        google.script.run
+                            .withSuccessHandler(r => resolve(r))
+                            .withFailureHandler(e => {
+                                const msg = (e && e.message) ? e.message : String(e);
+                                if (isAuthError(msg)) {
+                                    Object.assign(this.bab, { token: null, active: false, rows: [], baList: [], fBlok: '', ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                                }
+                                reject(msg);
+                            })
+                            [fn](...args);
+                    });
+                },
+                dateOnly(v) {
+                    if (!v) return '';
+                    const s = String(v);
+                    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
+                },
+                async babStart() {
+                    if (!this.bab.kategori) { this.notify('Pilih kategori kegiatan terlebih dahulu.', false); return; }
+                    if (this.bab.kategori === 'Praktikum' && !this.bab.subBagian) { this.notify('Untuk Praktikum, pilih sub bagian / lab terlebih dahulu.', false); return; }
+                    this.bab.loading = true;
+                    try {
+                        const res = await this.run('adminBagianBypass', this.bab.kategori, this.bab.subBagian);
+                        if (!res || !res.ok) { this.notify((res && res.message) || 'Gagal memulai sesi bagian.', false); return; }
+                        this.bab.token = res.token;
+                        this.bab.nama = res.nama || 'Admin';
+                        this.bab.active = true;
+                        await this.babLoad();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.bab.loading = false;
+                    }
+                },
+                babEnd() {
+                    if (this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
+                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], fBlok: '', baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                    this.notify('Sesi bagian diakhiri.');
+                },
+                async babLoad() {
+                    if (!this.bab.token) return;
+                    this.bab.loading = true;
+                    try {
+                        const [bs, boot] = await Promise.all([
+                            this.run('getBagianBaSettings'),
+                            this.runAsBab('getBagianBootstrap', this.bab.kategori, this.bab.subBagian)
+                        ]);
+                        if (bs) this.bab.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, bs);
+                        if (!boot || !boot.ok) { this.notify((boot && boot.message) || 'Gagal memuat data bagian.', false); return; }
+                        this.bab.rows = boot.rows || [];
+                        this.bab.baList = boot.baList || [];
+                    } catch (e) {
+                        this.notify('Gagal memuat data: ' + e, false);
+                    } finally {
+                        this.bab.loading = false;
+                    }
+                },
+                async babLoadBaList() {
+                    try {
+                        this.bab.baList = await this.runAsBab('getBeritaAcaraList', this.bab.subBagian || this.bab.kategori, this.bab.kategori) || [];
+                    } catch (e) {
+                        this.bab.baList = [];
+                    }
+                },
+                async login() {
+                    if (!this.loginPwd) { this.loginError = 'Masukkan password admin.'; return; }
+                    this.loginLoading = true;
+                    this.loginError = '';
+                    try {
+                        const res = await this.run('authenticateAdmin', this.loginPwd);
+                        if (res && res.ok && res.token) {
+                            const s = { token: res.token, nama: res.nama || 'Admin', role: 'admin' };
+                            saveSession(s);
+                            this.session = s;
+                            this.loginPwd = '';
+                            this.bootstrap();
+                        } else {
+                            this.loginError = (res && res.message) || 'Password admin salah.';
+                        }
+                    } catch (e) {
+                        this.loginError = (e && e.message) ? e.message : String(e);
+                    } finally {
+                        this.loginLoading = false;
+                    }
+                },
+                logout() {
+                    if (this.bab && this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
+                    if (this.session && this.session.token) {
+                        this.run('logoutSession', this.session.token).catch(() => {});
+                    }
+                    clearSession();
+                    this.session = null;
+                    this.loginPwd = '';
+                    this.loginError = '';
+                    this.bab.active = false;
+                    this.bab.token = null;
+                    this.bab.rows = [];
+                    this.bab.baList = [];
+                    this.loaded = { pengajuan: false, stats: false, bagian: false, ba: false, master: false };
+                },
+                notify(msg, ok = true) {
+                    this.toast = { show: true, msg, icon: ok ? 'bi-check-circle text-emerald-400' : 'bi-exclamation-triangle text-amber-400' };
+                    setTimeout(() => { this.toast.show = false; }, 3800);
+                },
+                formatRupiah(num) {
+                    const n = Number(num) || 0;
+                    return 'Rp ' + n.toLocaleString('id-ID');
+                },
+                formatTanggal(v) {
+                    if (!v) return '—';
+                    if (v instanceof Date) return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear();
+                    const s = String(v);
+                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m[3] + '/' + m[2] + '/' + m[1]; }
+                    return s;
+                },
+                formatTanggalWaktu(v) {
+                    if (!v) return '—';
+                    if (v instanceof Date) {
+                        const p = n => (n < 10 ? '0' : '') + n;
+                        return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear() + ' ' + p(v.getHours()) + ':' + p(v.getMinutes());
+                    }
+                    const s = String(v);
+                    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+                    if (m) {
+                        const datePart = m[3] + '/' + m[2] + '/' + m[1];
+                        const timePart = (m[4] !== undefined && m[5] !== undefined) ? (' ' + m[4] + ':' + m[5]) : '';
+                        return datePart + timePart;
+                    }
+                    return s;
+                },
+                toDatetimeLocalInputValue(v) {
+                    if (!v) return '';
+                    if (v instanceof Date) {
+                        const p = n => (n < 10 ? '0' : '') + n;
+                        return v.getFullYear() + '-' + p(v.getMonth() + 1) + '-' + p(v.getDate()) + 'T' + p(v.getHours()) + ':' + p(v.getMinutes());
+                    }
+                    const s = String(v);
+                    const dm = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+                    if (dm) return dm[1] + '-' + dm[2] + '-' + dm[3] + 'T' + (dm[4] || '00') + ':' + (dm[5] || '00');
+                    return s;
+                },
+                statusBadge(status) {
+                    const cls = {
+                        'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
+                        'Diterima': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+                        'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
+                        'ACC': 'bg-brand-50 text-brand-700 ring-brand-600/20',
+                        'Dibatalkan': 'bg-slate-100 text-slate-500 ring-slate-500/20'
+                    }[status] || 'bg-slate-100 text-slate-500 ring-slate-500/20';
+                    return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ' + cls;
+                },
+                notifBadge(status) {
+                    const s = String(status || 'Belum dikirim');
+                    const cls = s === 'Berhasil' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
+                        : (s === 'Gagal' ? 'bg-rose-50 text-rose-700 ring-rose-600/20'
+                            : 'bg-amber-50 text-amber-700 ring-amber-600/20');
+                    return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ' + cls;
+                },
+                barsOf(obj) {
+                    const o = obj || {};
+                    const keys = Object.keys(o);
+                    if (!keys.length) return [];
+                    const max = Math.max.apply(null, keys.map(k => o[k]));
+                    return keys.map(k => ({ label: k, value: o[k], pct: max ? Math.round(o[k] / max * 100) : 0 }));
+                },
+                switchTab(tab) {
+                    this.tab = tab;
+                    this.sidebarOpen = false;
+                    if (tab === 'pengajuan' && !this.loaded.pengajuan) this.loadPengajuan();
+                    if (tab === 'stats' && !this.loaded.stats) this.loadStats();
+                    if (tab === 'bagian' && !this.loaded.bagian) this.loadBagian();
+                    if (tab === 'ba' && !this.loaded.ba) this.loadBa();
+                    if (tab === 'master' && !this.loaded.master) this.loadMaster();
+                    if (tab === 'baBagian' && this.bab.active) this.babLoad();
+                },
+
+                // ---------- loaders ----------
+                async bootstrap() {
+                    this.sectionLoading.pengajuan = true;
+                    this.sectionLoading.stats = true;
+                    this.sectionLoading.bagian = true;
+                    this.sectionLoading.ba = true;
+                    try {
+                        const b = await this.run('getDashboardBootstrap');
+                        this.stats = b.stats || this.stats;
+                        this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
+                        this.detailMap = b.detailMap || {};
+                        this.bagian.all = (b.bagian && b.bagian.rows) || [];
+                        this.bagian.labs = (b.bagian && b.bagian.labs) || [];
+                        this.bagian.options = (b.bagian && b.bagian.filters && b.bagian.filters.bagian) || this.bagian.options;
+                        this.bagian.bloks = (b.bagian && b.bagian.filters && b.bagian.filters.blok) || [];
+                        this.applyBagianFilter();
+                        this.ba.all = b.beritaAcara || [];
+                        this.applyBaFilter();
+                        this.loaded.pengajuan = true;
+                        this.loaded.stats = true;
+                        this.loaded.bagian = true;
+                        this.loaded.ba = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat dashboard: ' + e, false);
+                    } finally {
+                        this.sectionLoading.pengajuan = false;
+                        this.sectionLoading.stats = false;
+                        this.sectionLoading.bagian = false;
+                        this.sectionLoading.ba = false;
+                    }
+                    this.loadDosenOptions();
+                },
+                async loadStats() {
+                    this.sectionLoading.stats = true;
+                    try {
+                        this.stats = await this.run('getDashboardStats');
+                        this.loaded.stats = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat statistik: ' + e, false);
+                    } finally {
+                        this.sectionLoading.stats = false;
+                    }
+                },
+                async loadPengajuan() {
+                    this.sectionLoading.pengajuan = true;
+                    try {
+                        const rows = await this.run('getPengajuanList', { search: this.filters.search, jenis: this.filters.jenis, blok: this.filters.blok, status: this.filters.status });
+                        this.pengajuanRows = (rows || []).map(r => Object.assign({}, r, { checked: false }));
+                        this.loaded.pengajuan = true;
+                    } catch (e) {
+                        this.pengajuanRows = [];
+                        this.notify('Gagal memuat pengajuan: ' + e, false);
+                    } finally {
+                        this.sectionLoading.pengajuan = false;
+                    }
+                },
+                async loadBagian() {
+                    this.sectionLoading.bagian = true;
+                    try {
+                        const data = await this.run('getBagianAggregation');
+                        this.bagian.all = (data && data.rows) || [];
+                        this.bagian.labs = (data && data.labs) || this.bagian.labs;
+                        this.bagian.options = (data && data.filters && data.filters.bagian) || this.bagian.options;
+                        this.bagian.bloks = (data && data.filters && data.filters.blok) || [];
+                        this.applyBagianFilter();
+                        this.loaded.bagian = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat laporan bagian: ' + e, false);
+                    } finally {
+                        this.sectionLoading.bagian = false;
+                    }
+                },
+                async loadBa() {
+                    this.sectionLoading.ba = true;
+                    try {
+                        this.ba.all = await this.run('getBeritaAcaraAdminList') || [];
+                        if (!this.bagian.labs.length) {
+                            this.bagian.labs = await this.run('getLabOptions') || [];
+                            this.bagian.options = ['Ujian', 'SGD', 'KKD'].concat(this.bagian.labs);
+                        }
+                        this.applyBaFilter();
+                        this.loaded.ba = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat berita acara: ' + e, false);
+                    } finally {
+                        this.sectionLoading.ba = false;
+                    }
+                },
+                async loadMaster() {
+                    this.sectionLoading.master = true;
+                    try {
+                        const d = await this.run('getMasterDataMonitor') || {};
+                        this.master.data = d;
+                        this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
+                        this.loaded.master = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat master data: ' + e, false);
+                    } finally {
+                        this.sectionLoading.master = false;
+                    }
+                },
+                async loadDosenOptions() {
+                    if (this.dosenOptions.length) return;
+                    try {
+                        this.dosenOptions = await this.run('getDosenOptions') || [];
+                    } catch (e) { /* non-blokir */ }
+                },
+
+                // ---------- pengajuan ----------
+                async applyFilter() {
+                    await this.loadPengajuan();
+                },
+                setStatusChip(key) {
+                    this.filters.status = key;
+                    this.applyFilter();
+                },
+                toggleAll(e) {
+                    this.pengajuanRows.forEach(r => { r.checked = e.target.checked; });
+                },
+                openDetailReport() {
+                    window.open(APP_URL + '?page=detail-laporan', '_blank');
+                },
+                exportCsv() {
+                    const rows = this.pengajuanRows;
+                    if (!rows.length) { this.notify('Tidak ada data untuk diekspor.', false); return; }
+                    const cols = ['Timestamp', 'ID Pengajuan', 'NPM', 'Nama Lengkap', 'Email', 'No. HP/WA', 'Blok', 'Jenis Kegiatan', 'Dosen', 'Tanggal Pelaksanaan', 'Nomor Surat', 'Status', 'Biaya Rupiah', 'Link Surat Keterangan', 'Link ACC INHAL', 'Link Bukti Bayar', 'Link Final', 'Catatan Admin'];
+                    const cell = v => {
+                        if (v instanceof Date) v = v.toISOString();
+                        return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"';
+                    };
+                    let csv = cols.map(cell).join(',') + '\n';
+                    rows.forEach(r => { csv += cols.map(c => cell(r[c])).join(',') + '\n'; });
+                    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'rekap-inhal.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    this.notify('Rekap CSV berhasil diunduh.');
+                },
+                async syncLogData() {
+                    if (!confirm('Sinkronkan data dari sheet LogData (sistem lama) ke Pengajuan? Data yang sudah ada tidak akan diduplikasi.')) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('syncLogDataToPengajuan');
+                        this.notify((res && res.message) || 'Selesai.');
+                        await Promise.all([this.loadStats(), this.loadPengajuan()]);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async runDiagnostic() {
+                    this.loading = true;
+                    try {
+                        const d = await this.run('diagnosticData');
+                        const line = [
+                            'Sheet ID: ' + (d.sheetId || '-'),
+                            'Jumlah sheet: ' + ((d.sheets || []).length),
+                            (d.sheets || []).map(s => s.name + ' (' + s.lastRow + ' baris)').join(', '),
+                            '',
+                            'Pengajuan: ' + (d.counts && d.counts.Pengajuan),
+                            'DetailKegiatan: ' + (d.counts && d.counts.DetailKegiatan),
+                            'Mahasiswa: ' + (d.counts && d.counts.Mahasiswa),
+                            'LogData: ' + (d.counts && d.counts.LogData),
+                            '',
+                            '--- NPM mentah (tipe | nilai JSON | kode karakter | nama) ---',
+                            ((d.npmDebug || []).map(p => (p.type || '-') + ' | ' + (p.value || '-') + ' | ' + (p.charCodes || '-') + ' | ' + (p.nama || '-'))).join('\n') || '(tidak ada)',
+                            '',
+                            '--- Status mentah (status JSON | kode karakter | tipe Timestamp) ---',
+                            ((d.npmDebug || []).map(p => (p.status || '-') + ' | ' + (p.statusCodes || '-') + ' | ' + (p.timestampType || '-'))).join('\n') || '(tidak ada)',
+                            '',
+                            '--- getStudentPortalData("2508260032") ---',
+                            JSON.stringify(d.portalResult),
+                            '',
+                            '--- getPengajuanList({}) ---',
+                            JSON.stringify(d.listResult),
+                            '',
+                            '--- getPengajuanList({ status: "Menunggu" }) ---',
+                            JSON.stringify(d.menungguResult)
+                        ].join('\n');
+                        this.diagnostic = line;
+                        this.notify('Diagnostik selesai. Lihat panel Diagnostik di bawah.');
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async bulkFinalEmail() {
+                    const sel = this.selectedIds;
+                    const msg = sel.length
+                        ? 'Kirim email ACC final (PDF) ke ' + sel.length + ' pengajuan terpilih?'
+                        : 'Kirim email ACC final (PDF) ke SEMUA pengajuan berstatus ACC?';
+                    if (!confirm(msg)) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('sendBulkFinalEmail', sel);
+                        this.notify((res && res.message) || 'Selesai.');
+                        if (res && res.details) {
+                            const failed = res.details.filter(d => !d.ok);
+                            if (failed.length) {
+                                setTimeout(() => alert('Rincian kegagalan (' + failed.length + '):\n' + failed.map(f => f.nama + ' (' + f.npm + '): ' + (f.notes || []).join(' ')).join('\n')), 200);
+                            }
+                        }
+                        await this.loadPengajuan();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // ---------- detail ----------
+                applyDetailFromRow(base) {
+                    const p = Object.assign({}, base);
+                    p.details = this.detailMap[String(p['ID Pengajuan'] || '').trim()] || [];
+                    this.detail.p = p;
+                    this.detail.baList = this.matchBaForPengajuan(p);
+                    this.detail.dForm = {
+                        dosen: p.Dosen || '',
+                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
+                    };
+                    this.detail.status = 'Diterima';
+                    this.detail.catatan = '';
+                    this.detail.open = true;
+                    this.detail.showLengkap = false;
+                    this.detail.loading = false;
+                },
+                openDetail(id) {
+                    const base = this.pengajuanRows.find(r => r['ID Pengajuan'] === id);
+                    if (base) {
+                        this.applyDetailFromRow(base);
+                        return;
+                    }
+                    this.reloadDetail(id, true);
+                },
+                async reloadDetail(id, keepOpen) {
+                    this.detail.loading = true;
+                    if (keepOpen) { this.detail.open = true; this.detail.showLengkap = false; }
+                    try {
+                        const p = await this.run('getPengajuanWithDetails', id);
+                        if (!p) { this.notify('Pengajuan tidak ditemukan.', false); return; }
+                        const base = Object.assign({}, p);
+                        delete base.details;
+                        const idx = this.pengajuanRows.findIndex(r => r['ID Pengajuan'] === id);
+                        if (idx >= 0) this.pengajuanRows[idx] = Object.assign({}, this.pengajuanRows[idx], base);
+                        this.detailMap[String(id || '').trim()] = p.details || [];
+                        this.applyDetailFromRow(this.pengajuanRows[idx] || base);
+                    } catch (e) {
+                        this.notify('Gagal memuat detail: ' + e, false);
+                    } finally {
+                        this.detail.loading = false;
+                    }
+                },
+                matchBaForPengajuan(p) {
+                    const normBlok = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                    const normName = s => String(s || '').toLowerCase().replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const blok = normBlok(p.Blok);
+                    if (!blok) return [];
+                    const details = p.details || [];
+                    const candidates = details.map(function(d) {
+                        const parts = [d.Pilihan, d.Detail].filter(function(x) { return x && String(x).trim(); });
+                        return parts.length ? normName(parts.join(' ')) : null;
+                    }).filter(Boolean);
+                    const jenis = normName(p['Jenis Kegiatan']);
+                    return (this.ba.all || []).filter(function(b) {
+                        if (normBlok(b.Blok) !== blok) return false;
+                        const nama = normName(b['Nama Kegiatan']);
+                        if (!nama) return false;
+                        if (candidates.indexOf(nama) !== -1) return true;
+                        if (!candidates.length && nama === jenis) return true;
+                        return false;
+                    });
+                },
+                async saveFields() {
+                    const d = this.detail.dForm;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('updatePengajuanFields', this.detail.p['ID Pengajuan'], {
+                            dosen: (d.dosen || '').trim(),
+                            tanggalPelaksanaan: d.tanggalPelaksanaan || ''
+                        });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
+                        this.notify((res && res.message) || 'Disimpan.');
+                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                        this.detail.open = false;
+                        this.switchTab('pengajuan');
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async updateStatus() {
+                    const status = this.detail.status;
+                    const catatan = this.detail.catatan.trim();
+                    if (status === 'Ditolak' && !catatan) {
+                        this.notify('Catatan wajib diisi saat menolak pengajuan.', false);
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        const res = await this.run('updatePengajuanStatus', this.detail.p['ID Pengajuan'], status, catatan, '');
+                        this.notify((res && res.message) || 'Status diperbarui.');
+                        if (res && res.success) {
+                            this.detail.open = false;
+                            await Promise.all([this.loadStats(), this.loadPengajuan()]);
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async quickStatus(status) {
+                    this.detail.status = status;
+                    if (status === 'Ditolak') {
+                        const alasan = prompt('Alasan penolakan (wajib):');
+                        if (!alasan || !alasan.trim()) { this.notify('Catatan wajib diisi saat menolak pengajuan.', false); return; }
+                        this.detail.catatan = alasan.trim();
+                    } else {
+                        this.detail.catatan = '';
+                    }
+                    await this.updateStatus();
+                },
+                async sendStatusEmail() {
+                    if (!confirm('Kirim ulang email notifikasi status ke mahasiswa?')) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('sendStatusNotificationEmail', this.detail.p['ID Pengajuan']);
+                        this.notify((res && res.message) || 'Selesai.');
+                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async sendFinalEmail() {
+                    const alreadyAcc = this.detail.p.Status === 'ACC';
+                    const msg = alreadyAcc
+                        ? 'Kirim ulang email ACC final (PDF) ke mahasiswa dan bagian?'
+                        : 'ACC pengajuan ini lalu kirim email ACC final (PDF) ke mahasiswa dan bagian?';
+                    if (!confirm(msg)) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('sendFinalEmail', this.detail.p['ID Pengajuan']);
+                        this.notify((res && res.message) || 'Selesai.');
+                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async sendAccFinalToBagian() {
+                    if (!confirm('Kirim ulang email ACC final (PDF) khusus ke email Bagian?')) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('sendAccFinalToBagian', this.detail.p['ID Pengajuan']);
+                        this.notify((res && res.message) || 'Selesai.');
+                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deletePengajuan() {
+                    if (!confirm('HAPUS pengajuan ' + this.detail.p['ID Pengajuan'] + ' beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.')) return;
+                    const alasan = prompt('Alasan penghapusan (opsional):');
+                    if (alasan === null) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('deletePengajuanAdmin', this.detail.p['ID Pengajuan'], alasan);
+                        this.notify((res && res.message) || 'Selesai.');
+                        if (res && res.success) {
+                            this.detail.open = false;
+                            await Promise.all([this.loadStats(), this.loadPengajuan()]);
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // ---------- bagian ----------
+                normBagian(v) {
+                    return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+                },
+                applyBagianFilter() {
+                    const rows = this.bagian.all.filter(r =>
+                        (!this.bagian.fBagian || r.bagian === this.bagian.fBagian) &&
+                        (!this.bagian.fBlok || r.blok === this.bagian.fBlok) &&
+                        (!this.bagian.fSumber || r.sumber === this.bagian.fSumber));
+                    this.bagian.rows = rows;
+                },
+
+                // ---------- berita acara ----------
+                resolveBaBagian(b) {
+                    const key = this.normBagian(b.Bagian);
+                    const categories = ['Ujian', 'SGD', 'KKD'];
+                    if (key) {
+                        for (let i = 0; i < categories.length; i++) {
+                            if (this.normBagian(categories[i]) === key) return categories[i];
+                        }
+                    }
+                    const labs = this.bagian.labs || [];
+                    if (key) {
+                        for (let i = 0; i < labs.length; i++) {
+                            if (this.normBagian(labs[i]) === key) return labs[i];
+                        }
+                    }
+                    const nKey = this.normBagian(b['Nama Kegiatan']);
+                    if (nKey) {
+                        const sorted = labs.slice().sort((a, b) => this.normBagian(b).length - this.normBagian(a).length);
+                        for (let i = 0; i < sorted.length; i++) {
+                            if (nKey.indexOf(this.normBagian(sorted[i])) !== -1) return sorted[i];
+                        }
+                    }
+                    return '';
+                },
+                applyBaFilter() {
+                    const rows = (this.ba.all || []).filter(b => {
+                        if (this.ba.fBlok && (b.Blok || '') !== this.ba.fBlok) return false;
+                        if (this.ba.fBagian && this.resolveBaBagian(b) !== this.ba.fBagian) return false;
+                        return true;
+                    });
+                    this.ba.rows = rows;
+                },
+                toggleBaExpand(baId) {
+                    this.expandedBa[baId] = !this.expandedBa[baId];
+                },
+                openBaUpload() {
+                    this.ba.form = { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null };
+                    this.ba.modal = true;
+                    this.loadBaUploadOptions();
+                },
+                async loadBaUploadOptions() {
+                    if (this.ba.opts.blok.length) return;
+                    this.ba.loadingOptions = true;
+                    try {
+                        const opts = await this.run('getBaUploadOptions');
+                        this.ba.opts = (opts && opts.blok) ? { blok: opts.blok || [], details: opts.details || [], labs: opts.labs || [] } : { blok: [], details: [], labs: [] };
+                    } catch (e) {
+                        this.ba.opts = { blok: [], details: [], labs: [] };
+                        this.notify('Gagal memuat opsi kegiatan: ' + e, false);
+                    } finally {
+                        this.ba.loadingOptions = false;
+                    }
+                },
+                onBaBlokChange() {
+                    this.ba.form.detailKey = '';
+                    this.ba.form.jenis = '';
+                    this.ba.form.pilihan = '';
+                    this.ba.form.detail = '';
+                    this.ba.form.bagian = '';
+                    this.ba.form.nama = '';
+                },
+                onBaDetailChange() {
+                    const d = this.selectedBaDetail;
+                    if (!d) return;
+                    this.ba.form.jenis = d.jenis;
+                    this.ba.form.pilihan = d.pilihan;
+                    this.ba.form.detail = d.detail;
+                    if (d.jenis === 'Praktikum') {
+                        const labs = this.ba.opts.labs || [];
+                        const pKey = String(d.pilihan || '').toLowerCase();
+                        const lab = labs.find(function(l) { return String(l || '').toLowerCase() === pKey; });
+                        this.ba.form.bagian = lab || 'Praktikum';
+                    } else {
+                        this.ba.form.bagian = d.jenis || this.ba.form.bagian;
+                    }
+                    const nama = [d.pilihan, d.detail].filter(Boolean).join(' — ');
+                    if (nama) this.ba.form.nama = nama;
+                },
+                onBaFile(e) {
+                    this.ba.form.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                },
+                readFileAsBase64(file) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = ev => resolve({ data: String(ev.target.result).split(',')[1] || '', mimeType: file.type, name: file.name });
+                        reader.onerror = () => reject(new Error('Gagal membaca file'));
+                        reader.readAsDataURL(file);
+                    });
+                },
+                async submitBaAdmin() {
+                    const f = this.ba.form;
+                    if (!f.file) { this.notify('Pilih file berita acara terlebih dahulu.', false); return; }
+                    if (!f.tanggal) { this.notify('Tanggal pelaksanaan wajib diisi.', false); return; }
+                    let tanggalPelaksanaan = f.tanggal;
+                    if (f.jam) tanggalPelaksanaan += 'T' + f.jam;
+                    this.loading = true;
+                    try {
+                        const fileData = await this.readFileAsBase64(f.file);
+                        const res = await this.run('uploadBeritaAcaraAdmin', {
+                            bagian: f.bagian.trim(),
+                            blok: f.blok.trim(),
+                            namaKegiatan: f.nama.trim(),
+                            tanggalPelaksanaan: tanggalPelaksanaan,
+                            jenis: f.jenis,
+                            pilihan: f.pilihan,
+                            detail: f.detail,
+                            catatan: f.catatan.trim(),
+                            file: fileData
+                        });
+                        this.notify((res && res.message) || 'Selesai.');
+                        if (res && res.success) {
+                            this.ba.modal = false;
+                            await this.loadBa();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deleteBa(baId) {
+                    if (!confirm('Hapus berita acara ' + baId + ' beserta peserta dan file terkait?')) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('deleteBeritaAcaraAdmin', baId);
+                        this.notify((res && res.message) || 'Selesai.');
+                        await this.loadBa();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // ---------- master ----------
+                masterCount(m) {
+                    if (m.settings) return 'Pengaturan';
+                    return (this.master.data[m.key] || []).length + ' entri';
+                },
+                editMaster(key) {
+                    const card = this.master.cards.find(c => c.key === key);
+                    if (!card) return;
+                    this.master.editKey = key;
+                    this.master.cols = card.cols;
+                    this.master.title = card.title;
+                    this.master.saveFn = card.saveFn;
+                    this.master.rows = (this.master.data[key] || []).map(r => Object.assign({}, r));
+                    this.master.modal = true;
+                },
+                addMasterRow() {
+                    const row = {};
+                    this.master.cols.forEach(c => { row[c] = ''; });
+                    this.master.rows.push(row);
+                },
+                removeMasterRow(i) {
+                    if (this.master.rows.length === 1) { this.notify('Minimal satu baris.', false); return; }
+                    this.master.rows.splice(i, 1);
+                },
+                async saveEdit() {
+                    this.loading = true;
+                    try {
+                        const res = await this.run(this.master.saveFn, { rows: this.master.rows });
+                        this.notify((res && res.message) || 'Disimpan.');
+                        this.master.modal = false;
+                        await this.loadMaster();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                toggleBaStatus(v) {
+                    const arr = this.master.baSettings.statuses || [];
+                    const i = arr.indexOf(v);
+                    if (i !== -1) arr.splice(i, 1);
+                    else arr.push(v);
+                },
+                async saveBaSettings() {
+                    this.master.saving = true;
+                    try {
+                        const res = await this.run('saveBagianBaSettings', {
+                            statuses: this.master.baSettings.statuses,
+                            finalOnly: this.master.baSettings.finalOnly
+                        });
+                        this.notify((res && res.message) || 'Disimpan.', !!(res && res.success));
+                        if (res && res.success) await this.loadMaster();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.master.saving = false;
+                    }
+                }
+            },
+            mounted() {
+                this.session = readSession();
+                if (this.loggedIn) this.bootstrap();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
