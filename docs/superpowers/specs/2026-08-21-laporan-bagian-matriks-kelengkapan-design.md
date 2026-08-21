@@ -25,6 +25,10 @@ Ubah tab "Laporan Bagian" menjadi **matriks kelengkapan BA**. Matriks menggantik
 - Pencocokan kunci memakai normalisasi: trim, lower-case, dan penggabungan spasi (`norm` server / `normBagian` frontend).
 - Setiap kegiatan muncul **satu kali** di matriks dengan status `✓ ber-BA` / `✗ belum ber-BA`. Sumber tidak ditampilkan sebagai entri terpisah.
 - BA dashboard (`Sumber='Admin'`) **tidak** ikut menentukan kelengkapan di tab ini.
+- **Penghitungan sel** (per bagian × blok):
+  - `totalKegiatan` = banyaknya kegiatan unik dari baris **Pengajuan** (kunci `bagian+blok+jenisKegiatan` ternormalisasi, mengabaikan tanggal).
+  - `sudahBA` = banyaknya kegiatan pengajuan tersebut yang memiliki **minimal satu** baris BA dengan kunci yang sama. Baris BA tidak dihitung sebagai kegiatan tersendiri; hanya berfungsi sebagai penanda "lengkap".
+  - Jika ada baris BA tanpa baris Pengajuan yang cocok (mis. selisih penamaan), baris BA tersebut tidak memengaruhi `totalKegiatan` maupun `sudahBA`.
 
 ### 2. Struktur Matriks
 
