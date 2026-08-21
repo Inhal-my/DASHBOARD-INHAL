@@ -486,7 +486,165 @@
                         </div>
 
                         <div v-else class="grid items-start gap-5 lg:grid-cols-2">
-                            <!-- kegiatan + upload + daftar BA diisi Task 5 -->
+                            <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
+                                    <h2 class="text-sm font-bold text-slate-900">Kegiatan Bagian</h2>
+                                    <div class="ml-auto flex flex-wrap gap-1.5">
+                                        <button class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset" :class="bab.fBlok==='' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-slate-200'" @click="bab.fBlok=''">Semua</button>
+                                        <button v-for="b in babBlokOptions" :key="b" class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset" :class="bab.fBlok===b ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-slate-200'" @click="bab.fBlok=b">{{ b }}</button>
+                                    </div>
+                                </div>
+                                <div v-if="!babFilteredRows.length" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data kegiatan.</div>
+                                <div v-else class="divide-y divide-slate-50">
+                                    <div v-for="r in babFilteredRows" :key="r.idPengajuan" class="flex items-start gap-3 p-4">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500"><i class="bi bi-person"></i></div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-start justify-between gap-2">
+                                                <div class="min-w-0">
+                                                    <div class="truncate text-sm font-bold text-slate-900">{{ r.namaLengkap }}</div>
+                                                    <div class="font-mono text-[11px] text-slate-400">NPM {{ r.npm }}</div>
+                                                </div>
+                                                <span class="shrink-0" :class="statusBadge(r.status)">{{ r.status || '-' }}</span>
+                                            </div>
+                                            <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                                                <span class="flex items-center gap-1"><i class="bi bi-grid"></i>{{ r.blok }}</span>
+                                                <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(r.tanggal) }}</span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-slate-600">{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></div>
+                                            <a v-if="r.linkSurat" :href="r.linkSurat" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-5">
+                                <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                    <div class="border-b border-slate-100 p-4">
+                                        <h2 class="text-sm font-bold text-slate-900">Upload Berita Acara</h2>
+                                        <p class="text-xs text-slate-400">Pilih kegiatan &amp; centang peserta yang hadir</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <button v-if="!bab.ba.open" class="btn-primary w-full" @click="babOpenBaPicker"><i class="bi bi-plus-circle"></i> Buat Berita Acara</button>
+                                        <div v-else class="space-y-3">
+                                            <div v-if="!babSelectedGroup">
+                                                <label class="label">Pilih Kegiatan ({{ (bab.baSettings.statuses || ['Diterima','ACC']).join(' / ') }})</label>
+                                                <div v-if="!babKegiatanGroups.length" class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">Tidak ada kegiatan yang bisa dibuatkan berita acara.</div>
+                                                <div v-else class="space-y-2">
+                                                    <button v-for="g in babKegiatanGroups" :key="g.key" class="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40" @click="babSelectKegiatan(g.key)">
+                                                        <div class="flex items-center justify-between gap-2">
+                                                            <span class="text-sm font-bold text-slate-800">{{ g.label }}</span>
+                                                            <span class="text-[11px] font-semibold text-brand-600">{{ g.peserta.length }} mhs</span>
+                                                        </div>
+                                                        <div class="mt-1.5 flex flex-wrap gap-1">
+                                                            <span v-for="s in g.statusOrder" :key="s" class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="statusBadge(s)">{{ g.statusCounts[s] }} {{ s }}</span>
+                                                        </div>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div v-else>
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <label class="label">Peserta Kegiatan</label>
+                                                    <button class="text-[11px] font-semibold text-brand-600" @click="babToggleAllPeserta">{{ babAllSelected ? 'Batal Semua' : 'Pilih Semua' }}</button>
+                                                </div>
+                                                <div class="space-y-1.5">
+                                                    <label v-for="p in babSelectedGroup.peserta" :key="p.idPengajuan" class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5 transition hover:border-brand-300" :class="bab.ba.selected[p.idPengajuan] ? 'border-brand-400 bg-brand-50/40' : ''">
+                                                        <input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="!!bab.ba.selected[p.idPengajuan]" @change="babTogglePeserta(p.idPengajuan)">
+                                                        <div class="min-w-0 flex-1">
+                                                            <div class="truncate text-xs font-bold text-slate-800">{{ p.namaLengkap }}</div>
+                                                            <div class="font-mono text-[10px] text-slate-400">{{ p.npm }}</div>
+                                                        </div>
+                                                        <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                                    </label>
+                                                </div>
+                                                <div class="grid gap-3 sm:grid-cols-2">
+                                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="bab.ba.tanggal" type="date" class="input"></div>
+                                                    <div>
+                                                        <label class="label">File BA (PDF / JPG / PNG)</label>
+                                                        <div class="flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-3">
+                                                            <i class="bi bi-cloud-arrow-up text-xl text-brand-400"></i>
+                                                            <div class="min-w-0 flex-1 truncate text-xs text-slate-500">
+                                                                <span v-if="!bab.ba.file">Pilih file...</span>
+                                                                <span v-else class="font-semibold text-slate-700">{{ bab.ba.fileName }}</span>
+                                                            </div>
+                                                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="max-w-[120px] text-xs" @change="babOnBaFile">
+                                                        </div>
+                                                    </div>
+                                                    <div class="sm:col-span-2"><label class="label">Catatan <span class="font-normal text-slate-400">(opsional)</span></label><textarea v-model="bab.ba.catatan" rows="2" class="input"></textarea></div>
+                                                </div>
+                                                <div class="flex gap-2">
+                                                    <button class="btn-soft flex-1" @click="babBackToKegiatanPicker"><i class="bi bi-arrow-left"></i> Ganti Kegiatan</button>
+                                                    <button class="btn-primary flex-1" @click="babSubmitBa"><i class="bi bi-check2"></i> Lanjut</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                    <div class="border-b border-slate-100 p-4">
+                                        <h2 class="text-sm font-bold text-slate-900">Berita Acara Terunggah</h2>
+                                        <p class="text-xs text-slate-400">{{ bab.baList.length }} berita acara</p>
+                                    </div>
+                                    <div v-if="!bab.baList.length" class="px-4 py-10 text-center text-sm text-slate-400">Belum ada berita acara untuk bagian ini.</div>
+                                    <div v-else class="divide-y divide-slate-50">
+                                        <div v-for="(r, i) in bab.baList" :key="i" class="p-4">
+                                            <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                                                <span class="font-mono">{{ r['BA ID'] }}</span>
+                                                <span>·</span>
+                                                <span>{{ formatTanggal(r.Timestamp) }}</span>
+                                            </div>
+                                            <div class="mt-1 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
+                                            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                                <i class="bi bi-calendar3"></i><span>{{ formatTanggalWaktu(r['Tanggal Pelaksanaan']) }}</span>
+                                                <span class="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600"><i class="bi bi-people"></i> {{ r['Jumlah Peserta'] }} peserta</span>
+                                            </div>
+                                            <div v-if="r.peserta && r.peserta.length" class="mt-2 flex flex-wrap gap-1.5">
+                                                <span v-for="(p, j) in r.peserta" :key="j" class="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
+                                                    <i class="bi bi-person"></i>{{ p.namaLengkap }}
+                                                </span>
+                                            </div>
+                                            <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link mt-2 inline-block text-xs"><i class="bi bi-eye"></i> Lihat File</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="bab.ba.confirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="bab.ba.confirm=false"></div>
+                            <transition name="pop" appear>
+                                <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-lift">
+                                    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                                        <h3 class="text-sm font-bold text-slate-900">Konfirmasi Upload</h3>
+                                        <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="bab.ba.confirm=false"><i class="bi bi-x-lg"></i></button>
+                                    </div>
+                                    <div class="px-6 py-4">
+                                        <div class="mb-3 text-sm font-bold text-slate-800">{{ babSelectedGroup.label }}</div>
+                                        <div class="mb-3 text-xs text-slate-500">{{ babSelectedList.length }} peserta dipilih · Tanggal {{ formatTanggal(bab.ba.tanggal) }}</div>
+                                        <div class="max-h-52 space-y-1.5 overflow-y-auto">
+                                            <div v-for="p in babSelectedList" :key="p.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-2.5">
+                                                <div class="min-w-0">
+                                                    <div class="truncate text-xs font-bold text-slate-800">{{ p.namaLengkap }}</div>
+                                                    <div class="font-mono text-[10px] text-slate-400">{{ p.npm }}</div>
+                                                </div>
+                                                <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                            </div>
+                                        </div>
+                                        <div v-if="bab.ba.fileName" class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700"><i class="bi bi-file-earmark-pdf"></i>{{ bab.ba.fileName }}</div>
+                                    </div>
+                                    <div class="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                                        <button class="btn-soft" @click="bab.ba.confirm=false">Batal</button>
+                                        <button class="btn-primary" :disabled="loading" @click="babDoUploadBa">
+                                            <svg v-if="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                            </svg>
+                                            <i v-else class="bi bi-upload"></i>
+                                            Unggah Berita Acara
+                                        </button>
+                                    </div>
+                                </div>
+                            </transition>
                         </div>
                     </template>
                 </section>
@@ -1060,6 +1218,54 @@
                 babLabOptions() {
                     return this.bagian.labs || [];
                 },
+                babKegiatanGroups() {
+                    const map = {};
+                    const statuses = (this.bab.baSettings && this.bab.baSettings.statuses) || ['Diterima', 'ACC'];
+                    const finalOnly = !(this.bab.baSettings && this.bab.baSettings.finalOnly === false);
+                    (this.bab.rows || []).forEach(r => {
+                        const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
+                        if (!map[key]) {
+                            map[key] = { key: key, jenis: r.jenis, pilihan: r.pilihan, detail: r.detail, tanggal: r.tanggal, blok: r.blok, label: 'Blok ' + r.blok + ' · ' + r.pilihan + (r.detail ? ' - ' + r.detail : ''), peserta: [], statusCounts: {}, blocked: false };
+                        }
+                        const g = map[key];
+                        g.statusCounts[r.status] = (g.statusCounts[r.status] || 0) + 1;
+                        if (statuses.indexOf(r.status) !== -1) {
+                            g.peserta.push({ idPengajuan: r.idPengajuan, npm: r.npm, namaLengkap: r.namaLengkap, blok: r.blok, statusPengajuan: r.status });
+                        }
+                        if (finalOnly && r.status === 'Menunggu') g.blocked = true;
+                    });
+                    const out = Object.values(map).filter(g => !g.blocked && g.peserta.length > 0);
+                    out.forEach(g => { g.statusOrder = Object.keys(g.statusCounts); });
+                    return out;
+                },
+                babSelectedGroup() {
+                    if (!this.bab.ba.kegiatanKey) return null;
+                    return this.babKegiatanGroups.find(g => g.key === this.bab.ba.kegiatanKey) || null;
+                },
+                babSelectedCount() {
+                    return Object.keys(this.bab.ba.selected).filter(k => this.bab.ba.selected[k]).length;
+                },
+                babSelectedList() {
+                    if (!this.babSelectedGroup) return [];
+                    return this.babSelectedGroup.peserta.filter(p => !!this.bab.ba.selected[p.idPengajuan]);
+                },
+                babAllSelected() {
+                    const list = this.babSelectedGroup ? this.babSelectedGroup.peserta : [];
+                    return list.length > 0 && list.every(p => !!this.bab.ba.selected[p.idPengajuan]);
+                },
+                babBlokOptions() {
+                    const seen = {};
+                    const out = [];
+                    (this.bab.rows || []).forEach(r => {
+                        const b = String(r.blok || '').trim();
+                        if (b && !seen[b]) { seen[b] = true; out.push(b); }
+                    });
+                    return out.sort();
+                },
+                babFilteredRows() {
+                    if (!this.bab.fBlok) return this.bab.rows;
+                    return this.bab.rows.filter(r => String(r.blok || '').trim() === this.bab.fBlok);
+                },
                 bagianBlokOptions() {
                     return (this.bagian.bloks || []).filter(b => b && b !== '-');
                 },
@@ -1206,6 +1412,81 @@
                         this.bab.baList = await this.runAsBab('getBeritaAcaraList', this.bab.subBagian || this.bab.kategori, this.bab.kategori) || [];
                     } catch (e) {
                         this.bab.baList = [];
+                    }
+                },
+                babOpenBaPicker() {
+                    this.bab.ba.open = true;
+                    this.bab.ba.kegiatanKey = null;
+                    this.bab.ba.selected = {};
+                    this.bab.ba.tanggal = '';
+                    this.bab.ba.catatan = '';
+                    this.bab.ba.file = null;
+                    this.bab.ba.fileName = '';
+                    this.bab.ba.confirm = false;
+                },
+                babCloseBaPicker() {
+                    this.bab.ba.open = false;
+                    this.bab.ba.kegiatanKey = null;
+                    this.bab.ba.selected = {};
+                    this.bab.ba.confirm = false;
+                },
+                babSelectKegiatan(key) {
+                    const g = this.babKegiatanGroups.find(x => x.key === key);
+                    if (!g) return;
+                    this.bab.ba.kegiatanKey = key;
+                    this.bab.ba.selected = {};
+                    this.bab.ba.tanggal = this.dateOnly(g.tanggal);
+                },
+                babBackToKegiatanPicker() {
+                    this.bab.ba.kegiatanKey = null;
+                    this.bab.ba.selected = {};
+                    this.bab.ba.confirm = false;
+                },
+                babTogglePeserta(id) {
+                    this.bab.ba.selected[id] = !this.bab.ba.selected[id];
+                },
+                babToggleAllPeserta() {
+                    if (!this.babSelectedGroup) return;
+                    const target = !this.babAllSelected;
+                    this.babSelectedGroup.peserta.forEach(p => { this.bab.ba.selected[p.idPengajuan] = target; });
+                },
+                babOnBaFile(e) {
+                    this.bab.ba.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    this.bab.ba.fileName = this.bab.ba.file ? this.bab.ba.file.name : '';
+                },
+                babSubmitBa() {
+                    if (!this.babSelectedGroup) { this.notify('Pilih kegiatan terlebih dahulu.', false); return; }
+                    if (!this.babSelectedList.length) { this.notify('Pilih minimal satu peserta.', false); return; }
+                    if (!this.bab.ba.file) { this.notify('Pilih file berita acara terlebih dahulu.', false); return; }
+                    if (!this.bab.ba.tanggal) { this.notify('Isi tanggal pelaksanaan terlebih dahulu.', false); return; }
+                    this.bab.ba.confirm = true;
+                },
+                async babDoUploadBa() {
+                    if (this.loading) return;
+                    this.bab.ba.confirm = false;
+                    this.loading = true;
+                    try {
+                        const payload = {
+                            namaKegiatan: this.babSelectedGroup.pilihan + (this.babSelectedGroup.detail ? ' - ' + this.babSelectedGroup.detail : ''),
+                            tanggalPelaksanaan: this.bab.ba.tanggal,
+                            blok: this.babSelectedGroup.blok,
+                            catatan: this.bab.ba.catatan.trim(),
+                            bagian: this.bab.subBagian || this.bab.kategori,
+                            peserta: this.babSelectedList,
+                            file: await this.readFileAsBase64(this.bab.ba.file)
+                        };
+                        const res = await this.runAsBab('uploadBeritaAcaraBagian', payload, this.bab.kategori);
+                        this.notify((res && res.message) || 'Selesai.', !!(res && res.success));
+                        if (res && res.success) {
+                            this.babCloseBaPicker();
+                            const fileEl = document.querySelector('input[type=file]');
+                            if (fileEl) fileEl.value = '';
+                            await this.babLoadBaList();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
                     }
                 },
                 async login() {
