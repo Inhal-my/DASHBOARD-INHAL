@@ -53,7 +53,8 @@ function logoutSession(token) {
 }
 
 function adminBagianBypass(kategori, subBagian) {
-    const admin = requireAuthorized(arguments[arguments.length - 1]);
+    requireAuthorized(arguments[arguments.length - 1]);
+    const admin = _CURRENT_SESSION;
     const kat = String(kategori || '').trim();
     const allowedCats = ['SGD', 'KKD', 'Ujian', 'Praktikum'];
     if (allowedCats.indexOf(kat) === -1) {
