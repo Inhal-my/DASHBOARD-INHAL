@@ -1463,6 +1463,14 @@
                     const q = String(this.master.search || '').toLowerCase().trim();
                     if (!q) return rows;
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
+                },
+                anyModalOpen() {
+                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.bab.ba.confirm);
+                }
+            },
+            watch: {
+                anyModalOpen(open) {
+                    document.body.style.overflow = open ? 'hidden' : '';
                 }
             },
             methods: {
