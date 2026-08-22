@@ -486,7 +486,11 @@ node -e "const h=require('fs').readFileSync('new-code1/pages/dashboard.html','ut
 ```
 Expected: `div 292 / 292 | transition 4 / 4` (jumlah div boleh bertambah jika 4 modal menambah elemen — yang penting open == close untuk keduanya).
 
-- [ ] **Step 2: Uji di browser via deploy-website**
+- [x] **Step 2: Uji di browser via deploy-website**
+
+Status: **verifikasi statis selesai; uji interaktif dibatasi oleh lingkungan.**
+
+`dashboard.html` adalah template Google Apps Script (dibuat via `HtmlService.createTemplateFromFile` di `new-code1/2_web.gs:27-36`). Preview lokal (server statis + URL preview `https://8000-7c40a4d5b55af2e1.monkeycode-ai.live/pages/dashboard.html`) hanya bisa memverifikasi struktur: halaman tersaji 200, 5× `modal-overlay`/`modal-panel`/`modal-body` (4 modal + 1 CSS), 2× `anyModalOpen`, tag balance 292/292 div + 11/11 transition, kelas lama CLEAN. **Login + data butuh backend GAS asli**, sehingga buka modal & scroll-lock interaktif tidak bisa diuji di preview lokal — verifikasi akhir dilakukan user di perangkatnya pada deployment GAS asli (kriteria sukses spec).
 
 Gunakan skill `/deploy-website` untuk menjalankan proyek. Login, lalu uji pada:
 - **DevTools responsive:** 320px, 375px, 414px, dan desktop ≥1024px.
@@ -500,5 +504,7 @@ Gunakan skill `/deploy-website` untuk menjalankan proyek. Login, lalu uji pada:
 - [ ] **Step 3: Commit final (jika ada perbaikan dari uji browser)**
 
 Hanya jika Step 2 menemukan masalah; commit perbaikan dengan pesan deskriptif, lalu ulangi Step 2.
+
+**Hasil Task 7:** Step 1 PASS (verifikasi statis, lihat catatan ledger `.superpowers/sdd/progress.md`). Step 2 = verifikasi statis selesai; uji interaktif dialihkan ke user (deployment GAS asli di HP, kriteria sukses spec). Tidak ada perbaikan → Step 3 tidak dijalankan. Whole-branch review (6347db2..6f58929): **Ready to merge: With fixes** — 0 Critical, 1 Important (gap verifikasi interaktif, ditangani di atas), 3 Minor (layout shift desktop saat modal terbuka, scroll-lock iOS di luar scope, nested scroll di Konfirmasi BA — semua kosmetik/trade-off, tidak diubah).
 
 ---
