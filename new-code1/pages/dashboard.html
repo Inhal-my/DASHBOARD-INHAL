@@ -1092,15 +1092,15 @@
 
         <!-- ============ MODAL: UPLOAD BA ============ -->
         <transition name="fade">
-            <div v-if="ba.modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div v-if="ba.modal" class="fixed inset-0 z-50 modal-overlay">
                 <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="ba.modal=false"></div>
                 <transition name="pop" appear>
-                    <div class="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-lift">
-                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <div class="modal-panel max-w-xl shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                             <h3 class="text-sm font-bold text-slate-900">Upload Berita Acara</h3>
                             <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="ba.modal=false"><i class="bi bi-x-lg"></i></button>
                         </div>
-                        <div class="px-6 py-4">
+                        <div class="modal-body px-6 py-4">
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <div>
                                     <label class="label">Blok</label>
@@ -1143,7 +1143,7 @@
                                 <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="ba.form.catatan" rows="2" class="input"></textarea></div>
                             </div>
                         </div>
-                        <div class="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
                             <button class="btn-soft" @click="ba.modal=false">Batal</button>
                             <button class="btn-primary" @click="submitBaAdmin()"><i class="bi bi-upload"></i>Upload</button>
                         </div>
