@@ -873,28 +873,20 @@
                 blokChart() {
                     return this._barSeries('Blok');
                 },
-                dosenGroups() {
+                dosenNpmMap() {
                     const map = {};
-                    this.filteredRows.forEach(r => {
-                        const d = String(r.pengajuan.Dosen || '').trim() || 'Tanpa Dosen';
-                        const key = this.normSearch(d);
-                        if (!map[key]) map[key] = { key: key, label: d, rows: [] };
-                        map[key].rows.push(r);
-                    });
-                    const arr = Object.values(map);
-                    arr.forEach(g => {
-                        const statusCounts = {};
-                        let biaya = 0;
-                        g.rows.forEach(r => {
-                            const s = String(r.pengajuan.Status || 'Lainnya').trim() || 'Lainnya';
-                            statusCounts[s] = (statusCounts[s] || 0) + 1;
-                            biaya += Number(r.pengajuan.Biaya) || 0;
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const npm = String(p.NPM || '').trim();
+                        if (!npm) return;
+                        if (!map[npm]) map[npm] = [];
+                        map[npm].push({
+                            dosen: String(p.Dosen || '').trim() || 'Tanpa Dosen',
+                            blok: String(p.Blok || '').trim(),
+                            jenis: String(p['Jenis Kegiatan'] || '').trim()
                         });
-                        g.totalBiaya = biaya;
-                        g.statusChips = Object.keys(statusCounts).map(s => ({ label: s, value: statusCounts[s], cls: statusChipCls(s) }));
                     });
-                    arr.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
-                    return arr;
+                    return map;
                 },
                 bagianBlokOptions() {
                     const sel = this.bagianFilter.bagian;
@@ -1179,6 +1171,16 @@
                         }
                     }
                     return '';
+                },
+                npmInfoFor(npm, baBlok) {
+                    const list = this.dosenNpmMap[String(npm || '').trim()] || [];
+                    if (!list.length) return null;
+                    const blok = String(baBlok || '').trim();
+                    return list.find(x => x.blok && x.blok === blok) || list[0];
+                },
+                resolveDosenForNpm(npm, baBlok) {
+                    const info = this.npmInfoFor(npm, baBlok);
+                    return info ? info.dosen : null;
                 },
                 dateVal(v) {
                     if (!v) return null;
