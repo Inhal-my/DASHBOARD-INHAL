@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= PAGE_TITLES['detail-laporan'] ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f6fa; }
+        [v-cloak] { display: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .input { width: 100%; border-radius: .75rem; border: 0; background: #fff; padding: .6rem .875rem; font-size: .875rem; color: #0f172a; outline: none; box-shadow: inset 0 0 0 1px #e2e8f0; transition: box-shadow .15s ease; }
+        .input:focus { box-shadow: inset 0 0 0 2px #4f46e5; }
+        .input::placeholder { color: #94a3b8; }
+        .label { display: block; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: #94a3b8; margin-bottom: .3rem; }
+        .value { font-size: .88rem; color: #334155; }
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: linear-gradient(90deg, #4f46e5, #7c3aed); padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #fff; box-shadow: 0 4px 12px rgba(79, 70, 229, .25); transition: all .15s ease; }
+        .btn-primary:hover { box-shadow: 0 6px 18px rgba(79, 70, 229, .35); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+        .btn-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff; padding: .6rem 1rem; font-size: .875rem; font-weight: 600; color: #475569; box-shadow: inset 0 0 0 1px #e2e8f0; transition: all .15s ease; }
+        .btn-soft:hover { background: #f1f5f9; }
+        .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        .section-title { display: flex; align-items: center; gap: .5rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #4f46e5; margin-bottom: .85rem; }
+        .timeline { position: relative; border-left: 2px solid #e2e8f0; margin-left: 6px; padding-left: 20px; }
+        .timeline-item { position: relative; padding-bottom: 12px; }
+        .timeline-item::before { content: ""; position: absolute; left: -26px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: #4f46e5; }
+        .fade-enter-active, .fade-leave-active { transition: opacity .2s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .pop-enter-active { transition: opacity .18s ease, transform .18s ease; }
+        .pop-leave-active { transition: opacity .12s ease; }
+        .pop-enter-from { opacity: 0; transform: scale(.96) translateY(8px); }
+        .pop-leave-to { opacity: 0; }
+    </style>
+    <style>
+*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.inset-x-0{left:0;right:0}.inset-y-0{top:0;bottom:0}.-left-10{left:-2.5rem}.-right-16{right:-4rem}.-top-16{top:-4rem}.bottom-0{bottom:0}.bottom-6{bottom:1.5rem}.left-0{left:0}.left-3{left:.75rem}.left-3\.5{left:.875rem}.left-4{left:1rem}.right-6{right:1.5rem}.top-0{top:0}.top-1{top:.25rem}.top-1\/2{top:50%}.top-16{top:4rem}.z-10{z-index:10}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[100\]{z-index:100}.z-\[110\]{z-index:110}.z-\[120\]{z-index:120}.col-span-2{grid-column:span 2/span 2}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-5{margin-top:1.25rem;margin-bottom:1.25rem}.\!mb-0{margin-bottom:0!important}.-mt-10{margin-top:-2.5rem}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.ml-3{margin-left:.75rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0{margin-top:0}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.contents{display:contents}.hidden{display:none}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2{height:.5rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-3{height:.75rem}.h-4{height:1rem}.h-40{height:10rem}.h-44{height:11rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-full{height:100%}.h-px{height:1px}.max-h-\[88vh\]{max-height:88vh}.max-h-\[92vh\]{max-height:92vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-20{width:5rem}.w-24{width:6rem}.w-3{width:.75rem}.w-36{width:9rem}.w-4{width:1rem}.w-40{width:10rem}.w-44{width:11rem}.w-5{width:1.25rem}.w-56{width:14rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-9{width:2.25rem}.w-\[268px\]{width:268px}.w-full{width:100%}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-5xl{max-width:64rem}.max-w-7xl{max-width:80rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-full{--tw-translate-x:-100%}.-translate-x-full,.-translate-y-1{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1{--tw-translate-y:-0.25rem}.-translate-y-1\/2{--tw-translate-y:-50%}.-translate-y-1\/2,.translate-x-0{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.translate-x-0{--tw-translate-x:0px}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-3{-moz-column-gap:.75rem;column-gap:.75rem}.gap-x-4{-moz-column-gap:1rem;column-gap:1rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-1{row-gap:.25rem}.gap-y-3{row-gap:.75rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-6>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-slate-50>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(248 250 252/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-t-3xl{border-top-left-radius:1.5rem;border-top-right-radius:1.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-brand-300{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-50{--tw-border-opacity:1;border-color:rgb(248 250 252/var(--tw-border-opacity,1))}.border-white{--tw-border-opacity:1;border-color:rgb(255 255 255/var(--tw-border-opacity,1))}.border-white\/10{border-color:hsla(0,0%,100%,.1)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36/var(--tw-bg-opacity,1))}.bg-amber-400\/90{background-color:rgba(251,191,36,.9)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.bg-brand-400{--tw-bg-opacity:1;background-color:rgb(129 140 248/var(--tw-bg-opacity,1))}.bg-brand-400\/20{background-color:rgba(129,140,248,.2)}.bg-brand-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-brand-500{--tw-bg-opacity:1;background-color:rgb(99 102 241/var(--tw-bg-opacity,1))}.bg-brand-500\/25{background-color:rgba(99,102,241,.25)}.bg-brand-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.bg-rose-600{--tw-bg-opacity:1;background-color:rgb(225 29 72/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-50\/60{background-color:rgba(248,250,252,.6)}.bg-slate-50\/70{background-color:rgba(248,250,252,.7)}.bg-slate-50\/80{background-color:rgba(248,250,252,.8)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/30{background-color:rgba(15,23,42,.3)}.bg-slate-900\/40{background-color:rgba(15,23,42,.4)}.bg-slate-900\/45{background-color:rgba(15,23,42,.45)}.bg-teal-50{--tw-bg-opacity:1;background-color:rgb(240 253 250/var(--tw-bg-opacity,1))}.bg-violet-50{--tw-bg-opacity:1;background-color:rgb(245 243 255/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/10{background-color:hsla(0,0%,100%,.1)}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.bg-white\/70{background-color:hsla(0,0%,100%,.7)}.bg-white\/80{background-color:hsla(0,0%,100%,.8)}.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-brand-400{--tw-gradient-from:#818cf8 var(--tw-gradient-from-position);--tw-gradient-to:rgba(129,140,248,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50{--tw-gradient-from:#eef2ff var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50\/60{--tw-gradient-from:rgba(238,242,255,.6) var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-500{--tw-gradient-from:#6366f1 var(--tw-gradient-from-position);--tw-gradient-to:rgba(99,102,241,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-600{--tw-gradient-from:#4f46e5 var(--tw-gradient-from-position);--tw-gradient-to:rgba(79,70,229,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-700{--tw-gradient-from:#4338ca var(--tw-gradient-from-position);--tw-gradient-to:rgba(67,56,202,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-teal-500{--tw-gradient-from:#14b8a6 var(--tw-gradient-from-position);--tw-gradient-to:rgba(20,184,166,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.via-brand-800{--tw-gradient-to:rgba(55,48,163,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#3730a3 var(--tw-gradient-via-position),var(--tw-gradient-to)}.to-brand-800{--tw-gradient-to:#3730a3 var(--tw-gradient-to-position)}.to-brand-900{--tw-gradient-to:#312e81 var(--tw-gradient-to-position)}.to-brand-950{--tw-gradient-to:#1e1b4b var(--tw-gradient-to-position)}.to-emerald-500{--tw-gradient-to:#10b981 var(--tw-gradient-to-position)}.to-violet-500{--tw-gradient-to:#8b5cf6 var(--tw-gradient-to-position)}.to-white{--tw-gradient-to:#fff var(--tw-gradient-to-position)}.p-1\.5{padding:.375rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.\!px-3{padding-left:.75rem!important;padding-right:.75rem!important}.\!py-1{padding-top:.25rem!important;padding-bottom:.25rem!important}.\!py-1\.5{padding-top:.375rem!important;padding-bottom:.375rem!important}.\!py-2{padding-top:.5rem!important;padding-bottom:.5rem!important}.\!py-2\.5{padding-top:.625rem!important;padding-bottom:.625rem!important}.\!py-3{padding-top:.75rem!important;padding-bottom:.75rem!important}.\!py-3\.5{padding-top:.875rem!important;padding-bottom:.875rem!important}.px-1{padding-left:.25rem;padding-right:.25rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0{padding-top:0;padding-bottom:0}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-12{padding-top:3rem;padding-bottom:3rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-16{padding-top:4rem;padding-bottom:4rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.\!pl-11{padding-left:2.75rem!important}.pb-2{padding-bottom:.5rem}.pb-20{padding-bottom:5rem}.pb-24{padding-bottom:6rem}.pb-8{padding-bottom:2rem}.pl-10{padding-left:2.5rem}.pt-14{padding-top:3.5rem}.pt-5{padding-top:1.25rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.font-sans{font-family:Plus Jakarta Sans,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3/var(--tw-text-opacity,1))}.text-brand-100{--tw-text-opacity:1;color:rgb(224 231 255/var(--tw-text-opacity,1))}.text-brand-200{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.text-brand-300{--tw-text-opacity:1;color:rgb(165 180 252/var(--tw-text-opacity,1))}.text-brand-400{--tw-text-opacity:1;color:rgb(129 140 248/var(--tw-text-opacity,1))}.text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}.text-brand-600{--tw-text-opacity:1;color:rgb(79 70 229/var(--tw-text-opacity,1))}.text-brand-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-brand-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153/var(--tw-text-opacity,1))}.text-emerald-500{--tw-text-opacity:1;color:rgb(16 185 129/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-ink{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-rose-400{--tw-text-opacity:1;color:rgb(251 113 133/var(--tw-text-opacity,1))}.text-rose-500{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-700{--tw-text-opacity:1;color:rgb(190 18 60/var(--tw-text-opacity,1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-teal-700{--tw-text-opacity:1;color:rgb(15 118 110/var(--tw-text-opacity,1))}.text-transparent{color:transparent}.text-violet-700{--tw-text-opacity:1;color:rgb(109 40 217/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-indigo-600{accent-color:#4f46e5}.opacity-25{opacity:.25}.opacity-75{opacity:.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lift{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color)}.shadow-lift,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.shadow-soft{--tw-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06);--tw-shadow-colored:0 1px 2px var(--tw-shadow-color),0 10px 28px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-indigo-200{--tw-shadow-color:#c7d2fe;--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-200\/50{--tw-shadow-color:rgba(199,210,254,.5);--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950{--tw-shadow-color:#1e1b4b;--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950\/50{--tw-shadow-color:rgba(30,27,75,.5);--tw-shadow:var(--tw-shadow-colored)}.outline{outline-style:solid}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-600{--tw-ring-opacity:1;--tw-ring-color:rgb(217 119 6/var(--tw-ring-opacity,1))}.ring-amber-600\/20{--tw-ring-color:rgba(217,119,6,.2)}.ring-brand-100{--tw-ring-opacity:1;--tw-ring-color:rgb(224 231 255/var(--tw-ring-opacity,1))}.ring-brand-600{--tw-ring-opacity:1;--tw-ring-color:rgb(79 70 229/var(--tw-ring-opacity,1))}.ring-brand-600\/20{--tw-ring-color:rgba(79,70,229,.2)}.ring-emerald-100{--tw-ring-opacity:1;--tw-ring-color:rgb(209 250 229/var(--tw-ring-opacity,1))}.ring-emerald-600{--tw-ring-opacity:1;--tw-ring-color:rgb(5 150 105/var(--tw-ring-opacity,1))}.ring-emerald-600\/20{--tw-ring-color:rgba(5,150,105,.2)}.ring-rose-100{--tw-ring-opacity:1;--tw-ring-color:rgb(255 228 230/var(--tw-ring-opacity,1))}.ring-rose-600{--tw-ring-opacity:1;--tw-ring-color:rgb(225 29 72/var(--tw-ring-opacity,1))}.ring-rose-600\/20{--tw-ring-color:rgba(225,29,72,.2)}.ring-slate-100{--tw-ring-opacity:1;--tw-ring-color:rgb(241 245 249/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.ring-slate-500{--tw-ring-opacity:1;--tw-ring-color:rgb(100 116 139/var(--tw-ring-opacity,1))}.ring-slate-500\/20{--tw-ring-color:rgba(100,116,139,.2)}.ring-slate-900{--tw-ring-opacity:1;--tw-ring-color:rgb(15 23 42/var(--tw-ring-opacity,1))}.ring-white{--tw-ring-opacity:1;--tw-ring-color:rgb(255 255 255/var(--tw-ring-opacity,1))}.ring-white\/20{--tw-ring-color:hsla(0,0%,100%,.2)}.ring-white\/60{--tw-ring-color:hsla(0,0%,100%,.6)}.blur{--tw-blur:blur(8px)}.blur,.blur-2xl{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.blur-2xl{--tw-blur:blur(40px)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.backdrop-blur-xl{--tw-backdrop-blur:blur(24px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.duration-500{transition-duration:.5s}.duration-700{transition-duration:.7s}.ease-out{transition-timing-function:cubic-bezier(0,0,.2,1)}.hover\:-translate-y-0\.5:hover{--tw-translate-y:-0.125rem;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-slate-200:hover{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.hover\:bg-brand-50\/40:hover{background-color:rgba(238,242,255,.4)}.hover\:bg-brand-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202/var(--tw-bg-opacity,1))}.hover\:bg-rose-50:hover{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-slate-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.hover\:bg-slate-50\/60:hover{background-color:rgba(248,250,252,.6)}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/20:hover{background-color:hsla(0,0%,100%,.2)}.hover\:bg-white\/25:hover{background-color:hsla(0,0%,100%,.25)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:text-rose-500:hover{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.hover\:shadow-lift:hover{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.hover\:ring-slate-300:hover{--tw-ring-opacity:1;--tw-ring-color:rgb(203 213 225/var(--tw-ring-opacity,1))}.active\:scale-\[\.98\]:active{--tw-scale-x:.98;--tw-scale-y:.98}.active\:scale-\[\.98\]:active,.active\:scale-\[\.99\]:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[\.99\]:active{--tw-scale-x:.99;--tw-scale-y:.99}.group:hover .group-hover\:text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:col-span-1{grid-column:span 1/span 1}.sm\:col-span-2{grid-column:span 2/span 2}.sm\:col-span-3{grid-column:span 3/span 3}.sm\:col-span-4{grid-column:span 4/span 4}.sm\:my-0{margin-top:0;margin-bottom:0}.sm\:inline{display:inline}.sm\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-end{align-items:flex-end}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width:768px){.md\:col-span-2{grid-column:span 2/span 2}.md\:col-span-3{grid-column:span 3/span 3}.md\:col-span-4{grid-column:span 4/span 4}.md\:col-span-6{grid-column:span 6/span 6}.md\:inline{display:inline}.md\:flex{display:flex}.md\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:p-6{padding:1.5rem}.md\:px-8{padding-left:2rem;padding-right:2rem}}@media (min-width:1024px){.lg\:ml-\[268px\]{margin-left:268px}.lg\:hidden{display:none}.lg\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg\:p-8{padding:2rem}}@media (min-width:1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.xl\:grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}}
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak class="font-sans text-ink antialiased">
+
+        <!-- loading overlay -->
+        <transition name="fade">
+            <div v-if="loading" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
+                <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 shadow-lift">
+                    <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-slate-700">Memuat data...</span>
+                </div>
+            </div>
+        </transition>
+
+        <!-- login -->
+        <transition name="fade">
+            <div v-if="!loggedIn" class="fixed inset-0 z-[150] flex items-center justify-center bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950 p-4">
+                <div class="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-lift">
+                    <div class="bg-gradient-to-br from-brand-600 to-violet-500 px-6 pb-8 pt-6 text-center text-white">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+                            <i class="bi bi-file-earmark-bar-graph text-2xl"></i>
+                        </div>
+                        <h1 class="mt-3 text-xl font-extrabold tracking-tight">Laporan INHAL</h1>
+                        <p class="mt-1 text-sm text-brand-100">Masukkan password admin untuk melanjutkan</p>
+                    </div>
+                    <form class="px-6 py-5" @submit.prevent="login">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Password Admin</label>
+                        <input v-model="loginPwd" type="password" class="mt-1.5 w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-inset ring-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-600" placeholder="••••••••" autocomplete="current-password">
+                        <p v-if="loginError" class="mt-2 text-xs font-semibold text-rose-500">{{ loginError }}</p>
+                        <button type="submit" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-brand-600 to-violet-500 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-95" :disabled="loginLoading">
+                            <svg v-if="loginLoading" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <i v-else class="bi bi-box-arrow-in-right"></i>
+                            {{ loginLoading ? 'Memeriksa...' : 'Masuk' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </transition>
+
+        <!-- toast -->
+        <transition name="pop">
+            <div v-if="toast.show" class="fixed bottom-6 right-6 z-[120] flex max-w-sm items-start gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lift">
+                <i :class="toast.icon" class="mt-0.5 text-lg"></i>
+                <div class="text-sm">{{ toast.msg }}</div>
+                <button class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </transition>
+
+        <!-- navbar -->
+        <nav v-if="loggedIn" class="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur">
+            <div class="flex h-16 items-center justify-between px-4 sm:px-6">
+                <a :href="appUrl" class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-lg shadow-indigo-200/50">
+                        <i class="bi bi-file-earmark-bar-graph text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-[15px] font-bold tracking-tight text-slate-900">Laporan INHAL</div>
+                        <div class="text-[11px] text-slate-400">Rekapitulasi &amp; Berita Acara</div>
+                    </div>
+                </a>
+                <div class="flex items-center gap-2">
+                    <span class="hidden items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 md:flex"><i class="bi bi-person-circle"></i>{{ session.nama || 'Admin' }}</span>
+                    <a :href="appUrl + '?page=dashboard'" class="btn-soft !py-2 text-xs"><i class="bi bi-speedometer2"></i><span class="hidden sm:inline">Dashboard</span></a>
+                    <a :href="appUrl" class="btn-soft !py-2 text-xs"><i class="bi bi-house"></i><span class="hidden sm:inline">Beranda</span></a>
+                    <button @click="logout()" class="btn-soft !py-2 text-xs text-rose-500 hover:bg-rose-50"><i class="bi bi-box-arrow-right"></i><span class="hidden sm:inline">Keluar</span></button>
+                </div>
+            </div>
+        </nav>
+
+        <main v-if="loggedIn" class="w-full px-4 py-6 sm:px-6">
+
+            <!-- hero -->
+            <div class="mb-6 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-brand-600 to-violet-500 p-6 text-white shadow-lift">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
+                    <i class="bi bi-graph-up-arrow text-2xl"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-2xl font-extrabold tracking-tight">Laporan INHAL</h1>
+                    <p class="text-sm text-brand-100">Rekapitulasi pengajuan, dosen, bagian, dan berita acara.</p>
+                </div>
+                <button class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold ring-1 ring-white/20 transition hover:bg-white/25" @click="loadData()">
+                    <i class="bi bi-arrow-clockwise"></i>Muat Ulang
+                </button>
+            </div>
+
+            <!-- filter bar (glassmorphism) -->
+            <div class="sticky top-16 z-30 mb-5 rounded-2xl bg-white/70 p-4 shadow-lift ring-1 ring-white/60 backdrop-blur-xl">
+                <div class="grid gap-3 md:grid-cols-12">
+                    <div class="md:col-span-3">
+                        <label class="label">Dari Tanggal</label>
+                        <input type="date" v-model="filters.from" class="input">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label">Sampai Tanggal</label>
+                        <input type="date" v-model="filters.to" class="input">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label">Blok</label>
+                        <select v-model="filters.blok" class="input">
+                            <option value="">Semua Blok</option>
+                            <option v-for="b in blok" :value="b">{{ b }}</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label">Status</label>
+                        <select v-model="filters.status" class="input">
+                            <option value="">Semua Status</option>
+                            <option v-for="s in statusOptions" :value="s">{{ s }}</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end md:col-span-2">
+                        <button class="btn-primary w-full" :disabled="exporting" @click="exportExcel()">
+                            <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
+                            {{ exporting ? 'Menyiapkan...' : 'Export .xlsx' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- tab switcher -->
+            <div class="mb-6 flex gap-2 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-soft ring-1 ring-slate-100">
+                <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key"
+                    :class="activeTab === t.key ? 'bg-gradient-to-r from-brand-600 to-violet-500 text-white shadow-lift' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
+                    class="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition">
+                    <i :class="t.icon"></i>{{ t.label }}
+                </button>
+            </div>
+
+            <!-- tab contents -->
+            <transition name="fade" mode="out-in">
+                <div :key="activeTab">
+
+                    <!-- ===================== TAB 1: REKAP KESELURUHAN ===================== -->
+                    <section v-if="activeTab === 'rekap'" class="space-y-6">
+                        <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+                            <div v-for="c in summaryCards" :key="c.label" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-lift">
+                                <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
+                                    <i :class="c.icon" :style="{ color: c.color }"></i>
+                                </div>
+                                <div class="text-xl font-extrabold tracking-tight text-slate-900" :class="c.money ? 'text-[13px] leading-snug' : ''">{{ c.num }}</div>
+                                <div class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ c.label }}</div>
+                            </div>
+                        </div>
+
+                        <div class="grid gap-4 lg:grid-cols-2">
+                            <!-- donut -->
+                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                                <div class="mb-4 flex items-center gap-2">
+                                    <i class="bi bi-pie-chart-fill text-brand-500"></i>
+                                    <h2 class="text-sm font-bold text-slate-800">Distribusi Status</h2>
+                                </div>
+                                <div class="flex flex-col items-center gap-5 sm:flex-row">
+                                    <svg viewBox="0 0 42 42" class="h-44 w-44 shrink-0">
+                                        <g transform="rotate(-90 21 21)">
+                                            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f1f5f9" stroke-width="4.5"></circle>
+                                            <circle v-for="(s, i) in statusChart.segments" :key="i" cx="21" cy="21" r="15.9155" fill="none"
+                                                :stroke="s.color" stroke-width="4.5" pathLength="100"
+                                                :stroke-dasharray="(s.pct * donutProgress) + ' ' + (100 - s.pct * donutProgress)"
+                                                :stroke-dashoffset="(-s.start)"></circle>
+                                        </g>
+                                        <text x="21" y="20" text-anchor="middle" dominant-baseline="middle" fill="#0f172a" font-size="7.5" font-weight="800">{{ statusChart.total }}</text>
+                                        <text x="21" y="26" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="3.4">Total</text>
+                                    </svg>
+                                    <div class="w-full space-y-2">
+                                        <div v-for="s in statusChart.segments" :key="s.label" class="flex items-center gap-2 text-sm">
+                                            <span class="h-3 w-3 shrink-0 rounded-full" :style="{ background: s.color }"></span>
+                                            <span class="flex-1 text-slate-600">{{ s.label }}</span>
+                                            <span class="font-bold text-slate-800">{{ s.value }}</span>
+                                            <span class="w-12 text-right text-xs text-slate-400">{{ Math.round(s.pct) }}%</span>
+                                        </div>
+                                        <div v-if="!statusChart.total" class="text-sm text-slate-400">Belum ada data.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- bars -->
+                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                                <div class="mb-4 flex items-center gap-2">
+                                    <i class="bi bi-bar-chart-fill text-brand-500"></i>
+                                    <h2 class="text-sm font-bold text-slate-800">Jumlah per Jenis Kegiatan</h2>
+                                </div>
+                                <div class="space-y-3">
+                                    <div v-for="b in jenisChart" :key="b.label">
+                                        <div class="mb-1 flex items-center justify-between text-xs">
+                                            <span class="text-slate-600">{{ b.label }}</span>
+                                            <span class="font-bold text-slate-800">{{ b.value }}</span>
+                                        </div>
+                                        <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
+                                        </div>
+                                    </div>
+                                    <div v-if="!jenisChart.length" class="text-sm text-slate-400">Belum ada data.</div>
+                                </div>
+
+                                <div class="mb-4 mt-6 flex items-center gap-2">
+                                    <i class="bi bi-grid-3x3-gap-fill text-brand-500"></i>
+                                    <h2 class="text-sm font-bold text-slate-800">Jumlah per Blok</h2>
+                                </div>
+                                <div class="space-y-3">
+                                    <div v-for="b in blokChart" :key="b.label">
+                                        <div class="mb-1 flex items-center justify-between text-xs">
+                                            <span class="text-slate-600">{{ b.label }}</span>
+                                            <span class="font-bold text-slate-800">{{ b.value }}</span>
+                                        </div>
+                                        <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
+                                        </div>
+                                    </div>
+                                    <div v-if="!blokChart.length" class="text-sm text-slate-400">Belum ada data.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- table filters -->
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-6">
+                                    <select v-model="filters.jenis" class="input">
+                                        <option value="">Semua Jenis</option>
+                                        <option v-for="j in jenisOptions" :value="j">{{ j }}</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-6">
+                                    <div class="relative">
+                                        <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                        <input v-model="filters.search" class="input pl-10" placeholder="Cari NPM / nama...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- table -->
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead>
+                                        <tr class="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-400">
+                                            <th class="w-10 px-3 py-3"></th>
+                                            <th class="px-3 py-3 font-semibold">Tanggal</th>
+                                            <th class="px-3 py-3 font-semibold">NPM / Nama</th>
+                                            <th class="px-3 py-3 font-semibold">Jenis</th>
+                                            <th class="px-3 py-3 font-semibold">Blok</th>
+                                            <th class="px-3 py-3 font-semibold">Dosen</th>
+                                            <th class="px-3 py-3 font-semibold">Tanggal Pelaksanaan</th>
+                                            <th class="px-3 py-3 font-semibold">Nomor Surat</th>
+                                            <th class="px-3 py-3 font-semibold">Status</th>
+                                            <th class="px-3 py-3 font-semibold">Biaya</th>
+                                            <th class="px-4 py-3 font-semibold">Bukti</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-if="!filteredRows.length">
+                                            <td colspan="11" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</td>
+                                        </tr>
+                                        <template v-for="r in filteredRows" :key="r.pengajuan['ID Pengajuan']">
+                                            <tr class="cursor-pointer border-b border-slate-50 transition hover:bg-brand-50/40" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
+                                                <td class="px-3 py-3 text-slate-400">
+                                                    <i :class="expanded[r.pengajuan['ID Pengajuan']] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-3 text-xs text-slate-500">{{ fmtTanggal(r.pengajuan.Timestamp) }}</td>
+                                                <td class="px-3 py-3">
+                                                    <div class="font-semibold text-slate-800">{{ r.pengajuan.NPM }}</div>
+                                                    <div class="text-xs text-slate-400">{{ r.pengajuan['Nama Lengkap'] }}</div>
+                                                </td>
+                                                <td class="px-3 py-3 text-slate-600">{{ r.pengajuan['Jenis Kegiatan'] }}</td>
+                                                <td class="px-3 py-3 text-slate-600">{{ r.pengajuan.Blok }}</td>
+                                                <td class="px-3 py-3 text-slate-600">{{ r.pengajuan.Dosen || '—' }}</td>
+                                                <td class="px-3 py-3 text-slate-600">{{ fmtTanggal(r.pengajuan['Tanggal Pelaksanaan']) }}</td>
+                                                <td class="px-3 py-3 text-slate-600">{{ r.pengajuan['Nomor Surat'] || '—' }}</td>
+                                                <td class="px-3 py-3"><span :class="statusBadgeCls(r.pengajuan.Status)">{{ r.pengajuan.Status || '-' }}</span></td>
+                                                <td class="whitespace-nowrap px-3 py-3 text-xs font-semibold text-slate-600">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</td>
+                                                <td class="px-4 py-3">
+                                                    <i v-if="r.pengajuan['Link Bukti Bayar'] || r.pengajuan['Link ACC INHAL']" class="bi bi-check-circle-fill text-emerald-500"></i>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="expanded[r.pengajuan['ID Pengajuan']]" class="border-b border-slate-100 bg-slate-50/60">
+                                                <td colspan="11" class="px-6 py-5"><expanded-detail :r="r"></expanded-detail></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===================== TAB 2: LAPORAN DOSEN ===================== -->
+                    <section v-if="activeTab === 'dosen'" class="space-y-4">
+                        <div v-if="!dosenGroups.length" class="rounded-2xl bg-white px-4 py-14 text-center shadow-soft ring-1 ring-slate-100">
+                            <i class="bi bi-person-video3 text-3xl text-slate-300"></i>
+                            <p class="mt-3 text-sm text-slate-400">Belum ada data dosen.</p>
+                        </div>
+                        <div v-for="g in dosenGroups" :key="g.key" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <button class="flex w-full items-center gap-4 p-4 text-left transition hover:bg-slate-50/60" @click="toggleDosen(g.key)">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white">
+                                    <i class="bi bi-person-video3 text-lg"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-bold text-slate-800">{{ g.label }}</div>
+                                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ g.rows.length }} pengajuan</span>
+                                        <span v-for="s in g.statusChips" :key="s.label" class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" :class="s.cls">{{ s.label }}: {{ s.value }}</span>
+                                        <span class="rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-700">{{ fmtRupiah(g.totalBiaya) }}</span>
+                                    </div>
+                                </div>
+                                <i :class="expandedDosen[g.key] ? 'bi-chevron-up' : 'bi-chevron-down'" class="shrink-0 text-slate-400"></i>
+                            </button>
+                            <transition name="fade">
+                                <div v-if="expandedDosen[g.key]" class="border-t border-slate-100">
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-sm">
+                                            <thead>
+                                                <tr class="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-400">
+                                                    <th class="w-10 px-3 py-2.5"></th>
+                                                    <th class="px-3 py-2.5 font-semibold">NPM / Nama</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Jenis</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Blok</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Tanggal</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Status</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Biaya</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template v-for="r in g.rows" :key="r.pengajuan['ID Pengajuan']">
+                                                    <tr class="cursor-pointer border-b border-slate-50 transition hover:bg-brand-50/40" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
+                                                        <td class="px-3 py-2.5 text-slate-400">
+                                                            <i :class="expanded[r.pengajuan['ID Pengajuan']] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                                                        </td>
+                                                        <td class="px-3 py-2.5">
+                                                            <div class="font-semibold text-slate-800">{{ r.pengajuan.NPM }}</div>
+                                                            <div class="text-xs text-slate-400">{{ r.pengajuan['Nama Lengkap'] }}</div>
+                                                        </td>
+                                                        <td class="px-3 py-2.5 text-slate-600">{{ r.pengajuan['Jenis Kegiatan'] }}</td>
+                                                        <td class="px-3 py-2.5 text-slate-600">{{ r.pengajuan.Blok }}</td>
+                                                        <td class="px-3 py-2.5 text-slate-600">{{ fmtTanggal(r.pengajuan['Tanggal Pelaksanaan']) }}</td>
+                                                        <td class="px-3 py-2.5"><span :class="statusBadgeCls(r.pengajuan.Status)">{{ r.pengajuan.Status || '-' }}</span></td>
+                                                        <td class="whitespace-nowrap px-3 py-2.5 text-xs font-semibold text-slate-600">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</td>
+                                                    </tr>
+                                                    <tr v-if="expanded[r.pengajuan['ID Pengajuan']]" class="border-b border-slate-100 bg-slate-50/60">
+                                                        <td colspan="7" class="px-6 py-4"><expanded-detail :r="r"></expanded-detail></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </transition>
+                        </div>
+                    </section>
+
+                    <!-- ===================== TAB 3: LAPORAN BAGIAN ===================== -->
+                    <section v-if="activeTab === 'bagian'" class="space-y-4">
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-3">
+                                    <label class="label">Bagian</label>
+                                    <select v-model="bagianFilter.bagian" class="input">
+                                        <option value="">Semua Bagian</option>
+                                        <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="label">Blok</label>
+                                    <select v-model="bagianFilter.blok" class="input">
+                                        <option value="">Semua Blok</option>
+                                        <option v-for="o in bagianBlokOptions" :key="o" :value="o">{{ o }}</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-4">
+                                    <label class="label">Cari</label>
+                                    <input v-model="bagianFilter.q" class="input" placeholder="Kegiatan, NPM, atau nama mahasiswa...">
+                                </div>
+                                <div class="flex items-end md:col-span-2">
+                                    <button v-if="activeMatrixCell" class="btn-soft w-full" @click="resetMatrixCell">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianAllLabels.length }} bagian</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianMatrixRows.length }} blok</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianDetailRows.length }} kegiatan</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianDetailPesertaTotal }} mahasiswa</span>
+                            </div>
+                        </div>
+
+                        <div id="bagian-detail" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                                <div>
+                                    <div class="font-bold text-slate-800">Detail Kegiatan per Bagian &amp; Blok</div>
+                                    <div class="text-xs text-slate-400">Klik baris untuk melihat daftar peserta &amp; bukti bayar</div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="w-8 px-3 py-2.5"></th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Bukti Bayar</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">BA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template v-for="r in bagianDetailRows" :key="r.uid">
+                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(r.uid)">
+                                                <td class="px-3 py-2.5 text-slate-400">
+                                                    <i :class="expanded[r.uid] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ r.bagian }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok }}</td>
+                                                <td class="px-3 py-2.5">
+                                                    <div class="flex items-center gap-2">
+                                                        <span :class="r.sumber === 'BA' ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'" class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold">{{ r.sumber === 'BA' ? 'BA' : 'Belum ada BA' }}</span>
+                                                        <span class="font-semibold text-slate-800">{{ r.nama }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.tanggal ? fmtTanggalWaktu(r.tanggal) : '-' }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.jumlahPeserta }}</td>
+                                                <td class="px-3 py-2.5 text-center">
+                                                    <span v-if="r.peserta.length" :class="r.countBukti === r.peserta.length ? 'bg-emerald-50 text-emerald-700' : (r.countBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold">{{ r.countBukti }}/{{ r.peserta.length }}</span>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5">
+                                                    <a v-if="r.fileUrl" :href="r.fileUrl" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="expanded[r.uid]">
+                                                <td colspan="8" class="bg-slate-50/60 px-6 py-4">
+                                                    <div v-if="r.peserta.length" class="space-y-1">
+                                                        <div v-for="(p, i) in r.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                                            <span class="font-mono font-semibold text-slate-600">{{ p.npm || '-' }}</span>
+                                                            <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
+                                                            <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
+                                                            <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <span v-else class="text-slate-300">-</span>
+                                                        </div>
+                                                    </div>
+                                                    <div v-else class="text-sm text-slate-400">Tidak ada daftar peserta.</div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div v-if="!bagianDetailRows.length" class="px-4 py-14 text-center">
+                                <i class="bi bi-table text-3xl text-slate-300"></i>
+                                <p class="mt-3 text-sm text-slate-400">Tidak ada data kegiatan untuk filter ini.</p>
+                            </div>
+                        </div>
+
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="border-b border-slate-100 px-4 py-3">
+                                <div class="font-bold text-slate-800">Rekap Jumlah Kegiatan per Bagian &amp; Blok</div>
+                                <div class="text-xs text-slate-400">Klik angka pada cell untuk melihat detail kegiatan &amp; pesertanya</div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Blok</th>
+                                            <th v-for="b in bagianAllLabels" :key="b" class="whitespace-nowrap px-3 py-2.5 text-center">{{ b }}</th>
+                                            <th class="px-3 py-2.5 text-center">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(row, ri) in bagianMatrixRows" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
+                                            <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="sticky left-0 z-10 px-4 py-2 font-semibold text-slate-700">{{ row.label }}</td>
+                                            <td v-for="b in bagianAllLabels" :key="b" class="px-1 py-1 text-center">
+                                                <button
+                                                    :disabled="!row.counts[bagianKey(b)]"
+                                                    :class="[
+                                                        'inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold transition',
+                                                        activeMatrixCell && activeMatrixCell.key === matrixCellKey(row.label, b)
+                                                            ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/30'
+                                                            : (row.counts[bagianKey(b)] ? 'bg-brand-50 text-brand-700 hover:bg-brand-100' : 'text-slate-200')
+                                                    ]"
+                                                    @click="filterByMatrixCell(b, row.label)">
+                                                    {{ row.counts[bagianKey(b)] || '0' }}
+                                                </button>
+                                            </td>
+                                            <td class="px-3 py-2 text-center font-bold text-slate-800">{{ row.total }}</td>
+                                        </tr>
+                                        <tr class="bg-slate-100">
+                                            <td class="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 font-bold text-slate-700">Total</td>
+                                            <td v-for="b in bagianAllLabels" :key="b" class="px-3 py-2.5 text-center font-bold text-slate-700">{{ matrixColTotal(b) }}</td>
+                                            <td class="px-3 py-2.5 text-center font-extrabold text-slate-900">{{ matrixGrandTotal }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===================== TAB 4: LAPORAN BERITA ACARA ===================== -->
+                    <section v-if="activeTab === 'ba'" class="space-y-4">
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-4">
+                                    <label class="label">Bagian</label>
+                                    <select v-model="filters.bagian" class="input">
+                                        <option value="">Semua Bagian</option>
+                                        <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end md:col-span-8 text-xs text-slate-400">
+                                    {{ baGroups.length }} kelompok berita acara
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="!baGroups.length" class="rounded-2xl bg-white px-4 py-14 text-center shadow-soft ring-1 ring-slate-100">
+                            <i class="bi bi-file-earmark-text text-3xl text-slate-300"></i>
+                            <p class="mt-3 text-sm text-slate-400">Belum ada berita acara.</p>
+                        </div>
+                        <div v-for="g in baGroups" :key="g.key" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                                <i class="bi bi-folder2-open text-brand-500"></i>
+                                <div class="font-bold text-slate-800">{{ g.label }}</div>
+                                <span class="ml-auto text-xs text-slate-400">{{ g.items.length }} BA</span>
+                            </div>
+                            <div class="divide-y divide-slate-50">
+                                <div v-for="b in g.items" :key="b['BA ID']" class="px-4 py-3">
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <span class="font-mono text-xs text-slate-400">{{ b['BA ID'] }}</span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="truncate font-semibold text-slate-800">{{ b['Nama Kegiatan'] || '-' }}</div>
+                                            <div class="text-xs text-slate-400">{{ b.Blok || '-' }} · {{ fmtTanggalWaktu(b['Tanggal Pelaksanaan']) }}</div>
+                                        </div>
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ (b.peserta || []).length }} peserta</span>
+                                        <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
+                                    </div>
+                                    <div v-if="b.peserta && b.peserta.length" class="mt-2 flex flex-wrap gap-1.5">
+                                        <span v-for="(p, i) in b.peserta" :key="i" class="rounded-lg bg-slate-100 px-2 py-1 text-[11px] text-slate-600">{{ p.npm }} · {{ p.namaLengkap }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </transition>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+        const APP_URL = '<?= appUrl ?>';
+        const USER_EMAIL = '<?= userEmail ?>';
+
+        const SESSION_STORE_KEY = 'inhal_admin_session';
+        function readSession() {
+            try {
+                const s = JSON.parse(localStorage.getItem(SESSION_STORE_KEY));
+                return s && s.token ? s : null;
+            } catch (e) { return null; }
+        }
+        function saveSession(s) {
+            try { localStorage.setItem(SESSION_STORE_KEY, JSON.stringify(s)); } catch (e) {}
+        }
+        function clearSession() {
+            try { localStorage.removeItem(SESSION_STORE_KEY); } catch (e) {}
+        }
+        function isAuthError(msg) {
+            return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
+        }
+
+        function fmtRupiah(num) {
+            const n = Number(num) || 0;
+            return 'Rp ' + n.toLocaleString('id-ID');
+        }
+        function fmtTanggal(v) {
+            if (!v) return '-';
+            if (v instanceof Date) return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear();
+            const s = String(v);
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m[3] + '/' + m[2] + '/' + m[1]; }
+            return s;
+        }
+        function fmtTanggalWaktu(v) {
+            if (!v) return '-';
+            if (v instanceof Date) {
+                const p = n => (n < 10 ? '0' : '') + n;
+                return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear() + ' ' + p(v.getHours()) + ':' + p(v.getMinutes());
+            }
+            const s = String(v);
+            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+            if (m) {
+                const datePart = m[3] + '/' + m[2] + '/' + m[1];
+                const timePart = (m[4] !== undefined && m[5] !== undefined) ? (' ' + m[4] + ':' + m[5]) : '';
+                return datePart + timePart;
+            }
+            return s;
+        }
+        function statusBadgeCls(status) {
+            const cls = {
+                'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
+                'Diterima': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+                'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
+                'ACC': 'bg-brand-50 text-brand-700 ring-brand-600/20',
+                'Dibatalkan': 'bg-slate-100 text-slate-500 ring-slate-500/20'
+            }[status] || 'bg-slate-100 text-slate-500 ring-slate-500/20';
+            return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ' + cls;
+        }
+        function statusChipCls(status) {
+            return {
+                'Menunggu': 'bg-amber-50 text-amber-700',
+                'Diterima': 'bg-emerald-50 text-emerald-700',
+                'Ditolak': 'bg-rose-50 text-rose-700',
+                'ACC': 'bg-indigo-50 text-indigo-700',
+                'Dibatalkan': 'bg-slate-100 text-slate-500'
+            }[status] || 'bg-slate-100 text-slate-500';
+        }
+        function statusColor(status) {
+            return {
+                'Menunggu': '#f59e0b',
+                'Diterima': '#10b981',
+                'ACC': '#6366f1',
+                'Ditolak': '#f43f5e',
+                'Dibatalkan': '#94a3b8'
+            }[status] || '#94a3b8';
+        }
+
+        const ExpandedDetail = {
+            props: ['r'],
+            methods: { fmtTanggal, fmtRupiah },
+            template: `
+                <div>
+                    <div class="grid gap-x-6 gap-y-3 sm:grid-cols-3">
+                        <div><div class="label">ID Pengajuan</div><div class="value font-mono">{{ r.pengajuan['ID Pengajuan'] }}</div></div>
+                        <div><div class="label">Email</div><div class="value">{{ r.pengajuan.Email || '—' }}</div></div>
+                        <div><div class="label">No. HP/WA</div><div class="value">{{ r.pengajuan['No. HP/WA'] || '—' }}</div></div>
+                        <div><div class="label">Keterangan</div><div class="value">{{ r.pengajuan.Keterangan || '—' }}</div></div>
+                        <div><div class="label">Dosen</div><div class="value">{{ r.pengajuan.Dosen || '—' }}</div></div>
+                        <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</div></div>
+                        <div><div class="label">Surat Keterangan</div>
+                            <a v-if="r.pengajuan['Link Surat Keterangan']" :href="r.pengajuan['Link Surat Keterangan']" target="_blank" class="link">Lihat</a>
+                            <span v-else class="text-slate-300">-</span>
+                        </div>
+                        <div><div class="label">ACC INHAL</div>
+                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="r.pengajuan['Link ACC INHAL']" target="_blank" class="link">Lihat</a>
+                            <span v-else class="text-slate-300">-</span>
+                        </div>
+                        <div><div class="label">Bukti Bayar</div>
+                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="r.pengajuan['Link Bukti Bayar']" target="_blank" class="link">Lihat</a>
+                            <span v-else class="text-slate-300">-</span>
+                        </div>
+                        <div><div class="label">Link Final</div>
+                            <a v-if="r.pengajuan['Link Final']" :href="r.pengajuan['Link Final']" target="_blank" class="link">Lihat</a>
+                            <span v-else class="text-slate-300">-</span>
+                        </div>
+                        <div><div class="label">Status Info Bagian</div><div class="value">{{ r.pengajuan['Status Info Bagian'] || '—' }}</div></div>
+                        <div><div class="label">Catatan Admin</div><div class="value">{{ r.pengajuan['Catatan Admin'] || '—' }}</div></div>
+                    </div>
+
+                    <div v-if="r.details && r.details.length" class="mt-5">
+                        <div class="section-title"><i class="bi bi-list-check"></i> Detail Kegiatan</div>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <div v-for="d in r.details" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                                <div class="text-sm font-bold text-slate-800">{{ d.Pilihan }}</div>
+                                <div class="mt-0.5 text-xs text-slate-500">{{ d.Detail }}</div>
+                                <div class="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-400">
+                                    <span><i class="bi bi-calendar3"></i> {{ fmtTanggal(d['Tanggal Pelaksanaan']) }}</span>
+                                    <span><i class="bi bi-diagram-3"></i> {{ d.Bagian }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="r.history && r.history.length" class="mt-5">
+                        <div class="section-title"><i class="bi bi-clock-history"></i> Riwayat Status</div>
+                        <div class="timeline">
+                            <div v-for="h in r.history" class="timeline-item">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-semibold text-slate-800">{{ h.Status }}</span>
+                                    <span class="text-xs text-slate-400">{{ fmtTanggal(h.Timestamp) }}</span>
+                                </div>
+                                <div v-if="h.Catatan" class="text-xs text-slate-500">{{ h.Catatan }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`
+        };
+
+        const { createApp } = Vue;
+
+        const app = createApp({
+            components: { ExpandedDetail },
+            data() {
+                return {
+                    loading: false,
+                    exporting: false,
+                    appUrl: APP_URL,
+                    userEmail: USER_EMAIL,
+                    session: null,
+                    loginPwd: '',
+                    loginError: '',
+                    loginLoading: false,
+                    activeTab: 'rekap',
+                    tabs: [
+                        { key: 'rekap', label: 'Rekap Keseluruhan', icon: 'bi-pie-chart-fill' },
+                        { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
+                        { key: 'bagian', label: 'Laporan Bagian', icon: 'bi-diagram-3' },
+                        { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' }
+                    ],
+                    summary: {},
+                    rows: [],
+                    beritaAcara: [],
+                    dosen: [],
+                    blok: [],
+                    bagian: { categories: [], labs: [] },
+                    filters: { from: '', to: '', blok: '', status: '', jenis: '', search: '', bagian: '' },
+                    expanded: {},
+                    dosenFilter: { blok: '', jenis: '', from: '', to: '', bagian: '', q: '' },
+                    activeDosenCell: null,
+                    bagianFilter: { bagian: '', blok: '', q: '' },
+                    activeMatrixCell: null,
+                    animated: { totalPendaftar: 0, totalMenunggu: 0, totalDiterima: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
+                    donutProgress: 0,
+                    barProgress: 0,
+                    toast: { show: false, icon: '', msg: '' }
+                };
+            },
+            computed: {
+                loggedIn() {
+                    return !!(this.session && this.session.token);
+                },
+                statusOptions() {
+                    const set = {};
+                    Object.keys(this.summary.perStatus || {}).forEach(k => { set[k] = 1; });
+                    ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(k => { set[k] = 1; });
+                    return Object.keys(set);
+                },
+                jenisOptions() {
+                    const set = {};
+                    this.rows.forEach(r => { if (r.pengajuan['Jenis Kegiatan']) set[r.pengajuan['Jenis Kegiatan']] = 1; });
+                    return Object.keys(set);
+                },
+                bagianOptions() {
+                    return ['Ujian', 'SGD', 'KKD'].concat(this.bagian.labs || []);
+                },
+                filteredRows() {
+                    const blok = this.filters.blok;
+                    const status = this.filters.status;
+                    const jenis = this.filters.jenis;
+                    const q = this.normSearch(this.filters.search);
+                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
+                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    return this.rows.filter(r => {
+                        const p = r.pengajuan;
+                        if (blok && (p.Blok || '') !== blok) return false;
+                        if (status && (p.Status || '') !== status) return false;
+                        if (jenis && (p['Jenis Kegiatan'] || '') !== jenis) return false;
+                        if (q) {
+                            const npm = this.normSearch(p.NPM);
+                            const nama = this.normSearch(p['Nama Lengkap']);
+                            if (npm.indexOf(q) === -1 && nama.indexOf(q) === -1) return false;
+                        }
+                        if (fromD || toD) {
+                            const d = this.dateVal(p['Tanggal Pelaksanaan']);
+                            if (!d) return false;
+                            if (fromD && d < fromD) return false;
+                            if (toD && d > toD) return false;
+                        }
+                        return true;
+                    });
+                },
+                filteredBa() {
+                    const blok = this.filters.blok;
+                    const bagian = this.filters.bagian;
+                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
+                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    return this.beritaAcara.filter(b => {
+                        if (blok && (b.Blok || '') !== blok) return false;
+                        if (bagian && this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) !== bagian) return false;
+                        if (fromD || toD) {
+                            const d = this.dateVal(b['Tanggal Pelaksanaan']);
+                            if (!d) return false;
+                            if (fromD && d < fromD) return false;
+                            if (toD && d > toD) return false;
+                        }
+                        return true;
+                    });
+                },
+                summaryCards() {
+                    return [
+                        { label: 'Total Pendaftar', num: this.animated.totalPendaftar, icon: 'bi-people-fill', color: '#4f46e5', tint: 'bg-brand-50' },
+                        { label: 'Menunggu', num: this.animated.totalMenunggu, icon: 'bi-hourglass-split', color: '#d97706', tint: 'bg-amber-50' },
+                        { label: 'Diterima', num: this.animated.totalDiterima, icon: 'bi-check2-circle', color: '#059669', tint: 'bg-emerald-50' },
+                        { label: 'ACC', num: this.animated.totalAcc, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'bg-indigo-50' },
+                        { label: 'Ditolak', num: this.animated.totalDitolak, icon: 'bi-x-circle', color: '#e11d48', tint: 'bg-rose-50' },
+                        { label: 'Total Biaya', num: fmtRupiah(this.animated.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'bg-teal-50' }
+                    ];
+                },
+                statusChart() {
+                    const counts = {};
+                    let total = 0;
+                    this.filteredRows.forEach(r => {
+                        const s = String(r.pengajuan.Status || 'Lainnya').trim() || 'Lainnya';
+                        counts[s] = (counts[s] || 0) + 1;
+                        total++;
+                    });
+                    const order = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan', 'Lainnya'];
+                    const keys = Object.keys(counts).sort((a, b) => {
+                        const ia = order.indexOf(a); const ib = order.indexOf(b);
+                        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+                    });
+                    let cum = 0;
+                    const segments = keys.map(k => {
+                        const pct = total ? (counts[k] / total) * 100 : 0;
+                        const seg = { label: k, value: counts[k], pct: pct, color: statusColor(k), start: cum };
+                        cum += pct;
+                        return seg;
+                    });
+                    return { segments: segments, total: total };
+                },
+                jenisChart() {
+                    return this._barSeries('Jenis Kegiatan');
+                },
+                blokChart() {
+                    return this._barSeries('Blok');
+                },
+                dosenGroups() {
+                    const map = {};
+                    this.filteredRows.forEach(r => {
+                        const d = String(r.pengajuan.Dosen || '').trim() || 'Tanpa Dosen';
+                        const key = this.normSearch(d);
+                        if (!map[key]) map[key] = { key: key, label: d, rows: [] };
+                        map[key].rows.push(r);
+                    });
+                    const arr = Object.values(map);
+                    arr.forEach(g => {
+                        const statusCounts = {};
+                        let biaya = 0;
+                        g.rows.forEach(r => {
+                            const s = String(r.pengajuan.Status || 'Lainnya').trim() || 'Lainnya';
+                            statusCounts[s] = (statusCounts[s] || 0) + 1;
+                            biaya += Number(r.pengajuan.Biaya) || 0;
+                        });
+                        g.totalBiaya = biaya;
+                        g.statusChips = Object.keys(statusCounts).map(s => ({ label: s, value: statusCounts[s], cls: statusChipCls(s) }));
+                    });
+                    arr.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+                    return arr;
+                },
+                bagianBlokOptions() {
+                    const sel = this.bagianFilter.bagian;
+                    const set = {};
+                    const add = (bagianLabel, blokRaw) => {
+                        const blok = String(blokRaw || '').trim();
+                        if (!blok) return;
+                        if (!sel || bagianLabel === sel) set[blok] = 1;
+                    };
+                    this.beritaAcara.forEach(b => add(this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya', b.Blok));
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const dets = (r.details && r.details.length) ? r.details : [{ 'Jenis Kegiatan': p['Jenis Kegiatan'] }];
+                        dets.forEach(d => add(this.resolveBagianLabel(d['Jenis Kegiatan'] || d.Bagian, d.Pilihan || d.Bagian, '') || 'Lainnya', p.Blok));
+                    });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                bagianKegiatanAll() {
+                    const normBlok = s => String(s || '').trim() || 'Tanpa Blok';
+                    const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const pLink = {};
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const npm = String(p.NPM || '').trim();
+                        if (!npm) return;
+                        pLink[npm] = {
+                            status: String(p.Status || '').trim() || '-',
+                            linkBukti: String(p['Link Bukti Bayar'] || '').trim()
+                        };
+                    });
+                    const map = {};
+                    const get = (bagianLabel, blokLabel) => {
+                        const key = this.normBagian(bagianLabel) + '::' + normBlok(blokLabel);
+                        if (!map[key]) map[key] = { bagian: bagianLabel, blok: normBlok(blokLabel), byName: {} };
+                        return map[key];
+                    };
+                    const baNames = {};
+                    this.beritaAcara.forEach(b => {
+                        const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
+                        const blokLabel = normBlok(b.Blok);
+                        const g = get(bagianLabel, blokLabel);
+                        const kName = normName(b['Nama Kegiatan']);
+                        const bKey = g.bagian && g.blok ? this.normBagian(g.bagian) + '::' + g.blok : '';
+                        if (!baNames[bKey]) baNames[bKey] = [];
+                        if (baNames[bKey].indexOf(kName) === -1) baNames[bKey].push(kName);
+                        const fullKey = kName + '::' + String(b['Tanggal Pelaksanaan'] || '');
+                        if (g.byName[fullKey]) return;
+                        const peserta = (b.peserta || []).map(p => {
+                            const info = pLink[String(p.npm || '').trim()] || {};
+                            return { npm: String(p.npm || '').trim(), namaLengkap: String(p.namaLengkap || '').trim(), status: info.status || '-', linkBukti: info.linkBukti || '' };
+                        });
+                        g.byName[fullKey] = {
+                            sumber: 'BA',
+                            nama: b['Nama Kegiatan'] || '-',
+                            tanggal: b['Tanggal Pelaksanaan'] || '',
+                            jumlahPeserta: Math.max(peserta.length, Number(b['Jumlah Peserta']) || 0),
+                            fileUrl: b['File URL'] || '',
+                            peserta: peserta
+                        };
+                    });
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const npm = String(p.NPM || '').trim();
+                        const info = pLink[npm] || { status: '-', linkBukti: '' };
+                        const dets = (r.details && r.details.length) ? r.details : [{ 'Jenis Kegiatan': p['Jenis Kegiatan'], 'Pilihan': '', 'Detail': '', 'Tanggal Pelaksanaan': p['Tanggal Pelaksanaan'] }];
+                        dets.forEach(d => {
+                            const bagianLabel = this.resolveBagianLabel(d['Jenis Kegiatan'] || d.Bagian, d.Pilihan || d.Bagian, '') || 'Lainnya';
+                            const blokLabel = normBlok(p.Blok);
+                            const g = get(bagianLabel, blokLabel);
+                            const parts = [d.Pilihan, d.Detail].filter(x => x && String(x).trim());
+                            const nama = parts.length ? parts.join(' ') : (p['Jenis Kegiatan'] || '-');
+                            const bKey = this.normBagian(bagianLabel) + '::' + blokLabel;
+                            if ((baNames[bKey] || []).indexOf(normName(nama)) !== -1) return;
+                            const tanggal = d['Tanggal Pelaksanaan'] || p['Tanggal Pelaksanaan'] || '';
+                            const fullKey = normName(nama) + '::' + String(tanggal || '');
+                            let keg = g.byName[fullKey];
+                            if (!keg) {
+                                keg = { sumber: 'Pengajuan', nama: nama, tanggal: tanggal, jumlahPeserta: 0, fileUrl: '', peserta: [] };
+                                g.byName[fullKey] = keg;
+                            }
+                            if (!keg.peserta.some(x => x.npm === npm)) {
+                                keg.peserta.push({ npm: npm, namaLengkap: String(p['Nama Lengkap'] || '').trim(), status: info.status || '-', linkBukti: info.linkBukti || '' });
+                            }
+                        });
+                    });
+                    const out = [];
+                    Object.values(map).forEach(g => {
+                        Object.values(g.byName).forEach(k => {
+                            const seen = {};
+                            k.peserta = k.peserta.filter(p => {
+                                const key = (p.npm || p.namaLengkap || '').toLowerCase();
+                                if (!key || seen[key]) return false;
+                                seen[key] = 1;
+                                return true;
+                            });
+                            if (k.sumber === 'Pengajuan') k.jumlahPeserta = k.peserta.length;
+                            out.push({ bagian: g.bagian, blok: g.blok, sumber: k.sumber, nama: k.nama, tanggal: k.tanggal, jumlahPeserta: k.jumlahPeserta, fileUrl: k.fileUrl || '', peserta: k.peserta });
+                        });
+                    });
+                    out.sort((a, b) => this.normBagian(a.bagian).localeCompare(this.normBagian(b.bagian)) || String(a.blok).localeCompare(String(b.blok)) || normName(a.nama).localeCompare(normName(b.nama)) || String(a.tanggal || '').localeCompare(String(b.tanggal || '')));
+                    return out;
+                },
+                bagianAllLabels() {
+                    const cats = (this.bagian.categories && this.bagian.categories.length) ? this.bagian.categories : ['Ujian', 'SGD', 'KKD'];
+                    const labels = cats.concat(this.bagian.labs || []);
+                    const seen = {};
+                    const uniq = labels.filter(l => {
+                        const k = this.normBagian(l);
+                        if (!k || seen[k]) return false;
+                        seen[k] = 1;
+                        return true;
+                    });
+                    const hasLainnya = this.bagianKegiatanAll.some(k => this.normBagian(k.bagian) === this.normBagian('Lainnya'));
+                    if (hasLainnya && !seen[this.normBagian('Lainnya')]) uniq.push('Lainnya');
+                    return uniq;
+                },
+                bagianMatrixBloks() {
+                    const set = {};
+                    (this.blok || []).forEach(b => { const v = String(b || '').trim(); if (v) set[v] = 1; });
+                    this.bagianKegiatanAll.forEach(k => { if (k.blok) set[k.blok] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                bagianMatrixRows() {
+                    const bagianLabels = this.bagianAllLabels;
+                    return this.bagianMatrixBloks.map(blok => {
+                        const counts = {};
+                        bagianLabels.forEach(l => { counts[this.normBagian(l)] = 0; });
+                        let total = 0;
+                        this.bagianKegiatanAll.forEach(k => {
+                            if (k.blok === blok) {
+                                const bk = this.normBagian(k.bagian);
+                                if (counts[bk] !== undefined) counts[bk]++;
+                                total++;
+                            }
+                        });
+                        return { key: blok, label: blok, counts: counts, total: total };
+                    });
+                },
+                matrixGrandTotal() {
+                    let t = 0;
+                    this.bagianMatrixRows.forEach(r => { t += r.total; });
+                    return t;
+                },
+                bagianDetailRows() {
+                    const selBagian = this.bagianFilter.bagian;
+                    const selBlok = this.bagianFilter.blok;
+                    const q = this.normSearch(this.bagianFilter.q);
+                    const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const rows = this.bagianKegiatanAll.filter(k => {
+                        if (selBagian && this.normBagian(k.bagian) !== this.normBagian(selBagian)) return false;
+                        if (selBlok && k.blok !== selBlok) return false;
+                        if (q) {
+                            if (normName(k.nama).indexOf(q) !== -1) return true;
+                            return (k.peserta || []).some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
+                        }
+                        return true;
+                    });
+                    rows.forEach((r, i) => {
+                        r.uid = 'bagian-k' + i;
+                        let c = 0;
+                        r.peserta.forEach(p => { if (p.linkBukti) c++; });
+                        r.countBukti = c;
+                    });
+                    return rows;
+                },
+                bagianDetailPesertaTotal() {
+                    const seen = {};
+                    this.bagianDetailRows.forEach(r => r.peserta.forEach(p => { const key = (p.npm || p.namaLengkap || '').toLowerCase(); if (key) seen[key] = 1; }));
+                    return Object.keys(seen).length;
+                },
+                baGroups() {
+                    const map = {};
+                    this.filteredBa.forEach(b => {
+                        const label = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
+                        if (!label) return;
+                        const k = this.normBagian(label);
+                        if (!map[k]) map[k] = { key: k, label: label, items: [] };
+                        map[k].items.push(b);
+                    });
+                    const arr = Object.values(map);
+                    arr.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+                    return arr;
+                }
+            },
+            watch: {
+                'filters.blok': function () { this.animateCharts(); },
+                'filters.status': function () { this.animateCharts(); },
+                'filters.jenis': function () { this.animateCharts(); },
+                'filters.from': function () { this.animateCharts(); },
+                'filters.to': function () { this.animateCharts(); },
+                'bagianFilter.bagian': function (v) {
+                    if (this.activeMatrixCell && v !== this.activeMatrixCell.bagian) this.activeMatrixCell = null;
+                },
+                'bagianFilter.blok': function (v) {
+                    if (this.activeMatrixCell && v !== this.activeMatrixCell.blok) this.activeMatrixCell = null;
+                }
+            },
+            methods: {
+                fmtRupiah,
+                fmtTanggal,
+                fmtTanggalWaktu,
+                statusBadgeCls,
+                statusChipCls,
+                statusColor,
+                run(fn, ...args) {
+                    if (this.session && this.session.token) args.push(this.session.token);
+                    return new Promise((resolve, reject) => {
+                        google.script.run
+                            .withSuccessHandler(r => resolve(r))
+                            .withFailureHandler(e => {
+                                const msg = (e && e.message) ? e.message : String(e);
+                                if (isAuthError(msg)) {
+                                    clearSession();
+                                    this.session = null;
+                                }
+                                reject(msg);
+                            })
+                            [fn](...args);
+                    });
+                },
+                async login() {
+                    if (!this.loginPwd) { this.loginError = 'Masukkan password admin.'; return; }
+                    this.loginLoading = true;
+                    this.loginError = '';
+                    try {
+                        const res = await this.run('authenticateAdmin', this.loginPwd);
+                        if (res && res.ok && res.token) {
+                            const s = { token: res.token, nama: res.nama || 'Admin', role: 'admin' };
+                            saveSession(s);
+                            this.session = s;
+                            this.loginPwd = '';
+                            this.loadData();
+                        } else {
+                            this.loginError = (res && res.message) || 'Password admin salah.';
+                        }
+                    } catch (e) {
+                        this.loginError = (e && e.message) ? e.message : String(e);
+                    } finally {
+                        this.loginLoading = false;
+                    }
+                },
+                logout() {
+                    if (this.session && this.session.token) {
+                        this.run('logoutSession', this.session.token).catch(() => {});
+                    }
+                    clearSession();
+                    this.session = null;
+                    this.loginPwd = '';
+                    this.loginError = '';
+                },
+                normSearch(s) {
+                    return String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
+                },
+                normBagian(v) {
+                    return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+                },
+                resolveBagianLabel(v, pilihan, namaKegiatan) {
+                    const key = this.normBagian(v);
+                    const categories = (this.bagian.categories && this.bagian.categories.length) ? this.bagian.categories : ['Ujian', 'SGD', 'KKD'];
+                    if (key) {
+                        for (let i = 0; i < categories.length; i++) {
+                            if (this.normBagian(categories[i]) === key) return categories[i];
+                        }
+                    }
+                    const labs = this.bagian.labs || [];
+                    if (key) {
+                        for (let i = 0; i < labs.length; i++) {
+                            if (this.normBagian(labs[i]) === key) return labs[i];
+                        }
+                    }
+                    const pKey = this.normBagian(pilihan);
+                    if (pKey) {
+                        for (let i = 0; i < labs.length; i++) {
+                            if (this.normBagian(labs[i]) === pKey) return labs[i];
+                        }
+                    }
+                    const nKey = this.normBagian(namaKegiatan);
+                    if (nKey) {
+                        const sorted = labs.slice().sort((a, b) => this.normBagian(b).length - this.normBagian(a).length);
+                        for (let i = 0; i < sorted.length; i++) {
+                            if (nKey.indexOf(this.normBagian(sorted[i])) !== -1) return sorted[i];
+                        }
+                    }
+                    return '';
+                },
+                dateVal(v) {
+                    if (!v) return null;
+                    if (v instanceof Date) return v;
+                    const s = String(v).trim();
+                    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+                    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+                    const d = new Date(s);
+                    return isNaN(d.getTime()) ? null : d;
+                },
+                _barSeries(field) {
+                    const counts = {};
+                    this.filteredRows.forEach(r => {
+                        const k = String(r.pengajuan[field] || 'Lainnya').trim() || 'Lainnya';
+                        counts[k] = (counts[k] || 0) + 1;
+                    });
+                    const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+                    const max = Math.max(1, ...Object.values(counts));
+                    return keys.map(k => ({ label: k, value: counts[k], pct: Math.round((counts[k] / max) * 100) }));
+                },
+                toggleExpand(id) {
+                    this.expanded[id] = !this.expanded[id];
+                },
+                toggleDosen(key) {
+                    this.expandedDosen[key] = !this.expandedDosen[key];
+                },
+                matrixColTotal(bagianLabel) {
+                    let t = 0;
+                    const bk = this.normBagian(bagianLabel);
+                    this.bagianMatrixRows.forEach(r => { t += r.counts[bk] || 0; });
+                    return t;
+                },
+                matrixCellKey(blok, bagianLabel) {
+                    return this.normBagian(bagianLabel) + '::' + String(blok || '').trim();
+                },
+                bagianKey(v) {
+                    return this.normBagian(v);
+                },
+                filterByMatrixCell(bagian, blok) {
+                    this.bagianFilter.bagian = bagian;
+                    this.bagianFilter.blok = blok;
+                    this.activeMatrixCell = { key: this.matrixCellKey(blok, bagian), bagian: bagian, blok: blok };
+                    this.$nextTick(() => {
+                        const el = document.getElementById('bagian-detail');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                },
+                resetMatrixCell() {
+                    this.bagianFilter.bagian = '';
+                    this.bagianFilter.blok = '';
+                    this.activeMatrixCell = null;
+                },
+                animateNumbers() {
+                    const s = this.summary || {};
+                    const targets = {
+                        totalPendaftar: s.totalPendaftar || 0,
+                        totalMenunggu: s.totalMenunggu || 0,
+                        totalDiterima: s.totalDiterima || 0,
+                        totalAcc: s.totalAcc || 0,
+                        totalDitolak: s.totalDitolak || 0,
+                        totalBiaya: s.totalBiaya || 0
+                    };
+                    const dur = 900;
+                    const start = performance.now();
+                    const step = now => {
+                        const t = Math.min(1, (now - start) / dur);
+                        const ease = 1 - Math.pow(1 - t, 3);
+                        Object.keys(targets).forEach(k => { this.animated[k] = Math.round(targets[k] * ease); });
+                        if (t < 1) requestAnimationFrame(step);
+                        else Object.keys(targets).forEach(k => { this.animated[k] = targets[k]; });
+                    };
+                    requestAnimationFrame(step);
+                },
+                animateCharts() {
+                    this.donutProgress = 0;
+                    this.barProgress = 0;
+                    this.$nextTick(() => {
+                        const dur = 700;
+                        const start = performance.now();
+                        const step = now => {
+                            const t = Math.min(1, (now - start) / dur);
+                            const ease = 1 - Math.pow(1 - t, 3);
+                            this.donutProgress = ease;
+                            this.barProgress = ease;
+                            if (t < 1) requestAnimationFrame(step);
+                        };
+                        requestAnimationFrame(step);
+                    });
+                },
+                showToast(icon, msg) {
+                    this.toast = { show: true, icon: icon, msg: msg };
+                    setTimeout(() => { this.toast.show = false; }, 3200);
+                },
+                async loadData() {
+                    this.loading = true;
+                    try {
+                        const data = await this.run('getLaporanBootstrap');
+                        this.summary = data.summary || {};
+                        this.rows = data.rows || [];
+                        this.beritaAcara = data.beritaAcara || [];
+                        this.dosen = data.dosen || [];
+                        this.blok = data.blok || [];
+                        this.bagian = data.bagian || { categories: [], labs: [] };
+                        this.expanded = {};
+                        this.activeDosenCell = null;
+                        this.activeMatrixCell = null;
+                        this.animateNumbers();
+                        this.animateCharts();
+                    } catch (e) {
+                        this.summary = {};
+                        this.rows = [];
+                        this.beritaAcara = [];
+                        this.dosen = [];
+                        this.blok = [];
+                        this.bagian = { categories: [], labs: [] };
+                        this.showToast('bi-x-circle', 'Gagal memuat data: ' + (e || 'Terjadi kesalahan.'));
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                exportExcel() {
+                    const loadXlsx = () => new Promise((resolve, reject) => {
+                        if (window.XLSX) return resolve();
+                        const s = document.createElement('script');
+                        s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                        s.onload = () => resolve();
+                        s.onerror = () => reject(new Error('Gagal memuat library export.'));
+                        document.head.appendChild(s);
+                    });
+                    this.exporting = true;
+                    loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const rekapRows = this.filteredRows.map(r => {
+                                const p = r.pengajuan;
+                                return {
+                                    'ID Pengajuan': p['ID Pengajuan'], NPM: p.NPM, Nama: p['Nama Lengkap'],
+                                    'Jenis Kegiatan': p['Jenis Kegiatan'], Blok: p.Blok, Dosen: p.Dosen,
+                                    'Tanggal Pelaksanaan': fmtTanggal(p['Tanggal Pelaksanaan']),
+                                    'Nomor Surat': p['Nomor Surat'] || '', Status: p.Status || '', Biaya: Number(p.Biaya) || 0
+                                };
+                            });
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap');
+
+                            const dosenRows = [];
+                            this.dosenGroups.forEach(g => g.rows.forEach(r => {
+                                const p = r.pengajuan;
+                                dosenRows.push({ Dosen: g.label, NPM: p.NPM, Nama: p['Nama Lengkap'], 'Jenis Kegiatan': p['Jenis Kegiatan'], Blok: p.Blok, 'Tanggal Pelaksanaan': fmtTanggal(p['Tanggal Pelaksanaan']), Status: p.Status || '', Biaya: Number(p.Biaya) || 0 });
+                            }));
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Dosen');
+
+                            const bagianLabels = this.bagianAllLabels;
+                            const rekapBagianRows = this.bagianMatrixRows.map(r => {
+                                const row = { Blok: r.label };
+                                bagianLabels.forEach(b => { row[b] = r.counts[this.normBagian(b)] || 0; });
+                                row.Total = r.total;
+                                return row;
+                            });
+                            const totalBlokRow = { Blok: 'Total' };
+                            bagianLabels.forEach(b => { totalBlokRow[b] = this.matrixColTotal(b); });
+                            totalBlokRow.Total = this.matrixGrandTotal;
+                            rekapBagianRows.push(totalBlokRow);
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapBagianRows), 'Rekap Bagian');
+
+                            const detailKegiatanRows = this.bagianDetailRows.map(r => ({
+                                'Bagian': r.bagian,
+                                'Blok': r.blok,
+                                'Sumber': r.sumber === 'BA' ? 'Berita Acara' : 'Pengajuan',
+                                'Nama Kegiatan': r.nama,
+                                'Tanggal': fmtTanggalWaktu(r.tanggal),
+                                'Jumlah Peserta': r.jumlahPeserta,
+                                'Bukti Bayar': r.countBukti + '/' + r.peserta.length,
+                                'Daftar Peserta': r.peserta.map(p => (p.npm || '-') + ' - ' + (p.namaLengkap || '-')).join('; '),
+                                'Link BA': r.fileUrl || ''
+                            }));
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailKegiatanRows), 'Detail Kegiatan');
+
+                            const detailPesertaRows = [];
+                            this.bagianDetailRows.forEach(r => r.peserta.forEach(p => {
+                                detailPesertaRows.push({
+                                    'Bagian': r.bagian,
+                                    'Blok': r.blok,
+                                    'Kegiatan': r.nama,
+                                    'Tanggal': fmtTanggalWaktu(r.tanggal),
+                                    'NPM': p.npm || '',
+                                    'Nama': p.namaLengkap || '',
+                                    'Status': p.status || '',
+                                    'Link Bukti Bayar': p.linkBukti || ''
+                                });
+                            }));
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailPesertaRows), 'Detail Peserta');
+
+                            const baRows = [];
+                            this.filteredBa.forEach(b => {
+                                const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
+                                if (!bl) return;
+                                baRows.push({
+                                    'BA ID': b['BA ID'], Bagian: bl, Blok: b.Blok || '',
+                                    'Nama Kegiatan': b['Nama Kegiatan'] || '', 'Tanggal Pelaksanaan': fmtTanggalWaktu(b['Tanggal Pelaksanaan']),
+                                    'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'File URL': b['File URL'] || ''
+                                });
+                            });
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(baRows), 'Berita Acara');
+
+                            XLSX.writeFile(wb, 'Laporan-INHAL-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export .xlsx berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                }
+            },
+            mounted() {
+                this.session = readSession();
+                if (this.loggedIn) this.loadData();
+            }
+        });
+
+        app.config.globalProperties.fmtRupiah = fmtRupiah;
+        app.config.globalProperties.fmtTanggal = fmtTanggal;
+        app.config.globalProperties.fmtTanggalWaktu = fmtTanggalWaktu;
+        app.config.globalProperties.statusBadgeCls = statusBadgeCls;
+        app.config.globalProperties.statusChipCls = statusChipCls;
+        app.config.globalProperties.statusColor = statusColor;
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
