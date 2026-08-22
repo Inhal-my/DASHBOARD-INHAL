@@ -1369,9 +1369,6 @@
                 toggleExpand(id) {
                     this.expanded[id] = !this.expanded[id];
                 },
-                toggleDosen(key) {
-                    this.expandedDosen[key] = !this.expandedDosen[key];
-                },
                 matrixColTotal(bagianLabel) {
                     let t = 0;
                     const bk = this.normBagian(bagianLabel);
@@ -1488,8 +1485,8 @@
                         this.loading = false;
                     }
                 },
-                exportExcel() {
-                    const loadXlsx = () => new Promise((resolve, reject) => {
+                _loadXlsx() {
+                    return new Promise((resolve, reject) => {
                         if (window.XLSX) return resolve();
                         const s = document.createElement('script');
                         s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
@@ -1497,8 +1494,10 @@
                         s.onerror = () => reject(new Error('Gagal memuat library export.'));
                         document.head.appendChild(s);
                     });
+                },
+                exportExcel() {
                     this.exporting = true;
-                    loadXlsx().then(() => {
+                    this._loadXlsx().then(() => {
                         try {
                             const wb = XLSX.utils.book_new();
                             const rekapRows = this.filteredRows.map(r => {
@@ -1512,12 +1511,18 @@
                             });
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap');
 
-                            const dosenRows = [];
-                            this.dosenGroups.forEach(g => g.rows.forEach(r => {
-                                const p = r.pengajuan;
-                                dosenRows.push({ Dosen: g.label, NPM: p.NPM, Nama: p['Nama Lengkap'], 'Jenis Kegiatan': p['Jenis Kegiatan'], Blok: p.Blok, 'Tanggal Pelaksanaan': fmtTanggal(p['Tanggal Pelaksanaan']), Status: p.Status || '', Biaya: Number(p.Biaya) || 0 });
-                            }));
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Dosen');
+                            const dosenCols = this.dosenMatrixCols;
+                            const dosenRows = this.dosenMatrixRows.map(r => {
+                                const row = { Dosen: r.label };
+                                dosenCols.forEach(b => { row[b] = r.counts[this.bagianKey(b)] || 0; });
+                                row.Total = r.total;
+                                return row;
+                            });
+                            const dosenTotalRow = { Dosen: 'Total' };
+                            dosenCols.forEach(b => { dosenTotalRow[b] = this.dosenColTotal(b); });
+                            dosenTotalRow.Total = this.dosenGrandTotal;
+                            dosenRows.push(dosenTotalRow);
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Rekap Dosen');
 
                             const bagianLabels = this.bagianAllLabels;
                             const rekapBagianRows = this.bagianMatrixRows.map(r => {
@@ -1574,6 +1579,35 @@
 
                             XLSX.writeFile(wb, 'Laporan-INHAL-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export .xlsx berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportDosenMatrix() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const cols = this.dosenMatrixCols;
+                            const rows = this.dosenMatrixRows.map(r => {
+                                const row = { Dosen: r.label };
+                                cols.forEach(b => { row[b] = r.counts[this.bagianKey(b)] || 0; });
+                                row.Total = r.total;
+                                return row;
+                            });
+                            const totalRow = { Dosen: 'Total' };
+                            cols.forEach(b => { totalRow[b] = this.dosenColTotal(b); });
+                            totalRow.Total = this.dosenGrandTotal;
+                            rows.push(totalRow);
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Rekap Dosen');
+                            XLSX.writeFile(wb, 'Rekap-Dosen-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export matriks dosen berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {
