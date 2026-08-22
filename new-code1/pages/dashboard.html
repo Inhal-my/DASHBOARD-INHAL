@@ -915,11 +915,11 @@
 
         <!-- ============ MODAL: DETAIL PENGAJUAN ============ -->
         <transition name="fade">
-            <div v-if="detail.open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div v-if="detail.open" class="fixed inset-0 z-50 modal-overlay">
                 <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="detail.open=false"></div>
                 <transition name="pop" appear>
-                    <div class="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-lift">
-                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <div class="modal-panel max-w-4xl shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-person-badge"></i></div>
                                 <div>
@@ -940,7 +940,7 @@
                             </svg>
                             <span class="ml-3 text-sm font-semibold text-slate-500">Memuat detail...</span>
                         </div>
-                        <div v-else-if="detail.p" class="flex-1 overflow-y-auto px-6 py-5">
+                        <div v-else-if="detail.p" class="modal-body px-6 py-5">
                             <div class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                                 <div><div class="label">NPM</div><div class="value">{{ detail.p.NPM }}</div></div>
                                 <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
