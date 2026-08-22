@@ -1050,15 +1050,15 @@
 
         <!-- ============ MODAL: MASTER EDITOR ============ -->
         <transition name="fade">
-            <div v-if="master.modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div v-if="master.modal" class="fixed inset-0 z-50 modal-overlay">
                 <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.modal=false"></div>
                 <transition name="pop" appear>
-                    <div class="relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-lift">
-                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <div class="modal-panel max-w-3xl shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                             <h3 class="text-sm font-bold text-slate-900">Edit {{ master.title }}</h3>
                             <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.modal=false"><i class="bi bi-x-lg"></i></button>
                         </div>
-                        <div class="flex-1 overflow-y-auto px-6 py-4">
+                        <div class="modal-body px-6 py-4">
                             <div class="overflow-x-auto rounded-xl ring-1 ring-slate-100">
                                 <table class="w-full text-left text-sm">
                                     <thead class="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-400">
@@ -1081,7 +1081,7 @@
                             </div>
                             <button class="btn-soft mt-3" @click="addMasterRow()"><i class="bi bi-plus-lg"></i>Tambah Baris</button>
                         </div>
-                        <div class="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
                             <button class="btn-soft" @click="master.modal=false">Batal</button>
                             <button class="btn-primary" @click="saveEdit()"><i class="bi bi-save"></i>Simpan</button>
                         </div>
