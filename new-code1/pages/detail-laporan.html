@@ -1175,7 +1175,13 @@
                 },
                 'bagianFilter.blok': function (v) {
                     if (this.activeMatrixCell && v !== this.activeMatrixCell.blok) this.activeMatrixCell = null;
-                }
+                },
+                'dosenFilter.blok': function () { this.activeDosenCell = null; },
+                'dosenFilter.jenis': function () { this.activeDosenCell = null; },
+                'dosenFilter.from': function () { this.activeDosenCell = null; },
+                'dosenFilter.to': function () { this.activeDosenCell = null; },
+                'dosenFilter.bagian': function () { this.activeDosenCell = null; },
+                'dosenFilter.q': function () { this.activeDosenCell = null; },
             },
             methods: {
                 fmtRupiah,
@@ -1308,6 +1314,15 @@
                     this.bagianMatrixRows.forEach(r => { t += r.counts[bk] || 0; });
                     return t;
                 },
+                dosenColTotal(bagianLabel) {
+                    let t = 0;
+                    const bk = this.normBagian(bagianLabel);
+                    this.dosenMatrixRows.forEach(r => { t += r.counts[bk] || 0; });
+                    return t;
+                },
+                dosenCellKey(dosen, bagian) {
+                    return this.normSearch(dosen) + '::' + this.normBagian(bagian);
+                },
                 matrixCellKey(blok, bagianLabel) {
                     return this.normBagian(bagianLabel) + '::' + String(blok || '').trim();
                 },
@@ -1327,6 +1342,19 @@
                     this.bagianFilter.bagian = '';
                     this.bagianFilter.blok = '';
                     this.activeMatrixCell = null;
+                },
+                openDosenCell(dosen, bagian) {
+                    this.activeDosenCell = { key: this.dosenCellKey(dosen, bagian), dosen: dosen, bagian: bagian };
+                    this.$nextTick(() => {
+                        const el = document.getElementById('dosen-detail');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                },
+                resetDosenCell() {
+                    this.activeDosenCell = null;
+                },
+                closeDosenDetail() {
+                    this.activeDosenCell = null;
                 },
                 animateNumbers() {
                     const s = this.summary || {};
