@@ -44,19 +44,6 @@
 <body>
     <div id="app" v-cloak class="font-sans text-ink antialiased">
 
-        <!-- loading overlay -->
-        <transition name="fade">
-            <div v-if="loading" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
-                <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 shadow-lift">
-                    <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                    </svg>
-                    <span class="text-sm font-semibold text-slate-700">Memuat data...</span>
-                </div>
-            </div>
-        </transition>
-
         <!-- login -->
         <transition name="fade">
             <div v-if="!loggedIn" class="fixed inset-0 z-[150] flex items-center justify-center bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950 p-4">
@@ -183,6 +170,21 @@
 
                     <!-- ===================== TAB 1: REKAP KESELURUHAN ===================== -->
                     <section v-if="activeTab === 'rekap'" class="space-y-6">
+                        <div v-if="loading" class="space-y-6">
+                            <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+                                <div v-for="i in 6" :key="i" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                    <div class="mb-3 h-9 w-9 animate-pulse rounded-xl bg-slate-200/70"></div>
+                                    <div class="h-4 w-2/3 animate-pulse rounded bg-slate-200/70"></div>
+                                    <div class="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-200/70"></div>
+                                </div>
+                            </div>
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                <div class="h-64 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                                <div class="h-64 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                            </div>
+                            <div class="h-64 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                        </div>
+                        <template v-else>
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                             <div v-for="c in summaryCards" :key="c.label" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-lift">
                                 <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
@@ -333,10 +335,23 @@
                                 </table>
                             </div>
                         </div>
+                        </template>
                     </section>
 
                     <!-- ===================== TAB 2: LAPORAN DOSEN ===================== -->
                     <section v-if="activeTab === 'dosen'" class="space-y-4">
+                        <div v-if="loading" class="space-y-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="grid gap-3 md:grid-cols-12">
+                                    <div v-for="i in 4" :key="i" class="h-10 animate-pulse rounded-xl bg-slate-200/70 md:col-span-3"></div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="mb-4 h-4 w-48 animate-pulse rounded bg-slate-200/70"></div>
+                                <div v-for="i in 5" :key="i" class="mb-2 h-8 animate-pulse rounded-xl bg-slate-200/70"></div>
+                            </div>
+                        </div>
+                        <template v-else>
                         <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-3">
@@ -461,10 +476,20 @@
                             </div>
                             <div v-else class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada BA untuk kombinasi ini.</div>
                         </div>
+                        </template>
                     </section>
 
                     <!-- ===================== TAB 3: LAPORAN BAGIAN ===================== -->
                     <section v-if="activeTab === 'bagian'" class="space-y-4">
+                        <div v-if="loading" class="space-y-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="grid gap-3 md:grid-cols-12">
+                                    <div v-for="i in 3" :key="i" class="h-10 animate-pulse rounded-xl bg-slate-200/70 md:col-span-4"></div>
+                                </div>
+                            </div>
+                            <div v-for="i in 4" :key="i" class="h-14 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                        </div>
+                        <template v-else>
                         <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-3">
@@ -610,10 +635,21 @@
                                 </table>
                             </div>
                         </div>
+                        </template>
                     </section>
 
                     <!-- ===================== TAB 4: LAPORAN BERITA ACARA ===================== -->
                     <section v-if="activeTab === 'ba'" class="space-y-4">
+                        <div v-if="loading" class="space-y-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="h-10 animate-pulse rounded-xl bg-slate-200/70"></div>
+                            </div>
+                            <div v-for="i in 4" :key="i" class="space-y-2 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="h-4 w-1/2 animate-pulse rounded bg-slate-200/70"></div>
+                                <div class="h-3 w-2/3 animate-pulse rounded bg-slate-200/70"></div>
+                            </div>
+                        </div>
+                        <template v-else>
                         <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-4">
@@ -655,6 +691,7 @@
                                 </div>
                             </div>
                         </div>
+                        </template>
                     </section>
 
                 </div>
