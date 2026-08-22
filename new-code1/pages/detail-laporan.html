@@ -1030,6 +1030,99 @@
                     this.bagianMatrixRows.forEach(r => { t += r.total; });
                     return t;
                 },
+                dosenFilteredBa() {
+                    const blok = String(this.dosenFilter.blok || '').trim();
+                    const jenis = String(this.dosenFilter.jenis || '').trim();
+                    const fromD = this.dosenFilter.from ? this.dateVal(this.dosenFilter.from) : null;
+                    const toD = this.dosenFilter.to ? this.dateVal(this.dosenFilter.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    return this.beritaAcara.filter(b => {
+                        if (blok && String(b.Blok || '').trim() !== blok) return false;
+                        if (jenis) {
+                            const ok = (b.peserta || []).some(p => {
+                                const info = this.npmInfoFor(String(p.npm || '').trim(), b.Blok);
+                                return info && info.jenis === jenis;
+                            });
+                            if (!ok) return false;
+                        }
+                        if (fromD || toD) {
+                            const d = this.dateVal(b['Tanggal Pelaksanaan']);
+                            if (!d) return false;
+                            if (fromD && d < fromD) return false;
+                            if (toD && d > toD) return false;
+                        }
+                        return true;
+                    });
+                },
+                dosenMatrixCols() {
+                    let cols = this.bagianAllLabels.slice();
+                    const sel = String(this.dosenFilter.bagian || '').trim();
+                    if (sel) {
+                        const sk = this.normBagian(sel);
+                        cols = cols.filter(c => this.normBagian(c) === sk);
+                    }
+                    return cols;
+                },
+                dosenMatrixRows() {
+                    const cols = this.dosenMatrixCols;
+                    const colKeys = cols.map(c => this.normBagian(c));
+                    const q = this.normSearch(this.dosenFilter.q);
+                    const map = {};
+                    this.dosenFilteredBa.forEach(b => {
+                        const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
+                        const bk = this.normBagian(bagianLabel);
+                        if (colKeys.indexOf(bk) === -1) return;
+                        const seenDosen = {};
+                        (b.peserta || []).forEach(p => {
+                            const dosen = this.resolveDosenForNpm(String(p.npm || '').trim(), b.Blok);
+                            if (!dosen) return;
+                            const dk = this.normSearch(dosen);
+                            if (seenDosen[dk]) return;
+                            seenDosen[dk] = 1;
+                            if (!map[dk]) {
+                                map[dk] = { key: dk, label: dosen, counts: {}, total: 0 };
+                                colKeys.forEach(k => { map[dk].counts[k] = 0; });
+                            }
+                            map[dk].counts[bk] = (map[dk].counts[bk] || 0) + 1;
+                            map[dk].total++;
+                        });
+                    });
+                    let arr = Object.values(map);
+                    if (q) arr = arr.filter(r => this.normSearch(r.label).indexOf(q) !== -1);
+                    arr.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+                    return arr;
+                },
+                dosenGrandTotal() {
+                    let t = 0;
+                    this.dosenMatrixRows.forEach(r => { t += r.total; });
+                    return t;
+                },
+                dosenMatrix() {
+                    return { cols: this.dosenMatrixCols, rows: this.dosenMatrixRows, grandTotal: this.dosenGrandTotal };
+                },
+                dosenCellDetail() {
+                    const cell = this.activeDosenCell;
+                    if (!cell) return [];
+                    const bk = this.normBagian(cell.bagian);
+                    const dk = this.normSearch(cell.dosen);
+                    const out = [];
+                    this.dosenFilteredBa.forEach(b => {
+                        const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
+                        if (this.normBagian(bagianLabel) !== bk) return;
+                        const found = (b.peserta || []).some(p => {
+                            const d = this.resolveDosenForNpm(String(p.npm || '').trim(), b.Blok);
+                            return d && this.normSearch(d) === dk;
+                        });
+                        if (!found) return;
+                        out.push({
+                            nama: b['Nama Kegiatan'] || '-',
+                            tanggal: b['Tanggal Pelaksanaan'] || '',
+                            jumlahPeserta: Math.max((b.peserta || []).length, Number(b['Jumlah Peserta']) || 0),
+                            fileUrl: b['File URL'] || ''
+                        });
+                    });
+                    return out;
+                },
                 bagianDetailRows() {
                     const selBagian = this.bagianFilter.bagian;
                     const selBlok = this.bagianFilter.blok;
