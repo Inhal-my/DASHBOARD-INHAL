@@ -53,6 +53,32 @@
         }
         .master-table-scroll { max-height: 520px; overflow-y: auto; }
         .master-table thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; }
+        .modal-overlay {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .modal-panel {
+            position: relative;
+            width: 100%;
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 1rem;
+            background: #fff;
+        }
+        .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
         .master-table tbody tr:hover { background: #f8fafc; }
         .master-search { position: relative; }
         .master-search i { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .875rem; pointer-events: none; }
