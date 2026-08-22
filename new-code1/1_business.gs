@@ -1557,6 +1557,19 @@ function getLaporanBootstrap() {
     const biayaMap = _getBiayaMap();
     const baPesertaMap = _getBaPesertaMap();
 
+    const detailById = {};
+    details.forEach(function(d) {
+        const k = String(d['ID Pengajuan'] || '').trim();
+        if (!detailById[k]) detailById[k] = [];
+        detailById[k].push(d);
+    });
+    const historyById = {};
+    histories.forEach(function(h) {
+        const k = String(h['ID Pengajuan'] || '').trim();
+        if (!historyById[k]) historyById[k] = [];
+        historyById[k].push(h);
+    });
+
     let totalPendaftar = 0;
     let totalDiterima = 0;
     let totalDitolak = 0;
@@ -1588,8 +1601,8 @@ function getLaporanBootstrap() {
 
         return {
             pengajuan: pengajuanCopy,
-            details: details.filter(function(d) { return String(d['ID Pengajuan'] || '').trim() === id; }).map(function(d) { return _clientRow(d); }),
-            history: histories.filter(function(h) { return String(h['ID Pengajuan'] || '').trim() === id; }).map(function(h) { return _clientRow(h); })
+            details: (detailById[id] || []).map(function(d) { return _clientRow(d); }),
+            history: (historyById[id] || []).map(function(h) { return _clientRow(h); })
         };
     });
 
