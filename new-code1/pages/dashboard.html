@@ -369,7 +369,7 @@
                 <section v-if="tab==='bagian'">
                     <div class="mb-5">
                         <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Laporan Bagian</h1>
-                        <p class="mt-0.5 text-sm text-slate-500">Rekapitulasi peserta per bagian kegiatan.</p>
+                        <p class="mt-0.5 text-sm text-slate-500">Matriks kelengkapan berita acara per bagian &amp; blok.</p>
                     </div>
 
                     <div v-if="sectionLoading.bagian" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
@@ -394,35 +394,71 @@
                                     <option v-for="o in bagian.options" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
-                            <div class="md:col-span-3">
-                                <select v-model="bagian.fSumber" class="input" @change="applyBagianFilter()">
-                                    <option value="">Semua Sumber</option>
-                                    <option>Pengajuan</option><option>Berita Acara</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-3 flex items-center text-xs text-slate-400">
-                                {{ bagian.rows.length }} baris data
+                            <div class="md:col-span-6 flex items-center text-xs text-slate-400">
+                                {{ bagianMatrix.rows.length }} bagian · {{ bagianMatrix.cols.length }} blok
                             </div>
                         </div>
                     </div>
 
                     <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                        <div v-if="!bagian.rows.length" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</div>
-                        <div v-else class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <div v-for="r in bagian.rows" class="rounded-2xl border border-slate-100 p-4 transition hover:border-slate-200">
-                                <div class="flex items-start justify-between gap-2">
-                                    <span class="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ r.bagian }}</span>
-                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ r.sumber }}</span>
+                        <div v-if="!bagianMatrix.cols.length" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</div>
+                        <div v-else class="overflow-x-auto">
+                            <table class="w-full border-collapse text-sm">
+                                <thead>
+                                    <tr>
+                                        <th class="sticky left-0 top-0 z-20 min-w-[150px] border-b border-slate-100 bg-white p-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Bagian</th>
+                                        <th v-for="b in bagianMatrix.cols" :key="'h' + b" class="sticky top-0 z-10 border-b border-slate-100 bg-white p-3 text-center text-xs font-bold text-slate-600">{{ b }}</th>
+                                        <th class="sticky top-0 z-10 border-b border-slate-100 bg-slate-50 p-3 text-center text-xs font-bold text-slate-600">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="r in bagianMatrix.rows" :key="'r' + r.bagian">
+                                        <td class="sticky left-0 z-10 border-b border-slate-50 bg-white p-3 text-sm font-bold text-slate-800">{{ r.bagian }}</td>
+                                        <td v-for="b in bagianMatrix.cols" :key="'c' + r.bagian + b" class="border-b border-slate-50 p-2 text-center">
+                                            <button v-if="r.cells[b].total" class="w-full rounded-xl px-2 py-2 text-xs font-bold ring-1 ring-inset transition hover:opacity-80" :class="matrixCellClass(r.cells[b])" @click="openBagianCell(r.bagian, b)">
+                                                {{ r.cells[b].done }}/{{ r.cells[b].total }}
+                                            </button>
+                                            <span v-else class="text-slate-300">–</span>
+                                        </td>
+                                        <td class="border-b border-slate-50 bg-slate-50/50 p-3 text-center text-xs font-bold text-slate-700">
+                                            <span v-if="r.total">{{ r.done }}/{{ r.total }}</span>
+                                            <span v-else class="text-slate-300">–</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td class="sticky left-0 z-10 bg-slate-50 p-3 text-xs font-bold uppercase tracking-wider text-slate-500">Total</td>
+                                        <td v-for="b in bagianMatrix.cols" :key="'f' + b" class="bg-slate-50 p-3 text-center text-xs font-bold text-slate-700">
+                                            <span v-if="bagianMatrix.colTotals[b].total">{{ bagianMatrix.colTotals[b].done }}/{{ bagianMatrix.colTotals[b].total }}</span>
+                                            <span v-else class="text-slate-300">–</span>
+                                        </td>
+                                        <td class="bg-slate-100 p-3 text-center text-xs font-bold text-slate-800">
+                                            <span v-if="bagianMatrix.grandTotal">{{ bagianMatrix.grandDone }}/{{ bagianMatrix.grandTotal }}</span>
+                                            <span v-else class="text-slate-300">–</span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div v-if="bagian.detail" class="mt-4 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
+                            <h2 class="text-sm font-bold text-slate-900">Kegiatan {{ bagian.detail.bagian }} · Blok {{ bagian.detail.blok }}</h2>
+                            <button class="ml-auto btn-soft !px-3 !py-1 text-xs" @click="closeBagianDetail()"><i class="bi bi-x-lg"></i> Tutup</button>
+                        </div>
+                        <div v-if="!bagianCellDetail.length" class="px-4 py-8 text-center text-sm text-slate-400">Tidak ada kegiatan.</div>
+                        <div v-else class="divide-y divide-slate-50">
+                            <div v-for="(k, i) in bagianCellDetail" :key="i" class="flex flex-wrap items-center gap-3 p-4">
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="k.hasBa ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+                                    {{ k.hasBa ? '✓ BA ada' : '✗ Belum ada BA' }}
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-sm font-bold text-slate-800">{{ k.jenisKegiatan }}</div>
+                                    <div class="mt-0.5 text-xs text-slate-400">{{ formatTanggal(k.tanggalPelaksanaan) }} · {{ k.total }} peserta</div>
                                 </div>
-                                <div class="mt-2 text-sm font-bold text-slate-900">{{ r.jenisKegiatan }}</div>
-                                <div class="mt-2 space-y-1 text-xs text-slate-500">
-                                    <div class="flex items-center gap-1.5"><i class="bi bi-grid"></i> {{ r.blok }}</div>
-                                    <div class="flex items-center gap-1.5"><i class="bi bi-calendar3"></i> {{ formatTanggal(r.tanggalPelaksanaan) }}</div>
-                                </div>
-                                <div class="mt-3 flex items-center justify-between">
-                                    <span class="text-sm font-extrabold text-slate-800">{{ r.total }} peserta</span>
-                                    <a v-if="r.fileUrl" :href="r.fileUrl" target="_blank" class="link text-xs">Lihat File</a>
-                                </div>
+                                <a v-if="k.hasBa && k.fileUrl" :href="k.fileUrl" target="_blank" class="link text-xs"><i class="bi bi-eye"></i> Lihat File</a>
                             </div>
                         </div>
                     </div>
