@@ -1137,7 +1137,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '' },
-                    bagian: { rows: [], all: [], fBagian: '', fSumber: '', fBlok: '', options: [], labs: [], bloks: [] },
+                    bagian: { rows: [], all: [], fBagian: '', fBlok: '', options: [], labs: [], bloks: [], detail: null },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
                     bab: {
@@ -1268,6 +1268,81 @@
                 },
                 bagianBlokOptions() {
                     return (this.bagian.bloks || []).filter(b => b && b !== '-');
+                },
+                bagianMatrixCols() {
+                    const seen = [];
+                    (this.bagian.rows || []).forEach(r => {
+                        const b = String(r.blok || '').trim();
+                        if (b && b !== '-' && seen.indexOf(b) === -1) seen.push(b);
+                    });
+                    return seen.sort();
+                },
+                bagianMatrix() {
+                    const rows = this.bagian.rows || [];
+                    const normK = (r) => this.normBagian(r.bagian) + '|' + String(r.blok || '').trim() + '|' + this.normBagian(r.jenisKegiatan);
+                    const baRowByKey = {};
+                    rows.forEach(r => {
+                        if (r.sumber === 'Berita Acara') {
+                            const k = normK(r);
+                            if (!baRowByKey[k]) baRowByKey[k] = r;
+                        }
+                    });
+                    const cellMap = {};
+                    rows.forEach(r => {
+                        if (r.sumber !== 'Pengajuan') return;
+                        const ck = this.normBagian(r.bagian) + '|' + String(r.blok || '').trim();
+                        if (!cellMap[ck]) cellMap[ck] = { kegiatan: [], done: 0, total: 0 };
+                        const ba = baRowByKey[normK(r)];
+                        const hasBa = !!ba;
+                        cellMap[ck].kegiatan.push({
+                            jenisKegiatan: r.jenisKegiatan,
+                            tanggalPelaksanaan: r.tanggalPelaksanaan,
+                            total: r.total,
+                            hasBa: hasBa,
+                            fileUrl: hasBa ? ba.fileUrl : ''
+                        });
+                        cellMap[ck].total += 1;
+                        if (hasBa) cellMap[ck].done += 1;
+                    });
+                    const cols = this.bagianMatrixCols;
+                    const colTotals = {};
+                    cols.forEach(b => { colTotals[b] = { total: 0, done: 0 }; });
+                    const bagRows = [];
+                    const rowsBags = [];
+                    (this.bagian.options || []).forEach(bag => {
+                        if (this.bagian.fBagian && bag !== this.bagian.fBagian) return;
+                        rowsBags.push(bag);
+                    });
+                    rows.forEach(r => {
+                        const b = r.bagian;
+                        if (b && rowsBags.indexOf(b) === -1 && (!this.bagian.fBagian || b === this.bagian.fBagian)) rowsBags.push(b);
+                    });
+                    rowsBags.forEach(bag => {
+                        const bKey = this.normBagian(bag);
+                        const cells = {};
+                        let rowTotal = 0, rowDone = 0;
+                        cols.forEach(blok => {
+                            const c = cellMap[bKey + '|' + blok] || { kegiatan: [], done: 0, total: 0 };
+                            cells[blok] = c;
+                            rowTotal += c.total;
+                            rowDone += c.done;
+                            colTotals[blok].total += c.total;
+                            colTotals[blok].done += c.done;
+                        });
+                        bagRows.push({ bagian: bag, cells: cells, total: rowTotal, done: rowDone });
+                    });
+                    let grandTotal = 0, grandDone = 0;
+                    bagRows.forEach(r => { grandTotal += r.total; grandDone += r.done; });
+                    return { rows: bagRows, cols: cols, colTotals: colTotals, grandTotal: grandTotal, grandDone: grandDone };
+                },
+                bagianCellDetail() {
+                    if (!this.bagian.detail) return [];
+                    const d = this.bagian.detail;
+                    const m = this.bagianMatrix;
+                    const row = m.rows.find(r => this.normBagian(r.bagian) === this.normBagian(d.bagian));
+                    if (!row) return [];
+                    const cell = row.cells[d.blok];
+                    return cell ? cell.kegiatan : [];
                 },
                 baDetailOptions() {
                     const blok = this.ba.form.blok;
