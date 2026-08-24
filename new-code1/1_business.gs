@@ -2623,6 +2623,7 @@ function updatePengajuanFields(idPengajuan, payload) {
         if (p.finalUrl !== undefined) setField('Link Final', p.finalUrl);
         if (p.catatan !== undefined) setField('Catatan Admin', p.catatan);
         if (p.keterangan !== undefined) setField('Keterangan', p.keterangan);
+        if (p.jenisKegiatan !== undefined) setField('Jenis Kegiatan', p.jenisKegiatan);
 
         if (values.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.Email)) {
             return { success: false, message: 'Format email tidak valid.' };
