@@ -185,6 +185,7 @@ const SCHEMAS = {
         'Dosen',
         'Hadir',
         'Catatan',
+        'Biaya',
         'UpdatedAt'
     ]
 };
