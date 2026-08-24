@@ -1002,12 +1002,35 @@
                                 <div v-if="detail.p.details && detail.p.details.length">
                                     <div class="label mb-2"><i class="bi bi-list-check"></i> Detail Kegiatan</div>
                                     <div class="grid gap-2">
-                                        <div v-for="d in detail.p.details" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                            <div class="text-sm font-bold text-slate-800">{{ d.Pilihan }}</div>
-                                            <div class="mt-1 text-xs text-slate-500">{{ d.Detail }}</div>
-                                            <div class="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-400">
-                                                <span><i class="bi bi-calendar3"></i> {{ formatTanggal(d['Tanggal Pelaksanaan']) }}</span>
-                                                <span><i class="bi bi-diagram-3"></i> {{ d.Bagian }}</span>
+                                        <div v-for="(d, i) in detail.p.details" :key="i" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                                            <div v-if="detail.editDetailIndex !== i">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <div class="min-w-0">
+                                                        <div class="text-sm font-bold text-slate-800">{{ d.Pilihan }}</div>
+                                                        <div class="mt-1 text-xs text-slate-500">{{ d.Detail }}</div>
+                                                    </div>
+                                                    <div class="flex shrink-0 items-center gap-1">
+                                                        <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600" @click="startEditDetail(i)" title="Edit"><i class="bi bi-pencil-square text-sm"></i></button>
+                                                        <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500" @click="deleteDetailRow(i)" title="Hapus"><i class="bi bi-trash text-sm"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-400">
+                                                    <span><i class="bi bi-tag"></i> {{ d['Jenis Kegiatan'] }}</span>
+                                                    <span><i class="bi bi-calendar3"></i> {{ formatTanggal(d['Tanggal Pelaksanaan']) }}</span>
+                                                    <span><i class="bi bi-diagram-3"></i> {{ d.Bagian }}</span>
+                                                </div>
+                                            </div>
+                                            <div v-else>
+                                                <div class="grid gap-2">
+                                                    <div><label class="label">Jenis Kegiatan</label><input v-model="detail.dEdit.jenisKegiatan" class="input !py-2 text-xs"></div>
+                                                    <div><label class="label">Pilihan</label><input v-model="detail.dEdit.pilihan" class="input !py-2 text-xs"></div>
+                                                    <div><label class="label">Detail</label><input v-model="detail.dEdit.detail" class="input !py-2 text-xs"></div>
+                                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.dEdit.tanggalPelaksanaan" type="datetime-local" class="input !py-2 text-xs"></div>
+                                                </div>
+                                                <div class="mt-2 flex gap-2">
+                                                    <button class="btn-primary !px-3 !py-1.5 text-xs" @click="saveDetailRow()"><i class="bi bi-save"></i>Simpan</button>
+                                                    <button class="btn-soft !px-3 !py-1.5 text-xs" @click="cancelEditDetail()">Batal</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1220,7 +1243,7 @@
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
-                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { rows: [], all: [], fBagian: '', fBlok: '', options: [], labs: [], bloks: [], detail: null },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
@@ -2001,6 +2024,8 @@
                         tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
                     };
                     this.detail.editInduk = false;
+                    this.detail.editDetailIndex = -1;
+                    this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
                     this.detail.status = 'Diterima';
                     this.detail.catatan = '';
                     this.detail.open = true;
@@ -2037,6 +2062,59 @@
                         this.notify((res && res.message) || 'Data pengajuan diperbarui.');
                         this.detail.editInduk = false;
                         await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                startEditDetail(i) {
+                    const d = (this.detail.p && this.detail.p.details) ? this.detail.p.details[i] : null;
+                    if (!d) return;
+                    this.detail.dEdit = {
+                        jenisKegiatan: d['Jenis Kegiatan'] || '',
+                        pilihan: d.Pilihan || '',
+                        detail: d.Detail || '',
+                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(d['Tanggal Pelaksanaan'])
+                    };
+                    this.detail.editDetailIndex = i;
+                },
+                cancelEditDetail() {
+                    this.detail.editDetailIndex = -1;
+                    this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
+                },
+                async saveDetailRow() {
+                    const f = this.detail.dEdit;
+                    const idx = this.detail.editDetailIndex;
+                    if (idx === -1) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('updateDetailKegiatan', this.detail.p['ID Pengajuan'], idx, {
+                            jenisKegiatan: (f.jenisKegiatan || '').trim(),
+                            pilihan: (f.pilihan || '').trim(),
+                            detail: (f.detail || '').trim(),
+                            tanggalPelaksanaan: f.tanggalPelaksanaan || ''
+                        });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
+                        this.notify((res && res.message) || 'Detail kegiatan diperbarui.');
+                        this.cancelEditDetail();
+                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deleteDetailRow(i) {
+                    if (!confirm('Hapus detail kegiatan ini dari pengajuan ' + this.detail.p['ID Pengajuan'] + '?')) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('deleteDetailKegiatan', this.detail.p['ID Pengajuan'], i);
+                        this.notify((res && res.message) || 'Detail kegiatan dihapus.');
+                        if (res && res.success) {
+                            this.cancelEditDetail();
+                            await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                        }
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
                     } finally {
