@@ -628,7 +628,12 @@ function getPengajuanWithDetails(idPengajuan) {
     });
     const copy = _clientRow(pengajuan);
     copy.details = details.map(function(d) { return _clientRow(d); });
-    copy.Biaya = _resolveBiayaForPengajuan(pengajuan);
+    const biayaMap = _getBiayaMap();
+    const overrideMap = _getBiayaOverrideMap();
+    copy.Biaya = _resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap);
+    copy.BiayaOverride = (overrideMap[String(pengajuan['ID Pengajuan'] || '').trim()] !== undefined)
+        ? String(overrideMap[String(pengajuan['ID Pengajuan'] || '').trim()])
+        : '';
     copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
     return copy;
 }
@@ -1365,11 +1370,12 @@ function getDashboardStats() {
         getAllRows('Pengajuan'),
         getAllRows('DetailKegiatan'),
         getAllRows('BeritaAcara'),
-        _getBiayaMap()
+        _getBiayaMap(),
+        _getBiayaOverrideMap()
     );
 }
 
-function _computeDashboardStats(pengajuan, details, ba, biayaMap) {
+function _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap) {
     const perStatus = {};
     const perJenis = {};
     const perBlok = {};
@@ -1389,7 +1395,7 @@ function _computeDashboardStats(pengajuan, details, ba, biayaMap) {
         const blok = String(p.Blok || '-').trim();
         perBlok[blok] = (perBlok[blok] || 0) + 1;
 
-        totalBiaya += _resolveBiayaForPengajuan(p, biayaMap);
+        totalBiaya += _resolveBiayaForPengajuan(p, biayaMap, overrideMap);
 
         const ts = p.Timestamp;
         if (ts) {
@@ -1446,13 +1452,13 @@ function getPengajuanList(filters) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
     const biayaMap = _getBiayaMap();
-    return _buildPengajuanClientRows(rows, biayaMap);
+    return _buildPengajuanClientRows(rows, biayaMap, _getBiayaOverrideMap());
 }
 
-function _buildPengajuanClientRows(rows, biayaMap) {
+function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
     return rows.map(function(r) {
         const copy = _clientRow(r);
-        copy.Biaya = _resolveBiayaForPengajuan(copy, biayaMap);
+        copy.Biaya = _resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
         copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
         return copy;
     });
@@ -1464,6 +1470,7 @@ function getDashboardBootstrap() {
     const details = getAllRows('DetailKegiatan');
     const ba = getAllRows('BeritaAcara');
     const biayaMap = _getBiayaMap();
+    const overrideMap = _getBiayaOverrideMap();
     const adminBaPesertaMap = _getBaPesertaMapAdmin();
 
     const sortedPengajuan = pengajuan.slice().sort(function(a, b) {
@@ -1479,10 +1486,18 @@ function getDashboardBootstrap() {
         detailMap[id].push(_clientRow(d));
     });
 
+    const masterBiaya = [];
+    Object.keys(biayaMap).forEach(function(k) {
+        const v = biayaMap[k];
+        if (masterBiaya.indexOf(v) === -1) masterBiaya.push(v);
+    });
+    masterBiaya.sort(function(a, b) { return a - b; });
+
     return {
-        stats: _computeDashboardStats(pengajuan, details, ba, biayaMap),
-        pengajuan: _buildPengajuanClientRows(sortedPengajuan, biayaMap),
+        stats: _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap),
+        pengajuan: _buildPengajuanClientRows(sortedPengajuan, biayaMap, overrideMap),
         detailMap: detailMap,
+        masterBiaya: masterBiaya,
         bagian: _computeBagianAggregation(pengajuan, details, ba),
         beritaAcara: adminBa.map(function(r) {
             const c = _clientRow(r);
@@ -1507,6 +1522,7 @@ function getDetailLaporanData() {
     const perJenis = {};
     const perBlok = {};
     const biayaMap = _getBiayaMap();
+    const overrideMap = _getBiayaOverrideMap();
 
     const rows = pengajuan.map(function(p) {
         const id = String(p['ID Pengajuan'] || '').trim();
@@ -1522,7 +1538,7 @@ function getDetailLaporanData() {
         perBlok[blok] = (perBlok[blok] || 0) + 1;
 
         const pengajuanCopy = _clientRow(p);
-        pengajuanCopy.Biaya = _resolveBiayaForPengajuan(pengajuanCopy, biayaMap);
+        pengajuanCopy.Biaya = _resolveBiayaForPengajuan(pengajuanCopy, biayaMap, overrideMap);
         pengajuanCopy['Biaya Rupiah'] = formatRupiah(pengajuanCopy.Biaya);
         totalBiaya += pengajuanCopy.Biaya;
 
@@ -1555,6 +1571,7 @@ function getLaporanBootstrap() {
     const histories = getAllRows('StatusHistory');
     const ba = getAllRows('BeritaAcara');
     const biayaMap = _getBiayaMap();
+    const overrideMap = _getBiayaOverrideMap();
     const baPesertaMap = _getBaPesertaMap();
 
     const detailById = {};
@@ -1595,7 +1612,7 @@ function getLaporanBootstrap() {
         perBlok[blok] = (perBlok[blok] || 0) + 1;
 
         const pengajuanCopy = _clientRow(p);
-        pengajuanCopy.Biaya = _resolveBiayaForPengajuan(pengajuanCopy, biayaMap);
+        pengajuanCopy.Biaya = _resolveBiayaForPengajuan(pengajuanCopy, biayaMap, overrideMap);
         pengajuanCopy['Biaya Rupiah'] = formatRupiah(pengajuanCopy.Biaya);
         totalBiaya += pengajuanCopy.Biaya;
 
@@ -2370,6 +2387,27 @@ function sendFinalEmail(idPengajuan) {
 // ==================== MASTER BIAYA ===============================
 // =================================================================
 
+function _getBiayaOverrideMap() {
+    try {
+        const checkRows = getAllRowsCached('CheckData', 60);
+        const map = {};
+        checkRows.forEach(function(c) {
+            const id = String(c['ID Pengajuan'] || '').trim();
+            if (!id) return;
+            if (String(c.Detail || '').trim() !== 'BIAYA-OVERRIDE') return;
+            const pilihan = String(c.Pilihan || '').trim();
+            const tanggal = String(c['Tanggal Pelaksanaan'] || '').trim();
+            if (pilihan || tanggal) return;
+            const biaya = String(c.Biaya || '').trim();
+            if (!biaya) return;
+            map[id] = parseCurrency(biaya);
+        });
+        return map;
+    } catch (e) {
+        return {};
+    }
+}
+
 function _getBiayaMap() {
     try {
         const rows = getAllRows('MasterBiaya');
@@ -2386,7 +2424,12 @@ function _getBiayaMap() {
     }
 }
 
-function _resolveBiayaForPengajuan(pengajuan, biayaMap) {
+function _resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap) {
+    const id = String((pengajuan && pengajuan['ID Pengajuan']) || '').trim();
+    overrideMap = overrideMap || _getBiayaOverrideMap();
+    if (id && overrideMap[id] !== undefined && overrideMap[id] !== null && String(overrideMap[id]).trim() !== '') {
+        return overrideMap[id];
+    }
     biayaMap = biayaMap || _getBiayaMap();
     const jenis = String((pengajuan && pengajuan['Jenis Kegiatan']) || '').trim();
     if (jenis && biayaMap[jenis] !== undefined) return biayaMap[jenis];
@@ -3164,9 +3207,10 @@ function getAcceptedStudentData(filter) {
         return String(a.Timestamp || '').localeCompare(String(b.Timestamp || ''));
     });
     const biayaMap = _getBiayaMap();
+    const overrideMap = _getBiayaOverrideMap();
     return rows.map(function(r) {
         const copy = Object.assign({}, r);
-        copy.Biaya = _resolveBiayaForPengajuan(copy, biayaMap);
+        copy.Biaya = _resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
         copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
         return copy;
     });
