@@ -2110,6 +2110,7 @@
                     this.loading = true;
                     try {
                         const res = await this.run('deleteDetailKegiatan', this.detail.p['ID Pengajuan'], i);
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menghapus.', false); return; }
                         this.notify((res && res.message) || 'Detail kegiatan dihapus.');
                         if (res && res.success) {
                             this.cancelEditDetail();
