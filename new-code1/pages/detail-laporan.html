@@ -685,41 +685,122 @@
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-4">
                                     <label class="label">Bagian</label>
-                                    <select v-model="filters.bagian" class="input">
+                                    <select v-model="baFilter.bagian" class="input">
                                         <option value="">Semua Bagian</option>
                                         <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
                                 </div>
-                                <div class="flex items-end md:col-span-8 text-xs text-slate-400">
-                                    {{ baGroups.length }} kelompok berita acara
+                                <div class="md:col-span-4">
+                                    <label class="label">Blok</label>
+                                    <select v-model="baFilter.blok" class="input">
+                                        <option value="">Semua Blok</option>
+                                        <option v-for="o in baBlokOptions" :key="o" :value="o">{{ o }}</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-4">
+                                    <label class="label">Cari</label>
+                                    <input v-model="baFilter.q" class="input" placeholder="Kegiatan, BA ID, NPM, atau nama...">
                                 </div>
                             </div>
-                        </div>
-                        <div v-if="!baGroups.length" class="rounded-2xl bg-white px-4 py-14 text-center shadow-soft ring-1 ring-slate-100">
-                            <i class="bi bi-file-earmark-text text-3xl text-slate-300"></i>
-                            <p class="mt-3 text-sm text-slate-400">Belum ada berita acara.</p>
-                        </div>
-                        <div v-for="g in baGroups" :key="g.key" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                                <i class="bi bi-folder2-open text-brand-500"></i>
-                                <div class="font-bold text-slate-800">{{ g.label }}</div>
-                                <span class="ml-auto text-xs text-slate-400">{{ g.items.length }} BA</span>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baGroupRows.length }} kelompok kegiatan</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baGroupBaTotal }} BA</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baGroupPesertaTotal }} mahasiswa</span>
                             </div>
-                            <div class="divide-y divide-slate-50">
-                                <div v-for="b in g.items" :key="b['BA ID']" class="px-4 py-3">
-                                    <div class="flex flex-wrap items-center gap-3">
-                                        <span class="font-mono text-xs text-slate-400">{{ b['BA ID'] }}</span>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="truncate font-semibold text-slate-800">{{ b['Nama Kegiatan'] || '-' }}</div>
-                                            <div class="text-xs text-slate-400">{{ b.Blok || '-' }} · {{ fmtTanggalWaktu(b['Tanggal Pelaksanaan']) }}</div>
-                                        </div>
-                                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ (b.peserta || []).length }} peserta</span>
-                                        <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
-                                    </div>
-                                    <div v-if="b.peserta && b.peserta.length" class="mt-2 flex flex-wrap gap-1.5">
-                                        <span v-for="(p, i) in b.peserta" :key="i" class="rounded-lg bg-slate-100 px-2 py-1 text-[11px] text-slate-600">{{ p.npm }} · {{ p.namaLengkap }}</span>
-                                    </div>
+                        </div>
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                                <div>
+                                    <div class="font-bold text-slate-800">Rekap Berita Acara per Bagian, Blok &amp; Kegiatan</div>
+                                    <div class="text-xs text-slate-400">Klik baris untuk melihat daftar file BA &amp; peserta</div>
                                 </div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportBaTable">
+                                    <i class="bi bi-file-earmark-excel"></i> Export XLSX
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="w-8 px-3 py-2.5"></th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Jumlah BA</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Biaya</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template v-for="s in baGroupSections" :key="s.type === 'row' ? s.row.key : ('sub-' + normBagian(s.bagian))">
+                                            <template v-if="s.type === 'subtotal'">
+                                                <tr class="bg-slate-100/80">
+                                                    <td class="px-3 py-2"></td>
+                                                    <td colspan="3" class="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtotal {{ s.bagian }}</td>
+                                                    <td class="px-3 py-2"></td>
+                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.jumlahBa }}</td>
+                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.pesertaCount }}</td>
+                                                    <td class="px-3 py-2 text-right font-bold text-teal-700">{{ fmtRupiah(s.biaya) }}</td>
+                                                </tr>
+                                            </template>
+                                            <template v-else>
+                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(s.row.key)">
+                                                <td class="px-3 py-2.5 text-slate-400">
+                                                    <i :class="expanded[s.row.key] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ s.row.bagian }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ s.row.blok || '-' }}</td>
+                                                <td class="px-3 py-2.5">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">BA</span>
+                                                        <span class="font-semibold text-slate-800">{{ s.row.nama }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ s.row.tanggal ? fmtTanggalWaktu(s.row.tanggal) : '-' }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ s.row.jumlahBa }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ s.row.pesertaCount }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(s.row.biaya) }}</td>
+                                            </tr>
+                                            <tr v-if="expanded[s.row.key]">
+                                                <td colspan="8" class="bg-slate-50/60 px-6 py-4">
+                                                    <div class="space-y-4">
+                                                        <div v-for="b in s.row.items" :key="b['BA ID']" class="rounded-xl bg-white p-3 ring-1 ring-slate-100">
+                                                            <div class="flex flex-wrap items-center gap-3">
+                                                                <span class="font-mono text-xs text-slate-400">{{ b['BA ID'] }}</span>
+                                                                <span class="text-xs text-slate-400">{{ b['Tanggal Pelaksanaan'] ? fmtTanggalWaktu(b['Tanggal Pelaksanaan']) : '-' }}</span>
+                                                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ (b.peserta || []).length }} peserta</span>
+                                                                <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="btn-soft ml-auto !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
+                                                            </div>
+                                                            <div v-if="b.peserta && b.peserta.length" class="mt-2 space-y-1">
+                                                                <div v-for="(p, i) in b.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs">
+                                                                    <span class="font-mono font-semibold text-slate-600">{{ p.npm || '-' }}</span>
+                                                                    <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
+                                                                    <a v-if="linkBuktiForNpm(p.npm)" :href="linkBuktiForNpm(p.npm)" target="_blank" class="link ml-auto whitespace-nowrap"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                                    <span v-else class="ml-auto text-slate-300">-</span>
+                                                                </div>
+                                                            </div>
+                                                            <div v-else class="mt-2 text-xs text-slate-400">Tidak ada daftar peserta.</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            </template>
+                                        </template>
+                                        <tr v-if="baGroupRows.length" class="bg-slate-200/70 font-extrabold">
+                                            <td class="px-3 py-2.5"></td>
+                                            <td colspan="3" class="px-3 py-2.5 text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
+                                            <td class="px-3 py-2.5"></td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baGroupBaTotal }}</td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baGroupPesertaTotal }}</td>
+                                            <td class="px-3 py-2.5 text-right text-teal-800">{{ fmtRupiah(baGroupGrandTotal) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div v-if="!baGroupRows.length" class="px-4 py-14 text-center">
+                                <i class="bi bi-table text-3xl text-slate-300"></i>
+                                <p class="mt-3 text-sm text-slate-400">Belum ada berita acara.</p>
                             </div>
                         </div>
                         </template>
@@ -902,6 +983,7 @@
                     dosenFilter: { blok: '', jenis: '', from: '', to: '', bagian: '', q: '' },
                     activeDosenCell: null,
                     bagianFilter: { bagian: '', blok: '', q: '' },
+                    baFilter: { bagian: '', blok: '', q: '' },
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalDiterima: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
@@ -1326,18 +1408,90 @@
                     this.bagianDetailRows.forEach(r => r.peserta.forEach(p => { const key = (p.npm || p.namaLengkap || '').toLowerCase(); if (key) seen[key] = 1; }));
                     return Object.keys(seen).length;
                 },
-                baGroups() {
-                    const map = {};
-                    this.filteredBa.forEach(b => {
-                        const label = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
-                        if (!label) return;
-                        const k = this.normBagian(label);
-                        if (!map[k]) map[k] = { key: k, label: label, items: [] };
-                        map[k].items.push(b);
+                baBlokOptions() {
+                    const set = {};
+                    const sel = this.baFilter.bagian;
+                    this.beritaAcara.forEach(b => {
+                        const blok = String(b.Blok || '').trim();
+                        if (!blok) return;
+                        if (!sel || this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) === sel) set[blok] = 1;
                     });
-                    const arr = Object.values(map);
-                    arr.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                filteredBaTab() {
+                    const bagian = this.baFilter.bagian;
+                    const blok = this.baFilter.blok;
+                    const q = this.normSearch(this.baFilter.q);
+                    const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    return this.beritaAcara.filter(b => {
+                        if (bagian && this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) !== bagian) return false;
+                        if (blok && String(b.Blok || '').trim() !== blok) return false;
+                        if (q) {
+                            if (normName(b['Nama Kegiatan']).indexOf(q) !== -1) return true;
+                            if (normName(b['BA ID']).indexOf(q) !== -1) return true;
+                            return (b.peserta || []).some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
+                        }
+                        return true;
+                    });
+                },
+                baGroupRows() {
+                    const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const map = {};
+                    this.filteredBaTab.forEach(b => {
+                        const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
+                        if (!bagianLabel) return;
+                        const blok = String(b.Blok || '').trim();
+                        const nama = b['Nama Kegiatan'] || '-';
+                        const key = this.normBagian(bagianLabel) + '::' + blok + '::' + normName(nama);
+                        if (!map[key]) map[key] = { key: key, bagian: bagianLabel, blok: blok, nama: nama, tanggal: b['Tanggal Pelaksanaan'] || '', jumlahBa: 0, pesertaCount: 0, biaya: 0, items: [], pesertaSeen: {} };
+                        const g = map[key];
+                        g.jumlahBa++;
+                        g.items.push(b);
+                        const peserta = b.peserta || [];
+                        if (!g.tanggal && b['Tanggal Pelaksanaan']) g.tanggal = b['Tanggal Pelaksanaan'];
+                        peserta.forEach(p => {
+                            const npm = String(p.npm || '').trim();
+                            if (!npm || g.pesertaSeen[npm]) return;
+                            g.pesertaSeen[npm] = 1;
+                            g.pesertaCount++;
+                            g.biaya += this.biayaForNpm(npm, blok);
+                        });
+                    });
+                    const arr = Object.values(map).map(g => {
+                        g.items.sort((a, b) => String(a['Tanggal Pelaksanaan'] || '').localeCompare(String(b['Tanggal Pelaksanaan'] || '')));
+                        return g;
+                    });
+                    arr.sort((a, b) => this.normBagian(a.bagian).localeCompare(this.normBagian(b.bagian)) || String(a.blok).localeCompare(String(b.blok)) || normName(a.nama).localeCompare(normName(b.nama)));
                     return arr;
+                },
+                baGroupSections() {
+                    const sections = [];
+                    let last = null;
+                    let sub = null;
+                    this.baGroupRows.forEach(g => {
+                        if (last !== g.bagian) {
+                            if (sub) sections.push(sub);
+                            sub = { type: 'subtotal', bagian: g.bagian, jumlahBa: 0, pesertaCount: 0, biaya: 0 };
+                            last = g.bagian;
+                        }
+                        sub.jumlahBa += g.jumlahBa;
+                        sub.pesertaCount += g.pesertaCount;
+                        sub.biaya += g.biaya;
+                        sections.push({ type: 'row', row: g });
+                    });
+                    if (sub) sections.push(sub);
+                    return sections;
+                },
+                baGroupGrandTotal() {
+                    return this.baGroupRows.reduce((t, g) => t + (g.biaya || 0), 0);
+                },
+                baGroupBaTotal() {
+                    return this.baGroupRows.reduce((t, g) => t + (g.jumlahBa || 0), 0);
+                },
+                baGroupPesertaTotal() {
+                    const seen = {};
+                    this.baGroupRows.forEach(g => g.items.forEach(b => (b.peserta || []).forEach(p => { const k = String(p.npm || '').trim(); if (k) seen[k] = 1; })));
+                    return Object.keys(seen).length;
                 }
             },
             watch: {
@@ -1458,6 +1612,12 @@
                     if (!list.length) return 0;
                     const blok = String(baBlok || '').trim();
                     return (list.find(x => x.blok && x.blok === blok) || list[0]).biaya || 0;
+                },
+                linkBuktiForNpm(npm) {
+                    const v = String(npm || '').trim();
+                    if (!v) return '';
+                    const found = this.rows.find(r => String(r.pengajuan.NPM || '').trim() === v);
+                    return found ? String(found.pengajuan['Link Bukti Bayar'] || '').trim() : '';
                 },
                 resolveDosenForNpm(npm, baBlok) {
                     const info = this.npmInfoFor(npm, baBlok);
@@ -1740,6 +1900,54 @@
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Rekap Dosen');
                             XLSX.writeFile(wb, 'Rekap-Dosen-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export matriks dosen berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportBaTable() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const rekapRows = this.baGroupRows.map(g => ({
+                                'Bagian': g.bagian,
+                                'Blok': g.blok || '',
+                                'Nama Kegiatan': g.nama,
+                                'Tanggal': fmtTanggalWaktu(g.tanggal),
+                                'Jumlah BA': g.jumlahBa,
+                                'Jumlah Peserta': g.pesertaCount,
+                                'Biaya': g.biaya || 0
+                            }));
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap BA');
+
+                            const detailRows = [];
+                            this.filteredBaTab.forEach(b => {
+                                const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
+                                if (!bl) return;
+                                const seenNpm = {};
+                                const peserta = (b.peserta || []).filter(p => {
+                                    const k = String(p.npm || '').trim();
+                                    if (!k || seenNpm[k]) return false;
+                                    seenNpm[k] = 1;
+                                    return true;
+                                });
+                                const biaya = peserta.reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
+                                detailRows.push({
+                                    'BA ID': b['BA ID'], Bagian: bl, Blok: b.Blok || '',
+                                    'Nama Kegiatan': b['Nama Kegiatan'] || '', 'Tanggal Pelaksanaan': fmtTanggalWaktu(b['Tanggal Pelaksanaan']),
+                                    'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'Biaya': biaya, 'File URL': b['File URL'] || ''
+                                });
+                            });
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows), 'Detail BA');
+
+                            XLSX.writeFile(wb, 'Rekap-Berita-Acara-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export berita acara berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {
