@@ -555,14 +555,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="s in bagianDetailSections" :key="s.type === 'row' ? s.row.uid : ('sub-' + s.bagian)">
+                                        <template v-for="s in bagianDetailSections" :key="s.type === 'row' ? s.row.uid : ('sub-' + normBagian(s.bagian))">
                                             <template v-if="s.type === 'subtotal'">
                                                 <tr class="bg-slate-100/80">
                                                     <td class="px-3 py-2"></td>
                                                     <td colspan="3" class="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtotal {{ s.bagian }}</td>
                                                     <td class="px-3 py-2"></td>
                                                     <td class="px-3 py-2 text-right font-bold text-teal-700">{{ fmtRupiah(s.biaya) }}</td>
-                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.count }}</td>
+                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.pesertaCount }}</td>
                                                     <td class="px-3 py-2" colspan="2"></td>
                                                 </tr>
                                             </template>
@@ -613,7 +613,7 @@
                                             <td colspan="3" class="px-3 py-2.5 text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
                                             <td class="px-3 py-2.5"></td>
                                             <td class="px-3 py-2.5 text-right text-teal-800">{{ fmtRupiah(bagianDetailGrandTotal) }}</td>
-                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ bagianDetailRows.length }}</td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ bagianDetailPesertaTotal }}</td>
                                             <td class="px-3 py-2.5" colspan="2"></td>
                                         </tr>
                                     </tbody>
@@ -1308,10 +1308,10 @@
                     this.bagianDetailRows.forEach(r => {
                         if (last !== r.bagian) {
                             if (sub) sections.push(sub);
-                            sub = { type: 'subtotal', bagian: r.bagian, count: 0, biaya: 0 };
+                            sub = { type: 'subtotal', bagian: r.bagian, pesertaCount: 0, biaya: 0 };
                             last = r.bagian;
                         }
-                        sub.count++;
+                        sub.pesertaCount += r.jumlahPeserta || 0;
                         sub.biaya += r.biaya || 0;
                         sections.push({ type: 'row', row: r });
                     });
@@ -1693,7 +1693,14 @@
                             this.filteredBa.forEach(b => {
                                 const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
                                 if (!bl) return;
-                                const biaya = (b.peserta || []).reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
+                                const seenNpm = {};
+                                const peserta = (b.peserta || []).filter(p => {
+                                    const k = String(p.npm || '').trim();
+                                    if (!k || seenNpm[k]) return false;
+                                    seenNpm[k] = 1;
+                                    return true;
+                                });
+                                const biaya = peserta.reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
                                 baRows.push({
                                     'BA ID': b['BA ID'], Bagian: bl, Blok: b.Blok || '',
                                     'Nama Kegiatan': b['Nama Kegiatan'] || '', 'Tanggal Pelaksanaan': fmtTanggalWaktu(b['Tanggal Pelaksanaan']),
