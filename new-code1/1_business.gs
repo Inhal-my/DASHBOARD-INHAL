@@ -2404,7 +2404,7 @@ function _resolveBiayaForPengajuan(pengajuan, biayaMap) {
 function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
     const id = String(idPengajuan || '').trim();
     if (!id) throw new Error('ID Pengajuan tidak tersedia.');
-    const key = [id, '', '', ''].join('||');
+    const key = [id, '', 'BIAYA-OVERRIDE', ''].join('||');
     const checkRows = getAllRows('CheckData');
     let found = null;
     for (let i = 0; i < checkRows.length; i++) {
@@ -2427,7 +2427,7 @@ function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
         'Blok': String((pRow && pRow.Blok) || '').trim(),
         'Jenis Kegiatan': String((pRow && pRow['Jenis Kegiatan']) || '').trim(),
         'Pilihan': '',
-        'Detail': '',
+        'Detail': 'BIAYA-OVERRIDE',
         'Tanggal Pelaksanaan': '',
         'Dosen': String((pRow && pRow.Dosen) || '').trim(),
         'Biaya': nilai
