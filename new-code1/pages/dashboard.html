@@ -990,6 +990,7 @@
                                 <div v-if="detail.showLengkap" class="mt-3 grid gap-3 sm:grid-cols-2">
                                     <div><label class="label">Dosen</label><input v-model="detail.dForm.dosen" class="input" list="dosenList"></div>
                                     <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.dForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
+                                    <div><label class="label">Biaya</label><select v-model="detail.dForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in masterBiaya" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
                                     <div class="mt-1 flex gap-2 sm:col-span-2">
                                         <button class="btn-primary" @click="saveFields()"><i class="bi bi-save"></i>Simpan Perubahan</button>
                                         <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
@@ -1243,7 +1244,8 @@
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
-                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    masterBiaya: [],
+                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '', biaya: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { rows: [], all: [], fBagian: '', fBlok: '', options: [], labs: [], bloks: [], detail: null },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
@@ -1802,6 +1804,7 @@
                         this.stats = b.stats || this.stats;
                         this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
                         this.detailMap = b.detailMap || {};
+                        this.masterBiaya = b.masterBiaya || [];
                         this.bagian.all = (b.bagian && b.bagian.rows) || [];
                         this.bagian.labs = (b.bagian && b.bagian.labs) || [];
                         this.bagian.options = (b.bagian && b.bagian.filters && b.bagian.filters.bagian) || this.bagian.options;
@@ -2014,7 +2017,8 @@
                     this.detail.baList = this.matchBaForPengajuan(p);
                     this.detail.dForm = {
                         dosen: p.Dosen || '',
-                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
+                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan']),
+                        biaya: p.BiayaOverride ? String(p.BiayaOverride) : ''
                     };
                     this.detail.iForm = {
                         email: p.Email || '',
@@ -2174,7 +2178,8 @@
                     try {
                         const res = await this.run('updatePengajuanFields', this.detail.p['ID Pengajuan'], {
                             dosen: (d.dosen || '').trim(),
-                            tanggalPelaksanaan: d.tanggalPelaksanaan || ''
+                            tanggalPelaksanaan: d.tanggalPelaksanaan || '',
+                            biaya: (d.biaya || '').trim()
                         });
                         if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
                         this.notify((res && res.message) || 'Disimpan.');
