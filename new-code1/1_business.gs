@@ -1460,6 +1460,9 @@ function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
         const copy = _clientRow(r);
         copy.Biaya = _resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
         copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
+        copy.BiayaOverride = (overrideMap[String(r['ID Pengajuan'] || '').trim()] !== undefined)
+            ? String(overrideMap[String(r['ID Pengajuan'] || '').trim()])
+            : '';
         return copy;
     });
 }
