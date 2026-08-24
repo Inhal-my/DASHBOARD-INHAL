@@ -2184,6 +2184,7 @@
                         if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
                         this.notify((res && res.message) || 'Disimpan.');
                         await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                        await this.loadStats();
                         this.detail.open = false;
                         this.switchTab('pengajuan');
                     } catch (e) {

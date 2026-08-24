@@ -2452,18 +2452,20 @@ function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
     if (!id) throw new Error('ID Pengajuan tidak tersedia.');
     const key = [id, '', 'BIAYA-OVERRIDE', ''].join('||');
     const checkRows = getAllRows('CheckData');
-    let found = null;
+    const matches = [];
     for (let i = 0; i < checkRows.length; i++) {
-        if (_checkDataKey(checkRows[i]) === key) { found = checkRows[i]; break; }
+        if (_checkDataKey(checkRows[i]) === key) matches.push(checkRows[i]);
     }
+    const found = matches[0] || null;
+    const dupes = matches.slice(1);
 
     const nilai = String(biaya || '').trim();
     if (!nilai) {
-        if (found) {
-            deleteRowByKey('CheckData', 'Check ID', found['Check ID'], 'Hapus baris biaya pengajuan ' + id, getActorName());
-        }
+        matches.forEach(function(m) {
+            deleteRowByKey('CheckData', 'Check ID', m['Check ID'], 'Hapus baris biaya pengajuan ' + id, getActorName());
+        });
         invalidateSheetCache('CheckData');
-        return { success: true, cleared: !!found, message: 'Biaya kembali ke default MasterBiaya.' };
+        return { success: true, cleared: matches.length > 0, message: 'Biaya kembali ke default MasterBiaya.' };
     }
 
     const values = {
@@ -2495,6 +2497,9 @@ function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
     } else {
         appendRowSafe('CheckData', Object.assign({ Timestamp: new Date(), 'Check ID': generateId('CHK') }, values));
     }
+    dupes.forEach(function(d) {
+        deleteRowByKey('CheckData', 'Check ID', d['Check ID'], 'Hapus duplikat baris biaya pengajuan ' + id, getActorName());
+    });
     invalidateSheetCache('CheckData');
     return { success: true, created: !found, message: 'Biaya pengajuan disimpan.' };
 }
