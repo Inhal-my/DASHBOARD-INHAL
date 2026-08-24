@@ -860,6 +860,23 @@
             }
             return s;
         }
+        function setUrlHyperlinks(ws, header, tooltip) {
+            if (!ws || !ws['!ref']) return;
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            let col = -1;
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                const cell = ws[XLSX.utils.encode_cell({ r: range.s.r, c })];
+                if (cell && String(cell.v) === header) { col = c; break; }
+            }
+            if (col < 0) return;
+            for (let r = range.s.r + 1; r <= range.e.r; r++) {
+                const addr = XLSX.utils.encode_cell({ r, c: col });
+                const cell = ws[addr];
+                if (!cell) continue;
+                const url = String(cell.v || '');
+                if (/^https?:\/\//i.test(url)) XLSX.utils.cell_set_hyperlink(cell, url, tooltip);
+            }
+        }
         function statusBadgeCls(status) {
             const cls = {
                 'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
@@ -1787,11 +1804,14 @@
                                 return {
                                     'ID Pengajuan': p['ID Pengajuan'], NPM: p.NPM, Nama: p['Nama Lengkap'],
                                     'Jenis Kegiatan': p['Jenis Kegiatan'], Blok: p.Blok, Dosen: p.Dosen,
-                                    'Tanggal Pelaksanaan': fmtTanggal(p['Tanggal Pelaksanaan']),
-                                    'Nomor Surat': p['Nomor Surat'] || '', Status: p.Status || '', Biaya: Number(p.Biaya) || 0
+                                    'Tanggal Pelaksanaan': fmtTanggalWaktu(p['Tanggal Pelaksanaan']),
+                                    'Nomor Surat': p['Nomor Surat'] || '', Status: p.Status || '', Biaya: Number(p.Biaya) || 0,
+                                    Link: p['Link Bukti Bayar'] || ''
                                 };
                             });
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap');
+                            const wsRekap = XLSX.utils.json_to_sheet(rekapRows);
+                            setUrlHyperlinks(wsRekap, 'Link', 'Buka link bukti bayar');
+                            XLSX.utils.book_append_sheet(wb, wsRekap, 'Rekap');
 
                             const dosenCols = this.dosenMatrixCols;
                             const dosenRows = this.dosenMatrixRows.map(r => {
@@ -1831,7 +1851,9 @@
                                 'Daftar Peserta': r.peserta.map(p => (p.npm || '-') + ' - ' + (p.namaLengkap || '-')).join('; '),
                                 'Link BA': r.fileUrl || ''
                             }));
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailKegiatanRows), 'Detail Kegiatan');
+                            const wsDetailKegiatan = XLSX.utils.json_to_sheet(detailKegiatanRows);
+                            setUrlHyperlinks(wsDetailKegiatan, 'Link BA', 'Buka link berita acara');
+                            XLSX.utils.book_append_sheet(wb, wsDetailKegiatan, 'Detail Kegiatan');
 
                             const detailPesertaRows = [];
                             this.bagianDetailRows.forEach(r => r.peserta.forEach(p => {
@@ -1847,7 +1869,9 @@
                                     'Link Bukti Bayar': p.linkBukti || ''
                                 });
                             }));
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailPesertaRows), 'Detail Peserta');
+                            const wsDetailPeserta = XLSX.utils.json_to_sheet(detailPesertaRows);
+                            setUrlHyperlinks(wsDetailPeserta, 'Link Bukti Bayar', 'Buka link bukti bayar');
+                            XLSX.utils.book_append_sheet(wb, wsDetailPeserta, 'Detail Peserta');
 
                             const baRows = [];
                             this.filteredBa.forEach(b => {
@@ -1867,7 +1891,9 @@
                                     'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'Biaya': biaya, 'File URL': b['File URL'] || ''
                                 });
                             });
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(baRows), 'Berita Acara');
+                            const wsBa = XLSX.utils.json_to_sheet(baRows);
+                            setUrlHyperlinks(wsBa, 'File URL', 'Buka file berita acara');
+                            XLSX.utils.book_append_sheet(wb, wsBa, 'Berita Acara');
 
                             XLSX.writeFile(wb, 'Laporan-INHAL-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export .xlsx berhasil diunduh.');
@@ -1944,7 +1970,9 @@
                                     'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'Biaya': biaya, 'File URL': b['File URL'] || ''
                                 });
                             });
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows), 'Detail BA');
+                            const wsDetailBa = XLSX.utils.json_to_sheet(detailRows);
+                            setUrlHyperlinks(wsDetailBa, 'File URL', 'Buka file berita acara');
+                            XLSX.utils.book_append_sheet(wb, wsDetailBa, 'Detail BA');
 
                             XLSX.writeFile(wb, 'Rekap-Berita-Acara-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export berita acara berhasil diunduh.');

@@ -1804,6 +1804,7 @@ function getMasterDataMonitor() {
 
 function saveMasterBagian(payload) {
     requireAuthorized(arguments[arguments.length - 1]);
+    invalidateSheetCache('MasterBagian');
     const rows = (payload && payload.rows) ? payload.rows : [];
     const sheet = getGlobalSpreadsheet().getSheetByName('MasterBagian');
     if (!sheet) throw new Error('Sheet MasterBagian tidak ditemukan.');
@@ -1825,6 +1826,7 @@ function saveMasterBagian(payload) {
 
 function saveMasterBiaya(payload) {
     requireAuthorized(arguments[arguments.length - 1]);
+    invalidateSheetCache('MasterBiaya');
     const rows = (payload && payload.rows) ? payload.rows : [];
     const sheet = getGlobalSpreadsheet().getSheetByName('MasterBiaya');
     if (!sheet) throw new Error('Sheet MasterBiaya tidak ditemukan.');

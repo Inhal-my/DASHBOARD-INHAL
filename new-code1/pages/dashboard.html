@@ -1888,6 +1888,11 @@
                         const d = await this.run('getMasterDataMonitor') || {};
                         this.master.data = d;
                         this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
+                        const mb = (d.masterBiaya || []).map(r => parseInt(String((r && (r.Biaya || r.biaya)) || '').replace(/[^0-9]/g, ''), 10) || 0).filter(v => v > 0);
+                        const mbUniq = [];
+                        mb.forEach(v => { if (mbUniq.indexOf(v) === -1) mbUniq.push(v); });
+                        mbUniq.sort((a, b) => a - b);
+                        this.masterBiaya = mbUniq;
                         this.loaded.master = true;
                     } catch (e) {
                         this.notify('Gagal memuat master data: ' + e, false);
@@ -2474,6 +2479,9 @@
                         this.notify((res && res.message) || 'Disimpan.');
                         this.master.modal = false;
                         await this.loadMaster();
+                        this.loaded.pengajuan = false;
+                        this.loaded.stats = false;
+                        await Promise.all([this.loadPengajuan(), this.loadStats()]);
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
                     } finally {
