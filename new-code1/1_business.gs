@@ -2648,6 +2648,33 @@ function updateDetailKegiatan(idPengajuan, index, payload) {
     }
 }
 
+function deleteDetailKegiatan(idPengajuan, index) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const rowIndex = _findDetailKegiatanRowByIdIndex(idPengajuan, index);
+        if (rowIndex === -1) return { success: false, message: 'Detail kegiatan tidak ditemukan.' };
+        const sheet = getGlobalSpreadsheet().getSheetByName('DetailKegiatan');
+        const headers = getHeadersFromSheet(sheet);
+        const row = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+        const data = rowToObject(headers, row);
+        sheet.deleteRow(rowIndex);
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'DELETE',
+            target: 'DetailKegiatan',
+            detail: JSON.stringify(data),
+            alasan: 'Pemeliharaan data admin'
+        });
+        return { success: true, message: 'Detail kegiatan dihapus.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    } finally {
+        lock.releaseLock();
+    }
+}
+
 function updatePengajuanFields(idPengajuan, payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     try {
