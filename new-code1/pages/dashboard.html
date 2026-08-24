@@ -941,15 +941,37 @@
                             <span class="ml-3 text-sm font-semibold text-slate-500">Memuat detail...</span>
                         </div>
                         <div v-else-if="detail.p" class="modal-body px-6 py-5">
-                            <div class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                                <div><div class="label">NPM</div><div class="value">{{ detail.p.NPM }}</div></div>
-                                <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
-                                <div><div class="label">Tanggal Daftar</div><div class="value">{{ formatTanggal(detail.p.Timestamp) }}</div></div>
-                                <div><div class="label">Blok</div><div class="value">{{ detail.p.Blok }}</div></div>
-                                <div><div class="label">Jenis Kegiatan</div><div class="value">{{ detail.p['Jenis Kegiatan'] }}</div></div>
-                                <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
-                                <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
-                                <div><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
+                            <div class="rounded-2xl bg-slate-50/70 p-4">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <span class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-person-badge text-base text-brand-600"></i> Data Mahasiswa</span>
+                                    <button v-if="!detail.editInduk" class="btn-soft !px-3 !py-1.5 text-xs" @click="startEditInduk()"><i class="bi bi-pencil-square"></i>Edit</button>
+                                </div>
+                                <div v-if="!detail.editInduk" class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div><div class="label">NPM</div><div class="value">{{ detail.p.NPM }}</div></div>
+                                    <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
+                                    <div><div class="label">Email</div><div class="value">{{ detail.p.Email || '—' }}</div></div>
+                                    <div><div class="label">No. HP/WA</div><div class="value">{{ detail.p['No. HP/WA'] || '—' }}</div></div>
+                                    <div><div class="label">Blok</div><div class="value">{{ detail.p.Blok }}</div></div>
+                                    <div><div class="label">Jenis Kegiatan</div><div class="value">{{ detail.p['Jenis Kegiatan'] }}</div></div>
+                                    <div><div class="label">Tanggal Pelaksanaan</div><div class="value">{{ detail.p['Tanggal Pelaksanaan'] ? formatTanggalWaktu(detail.p['Tanggal Pelaksanaan']) : '—' }}</div></div>
+                                    <div><div class="label">Tanggal Daftar</div><div class="value">{{ formatTanggal(detail.p.Timestamp) }}</div></div>
+                                    <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
+                                    <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
+                                    <div><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
+                                </div>
+                                <div v-else class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div><div class="label">NPM</div><div class="value font-semibold">{{ detail.p.NPM }}</div></div>
+                                    <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
+                                    <div><label class="label">Email</label><input v-model="detail.iForm.email" type="email" class="input"></div>
+                                    <div><label class="label">No. HP/WA</label><input v-model="detail.iForm.noHp" class="input"></div>
+                                    <div><label class="label">Blok</label><input v-model="detail.iForm.blok" class="input"></div>
+                                    <div><label class="label">Jenis Kegiatan</label><input v-model="detail.iForm.jenisKegiatan" class="input"></div>
+                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.iForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
+                                    <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+                                        <button class="btn-primary" @click="saveIndukFields()"><i class="bi bi-save"></i>Simpan</button>
+                                        <button class="btn-soft" @click="cancelEditInduk()">Batal</button>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- links -->
@@ -1198,7 +1220,7 @@
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
-                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '' },
+                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' } },
                     bagian: { rows: [], all: [], fBagian: '', fBlok: '', options: [], labs: [], bloks: [], detail: null },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
@@ -1971,11 +1993,55 @@
                         dosen: p.Dosen || '',
                         tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
                     };
+                    this.detail.iForm = {
+                        email: p.Email || '',
+                        noHp: p['No. HP/WA'] || '',
+                        blok: p.Blok || '',
+                        jenisKegiatan: p['Jenis Kegiatan'] || '',
+                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
+                    };
+                    this.detail.editInduk = false;
                     this.detail.status = 'Diterima';
                     this.detail.catatan = '';
                     this.detail.open = true;
                     this.detail.showLengkap = false;
                     this.detail.loading = false;
+                },
+                startEditInduk() {
+                    const p = this.detail.p;
+                    if (!p) return;
+                    this.detail.iForm = {
+                        email: p.Email || '',
+                        noHp: p['No. HP/WA'] || '',
+                        blok: p.Blok || '',
+                        jenisKegiatan: p['Jenis Kegiatan'] || '',
+                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
+                    };
+                    this.detail.editInduk = true;
+                },
+                cancelEditInduk() {
+                    this.detail.editInduk = false;
+                },
+                async saveIndukFields() {
+                    const f = this.detail.iForm;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('updatePengajuanFields', this.detail.p['ID Pengajuan'], {
+                            email: (f.email || '').trim(),
+                            noHp: (f.noHp || '').trim(),
+                            blok: (f.blok || '').trim(),
+                            jenisKegiatan: (f.jenisKegiatan || '').trim(),
+                            tanggalPelaksanaan: f.tanggalPelaksanaan || ''
+                        });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
+                        this.notify((res && res.message) || 'Data pengajuan diperbarui.');
+                        this.detail.editInduk = false;
+                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
                 },
                 openDetail(id) {
                     const base = this.pengajuanRows.find(r => r['ID Pengajuan'] === id);
