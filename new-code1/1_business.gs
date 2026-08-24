@@ -2581,6 +2581,29 @@ function _setPengajuanColumns(idPengajuan, values) {
     range.setValues([row]);
 }
 
+function _findDetailKegiatanRowByIdIndex(idPengajuan, index) {
+    const sheet = getGlobalSpreadsheet().getSheetByName('DetailKegiatan');
+    if (!sheet) throw new Error('Sheet DetailKegiatan tidak ditemukan.');
+    const headers = getHeadersFromSheet(sheet);
+    const idIdx = headers.indexOf('ID Pengajuan');
+    if (idIdx === -1) throw new Error('Kolom ID Pengajuan tidak ditemukan di DetailKegiatan.');
+    const last = sheet.getLastRow();
+    if (last < 2) return -1;
+    const values = sheet.getRange(2, 1, last - 1, headers.length).getValues();
+    let n = -1;
+    for (let i = 0; i < values.length; i++) {
+        const hasValue = values[i].some(function(c) {
+            return c !== null && c !== undefined && String(c).trim() !== '';
+        });
+        if (!hasValue) continue;
+        if (String(values[i][idIdx]).trim() === String(idPengajuan || '').trim()) {
+            n++;
+            if (n === index) return i + 2;
+        }
+    }
+    return -1;
+}
+
 function updatePengajuanFields(idPengajuan, payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     try {
