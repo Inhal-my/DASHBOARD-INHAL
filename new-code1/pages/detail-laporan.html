@@ -467,7 +467,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
                                 <div>
                                     <div class="font-bold text-slate-800">Detail BA: {{ activeDosenCell.dosen }}</div>
-                                    <div class="text-xs text-slate-400">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA</div>
+                                    <div class="text-xs text-slate-400">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA · Total <span class="font-semibold text-teal-700">{{ fmtRupiah(dosenCellBiayaTotal) }}</span></div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" @click="closeDosenDetail"><i class="bi bi-x-lg"></i> Tutup</button>
                             </div>
@@ -479,6 +479,7 @@
                                     </div>
                                     <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ d.jumlahPeserta }} peserta</span>
                                     <a v-if="d.fileUrl" :href="d.fileUrl" target="_blank" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                    <span v-if="d.biaya" class="whitespace-nowrap rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-700">{{ fmtRupiah(d.biaya) }}</span>
                                 </div>
                             </div>
                             <div v-else class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada BA untuk kombinasi ini.</div>
@@ -547,43 +548,57 @@
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
                                             <th class="px-3 py-2.5 text-left">Kegiatan</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Biaya</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Bukti Bayar</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">BA</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="r in bagianDetailRows" :key="r.uid">
-                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(r.uid)">
+                                        <template v-for="s in bagianDetailSections" :key="s.type === 'row' ? s.row.uid : ('sub-' + s.bagian)">
+                                            <template v-if="s.type === 'subtotal'">
+                                                <tr class="bg-slate-100/80">
+                                                    <td class="px-3 py-2"></td>
+                                                    <td colspan="3" class="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtotal {{ s.bagian }}</td>
+                                                    <td class="px-3 py-2"></td>
+                                                    <td class="px-3 py-2 text-right font-bold text-teal-700">{{ fmtRupiah(s.biaya) }}</td>
+                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.count }}</td>
+                                                    <td class="px-3 py-2" colspan="2"></td>
+                                                </tr>
+                                            </template>
+                                            <template v-else>
+                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(s.row.uid)">
                                                 <td class="px-3 py-2.5 text-slate-400">
-                                                    <i :class="expanded[r.uid] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                    <i :class="expanded[s.row.uid] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                                                 </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ r.bagian }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ s.row.bagian }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ s.row.blok }}</td>
                                                 <td class="px-3 py-2.5">
                                                     <div class="flex items-center gap-2">
-                                                        <span :class="r.sumber === 'BA' ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'" class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold">{{ r.sumber === 'BA' ? 'BA' : 'Belum ada BA' }}</span>
-                                                        <span class="font-semibold text-slate-800">{{ r.nama }}</span>
+                                                        <span :class="s.row.sumber === 'BA' ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'" class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold">{{ s.row.sumber === 'BA' ? 'BA' : 'Belum ada BA' }}</span>
+                                                        <span class="font-semibold text-slate-800">{{ s.row.nama }}</span>
                                                     </div>
                                                 </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.tanggal ? fmtTanggalWaktu(r.tanggal) : '-' }}</td>
-                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.jumlahPeserta }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ s.row.tanggal ? fmtTanggalWaktu(s.row.tanggal) : '-' }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(s.row.biaya || 0) }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ s.row.jumlahPeserta }}</td>
                                                 <td class="px-3 py-2.5 text-center">
-                                                    <span v-if="r.peserta.length" :class="r.countBukti === r.peserta.length ? 'bg-emerald-50 text-emerald-700' : (r.countBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold">{{ r.countBukti }}/{{ r.peserta.length }}</span>
+                                                    <span v-if="s.row.peserta.length" :class="s.row.countBukti === s.row.peserta.length ? 'bg-emerald-50 text-emerald-700' : (s.row.countBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold">{{ s.row.countBukti }}/{{ s.row.peserta.length }}</span>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="r.fileUrl" :href="r.fileUrl" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
+                                                    <a v-if="s.row.fileUrl" :href="s.row.fileUrl" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
-                                            <tr v-if="expanded[r.uid]">
-                                                <td colspan="8" class="bg-slate-50/60 px-6 py-4">
-                                                    <div v-if="r.peserta.length" class="space-y-1">
-                                                        <div v-for="(p, i) in r.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                            <tr v-if="expanded[s.row.uid]">
+                                                <td colspan="9" class="bg-slate-50/60 px-6 py-4">
+                                                    <div v-if="s.row.peserta.length" class="space-y-1">
+                                                        <div v-for="(p, i) in s.row.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
                                                             <span class="font-mono font-semibold text-slate-600">{{ p.npm || '-' }}</span>
                                                             <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
                                                             <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
+                                                            <span v-if="biayaForNpm(p.npm, s.row.blok)" class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(biayaForNpm(p.npm, s.row.blok)) }}</span>
                                                             <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="text-slate-300">-</span>
                                                         </div>
@@ -591,7 +606,16 @@
                                                     <div v-else class="text-sm text-slate-400">Tidak ada daftar peserta.</div>
                                                 </td>
                                             </tr>
+                                            </template>
                                         </template>
+                                        <tr v-if="bagianDetailRows.length" class="bg-slate-200/70 font-extrabold">
+                                            <td class="px-3 py-2.5"></td>
+                                            <td colspan="3" class="px-3 py-2.5 text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
+                                            <td class="px-3 py-2.5"></td>
+                                            <td class="px-3 py-2.5 text-right text-teal-800">{{ fmtRupiah(bagianDetailGrandTotal) }}</td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ bagianDetailRows.length }}</td>
+                                            <td class="px-3 py-2.5" colspan="2"></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1001,6 +1025,20 @@
                     });
                     return map;
                 },
+                npmBiayaMap() {
+                    const map = {};
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const npm = String(p.NPM || '').trim();
+                        if (!npm) return;
+                        if (!map[npm]) map[npm] = [];
+                        map[npm].push({
+                            blok: String(p.Blok || '').trim(),
+                            biaya: Number(p.Biaya) || 0
+                        });
+                    });
+                    return map;
+                },
                 bagianBlokOptions() {
                     const sel = this.bagianFilter.bagian;
                     const set = {};
@@ -1096,7 +1134,8 @@
                                 return true;
                             });
                             if (k.sumber === 'Pengajuan') k.jumlahPeserta = k.peserta.length;
-                            out.push({ bagian: g.bagian, blok: g.blok, sumber: k.sumber, nama: k.nama, tanggal: k.tanggal, jumlahPeserta: k.jumlahPeserta, fileUrl: k.fileUrl || '', peserta: k.peserta });
+                            const biaya = k.peserta.reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), g.blok), 0);
+                            out.push({ bagian: g.bagian, blok: g.blok, sumber: k.sumber, nama: k.nama, tanggal: k.tanggal, jumlahPeserta: k.jumlahPeserta, fileUrl: k.fileUrl || '', peserta: k.peserta, biaya: biaya });
                         });
                     });
                     out.sort((a, b) => this.normBagian(a.bagian).localeCompare(this.normBagian(b.bagian)) || String(a.blok).localeCompare(String(b.blok)) || normName(a.nama).localeCompare(normName(b.nama)) || String(a.tanggal || '').localeCompare(String(b.tanggal || '')));
@@ -1231,10 +1270,14 @@
                             nama: b['Nama Kegiatan'] || '-',
                             tanggal: b['Tanggal Pelaksanaan'] || '',
                             jumlahPeserta: Math.max((b.peserta || []).length, Number(b['Jumlah Peserta']) || 0),
-                            fileUrl: b['File URL'] || ''
+                            fileUrl: b['File URL'] || '',
+                            biaya: (b.peserta || []).reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0)
                         });
                     });
                     return out;
+                },
+                dosenCellBiayaTotal() {
+                    return this.dosenCellDetail.reduce((t, d) => t + (d.biaya || 0), 0);
                 },
                 bagianDetailRows() {
                     const selBagian = this.bagianFilter.bagian;
@@ -1257,6 +1300,26 @@
                         r.countBukti = c;
                     });
                     return rows;
+                },
+                bagianDetailSections() {
+                    const sections = [];
+                    let last = null;
+                    let sub = null;
+                    this.bagianDetailRows.forEach(r => {
+                        if (last !== r.bagian) {
+                            if (sub) sections.push(sub);
+                            sub = { type: 'subtotal', bagian: r.bagian, count: 0, biaya: 0 };
+                            last = r.bagian;
+                        }
+                        sub.count++;
+                        sub.biaya += r.biaya || 0;
+                        sections.push({ type: 'row', row: r });
+                    });
+                    if (sub) sections.push(sub);
+                    return sections;
+                },
+                bagianDetailGrandTotal() {
+                    return this.bagianDetailRows.reduce((t, r) => t + (r.biaya || 0), 0);
                 },
                 bagianDetailPesertaTotal() {
                     const seen = {};
@@ -1389,6 +1452,12 @@
                     if (!list.length) return null;
                     const blok = String(baBlok || '').trim();
                     return list.find(x => x.blok && x.blok === blok) || list[0];
+                },
+                biayaForNpm(npm, baBlok) {
+                    const list = this.npmBiayaMap[String(npm || '').trim()] || [];
+                    if (!list.length) return 0;
+                    const blok = String(baBlok || '').trim();
+                    return (list.find(x => x.blok && x.blok === blok) || list[0]).biaya || 0;
                 },
                 resolveDosenForNpm(npm, baBlok) {
                     const info = this.npmInfoFor(npm, baBlok);
@@ -1596,6 +1665,7 @@
                                 'Sumber': r.sumber === 'BA' ? 'Berita Acara' : 'Pengajuan',
                                 'Nama Kegiatan': r.nama,
                                 'Tanggal': fmtTanggalWaktu(r.tanggal),
+                                'Biaya': r.biaya || 0,
                                 'Jumlah Peserta': r.jumlahPeserta,
                                 'Bukti Bayar': r.countBukti + '/' + r.peserta.length,
                                 'Daftar Peserta': r.peserta.map(p => (p.npm || '-') + ' - ' + (p.namaLengkap || '-')).join('; '),
@@ -1613,6 +1683,7 @@
                                     'NPM': p.npm || '',
                                     'Nama': p.namaLengkap || '',
                                     'Status': p.status || '',
+                                    'Biaya': this.biayaForNpm(String(p.npm || '').trim(), r.blok),
                                     'Link Bukti Bayar': p.linkBukti || ''
                                 });
                             }));
@@ -1622,10 +1693,11 @@
                             this.filteredBa.forEach(b => {
                                 const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
                                 if (!bl) return;
+                                const biaya = (b.peserta || []).reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
                                 baRows.push({
                                     'BA ID': b['BA ID'], Bagian: bl, Blok: b.Blok || '',
                                     'Nama Kegiatan': b['Nama Kegiatan'] || '', 'Tanggal Pelaksanaan': fmtTanggalWaktu(b['Tanggal Pelaksanaan']),
-                                    'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'File URL': b['File URL'] || ''
+                                    'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'Biaya': biaya, 'File URL': b['File URL'] || ''
                                 });
                             });
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(baRows), 'Berita Acara');
