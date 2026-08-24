@@ -2401,6 +2401,58 @@ function _resolveBiayaForPengajuan(pengajuan, biayaMap) {
     return 0;
 }
 
+function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
+    const id = String(idPengajuan || '').trim();
+    if (!id) throw new Error('ID Pengajuan tidak tersedia.');
+    const key = [id, '', '', ''].join('||');
+    const checkRows = getAllRows('CheckData');
+    let found = null;
+    for (let i = 0; i < checkRows.length; i++) {
+        if (_checkDataKey(checkRows[i]) === key) { found = checkRows[i]; break; }
+    }
+
+    const nilai = String(biaya || '').trim();
+    if (!nilai) {
+        if (found) {
+            deleteRowByKey('CheckData', 'Check ID', found['Check ID'], 'Hapus baris biaya pengajuan ' + id, getActorName());
+        }
+        invalidateSheetCache('CheckData');
+        return { success: true, cleared: !!found, message: 'Biaya kembali ke default MasterBiaya.' };
+    }
+
+    const values = {
+        'ID Pengajuan': id,
+        'NPM': String((pRow && pRow.NPM) || '').trim(),
+        'Nama Lengkap': String((pRow && pRow['Nama Lengkap']) || '').trim(),
+        'Blok': String((pRow && pRow.Blok) || '').trim(),
+        'Jenis Kegiatan': String((pRow && pRow['Jenis Kegiatan']) || '').trim(),
+        'Pilihan': '',
+        'Detail': '',
+        'Tanggal Pelaksanaan': '',
+        'Dosen': String((pRow && pRow.Dosen) || '').trim(),
+        'Biaya': nilai
+    };
+
+    if (found) {
+        values['Check ID'] = found['Check ID'];
+        values['Timestamp'] = found['Timestamp'];
+        const sheet = getGlobalSpreadsheet().getSheetByName('CheckData');
+        const headers = getHeadersFromSheet(sheet);
+        const idIdx = headers.indexOf('Check ID');
+        const rowIndex = findRowByColumnValue(sheet, idIdx + 1, found['Check ID']);
+        if (rowIndex === -1) throw new Error('Baris CheckData tidak ditemukan.');
+        const row = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+        headers.forEach(function(h, i) {
+            if (values[h] !== undefined) row[i] = values[h];
+        });
+        sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
+    } else {
+        appendRowSafe('CheckData', Object.assign({ Timestamp: new Date(), 'Check ID': generateId('CHK') }, values));
+    }
+    invalidateSheetCache('CheckData');
+    return { success: true, created: !found, message: 'Biaya pengajuan disimpan.' };
+}
+
 // =================================================================
 // ==================== BA ADMIN ===================================
 // =================================================================
@@ -2696,6 +2748,14 @@ function updatePengajuanFields(idPengajuan, payload) {
         if (p.keterangan !== undefined) setField('Keterangan', p.keterangan);
         if (p.jenisKegiatan !== undefined) setField('Jenis Kegiatan', p.jenisKegiatan);
 
+        let biayaResult = null;
+        if (p.biaya !== undefined) {
+            biayaResult = _upsertBiayaCheckData(idPengajuan, String(p.biaya || '').trim(), existing);
+            if (biayaResult && biayaResult.success === false) {
+                return { success: false, message: biayaResult.message || 'Gagal menyimpan biaya.' };
+            }
+        }
+
         if (values.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.Email)) {
             return { success: false, message: 'Format email tidak valid.' };
         }
@@ -2709,6 +2769,15 @@ function updatePengajuanFields(idPengajuan, payload) {
                 target: 'Pengajuan',
                 detail: JSON.stringify(Object.assign({ idPengajuan: idPengajuan }, values)),
                 alasan: 'Pemeliharaan data admin'
+            });
+        }
+        if (biayaResult && biayaResult.success) {
+            writeAuditLog({
+                actor: getActorName(),
+                action: biayaResult.cleared ? 'DELETE' : 'UPDATE',
+                target: 'CheckData',
+                detail: JSON.stringify({ idPengajuan: idPengajuan, biaya: String(p.biaya || '').trim(), cleared: !!biayaResult.cleared }),
+                alasan: 'Pemeliharaan biaya pengajuan'
             });
         }
         return { success: true, message: 'Data pengajuan diperbarui.', values: values };
