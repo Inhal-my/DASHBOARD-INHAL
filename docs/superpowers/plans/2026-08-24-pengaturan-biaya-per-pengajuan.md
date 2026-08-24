@@ -4,7 +4,7 @@
 
 **Goal:** Menambahkan kemampuan admin mengatur **biaya per pengajuan** (override biaya) melalui **dropdown nilai MasterBiaya** di dalam kotak **Keterangan Dosen** pada modal Detail Pengajuan di `dashboard.html`, dengan nilai tersimpan di sheet **CheckData** (bukan kolom baru di sheet Pengajuan).
 
-**Architecture:** Nilai biaya override disimpan sebagai **baris CheckData** dengan key `[ID Pengajuan, Pilihan='', Detail='', Tanggal Pelaksanaan='']` (baris khusus, Pilihan/Detail/Tanggal kosong). `_resolveBiayaForPengajuan` (yang dipakai di semua titik tampilan biaya: dashboard, detail-laporan, statistik, export) diperluas: cek override CheckData dulu, baru fallback MasterBiaya. Frontend menambah dropdown di Keterangan Dosen (di bawah Tanggal Pelaksanaan), `saveFields()` mengirim field `biaya` ke `updatePengajuanFields`, dan `getDashboardBootstrap` mengirim daftar nilai MasterBiaya + `getPengajuanWithDetails` mengirim nilai override saat ini (`BiayaOverride`).
+**Architecture:** Nilai biaya override disimpan sebagai **baris CheckData** dengan key `[ID Pengajuan, Pilihan='', Detail='BIAYA-OVERRIDE', Tanggal Pelaksanaan='']` (baris khusus ber-sentinel `'BIAYA-OVERRIDE'` pada kolom Detail — tidak mungkin bentrok dengan baris check nyata yang ber-`Detail=''` untuk pengajuan tanpa detail, atau baris check ber-Detail asli). `_resolveBiayaForPengajuan` (yang dipakai di semua titik tampilan biaya: dashboard, detail-laporan, statistik, export) diperluas: cek override CheckData dulu, baru fallback MasterBiaya. Frontend menambah dropdown di Keterangan Dosen (di bawah Tanggal Pelaksanaan), `saveFields()` mengirim field `biaya` ke `updatePengajuanFields`, dan `getDashboardBootstrap` mengirim daftar nilai MasterBiaya + `getPengajuanWithDetails` mengirim nilai override saat ini (`BiayaOverride`).
 
 **Tech Stack:** Google Apps Script (`.gs`) + HTML/Vue 3 global build (inline di `dashboard.html`).
 
@@ -12,6 +12,7 @@
 
 - File yang berubah: `new-code1/0_code.gs` (skema CheckData), `new-code1/1_business.gs` (backend), `new-code1/pages/dashboard.html` (frontend).
 - Skema sheet **Pengajuan TIDAK berubah** — biaya override disimpan di **CheckData**.
+- Baris biaya override di CheckData memakai **sentinel `'BIAYA-OVERRIDE'` pada kolom `Detail`** (Pilihan/Tanggal kosong) → key `[ID Pengajuan, '', 'BIAYA-OVERRIDE', '']`. Ini menghindari bentrok dengan baris check nyata untuk pengajuan tanpa detail (yang ber-`Detail=''`) maupun baris check ber-Detail asli — **keputusan user (Opsi B), amandemen dari desain awal key `[id,'','','']`**.
 - Biaya kosong / tidak diatur = **tidak masalah** → fallback `MasterBiaya` tetap berjalan (default).
 - Field biaya berupa **dropdown nilai MasterBiaya**, diletakkan di kotak **Keterangan Dosen** di **bawah Tanggal Pelaksanaan**.
 - Section Keterangan Dosen, tombol delete induk (`deletePengajuan()`), dan `saveFields()` lama **tidak dihapus** — `saveFields()` hanya menambah field `biaya` pada payload.
@@ -68,7 +69,7 @@ git commit -m "feat(backend): add Biaya column to CheckData schema"
 
 **Interfaces:**
 - Consumes: `_checkDataKey` (1_business.gs:2798), `getAllRows`, `getGlobalSpreadsheet`, `getHeadersFromSheet`, `findRowByColumnValue`, `appendRowSafe` (0_code.gs:493), `deleteRowByKey` (0_code.gs:583), `invalidateSheetCache` (0_code.gs:302), `generateId` (0_code.gs:224), `getActorName`, `writeAuditLog`.
-- Produces: `_upsertBiayaCheckData(idPengajuan, biaya, pRow)` — menyimpan/hapus baris CheckData override biaya; `updatePengajuanFields` menerima `payload.biaya`.
+- Produces: `_upsertBiayaCheckData(idPengajuan, biaya, pRow)` — menyimpan/hapus baris CheckData override biaya (key `[id, '', 'BIAYA-OVERRIDE', '']`); `updatePengajuanFields` menerima `payload.biaya`.
 
 - [ ] **Step 1: Tambahkan helper `_upsertBiayaCheckData`**
 
@@ -78,7 +79,7 @@ Sisipkan tepat setelah fungsi `_resolveBiayaForPengajuan` (baris 2402, sebelum `
 function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
     const id = String(idPengajuan || '').trim();
     if (!id) throw new Error('ID Pengajuan tidak tersedia.');
-    const key = [id, '', '', ''].join('||');
+    const key = [id, '', 'BIAYA-OVERRIDE', ''].join('||');
     const checkRows = getAllRows('CheckData');
     let found = null;
     for (let i = 0; i < checkRows.length; i++) {
@@ -101,7 +102,7 @@ function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
         'Blok': String((pRow && pRow.Blok) || '').trim(),
         'Jenis Kegiatan': String((pRow && pRow['Jenis Kegiatan']) || '').trim(),
         'Pilihan': '',
-        'Detail': '',
+        'Detail': 'BIAYA-OVERRIDE',
         'Tanggal Pelaksanaan': '',
         'Dosen': String((pRow && pRow.Dosen) || '').trim(),
         'Biaya': nilai
@@ -196,10 +197,10 @@ function _getBiayaOverrideMap() {
         checkRows.forEach(function(c) {
             const id = String(c['ID Pengajuan'] || '').trim();
             if (!id) return;
+            if (String(c.Detail || '').trim() !== 'BIAYA-OVERRIDE') return;
             const pilihan = String(c.Pilihan || '').trim();
-            const detail = String(c.Detail || '').trim();
             const tanggal = String(c['Tanggal Pelaksanaan'] || '').trim();
-            if (pilihan || detail || tanggal) return;
+            if (pilihan || tanggal) return;
             const biaya = String(c.Biaya || '').trim();
             if (!biaya) return;
             map[id] = parseCurrency(biaya);
