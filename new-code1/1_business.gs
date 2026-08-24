@@ -2604,6 +2604,50 @@ function _findDetailKegiatanRowByIdIndex(idPengajuan, index) {
     return -1;
 }
 
+function updateDetailKegiatan(idPengajuan, index, payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const rowIndex = _findDetailKegiatanRowByIdIndex(idPengajuan, index);
+        if (rowIndex === -1) return { success: false, message: 'Detail kegiatan tidak ditemukan.' };
+        const sheet = getGlobalSpreadsheet().getSheetByName('DetailKegiatan');
+        const headers = getHeadersFromSheet(sheet);
+        const p = payload || {};
+        const values = {};
+        const setField = function(header, raw) {
+            values[header] = String(raw === undefined || raw === null ? '' : raw).trim();
+        };
+        if (p.jenisKegiatan !== undefined) setField('Jenis Kegiatan', p.jenisKegiatan);
+        if (p.pilihan !== undefined) setField('Pilihan', p.pilihan);
+        if (p.detail !== undefined) setField('Detail', p.detail);
+        if (p.tanggalPelaksanaan !== undefined) setField('Tanggal Pelaksanaan', p.tanggalPelaksanaan);
+        if (values['Jenis Kegiatan'] === 'Praktikum') {
+            values['Bagian'] = _resolveBagianFor('Praktikum', values['Pilihan'], values['Detail']);
+        }
+        if (Object.keys(values).length > 0) {
+            const existing = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+            const row = existing.slice();
+            headers.forEach(function(h, i) {
+                if (values[h] !== undefined) row[i] = values[h];
+            });
+            sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
+            writeAuditLog({
+                actor: getActorName(),
+                action: 'UPDATE',
+                target: 'DetailKegiatan',
+                detail: JSON.stringify(Object.assign({ idPengajuan: idPengajuan, index: index }, values)),
+                alasan: 'Pemeliharaan data admin'
+            });
+        }
+        return { success: true, message: 'Detail kegiatan diperbarui.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    } finally {
+        lock.releaseLock();
+    }
+}
+
 function updatePengajuanFields(idPengajuan, payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     try {
