@@ -1226,6 +1226,19 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             };
         }
 
+        const dup = getAllRows('BeritaAcara').find(function(r) {
+            return String(r.Bagian || '').trim() === String((payload && payload.bagian) || kategori || '').trim()
+                && String(r.Blok || '').trim() === String((payload && payload.blok) || '').trim()
+                && String(r['Nama Kegiatan'] || '').trim() === String((payload && payload.namaKegiatan) || '').trim()
+                && String(r['Tanggal Pelaksanaan'] || '').trim() === String((payload && payload.tanggalPelaksanaan) || '').trim();
+        });
+        if (dup) {
+            return {
+                success: false,
+                message: 'Upload dibatalkan: sudah ada berita acara untuk "' + dup['Nama Kegiatan'] + '" (Bagian ' + dup.Bagian + ', Blok ' + dup.Blok + ') pada ' + dup['Tanggal Pelaksanaan'] + '. Jika ini revisi, hubungi admin untuk menghapus BA lama.'
+            };
+        }
+
         appendRowSafe('BeritaAcara', {
             Timestamp: new Date(),
             'BA ID': baId,
@@ -1489,12 +1502,10 @@ function getDashboardBootstrap() {
         detailMap[id].push(_clientRow(d));
     });
 
-    const masterBiaya = [];
-    Object.keys(biayaMap).forEach(function(k) {
-        const v = biayaMap[k];
-        if (masterBiaya.indexOf(v) === -1) masterBiaya.push(v);
+    const masterBiaya = Object.keys(biayaMap).map(function(k) {
+        return { Kegiatan: k, Biaya: biayaMap[k] };
     });
-    masterBiaya.sort(function(a, b) { return a - b; });
+    masterBiaya.sort(function(a, b) { return a.Biaya - b.Biaya; });
 
     return {
         stats: _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap),

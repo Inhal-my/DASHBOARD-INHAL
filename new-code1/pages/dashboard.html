@@ -854,7 +854,7 @@
                                             </td>
                                         </tr>
                                         <tr v-for="(r,i) in activeMasterRows" class="border-t border-slate-50">
-                                            <td v-for="c in activeMasterCard.cols" class="px-5 py-2.5 text-slate-600">{{ r[c] === undefined || r[c] === null ? '—' : r[c] }}</td>
+                                            <td v-for="c in activeMasterCard.cols" class="px-5 py-2.5 text-slate-600">{{ masterCellValue(r, c) }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -990,7 +990,7 @@
                                 <div v-if="detail.showLengkap" class="mt-3 grid gap-3 sm:grid-cols-2">
                                     <div><label class="label">Dosen</label><input v-model="detail.dForm.dosen" class="input" list="dosenList"></div>
                                     <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.dForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
-                                    <div><label class="label">Biaya</label><select v-model="detail.dForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in masterBiaya" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
+                                    <div><label class="label">Biaya</label><select v-model="detail.dForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in masterBiaya" :key="b.Kegiatan" :value="String(b.Biaya)">{{ b.Kegiatan }} - {{ formatRupiah(b.Biaya) }}</option></select></div>
                                     <div class="mt-1 flex gap-2 sm:col-span-2">
                                         <button class="btn-primary" @click="saveFields()"><i class="bi bi-save"></i>Simpan Perubahan</button>
                                         <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
@@ -1116,7 +1116,12 @@
                                     <tbody>
                                         <tr v-for="(row, i) in master.rows" :key="i" class="border-t border-slate-50">
                                             <td v-for="c in master.cols" class="px-2 py-2">
-                                                <input v-model="row[c]" class="input !py-2 text-xs">
+                                                <select v-if="isConfigKeyRow(row, c)" v-model="row[c]" class="input !py-2 text-xs">
+                                                    <option value="strict">Strict</option>
+                                                    <option value="lenggang">Bypass</option>
+                                                </select>
+                                                <input v-else-if="master.editKey === 'config' && isBuktiModeRow(row)" v-model="row[c]" class="input !py-2 text-xs" disabled>
+                                                <input v-else v-model="row[c]" class="input !py-2 text-xs">
                                             </td>
                                             <td class="px-2 py-2 text-center">
                                                 <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500" @click="removeMasterRow(i)"><i class="bi bi-trash"></i></button>
@@ -1888,11 +1893,9 @@
                         const d = await this.run('getMasterDataMonitor') || {};
                         this.master.data = d;
                         this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
-                        const mb = (d.masterBiaya || []).map(r => parseInt(String((r && (r.Biaya || r.biaya)) || '').replace(/[^0-9]/g, ''), 10) || 0).filter(v => v > 0);
-                        const mbUniq = [];
-                        mb.forEach(v => { if (mbUniq.indexOf(v) === -1) mbUniq.push(v); });
-                        mbUniq.sort((a, b) => a - b);
-                        this.masterBiaya = mbUniq;
+                        const mb = (d.masterBiaya || []).map(r => ({ Kegiatan: String((r && (r.Kegiatan || r.kegiatan)) || '').trim(), Biaya: parseInt(String((r && (r.Biaya || r.biaya)) || '').replace(/[^0-9]/g, ''), 10) || 0 })).filter(o => o.Kegiatan && o.Biaya > 0);
+                        mb.sort((a, b) => a.Biaya - b.Biaya);
+                        this.masterBiaya = mb;
                         this.loaded.master = true;
                     } catch (e) {
                         this.notify('Gagal memuat master data: ' + e, false);
@@ -2453,6 +2456,18 @@
                     if (m.settings) return 'Pengaturan';
                     return (this.master.data[m.key] || []).length + ' entri';
                 },
+                isBuktiModeRow(row) {
+                    return this.master.editKey === 'config' && String((row && row.Key) || '').trim() === 'BUKTI_MODE';
+                },
+                isConfigKeyRow(row, c) {
+                    return c === 'Value' && this.isBuktiModeRow(row);
+                },
+                masterCellValue(r, c) {
+                    if (c === 'Value' && String((r && r.Key) || '').trim() === 'BUKTI_MODE') {
+                        return r[c] === 'lenggang' ? 'Bypass' : 'Strict';
+                    }
+                    return r[c] === undefined || r[c] === null ? '—' : r[c];
+                },
                 editMaster(key) {
                     const card = this.master.cards.find(c => c.key === key);
                     if (!card) return;
@@ -2461,6 +2476,13 @@
                     this.master.title = card.title;
                     this.master.saveFn = card.saveFn;
                     this.master.rows = (this.master.data[key] || []).map(r => Object.assign({}, r));
+                    if (key === 'config') {
+                        this.master.rows.forEach(function(r) {
+                            if (String((r && r.Key) || '').trim() === 'BUKTI_MODE') {
+                                r.Value = (String(r.Value || '').trim() === 'lenggang') ? 'lenggang' : 'strict';
+                            }
+                        });
+                    }
                     this.master.modal = true;
                 },
                 addMasterRow() {

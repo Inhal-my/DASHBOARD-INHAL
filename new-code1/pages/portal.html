@@ -513,7 +513,7 @@
                                 </div>
 
                                 <div>
-                                    <label class="label">{{ upload.buktiMode === 'lenggang' ? 'Upload Bukti Bayar (PDF / Gambar)' : 'Upload Bukti Bayar (PDF Portal)' }}</label>
+                                    <label class="label">Upload Bukti Bayar</label>
                                     <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
                                         <i class="bi bi-receipt text-2xl text-brand-400"></i>
                                         <div class="min-w-0 flex-1 text-xs text-slate-500">
@@ -896,17 +896,17 @@
                     if (!file) { this.upload.validMsg = ''; return; }
                     if (this.upload.buktiMode === 'lenggang') {
                         this.upload.validOk = true;
-                        this.upload.validMsg = 'File bukti bayar diterima (mode lenggang).';
+                        this.upload.validMsg = 'cek berkas valid';
                         return;
                     }
                     if (!window.pdfjsLib) {
-                        this.upload.validMsg = 'Pemeriksa PDF belum tersedia. Muat ulang halaman.';
+                        this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }
                     this.upload.validMsg = 'Memeriksa bukti bayar...';
                     const head = await this.readFileHeader(file, 5).catch(() => '');
                     if (head.indexOf('%PDF') !== 0) {
-                        this.upload.validMsg = 'File ini bukan PDF (header tidak valid). Unggah PDF asli dari portal mahasiswa.';
+                        this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }
                     let text = '';
@@ -921,21 +921,21 @@
                         }
                     } catch (e) {
                         console.error('validateBukti - gagal ekstrak teks PDF:', e);
-                        this.upload.validMsg = 'Gagal membaca teks PDF: ' + (e && e.message ? e.message : String(e)) + '. Muat ulang halaman lalu coba lagi.';
+                        this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }
                     const m = text.match(/NPM[\s:：]*(\d{10})/);
                     if (!m) {
                         console.warn('validateBukti - NPM tidak ditemukan. Teks PDF:', text.slice(0, 300));
-                        this.upload.validMsg = 'NPM tidak ditemukan pada bukti bayar. Pastikan PDF asli dari portal mahasiswa.';
+                        this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }
                     if (m[1] !== String(this.user.npm || '').trim()) {
-                        this.upload.validMsg = 'NPM pada bukti pembayaran tidak sesuai dengan akun Anda.';
+                        this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }
                     this.upload.validOk = true;
-                    this.upload.validMsg = 'Bukti bayar valid (PDF portal, NPM cocok).';
+                    this.upload.validMsg = 'cek berkas valid';
                 },
                 readFileAsBase64(file) {
                     return new Promise((resolve, reject) => {
@@ -952,7 +952,7 @@
                     }
                     await this.validateBukti();
                     if (!this.upload.validOk) {
-                        this.showToast(this.upload.validMsg || 'Bukti bayar tidak valid.', 'error');
+                        this.showToast(this.upload.validMsg || 'cek berkas gagal, gunakan file pdf dari portal mahasiswa', 'error');
                         return;
                     }
                     this.upload.submitting = true;
