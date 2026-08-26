@@ -305,12 +305,12 @@
                                         <input v-model="regForm.namaLengkap" class="input" placeholder="Nama sesuai KTP">
                                     </div>
                                     <div>
-                                        <label class="label">Email Aktif</label>
-                                        <input v-model="regForm.email" type="email" class="input" placeholder="nama@email.com">
+                                        <label class="label">Email Aktif <span class="text-rose-500">*</span></label>
+                                        <input v-model="regForm.email" type="email" class="input" placeholder="nama@email.com" required>
                                     </div>
                                     <div>
-                                        <label class="label">No. HP / WhatsApp</label>
-                                        <input v-model="regForm.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx">
+                                        <label class="label">No. HP / WhatsApp <span class="text-rose-500">*</span></label>
+                                        <input v-model="regForm.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx" required>
                                     </div>
                                     <div>
                                         <label class="label">Blok <span class="text-rose-500">*</span></label>
@@ -763,13 +763,23 @@
                         this.showToast('Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan.', 'error');
                         return;
                     }
+                    const email = this.regForm.email.trim();
+                    const noHp = this.regForm.noHp.trim();
+                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+                        this.showToast('Email aktif wajib diisi dengan format yang benar.', 'error');
+                        return;
+                    }
+                    if (!noHp || !/^[0-9+\-\s().]{8,20}$/.test(noHp)) {
+                        this.showToast('No. HP/WhatsApp wajib diisi dengan format yang benar.', 'error');
+                        return;
+                    }
                     this.loading = true;
                     try {
                         const formData = {
                             npm: this.regForm.npm.trim(),
                             namaLengkap: this.regForm.namaLengkap.trim(),
-                            email: this.regForm.email.trim(),
-                            noHp: this.regForm.noHp.trim(),
+                            email: email,
+                            noHp: noHp,
                             blok: this.regForm.blok,
                             jenisKegiatan: jenis,
                             keterangan: this.regForm.keterangan.trim()

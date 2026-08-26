@@ -76,6 +76,14 @@ function _normalizeFormText(value) {
     return String(value || '').trim();
 }
 
+function _isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value || '').trim());
+}
+
+function _isValidPhone(value) {
+    return /^[0-9+\-\s().]{8,20}$/.test(String(value || '').trim());
+}
+
 function _buildDetailKegiatanRows(formData, idPengajuan) {
     const rows = [];
     const jenis = _normalizeFormText(formData.jenisKegiatan);
@@ -188,8 +196,16 @@ function registerPengajuan(formData) {
     try {
         const npm = _normalizeFormText(formData.npm);
         const nama = _normalizeFormText(formData.namaLengkap);
+        const email = _normalizeFormText(formData.email);
+        const noHp = _normalizeFormText(formData.noHp);
         if (!npm || !nama) {
             return { success: false, message: 'NPM dan Nama Lengkap wajib diisi.' };
+        }
+        if (!email || !_isValidEmail(email)) {
+            return { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
+        }
+        if (!noHp || !_isValidPhone(noHp)) {
+            return { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
         }
 
         const dup = checkDuplicatePengajuan(formData);
@@ -212,8 +228,8 @@ function registerPengajuan(formData) {
             'ID Pengajuan': idPengajuan,
             'NPM': npm,
             'Nama Lengkap': nama,
-            'Email': _normalizeFormText(formData.email),
-            'No. HP/WA': _normalizeFormText(formData.noHp),
+            'Email': email,
+            'No. HP/WA': noHp,
             'Blok': _normalizeFormText(formData.blok),
             'Jenis Kegiatan': _normalizeFormText(formData.jenisKegiatan),
             'Keterangan': _normalizeFormText(formData.keterangan),
@@ -329,6 +345,7 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
     const lock = LockService.getScriptLock();
     lock.waitLock(30000);
     try {
+        requireAuthorized(arguments[arguments.length - 1]);
         const validStatus = Object.keys(STATUS).map(function(k) { return STATUS[k]; });
         if (validStatus.indexOf(newStatus) === -1) {
             return { success: false, message: 'Status tidak valid: ' + newStatus };
@@ -346,7 +363,7 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
             'Status': newStatus,
             'UpdatedAt': new Date()
         };
-        if (catatan !== undefined) update['Catatan Admin'] = catatan;
+        if (catatan !== undefined && String(catatan || '').trim() !== '') update['Catatan Admin'] = String(catatan).trim();
 
         let nomorSurat = String(existing['Nomor Surat'] || '').trim();
         if (newStatus === STATUS.DITERIMA && !nomorSurat) {
@@ -460,18 +477,6 @@ function updateStatusInfoBagian(idPengajuan, status, email, message) {
     }
 }
 
-function updateLinkFinal(idPengajuan, url) {
-    try {
-        upsertRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan, {
-            'Link Final': url || '',
-            'UpdatedAt': new Date()
-        });
-        return { success: true };
-    } catch (e) {
-        return { success: false, message: e.message };
-    }
-}
-
 function getNextSuratNumberYearly(type) {
     type = type || 'INHAL';
     const lock = LockService.getScriptLock();
@@ -550,14 +555,7 @@ function getMasterOptions(kategori) {
     }
 }
 
-function getBlokOptions() { return getMasterOptions('Blok'); }
-function getUjianOptions() { return getMasterOptions('Ujian'); }
-function getSgdOptions() { return getMasterOptions('SGD'); }
-function getDetailSgdOptions() { return getMasterOptions('Detail SGD'); }
-function getKkdOptions() { return getMasterOptions('KKD'); }
-function getDetailKkdOptions() { return getMasterOptions('Detail KKD'); }
 function getLabOptions() { return getMasterOptions('Lab'); }
-function getKegiatanLabOptions() { return getMasterOptions('Kegiatan Lab'); }
 function getDosenOptions() { return getMasterOptions('Dosen'); }
 
 function getRegistrationOptions() {
@@ -600,14 +598,6 @@ function getStudentNameByNpm(npm) {
     return m ? (m['Nama Lengkap'] || '') : '';
 }
 
-function getBagianMappings() {
-    try {
-        return getAllRows('MasterBagian');
-    } catch (e) {
-        return [];
-    }
-}
-
 function getBagianStaffList() {
     try {
         return getAllRowsCached('BagianStaff', 60);
@@ -616,11 +606,8 @@ function getBagianStaffList() {
     }
 }
 
-function getAllPengajuan() {
-    return getAllRows('Pengajuan');
-}
-
 function getPengajuanWithDetails(idPengajuan) {
+    requireAuthorized(arguments[arguments.length - 1]);
     const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan);
     if (!pengajuan) return null;
     const details = getAllRows('DetailKegiatan').filter(function(r) {
@@ -636,12 +623,6 @@ function getPengajuanWithDetails(idPengajuan) {
         : '';
     copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
     return copy;
-}
-
-function getStatusHistory(idPengajuan) {
-    return getAllRows('StatusHistory').filter(function(r) {
-        return String(r['ID Pengajuan'] || '').trim() === String(idPengajuan || '').trim();
-    });
 }
 
 function saveMasterKegiatan(payload) {
@@ -721,35 +702,6 @@ function uploadBuktiFiles(payload) {
         }
 
         return uploadBuktiBayar({ idPengajuan: idPengajuan }, accUrl, buktiUrl);
-    } catch (e) {
-        return { success: false, message: e.message };
-    }
-}
-
-function getPengajuanByNpm(npm) {
-    try {
-        const npmVal = _normalizeFormText(npm);
-        if (!npmVal) {
-            return { success: false, message: 'NPM wajib diisi.' };
-        }
-        const all = getAllRows('Pengajuan');
-        const details = getAllRows('DetailKegiatan');
-        const histories = getAllRows('StatusHistory');
-        const rows = all.filter(function(p) {
-            return String(p['NPM'] || '').trim() === npmVal;
-        }).map(function(p) {
-            const id = String(p['ID Pengajuan'] || '').trim();
-            return {
-                pengajuan: p,
-                details: details.filter(function(d) {
-                    return String(d['ID Pengajuan'] || '').trim() === id;
-                }),
-                history: histories.filter(function(h) {
-                    return String(h['ID Pengajuan'] || '').trim() === id;
-                })
-            };
-        });
-        return { success: true, rows: rows };
     } catch (e) {
         return { success: false, message: e.message };
     }
@@ -1230,7 +1182,7 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             return String(r.Bagian || '').trim() === String((payload && payload.bagian) || kategori || '').trim()
                 && String(r.Blok || '').trim() === String((payload && payload.blok) || '').trim()
                 && String(r['Nama Kegiatan'] || '').trim() === String((payload && payload.namaKegiatan) || '').trim()
-                && String(r['Tanggal Pelaksanaan'] || '').trim() === String((payload && payload.tanggalPelaksanaan) || '').trim();
+                && _dateOnly(r['Tanggal Pelaksanaan']) === _dateOnly(payload && payload.tanggalPelaksanaan);
         });
         if (dup) {
             return {
@@ -1521,63 +1473,6 @@ function getDashboardBootstrap() {
     };
 }
 
-function getDetailLaporanData() {
-    requireAuthorized(arguments[arguments.length - 1]);
-    const pengajuan = getAllRows('Pengajuan');
-    const details = getAllRows('DetailKegiatan');
-    const histories = getAllRows('StatusHistory');
-
-    let totalPendaftar = 0;
-    let totalDiterima = 0;
-    let totalDitolak = 0;
-    let totalMenunggu = 0;
-    let totalAcc = 0;
-    let totalBiaya = 0;
-    const perJenis = {};
-    const perBlok = {};
-    const biayaMap = _getBiayaMap();
-    const overrideMap = _getBiayaOverrideMap();
-
-    const rows = pengajuan.map(function(p) {
-        const id = String(p['ID Pengajuan'] || '').trim();
-        const status = String(p.Status || '').trim();
-        totalPendaftar++;
-        if (status === 'Diterima') totalDiterima++;
-        if (status === 'Ditolak') totalDitolak++;
-        if (status === 'Menunggu') totalMenunggu++;
-        if (status === 'ACC') totalAcc++;
-        const jenis = String(p['Jenis Kegiatan'] || 'Lainnya').trim();
-        perJenis[jenis] = (perJenis[jenis] || 0) + 1;
-        const blok = String(p.Blok || '-').trim();
-        perBlok[blok] = (perBlok[blok] || 0) + 1;
-
-        const pengajuanCopy = _clientRow(p);
-        pengajuanCopy.Biaya = _resolveBiayaForPengajuan(pengajuanCopy, biayaMap, overrideMap);
-        pengajuanCopy['Biaya Rupiah'] = formatRupiah(pengajuanCopy.Biaya);
-        totalBiaya += pengajuanCopy.Biaya;
-
-        return {
-            pengajuan: pengajuanCopy,
-            details: details.filter(function(d) { return String(d['ID Pengajuan'] || '').trim() === id; }).map(function(d) { return _clientRow(d); }),
-            history: histories.filter(function(h) { return String(h['ID Pengajuan'] || '').trim() === id; }).map(function(h) { return _clientRow(h); })
-        };
-    });
-
-    return {
-        summary: {
-            totalPendaftar: totalPendaftar,
-            totalDiterima: totalDiterima,
-            totalDitolak: totalDitolak,
-            totalMenunggu: totalMenunggu,
-            totalAcc: totalAcc,
-            totalBiaya: totalBiaya,
-            perJenis: perJenis,
-            perBlok: perBlok
-        },
-        rows: rows
-    };
-}
-
 function getLaporanBootstrap() {
     requireAuthorized(arguments[arguments.length - 1]);
     const pengajuan = getAllRows('Pengajuan');
@@ -1702,13 +1597,14 @@ function _computeBagianAggregation(pengajuan, details, ba) {
         if (v && list.indexOf(v) === -1) list.push(v);
     };
 
-    const addRow = function(sumber, bagian, blok, jenisKegiatan, tgl, jumlah, fileUrl) {
+    const addRow = function(sumber, bagian, blok, jenisKegiatan, tgl, jumlah, fileUrl, linkFinal) {
         blok = String(blok || '-').replace(/\s+/g, ' ').trim();
         jenisKegiatan = String(jenisKegiatan || '-').replace(/\s+/g, ' ').trim();
         tgl = String(tgl || '-').replace(/\s+/g, ' ').trim();
         const key = [sumber, bagian, blok, jenisKegiatan, tgl].join('|');
         if (bagianIndex[key] !== undefined) {
             bagianRows[bagianIndex[key]].total += jumlah;
+            if (linkFinal && !bagianRows[bagianIndex[key]].linkFinal) bagianRows[bagianIndex[key]].linkFinal = linkFinal;
         } else {
             bagianIndex[key] = bagianRows.length;
             bagianRows.push({
@@ -1718,7 +1614,8 @@ function _computeBagianAggregation(pengajuan, details, ba) {
                 jenisKegiatan: jenisKegiatan,
                 tanggalPelaksanaan: tgl,
                 total: jumlah,
-                fileUrl: fileUrl || ''
+                fileUrl: fileUrl || '',
+                linkFinal: linkFinal || ''
             });
         }
     };
@@ -1730,7 +1627,7 @@ function _computeBagianAggregation(pengajuan, details, ba) {
         const pilihan = String(d.Pilihan || '').trim();
         const detailText = String(d.Detail || '').trim();
         const jenisKegiatan = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
-        addRow('Pengajuan', bagian, p.Blok, jenisKegiatan, _clientDate(d['Tanggal Pelaksanaan']), 1, '');
+        addRow('Pengajuan', bagian, p.Blok, jenisKegiatan, _clientDate(d['Tanggal Pelaksanaan']), 1, '', p['Link Final']);
     });
 
     ba.forEach(function(b) {
@@ -2638,6 +2535,9 @@ function uploadBeritaAcaraAdmin(payload) {
         if (!peserta.length) {
             peserta = normalizeBaPeserta(payload);
         }
+        if (!peserta.length) {
+            return { success: false, message: 'Upload dibatalkan: tidak ada peserta pada berita acara ini. Pilih minimal satu peserta.' };
+        }
 
         appendRowSafe('BeritaAcaraAdmin', {
             Timestamp: new Date(),
@@ -2937,67 +2837,6 @@ function _checkDataKey(c) {
     ].join('||');
 }
 
-function getCheckPageData(options) {
-    requireAuthorized(arguments[arguments.length - 1]);
-    options = options || {};
-    const pengajuan = getAllRows('Pengajuan');
-    const details = getAllRows('DetailKegiatan');
-    const checkRows = getAllRows('CheckData');
-
-    const checkByKey = {};
-    checkRows.forEach(function(c) {
-        checkByKey[_checkDataKey(c)] = c;
-    });
-
-    const rows = [];
-    pengajuan.forEach(function(p) {
-        const id = String(p['ID Pengajuan'] || '').trim();
-        const pDetails = details.filter(function(d) {
-            return String(d['ID Pengajuan'] || '').trim() === id;
-        });
-        const list = pDetails.length ? pDetails : [{
-            'Jenis Kegiatan': p['Jenis Kegiatan'], Pilihan: '', Detail: '', 'Tanggal Pelaksanaan': '', Bagian: ''
-        }];
-        list.forEach(function(d) {
-            const existingCheck = checkByKey[_checkDataKey(Object.assign({ 'ID Pengajuan': id }, d))];
-            rows.push({
-                checkKey: _checkDataKey(Object.assign({ 'ID Pengajuan': id }, d)),
-                checkId: existingCheck ? String(existingCheck['Check ID'] || '').trim() : '',
-                idPengajuan: id,
-                npm: String(p.NPM || '').trim(),
-                namaLengkap: String(p['Nama Lengkap'] || '').trim(),
-                blok: String(p.Blok || '').trim(),
-                jenisKegiatan: String(d['Jenis Kegiatan'] || p['Jenis Kegiatan'] || '').trim(),
-                pilihan: String(d.Pilihan || '').trim(),
-                detail: String(d.Detail || '').trim(),
-                tanggalPelaksanaan: String(d['Tanggal Pelaksanaan'] || '').trim(),
-                bagian: String(d.Bagian || '').trim(),
-                dosen: existingCheck ? String(existingCheck.Dosen || '').trim() : String(p.Dosen || '').trim(),
-                hadir: existingCheck ? String(existingCheck.Hadir || '').trim() : '',
-                catatan: existingCheck ? String(existingCheck.Catatan || '').trim() : '',
-                statusPengajuan: String(p.Status || '').trim()
-            });
-        });
-    });
-
-    let filtered = rows;
-    if (options.status) filtered = filtered.filter(function(r) { return r.statusPengajuan === options.status; });
-    if (options.hadir) filtered = filtered.filter(function(r) { return (r.hadir || 'Belum') === options.hadir; });
-    if (options.jenis) filtered = filtered.filter(function(r) { return r.jenisKegiatan === options.jenis; });
-    if (options.search) {
-        const q = norm(options.search);
-        filtered = filtered.filter(function(r) {
-            return (r.npm && norm(r.npm).indexOf(q) !== -1) || (r.namaLengkap && norm(r.namaLengkap).indexOf(q) !== -1);
-        });
-    }
-    filtered.sort(function(a, b) {
-        const cmp = String(a.tanggalPelaksanaan || '').localeCompare(String(b.tanggalPelaksanaan || ''));
-        return cmp !== 0 ? cmp : String(a.npm || '').localeCompare(String(b.npm || ''));
-    });
-
-    return { rows: filtered, total: rows.length };
-}
-
 function updateCheckDataPartial(payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     try {
@@ -3210,29 +3049,4 @@ function sendAccFinalToBagian(idPengajuan) {
     } catch (e) {
         return { success: false, message: (e && e.message) ? e.message : String(e) };
     }
-}
-
-// =================================================================
-// ==================== REKAP / EXPORT =============================
-// =================================================================
-
-function getAcceptedStudentData(filter) {
-    requireAuthorized(arguments[arguments.length - 1]);
-    filter = filter || {};
-    let rows = getAllRows('Pengajuan');
-    const fStatus = String(filter.status || '').trim();
-    if (fStatus) {
-        rows = rows.filter(function(r) { return String(r.Status || '').trim() === fStatus; });
-    }
-    rows.sort(function(a, b) {
-        return String(a.Timestamp || '').localeCompare(String(b.Timestamp || ''));
-    });
-    const biayaMap = _getBiayaMap();
-    const overrideMap = _getBiayaOverrideMap();
-    return rows.map(function(r) {
-        const copy = Object.assign({}, r);
-        copy.Biaya = _resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
-        copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
-        return copy;
-    });
 }

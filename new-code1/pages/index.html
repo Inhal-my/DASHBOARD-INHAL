@@ -112,12 +112,12 @@
                             <input v-model="form.namaLengkap" class="input" placeholder="Nama sesuai KTP">
                         </div>
                         <div>
-                            <label class="label">Email Aktif</label>
-                            <input v-model="form.email" type="email" class="input" placeholder="nama@email.com">
+                            <label class="label">Email Aktif <span class="text-rose-500">*</span></label>
+                            <input v-model="form.email" type="email" class="input" placeholder="nama@email.com" required>
                         </div>
                         <div>
-                            <label class="label">No. HP / WhatsApp</label>
-                            <input v-model="form.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx">
+                            <label class="label">No. HP / WhatsApp <span class="text-rose-500">*</span></label>
+                            <input v-model="form.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx" required>
                         </div>
                         <div>
                             <label class="label">Blok <span class="text-rose-500">*</span></label>
@@ -354,13 +354,23 @@
                         alert('Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan terlebih dahulu.');
                         return;
                     }
+                    const email = this.form.email.trim();
+                    const noHp = this.form.noHp.trim();
+                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+                        alert('Email aktif wajib diisi dengan format yang benar.');
+                        return;
+                    }
+                    if (!noHp || !/^[0-9+\-\s().]{8,20}$/.test(noHp)) {
+                        alert('No. HP/WhatsApp wajib diisi dengan format yang benar.');
+                        return;
+                    }
                     this.loading = true;
                     try {
                         const formData = {
                             npm: this.form.npm.trim(),
                             namaLengkap: this.form.namaLengkap.trim(),
-                            email: this.form.email.trim(),
-                            noHp: this.form.noHp.trim(),
+                            email: email,
+                            noHp: noHp,
                             blok: this.form.blok,
                             jenisKegiatan: jenis,
                             keterangan: this.form.keterangan.trim()

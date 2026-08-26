@@ -214,6 +214,12 @@ function _clientDate(v) {
         'T' + p(v.getHours()) + ':' + p(v.getMinutes()) + ':' + p(v.getSeconds());
 }
 
+function _dateOnly(v) {
+    const s = String(v || '').trim();
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[1] + '-' + m[2] + '-' + m[3] : s;
+}
+
 function _clientRow(obj) {
     const out = {};
     Object.keys(obj || {}).forEach(function(k) {
@@ -329,22 +335,9 @@ function getAllRowsCached(sheetName, ttlSeconds) {
     return rows;
 }
 
-function getSchemas() {
-    return SCHEMAS;
-}
-
-function getSheetSchema(sheetName) {
-    return SCHEMAS[sheetName] || null;
-}
-
 function getHeadersFromSheet(sheet) {
     if (!sheet || sheet.getLastRow() < 1) return [];
     return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
-}
-
-function getHeaders(sheetName) {
-    const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
-    return getHeadersFromSheet(sheet);
 }
 
 function ensureSheetWithHeaders(ss, sheetName, expectedHeaders) {
@@ -434,30 +427,6 @@ function applyDataValidation(ss) {
     applyDropdownValidation(ss, 'Pengajuan', 'Status', Object.values(STATUS));
     applyDropdownValidation(ss, 'DetailKegiatan', 'Jenis Kegiatan', JENIS_KEGIATAN);
     applyDropdownValidation(ss, 'MasterKegiatan', 'Kategori', KATEGORI_MASTER);
-}
-
-function validateDatabaseSchema() {
-    const ss = getGlobalSpreadsheet();
-    const result = { valid: true, missingSheets: [], missingHeaders: {} };
-
-    Object.keys(SCHEMAS).forEach(function(sheetName) {
-        const sheet = ss.getSheetByName(sheetName);
-        if (!sheet) {
-            result.valid = false;
-            result.missingSheets.push(sheetName);
-            return;
-        }
-        const existing = getHeadersFromSheet(sheet);
-        const missing = SCHEMAS[sheetName].filter(function(h) {
-            return existing.indexOf(h) === -1;
-        });
-        if (missing.length > 0) {
-            result.valid = false;
-            result.missingHeaders[sheetName] = missing;
-        }
-    });
-
-    return result;
 }
 
 function rowToObject(headers, row) {

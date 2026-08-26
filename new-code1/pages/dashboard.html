@@ -477,14 +477,20 @@
                         <div v-if="!bagianCellDetail.length" class="px-4 py-8 text-center text-sm text-slate-400">Tidak ada kegiatan.</div>
                         <div v-else class="divide-y divide-slate-50">
                             <div v-for="(k, i) in bagianCellDetail" :key="i" class="flex flex-wrap items-center gap-3 p-4">
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="k.hasBa ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
-                                    {{ k.hasBa ? '✓ BA ada' : '✗ Belum ada BA' }}
-                                </span>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="k.hasBa ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+                                        {{ k.hasBa ? '✓ BA ada' : '✗ Belum ada BA' }}
+                                    </span>
+                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="k.hasFinal ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+                                        {{ k.hasFinal ? '✓ ACC Final' : '✗ Belum ACC Final' }}
+                                    </span>
+                                </div>
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-bold text-slate-800">{{ k.jenisKegiatan }}</div>
                                     <div class="mt-0.5 text-xs text-slate-400">{{ formatTanggal(k.tanggalPelaksanaan) }} · {{ k.total }} peserta</div>
                                 </div>
                                 <a v-if="k.hasBa && k.fileUrl" :href="k.fileUrl" target="_blank" class="link text-xs"><i class="bi bi-eye"></i> Lihat File</a>
+                                <a v-if="k.hasFinal && k.linkFinal" :href="k.linkFinal" target="_blank" class="link text-xs"><i class="bi bi-eye"></i> Final</a>
                             </div>
                         </div>
                     </div>
@@ -1408,12 +1414,15 @@
                         if (!cellMap[ck]) cellMap[ck] = { kegiatan: [], done: 0, total: 0 };
                         const ba = baRowByKey[normK(r)];
                         const hasBa = !!ba;
+                        const linkFinal = String(r.linkFinal || '').trim();
                         cellMap[ck].kegiatan.push({
                             jenisKegiatan: r.jenisKegiatan,
                             tanggalPelaksanaan: r.tanggalPelaksanaan,
                             total: r.total,
                             hasBa: hasBa,
-                            fileUrl: hasBa ? ba.fileUrl : ''
+                            fileUrl: hasBa ? ba.fileUrl : '',
+                            hasFinal: !!linkFinal,
+                            linkFinal: linkFinal
                         });
                         cellMap[ck].total += 1;
                         if (hasBa) cellMap[ck].done += 1;
@@ -2039,7 +2048,7 @@
                     this.detail.editDetailIndex = -1;
                     this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
                     this.detail.status = 'Diterima';
-                    this.detail.catatan = '';
+                    this.detail.catatan = p['Catatan Admin'] || '';
                     this.detail.open = true;
                     this.detail.showLengkap = false;
                     this.detail.loading = false;
