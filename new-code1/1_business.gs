@@ -610,7 +610,7 @@ function getPengajuanWithDetails(idPengajuan) {
     requireAuthorized(arguments[arguments.length - 1]);
     const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan);
     if (!pengajuan) return null;
-    const details = getAllRows('DetailKegiatan').filter(function(r) {
+    const details = getAllRowsCached('DetailKegiatan').filter(function(r) {
         return String(r['ID Pengajuan'] || '').trim() === String(idPengajuan || '').trim();
     });
     const copy = _clientRow(pengajuan);
@@ -1047,8 +1047,8 @@ function requireBaginaSession(kategori, subBagian, token) {
 }
 
 function _computeBagianRows(kategori, subBagian) {
-    const all = getAllRows('Pengajuan');
-    const details = getAllRows('DetailKegiatan');
+    const all = getAllRowsCached('Pengajuan');
+    const details = getAllRowsCached('DetailKegiatan');
     const kat = _normBaginaKey(kategori);
     const sub = _normBaginaKey(subBagian);
     const byId = {};
@@ -1230,7 +1230,7 @@ function _baSumber(r) {
 
 function _getBaPesertaMap() {
     const map = {};
-    getAllRows('BeritaAcaraPeserta').forEach(function(r) {
+    getAllRowsCached('BeritaAcaraPeserta').forEach(function(r) {
         const id = String(r['BA ID'] || '').trim();
         if (!id) return;
         if (!map[id]) map[id] = [];
@@ -1245,7 +1245,7 @@ function _getBaPesertaMap() {
 
 function _getBaPesertaMapAdmin() {
     const map = {};
-    getAllRows('BeritaAcaraAdminPeserta').forEach(function(r) {
+    getAllRowsCached('BeritaAcaraAdminPeserta').forEach(function(r) {
         const id = String(r['BA ID'] || '').trim();
         if (!id) return;
         if (!map[id]) map[id] = [];
@@ -1259,7 +1259,7 @@ function _getBaPesertaMapAdmin() {
 }
 
 function _computeBaList(bagianFilter, kategori) {
-    const rows = getAllRows('BeritaAcara').filter(function(r) {
+    const rows = getAllRowsCached('BeritaAcara').filter(function(r) {
         return _baSumber(r) === 'Bagian';
     });
     const filter = _normBaginaKey(bagianFilter);
@@ -1332,9 +1332,9 @@ function getBagianBootstrap(kategori, subBagian, token) {
 function getDashboardStats() {
     requireAuthorized(arguments[arguments.length - 1]);
     return _computeDashboardStats(
-        getAllRows('Pengajuan'),
-        getAllRows('DetailKegiatan'),
-        getAllRows('BeritaAcara'),
+        getAllRowsCached('Pengajuan'),
+        getAllRowsCached('DetailKegiatan'),
+        getAllRowsCached('BeritaAcara'),
         _getBiayaMap(),
         _getBiayaOverrideMap()
     );
@@ -1402,7 +1402,7 @@ function getPengajuanList(filters) {
     const fBlok = String(filters.blok || '').trim();
     const q = norm(filters.search || '');
 
-    let rows = getAllRows('Pengajuan');
+    let rows = getAllRowsCached('Pengajuan');
     if (fStatus) rows = rows.filter(function(r) { return String(r.Status || '').trim() === fStatus; });
     if (fJenis) rows = rows.filter(function(r) { return String(r['Jenis Kegiatan'] || '').trim() === fJenis; });
     if (fBlok) rows = rows.filter(function(r) { return String(r.Blok || '').trim() === fBlok; });
@@ -1434,9 +1434,9 @@ function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
 
 function getDashboardBootstrap() {
     requireAuthorized(arguments[arguments.length - 1]);
-    const pengajuan = getAllRows('Pengajuan');
-    const details = getAllRows('DetailKegiatan');
-    const ba = getAllRows('BeritaAcara');
+    const pengajuan = getAllRowsCached('Pengajuan');
+    const details = getAllRowsCached('DetailKegiatan');
+    const ba = getAllRowsCached('BeritaAcara');
     const biayaMap = _getBiayaMap();
     const overrideMap = _getBiayaOverrideMap();
     const adminBaPesertaMap = _getBaPesertaMapAdmin();
@@ -1444,7 +1444,7 @@ function getDashboardBootstrap() {
     const sortedPengajuan = pengajuan.slice().sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
-    const adminBa = getAllRows('BeritaAcaraAdmin').slice().sort(function(a, b) { return String(b.Timestamp || '').localeCompare(String(a.Timestamp || '')); });
+    const adminBa = getAllRowsCached('BeritaAcaraAdmin').slice().sort(function(a, b) { return String(b.Timestamp || '').localeCompare(String(a.Timestamp || '')); });
 
     const detailMap = {};
     details.forEach(function(d) {
@@ -1582,7 +1582,7 @@ function getLaporanBootstrap() {
 
 function getBagianAggregation() {
     requireAuthorized(arguments[arguments.length - 1]);
-    return _computeBagianAggregation(getAllRows('Pengajuan'), getAllRows('DetailKegiatan'), getAllRows('BeritaAcara'));
+    return _computeBagianAggregation(getAllRowsCached('Pengajuan'), getAllRowsCached('DetailKegiatan'), getAllRowsCached('BeritaAcara'));
 }
 
 function _computeBagianAggregation(pengajuan, details, ba) {
@@ -1657,7 +1657,7 @@ function _computeBagianAggregation(pengajuan, details, ba) {
 
 function getBeritaAcaraAdminList() {
     requireAuthorized(arguments[arguments.length - 1]);
-    const rows = getAllRows('BeritaAcaraAdmin');
+    const rows = getAllRowsCached('BeritaAcaraAdmin');
     rows.sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
@@ -2323,7 +2323,7 @@ function _getBiayaOverrideMap() {
 
 function _getBiayaMap() {
     try {
-        const rows = getAllRows('MasterBiaya');
+        const rows = getAllRowsCached('MasterBiaya');
         const map = {};
         rows.forEach(function(r) {
             const kegiatan = String(r.Kegiatan || '').trim();
@@ -2421,8 +2421,8 @@ function _upsertBiayaCheckData(idPengajuan, biaya, pRow) {
 function getBaUploadOptions() {
     requireAuthorized(arguments[arguments.length - 1]);
     try {
-        const pengajuan = getAllRows('Pengajuan');
-        const details = getAllRows('DetailKegiatan');
+        const pengajuan = getAllRowsCached('Pengajuan');
+        const details = getAllRowsCached('DetailKegiatan');
 
         const pMap = {};
         pengajuan.forEach(function(p) { pMap[String(p['ID Pengajuan'] || '').trim()] = p; });
