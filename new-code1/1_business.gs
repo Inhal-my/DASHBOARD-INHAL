@@ -1402,7 +1402,7 @@ function getPengajuanList(filters) {
     const fBlok = String(filters.blok || '').trim();
     const q = norm(filters.search || '');
 
-    let rows = getAllRowsCached('Pengajuan');
+    let rows = getAllRowsCached('Pengajuan').slice();
     if (fStatus) rows = rows.filter(function(r) { return String(r.Status || '').trim() === fStatus; });
     if (fJenis) rows = rows.filter(function(r) { return String(r['Jenis Kegiatan'] || '').trim() === fJenis; });
     if (fBlok) rows = rows.filter(function(r) { return String(r.Blok || '').trim() === fBlok; });
@@ -1650,7 +1650,7 @@ function _computeBagianAggregation(pengajuan, details, ba) {
 
 function getBeritaAcaraAdminList() {
     requireAuthorized(arguments[arguments.length - 1]);
-    const rows = getAllRowsCached('BeritaAcaraAdmin');
+    const rows = getAllRowsCached('BeritaAcaraAdmin').slice();
     rows.sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });

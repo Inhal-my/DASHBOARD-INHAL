@@ -2014,6 +2014,11 @@
                     p.details = this.detailMap[String(p['ID Pengajuan'] || '').trim()] || [];
                     this.detail.p = p;
                     this.detail.baList = this.matchBaForPengajuan(p);
+                    if (!this.loaded.ba && !this.sectionLoading.ba) {
+                        this.loadBa().then(() => {
+                            if (this.detail.p) this.detail.baList = this.matchBaForPengajuan(this.detail.p);
+                        }).catch(() => {});
+                    }
                     this.detail.dForm = {
                         dosen: p.Dosen || '',
                         tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan']),
