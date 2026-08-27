@@ -1439,12 +1439,10 @@ function getDashboardBootstrap() {
     const ba = getAllRowsCached('BeritaAcara');
     const biayaMap = _getBiayaMap();
     const overrideMap = _getBiayaOverrideMap();
-    const adminBaPesertaMap = _getBaPesertaMapAdmin();
 
     const sortedPengajuan = pengajuan.slice().sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
-    const adminBa = getAllRowsCached('BeritaAcaraAdmin').slice().sort(function(a, b) { return String(b.Timestamp || '').localeCompare(String(a.Timestamp || '')); });
 
     const detailMap = {};
     details.forEach(function(d) {
@@ -1464,13 +1462,7 @@ function getDashboardBootstrap() {
         pengajuan: _buildPengajuanClientRows(sortedPengajuan, biayaMap, overrideMap),
         detailMap: detailMap,
         masterBiaya: masterBiaya,
-        dosen: getMasterOptions('Dosen'),
-        bagian: _computeBagianAggregation(pengajuan, details, ba),
-        beritaAcara: adminBa.map(function(r) {
-            const c = _clientRow(r);
-            c.peserta = adminBaPesertaMap[String(r['BA ID'] || '').trim()] || [];
-            return c;
-        })
+        dosen: getMasterOptions('Dosen')
     };
 }
 

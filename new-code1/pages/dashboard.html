@@ -1805,14 +1805,13 @@
                     if (tab === 'ba' && !this.loaded.ba) this.loadBa();
                     if (tab === 'master' && !this.loaded.master) this.loadMaster();
                     if (tab === 'baBagian' && this.bab.active) this.babLoad();
+                    if (tab === 'baBagian' && !this.loaded.bagian && !this.bagian.labs.length) this.loadBagian();
                 },
 
                 // ---------- loaders ----------
                 async bootstrap() {
                     this.sectionLoading.pengajuan = true;
                     this.sectionLoading.stats = true;
-                    this.sectionLoading.bagian = true;
-                    this.sectionLoading.ba = true;
                     try {
                         const b = await this.run('getDashboardBootstrap');
                         this.stats = b.stats || this.stats;
@@ -1820,24 +1819,13 @@
                         this.detailMap = b.detailMap || {};
                         this.masterBiaya = b.masterBiaya || [];
                         this.dosenOptions = b.dosen || this.dosenOptions;
-                        this.bagian.all = (b.bagian && b.bagian.rows) || [];
-                        this.bagian.labs = (b.bagian && b.bagian.labs) || [];
-                        this.bagian.options = (b.bagian && b.bagian.filters && b.bagian.filters.bagian) || this.bagian.options;
-                        this.bagian.bloks = (b.bagian && b.bagian.filters && b.bagian.filters.blok) || [];
-                        this.applyBagianFilter();
-                        this.ba.all = b.beritaAcara || [];
-                        this.applyBaFilter();
                         this.loaded.pengajuan = true;
                         this.loaded.stats = true;
-                        this.loaded.bagian = true;
-                        this.loaded.ba = true;
                     } catch (e) {
                         this.notify('Gagal memuat dashboard: ' + e, false);
                     } finally {
                         this.sectionLoading.pengajuan = false;
                         this.sectionLoading.stats = false;
-                        this.sectionLoading.bagian = false;
-                        this.sectionLoading.ba = false;
                     }
                 },
                 async loadStats() {
