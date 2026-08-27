@@ -1464,6 +1464,7 @@ function getDashboardBootstrap() {
         pengajuan: _buildPengajuanClientRows(sortedPengajuan, biayaMap, overrideMap),
         detailMap: detailMap,
         masterBiaya: masterBiaya,
+        dosen: getMasterOptions('Dosen'),
         bagian: _computeBagianAggregation(pengajuan, details, ba),
         beritaAcara: adminBa.map(function(r) {
             const c = _clientRow(r);

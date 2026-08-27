@@ -1819,6 +1819,7 @@
                         this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
                         this.detailMap = b.detailMap || {};
                         this.masterBiaya = b.masterBiaya || [];
+                        this.dosenOptions = b.dosen || this.dosenOptions;
                         this.bagian.all = (b.bagian && b.bagian.rows) || [];
                         this.bagian.labs = (b.bagian && b.bagian.labs) || [];
                         this.bagian.options = (b.bagian && b.bagian.filters && b.bagian.filters.bagian) || this.bagian.options;
@@ -1838,7 +1839,6 @@
                         this.sectionLoading.bagian = false;
                         this.sectionLoading.ba = false;
                     }
-                    this.loadDosenOptions();
                 },
                 async loadStats() {
                     this.sectionLoading.stats = true;
@@ -1911,12 +1911,6 @@
                     } finally {
                         this.sectionLoading.master = false;
                     }
-                },
-                async loadDosenOptions() {
-                    if (this.dosenOptions.length) return;
-                    try {
-                        this.dosenOptions = await this.run('getDosenOptions') || [];
-                    } catch (e) { /* non-blokir */ }
                 },
 
                 // ---------- pengajuan ----------
