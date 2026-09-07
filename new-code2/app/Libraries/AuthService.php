@@ -92,6 +92,37 @@ class AuthService
         }
     }
 
+    public function sessionBagian(): ?array
+    {
+        $session = session();
+        $bypass = $session->get('bab_session');
+        $auth = $session->get('auth');
+        if ($bypass) {
+            return [
+                'role'       => self::ROLE_BAGIAN,
+                'nama'       => $bypass['nama'] ?? 'Admin',
+                'email'      => '',
+                'kategori'   => $bypass['kategori'] ?? '',
+                'subBagian'  => $bypass['subBagian'] ?? '',
+                'kategoris'  => $bypass['kategoris'] ?? [],
+                'bypass'     => true,
+            ];
+        }
+        if (!$auth || ($auth['role'] ?? null) !== self::ROLE_BAGIAN) {
+            return null;
+        }
+        $staf = (new BagianStaffModel())->where('email', trim($auth['email'] ?? ''))->first();
+        return [
+            'role'       => self::ROLE_BAGIAN,
+            'nama'       => $auth['nama'] ?? ($staf['nama'] ?? 'Petugas Bagian'),
+            'email'      => $auth['email'] ?? '',
+            'kategori'   => $auth['kategori'] ?? ($staf['kategori'] ?? ''),
+            'subBagian'  => '',
+            'kategoris'  => $auth['kategoris'] ?? ($staf['kategori'] ? [$staf['kategori']] : []),
+            'staf'       => $staf,
+        ];
+    }
+
     public function adminBagianBypass(string $kategori, string $subBagian): array
     {
         $this->requireAdmin();
