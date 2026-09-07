@@ -140,8 +140,8 @@ class DashboardApi extends BaseApi
         if ($catatan !== '') {
             $upd['catatan_admin'] = $catatan;
         }
-        if ($status === 'ACC' && trim((string) ($p['nomor_surat'] ?? '')) === '') {
-            $upd['nomor_surat'] = (new NomorSuratService())->next('ACC');
+        if ($status === 'Diterima' && trim((string) ($p['nomor_surat'] ?? '')) === '') {
+            $upd['nomor_surat'] = (new NomorSuratService())->next('INHAL');
         }
         $pm->update($p['id'], $upd);
         if ($p['status'] !== $status) {

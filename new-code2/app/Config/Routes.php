@@ -35,3 +35,14 @@ $routes->put('/api/pengajuan/(:segment)', 'Api\DashboardApi::updateFields/$1', [
 $routes->delete('/api/pengajuan/(:segment)', 'Api\DashboardApi::deletePengajuan/$1', ['filter' => 'admin', 'as' => 'pengajuan-delete']);
 $routes->get('/api/portal/(:segment)', 'Api\PortalApi::data/$1');
 $routes->post('/api/portal/(:segment)/bukti', 'Api\PortalApi::uploadBukti/$1');
+
+$routes->get('/api/admin/ba/options', 'Api\BeritaAcaraApi::options', ['filter' => 'admin', 'as' => 'admin-ba-options']);
+$routes->get('/api/admin/ba', 'Api\BeritaAcaraApi::index', ['filter' => 'admin', 'as' => 'admin-ba']);
+$routes->post('/api/admin/ba', 'Api\BeritaAcaraApi::store', ['filter' => 'admin', 'as' => 'admin-ba-store']);
+$routes->delete('/api/admin/ba/(:segment)', 'Api\BeritaAcaraApi::delete/$1', ['filter' => 'admin', 'as' => 'admin-ba-delete']);
+$routes->post('/api/admin/ba-bagian/start', 'Api\BeritaAcaraApi::bypassStart', ['filter' => 'admin', 'as' => 'admin-ba-bagian-start']);
+$routes->post('/api/admin/ba-bagian/end', 'Api\BeritaAcaraApi::bypassEnd', ['filter' => 'admin', 'as' => 'admin-ba-bagian-end']);
+
+$routes->post('/api/pengajuan/(:segment)/email-status', 'Api\PengajuanApi::emailStatus/$1', ['filter' => 'admin', 'as' => 'pengajuan-email-status']);
+$routes->post('/api/pengajuan/(:segment)/email-final', 'Api\PengajuanApi::emailFinal/$1', ['filter' => 'admin', 'as' => 'pengajuan-email-final']);
+$routes->post('/api/pengajuan/(:segment)/email-bagian', 'Api\PengajuanApi::emailBagian/$1', ['filter' => 'admin', 'as' => 'pengajuan-email-bagian']);

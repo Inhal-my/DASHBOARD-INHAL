@@ -2,6 +2,7 @@
 
 namespace App\Controllers\Api;
 
+use App\Libraries\EmailAccService;
 use App\Models\DetailKegiatanModel;
 use App\Models\PengajuanModel;
 use App\Models\StatusHistoryModel;
@@ -94,6 +95,102 @@ class PengajuanApi extends BaseApi
         ]);
     }
 
+    public function emailStatus(string $idPengajuan)
+    {
+        $this->requireAdmin();
+        $pm = new PengajuanModel();
+        $p = $pm->findByIdPengajuan($idPengajuan);
+        if (!$p) {
+            return $this->respondErr('Pengajuan tidak ditemukan.', 404);
+        }
+        $status = trim((string) ($p['status'] ?? ''));
+        if ($status !== 'Diterima' && $status !== 'Ditolak') {
+            return $this->respondErr('Email notifikasi hanya untuk status Diterima/Ditolak. Status saat ini: ' . ($status !== '' ? $status : '-'), 400);
+        }
+        $kode = $status === 'Ditolak' ? 'acc_ditolak' : 'acc_diterima';
+        $res = (new EmailAccService())->sendStatus($kode, [
+            'nama'       => trim((string) ($p['nama_lengkap'] ?? '')),
+            'npm'        => trim((string) ($p['npm'] ?? '')),
+            'email'      => trim((string) ($p['email'] ?? '')),
+            'nomor_surat'=> trim((string) ($p['nomor_surat'] ?? '')),
+            'catatan'    => trim((string) ($p['catatan_admin'] ?? '')),
+        ]);
+        $upd = $res['ok']
+            ? ['status_notifikasi_email' => 'Terkirim', 'notifikasi_terkirim_pada' => date('Y-m-d H:i:s'), 'error_notifikasi_email' => null]
+            : ['status_notifikasi_email' => 'Gagal', 'error_notifikasi_email' => $res['message']];
+        $pm->update($p['id'], $upd);
+        audit_log_add($this->actor(), 'EMAIL_STATUS', $idPengajuan, $kode . '=' . ($res['ok'] ? 'Terkirim' : 'Gagal'));
+        if ($res['ok']) {
+            return $this->respondOk(['message' => 'Email terkirim.']);
+        }
+        return $this->respondErr('Gagal mengirim email: ' . $res['message'], 500);
+    }
+
+    public function emailFinal(string $idPengajuan)
+    {
+        $this->requireAdmin();
+        $pm = new PengajuanModel();
+        $p = $pm->findByIdPengajuan($idPengajuan);
+        if (!$p) {
+            return $this->respondErr('Pengajuan tidak ditemukan.', 404);
+        }
+        if (trim((string) ($p['status'] ?? '')) !== 'ACC') {
+            return $this->respondErr('Email final hanya untuk pengajuan berstatus ACC. Status saat ini: ' . trim((string) ($p['status'] ?? '-')), 409);
+        }
+        $details = (new DetailKegiatanModel())
+            ->where('id_pengajuan', $idPengajuan)
+            ->orderBy('timestamp', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->findAll();
+        $res = (new EmailAccService())->sendFinal($p, $details);
+        $nomor = trim((string) ($res['nomorSurat'] ?? ''));
+        $bagianStatus = $res['bagianEmailSent'] ? 'Terkirim' : ($res['bagianEmail'] !== '' ? 'Gagal' : 'Belum dikirim');
+        $pm->update($p['id'], [
+            'email_bagian'       => trim((string) ($res['bagianEmail'] ?? '')),
+            'status_info_bagian' => $bagianStatus,
+            'waktu_info_bagian'  => date('Y-m-d H:i:s'),
+            'catatan_info_bagian'=> $res['bagianEmailSent'] ? '' : (string) ($res['message'] ?? ''),
+        ]);
+        audit_log_add($this->actor(), 'EMAIL_FINAL', $idPengajuan, 'nomor=' . $nomor . ', mahasiswa=' . ($res['studentEmailSent'] ? 'Terkirim' : 'Gagal') . ', bagian=' . $bagianStatus);
+        if ($res['ok']) {
+            return $this->respondOk([
+                'message'           => $res['message'],
+                'nomorSurat'        => $nomor,
+                'studentEmailSent'  => $res['studentEmailSent'],
+                'bagianEmailSent'   => $res['bagianEmailSent'],
+            ]);
+        }
+        return $this->respondErr('Gagal mengirim email final: ' . $res['message'], 500);
+    }
+
+    public function emailBagian(string $idPengajuan)
+    {
+        $this->requireAdmin();
+        $pm = new PengajuanModel();
+        $p = $pm->findByIdPengajuan($idPengajuan);
+        if (!$p) {
+            return $this->respondErr('Pengajuan tidak ditemukan.', 404);
+        }
+        $details = (new DetailKegiatanModel())
+            ->where('id_pengajuan', $idPengajuan)
+            ->orderBy('timestamp', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->findAll();
+        $res = (new EmailAccService())->sendAccFinalToBagian($p, $details);
+        $bagianStatus = $res['ok'] ? 'Terkirim' : 'Gagal';
+        $pm->update($p['id'], [
+            'email_bagian'       => trim((string) ($res['bagianEmail'] ?? '')),
+            'status_info_bagian' => $bagianStatus,
+            'waktu_info_bagian'  => date('Y-m-d H:i:s'),
+            'catatan_info_bagian'=> $res['ok'] ? 'Dikirim ulang khusus ke Bagian oleh Admin' : (string) ($res['message'] ?? ''),
+        ]);
+        audit_log_add($this->actor(), 'EMAIL_BAGIAN', $idPengajuan, 'status=' . $bagianStatus);
+        if ($res['ok']) {
+            return $this->respondOk(['message' => $res['message'], 'bagianEmail' => $res['bagianEmail']]);
+        }
+        return $this->respondErr('Gagal mengirim email: ' . $res['message'], 500);
+    }
+
     private function detailRows(array $r, string $jenis): array
     {
         $rows = [];
@@ -123,5 +220,10 @@ class PengajuanApi extends BaseApi
         }
 
         return $rows;
+    }
+
+    private function actor(): string
+    {
+        return (string) ((new \App\Libraries\AuthService())->sessionAuth()['nama'] ?? 'admin');
     }
 }

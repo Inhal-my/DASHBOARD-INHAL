@@ -76,6 +76,9 @@ $userEmail = $userEmail ?? '';
         .st-dibatalkan{background:#f1f5f9;color:#475569}
         .flag-on{display:inline-flex;align-items:center;gap:.25rem;background:#ecfdf5;color:#047857;font-size:.7rem;font-weight:800;padding:.2rem .55rem;border-radius:999px}
         .flag-off{color:#cbd5e1;font-size:.8rem}
+        .check-item{display:flex;align-items:center;gap:.6rem;padding:.55rem .1rem;font-size:.84rem}
+        .check-name{font-weight:700;color:#0f172a;flex:1;min-width:0}
+        .check-npm{font-size:.7rem;color:#94a3b8;margin-left:.35rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
         .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76rem}
         .sec-title{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:.95rem;margin:1.3rem 0 .9rem;color:#0f172a}
         .sec-title i{color:#6366f1}
@@ -213,6 +216,13 @@ $userEmail = $userEmail ?? '';
                 <button class="tab" :class="{'is-active': tab==='stats'}" @click="tab='stats'">
                     <i class="bi bi-bar-chart-line"></i> Statistik
                 </button>
+                <button class="tab" :class="{'is-active': tab==='ba'}" @click="setTab('ba')">
+                    <i class="bi bi-file-earmark-text"></i> Berita Acara
+                    <span v-if="baSummary.jumlahBa" class="dot">{{ baSummary.jumlahBa }}</span>
+                </button>
+                <button class="tab" :class="{'is-active': tab==='bab'}" @click="setTab('bab')">
+                    <i class="bi bi-diagram-3"></i> BA Bagian
+                </button>
             </div>
 
             <section v-if="tab==='pengajuan'">
@@ -313,6 +323,171 @@ $userEmail = $userEmail ?? '';
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section v-if="tab==='ba'">
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title"><i class="bi bi-file-earmark-text"></i> Berita Acara Admin ({{ baRows.length }})</span>
+                        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                            <button class="btn btn-soft" @click="loadBa()" :disabled="baLoading"><i class="bi bi-arrow-clockwise"></i>Muat Ulang</button>
+                            <button class="btn btn-primary" @click="openBaUpload()"><i class="bi bi-upload"></i>Upload Berita Acara</button>
+                        </div>
+                    </div>
+                    <div v-if="baLoading" class="loading-pane"><div class="spinner"></div><span>Memuat berita acara…</span></div>
+                    <div v-else-if="!baRows.length" class="empty">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <p>Belum ada berita acara dari admin.</p>
+                    </div>
+                    <div v-else class="table-scroll">
+                        <table class="list">
+                            <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Kegiatan</th>
+                                <th>Bagian</th>
+                                <th>Blok</th>
+                                <th>Peserta</th>
+                                <th>File</th>
+                                <th>Catatan</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="b in baRows" :key="b.baId" @click="toggleBaExpand(b.baId)">
+                                <td style="white-space:nowrap">{{ formatTanggal(b.tanggalPelaksanaan) }}</td>
+                                <td>
+                                    <div style="font-weight:700;color:#0f172a">{{ b.namaKegiatan }}</div>
+                                    <div style="font-size:.72rem;color:#94a3b8">{{ b.baId }}</div>
+                                </td>
+                                <td>{{ b.bagian || 'Admin' }}</td>
+                                <td>{{ b.blok }}</td>
+                                <td><span class="badge" style="background:#eef2ff;color:#4f46e5">{{ b.jumlahPeserta }}</span></td>
+                                <td>
+                                    <span v-if="b.file_name" class="flag-on"><i class="bi bi-paperclip"></i>{{ b.file_name }}</span>
+                                    <span v-else class="flag-off">—</span>
+                                </td>
+                                <td style="max-width:14rem">{{ b.catatan || '—' }}</td>
+                                <td style="text-align:right;white-space:nowrap">
+                                    <button class="icon-btn danger" title="Hapus BA" @click.stop="deleteBa(b)"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tbody v-for="b in baRows" :key="'p'+b.baId">
+                            <tr v-if="expandedBa[b.baId]" style="background:#fafbfc">
+                                <td colspan="8" style="padding:.4rem 1rem">
+                                    <div v-if="!b.peserta.length" class="hint">Tidak ada peserta tercatat.</div>
+                                    <table style="width:100%;font-size:.78rem;border-collapse:collapse">
+                                        <thead><tr><th style="text-align:left;color:#94a3b8;padding:.35rem .5rem">NPM</th><th style="text-align:left;color:#94a3b8;padding:.35rem .5rem">Nama Lengkap</th><th style="text-align:left;color:#94a3b8;padding:.35rem .5rem">Blok</th><th style="text-align:left;color:#94a3b8;padding:.35rem .5rem">Status Pengajuan</th></tr></thead>
+                                        <tbody>
+                                        <tr v-for="p in b.peserta" :key="b.baId+p.npm">
+                                            <td style="padding:.3rem .5rem" class="mono">{{ p.npm }}</td>
+                                            <td style="padding:.3rem .5rem;font-weight:600">{{ p.namaLengkap }}</td>
+                                            <td style="padding:.3rem .5rem">{{ p.blok }}</td>
+                                            <td style="padding:.3rem .5rem"><span class="badge" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="stats" v-if="baSummary.jumlahBa !== undefined">
+                    <div class="stat"><span class="stat-label"><i class="bi bi-file-earmark-text"></i> Total BA</span><span class="stat-value">{{ baSummary.jumlahBa }}</span></div>
+                    <div class="stat"><span class="stat-label"><i class="bi bi-people"></i> Total Peserta</span><span class="stat-value">{{ baSummary.jumlahPeserta }}</span></div>
+                    <div class="stat" v-if="baSummary.terakhir"><span class="stat-label"><i class="bi bi-clock-history"></i> Terakhir</span><span class="stat-value" style="font-size:1rem;padding-top:.2rem">{{ formatTanggalWaktu(baSummary.terakhir) }}</span></div>
+                </div>
+            </section>
+
+            <section v-if="tab==='bab'">
+                <div v-if="!bab.active" class="card">
+                    <div class="card-head"><span class="card-title"><i class="bi bi-play-circle"></i> Mulai Sesi Bagian</span></div>
+                    <div class="card-body">
+                        <div class="grid-form" style="grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))">
+                            <div>
+                                <label class="label">Kategori</label>
+                                <select v-model="bab.kategori" class="input" @change="onBabKategoriChange()">
+                                    <option value="">(Pilih Kategori)</option>
+                                    <option>SGD</option><option>KKD</option><option>Ujian</option><option>Praktikum</option>
+                                </select>
+                            </div>
+                            <div v-if="bab.kategori==='Praktikum'">
+                                <label class="label">Sub Bagian / Lab</label>
+                                <select v-model="bab.subBagian" class="input">
+                                    <option value="">(Pilih Lab)</option>
+                                    <option v-for="l in babLabOptions" :key="l" :value="l">{{ l }}</option>
+                                </select>
+                            </div>
+                            <div style="display:flex;align-items:flex-end">
+                                <button class="btn btn-primary" :disabled="bab.loading" @click="babStart()">
+                                    <span v-if="bab.loading" class="spinner spinner-sm"></span>
+                                    <i v-else class="bi bi-play-circle"></i> Mulai Sesi Bagian
+                                </button>
+                            </div>
+                        </div>
+                        <p class="hint" style="margin:.9rem 0 0"><i class="bi bi-info-circle"></i> Lihat data kegiatan dan berita acara bagian sebagai petugas bagian (tanpa mengubah sesi admin).</p>
+                    </div>
+                </div>
+                <template v-else>
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="card-title"><i class="bi bi-funnel-fill"></i> {{ bab.kategori }}<template v-if="bab.subBagian"> / {{ bab.subBagian }}</template></span>
+                            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                                <span class="user-chip"><i class="bi bi-person-badge"></i>{{ bab.nama }}</span>
+                                <button class="btn btn-soft" :disabled="bab.loading" @click="babLoad()"><i class="bi bi-arrow-clockwise"></i>Muat Ulang</button>
+                                <button class="btn btn-danger-soft" @click="babEnd()"><i class="bi bi-box-arrow-right"></i>Akhiri Sesi</button>
+                            </div>
+                        </div>
+                        <div class="stats" v-if="babSummary.jumlahBa !== undefined">
+                            <div class="stat"><span class="stat-label"><i class="bi bi-people"></i> Peserta Kegiatan</span><span class="stat-value">{{ babRows.length }}</span><span class="stat-sub">Diterima / ACC</span></div>
+                            <div class="stat"><span class="stat-label"><i class="bi bi-file-earmark-text"></i> Berita Acara</span><span class="stat-value">{{ babSummary.jumlahBa }}</span><span class="stat-sub">{{ babSummary.jumlahPeserta }} peserta</span></div>
+                            <div class="stat" v-if="babSummary.terakhir"><span class="stat-label"><i class="bi bi-clock-history"></i> Terakhir</span><span class="stat-value" style="font-size:1rem;padding-top:.2rem">{{ formatTanggal(babSummary.terakhir) }}</span></div>
+                        </div>
+                        <div class="table-scroll" style="max-height:30rem;overflow:auto">
+                            <table class="list">
+                                <thead>
+                                <tr>
+                                    <th>NPM</th><th>Nama Lengkap</th><th>Blok</th><th>Kegiatan</th><th>Tanggal</th><th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr v-if="!babRows.length"><td colspan="6"><div class="empty" style="padding:1.5rem"><p>Belum ada kegiatan pada bagian ini.</p></div></td></tr>
+                                <tr v-for="r in babRows" :key="r.idPengajuan">
+                                    <td class="mono">{{ r.npm }}</td>
+                                    <td style="font-weight:600;color:#0f172a">{{ r.namaLengkap }}</td>
+                                    <td>{{ r.blok }}</td>
+                                    <td>{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></td>
+                                    <td style="white-space:nowrap">{{ formatTanggal(r.tanggal) }}</td>
+                                    <td><span class="badge" :class="statusBadge(r.status)">{{ r.status }}</span></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><span class="card-title"><i class="bi bi-file-earmark-check"></i> Berita Acara Bagian ({{ babBaList.length }})</span></div>
+                        <div v-if="!babBaList.length" class="empty"><i class="bi bi-file-earmark-text"></i><p>Belum ada berita acara dari bagian ini.</p></div>
+                        <div v-else class="table-scroll">
+                            <table class="list">
+                                <thead>
+                                <tr><th>Tanggal</th><th>Kegiatan</th><th>Blok</th><th>Jumlah</th><th>File</th><th>Catatan</th></tr>
+                                </thead>
+                                <tbody>
+                                <tr v-for="b in babBaList" :key="b.baId">
+                                    <td style="white-space:nowrap">{{ formatTanggal(b.tanggalPelaksanaan) }}</td>
+                                    <td><div style="font-weight:700;color:#0f172a">{{ b.namaKegiatan }}</div><div style="font-size:.72rem;color:#94a3b8">{{ b.baId }}</div></td>
+                                    <td>{{ b.blok }}</td>
+                                    <td><span class="badge" style="background:#eef2ff;color:#4f46e5">{{ b.jumlahPeserta }}</span></td>
+                                    <td><span v-if="b.file_name" class="flag-on"><i class="bi bi-paperclip"></i>{{ b.file_name }}</span><span v-else class="flag-off">—</span></td>
+                                    <td style="max-width:14rem">{{ b.catatan || '—' }}</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
             </section>
         </template>
     </div>
@@ -499,6 +674,90 @@ $userEmail = $userEmail ?? '';
     </transition>
 
     <transition name="fade">
+        <div v-if="baUpload.open" class="modal-mask" @click.self="baUpload.open=false">
+            <div class="modal" style="max-width:46rem">
+                <div class="modal-head">
+                    <div style="display:flex;align-items:center;gap:.8rem">
+                        <div style="width:2.5rem;height:2.5rem;border-radius:.8rem;background:#eef2ff;color:#4f46e5;display:inline-flex;align-items:center;justify-content:center"><i class="bi bi-upload"></i></div>
+                        <div>
+                            <div class="modal-title">Upload Berita Acara</div>
+                            <div class="modal-sub">Admin</div>
+                        </div>
+                    </div>
+                    <button class="modal-close" @click="baUpload.open=false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="grid-form">
+                        <div>
+                            <label class="label">Blok</label>
+                            <select v-model="baUpload.blok" class="input" :disabled="baUpload.loadingOpts" @change="onUploadBlokChange">
+                                <option value="">(Pilih Blok)</option>
+                                <option v-for="b in baUpload.opts.blok" :key="b" :value="b">{{ b }}</option>
+                            </select>
+                        </div>
+                        <div style="grid-column:span 2 / -1;min-width:0">
+                            <label class="label">Kegiatan</label>
+                            <select v-model="baUpload.groupKey" class="input" :disabled="!baUpload.blok || baUpload.loadingOpts" @change="onUploadGroupChange">
+                                <option value="">(Pilih Kegiatan)</option>
+                                <option v-for="g in uploadGroupOptions" :key="g.key" :value="g.key">{{ g.label }} ({{ g.peserta.length }} mhs)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Nama Kegiatan</label>
+                            <input v-model="baUpload.form.nama" class="input" placeholder="cth: SGD 1 - Modul 2">
+                        </div>
+                        <div>
+                            <label class="label">Bagian</label>
+                            <select v-model="baUpload.form.bagian" class="input">
+                                <option>Admin</option><option>SGD</option><option>KKD</option><option>Ujian</option><option>Praktikum</option>
+                                <optgroup label="Lab Praktikum">
+                                    <option v-for="l in baUpload.opts.labs" :key="l" :value="l">{{ l }}</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Tanggal Pelaksanaan</label>
+                            <input v-model="baUpload.form.tanggal" type="date" class="input">
+                        </div>
+                        <div>
+                            <label class="label">File BA (PDF / JPG / PNG)</label>
+                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="input" @change="onUploadFile">
+                        </div>
+                    </div>
+
+                    <div v-if="uploadSelectedGroup" class="panel-white" style="margin-top:1rem">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.4rem">
+                            <span style="font-weight:800;font-size:.85rem"><i class="bi bi-people" style="color:#6366f1"></i> Peserta ({{ uploadSelectedCount }})</span>
+                            <label style="font-size:.78rem;font-weight:700;color:#475569;display:inline-flex;align-items:center;gap:.35rem;cursor:pointer">
+                                <input type="checkbox" style="accent-color:#4f46e5" :checked="uploadAllSelected" @change="uploadToggleAll"> Pilih semua
+                            </label>
+                        </div>
+                        <div style="border:1px solid #e2e8f0;border-radius:.8rem;padding:.3rem 1rem;max-height:14rem;overflow-y:auto">
+                            <label v-for="p in uploadSelectedGroup.peserta" :key="p.idPengajuan" class="check-item" style="cursor:pointer;border-bottom:1px dashed #f1f5f9">
+                                <input type="checkbox" :checked="!!baUpload.selected[p.idPengajuan]" @change="uploadTogglePeserta(p.idPengajuan)">
+                                <span class="check-name">{{ p.namaLengkap }} <span class="check-npm">{{ p.npm }}</span></span>
+                                <span class="badge" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field" style="margin-top:1rem">
+                        <label class="label">Catatan</label>
+                        <textarea v-model="baUpload.form.catatan" rows="2" class="input" placeholder="Catatan tambahan…"></textarea>
+                    </div>
+                </div>
+                <div class="modal-foot">
+                    <button class="btn btn-soft" @click="baUpload.open=false">Batal</button>
+                    <button class="btn btn-primary" :disabled="loading || uploadBlocked" @click="submitBaUpload()">
+                        <span v-if="loading" class="spinner spinner-sm"></span>
+                        <i v-else class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <transition name="fade">
         <div v-if="toast.show" class="toast" :class="toastClass">
             <i :class="toast.icon"></i>{{ toast.message }}
         </div>
@@ -555,6 +814,21 @@ $userEmail = $userEmail ?? '';
                 detailMap: {},
                 masterBiaya: [],
                 dosenOptions: [],
+                baRows: [],
+                baSummary: {},
+                baLoading: false,
+                expandedBa: {},
+                baUpload: {
+                    open: false, loadingOpts: false, blok: '', groupKey: '',
+                    opts: { blok: [], labs: [], groups: [] },
+                    form: { nama: '', bagian: 'Admin', tanggal: '', catatan: '', file: null, fileLabel: '' },
+                    selected: {}
+                },
+                bab: { active: false, loading: false, kategori: '', subBagian: '', nama: '' },
+                babLabOptions: [],
+                babRows: [],
+                babBaList: [],
+                babSummary: {},
                 filters: { search: '', jenis: '', blok: '', status: '' },
                 detail: {
                     open: false, loading: false, showLengkap: false, p: null, details: [], history: [],
@@ -569,7 +843,13 @@ $userEmail = $userEmail ?? '';
         },
         computed: {
             pageTitle() {
-                return this.tab === 'pengajuan' ? 'Telaah Pengajuan' : 'Statistik Pendaftaran';
+                const t = {
+                    'pengajuan': 'Telaah Pengajuan',
+                    'stats': 'Statistik Pendaftaran',
+                    'ba': 'Berita Acara Admin',
+                    'bab': 'Berita Acara Bagian'
+                };
+                return t[this.tab] || 'Dashboard';
             },
             toastClass() {
                 return { success: 'toast-success', error: 'toast-error', info: 'toast-info' }[this.toast.type] || 'toast-info';
@@ -619,6 +899,27 @@ $userEmail = $userEmail ?? '';
                     { title: 'Per Blok', icon: 'bi-layers', grad: 'linear-gradient(90deg,#f59e0b,#fbbf24)', bars: this.barsOf(this.stats.perBlok) },
                     { title: 'Per Bagian', icon: 'bi-diagram-3', grad: 'linear-gradient(90deg,#8b5cf6,#c084fc)', bars: this.barsOf(this.stats.perBagian) }
                 ];
+            },
+            uploadGroupOptions() {
+                return (this.baUpload.opts.groups || []).filter(g => g.blok === this.baUpload.blok && (g.nama || '').trim() !== '');
+            },
+            uploadSelectedGroup() {
+                return (this.baUpload.opts.groups || []).find(g => g.key === this.baUpload.groupKey) || null;
+            },
+            uploadSelectedList() {
+                const g = this.uploadSelectedGroup;
+                return g ? (g.peserta || []).filter(p => !!this.baUpload.selected[p.idPengajuan]) : [];
+            },
+            uploadSelectedCount() {
+                return this.uploadSelectedList.length;
+            },
+            uploadAllSelected() {
+                const g = this.uploadSelectedGroup;
+                return !!g && (g.peserta || []).length > 0 && (g.peserta || []).every(p => !!this.baUpload.selected[p.idPengajuan]);
+            },
+            uploadBlocked() {
+                const f = this.baUpload.form;
+                return !this.baUpload.blok || !this.baUpload.groupKey || !(f.nama || '').trim() || !f.tanggal || !f.file || this.uploadSelectedCount === 0;
             }
         },
         methods: {
@@ -640,6 +941,7 @@ $userEmail = $userEmail ?? '';
                     const res = await apiFetch('GET', 'dashboard/bootstrap');
                     this.applyBootstrap(res.data);
                     this.loggedIn = true;
+                    this.loadBa();
                 } catch (e) {
                     this.loggedIn = false;
                 } finally {
@@ -654,6 +956,210 @@ $userEmail = $userEmail ?? '';
                 this.detailMap = b.detailMap || {};
                 this.masterBiaya = b.masterBiaya || [];
                 this.dosenOptions = b.dosen || [];
+            },
+            async setTab(name) {
+                this.tab = name;
+                if (name === 'ba') {
+                    await this.loadBa();
+                } else if (name === 'bab') {
+                    if (this.bab.active) {
+                        await this.babLoad();
+                    } else {
+                        await this.babProbe();
+                    }
+                }
+            },
+            async fetchBaAdminOptions(force) {
+                if (!force && this.baUpload.opts.groups.length) return;
+                this.baUpload.loadingOpts = true;
+                try {
+                    const res = await apiFetch('GET', 'admin/ba/options');
+                    const d = res.data || {};
+                    this.baUpload.opts = { blok: d.blok || [], labs: d.labs || [], groups: d.groups || [] };
+                    this.babLabOptions = d.labs || [];
+                } catch (e) {
+                    this.showToast('Gagal memuat pilihan kegiatan: ' + e.message, 'error');
+                } finally {
+                    this.baUpload.loadingOpts = false;
+                }
+            },
+            async loadBa() {
+                if (this.baLoading) return;
+                this.baLoading = true;
+                try {
+                    const res = await apiFetch('GET', 'admin/ba');
+                    this.baRows = (res.data && res.data.list) || [];
+                    this.baSummary = (res.data && res.data.summary) || {};
+                } catch (e) {
+                    this.showToast('Gagal memuat berita acara: ' + e.message, 'error');
+                } finally {
+                    this.baLoading = false;
+                }
+            },
+            toggleBaExpand(baId) {
+                this.expandedBa[baId] = !this.expandedBa[baId];
+            },
+            async deleteBa(b) {
+                if (!confirm('Hapus berita acara "' + b.namaKegiatan + '" (Blok ' + b.blok + ', ' + b.tanggalPelaksanaan + ')? Peserta terkait ikut terhapus.')) return;
+                this.loading = true;
+                try {
+                    const res = await apiFetch('DELETE', 'admin/ba/' + encodeURIComponent(b.baId));
+                    this.showToast((res.data && res.data.message) || 'Berita acara berhasil dihapus.');
+                    this.expandedBa[b.baId] = false;
+                    await this.loadBa();
+                } catch (e) {
+                    this.showToast('Gagal menghapus: ' + e.message, 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            async openBaUpload() {
+                this.baUpload.open = true;
+                this.baUpload.blok = '';
+                this.baUpload.groupKey = '';
+                this.baUpload.form = { nama: '', bagian: 'Admin', tanggal: '', catatan: '', file: null, fileLabel: '' };
+                this.baUpload.selected = {};
+                await this.fetchBaAdminOptions();
+            },
+            onUploadBlokChange() {
+                this.baUpload.groupKey = '';
+                this.baUpload.selected = {};
+                this.baUpload.form.nama = '';
+            },
+            onUploadGroupChange() {
+                const g = this.uploadSelectedGroup;
+                this.baUpload.selected = {};
+                if (g) {
+                    this.baUpload.form.nama = (g.nama || '').trim();
+                    this.baUpload.form.tanggal = String(g.tanggal || '').slice(0, 10);
+                    this.baUpload.form.bagian = (g.jenis || '').trim() !== '' ? (g.jenis || '').trim() : 'Admin';
+                }
+            },
+            uploadTogglePeserta(id) {
+                this.baUpload.selected[id] = !this.baUpload.selected[id];
+            },
+            uploadToggleAll() {
+                const g = this.uploadSelectedGroup;
+                if (!g) return;
+                const target = !this.uploadAllSelected;
+                (g.peserta || []).forEach(p => { this.baUpload.selected[p.idPengajuan] = target; });
+            },
+            onUploadFile(e) {
+                const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                this.baUpload.form.file = f;
+                this.baUpload.form.fileLabel = f ? f.name : '';
+            },
+            async submitBaUpload() {
+                if (this.uploadBlocked || this.loading) return;
+                this.loading = true;
+                try {
+                    const f = this.baUpload.form;
+                    const peserta = this.uploadSelectedList.map(p => ({ idPengajuan: p.idPengajuan }));
+                    const fd = new FormData();
+                    fd.set('namaKegiatan', (f.nama || '').trim());
+                    fd.set('blok', this.baUpload.blok);
+                    fd.set('tanggalPelaksanaan', f.tanggal);
+                    fd.set('bagian', (f.bagian || 'Admin').trim());
+                    fd.set('catatan', (f.catatan || '').trim());
+                    fd.set('peserta', JSON.stringify(peserta));
+                    if (f.file) fd.set('file', f.file);
+                    const res = await fetch('/api/admin/ba', { method: 'POST', body: fd });
+                    const data = await readJson(res);
+                    this.showToast((data && data.message) || (res.ok ? 'Berita acara berhasil diunggah.' : 'Upload gagal.'), res.ok ? 'success' : 'error');
+                    if (res.ok && data.ok) {
+                        this.baUpload.open = false;
+                        await this.loadBa();
+                    }
+                } catch (e) {
+                    this.showToast('Gagal mengunggah berita acara.', 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            onBabKategoriChange() {
+                if (this.bab.kategori !== 'Praktikum') {
+                    this.bab.subBagian = '';
+                } else {
+                    this.loadBabLabs();
+                }
+            },
+            async loadBabLabs() {
+                if (!this.babLabOptions.length) {
+                    await this.fetchBaAdminOptions();
+                }
+            },
+            applyBagianBootstrap(b) {
+                this.bab.nama = b.nama || '';
+                this.bab.kategori = b.kategori || '';
+                this.bab.subBagian = b.subBagian || '';
+                this.babRows = b.rows || [];
+                const ba = b.ba || {};
+                this.babBaList = ba.list || [];
+                this.babSummary = ba.summary || {};
+            },
+            async babProbe() {
+                if (this.bab.loading) return;
+                this.bab.loading = true;
+                try {
+                    const res = await apiFetch('GET', 'bagian/bootstrap');
+                    this.applyBagianBootstrap(res.data);
+                    this.bab.active = true;
+                } catch (e) {
+                    this.bab.active = false;
+                } finally {
+                    this.bab.loading = false;
+                }
+            },
+            async babLoad() {
+                if (this.bab.loading) return;
+                this.bab.loading = true;
+                try {
+                    const res = await apiFetch('GET', 'bagian/bootstrap');
+                    this.applyBagianBootstrap(res.data);
+                } catch (e) {
+                    this.showToast('Gagal memuat data bagian: ' + e.message, 'error');
+                    this.bab.active = false;
+                } finally {
+                    this.bab.loading = false;
+                }
+            },
+            async babStart() {
+                const k = (this.bab.kategori || '').trim();
+                if (!k) { this.showToast('Pilih kategori kegiatan.', 'error'); return; }
+                if (k === 'Praktikum' && !(this.bab.subBagian || '').trim()) {
+                    this.showToast('Untuk Praktikum, pilih sub bagian / lab terlebih dahulu.', 'error');
+                    return;
+                }
+                this.bab.loading = true;
+                try {
+                    const res = await apiFetch('POST', 'admin/ba-bagian/start', { kategori: k, subBagian: (this.bab.subBagian || '').trim() });
+                    this.bab.active = true;
+                    this.showToast((res.data && res.data.message) || 'Sesi bagian dimulai.');
+                    await this.babLoad();
+                } catch (e) {
+                    this.showToast('Gagal memulai sesi: ' + e.message, 'error');
+                } finally {
+                    this.bab.loading = false;
+                }
+            },
+            async babEnd() {
+                if (!confirm('Akhiri sesi bagian ' + this.bab.kategori + (this.bab.subBagian ? ' / ' + this.bab.subBagian : '') + '?')) return;
+                this.bab.loading = true;
+                try {
+                    const res = await apiFetch('POST', 'admin/ba-bagian/end');
+                    this.showToast((res.data && res.data.message) || 'Sesi bagian diakhiri.');
+                    this.bab.active = false;
+                    this.bab.kategori = '';
+                    this.bab.subBagian = '';
+                    this.bab.nama = '';
+                    this.babRows = [];
+                    this.babBaList = [];
+                    this.babSummary = {};
+                } catch (e) {
+                    this.showToast('Gagal mengakhiri sesi: ' + e.message, 'error');
+                } finally {
+                    this.bab.loading = false;
+                }
             },
             async refresh() {
                 if (this.loading) return;
