@@ -25,6 +25,7 @@ $routes->get('/api/mahasiswa/(:segment)', 'Api\MasterApi::mahasiswa/$1');
 $routes->post('/api/pengajuan', 'Api\PengajuanApi::register');
 
 $routes->get('/api/dashboard/bootstrap', 'Api\DashboardApi::bootstrap', ['filter' => 'admin', 'as' => 'dashboard-bootstrap']);
+$routes->get('/api/laporan/bootstrap', 'Api\LaporanApi::bootstrap', ['filter' => 'admin', 'as' => 'laporan-bootstrap']);
 $routes->get('/api/dashboard/stats', 'Api\DashboardApi::stats', ['filter' => 'admin', 'as' => 'dashboard-stats']);
 $routes->get('/api/pengajuan/(:segment)', 'Api\DashboardApi::pengajuanDetail/$1', ['filter' => 'admin', 'as' => 'pengajuan-detail']);
 $routes->put('/api/pengajuan/(:segment)/status', 'Api\DashboardApi::updateStatus/$1', ['filter' => 'admin', 'as' => 'pengajuan-status']);
