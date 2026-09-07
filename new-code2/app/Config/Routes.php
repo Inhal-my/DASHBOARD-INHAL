@@ -23,5 +23,15 @@ $routes->post('/api/bagian/ba/(:segment)/status', 'Api\BagianApi::updateStatus/$
 $routes->get('/api/registration-options', 'Api\MasterApi::registrationOptions');
 $routes->get('/api/mahasiswa/(:segment)', 'Api\MasterApi::mahasiswa/$1');
 $routes->post('/api/pengajuan', 'Api\PengajuanApi::register');
+
+$routes->get('/api/dashboard/bootstrap', 'Api\DashboardApi::bootstrap', ['filter' => 'admin', 'as' => 'dashboard-bootstrap']);
+$routes->get('/api/dashboard/stats', 'Api\DashboardApi::stats', ['filter' => 'admin', 'as' => 'dashboard-stats']);
+$routes->get('/api/pengajuan/(:segment)', 'Api\DashboardApi::pengajuanDetail/$1', ['filter' => 'admin', 'as' => 'pengajuan-detail']);
+$routes->put('/api/pengajuan/(:segment)/status', 'Api\DashboardApi::updateStatus/$1', ['filter' => 'admin', 'as' => 'pengajuan-status']);
+$routes->put('/api/pengajuan/(:segment)/biaya', 'Api\DashboardApi::updateBiaya/$1', ['filter' => 'admin', 'as' => 'pengajuan-biaya']);
+$routes->put('/api/pengajuan/(:segment)/detail/(:segment)', 'Api\DashboardApi::updateDetail/$1/$2', ['filter' => 'admin', 'as' => 'pengajuan-detail-update']);
+$routes->delete('/api/pengajuan/(:segment)/detail/(:segment)', 'Api\DashboardApi::deleteDetail/$1/$2', ['filter' => 'admin', 'as' => 'pengajuan-detail-delete']);
+$routes->put('/api/pengajuan/(:segment)', 'Api\DashboardApi::updateFields/$1', ['filter' => 'admin', 'as' => 'pengajuan-update']);
+$routes->delete('/api/pengajuan/(:segment)', 'Api\DashboardApi::deletePengajuan/$1', ['filter' => 'admin', 'as' => 'pengajuan-delete']);
 $routes->get('/api/portal/(:segment)', 'Api\PortalApi::data/$1');
 $routes->post('/api/portal/(:segment)/bukti', 'Api\PortalApi::uploadBukti/$1');
