@@ -29,7 +29,7 @@ class ConfigModel extends Model
         }
 
         if ($this->where('config_key', $key)->countAllResults() > 0) {
-            $this->where('config_key', $key)->update(['config_value' => $value]);
+            $this->where('config_key', $key)->update(null, ['config_value' => $value]);
         } else {
             $this->insert(['config_key' => $key, 'config_value' => $value]);
         }

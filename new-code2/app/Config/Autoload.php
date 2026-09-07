@@ -82,9 +82,7 @@ class Autoload extends AutoloadConfig
      *
      * @var list<string>
      */
-    public $files = [
-        APPPATH . 'Common_inhal.php',
-    ];
+    public $files = [];
 
     /**
      * -------------------------------------------------------------------
