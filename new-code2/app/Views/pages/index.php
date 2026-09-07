@@ -15,6 +15,7 @@ $userEmail = $userEmail ?? '';
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
+
         *,*::before,*::after{box-sizing:border-box}
         [v-cloak]{display:none}
         body{margin:0;background:#f5f6fa;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased}
@@ -39,40 +40,408 @@ $userEmail = $userEmail ?? '';
         .card-note{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#475569}
         .boot-chip{display:inline-flex;align-items:center;gap:.4rem;margin-top:1rem;border-radius:999px;background:#ecfdf5;color:#059669;padding:.35rem .8rem;font-size:.75rem;font-weight:700}
     </style>
+    <style>
+
+        body { background: #f5f6fa; }
+        [v-cloak] { display: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .input { width: 100%; border-radius: .75rem; border: 0; background: #fff; padding: .625rem .875rem; font-size: .875rem; color: #0f172a; outline: none; box-shadow: inset 0 0 0 1px #e2e8f0; transition: box-shadow .15s ease; }
+        .input:focus { box-shadow: inset 0 0 0 2px #4f46e5; }
+        .input::placeholder { color: #94a3b8; }
+        .label { display: block; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: #64748b; margin-bottom: .4rem; }
+        .value { font-size: .9rem; color: #334155; }
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #4f46e5; padding: .7rem 1.25rem; font-size: .875rem; font-weight: 600; color: #fff; transition: background .15s ease; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+        .btn-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff; padding: .6rem 1rem; font-size: .875rem; font-weight: 600; color: #475569; box-shadow: inset 0 0 0 1px #e2e8f0; transition: all .15s ease; }
+        .btn-soft:hover { background: #f1f5f9; }
+        .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        .section-title { display: flex; align-items: center; gap: .5rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #4f46e5; margin-bottom: 1rem; }
+        .fade-enter-active, .fade-leave-active { transition: opacity .2s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+    <style>
+
+*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.inset-x-0{left:0;right:0}.inset-y-0{top:0;bottom:0}.-left-10{left:-2.5rem}.-right-16{right:-4rem}.-top-16{top:-4rem}.bottom-0{bottom:0}.bottom-6{bottom:1.5rem}.left-0{left:0}.left-3\.5{left:.875rem}.left-4{left:1rem}.right-6{right:1.5rem}.top-0{top:0}.top-1\/2{top:50%}.z-10{z-index:10}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[100\]{z-index:100}.z-\[110\]{z-index:110}.z-\[120\]{z-index:120}.col-span-2{grid-column:span 2/span 2}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-5{margin-top:1.25rem;margin-bottom:1.25rem}.\!mb-0{margin-bottom:0!important}.-mt-10{margin-top:-2.5rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.ml-3{margin-left:.75rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-4{height:1rem}.h-40{height:10rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-full{height:100%}.h-px{height:1px}.max-h-\[88vh\]{max-height:88vh}.max-h-\[92vh\]{max-height:92vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-20{width:5rem}.w-24{width:6rem}.w-36{width:9rem}.w-4{width:1rem}.w-40{width:10rem}.w-5{width:1.25rem}.w-56{width:14rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-9{width:2.25rem}.w-\[268px\]{width:268px}.w-full{width:100%}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-5xl{max-width:64rem}.max-w-7xl{max-width:80rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-full{--tw-translate-x:-100%}.-translate-x-full,.-translate-y-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%}.translate-x-0{--tw-translate-x:0px}.transform,.translate-x-0{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-3{-moz-column-gap:.75rem;column-gap:.75rem}.gap-x-4{-moz-column-gap:1rem;column-gap:1rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-1{row-gap:.25rem}.gap-y-3{row-gap:.75rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-slate-50>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(248 250 252/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-t-3xl{border-top-left-radius:1.5rem;border-top-right-radius:1.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-brand-300{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-50{--tw-border-opacity:1;border-color:rgb(248 250 252/var(--tw-border-opacity,1))}.border-white\/10{border-color:hsla(0,0%,100%,.1)}.bg-amber-400\/90{background-color:rgba(251,191,36,.9)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.bg-brand-400\/20{background-color:rgba(129,140,248,.2)}.bg-brand-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-brand-500\/25{background-color:rgba(99,102,241,.25)}.bg-brand-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.bg-rose-600{--tw-bg-opacity:1;background-color:rgb(225 29 72/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-50\/60{background-color:rgba(248,250,252,.6)}.bg-slate-50\/70{background-color:rgba(248,250,252,.7)}.bg-slate-50\/80{background-color:rgba(248,250,252,.8)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/30{background-color:rgba(15,23,42,.3)}.bg-slate-900\/40{background-color:rgba(15,23,42,.4)}.bg-slate-900\/45{background-color:rgba(15,23,42,.45)}.bg-teal-50{--tw-bg-opacity:1;background-color:rgb(240 253 250/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/10{background-color:hsla(0,0%,100%,.1)}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.bg-white\/70{background-color:hsla(0,0%,100%,.7)}.bg-white\/80{background-color:hsla(0,0%,100%,.8)}.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-brand-400{--tw-gradient-from:#818cf8 var(--tw-gradient-from-position);--tw-gradient-to:rgba(129,140,248,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50\/60{--tw-gradient-from:rgba(238,242,255,.6) var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-600{--tw-gradient-from:#4f46e5 var(--tw-gradient-from-position);--tw-gradient-to:rgba(79,70,229,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-700{--tw-gradient-from:#4338ca var(--tw-gradient-from-position);--tw-gradient-to:rgba(67,56,202,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.via-brand-800{--tw-gradient-to:rgba(55,48,163,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#3730a3 var(--tw-gradient-via-position),var(--tw-gradient-to)}.to-brand-800{--tw-gradient-to:#3730a3 var(--tw-gradient-to-position)}.to-brand-900{--tw-gradient-to:#312e81 var(--tw-gradient-to-position)}.to-brand-950{--tw-gradient-to:#1e1b4b var(--tw-gradient-to-position)}.to-violet-500{--tw-gradient-to:#8b5cf6 var(--tw-gradient-to-position)}.to-white{--tw-gradient-to:#fff var(--tw-gradient-to-position)}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.\!px-3{padding-left:.75rem!important;padding-right:.75rem!important}.\!py-1{padding-top:.25rem!important;padding-bottom:.25rem!important}.\!py-1\.5{padding-top:.375rem!important;padding-bottom:.375rem!important}.\!py-2{padding-top:.5rem!important;padding-bottom:.5rem!important}.\!py-2\.5{padding-top:.625rem!important;padding-bottom:.625rem!important}.\!py-3{padding-top:.75rem!important;padding-bottom:.75rem!important}.\!py-3\.5{padding-top:.875rem!important;padding-bottom:.875rem!important}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-12{padding-top:3rem;padding-bottom:3rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-16{padding-top:4rem;padding-bottom:4rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.\!pl-11{padding-left:2.75rem!important}.pb-2{padding-bottom:.5rem}.pb-20{padding-bottom:5rem}.pb-24{padding-bottom:6rem}.pb-8{padding-bottom:2rem}.pl-10{padding-left:2.5rem}.pt-14{padding-top:3.5rem}.pt-5{padding-top:1.25rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.font-sans{font-family:Plus Jakarta Sans,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3/var(--tw-text-opacity,1))}.text-brand-100{--tw-text-opacity:1;color:rgb(224 231 255/var(--tw-text-opacity,1))}.text-brand-200{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.text-brand-300{--tw-text-opacity:1;color:rgb(165 180 252/var(--tw-text-opacity,1))}.text-brand-400{--tw-text-opacity:1;color:rgb(129 140 248/var(--tw-text-opacity,1))}.text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}.text-brand-600{--tw-text-opacity:1;color:rgb(79 70 229/var(--tw-text-opacity,1))}.text-brand-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-brand-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153/var(--tw-text-opacity,1))}.text-emerald-500{--tw-text-opacity:1;color:rgb(16 185 129/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-ink{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-rose-400{--tw-text-opacity:1;color:rgb(251 113 133/var(--tw-text-opacity,1))}.text-rose-500{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-700{--tw-text-opacity:1;color:rgb(190 18 60/var(--tw-text-opacity,1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-transparent{color:transparent}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-indigo-600{accent-color:#4f46e5}.opacity-25{opacity:.25}.opacity-75{opacity:.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lift{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color)}.shadow-lift,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.shadow-soft{--tw-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06);--tw-shadow-colored:0 1px 2px var(--tw-shadow-color),0 10px 28px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-indigo-200\/50{--tw-shadow-color:rgba(199,210,254,.5);--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950\/50{--tw-shadow-color:rgba(30,27,75,.5);--tw-shadow:var(--tw-shadow-colored)}.outline{outline-style:solid}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-600\/20{--tw-ring-color:rgba(217,119,6,.2)}.ring-brand-100{--tw-ring-opacity:1;--tw-ring-color:rgb(224 231 255/var(--tw-ring-opacity,1))}.ring-brand-600\/20{--tw-ring-color:rgba(79,70,229,.2)}.ring-emerald-100{--tw-ring-opacity:1;--tw-ring-color:rgb(209 250 229/var(--tw-ring-opacity,1))}.ring-emerald-600\/20{--tw-ring-color:rgba(5,150,105,.2)}.ring-rose-100{--tw-ring-opacity:1;--tw-ring-color:rgb(255 228 230/var(--tw-ring-opacity,1))}.ring-rose-600\/20{--tw-ring-color:rgba(225,29,72,.2)}.ring-slate-100{--tw-ring-opacity:1;--tw-ring-color:rgb(241 245 249/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.ring-slate-500\/20{--tw-ring-color:rgba(100,116,139,.2)}.ring-slate-900{--tw-ring-opacity:1;--tw-ring-color:rgb(15 23 42/var(--tw-ring-opacity,1))}.ring-white\/20{--tw-ring-color:hsla(0,0%,100%,.2)}.blur{--tw-blur:blur(8px)}.blur,.blur-2xl{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.blur-2xl{--tw-blur:blur(40px)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.duration-500{transition-duration:.5s}.hover\:border-slate-200:hover{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.hover\:bg-brand-50\/40:hover{background-color:rgba(238,242,255,.4)}.hover\:bg-brand-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202/var(--tw-bg-opacity,1))}.hover\:bg-rose-50:hover{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/20:hover{background-color:hsla(0,0%,100%,.2)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:text-rose-500:hover{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.hover\:ring-slate-300:hover{--tw-ring-opacity:1;--tw-ring-color:rgb(203 213 225/var(--tw-ring-opacity,1))}.active\:scale-\[\.98\]:active{--tw-scale-x:.98;--tw-scale-y:.98}.active\:scale-\[\.98\]:active,.active\:scale-\[\.99\]:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[\.99\]:active{--tw-scale-x:.99;--tw-scale-y:.99}.group:hover .group-hover\:text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:col-span-1{grid-column:span 1/span 1}.sm\:col-span-2{grid-column:span 2/span 2}.sm\:col-span-3{grid-column:span 3/span 3}.sm\:col-span-4{grid-column:span 4/span 4}.sm\:my-0{margin-top:0;margin-bottom:0}.sm\:inline{display:inline}.sm\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:items-end{align-items:flex-end}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width:768px){.md\:col-span-2{grid-column:span 2/span 2}.md\:col-span-3{grid-column:span 3/span 3}.md\:col-span-4{grid-column:span 4/span 4}.md\:inline{display:inline}.md\:flex{display:flex}.md\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:p-6{padding:1.5rem}.md\:px-8{padding-left:2rem;padding-right:2rem}}@media (min-width:1024px){.lg\:ml-\[268px\]{margin-left:268px}.lg\:hidden{display:none}.lg\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg\:p-8{padding:2rem}}@media (min-width:1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.xl\:grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}}
+    </style>
 </head>
 <body>
-<div id="app">
-    <?= view('layouts/nav', ['page' => $pageKey, 'title' => $pageTitle]) ?>
-    <main class="container">
-        <div class="page-head">
-            <div class="page-head-icon"><i class="bi bi-person-plus"></i></div>
-            <div>
-                <h1>Form Pengajuan Kegiatan INHAL</h1>
-                <p>Isi data dengan lengkap dan benar</p>
+<div id="app" v-cloak class="font-sans text-ink antialiased">
+        <!-- loading overlay -->
+        <transition name="fade">
+            <div v-if="loading" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
+                <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 shadow-lift">
+                    <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-slate-700">Memproses pendaftaran...</span>
+                </div>
             </div>
-        </div>
-        <div class="card">
-            <div class="card-note">
-                <i class="bi bi-cursor"></i>
-                <span>Kerangka halaman pendaftaran. Formulir pengajuan ditambahkan pada tahap berikutnya.</span>
+        </transition>
+        <?= view('layouts/nav', ['page' => $pageKey, 'title' => $pageTitle]) ?>
+        <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+
+            <!-- result banner -->
+            <transition name="fade">
+                <div v-if="result" :class="result.success ? 'bg-emerald-50 ring-emerald-100' : 'bg-rose-50 ring-rose-100'"
+                     class="mb-5 rounded-2xl p-5 ring-1">
+                    <div class="flex items-start gap-3">
+                        <i :class="result.success ? 'bi-check-circle-fill text-emerald-500' : 'bi-x-circle-fill text-rose-500'" class="mt-0.5 text-lg"></i>
+                        <div class="flex-1">
+                            <div class="text-sm font-bold" :class="result.success ? 'text-emerald-800' : 'text-rose-800'">{{ result.success ? 'Berhasil!' : 'Gagal' }}</div>
+                            <div class="mt-0.5 text-sm text-slate-600">{{ result.message }}</div>
+                            <div v-if="result.success && result.idPengajuan" class="mt-3 rounded-xl bg-white/70 p-3 text-sm">
+                                <div class="text-slate-600">Simpan ID Pengajuan Anda:</div>
+                                <div class="mt-1 font-mono text-base font-bold text-slate-900">{{ result.idPengajuan }}</div>
+                                <a href="/portal" class="link mt-1 inline-block text-sm">Cek status di Portal Mahasiswa</a>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600" @click="result=null"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </div>
+            </transition>
+
+            <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                <div class="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-person-plus"></i></div>
+                    <div>
+                        <h1 class="text-base font-bold text-slate-900">Form Pengajuan Kegiatan INHAL</h1>
+                        <p class="text-xs text-slate-400">Isi data dengan lengkap dan benar</p>
+                    </div>
+                </div>
+
+                <form class="px-6 py-5" @submit.prevent="submit">
+                    <div class="section-title"><i class="bi bi-person-fill"></i> Data Mahasiswa</div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="label">NPM <span class="text-rose-500">*</span></label>
+                            <input v-model="form.npm" class="input" placeholder="Contoh: 2201010001" @blur="onNpmBlur">
+                            <p class="mt-1 text-[11px] text-slate-400">Masukkan NPM, nama akan terisi otomatis bila terdaftar.</p>
+                        </div>
+                        <div>
+                            <label class="label">Nama Lengkap <span class="text-rose-500">*</span></label>
+                            <input v-model="form.namaLengkap" class="input" placeholder="Nama sesuai KTP">
+                        </div>
+                        <div>
+                            <label class="label">Email Aktif <span class="text-rose-500">*</span></label>
+                            <input v-model="form.email" type="email" class="input" placeholder="nama@email.com" required>
+                        </div>
+                        <div>
+                            <label class="label">No. HP / WhatsApp <span class="text-rose-500">*</span></label>
+                            <input v-model="form.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx" required>
+                        </div>
+                        <div>
+                            <label class="label">Blok <span class="text-rose-500">*</span></label>
+                            <select v-model="form.blok" class="input">
+                                <option value="">-- Pilih Blok --</option>
+                                <option v-for="b in options.blok" :value="b">{{ b }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="my-5 h-px bg-slate-100"></div>
+
+                    <div class="section-title"><i class="bi bi-calendar-check"></i> Jenis Kegiatan</div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="label">Jenis Kegiatan <span class="text-rose-500">*</span></label>
+                            <select v-model="form.jenisKegiatan" class="input">
+                                <option value="">-- Pilih Jenis --</option>
+                                <option value="Ujian">Ujian</option>
+                                <option value="SGD">SGD</option>
+                                <option value="KKD">KKD</option>
+                                <option value="Praktikum">Praktikum</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div v-if="form.jenisKegiatan && form.jenisKegiatan !== 'Praktikum'" class="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="label">Matakuliah <span class="text-rose-500">*</span></label>
+                            <select v-model="form.matakuliah" class="input">
+                                <option value="">-- Pilih Matakuliah --</option>
+                                <option v-for="o in options.matakuliah" :value="o">{{ o }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Ujian -->
+                    <div v-if="form.jenisKegiatan==='Ujian'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                        <div class="section-title"><i class="bi bi-pencil-square"></i> Detail Ujian</div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
+                                <select v-model="ujian.pilihan" class="input">
+                                    <option value="">-- Pilih Ujian --</option>
+                                    <option v-for="o in options.ujian" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Tanggal Ujian <span class="text-rose-500">*</span></label>
+                                <input v-model="ujian.tanggal" type="date" class="input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SGD -->
+                    <div v-if="form.jenisKegiatan==='SGD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                        <div class="section-title"><i class="bi bi-people"></i> Detail SGD</div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
+                                <select v-model="sgd.pilihan" class="input">
+                                    <option value="">-- Pilih SGD --</option>
+                                    <option v-for="o in options.sgd" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Detail SGD</label>
+                                <select v-model="sgd.detail" class="input">
+                                    <option value="">-- Pilih Detail --</option>
+                                    <option v-for="o in options.detailSgd" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Tanggal SGD <span class="text-rose-500">*</span></label>
+                                <input v-model="sgd.tanggal" type="date" class="input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KKD -->
+                    <div v-if="form.jenisKegiatan==='KKD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                        <div class="section-title"><i class="bi bi-journal-text"></i> Detail KKD</div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
+                                <select v-model="kkd.pilihan" class="input">
+                                    <option value="">-- Pilih KKD --</option>
+                                    <option v-for="o in options.kkd" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Detail KKD</label>
+                                <select v-model="kkd.detail" class="input">
+                                    <option value="">-- Pilih Detail --</option>
+                                    <option v-for="o in options.detailKkd" :value="o">{{ o }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Tanggal KKD <span class="text-rose-500">*</span></label>
+                                <input v-model="kkd.tanggal" type="date" class="input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Praktikum -->
+                    <div v-if="form.jenisKegiatan==='Praktikum'" class="mt-4">
+                        <div class="mb-3 flex items-center justify-between">
+                            <div class="section-title !mb-0"><i class="bi bi-ui-checks"></i> Detail Praktikum</div>
+                            <button type="button" class="btn-soft !py-2 text-xs" @click="addLab"><i class="bi bi-plus-lg"></i>Tambah Lab</button>
+                        </div>
+                        <div class="space-y-3">
+                            <div v-for="(lab, i) in labs" :key="i" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
+                                <div class="grid gap-3 sm:grid-cols-12 sm:items-end">
+                                    <div class="sm:col-span-4">
+                                        <label class="label">Pilihan Lab</label>
+                                        <select v-model="lab.lab" class="input !py-2 text-sm">
+                                            <option value="">-- Lab --</option>
+                                            <option v-for="o in options.lab" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-4">
+                                        <label class="label">Kegiatan Lab</label>
+                                        <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
+                                            <option value="">-- Kegiatan --</option>
+                                            <option v-for="o in options.kegiatanLab" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="label">Tanggal Praktikum</label>
+                                        <input v-model="lab.tanggal" type="date" class="input !py-2 text-sm">
+                                    </div>
+                                    <div class="sm:col-span-1 text-right">
+                                        <button type="button" class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500" @click="removeLab(i)"><i class="bi bi-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="my-5 h-px bg-slate-100"></div>
+
+                    <div class="section-title"><i class="bi bi-file-earmark-text"></i> Keterangan</div>
+                    <div class="grid gap-4">
+                        <div>
+                            <label class="label">Keterangan (Opsional)</label>
+                            <textarea v-model="form.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <button type="submit" class="btn-primary w-full !py-3"><i class="bi bi-send-fill"></i>Kirim Pengajuan</button>
+                    </div>
+                </form>
             </div>
-            <div v-cloak class="boot-chip">
-                <i class="bi bi-check-circle-fill"></i>
-                <span>{{ bootMsg }}</span>
-            </div>
-        </div>
-    </main>
+        </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 <script>
-Vue.createApp({
-    data() {
-        return {
-            pageKey: <?= json_encode($pageKey) ?>,
-            bootMsg: 'Halaman ' + <?= json_encode($pageTitle) ?> + ' siap (Vue ' + Vue.version + ')'
-        };
-    }
-}).mount('#app');
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    result: null,
+                    form: { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', matakuliah: '', keterangan: '' },
+                    ujian: { pilihan: '', tanggal: '' },
+                    sgd: { pilihan: '', detail: '', tanggal: '' },
+                    kkd: { pilihan: '', detail: '', tanggal: '' },
+                    labs: [{ lab: '', kegiatanLab: '', tanggal: '' }],
+                    options: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], lab: [], kegiatanLab: [], dosen: [], matakuliah: [], buktiMode: 'strict' },
+                    maxLab: 9
+                };
+            },
+            methods: {
+                async run(path, payload) {
+                    const isGet = payload === undefined;
+                    const opt = { method: isGet ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' };
+                    if (!isGet) opt.body = JSON.stringify(payload || {});
+                    let res;
+                    try {
+                        res = await fetch('/api/' + path, opt);
+                    } catch (e) {
+                        throw new Error('Tidak dapat terhubung ke server.');
+                    }
+                    let j;
+                    try {
+                        j = await res.json();
+                    } catch (e) {
+                        j = { ok: false, message: 'Respons tidak valid' };
+                    }
+                    if (!j.ok) {
+                        let msg = j.message || 'Terjadi kesalahan';
+                        if (j.errors) {
+                            const errs = Object.values(j.errors).filter(Boolean);
+                            if (errs.length) msg = errs.join(' ');
+                        }
+                        throw new Error(msg);
+                    }
+                    return j.data;
+                },
+                async loadOptions() {
+                    try {
+                        const res = await this.run('registration-options');
+                        this.options.blok = res.blok || [];
+                        this.options.ujian = res.ujian || [];
+                        this.options.sgd = res.sgd || [];
+                        this.options.detailSgd = res.detailSgd || [];
+                        this.options.kkd = res.kkd || [];
+                        this.options.detailKkd = res.detailKkd || [];
+                        this.options.lab = res.lab || [];
+                        this.options.kegiatanLab = res.kegiatanLab || [];
+                        this.options.dosen = res.dosen || [];
+                        this.options.matakuliah = res.matakuliah || [];
+                        this.options.buktiMode = res.buktiMode || 'strict';
+                    } catch (e) { /* non-blokir */ }
+                },
+                async onNpmBlur() {
+                    const npm = this.form.npm.trim();
+                    if (!npm || this.form.namaLengkap.trim()) return;
+                    try {
+                        const found = await this.run('mahasiswa/' + encodeURIComponent(npm));
+                        const name = found && found.nama_lengkap ? found.nama_lengkap : '';
+                        if (name && !this.form.namaLengkap.trim()) this.form.namaLengkap = name;
+                    } catch (e) { /* non-blokir */ }
+                },
+                addLab() {
+                    if (this.labs.length >= this.maxLab) {
+                        alert('Maksimal ' + this.maxLab + ' lab per pengajuan.');
+                        return;
+                    }
+                    this.labs.push({ lab: '', kegiatanLab: '', tanggal: '' });
+                },
+                removeLab(i) {
+                    this.labs.splice(i, 1);
+                },
+                async submit() {
+                    const jenis = this.form.jenisKegiatan;
+                    if (!this.form.npm.trim() || !this.form.namaLengkap.trim() || !this.form.blok || !jenis) {
+                        alert('Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan terlebih dahulu.');
+                        return;
+                    }
+                    const email = this.form.email.trim();
+                    const noHp = this.form.noHp.trim();
+                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+                        alert('Email aktif wajib diisi dengan format yang benar.');
+                        return;
+                    }
+                    if (!noHp || !/^[0-9+\-\s().]{8,20}$/.test(noHp)) {
+                        alert('No. HP/WhatsApp wajib diisi dengan format yang benar.');
+                        return;
+                    }
+                    if (jenis !== 'Praktikum' && !this.form.matakuliah) {
+                        alert('Matakuliah wajib diisi untuk jenis kegiatan ini.');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        const formData = {
+                            npm: this.form.npm.trim(),
+                            namaLengkap: this.form.namaLengkap.trim(),
+                            email: email,
+                            noHp: noHp,
+                            blok: this.form.blok,
+                            jenisKegiatan: jenis,
+                            matakuliah: jenis === 'Praktikum' ? '' : this.form.matakuliah,
+                            keterangan: this.form.keterangan.trim()
+                        };
+                        if (jenis === 'Ujian') {
+                            formData.detailKegiatan = this.ujian.pilihan;
+                            formData.tanggalKegiatan = this.ujian.tanggal;
+                        } else if (jenis === 'SGD') {
+                            formData.pilihanSgd = this.sgd.pilihan;
+                            formData.detailSgd = this.sgd.detail;
+                            formData.tanggalKegiatan = this.sgd.tanggal;
+                        } else if (jenis === 'KKD') {
+                            formData.pilihanKkd = this.kkd.pilihan;
+                            formData.detailKkd = this.kkd.detail;
+                            formData.tanggalKegiatan = this.kkd.tanggal;
+                        } else if (jenis === 'Praktikum') {
+                            const labs = this.labs.filter(l => l.lab || l.kegiatanLab);
+                            if (labs.length === 0) {
+                                alert('Tambahkan minimal satu detail praktikum.');
+                                this.loading = false;
+                                return;
+                            }
+                            formData.praktikum = labs;
+                            formData.tanggalKegiatan = labs[0].tanggal || '';
+                        }
+                        const res = await this.run('pengajuan', formData);
+                        this.result = { success: true, message: res.message || 'Pengajuan berhasil dikirim.', idPengajuan: res.id_pengajuan };
+                        this.resetForm();
+                    } catch (e) {
+                        this.result = { success: false, message: String(e) };
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                resetForm() {
+                    this.form = { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', matakuliah: '', keterangan: '' };
+                    this.ujian = { pilihan: '', tanggal: '' };
+                    this.sgd = { pilihan: '', detail: '', tanggal: '' };
+                    this.kkd = { pilihan: '', detail: '', tanggal: '' };
+                    this.labs = [{ lab: '', kegiatanLab: '', tanggal: '' }];
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            },
+            mounted() {
+                this.loadOptions();
+            }
+        }).mount('#app');
 </script>
 </body>
 </html>

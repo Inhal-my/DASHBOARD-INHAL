@@ -9,3 +9,7 @@ $routes->get('/dashboard', 'PageController::show/dashboard');
 $routes->get('/admin', 'PageController::show/dashboard');
 $routes->get('/laporan', 'PageController::show/laporan');
 $routes->get('/pengaturan', 'PageController::show/pengaturan');
+
+$routes->get('/api/registration-options', 'Api\MasterApi::registrationOptions');
+$routes->get('/api/mahasiswa/(:segment)', 'Api\MasterApi::mahasiswa/$1');
+$routes->post('/api/pengajuan', 'Api\PengajuanApi::register');
