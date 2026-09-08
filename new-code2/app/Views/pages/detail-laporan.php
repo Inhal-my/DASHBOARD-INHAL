@@ -3,31 +3,11 @@ $pageKey = $page ?? 'laporan';
 $pageTitle = $title ?? 'Laporan';
 $userEmail = $userEmail ?? '';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf" content="<?= csrf_hash() ?>">
-    <title><?= htmlspecialchars($pageTitle) ?> | Pendaftaran INHAL</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
+<style>
         *,*::before,*::after{box-sizing:border-box}
         [v-cloak]{display:none}
         body{margin:0;background:#f5f6fa;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased}
-        .topnav{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.88);border-bottom:1px solid #eef1f6;backdrop-filter:blur(8px)}
-        .topnav-inner{max-width:80rem;margin:0 auto;height:4rem;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-        .topnav-brand{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:inherit}
-        .topnav-badge{display:inline-flex;align-items:center;justify-content:center;width:2.4rem;height:2.4rem;border-radius:.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 8px 20px rgba(99,102,241,.35);font-size:1.1rem}
-        .topnav-name{display:flex;flex-direction:column}
-        .topnav-name b{font-size:.95rem;font-weight:800;letter-spacing:-.01em;line-height:1.2}
-        .topnav-name span{font-size:.68rem;color:#94a3b8;line-height:1.2}
-        .topnav-links{display:flex;align-items:center;gap:.4rem}
-        .navlink{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:700;color:#475569;text-decoration:none;padding:.5rem .8rem;border-radius:.7rem}
-        .navlink:hover{background:#f1f5f9;color:#0f172a}
+        .container{padding:0;margin:0}
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:0;border-radius:.8rem;font-size:.84rem;font-weight:700;padding:.6rem 1rem;cursor:pointer;transition:.15s ease}
         .btn:disabled{opacity:.6;cursor:not-allowed}
         .btn-primary{background:linear-gradient(135deg,#6366f1,#7c5cf0);color:#fff;box-shadow:0 6px 18px rgba(99,102,241,.28)}
@@ -36,7 +16,6 @@ $userEmail = $userEmail ?? '';
         .btn-soft:hover{background:#f8fafc;color:#0f172a}
         .btn-sm{padding:.42rem .75rem;font-size:.78rem;border-radius:.65rem}
         .btn-block{width:100%}
-        .container{max-width:80rem;margin:0 auto;padding:1.5rem 1.25rem 4rem}
         .page-head{display:flex;align-items:center;gap:.9rem;margin-bottom:1.25rem;flex-wrap:wrap}
         .page-head-icon{display:inline-flex;align-items:center;justify-content:center;width:2.9rem;height:2.9rem;border-radius:1rem;background:#eef2ff;color:#4f46e5;font-size:1.3rem}
         .page-head h1{margin:0;font-size:1.3rem;font-weight:800;letter-spacing:-.01em}
@@ -114,49 +93,14 @@ $userEmail = $userEmail ?? '';
         @keyframes shimmer{to{background-position:-200% 0}}
         @media(max-width:640px){.filter-grid .wide{grid-column:span 1}.filter-grid{grid-template-columns:1fr 1fr}}
     </style>
-</head>
-<body>
+
 <div id="app" v-cloak>
-    <nav class="topnav">
-        <div class="topnav-inner">
-            <a href="/dashboard" class="topnav-brand">
-                <span class="topnav-badge"><i class="bi bi-file-earmark-bar-graph"></i></span>
-                <span class="topnav-name"><b>Laporan INHAL</b><span>Admin laporan &amp; rekap biaya</span></span>
-            </a>
-            <div v-if="loggedIn" class="topnav-links">
-                <span class="navlink" style="color:#94a3b8;cursor:default"><i class="bi bi-person-circle"></i>{{ sessionNama }}</span>
-                <a class="navlink" href="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a>
-                <a class="navlink" href="/logout"><i class="bi bi-box-arrow-right"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <template v-if="bootLoading">
+        <div class="card"><div class="loading-pane"><div class="spinner"></div><span>Memeriksa sesi admin…</span></div></div>
+    </template>
 
-    <div class="container">
-        <template v-if="bootLoading">
-            <div class="card"><div class="loading-pane"><div class="spinner"></div><span>Memeriksa sesi admin…</span></div></div>
-        </template>
-
-        <template v-else-if="!loggedIn">
-            <div class="auth-card">
-                <div class="auth-logo"><i class="bi bi-shield-lock"></i></div>
-                <h2 class="auth-title">Masuk Laporan</h2>
-                <p class="auth-desc">Halaman laporan khusus admin</p>
-                <div v-if="loginError" class="auth-error"><i class="bi bi-exclamation-triangle-fill"></i>{{ loginError }}</div>
-                <form @submit.prevent="doLogin">
-                    <div class="field">
-                        <label><i class="bi bi-shield-lock"></i> Password admin</label>
-                        <input class="input" type="password" v-model="loginPwd" autocomplete="current-password" placeholder="••••••••">
-                    </div>
-                    <button class="btn btn-primary btn-block" type="submit" :disabled="loading">
-                        <span v-if="loading" class="spinner spinner-sm"></span>
-                        <i v-else class="bi bi-box-arrow-in-right"></i> Masuk
-                    </button>
-                </form>
-            </div>
-        </template>
-
-        <template v-else>
-            <div class="page-head">
+    <template v-else-if="loggedIn">
+        <div class="page-head">
                 <div class="page-head-icon"><i class="bi bi-file-earmark-bar-graph"></i></div>
                 <div>
                     <h1>Laporan INHAL</h1>
@@ -469,7 +413,6 @@ $userEmail = $userEmail ?? '';
                 </section>
             </template>
         </template>
-    </div>
 
     <transition name="fade">
         <div v-if="toast.show" class="toast" :class="toastClass">
@@ -1204,5 +1147,3 @@ $userEmail = $userEmail ?? '';
         }
     }).mount('#app');
 </script>
-</body>
-</html>
