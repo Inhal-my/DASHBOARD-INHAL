@@ -13,6 +13,7 @@ $routes->get('/pengaturan', 'PageController::show/pengaturan');
 $routes->get('/login', 'Auth::index');
 $routes->post('/login', 'Auth::login');
 $routes->get('/logout', 'Logout::index');
+$routes->get('files/(:segment)/(:segment)', 'FileApi::index/$1/$2');
 
 $routes->get('/api/bagian/bootstrap', 'Api\BagianApi::bootstrap', ['filter' => 'bagian', 'as' => 'bagian-bootstrap']);
 $routes->get('/api/bagian/config', 'Api\BagianApi::config', ['filter' => 'bagian', 'as' => 'bagian-config']);

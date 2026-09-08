@@ -47,7 +47,7 @@ class EmailAccService
         if ($studentEmail === '') {
             $studentNote = 'Email mahasiswa tidak ditemukan.';
         } else {
-            $res = $this->sendTemplate('acc_final', $vars, $studentEmail);
+            $res = $this->sendTemplate('acc_final', $vars, $studentEmail, $this->finalAttachments($pengajuan));
             $studentSent = $res['ok'];
             if (!$studentSent) {
                 $studentNote = 'Email mahasiswa tidak terkirim: ' . $res['message'];
@@ -62,7 +62,7 @@ class EmailAccService
         } else {
             $bv = $vars;
             $bv['nama'] = 'Admin Bagian ' . $bagian['nama'];
-            $res = $this->sendTemplate('acc_final', $bv, $bagian['email']);
+            $res = $this->sendTemplate('acc_final', $bv, $bagian['email'], $this->finalAttachments($pengajuan));
             $bagianSent = $res['ok'];
             if (!$bagianSent) {
                 $bagianNote = 'Email Bagian tidak terkirim: ' . $res['message'];
@@ -103,7 +103,7 @@ class EmailAccService
         }
         $vars = $this->varsFor($pengajuan, $nomor);
         $vars['nama'] = 'Admin Bagian ' . $bagian['nama'];
-        $res = $this->sendTemplate('acc_final', $vars, $bagian['email']);
+        $res = $this->sendTemplate('acc_final', $vars, $bagian['email'], $this->finalAttachments($pengajuan));
         if (!$res['ok']) {
             return [
                 'ok'          => false,
@@ -132,7 +132,7 @@ class EmailAccService
         return $nomor;
     }
 
-    private function sendTemplate(string $kodeTemplate, array $vars, string $recipient): array
+    private function sendTemplate(string $kodeTemplate, array $vars, string $recipient, array $attachments = []): array
     {
         $tpl = (new EmailTemplateModel())->where('kode', $kodeTemplate)->first();
         if (!$tpl || !$tpl['aktif']) {
@@ -144,6 +144,13 @@ class EmailAccService
             $email->setTo($recipient);
             $email->setSubject($this->fill($tpl['subjek'], $vars));
             $email->setMessage($this->fill($tpl['body_html'], $vars));
+            foreach ($attachments as $attachPath) {
+                $full = WRITEPATH . 'uploads/' . ltrim($attachPath, '/');
+                $real = realpath($full);
+                if ($real !== false && is_file($real)) {
+                    $email->attach($real);
+                }
+            }
             if (!$email->send()) {
                 return ['ok' => false, 'message' => (string) $email->printDebugger(['headers'])];
             }
@@ -151,6 +158,23 @@ class EmailAccService
         } catch (\Throwable $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }
+    }
+
+    private function finalAttachments(array $pengajuan): array
+    {
+        $final = trim((string) ($pengajuan['path_final'] ?? ''));
+        $acc = trim((string) ($pengajuan['path_acc_inhal'] ?? ''));
+        $attachments = [];
+        foreach ([$final, $acc] as $rel) {
+            if ($rel === '') {
+                continue;
+            }
+            $full = WRITEPATH . 'uploads/' . ltrim($rel, '/');
+            if (is_file($full)) {
+                $attachments[] = $rel;
+            }
+        }
+        return $attachments;
     }
 
     private function varsFor(array $pengajuan, string $nomor): array

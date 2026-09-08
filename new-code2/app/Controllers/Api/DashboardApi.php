@@ -422,9 +422,10 @@ class DashboardApi extends BaseApi
 
     private function clientPengajuanRow(array $p, float $biaya, ?float $override): array
     {
+        $id = (string) $p['id_pengajuan'];
         return [
             'id'               => (int) $p['id'],
-            'idPengajuan'      => $p['id_pengajuan'],
+            'idPengajuan'      => $id,
             'timestamp'        => $p['timestamp'],
             'npm'              => $p['npm'],
             'namaLengkap'      => $p['nama_lengkap'],
@@ -444,9 +445,9 @@ class DashboardApi extends BaseApi
             'errorNotifEmail'  => $p['error_notifikasi_email'],
             'emailBagian'      => $p['email_bagian'],
             'linkSurat'        => $p['link_surat_keterangan'],
-            'linkAcc'          => $p['path_acc_inhal'],
-            'linkBukti'        => $p['path_bukti_bayar'],
-            'linkFinal'        => $p['path_final'],
+            'linkAcc'          => $this->fileLink('acc', $id, $p['path_acc_inhal']),
+            'linkBukti'        => $this->fileLink('bukti', $id, $p['path_bukti_bayar']),
+            'linkFinal'        => $this->fileLink('final', $id, $p['path_final']),
             'hasSurat'         => !empty($p['link_surat_keterangan']),
             'hasAcc'           => !empty($p['path_acc_inhal']),
             'hasBukti'         => !empty($p['path_bukti_bayar']),
@@ -454,6 +455,11 @@ class DashboardApi extends BaseApi
             'biaya'            => $biaya,
             'biayaOverride'    => $override,
         ];
+    }
+
+    private function fileLink(string $jenis, string $idPengajuan, $path): string
+    {
+        return !empty($path) ? '/files/' . $jenis . '/' . $idPengajuan : '';
     }
 
     private function clientDetailRow(array $d): array

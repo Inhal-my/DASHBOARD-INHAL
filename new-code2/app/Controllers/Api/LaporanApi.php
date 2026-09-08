@@ -136,7 +136,7 @@ class LaporanApi extends BaseApi
                 'namaKegiatan'       => $r['nama_kegiatan'],
                 'tanggalPelaksanaan' => $this->dateOnly($r['tanggal_pelaksanaan']),
                 'jumlahPeserta'      => (int) $r['jumlah_peserta'],
-                'fileUrl'            => '',
+                'fileUrl'            => !empty($r['file_path']) ? '/files/ba/' . $r['ba_id'] : '',
                 'fileName'           => $r['file_name'],
                 'catatan'            => $r['catatan'],
                 'sumber'             => $r['sumber'] !== '' ? $r['sumber'] : 'Bagian',
@@ -259,11 +259,17 @@ class LaporanApi extends BaseApi
         return $jenis !== '' && isset($biayaMap[$jenis]) ? $jenis : null;
     }
 
+    private function fileLink(string $jenis, string $idPengajuan, $path): string
+    {
+        return !empty($path) ? '/files/' . $jenis . '/' . $idPengajuan : '';
+    }
+
     private function clientPengajuanRow(array $p, float $biaya, ?float $override): array
     {
+        $id = (string) $p['id_pengajuan'];
         return [
             'id'               => (int) $p['id'],
-            'idPengajuan'      => $p['id_pengajuan'],
+            'idPengajuan'      => $id,
             'timestamp'        => $p['timestamp'],
             'npm'              => $p['npm'],
             'namaLengkap'      => $p['nama_lengkap'],
@@ -280,9 +286,9 @@ class LaporanApi extends BaseApi
             'nomorSurat'       => $p['nomor_surat'],
             'statusInfoBagian' => $p['status_info_bagian'],
             'linkSurat'        => $p['link_surat_keterangan'],
-            'linkAcc'          => $p['path_acc_inhal'],
-            'linkBukti'        => $p['path_bukti_bayar'],
-            'linkFinal'        => $p['path_final'],
+            'linkAcc'          => $this->fileLink('acc', $id, $p['path_acc_inhal']),
+            'linkBukti'        => $this->fileLink('bukti', $id, $p['path_bukti_bayar']),
+            'linkFinal'        => $this->fileLink('final', $id, $p['path_final']),
             'biaya'            => $biaya,
             'biayaOverride'    => $override,
         ];
