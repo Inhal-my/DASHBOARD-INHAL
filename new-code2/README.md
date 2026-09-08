@@ -1,68 +1,118 @@
-# CodeIgniter 4 Application Starter
+# DASHBOARD-INHAL — Aplikasi Pengajuan & Berita Acara Kegiatan INHAL
 
-## What is CodeIgniter?
+Sistem informasi pengelolaan pengajuan kegiatan mahasiswa INHAL (registrasi mahasiswa, persetujuan bagian/ACC, berita acara, laporan, pengaturan) berbasis **CodeIgniter 4.4.7** + **MySQL** + **Vue 3 (CDN)**. UI berbahasa Indonesia.
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+Proyek ini merupakan hasil porting/penyempurnaan dari aplikasi INHAL sebelumnya ke kode bersih (`new-code2`).
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+## Persyaratan Sistem
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+- PHP `^7.4 || ^8.0` (direkomendasikan PHP 8.x) dengan ekstensi: `intl`, `mbstring`, `mysqlnd`, `json`, `curl`
+- MySQL 5.7+ / 8.0 (utf8mb4)
+- Composer
+- Node.js (opsional, untuk `node --check` sintaks JS view)
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+## Instalasi
 
-## Installation & updates
+```bash
+# 1. Pasang dependensi PHP
+composer install
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+# 2. Siapkan konfigurasi lingkungan
+cp env .env
+# lalu sesuaikan app.baseURL dan database.default.* di .env
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+# 3. Buat database dan impor skema + data awal
+mysql -u root < database/inhal.sql
+```
 
-## Setup
+Skema dan seed dibawa dalam satu file `database/inhal.sql` (bukan Migrations CI4). Migrasi otomatis tidak dipakai.
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+### Akun bawaan (seed)
 
-## Important Change with index.php
+| Peran   | Login                          | Password  |
+|---------|--------------------------------|-----------|
+| Admin   | (halaman `/login` tab Admin)   | `admin123`|
+| Bagian  | `staf.sgd@inhal.test` (SGD)    | `admin123`|
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+### Menjalankan server pengembangan
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+```bash
+php -S localhost:8080 -t public
+```
 
-**Please** read the user guide for a better explanation of how CI4 works!
+Arahkan browser ke `http://localhost:8080`. Pastikan `app.baseURL` di `.env` sesuai.
 
-## Repository Management
+### Menjalankan test
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+Suite PHPUnit memakai database terpisah `inhal_test` (dibuat dengan cara yang sama dari `database/inhal.sql`; dikonfigurasi via env `database.tests.*` di `phpunit.xml.dist`).
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+```bash
+mysql -u root < database/inhal.sql        # siapkan ulang database pengembangan bila perlu
+# buat database test bila belum ada:
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS inhal_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+mysql -u root inhal_test < database/inhal.sql
 
-## Server Requirements
+vendor/bin/phpunit tests
+```
 
-PHP version 7.4 or higher is required, with the following extensions installed:
+## Halaman Aplikasi
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+| Rute          | Halaman                                                       | Akses          |
+|---------------|---------------------------------------------------------------|----------------|
+| `/`           | Beranda registrasi mahasiswa                                  | Publik         |
+| `/portal`     | Portal mahasiswa (unggah bukti, cek status)                   | Publik (via NPM) |
+| `/bagian`     | Login + ruang kerja bagian (BA, upload berita acara)          | Bagian/Admin   |
+| `/dashboard`  | Dashboard admin (daftar & status pengajuan)                   | Admin          |
+| `/laporan`    | Laporan                                                       | Admin          |
+| `/pengaturan` | Pengaturan 11 tab (Umum, Matakuliah, Master, Bagian, Biaya, Pengguna, Email, Nomor Surat, Upload, Status, Audit) | Admin |
 
-> [!WARNING]
-> The end of life date for PHP 7.4 was November 28, 2022.
-> The end of life date for PHP 8.0 was November 26, 2023.
-> If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> The end of life date for PHP 8.1 will be November 25, 2024.
+Endpoints API berada di bawah `/api/...` dan seluruhnya dibungkus filter `admin`/`bagian` kecuali yang memang publik (registrasi, opsi pendaftaran, portal, login). Respons memakai kontrak:
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+```json
+{ "ok": true,  "data": { ... } }
+{ "ok": false, "message": "..." }
+```
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+Rute `/login` (POST) dan seluruh halaman form memakai proteksi CSRF; request JSON API dikecualikan (`api/*`).
+
+## Struktur Proyek
+
+```
+new-code2/
+├─ app/
+│  ├─ Config/            # Routes, Database, Filters, CSRF, dst.
+│  ├─ Controllers/
+│  │  ├─ Auth.php, Logout.php, PageController.php, FileApi.php
+│  │  └─ Api/            # PengajuanApi, PortalApi, BagianApi, DashboardApi,
+│  │                     # LaporanApi, BeritaAcaraApi, PengaturanApi, MasterApi
+│  ├─ Database/          # (Migrations/Seeds kosong; skema via database/inhal.sql)
+│  ├─ Filters/           # AdminFilter, BagianFilter, dll.
+│  ├─ Helpers/           # inhal_helper (inhal_id, config_get, audit_log_add, fileLink)
+│  ├─ Libraries/         # AuthService, BiayaService, NomorSuratService, UploadService,
+│  │                     # EmailAccService, EmailBagianService, dsb.
+│  ├─ Models/            # Model per tabel (pengajuan, detail_kegiatan, berita_acara, ...)
+│  └─ Views/
+│     ├─ layouts/        # kerangka layout
+│     └─ pages/          # index (registrasi), portal, bagian, dashboard,
+│                        # laporan, detail-laporan, pengaturan
+├─ database/inhal.sql    # skema + seed lengkap
+├─ public/               # front controller + aset
+├─ tests/                # PHPUnit (unit + feature)
+└─ writable/uploads/     # file BA/bukti/ACC/final (acc, ba, bukti, final)
+```
+
+## Konvensi Penting
+
+- **Bahasa kode & UI**: Indonesia; komentar ringkas. Ringkasan/komunikasi teknis bebas.
+- **DB**: tabel `pengajuan`, `detail_kegiatan`, `status_history`, `check_data` (termasuk override `BIAYA-OVERRIDE`), `berita_acara` + `berita_acara_admin` (+ `_peserta`), `master_*`, `config` (key pasangan), `email_templates`, `audit_log`, `log_upload`, `mahasiswa`, `admin`, `bagian_staff`.
+- **Biaya**: `BiayaService` memakai `master_biaya` berdasarkan nama kegiatan; override per pengajuan (tabel `check_data`, detail `BIAYA-OVERRIDE`) menang atas master.
+- **Status pengajuan**: `Menunggu → Diterima/Ditolak → ACC → Dibatalkan`. Nomor surat dibuat tipe `INHAL` saat transisi ke `Diterima` (tidak diulang saat `ACC`).
+- **File**: disimpan di `writable/uploads/{acc,ba,bukti,final}/`. Unduhan memakai rute terautentikasi `GET /files/{jenis}/{idPengajuan|baId}` (`FileApi`), bukan path lokal mentah. Daftar MIME yang diizinkan dikelola pada tab Pengaturan → Upload (`UPLOAD_MIME_WHITELIST` di tabel `config`).
+- **Email**: dikirim lewat SMTP yang dikonfigurasi di Pengaturan → Email; bila gagal/absurd, status dicatat `status_notifikasi_email=Gagal` + pesan error (tidak dipalsukan sukses).
+- **Audit**: aksi admin/bagian tercatat di `audit_log` melalui helper `audit_log_add`.
+
+## Troubleshooting
+
+- Halaman mengarah `/login` padahal bukan admin → pastikan sesi login admin aktif (halaman `/dashboard`, `/laporan`, `/pengaturan` khusus admin).
+- Login API `403` → sertakan header `X-CSRF-TOKEN` (nilai dari `<meta name="csrf">`) dan `X-Requested-With: XMLHttpRequest`, sesuai perilaku form `/login`.
+- Nama DB test: `inhal_test` harus diimpor ulang setelah ada perubahan `database/inhal.sql`.
