@@ -157,16 +157,6 @@ $userEmail = $userEmail ?? '';
                             </select>
                         </div>
                     </div>
-
-                    <div v-if="form.jenisKegiatan && form.jenisKegiatan !== 'Praktikum'" class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="label">Matakuliah <span class="text-rose-500">*</span></label>
-                            <select v-model="form.matakuliah" class="input">
-                                <option value="">-- Pilih Matakuliah --</option>
-                                <option v-for="o in options.matakuliah" :value="o">{{ o }}</option>
-                            </select>
-                        </div>
-                    </div>
                     <!-- Ujian -->
                     <div v-if="form.jenisKegiatan==='Ujian'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
                         <div class="section-title"><i class="bi bi-pencil-square"></i> Detail Ujian</div>
@@ -296,7 +286,7 @@ $userEmail = $userEmail ?? '';
                 return {
                     loading: false,
                     result: null,
-                    form: { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', matakuliah: '', keterangan: '' },
+                    form: { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', keterangan: '' },
                     ujian: { pilihan: '', tanggal: '' },
                     sgd: { pilihan: '', detail: '', tanggal: '' },
                     kkd: { pilihan: '', detail: '', tanggal: '' },
@@ -383,10 +373,6 @@ $userEmail = $userEmail ?? '';
                         alert('No. HP/WhatsApp wajib diisi dengan format yang benar.');
                         return;
                     }
-                    if (jenis !== 'Praktikum' && !this.form.matakuliah) {
-                        alert('Matakuliah wajib diisi untuk jenis kegiatan ini.');
-                        return;
-                    }
                     this.loading = true;
                     try {
                         const formData = {
@@ -396,7 +382,7 @@ $userEmail = $userEmail ?? '';
                             noHp: noHp,
                             blok: this.form.blok,
                             jenisKegiatan: jenis,
-                            matakuliah: jenis === 'Praktikum' ? '' : this.form.matakuliah,
+                            matakuliah: '',
                             keterangan: this.form.keterangan.trim()
                         };
                         if (jenis === 'Ujian') {
@@ -430,7 +416,7 @@ $userEmail = $userEmail ?? '';
                     }
                 },
                 resetForm() {
-                    this.form = { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', matakuliah: '', keterangan: '' };
+                    this.form = { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', keterangan: '' };
                     this.ujian = { pilihan: '', tanggal: '' };
                     this.sgd = { pilihan: '', detail: '', tanggal: '' };
                     this.kkd = { pilihan: '', detail: '', tanggal: '' };
