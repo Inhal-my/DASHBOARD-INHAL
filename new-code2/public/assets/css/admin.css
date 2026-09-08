@@ -1,0 +1,65 @@
+/* Admin shell (AdminLTE-like) — layout, sidebar, topbar, responsive. */
+*,*::before,*::after{box-sizing:border-box}
+[v-cloak]{display:none}
+body{margin:0;background:#f5f6fa;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased}
+
+.shell{display:flex;min-height:100vh;align-items:stretch}
+
+/* ---- Sidebar ---- */
+.shell-sidebar{position:fixed;top:0;left:0;bottom:0;width:264px;z-index:150;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,#111827,#1e1b4b);color:#cbd5e1;transition:transform .22s ease}
+.shell-sidebar .sidebar-brand{display:flex;align-items:center;gap:.7rem;padding:1rem 1.1rem;text-decoration:none;color:#fff;border-bottom:1px solid rgba(255,255,255,.08);flex:none}
+.shell-sidebar .sidebar-brand-badge{display:inline-flex;align-items:center;justify-content:center;width:2.35rem;height:2.35rem;border-radius:.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:1.05rem;box-shadow:0 8px 20px rgba(99,102,241,.35)}
+.shell-sidebar .sidebar-brand-name{font-size:.92rem;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.shell-sidebar .sidebar-brand-sub{font-size:.66rem;color:#94a3b8;line-height:1.2}
+.shell-nav{flex:1;overflow-y:auto;padding:.7rem .65rem 1.5rem;display:flex;flex-direction:column;gap:.15rem}
+.shell-nav::-webkit-scrollbar{width:6px}
+.shell-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:6px}
+.menu-label{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin:.85rem .55rem .25rem}
+.side-link{display:flex;align-items:center;gap:.6rem;padding:.6rem .7rem;border-radius:.7rem;font-size:.84rem;font-weight:700;color:#cbd5e1;text-decoration:none;transition:background .15s ease,color .15s ease}
+.side-link i{font-size:1rem;width:1.15rem;text-align:center}
+.side-link:hover{background:rgba(255,255,255,.06);color:#fff}
+.side-link.is-active{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.35)}
+.side-submenu{margin:.15rem 0 .15rem .55rem;padding-left:.5rem;border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:.1rem}
+.side-sub-link{display:flex;align-items:center;gap:.55rem;padding:.45rem .6rem;border-radius:.6rem;font-size:.8rem;font-weight:600;color:#94a3b8;text-decoration:none;background:transparent;border:0;cursor:pointer;text-align:left;transition:background .15s ease,color .15s ease}
+.side-sub-link i{font-size:.85rem;width:1rem;text-align:center;opacity:.85}
+.side-sub-link:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+.side-sub-link.is-active{background:rgba(99,102,241,.25);color:#c7d2fe}
+.sidebar-foot{padding:.9rem 1.1rem;border-top:1px solid rgba(255,255,255,.08);font-size:.72rem;color:#64748b;flex:none}
+.shell-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(2px);z-index:140;opacity:0;pointer-events:none;transition:opacity .2s ease}
+
+/* ---- Main column ---- */
+.shell-main{flex:1;min-width:0;display:flex;flex-direction:column;margin-left:264px}
+.shell-topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:1rem;height:4rem;padding:0 1.4rem;
+  background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-bottom:1px solid #eef1f6}
+.shell-hamburger{display:none;border:0;background:#f1f5f9;color:#334155;width:2.35rem;height:2.35rem;border-radius:.7rem;font-size:1.05rem;cursor:pointer;align-items:center;justify-content:center}
+.shell-hamburger:hover{background:#e2e8f0}
+.shell-topbar-title{display:flex;flex-direction:column;min-width:0}
+.shell-topbar-title b{font-size:.95rem;font-weight:800;letter-spacing:-.01em;color:#0f172a;line-height:1.2}
+.shell-topbar-title span{font-size:.68rem;color:#94a3b8;line-height:1.2}
+.shell-topbar-nav{margin-left:auto;display:flex;align-items:center;gap:.55rem}
+.shell-topbar-user{display:inline-flex;align-items:center;gap:.45rem;font-size:.78rem;font-weight:600;color:#334155;background:#fff;border:1px solid #e2e8f0;padding:.4rem .8rem;border-radius:999px}
+.shell-topbar-user i{color:#6366f1}
+.shell-topbar-nav a.btn{text-decoration:none}
+
+/* ---- Fluid content area: neutralise old fixed-width wrappers ---- */
+.shell-content{padding:1.4rem 1.4rem 4rem;min-width:0}
+.shell-content .wrap,
+.shell-content .container{max-width:none;margin:0 auto;padding:0}
+
+/* ---- Buttons reused by shell ---- */
+.shell .btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:0;border-radius:.8rem;font-size:.84rem;font-weight:700;padding:.55rem .95rem;cursor:pointer;text-decoration:none;transition:.15s ease}
+.shell .btn:disabled{opacity:.6;cursor:not-allowed}
+.shell .btn-soft{background:#fff;color:#475569;border:1px solid #e2e8f0}
+.shell .btn-soft:hover{background:#f8fafc;color:#0f172a}
+.shell .btn-sm{padding:.42rem .75rem;font-size:.78rem;border-radius:.65rem}
+.shell .btn-danger-soft{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+
+/* ---- Responsive ---- */
+@media (max-width:991px){
+  .shell-sidebar{transform:translateX(-100%);box-shadow:none}
+  .shell-sidebar.open{transform:translateX(0);box-shadow:0 0 60px rgba(15,23,42,.35)}
+  .shell-overlay.show{opacity:1;pointer-events:auto}
+  .shell-main{margin-left:0}
+  .shell-hamburger{display:inline-flex}
+}
