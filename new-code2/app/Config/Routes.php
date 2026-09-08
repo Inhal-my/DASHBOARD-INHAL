@@ -47,3 +47,25 @@ $routes->post('/api/admin/ba-bagian/end', 'Api\BeritaAcaraApi::bypassEnd', ['fil
 $routes->post('/api/pengajuan/(:segment)/email-status', 'Api\PengajuanApi::emailStatus/$1', ['filter' => 'admin', 'as' => 'pengajuan-email-status']);
 $routes->post('/api/pengajuan/(:segment)/email-final', 'Api\PengajuanApi::emailFinal/$1', ['filter' => 'admin', 'as' => 'pengajuan-email-final']);
 $routes->post('/api/pengajuan/(:segment)/email-bagian', 'Api\PengajuanApi::emailBagian/$1', ['filter' => 'admin', 'as' => 'pengajuan-email-bagian']);
+
+$routes->get('/api/pengaturan/umum', 'Api\PengaturanApi::umumGet', ['filter' => 'admin', 'as' => 'pengaturan-umum']);
+$routes->put('/api/pengaturan/umum', 'Api\PengaturanApi::umumSave', ['filter' => 'admin', 'as' => 'pengaturan-umum-save']);
+$routes->get('/api/pengaturan/kegiatan', 'Api\PengaturanApi::kegiatanGet', ['filter' => 'admin', 'as' => 'pengaturan-kegiatan']);
+$routes->put('/api/pengaturan/kegiatan', 'Api\PengaturanApi::kegiatanSave', ['filter' => 'admin', 'as' => 'pengaturan-kegiatan-save']);
+$routes->get('/api/pengaturan/matakuliah', 'Api\PengaturanApi::matakuliahGet', ['filter' => 'admin', 'as' => 'pengaturan-matakuliah']);
+$routes->put('/api/pengaturan/matakuliah', 'Api\PengaturanApi::matakuliahSave', ['filter' => 'admin', 'as' => 'pengaturan-matakuliah-save']);
+$routes->get('/api/pengaturan/bagian', 'Api\PengaturanApi::bagianGet', ['filter' => 'admin', 'as' => 'pengaturan-bagian']);
+$routes->put('/api/pengaturan/bagian', 'Api\PengaturanApi::bagianSave', ['filter' => 'admin', 'as' => 'pengaturan-bagian-save']);
+$routes->get('/api/pengaturan/biaya', 'Api\PengaturanApi::biayaGet', ['filter' => 'admin', 'as' => 'pengaturan-biaya']);
+$routes->put('/api/pengaturan/biaya', 'Api\PengaturanApi::biayaSave', ['filter' => 'admin', 'as' => 'pengaturan-biaya-save']);
+$routes->get('/api/pengaturan/pengguna', 'Api\PengaturanApi::penggunaGet', ['filter' => 'admin', 'as' => 'pengaturan-pengguna']);
+$routes->put('/api/pengaturan/pengguna', 'Api\PengaturanApi::penggunaSave', ['filter' => 'admin', 'as' => 'pengaturan-pengguna-save']);
+$routes->get('/api/pengaturan/email', 'Api\PengaturanApi::emailGet', ['filter' => 'admin', 'as' => 'pengaturan-email']);
+$routes->put('/api/pengaturan/email', 'Api\PengaturanApi::emailSave', ['filter' => 'admin', 'as' => 'pengaturan-email-save']);
+$routes->get('/api/pengaturan/nomor-surat', 'Api\PengaturanApi::nomorSuratGet', ['filter' => 'admin', 'as' => 'pengaturan-nomor-surat']);
+$routes->put('/api/pengaturan/nomor-surat', 'Api\PengaturanApi::nomorSuratSave', ['filter' => 'admin', 'as' => 'pengaturan-nomor-surat-save']);
+$routes->get('/api/pengaturan/upload', 'Api\PengaturanApi::uploadGet', ['filter' => 'admin', 'as' => 'pengaturan-upload']);
+$routes->put('/api/pengaturan/upload', 'Api\PengaturanApi::uploadSave', ['filter' => 'admin', 'as' => 'pengaturan-upload-save']);
+$routes->get('/api/pengaturan/status', 'Api\PengaturanApi::statusGet', ['filter' => 'admin', 'as' => 'pengaturan-status']);
+$routes->put('/api/pengaturan/status', 'Api\PengaturanApi::statusSave', ['filter' => 'admin', 'as' => 'pengaturan-status-save']);
+$routes->get('/api/pengaturan/audit', 'Api\PengaturanApi::audit', ['filter' => 'admin', 'as' => 'pengaturan-audit']);
