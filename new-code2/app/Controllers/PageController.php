@@ -14,7 +14,7 @@ class PageController extends BaseController
     ];
 
     /** Keys that render through layouts/admin. Grows per conversion task. */
-    private array $shellKeys = [];
+    private array $shellKeys = ['dashboard'];
 
     private array $titles = [
         'dashboard'  => 'Dashboard',

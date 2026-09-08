@@ -3,22 +3,11 @@ $pageKey = $page ?? 'dashboard';
 $pageTitle = $title ?? 'Dashboard';
 $userEmail = $userEmail ?? '';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf" content="<?= csrf_hash() ?>">
-    <title><?= htmlspecialchars($pageTitle) ?> | Pendaftaran INHAL</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
+<style>
         *,*::before,*::after{box-sizing:border-box}
         [v-cloak]{display:none}
         body{margin:0;background:#f5f6fa;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased}
-        .wrap{max-width:72rem;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+        .wrap{padding:0;margin:0}
         .page-head{display:flex;align-items:center;gap:.9rem;margin-bottom:1.25rem;flex-wrap:wrap}
         .page-head-icon{display:inline-flex;align-items:center;justify-content:center;width:2.9rem;height:2.9rem;border-radius:1rem;background:#eef2ff;color:#4f46e5;font-size:1.3rem}
         .page-head h1{margin:0;font-size:1.3rem;font-weight:800;letter-spacing:-.01em}
@@ -143,59 +132,13 @@ $userEmail = $userEmail ?? '';
         .hint{font-size:.74rem;color:#94a3b8;font-weight:500}
         .req{color:#e11d48}
     </style>
-</head>
-<body>
+
 <div id="app" v-cloak>
-    <div style="position:sticky;top:0;z-index:40;background:rgba(255,255,255,.88);border-bottom:1px solid #eef1f6;backdrop-filter:blur(8px)">
-        <div style="max-width:72rem;margin:0 auto;height:4rem;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem">
-            <div style="display:flex;align-items:center;gap:.7rem">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:2.4rem;height:2.4rem;border-radius:.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 8px 20px rgba(99,102,241,.35);font-size:1.1rem"><i class="bi bi-speedometer2"></i></span>
-                <div>
-                    <div style="font-weight:800;font-size:.95rem;letter-spacing:-.01em;line-height:1.2">Dashboard INHAL</div>
-                    <div style="font-size:.68rem;color:#94a3b8;line-height:1.2">Admin operasional pengajuan</div>
-                </div>
-            </div>
-            <div v-if="loggedIn" class="topbar-actions">
-                <span class="user-chip"><i class="bi bi-person-circle"></i>{{ sessionNama }}</span>
-                <a class="btn btn-soft btn-sm" href="/"><i class="bi bi-house"></i><span style="display:none" class="md-inline">Beranda</span></a>
-                <a class="btn btn-soft btn-sm" href="/logout"><i class="bi bi-box-arrow-right"></i> Keluar</a>
-            </div>
-        </div>
-    </div>
+    <template v-if="bootLoading">
+        <div class="card"><div class="loading-pane"><div class="spinner"></div><span>Memeriksa sesi admin…</span></div></div>
+    </template>
 
-    <div class="wrap">
-        <template v-if="bootLoading">
-            <div class="card"><div class="loading-pane"><div class="spinner"></div><span>Memeriksa sesi admin…</span></div></div>
-        </template>
-
-        <template v-else-if="!loggedIn">
-            <div class="auth-card">
-                <div class="auth-logo"><i class="bi bi-shield-lock"></i></div>
-                <h2 class="auth-title">Masuk Dashboard</h2>
-                <p class="auth-desc">Masuk sebagai admin untuk mengelola pengajuan</p>
-                <div class="role-tabs">
-                    <button class="role-tab" :class="{'is-active': role==='admin'}" @click="role='admin'">Admin</button>
-                    <button class="role-tab" :class="{'is-active': role==='bagian'}" @click="role='bagian'">Bagian</button>
-                </div>
-                <div v-if="loginError" class="auth-error"><i class="bi bi-exclamation-triangle-fill"></i>{{ loginError }}</div>
-                <form @submit.prevent="doLogin">
-                    <div v-if="role==='bagian'" class="field">
-                        <label><i class="bi bi-envelope"></i> Email bagian</label>
-                        <input class="input" type="email" v-model="loginEmail" autocomplete="username" placeholder="nama@inhal.test">
-                    </div>
-                    <div class="field">
-                        <label><i class="bi bi-shield-lock"></i> {{ role==='admin' ? 'Password admin' : 'Password' }}</label>
-                        <input class="input" type="password" v-model="loginPwd" autocomplete="current-password" placeholder="••••••••">
-                    </div>
-                    <button class="btn btn-primary btn-block" type="submit" :disabled="loading">
-                        <span v-if="loading" class="spinner spinner-sm"></span>
-                        <i v-else class="bi bi-box-arrow-in-right"></i> Masuk
-                    </button>
-                </form>
-            </div>
-        </template>
-
-        <template v-else>
+        <template v-else-if="loggedIn">
             <div class="page-head">
                 <div class="page-head-icon"><i class="bi bi-speedometer2"></i></div>
                 <div>
@@ -490,7 +433,6 @@ $userEmail = $userEmail ?? '';
                 </template>
             </section>
         </template>
-    </div>
 
     <transition name="fade">
         <div v-if="detail.open" class="modal-mask">
@@ -527,7 +469,6 @@ $userEmail = $userEmail ?? '';
                                         <div><span class="label">No. HP/WA</span><span class="value">{{ detail.p.noHp || '—' }}</span></div>
                                         <div><span class="label">Blok</span><span class="value">{{ detail.p.blok }}</span></div>
                                         <div><span class="label">Jenis Kegiatan</span><span class="value">{{ detail.p.jenisKegiatan }}</span></div>
-                                        <div v-if="detail.p.matakuliah"><span class="label">Matakuliah</span><span class="value">{{ detail.p.matakuliah }}</span></div>
                                         <div><span class="label">Tanggal Pelaksanaan</span><span class="value">{{ formatTanggalWaktu(detail.p.tanggalPelaksanaan) }}</span></div>
                                         <div><span class="label">Tanggal Daftar</span><span class="value">{{ formatTanggal(detail.p.timestamp) }}</span></div>
                                         <div><span class="label">Biaya</span><span class="value" style="font-weight:700;color:#4f46e5">{{ formatRupiah(detail.p.biaya) }}</span></div>
@@ -1500,5 +1441,3 @@ $userEmail = $userEmail ?? '';
         }
     }).mount('#app');
 </script>
-</body>
-</html>
