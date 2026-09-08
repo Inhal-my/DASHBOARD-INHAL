@@ -14,7 +14,7 @@ class PageController extends BaseController
     ];
 
     /** Keys that render through layouts/admin. Grows per conversion task. */
-    private array $shellKeys = ['dashboard', 'laporan'];
+    private array $shellKeys = ['dashboard', 'laporan', 'pengaturan'];
 
     private array $titles = [
         'dashboard'  => 'Dashboard',
@@ -54,7 +54,7 @@ class PageController extends BaseController
         }
 
         $sub = $key === 'pengaturan'
-            ? $this->normalizeSubMenu((string) $this->request->getGet('tab', 'umum'))
+            ? $this->normalizeSubMenu((string) ($this->request->getGet('tab') ?? 'umum'))
             : '';
 
         $fragment = view($this->pages[$key], [

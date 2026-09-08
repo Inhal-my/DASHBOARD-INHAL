@@ -3,31 +3,16 @@ $pageKey = $page ?? 'pengaturan';
 $pageTitle = $title ?? 'Pengaturan';
 $userEmail = $userEmail ?? '';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf" content="<?= csrf_hash() ?>">
-    <title><?= htmlspecialchars($pageTitle) ?> | Pendaftaran INHAL</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
+<style>
         *,*::before,*::after{box-sizing:border-box}
         [v-cloak]{display:none}
         body{margin:0;background:#f5f6fa;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased}
-        .wrap{max-width:76rem;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+        .wrap{padding:0;margin:0}
         .page-head{display:flex;align-items:center;gap:.9rem;margin-bottom:1.25rem;flex-wrap:wrap}
         .page-head-icon{display:inline-flex;align-items:center;justify-content:center;width:2.9rem;height:2.9rem;border-radius:1rem;background:#eef2ff;color:#4f46e5;font-size:1.3rem}
         .page-head h1{margin:0;font-size:1.3rem;font-weight:800;letter-spacing:-.01em}
         .page-head p{margin:.15rem 0 0;font-size:.8rem;color:#64748b}
         .page-head-actions{margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap}
-        .tabs{display:flex;gap:.3rem;background:#fff;border-radius:1rem;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:.35rem;margin-bottom:1.25rem;max-width:100%;overflow-x:auto}
-        .tab{border:0;background:transparent;display:inline-flex;align-items:center;gap:.45rem;font-size:.83rem;font-weight:700;color:#64748b;padding:.55rem .9rem;border-radius:.7rem;cursor:pointer;white-space:nowrap;transition:.15s ease}
-        .tab:hover{background:#f1f5f9;color:#334155}
-        .tab.is-active{background:#eef2ff;color:#4f46e5}
         .card{background:#fff;border-radius:1.15rem;box-shadow:0 1px 3px rgba(15,23,42,.06);margin-bottom:1.25rem;overflow:hidden}
         .card-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1rem 1.25rem;border-bottom:1px solid #f1f5f9;flex-wrap:wrap}
         .card-title{display:flex;align-items:center;gap:.6rem;font-size:.98rem;font-weight:800;letter-spacing:-.01em;color:#0f172a}
@@ -76,61 +61,14 @@ $userEmail = $userEmail ?? '';
         .chip-check{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #e2e8f0;border-radius:999px;padding:.35rem .7rem;font-size:.78rem;font-weight:700;color:#475569;cursor:pointer;background:#fff}
         .chip-check.is-on{border-color:#818cf8;background:#eef2ff;color:#4f46e5}
         .hint{font-size:.74rem;color:#94a3b8;font-weight:500}
-        .role-tabs{display:flex;gap:.3rem;background:#f1f5f9;border-radius:.8rem;padding:.3rem;margin-bottom:1rem}
-        .role-tab{flex:1;border:0;border-radius:.6rem;padding:.5rem;font-weight:700;font-size:.84rem;color:#64748b;cursor:pointer;background:transparent}
-        .role-tab.is-active{background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(15,23,42,.12)}
-        .auth-card{max-width:25rem;margin:2rem auto;background:#fff;border-radius:1.2rem;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:1.75rem}
-        .auth-logo{width:3.2rem;height:3.2rem;border-radius:1rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto .9rem}
-        .auth-title{margin:0;text-align:center;font-size:1.15rem;font-weight:800}
-        .auth-desc{margin:.3rem 0 1.1rem;text-align:center;font-size:.8rem;color:#94a3b8}
-        .auth-error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:.7rem;padding:.6rem .8rem;font-size:.8rem;font-weight:600;margin-bottom:.8rem;display:flex;gap:.4rem;align-items:center}
-        .field{margin-bottom:.9rem}
-        .btn-block{width:100%}
-        .topbar-actions{display:flex;align-items:center;gap:.6rem}
-        .user-chip{display:inline-flex;align-items:center;gap:.45rem;font-size:.78rem;font-weight:600;color:#334155;background:#fff;border:1px solid #e2e8f0;padding:.4rem .8rem;border-radius:999px}
-        .user-chip i{color:#6366f1}
     </style>
-</head>
-<body>
+
 <div id="app" v-cloak>
-    <div style="position:sticky;top:0;z-index:40;background:rgba(255,255,255,.88);border-bottom:1px solid #eef1f6;backdrop-filter:blur(8px)">
-        <div style="max-width:76rem;margin:0 auto;height:4rem;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem">
-            <div style="display:flex;align-items:center;gap:.7rem">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:2.4rem;height:2.4rem;border-radius:.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 8px 20px rgba(99,102,241,.35);font-size:1.1rem"><i class="bi bi-sliders"></i></span>
-                <div>
-                    <div style="font-weight:800;font-size:.95rem;letter-spacing:-.01em;line-height:1.2">Pengaturan INHAL</div>
-                    <div style="font-size:.68rem;color:#94a3b8;line-height:1.2">Konfigurasi master, pengguna, dan email</div>
-                </div>
-            </div>
-            <div class="topbar-actions">
-                <a class="btn btn-soft btn-sm" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
-                <a class="btn btn-soft btn-sm" href="/laporan"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
-                <a class="btn btn-soft btn-sm" href="/logout"><i class="bi bi-box-arrow-right"></i> Keluar</a>
-            </div>
-        </div>
-    </div>
+    <template v-if="bootLoading">
+        <div class="card"><div class="loading-pane"><div class="spinner"></div><span>Memeriksa sesi admin…</span></div></div>
+    </template>
 
-    <div class="wrap">
-        <template v-if="!loggedIn">
-            <div class="auth-card">
-                <div class="auth-logo"><i class="bi bi-shield-lock"></i></div>
-                <h2 class="auth-title">Masuk Admin</h2>
-                <p class="auth-desc">Masuk sebagai admin untuk membuka Pengaturan</p>
-                <div v-if="loginError" class="auth-error"><i class="bi bi-exclamation-triangle-fill"></i>{{ loginError }}</div>
-                <form @submit.prevent="doLogin">
-                    <div class="field">
-                        <label class="f">Password admin</label>
-                        <input class="input" type="password" v-model="loginPwd" autocomplete="current-password" placeholder="••••••••">
-                    </div>
-                    <button class="btn btn-primary btn-block" type="submit" :disabled="loading">
-                        <span v-if="loading" class="spinner" style="width:1rem;height:1rem"></span>
-                        <i v-else class="bi bi-box-arrow-in-right"></i> Masuk
-                    </button>
-                </form>
-            </div>
-        </template>
-
-        <template v-else>
+    <template v-else-if="loggedIn">
             <div class="page-head">
                 <div class="page-head-icon"><i class="bi bi-sliders"></i></div>
                 <div>
@@ -143,21 +81,6 @@ $userEmail = $userEmail ?? '';
                         <i v-else class="bi bi-check2-circle"></i> Simpan
                     </button>
                 </div>
-            </div>
-
-            <div class="tabs">
-                <button class="tab" :class="{'is-active': tab==='umum'}" @click="setTab('umum')"><i class="bi bi-gear"></i> Umum</button>
-                <button class="tab" :class="{'is-active': tab==='matakuliah'}" @click="setTab('matakuliah')"><i class="bi bi-book"></i> Matakuliah</button>
-                <button class="tab" :class="{'is-active': tab==='kegiatan'}" @click="setTab('kegiatan')"><i class="bi bi-diagram-3"></i> Master Kegiatan</button>
-                <button class="tab" :class="{'is-active': tab==='bagian'}" @click="setTab('bagian')"><i class="bi bi-people"></i> Master Bagian</button>
-                <button class="tab" :class="{'is-active': tab==='biaya'}" @click="setTab('biaya')"><i class="bi bi-cash-coin"></i> Master Biaya</button>
-                <button class="tab" :class="{'is-active': tab==='mahasiswa'}" @click="setTab('mahasiswa')"><i class="bi bi-person-lines-fill"></i> Mahasiswa</button>
-                <button class="tab" :class="{'is-active': tab==='pengguna'}" @click="setTab('pengguna')"><i class="bi bi-person-badge"></i> Pengguna</button>
-                <button class="tab" :class="{'is-active': tab==='email'}" @click="setTab('email')"><i class="bi bi-envelope"></i> Email</button>
-                <button class="tab" :class="{'is-active': tab==='nomor'}" @click="setTab('nomor')"><i class="bi bi-file-earmark-text"></i> Nomor Surat</button>
-                <button class="tab" :class="{'is-active': tab==='upload'}" @click="setTab('upload')"><i class="bi bi-cloud-arrow-up"></i> Upload</button>
-                <button class="tab" :class="{'is-active': tab==='status'}" @click="setTab('status')"><i class="bi bi-arrow-repeat"></i> Alur Status</button>
-                <button class="tab" :class="{'is-active': tab==='audit'}" @click="setTab('audit')"><i class="bi bi-clock-history"></i> Audit</button>
             </div>
 
             <template v-if="loading">
@@ -552,7 +475,6 @@ $userEmail = $userEmail ?? '';
                 </section>
             </template>
         </template>
-    </div>
 
     <transition name="fade">
         <div v-if="toast.show" class="toast" :class="'toast-'+toast.type">
@@ -564,10 +486,6 @@ $userEmail = $userEmail ?? '';
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 <script>
     const { createApp } = Vue;
-    const CSRF = (() => {
-        const el = document.querySelector('meta[name="csrf"]');
-        return el ? el.getAttribute('content') : '';
-    })();
 
     function readJson(res) {
         return res.json().catch(() => ({ ok: false, message: 'Respons tidak valid.' }));
@@ -597,12 +515,11 @@ $userEmail = $userEmail ?? '';
     createApp({
         data() {
             return {
+                bootLoading: true,
                 loggedIn: false,
                 loading: false,
                 saving: false,
-                loginPwd: '',
-                loginError: '',
-                tab: 'matakuliah',
+                tab: 'umum',
                 statusAll: STATUS_ALL,
                 kegiatanKategori: ['Blok', 'Ujian', 'SGD', 'Detail SGD', 'KKD', 'Detail KKD', 'Lab', 'Kegiatan Lab', 'Dosen', 'Matakuliah'],
                 c: {
@@ -646,48 +563,29 @@ $userEmail = $userEmail ?? '';
             badgeStatus(s) {
                 return 'st-' + s.toLowerCase();
             },
-            async doLogin() {
-                if (!this.loginPwd) {
-                    this.loginError = 'Masukkan password admin.';
-                    return;
-                }
-                this.loginError = '';
-                this.saving = true;
-                try {
-                    const fd = new URLSearchParams();
-                    fd.set('role', 'admin');
-                    fd.set('password', this.loginPwd);
-                    const res = await fetch('/login', {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF },
-                        body: fd
-                    });
-                    const data = await readJson(res);
-                    if (!res.ok || !data.ok) {
-                        this.loginError = (data && data.message) || 'Login gagal. Coba lagi.';
-                        return;
-                    }
-                    this.loginPwd = '';
-                    window.location.reload();
-                } catch (e) {
-                    this.loginError = 'Tidak dapat terhubung ke server.';
-                } finally {
-                    this.saving = false;
-                }
-            },
             async boot() {
                 this.loading = true;
+                const qtab = new URLSearchParams(window.location.search).get('tab');
+                const allowed = ['umum','matakuliah','kegiatan','bagian','biaya','mahasiswa','pengguna','email','nomor','upload','status','audit'];
+                if (qtab && allowed.indexOf(qtab) !== -1) this.tab = qtab;
                 try {
                     const res = await apiFetch('GET', 'pengaturan/umum');
                     this.loggedIn = true;
                     this.loaded.umum = true;
                     this.c.umum = Object.assign(this.c.umum, res.data);
-                    await this.loadTab('matakuliah');
+                    await this.loadTab(this.tab);
                 } catch (e) {
                     this.loggedIn = false;
                 } finally {
                     this.loading = false;
+                    this.bootLoading = false;
                 }
+            },
+            applyTabFromEvent(name) {
+                const allowed = ['umum','matakuliah','kegiatan','bagian','biaya','mahasiswa','pengguna','email','nomor','upload','status','audit'];
+                if (allowed.indexOf(name) === -1) return;
+                this.setTab(name);
+                try { history.replaceState(null, '', '/pengaturan?tab=' + name); } catch (e) { /* noop */ }
             },
             async setTab(name) {
                 this.tab = name;
@@ -996,9 +894,10 @@ $userEmail = $userEmail ?? '';
             }
         },
         mounted() {
+            window.addEventListener('inhal-tab', (ev) => {
+                if (ev && ev.detail) this.applyTabFromEvent(ev.detail);
+            });
             this.boot();
         }
     }).mount('#app');
 </script>
-</body>
-</html>
