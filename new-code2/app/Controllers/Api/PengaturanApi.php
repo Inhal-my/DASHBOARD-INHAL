@@ -7,6 +7,7 @@ use App\Models\AdminModel;
 use App\Models\AuditLogModel;
 use App\Models\BagianStaffModel;
 use App\Models\EmailTemplateModel;
+use App\Models\MahasiswaModel;
 use App\Models\MasterBagianModel;
 use App\Models\MasterBiayaModel;
 use App\Models\MasterKegiatanModel;
@@ -156,6 +157,109 @@ class PengaturanApi extends BaseApi
         audit_log_add($this->actor(), 'save_master', 'master_biaya', 'items=' . count($items));
 
         return $this->respondOk($m->orderBy('biaya', 'ASC')->orderBy('kegiatan', 'ASC')->findAll());
+    }
+
+    public function mahasiswaGet()
+    {
+        $this->requireAdmin();
+        $rows = (new MahasiswaModel())->orderBy('nama_lengkap', 'ASC')->orderBy('npm', 'ASC')->findAll();
+
+        return $this->respondOk($rows);
+    }
+
+    public function mahasiswaSave()
+    {
+        $this->requireAdmin();
+        $items = $this->itemsFromPayload();
+        if ($items === null) {
+            return $this->respondErr('Payload items wajib array.');
+        }
+        $db  = db_connect();
+        $m   = new MahasiswaModel();
+        $byId  = [];
+        $byNpm = [];
+        foreach ($m->findAll() as $row) {
+            $byId[(int) $row['id']]     = $row;
+            $byNpm[$this->npmKey($row['npm'])] = (int) $row['id'];
+        }
+
+        $added    = 0;
+        $skipped  = [];
+        $toDelete = [];
+        $toUpdate = [];
+        $toInsert = [];
+
+        foreach ($items as $it) {
+            if (!empty($it['_delete'])) {
+                $delId = (int) ($it['id'] ?? 0);
+                if ($delId > 0 && isset($byId[$delId])) {
+                    $toDelete[] = $delId;
+                    unset($byId[$delId]);
+                }
+                continue;
+            }
+            $id   = (int) ($it['id'] ?? 0);
+            $npm  = trim((string) ($it['npm'] ?? ''));
+            $nama = trim((string) ($it['nama_lengkap'] ?? ''));
+            if ($npm === '' && $nama === '') {
+                continue;
+            }
+            if ($npm === '' || $nama === '') {
+                return $this->respondErr('NPM dan Nama Lengkap wajib diisi untuk setiap mahasiswa. Periksa baris: ' . ($npm !== '' ? $npm : '(NPM kosong)'), 422);
+            }
+            if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9.\-_]{0,19}$/', $npm)) {
+                return $this->respondErr('NPM tidak valid: ' . $npm, 422);
+            }
+            $key     = $this->npmKey($npm);
+            $exists  = $id > 0 && isset($byId[$id]);
+            $usedBy  = $byNpm[$key] ?? null;
+            if ($exists) {
+                if ($usedBy !== null && (int) $usedBy !== $id) {
+                    $skipped[] = ['npm' => $npm, 'nama_lengkap' => $nama, 'alasan' => 'NPM sudah digunakan mahasiswa lain.'];
+                    continue;
+                }
+                $toUpdate[] = ['id' => $id, 'npm' => $npm, 'nama_lengkap' => $nama];
+                unset($byNpm[$this->npmKey((string) ($byId[$id]['npm'] ?? ''))]);
+                $byNpm[$key] = $id;
+                $byId[$id]['npm'] = $npm;
+                $byId[$id]['nama_lengkap'] = $nama;
+                continue;
+            }
+            if ($usedBy !== null) {
+                $skipped[] = ['npm' => $npm, 'nama_lengkap' => $nama, 'alasan' => 'NPM sudah terdaftar.'];
+                continue;
+            }
+            $toInsert[] = ['npm' => $npm, 'nama_lengkap' => $nama];
+            $added++;
+            $byNpm[$key] = 0;
+        }
+
+        $db->transStart();
+        try {
+            foreach ($toDelete as $delId) {
+                $m->delete($delId);
+            }
+            foreach ($toUpdate as $u) {
+                $m->update($u['id'], ['npm' => $u['npm'], 'nama_lengkap' => $u['nama_lengkap']]);
+            }
+            foreach ($toInsert as $ins) {
+                $m->insert($ins);
+            }
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            return $this->respondErr('Gagal menyimpan mahasiswa: ' . $e->getMessage(), 400);
+        }
+        $db->transComplete();
+
+        audit_log_add($this->actor(), 'save_mahasiswa', 'mahasiswa', 'added=' . $added . ';skipped=' . count($skipped));
+
+        $rows = $m->orderBy('nama_lengkap', 'ASC')->orderBy('npm', 'ASC')->findAll();
+
+        return $this->respondOk([
+            'list'    => $rows,
+            'added'   => $added,
+            'skipped' => $skipped,
+        ]);
     }
 
     public function penggunaGet()
@@ -568,5 +672,10 @@ class PengaturanApi extends BaseApi
     private function actor(): string
     {
         return (string) ((new AuthService())->sessionAuth()['nama'] ?? 'admin');
+    }
+
+    private function npmKey(string $npm): string
+    {
+        return strtoupper(trim($npm));
     }
 }

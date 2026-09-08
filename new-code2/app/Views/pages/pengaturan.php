@@ -151,6 +151,7 @@ $userEmail = $userEmail ?? '';
                 <button class="tab" :class="{'is-active': tab==='kegiatan'}" @click="setTab('kegiatan')"><i class="bi bi-diagram-3"></i> Master Kegiatan</button>
                 <button class="tab" :class="{'is-active': tab==='bagian'}" @click="setTab('bagian')"><i class="bi bi-people"></i> Master Bagian</button>
                 <button class="tab" :class="{'is-active': tab==='biaya'}" @click="setTab('biaya')"><i class="bi bi-cash-coin"></i> Master Biaya</button>
+                <button class="tab" :class="{'is-active': tab==='mahasiswa'}" @click="setTab('mahasiswa')"><i class="bi bi-person-lines-fill"></i> Mahasiswa</button>
                 <button class="tab" :class="{'is-active': tab==='pengguna'}" @click="setTab('pengguna')"><i class="bi bi-person-badge"></i> Pengguna</button>
                 <button class="tab" :class="{'is-active': tab==='email'}" @click="setTab('email')"><i class="bi bi-envelope"></i> Email</button>
                 <button class="tab" :class="{'is-active': tab==='nomor'}" @click="setTab('nomor')"><i class="bi bi-file-earmark-text"></i> Nomor Surat</button>
@@ -292,6 +293,64 @@ $userEmail = $userEmail ?? '';
                                     <tr v-if="!c.biaya.length"><td colspan="3"><div class="empty"><i class="bi bi-cash-coin"></i><p>Belum ada data.</p></div></td></tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section v-if="tab==='mahasiswa'">
+                    <div class="card">
+                        <div class="card-head">
+                            <div class="card-title"><i class="bi bi-person-lines-fill"></i> Tambah / Impor Mahasiswa</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2" style="margin-bottom:.9rem">
+                                <div>
+                                    <label class="f">NPM</label>
+                                    <input class="input mono" v-model="mhsManual.npm" placeholder="Contoh: 1234567890" @keyup.enter="mhsAddManual()">
+                                </div>
+                                <div>
+                                    <label class="f">Nama Lengkap</label>
+                                    <input class="input" v-model="mhsManual.nama_lengkap" placeholder="Nama lengkap mahasiswa" @keyup.enter="mhsAddManual()">
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+                                <button class="btn btn-soft" @click="mhsAddManual()"><i class="bi bi-plus-lg"></i> Tambah Baris</button>
+                                <button class="btn btn-success" @click="mhsOpenFile()" :disabled="mhsImporting"><i v-if="mhsImporting" class="bi bi-hourglass-split"></i><i v-else class="bi bi-file-earmark-spreadsheet"></i> Impor dari Excel</button>
+                                <input type="file" ref="mhsFile" accept=".xlsx,.xls,.csv" style="display:none" @change="mhsOnFile">
+                            </div>
+                            <div class="sm" style="margin-top:.8rem">
+                                Excel: kolom pertama <b>NPM</b>, kolom kedua <b>Nama Lengkap</b> (baris judul diabaikan).
+                                Paste juga didukung: tempel langsung ke kolom NPM di bawah dari Excel/CSV (tab/koma/baris baru).
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-head">
+                            <div class="card-title"><i class="bi bi-people"></i> Daftar Mahasiswa</div>
+                            <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+                                <span v-if="mhsInfo" class="sm" style="color:#047857;font-weight:700">{{ mhsInfo }}</span>
+                                <button class="btn btn-soft btn-sm" @click="mhsClearImport()"><i class="bi bi-x-lg"></i> Bersihkan Antrean</button>
+                                <button class="btn btn-soft btn-sm" @click="addRow('mahasiswa')"><i class="bi bi-plus-lg"></i> Tambah Baris Kosong</button>
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="list">
+                                <thead><tr><th style="width:10rem">NPM</th><th>Nama Lengkap</th><th style="width:5rem">Hapus</th></tr></thead>
+                                <tbody>
+                                    <tr v-for="(r,i) in c.mahasiswa" :key="'mh'+(r.id||'new'+i)" :class="{'row-del': r._delete}">
+                                        <td>
+                                            <input class="input mono" v-model="r.npm" placeholder="NPM" @paste="mhsOnPasteCell($event)">
+                                        </td>
+                                        <td><input class="input" v-model="r.nama_lengkap" placeholder="Nama lengkap"></td>
+                                        <td><button class="btn btn-danger-soft btn-sm" @click="toggleDelete(c.mahasiswa, i)"><i :class="r._delete ? 'bi bi-arrow-counterclockwise' : 'bi bi-trash'"></i></button></td>
+                                    </tr>
+                                    <tr v-if="!c.mahasiswa.length"><td colspan="3"><div class="empty"><i class="bi bi-person-lines-fill"></i><p>Belum ada mahasiswa. Tambahkan lewat form di atas, impor dari Excel, atau "Tambah Baris Kosong".</p></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-body" style="padding-top:.6rem">
+                            <div class="sm">Baris tanpa NPM duplikat (nama diisi) akan disimpan; NPM yang sudah ada di database otomatis dilewati. Klik <b>Simpan</b> di pojok kanan atas untuk menyimpan seluruh daftar. Nama terisi otomatis di formulir pendaftaran saat NPM dikenali.</div>
                         </div>
                     </div>
                 </section>
@@ -552,6 +611,7 @@ $userEmail = $userEmail ?? '';
                     kegiatan: [],
                     bagian: [],
                     biaya: [],
+                    mahasiswa: [],
                     pengguna: { admin: [], staf: [] },
                     email: { templates: [], smtp: {} },
                     nomor: [],
@@ -559,6 +619,9 @@ $userEmail = $userEmail ?? '';
                     status: { statuses: [], bagianBaStatuses: [], statusRoles: {} },
                     audit: { logs: [], counts: {} }
                 },
+                mhsManual: { npm: '', nama_lengkap: '' },
+                mhsInfo: '',
+                mhsImporting: false,
                 loaded: {},
                 toast: { show: false, type: 'info', message: '' },
                 toastTimer: null
@@ -646,6 +709,7 @@ $userEmail = $userEmail ?? '';
                     else if (name === 'matakuliah') this.c.matakuliah = this.rowsOf(d);
                     else if (name === 'bagian') this.c.bagian = this.rowsOf(d);
                     else if (name === 'biaya') this.c.biaya = this.rowsOf(d);
+                    else if (name === 'mahasiswa') this.c.mahasiswa = this.rowsOf(d);
                     else if (name === 'pengguna') this.c.pengguna = d;
                     else if (name === 'email') this.c.email = d;
                     else if (name === 'nomor') this.c.nomor = this.rowsOf(d);
@@ -661,7 +725,7 @@ $userEmail = $userEmail ?? '';
                 }
             },
             sectionFor(name) {
-                return { matakuliah: 'matakuliah', kegiatan: 'kegiatan', bagian: 'bagian', biaya: 'biaya', pengguna: 'pengguna', email: 'email', nomor: 'nomor-surat', upload: 'upload', status: 'status', audit: 'audit', umum: 'umum' }[name] || name;
+                return { matakuliah: 'matakuliah', kegiatan: 'kegiatan', bagian: 'bagian', biaya: 'biaya', mahasiswa: 'mahasiswa', pengguna: 'pengguna', email: 'email', nomor: 'nomor-surat', upload: 'upload', status: 'status', audit: 'audit', umum: 'umum' }[name] || name;
             },
             rowsOf(d) {
                 return (d || []).map(r => Object.assign({}, r));
@@ -672,6 +736,7 @@ $userEmail = $userEmail ?? '';
                 else if (tab === 'kegiatan') empty = { kategori: 'SGD', nilai: '' };
                 else if (tab === 'bagian') empty = { lab: '', kegiatan_lab: '', bagian: '', email: '' };
                 else if (tab === 'biaya') empty = { kegiatan: '', biaya: 0 };
+                else if (tab === 'mahasiswa') empty = { npm: '', nama_lengkap: '' };
                 else if (tab === 'nomor') empty = { type: 'INHAL', tahun: new Date().getFullYear(), last_number: 0 };
                 this.c[tab].push(empty);
             },
@@ -711,6 +776,149 @@ $userEmail = $userEmail ?? '';
                     const o = Object.assign({}, r);
                     if (o._delete && !o.id) delete o._delete;
                     return o;
+                });
+            },
+            mhsNpmOk(npm) {
+                return /^[A-Za-z0-9][A-Za-z0-9.\-_]{0,19}$/.test(npm);
+            },
+            mhsKey(npm) {
+                return String(npm || '').trim().toLowerCase();
+            },
+            mhsNpmTaken(npm, skipIndex) {
+                const k = this.mhsKey(npm);
+                return this.c.mahasiswa.some((r, i) => i !== skipIndex && !r._delete && this.mhsKey(r.npm) === k);
+            },
+            mhsAddManual() {
+                const npm = String(this.mhsManual.npm || '').trim();
+                const nama = String(this.mhsManual.nama_lengkap || '').trim();
+                if (!npm || !nama) {
+                    this.toastShow('error', 'Isi NPM dan Nama Lengkap dulu.');
+                    return;
+                }
+                if (!this.mhsNpmOk(npm)) {
+                    this.toastShow('error', 'Format NPM tidak valid: ' + npm);
+                    return;
+                }
+                if (this.mhsNpmTaken(npm)) {
+                    this.toastShow('error', 'NPM ' + npm + ' sudah ada di daftar.');
+                    return;
+                }
+                this.c.mahasiswa.push({ npm: npm, nama_lengkap: nama });
+                this.mhsManual = { npm: '', nama_lengkap: '' };
+                this.mhsInfo = '';
+                this.toastShow('success', npm + ' ditambahkan ke daftar. Klik Simpan untuk menyimpan.');
+            },
+            mhsOpenFile() {
+                this.$refs.mhsFile.click();
+            },
+            async mhsOnFile(ev) {
+                const file = ev.target.files && ev.target.files[0];
+                ev.target.value = '';
+                if (!file) return;
+                const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+                this.mhsImporting = true;
+                try {
+                    let rows;
+                    if (isExcel) {
+                        await this._loadXlsx();
+                        const buf = await file.arrayBuffer();
+                        const wb = XLSX.read(buf, { type: 'array' });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+                        rows = aoa.map(row => row.map(c => String(c == null ? '' : c).trim()));
+                    } else {
+                        const txt = await file.text();
+                        rows = this._mhsSplitText(txt);
+                    }
+                    this._mhsMergeRows(rows, 'Impor dari ' + file.name);
+                } catch (e) {
+                    this.toastShow('error', 'Gagal membaca file: ' + (e && e.message || 'format tidak didukung.'));
+                } finally {
+                    this.mhsImporting = false;
+                }
+            },
+            mhsOnPasteCell(ev) {
+                const text = (ev.clipboardData || window.clipboardData).getData('text');
+                if (!text || !/[\t\r\n]/.test(text)) return;
+                ev.preventDefault();
+                this._mhsMergeRows(this._mhsSplitText(text), 'Tempelan (paste)');
+            },
+            _mhsSplitText(text) {
+                return String(text || '').split(/\r?\n/).map(line => {
+                    const l = String(line || '');
+                    let sep = '\t';
+                    if (l.indexOf('\t') === -1) sep = l.indexOf(',') >= 0 ? ',' : (l.indexOf(';') >= 0 ? ';' : ',');
+                    return l.split(sep).map(c => String(c == null ? '' : c).replace(/^["']|["']$/g, '').trim());
+                }).filter(cells => cells.some(c => c !== ''));
+            },
+            _mhsIsHeader(cells) {
+                const a = String(cells[0] || '').toLowerCase();
+                const b = String(cells[1] || '').toLowerCase();
+                return /^(npm|nim|no|nomor)$/.test(a) || /nama/.test(a) || /nama/.test(b);
+            },
+            _mhsMergeRows(rows, sumber) {
+                let diabaikan = 0;
+                let ditambah = 0;
+                const skipNpm = [];
+                let first = true;
+                const pendek = [];
+                rows.forEach(cells => {
+                    if (first) {
+                        first = false;
+                        if (this._mhsIsHeader(cells)) return;
+                    }
+                    let npm = String(cells[0] || '').trim();
+                    const nama = String(cells[1] || '').trim();
+                    if (!npm && !nama) return;
+                    if (!npm && nama) {
+                        diabaikan++;
+                        pendek.push('(NPM kosong)');
+                        return;
+                    }
+                    if (npm && !nama) {
+                        diabaikan++;
+                        pendek.push(npm);
+                        return;
+                    }
+                    if (!this.mhsNpmOk(npm)) {
+                        diabaikan++;
+                        pendek.push(npm);
+                        return;
+                    }
+                    if (this.mhsNpmTaken(npm)) {
+                        diabaikan++;
+                        skipNpm.push(npm);
+                        return;
+                    }
+                    this.c.mahasiswa.push({ npm: npm, nama_lengkap: nama });
+                    ditambah++;
+                });
+                const pesan = sumber + ': ' + ditambah + ' baris valid ditambahkan ke daftar, ' + diabaikan + ' dilewati.';
+                this.mhsInfo = pesan;
+                if (ditambah) {
+                    this.toastShow('success', pesan + ' Klik Simpan untuk menyimpan.');
+                } else {
+                    let alas = 'NPM sudah ada.';
+                    if (skipNpm.length) alas = 'NPM sudah ada: ' + skipNpm.slice(0, 3).join(', ') + (skipNpm.length > 3 ? ', …' : '');
+                    else if (pendek.length) alas = 'Baris tidak lengkap / format salah.';
+                    this.toastShow('info', 'Tidak ada baris baru. ' + alas);
+                }
+            },
+            mhsClearImport() {
+                const before = this.c.mahasiswa.length;
+                this.c.mahasiswa = this.c.mahasiswa.filter(r => r.id);
+                const removed = before - this.c.mahasiswa.length;
+                this.mhsInfo = removed ? removed + ' baris antrean dibersihkan.' : '';
+                if (removed) this.toastShow('info', this.mhsInfo);
+            },
+            _loadXlsx() {
+                return new Promise((resolve, reject) => {
+                    if (window.XLSX) return resolve();
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                    s.onload = () => resolve();
+                    s.onerror = () => reject(new Error('Gagal memuat library Excel.'));
+                    document.head.appendChild(s);
                 });
             },
             async saveActive() {
@@ -753,13 +961,29 @@ $userEmail = $userEmail ?? '';
                     else if (tab === 'matakuliah') this.c.matakuliah = this.rowsOf(d);
                     else if (tab === 'bagian') this.c.bagian = this.rowsOf(d);
                     else if (tab === 'biaya') this.c.biaya = this.rowsOf(d);
+                    else if (tab === 'mahasiswa') {
+                        this.c.mahasiswa = this.rowsOf(d.list);
+                        this.mhsInfo = '';
+                        this.mhsManual = { npm: '', nama_lengkap: '' };
+                    }
                     else if (tab === 'nomor') this.c.nomor = this.rowsOf(d);
                     else if (tab === 'umum') this.c.umum = Object.assign(this.c.umum, d);
                     else if (tab === 'pengguna') this.c.pengguna = d;
                     else if (tab === 'email') this.c.email = d;
                     else if (tab === 'upload') this.c.upload = d;
                     else if (tab === 'status') this.c.status = d;
-                    this.toastShow('success', 'Pengaturan ' + this.labelFor(tab) + ' disimpan.');
+                    let okMsg = 'Pengaturan ' + this.labelFor(tab) + ' disimpan.';
+                    if (tab === 'mahasiswa') {
+                        const added = Number(d.added) || 0;
+                        const skipped = d.skipped || [];
+                        if (skipped.length) {
+                            const ex = skipped.slice(0, 3).map(s => s.npm).join(', ');
+                            okMsg = added + ' mahasiswa ditambahkan, ' + skipped.length + ' dilewati (duplikat): ' + ex + (skipped.length > 3 ? ', …' : '');
+                        } else if (added > 0) {
+                            okMsg = added + ' mahasiswa ditambahkan.';
+                        }
+                    }
+                    this.toastShow('success', okMsg);
                 } catch (e) {
                     this.toastShow('error', e.message);
                     if (/sesi|login/i.test(e.message)) window.location.href = '/login';
@@ -768,7 +992,7 @@ $userEmail = $userEmail ?? '';
                 }
             },
             labelFor(tab) {
-                return { umum: 'Umum', matakuliah: 'Matakuliah', kegiatan: 'Master Kegiatan', bagian: 'Master Bagian', biaya: 'Master Biaya', pengguna: 'Pengguna', email: 'Email', nomor: 'Nomor Surat', upload: 'Upload', status: 'Alur Status', audit: 'Audit' }[tab] || tab;
+                return { umum: 'Umum', matakuliah: 'Matakuliah', kegiatan: 'Master Kegiatan', bagian: 'Master Bagian', biaya: 'Master Biaya', mahasiswa: 'Mahasiswa', pengguna: 'Pengguna', email: 'Email', nomor: 'Nomor Surat', upload: 'Upload', status: 'Alur Status', audit: 'Audit' }[tab] || tab;
             }
         },
         mounted() {

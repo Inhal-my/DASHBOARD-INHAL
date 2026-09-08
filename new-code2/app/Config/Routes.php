@@ -59,6 +59,8 @@ $routes->get('/api/pengaturan/bagian', 'Api\PengaturanApi::bagianGet', ['filter'
 $routes->put('/api/pengaturan/bagian', 'Api\PengaturanApi::bagianSave', ['filter' => 'admin', 'as' => 'pengaturan-bagian-save']);
 $routes->get('/api/pengaturan/biaya', 'Api\PengaturanApi::biayaGet', ['filter' => 'admin', 'as' => 'pengaturan-biaya']);
 $routes->put('/api/pengaturan/biaya', 'Api\PengaturanApi::biayaSave', ['filter' => 'admin', 'as' => 'pengaturan-biaya-save']);
+$routes->get('/api/pengaturan/mahasiswa', 'Api\PengaturanApi::mahasiswaGet', ['filter' => 'admin', 'as' => 'pengaturan-mahasiswa']);
+$routes->put('/api/pengaturan/mahasiswa', 'Api\PengaturanApi::mahasiswaSave', ['filter' => 'admin', 'as' => 'pengaturan-mahasiswa-save']);
 $routes->get('/api/pengaturan/pengguna', 'Api\PengaturanApi::penggunaGet', ['filter' => 'admin', 'as' => 'pengaturan-pengguna']);
 $routes->put('/api/pengaturan/pengguna', 'Api\PengaturanApi::penggunaSave', ['filter' => 'admin', 'as' => 'pengaturan-pengguna-save']);
 $routes->get('/api/pengaturan/email', 'Api\PengaturanApi::emailGet', ['filter' => 'admin', 'as' => 'pengaturan-email']);
