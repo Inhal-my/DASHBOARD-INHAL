@@ -141,3 +141,18 @@
 #--------------------------------------------------------------------
 
 # curlrequest.shareOptions = false
+
+#--------------------------------------------------------------------
+# EMAIL (SMTP)
+#--------------------------------------------------------------------
+
+# email.fromEmail = 'noreply@example.com'
+# email.fromName = 'INHAL FKIK UMSU'
+# email.protocol = 'smtp'
+# email.SMTPHost = 'smtp.gmail.com'
+# email.SMTPPort = 587
+# email.SMTPUser = ''
+# email.SMTPPass = ''
+# email.SMTPCrypto = 'tls'
+# email.mailType = 'html'
+

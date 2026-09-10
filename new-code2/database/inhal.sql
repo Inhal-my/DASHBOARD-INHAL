@@ -17,7 +17,7 @@ CREATE TABLE mahasiswa (
 DROP TABLE IF EXISTS pengajuan;
 CREATE TABLE pengajuan (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  id_pengajuan VARCHAR(32) NOT NULL,
+  id_pengajuan VARCHAR(64) NOT NULL,
   timestamp DATETIME NOT NULL,
   npm VARCHAR(20) NOT NULL,
   nama_lengkap VARCHAR(191) NOT NULL,
@@ -57,7 +57,7 @@ DROP TABLE IF EXISTS detail_kegiatan;
 CREATE TABLE detail_kegiatan (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   pengajuan_id BIGINT UNSIGNED NOT NULL,
-  id_pengajuan VARCHAR(32) NOT NULL,
+  id_pengajuan VARCHAR(64) NOT NULL,
   timestamp DATETIME NOT NULL,
   jenis_kegiatan VARCHAR(64) NULL,
   pilihan VARCHAR(191) NULL,
@@ -73,7 +73,7 @@ DROP TABLE IF EXISTS status_history;
 CREATE TABLE status_history (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   pengajuan_id BIGINT UNSIGNED NOT NULL,
-  id_pengajuan VARCHAR(32) NOT NULL,
+  id_pengajuan VARCHAR(64) NOT NULL,
   timestamp DATETIME NOT NULL,
   status VARCHAR(32) NOT NULL,
   catatan TEXT NULL,
@@ -86,9 +86,9 @@ CREATE TABLE status_history (
 DROP TABLE IF EXISTS check_data;
 CREATE TABLE check_data (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  check_id VARCHAR(32) NOT NULL,
+  check_id VARCHAR(64) NOT NULL,
   pengajuan_id BIGINT UNSIGNED NULL,
-  id_pengajuan VARCHAR(32) NULL,
+  id_pengajuan VARCHAR(64) NULL,
   timestamp DATETIME NOT NULL,
   npm VARCHAR(20) NULL,
   nama_lengkap VARCHAR(191) NULL,
@@ -197,7 +197,7 @@ CREATE TABLE log_upload (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   timestamp DATETIME NOT NULL,
   pengajuan_id BIGINT UNSIGNED NULL,
-  id_pengajuan VARCHAR(32) NULL,
+  id_pengajuan VARCHAR(64) NULL,
   npm VARCHAR(20) NULL,
   nama_lengkap VARCHAR(191) NULL,
   blok VARCHAR(64) NULL,
@@ -212,7 +212,7 @@ DROP TABLE IF EXISTS berita_acara;
 CREATE TABLE berita_acara (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   timestamp DATETIME NOT NULL,
-  ba_id VARCHAR(32) NOT NULL,
+  ba_id VARCHAR(64) NOT NULL,
   bagian VARCHAR(191) NULL,
   blok VARCHAR(64) NULL,
   nama_kegiatan VARCHAR(191) NULL,
@@ -230,7 +230,7 @@ DROP TABLE IF EXISTS berita_acara_peserta;
 CREATE TABLE berita_acara_peserta (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   timestamp DATETIME NOT NULL,
-  ba_id VARCHAR(32) NOT NULL,
+  ba_id VARCHAR(64) NOT NULL,
   npm VARCHAR(20) NULL,
   nama_lengkap VARCHAR(191) NULL,
   blok VARCHAR(64) NULL,
@@ -244,7 +244,7 @@ DROP TABLE IF EXISTS berita_acara_admin;
 CREATE TABLE berita_acara_admin (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   timestamp DATETIME NOT NULL,
-  ba_id VARCHAR(32) NOT NULL,
+  ba_id VARCHAR(64) NOT NULL,
   bagian VARCHAR(191) NULL,
   blok VARCHAR(64) NULL,
   nama_kegiatan VARCHAR(191) NULL,
@@ -261,7 +261,7 @@ DROP TABLE IF EXISTS berita_acara_admin_peserta;
 CREATE TABLE berita_acara_admin_peserta (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   timestamp DATETIME NOT NULL,
-  ba_id VARCHAR(32) NOT NULL,
+  ba_id VARCHAR(64) NOT NULL,
   npm VARCHAR(20) NULL,
   nama_lengkap VARCHAR(191) NULL,
   blok VARCHAR(64) NULL,
