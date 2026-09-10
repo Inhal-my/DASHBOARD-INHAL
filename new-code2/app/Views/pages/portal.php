@@ -622,6 +622,14 @@ $userEmail = $userEmail ?? '';
                         }
                     } catch (e) { }
                 }
+            },
+            mounted() {
+                const params = new URLSearchParams(window.location.search);
+                const npm = (params.get('npm') || '').trim();
+                if (!npm) return;
+                this.npmInput = npm;
+                this.doLogin();
+                window.history.replaceState(null, '', window.location.pathname);
             }
         }).mount('#app');
 </script>

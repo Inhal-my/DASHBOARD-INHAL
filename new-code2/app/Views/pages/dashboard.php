@@ -96,6 +96,14 @@ $userEmail = $userEmail ?? '';
         .auth-error{display:flex;align-items:center;gap:.5rem;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:.8rem;font-weight:600;border-radius:.8rem;padding:.6rem .8rem;margin-bottom:.9rem}
         .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(2px);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
         .modal{background:#fff;border-radius:1.25rem;width:100%;max-width:52rem;box-shadow:0 30px 80px rgba(15,23,42,.25);overflow:hidden;margin:auto}
+        .modal-detail{max-width:min(80rem,calc(100vw - 2rem))}
+        .det2{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:1.1rem;align-items:start}
+        .file-link{display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:700;padding:.32rem .7rem;border-radius:999px;color:#4338ca;background:#eef2ff;text-decoration:none;white-space:nowrap;cursor:pointer}
+        .file-link:hover{background:#e0e7ff}
+        .file-link i{font-size:.8rem}
+        .file-link.is-ext{color:#047857;background:#ecfdf5}
+        .file-link.is-ext:hover{background:#d1fae5}
+        @media(max-width:1024px){.det2{grid-template-columns:1fr}}
         .modal-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1.15rem 1.35rem;border-bottom:1px solid #f1f5f9;flex-wrap:wrap}
         .modal-title{font-weight:800;font-size:1rem;display:flex;align-items:center;gap:.55rem}
         .modal-title i{color:#6366f1}
@@ -438,7 +446,7 @@ $userEmail = $userEmail ?? '';
         <div v-if="detail.open" class="modal-mask">
             <div class="modal-mask" style="position:static;background:transparent;backdrop-filter:none;padding:0" @click.self="closeDetail()">
                 <transition name="pop" appear>
-                    <div class="modal">
+                    <div class="modal modal-detail">
                         <div class="modal-head">
                             <div style="display:flex;align-items:center;gap:.8rem">
                                 <div style="width:2.5rem;height:2.5rem;border-radius:.8rem;background:#eef2ff;color:#4f46e5;display:inline-flex;align-items:center;justify-content:center"><i class="bi bi-person-badge"></i></div>
@@ -457,6 +465,8 @@ $userEmail = $userEmail ?? '';
 
                         <template v-else-if="detail.p">
                             <div class="modal-body">
+                                <div class="det2">
+                                <div class="det2-l">
                                 <div class="panel">
                                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.5rem">
                                         <span style="font-weight:800;font-size:.9rem;display:inline-flex;align-items:center;gap:.45rem"><i class="bi bi-person-vcard" style="color:#6366f1"></i> Data Mahasiswa</span>
@@ -493,12 +503,11 @@ $userEmail = $userEmail ?? '';
                                         </div>
                                     </div>
 
-                                    <div v-if="detail.p.hasSurat || detail.p.hasAcc || detail.p.hasBukti || detail.p.hasFinal" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem;padding-top:.9rem;border-top:1px dashed #e2e8f0">
-                                        <span v-if="detail.p.hasSurat" class="flag-on"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</span>
-                                        <span v-if="detail.p.hasAcc" class="flag-on"><i class="bi bi-patch-check"></i>ACC INHAL</span>
-                                        <span v-if="detail.p.hasBukti" class="flag-on"><i class="bi bi-cash-coin"></i>Bukti Bayar</span>
-                                        <span v-if="detail.p.hasFinal" class="flag-on"><i class="bi bi-file-earmark-pdf"></i>Final</span>
-                                        <a v-if="detail.p.linkSurat && isHttp(detail.p.linkSurat)" class="link" style="font-size:.75rem" :href="detail.p.linkSurat" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Buka tautan</a>
+                                    <div v-if="detail.p.linkAcc || detail.p.linkBukti || detail.p.linkFinal || (detail.p.linkSurat && isHttp(detail.p.linkSurat))" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem;padding-top:.9rem;border-top:1px dashed #e2e8f0">
+                                        <a v-if="detail.p.linkAcc" class="file-link" :href="detail.p.linkAcc" target="_blank" title="Buka ACC INHAL"><i class="bi bi-patch-check"></i>ACC INHAL</a>
+                                        <a v-if="detail.p.linkBukti" class="file-link is-ext" :href="detail.p.linkBukti" target="_blank" title="Buka bukti bayar"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
+                                        <a v-if="detail.p.linkFinal" class="file-link" :href="detail.p.linkFinal" target="_blank" title="Buka file final"><i class="bi bi-file-earmark-pdf"></i>Final</a>
+                                        <a v-if="detail.p.linkSurat && isHttp(detail.p.linkSurat)" class="file-link is-ext" :href="detail.p.linkSurat" target="_blank" title="Buka surat keterangan"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
                                     </div>
                                 </div>
 
@@ -562,6 +571,22 @@ $userEmail = $userEmail ?? '';
                                         </div>
                                     </div>
                                 </div>
+                                </div>
+                                <div class="det2-r">
+                                <div class="panel-white">
+                                    <div style="font-weight:800;font-size:.9rem;margin-bottom:.8rem;display:inline-flex;align-items:center;gap:.45rem"><i class="bi bi-file-earmark-text" style="color:#6366f1"></i> Berita Acara Terkait</div>
+                                    <div v-if="detailBaRows.length">
+                                        <div v-for="b in detailBaRows" :key="b.baId" style="display:flex;align-items:center;gap:.75rem;border-bottom:1px solid #f1f5f9;padding:.7rem 0">
+                                            <div style="flex:1;min-width:0">
+                                                <div style="font-weight:700;font-size:.84rem;color:#0f172a;word-break:break-word">{{ b.namaKegiatan }}</div>
+                                                <div style="font-size:.72rem;color:#94a3b8">Blok {{ b.blok }} · {{ formatTanggal(b.tanggalPelaksanaan) }} · {{ b.jumlahPeserta }} peserta</div>
+                                            </div>
+                                            <a v-if="b.file_path || b.file_name" :href="'/files/ba/' + b.baId" target="_blank" class="file-link" title="Buka PDF berita acara"><i class="bi bi-file-earmark-pdf"></i>Lihat PDF</a>
+                                            <span v-else style="font-size:.72rem;color:#cbd5e1;font-weight:700">File belum diunggah</span>
+                                        </div>
+                                    </div>
+                                    <div v-else style="font-size:.8rem;color:#94a3b8;padding:.2rem 0">Belum ada berita acara untuk NPM ini.</div>
+                                </div>
 
                                 <div class="panel-white">
                                     <div style="font-weight:800;font-size:.9rem;margin-bottom:.8rem;display:inline-flex;align-items:center;gap:.45rem"><i class="bi bi-clock-history" style="color:#6366f1"></i> Riwayat Status</div>
@@ -601,6 +626,8 @@ $userEmail = $userEmail ?? '';
                                         <button class="btn btn-soft btn-sm" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>ACC</button>
                                         <button class="btn btn-danger-soft btn-sm" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
                                     </div>
+                                </div>
+                                </div>
                                 </div>
 
                                 <datalist id="dosenList">
@@ -820,6 +847,12 @@ $userEmail = $userEmail ?? '';
                     if (q && this.norm(r.npm).indexOf(q) === -1 && this.norm(r.namaLengkap).indexOf(q) === -1) return false;
                     return true;
                 });
+            },
+            detailBaRows() {
+                if (!this.detail.p || !this.detail.p.npm) return [];
+                const npm = String(this.detail.p.npm).trim();
+                if (!npm) return [];
+                return (this.baRows || []).filter(b => (b.peserta || []).some(p => String(p.npm || '').trim() === npm));
             },
             statCards() {
                 const s = this.stats.perStatus || {};
@@ -1163,6 +1196,7 @@ $userEmail = $userEmail ?? '';
                 this.detail.editDetailIndex = -1;
                 this.detail.loading = true;
                 this.detail.history = [];
+                if (!this.baRows.length) this.loadBa();
                 this.reloadDetail(row.idPengajuan);
             },
             closeDetail() {
@@ -1301,25 +1335,43 @@ $userEmail = $userEmail ?? '';
                 }
             },
             async updateStatus() {
+                const id = this.detail.p ? this.detail.p.idPengajuan : '';
+                const prev = this.detail.p ? this.detail.p.status : '';
                 const status = this.detail.status;
                 const catatan = (this.detail.catatan || '').trim();
                 if (status === 'Ditolak' && !catatan) {
                     this.showToast('Catatan wajib diisi saat menolak pengajuan.', 'error');
                     return;
                 }
+                if (!id) return;
                 this.loading = true;
                 try {
-                    await apiFetch('PUT', 'pengajuan/' + encodeURIComponent(this.detail.p.idPengajuan) + '/status', {
+                    await apiFetch('PUT', 'pengajuan/' + encodeURIComponent(id) + '/status', {
                         status: status,
                         catatan: catatan
                     });
                     this.showToast('Status diperbarui menjadi ' + status + '.');
                     this.detail.open = false;
                     await this.reloadAll();
+                    if (status !== prev) {
+                        await this.sendStatusEmail(status, id);
+                    }
                 } catch (e) {
                     this.showToast('Gagal memperbarui status: ' + e.message, 'error');
                 } finally {
                     this.loading = false;
+                }
+            },
+            async sendStatusEmail(status, id) {
+                const ep = status === 'ACC'
+                    ? 'email-final'
+                    : (status === 'Diterima' || status === 'Ditolak' ? 'email-status' : '');
+                if (!ep) return;
+                try {
+                    const res = await apiFetch('POST', 'pengajuan/' + encodeURIComponent(id) + '/' + ep);
+                    this.showToast((res.data && res.data.message) || 'Email notifikasi terkirim ke mahasiswa.');
+                } catch (e) {
+                    this.showToast('Status tersimpan, tetapi email gagal terkirim: ' + e.message, 'error');
                 }
             },
             async quickStatus(status) {

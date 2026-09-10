@@ -407,8 +407,10 @@ $userEmail = $userEmail ?? '';
                             formData.tanggalKegiatan = labs[0].tanggal || '';
                         }
                         const res = await this.run('pengajuan', formData);
+                        const successNpm = this.form.npm.trim();
                         this.result = { success: true, message: res.message || 'Pengajuan berhasil dikirim.', idPengajuan: res.id_pengajuan };
                         this.resetForm();
+                        window.location.href = '/portal?npm=' + encodeURIComponent(successNpm);
                     } catch (e) {
                         this.result = { success: false, message: String(e) };
                     } finally {

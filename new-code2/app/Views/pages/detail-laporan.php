@@ -421,6 +421,49 @@ $userEmail = $userEmail ?? '';
     </transition>
 </div>
 
+<script>
+    (function () {
+        var shown = false;
+        window.__pageFatal = function (msg) {
+            var app = document.getElementById('app');
+            if (shown || !app) return;
+            shown = true;
+            app.removeAttribute('v-cloak');
+            app.setAttribute('style', 'display:block');
+            var wrap = document.createElement('div');
+            wrap.setAttribute('style', 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem');
+            var card = document.createElement('div');
+            card.setAttribute('style', 'max-width:40rem;width:100%;background:#fff;border-radius:1.1rem;box-shadow:0 10px 40px rgba(15,23,42,.12);padding:1.75rem;text-align:center');
+            var icon = document.createElement('div');
+            icon.setAttribute('style', 'display:inline-flex;align-items:center;justify-content:center;width:3.1rem;height:3.1rem;border-radius:1rem;background:#fef2f2;color:#e11d48;margin:0 auto .9rem');
+            icon.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+            var title = document.createElement('h2');
+            title.setAttribute('style', 'margin:0 0 .5rem;font-size:1.05rem;font-weight:800;color:#0f172a');
+            title.textContent = 'Halaman Laporan tidak dapat dimuat';
+            var msgEl = document.createElement('p');
+            msgEl.setAttribute('style', 'font-size:.82rem;color:#64748b;word-break:break-word;background:#f8fafc;border:1px solid #f1f5f9;border-radius:.7rem;padding:.7rem .8rem;margin:0;text-align:left');
+            msgEl.textContent = msg || 'Terjadi galat yang tidak diketahui.';
+            var actions = document.createElement('div');
+            actions.setAttribute('style', 'display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:1.1rem');
+            actions.innerHTML = '<button type="button" onclick="location.reload()" style="border:0;cursor:pointer;padding:.55rem 1rem;border-radius:.7rem;font-weight:700;font-size:.84rem;background:#4f46e5;color:#fff">Muat Ulang</button><a href="/login" style="padding:.55rem 1rem;border-radius:.7rem;font-weight:700;font-size:.84rem;color:#475569;text-decoration:none;border:1px solid #e2e8f0">Login Ulang</a>';
+            card.appendChild(icon);
+            card.appendChild(title);
+            card.appendChild(msgEl);
+            card.appendChild(actions);
+            wrap.appendChild(card);
+            app.appendChild(wrap);
+        };
+        window.addEventListener('error', function (ev) {
+            if (!(ev && ev.error)) return;
+            window.__pageFatal('Galat JavaScript: ' + (ev.error.message || String(ev.error)));
+        });
+        window.addEventListener('unhandledrejection', function (ev) {
+            var r = ev && ev.reason;
+            window.__pageFatal('Galat tidak tertangani: ' + (r && r.message ? r.message : String(r)));
+        });
+    })();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 <script>
     const { createApp } = Vue;
@@ -485,7 +528,7 @@ $userEmail = $userEmail ?? '';
         }
     }
 
-    createApp({
+    const app = createApp({
         data() {
             return {
                 bootLoading: true,
@@ -968,6 +1011,8 @@ $userEmail = $userEmail ?? '';
                     'Dibatalkan': 'st-dibatalkan'
                 }[status] || 'st-dibatalkan';
             },
+            fmtRupiah: (num) => fmtRupiah(num),
+            fmtTanggalWaktu: (v) => fmtTanggalWaktu(v),
             applyBootstrap(b) {
                 this.sessionNama = b.nama || 'Admin';
                 this.summary = b.summary || {};
@@ -990,6 +1035,9 @@ $userEmail = $userEmail ?? '';
                     this.loggedIn = true;
                 } catch (e) {
                     this.loggedIn = false;
+                    if (window.__pageFatal) {
+                        window.__pageFatal('Gagal memuat data laporan. ' + ((e && e.message) ? e.message : 'Sesi berakhir atau server tidak merespons.') + ' Pastikan Anda sudah login sebagai admin.');
+                    }
                 } finally {
                     this.bootLoading = false;
                 }
@@ -1145,5 +1193,11 @@ $userEmail = $userEmail ?? '';
         mounted() {
             this.boot();
         }
-    }).mount('#app');
+    });
+    app.config.errorHandler = function (err) {
+        if (window.__pageFatal) {
+            window.__pageFatal('Terjadi galat saat merender halaman Laporan. ' + ((err && err.message) ? err.message : String(err)));
+        }
+    };
+    app.mount('#app');
 </script>
