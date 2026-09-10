@@ -83,6 +83,12 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 
 Untuk produksi, buat file migrasi terpisah tanpa `DROP TABLE` dan tanpa seed, lalu jalankan file itu.
 
+Migrasi panel admin (`CREATE TABLE IF NOT EXISTS`, aman untuk data yang sudah ada):
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-09-10-admin-panels.sql
+```
+
 ## 4. Deploy Worker + aset
 
 ```bash
@@ -105,6 +111,10 @@ Buka URL Worker di browser, atau:
 # ganti URL sesuai hasil deploy
 curl https://inhal-poc.new-code1-cf.workers.dev/api/health
 curl https://inhal-poc.new-code1-cf.workers.dev/api/registration-options
+curl -o /dev/null -w "%{http_code}\n" https://inhal-poc.new-code1-cf.workers.dev/dashboard
+curl -o /dev/null -w "%{http_code}\n" https://inhal-poc.new-code1-cf.workers.dev/detail-laporan
+curl -o /dev/null -w "%{http_code}\n" https://inhal-poc.new-code1-cf.workers.dev/bagian
+curl -s https://inhal-poc.new-code1-cf.workers.dev/api/rpc -H 'Content-Type: application/json' -d '{"fn":"getBaginaConfig","args":[]}'
 ```
 
 Cek data D1 remote:
