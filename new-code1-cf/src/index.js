@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { getMasterOptions, getBuktiMode, getStudentNameByNpm } from './repo.js';
 import { registerPengajuan } from './pengajuan.js';
+import { getStudentPortalData } from './portal.js';
 
 const app = new Hono();
 
@@ -37,6 +38,15 @@ app.post('/api/pengajuan', async (c) => {
   }
   const result = await registerPengajuan(c.env.DB, body);
   return c.json(result, result.success ? 200 : 400);
+});
+
+app.get('/api/portal/:npm', async (c) => {
+  const data = await getStudentPortalData(c.env.DB, c.req.param('npm'));
+  return c.json(data);
+});
+
+app.post('/api/portal/upload', (c) => {
+  return c.json({ success: false, message: 'Fitur unggah berkas akan tersedia pada tahap berikutnya.' });
 });
 
 export default app;

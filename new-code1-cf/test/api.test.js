@@ -38,3 +38,32 @@ describe('read endpoints', () => {
     expect(await res.json()).toBe('');
   });
 });
+
+describe('portal endpoints', () => {
+  it('returns portal data for a known npm', async () => {
+    const res = await SELF.fetch('http://example.com/api/portal/2201010001');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.nama).toBe('Aisyah Putri');
+    expect(Array.isArray(body.history)).toBe(true);
+    expect(body.buktiMode).toBe('strict');
+  });
+
+  it('returns an error object for an unknown npm', async () => {
+    const res = await SELF.fetch('http://example.com/api/portal/9999999999');
+    expect(res.status).toBe(200);
+    expect(typeof (await res.json()).error).toBe('string');
+  });
+
+  it('stubs the upload endpoint', async () => {
+    const res = await SELF.fetch('http://example.com/api/portal/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.message).toContain('tahap berikutnya');
+  });
+});
