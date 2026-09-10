@@ -34,6 +34,10 @@ npm test
 | GET | `/api/mahasiswa/:npm` | Nama mahasiswa (string) |
 | POST | `/api/pengajuan` | Simpan pendaftaran |
 
+## Deploy ke Cloudflare
+
+Lihat `DEPLOY.md`.
+
 ## Cakupan
 
 Termasuk: halaman index, 3 endpoint, D1 (7 tabel + seed), test otomatis.
