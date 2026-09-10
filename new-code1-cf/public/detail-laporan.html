@@ -1623,7 +1623,10 @@
                     const list = this.dosenNpmMap[String(npm || '').trim()] || [];
                     if (!list.length) return null;
                     const blok = String(baBlok || '').trim();
-                    return list.find(x => x.blok && x.blok === blok) || list[0];
+                    const withDosen = x => x.dosen && x.dosen !== 'Tanpa Dosen';
+                    return list.find(x => x.blok && x.blok === blok && withDosen(x))
+                        || list.find(x => x.blok && x.blok === blok)
+                        || list[0];
                 },
                 biayaForNpm(npm, baBlok) {
                     const list = this.npmBiayaMap[String(npm || '').trim()] || [];
