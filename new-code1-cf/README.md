@@ -42,11 +42,30 @@ Halaman:
 
 Unggah berkas ACC/bukti bayar belum aktif (ditunda ke tahap berikutnya).
 
+## Impor data asli dari Google Sheets
+
+Data asli (Mahasiswa, MasterKegiatan, MasterBagian, Config, Pengajuan, DetailKegiatan)
+dapat diimpor dari Google Sheet sumber. Script menghasilkan SQL lalu menerapkannya ke D1.
+
+```bash
+# Hasilkan SQL (default: /tmp/opencode/inhal-real-import.sql)
+node scripts/import-sheets.mjs
+
+# Terapkan ke D1 lokal
+npx wrangler d1 execute inhal-poc --local --file=/tmp/opencode/inhal-real-import.sql
+
+# Terapkan ke D1 produksi
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=/tmp/opencode/inhal-real-import.sql
+```
+
+Impor bersifat idempotent (`DELETE` lalu `INSERT`). Sheet ID dapat diubah lewat
+env `INHAL_SHEET_ID`. Hasil SQL tidak di-commit karena memuat data pribadi.
+
 ## Deploy ke Cloudflare
 
 Lihat `DEPLOY.md`.
 
 ## Cakupan
 
-Termasuk: halaman index, 3 endpoint, D1 (7 tabel + seed), test otomatis.
-Belum termasuk: auth, email, R2, halaman lain, migrasi data asli, deploy produksi.
+Termasuk: halaman index + portal, endpoint terkait, D1 (7 tabel), impor data asli, test otomatis.
+Belum termasuk: auth, email, R2, halaman lain, unggah berkas.
