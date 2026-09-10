@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { getMasterOptions, getBuktiMode, getStudentNameByNpm } from './repo.js';
 import { registerPengajuan } from './pengajuan.js';
 import { getStudentPortalData } from './portal.js';
+import { dispatchRpc } from './rpc.js';
 
 const app = new Hono();
 
@@ -47,6 +48,13 @@ app.get('/api/portal/:npm', async (c) => {
 
 app.post('/api/portal/upload', (c) => {
   return c.json({ success: false, message: 'Fitur unggah berkas akan tersedia pada tahap berikutnya.' });
+});
+
+app.post('/api/rpc', async (c) => {
+  let body = {};
+  try { body = await c.req.json(); } catch (e) { body = {}; }
+  const result = await dispatchRpc(c.env.DB, body.fn, body.args);
+  return c.json(result);
 });
 
 export default app;
