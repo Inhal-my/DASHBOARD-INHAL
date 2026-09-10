@@ -1,0 +1,14 @@
+name = "inhal-poc"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc"
+database_id = "00000000-0000-0000-0000-000000000000"
