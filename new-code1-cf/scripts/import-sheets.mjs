@@ -1,8 +1,16 @@
 import { writeFile } from 'node:fs/promises';
-import { parseGvizResponse, tableToRecordsAuto, tableToPositionalRecords, buildImportSql } from '../src/sheetImport.js';
+import { execFileSync } from 'node:child_process';
+import { parseGvizResponse, tableToRecordsAuto, tableToPositionalRecords, mapRecords, buildInsertStatements } from '../src/sheetImport.js';
 
 const SHEET_ID = process.env.INHAL_SHEET_ID || '1awscv3N22hW9XMddsgk21p135Q8NOFXUcylH6BcJ518';
-const OUTPUT = process.argv[2] || '/tmp/opencode/inhal-real-import.sql';
+const OUTPUT = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : '/tmp/opencode/inhal-real-import.sql';
+
+const DELETE_ORDER = [
+  'berita_acara_peserta', 'berita_acara_admin_peserta', 'berita_acara_admin', 'berita_acara',
+  'check_data', 'status_history', 'detail_kegiatan', 'pengajuan', 'nomor_surat',
+  'config', 'master_biaya', 'master_bagian', 'master_kegiatan', 'mahasiswa',
+  'bagian_staff', 'admin'
+];
 
 const SPECS = [
   {
@@ -154,6 +162,18 @@ async function fetchTable(sheet) {
   return parseGvizResponse(text);
 }
 
+function buildSql(specs) {
+  const parts = ['PRAGMA foreign_keys = OFF;'];
+  for (const table of DELETE_ORDER) parts.push(`DELETE FROM "${table}";`);
+  for (const spec of specs) {
+    const columns = Object.values(spec.columnMap);
+    const rows = mapRecords(spec.records, spec.columnMap);
+    parts.push(...buildInsertStatements(spec.table, columns, rows));
+  }
+  parts.push('PRAGMA foreign_keys = ON;');
+  return parts.join('\n') + '\n';
+}
+
 async function main() {
   const specs = [];
   for (const spec of SPECS) {
@@ -162,9 +182,14 @@ async function main() {
     specs.push({ ...spec, records });
     console.log(`${spec.sheet.padEnd(16)} -> ${spec.table.padEnd(16)} ${records.length} baris`);
   }
-  const sql = buildImportSql(specs);
+  const sql = buildSql(specs);
   await writeFile(OUTPUT, sql, 'utf8');
   console.log(`SQL ditulis ke ${OUTPUT} (${sql.length} byte)`);
+
+  if (process.argv.includes('--execute')) {
+    console.log('Menjalankan wrangler d1 execute --remote ...');
+    execFileSync('npx', ['wrangler', 'd1', 'execute', 'inhal-poc', '--remote', `--file=${OUTPUT}`], { stdio: 'inherit' });
+  }
 }
 
 main().catch((err) => {
