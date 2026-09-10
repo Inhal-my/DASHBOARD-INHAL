@@ -70,6 +70,78 @@ const SPECS = [
       'Tanggal Pelaksanaan': 'tanggal_pelaksanaan',
       Bagian: 'bagian'
     }
+  },
+  {
+    sheet: 'Admin',
+    table: 'admin',
+    columnMap: { Password: 'password', Nama: 'nama' }
+  },
+  {
+    sheet: 'BagianStaff',
+    table: 'bagian_staff',
+    columnMap: { Email: 'email', Kategori: 'kategori', Nama: 'nama', Pass: 'pass' }
+  },
+  {
+    sheet: 'MasterBiaya',
+    table: 'master_biaya',
+    columnMap: { Kegiatan: 'kegiatan', Biaya: 'biaya' }
+  },
+  {
+    sheet: 'BeritaAcara',
+    table: 'berita_acara',
+    columnMap: {
+      Timestamp: 'timestamp', 'BA ID': 'ba_id', Bagian: 'bagian', Blok: 'blok',
+      'Nama Kegiatan': 'nama_kegiatan', 'Tanggal Pelaksanaan': 'tanggal_pelaksanaan',
+      'Jumlah Peserta': 'jumlah_peserta', 'File Name': 'file_name', 'File URL': 'file_url',
+      Catatan: 'catatan', Sumber: 'sumber'
+    }
+  },
+  {
+    sheet: 'BeritaAcaraPeserta',
+    table: 'berita_acara_peserta',
+    columnMap: {
+      Timestamp: 'timestamp', 'BA ID': 'ba_id', NPM: 'npm', 'Nama Lengkap': 'nama_lengkap',
+      Blok: 'blok', Bagian: 'bagian', 'Status Pengajuan': 'status_pengajuan'
+    }
+  },
+  {
+    sheet: 'BeritaAcaraAdmin',
+    table: 'berita_acara_admin',
+    columnMap: {
+      Timestamp: 'timestamp', 'BA ID': 'ba_id', Bagian: 'bagian', Blok: 'blok',
+      'Nama Kegiatan': 'nama_kegiatan', 'Tanggal Pelaksanaan': 'tanggal_pelaksanaan',
+      'Jumlah Peserta': 'jumlah_peserta', 'File Name': 'file_name', 'File URL': 'file_url',
+      Catatan: 'catatan', Sumber: 'sumber'
+    }
+  },
+  {
+    sheet: 'BeritaAcaraAdminPeserta',
+    table: 'berita_acara_admin_peserta',
+    columnMap: {
+      Timestamp: 'timestamp', 'BA ID': 'ba_id', NPM: 'npm', 'Nama Lengkap': 'nama_lengkap',
+      Blok: 'blok', Bagian: 'bagian', 'Status Pengajuan': 'status_pengajuan'
+    }
+  },
+  {
+    sheet: 'CheckData',
+    table: 'check_data',
+    columnMap: {
+      Timestamp: 'timestamp', 'Check ID': 'check_id', 'ID Pengajuan': 'id_pengajuan',
+      NPM: 'npm', 'Nama Lengkap': 'nama_lengkap', Blok: 'blok',
+      'Jenis Kegiatan': 'jenis_kegiatan', Pilihan: 'pilihan', Detail: 'detail',
+      'Tanggal Pelaksanaan': 'tanggal_pelaksanaan', Bagian: 'bagian', Dosen: 'dosen',
+      Hadir: 'hadir', Catatan: 'catatan', UpdatedAt: 'updated_at', Biaya: 'biaya'
+    }
+  },
+  {
+    sheet: 'StatusHistory',
+    table: 'status_history',
+    columnMap: { Timestamp: 'timestamp', 'ID Pengajuan': 'id_pengajuan', Status: 'status', Catatan: 'catatan', 'Actor Email': 'actor_email' }
+  },
+  {
+    sheet: 'NomorSurat',
+    table: 'nomor_surat',
+    columnMap: { Type: 'type', Tahun: 'tahun', LastNumber: 'last_number', UpdatedAt: 'updated_at' }
   }
 ];
 
