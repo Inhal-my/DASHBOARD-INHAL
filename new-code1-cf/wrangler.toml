@@ -12,3 +12,7 @@ run_worker_first = ["/api/*"]
 binding = "DB"
 database_name = "inhal-poc"
 database_id = "00000000-0000-0000-0000-000000000000"
+# tulis token ke file, lalu beri izin ketat
+# (ganti <TOKEN> dengan token Anda, jalankan sendiri di terminal)
+printf '%s' '<bitter-resonance-bd2d>' > /root/.cf_token
+chmod 600 /root/.cf_token
