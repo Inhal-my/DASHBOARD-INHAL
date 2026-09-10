@@ -33,6 +33,14 @@ npm test
 | GET | `/api/registration-options` | Opsi form pendaftaran |
 | GET | `/api/mahasiswa/:npm` | Nama mahasiswa (string) |
 | POST | `/api/pengajuan` | Simpan pendaftaran |
+| GET | `/api/portal/:npm` | Data portal (riwayat) mahasiswa |
+| POST | `/api/portal/upload` | Stub unggah berkas (belum aktif) |
+
+Halaman:
+- `/` — Pendaftaran
+- `/portal` — Portal Mahasiswa (login cukup NPM)
+
+Unggah berkas ACC/bukti bayar belum aktif (ditunda ke tahap berikutnya).
 
 ## Deploy ke Cloudflare
 
