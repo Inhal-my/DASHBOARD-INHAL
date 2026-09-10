@@ -5,6 +5,7 @@ import {
   parseGvizResponse,
   tableToRecords,
   tableToRecordsAuto,
+  tableToPositionalRecords,
   mapRecords,
   buildImportSql
 } from '../src/sheetImport.js';
@@ -68,6 +69,22 @@ google.visualization.Query.setResponse({"table":{"cols":[{"label":""},{"label":"
 ]}});`;
     const records = tableToRecordsAuto(parseGvizResponse(text));
     expect(records).toEqual([{ Key: 'BUKTI_MODE', Value: 'lenggang' }]);
+  });
+});
+
+describe('tableToPositionalRecords', () => {
+  it('skips the header row and maps by column position', () => {
+    const text = `/*O_o*/
+google.visualization.Query.setResponse({"table":{"cols":[{"label":""},{"label":""}],"rows":[
+{"c":[{"v":"Password"},{"v":"Nama"}]},
+{"c":[{"v":"rahasia"},{"v":"Admin Utama"}]},
+{"c":[{"v":"bgn"},{"v":"Bagian Umum"}]}
+]}});`;
+    const records = tableToPositionalRecords(parseGvizResponse(text), 2);
+    expect(records).toEqual([
+      { '#0': 'rahasia', '#1': 'Admin Utama' },
+      { '#0': 'bgn', '#1': 'Bagian Umum' }
+    ]);
   });
 });
 

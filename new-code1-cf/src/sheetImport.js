@@ -62,6 +62,18 @@ export function tableToRecordsAuto(table) {
   });
 }
 
+export function tableToPositionalRecords(table, count) {
+  const rows = table.rows || [];
+  if (!rows.length) return [];
+  const n = Math.max(0, Number(count) || 0);
+  return rows.slice(1).map((row) => {
+    const cells = row.c || [];
+    const record = {};
+    for (let i = 0; i < n; i++) record['#' + i] = cellToValue(cells[i]);
+    return record;
+  });
+}
+
 export function mapRecords(records, columnMap) {
   const labels = Object.keys(columnMap);
   return records.map((record) => labels.map((label) => (record[label] == null ? '' : record[label])));

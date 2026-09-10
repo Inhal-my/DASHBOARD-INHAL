@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { parseGvizResponse, tableToRecordsAuto, buildImportSql } from '../src/sheetImport.js';
+import { parseGvizResponse, tableToRecordsAuto, tableToPositionalRecords, buildImportSql } from '../src/sheetImport.js';
 
 const SHEET_ID = process.env.INHAL_SHEET_ID || '1awscv3N22hW9XMddsgk21p135Q8NOFXUcylH6BcJ518';
 const OUTPUT = process.argv[2] || '/tmp/opencode/inhal-real-import.sql';
@@ -74,7 +74,8 @@ const SPECS = [
   {
     sheet: 'Admin',
     table: 'admin',
-    columnMap: { Password: 'password', Nama: 'nama' }
+    positions: 2,
+    columnMap: { '#0': 'password', '#1': 'nama' }
   },
   {
     sheet: 'BagianStaff',
@@ -145,18 +146,19 @@ const SPECS = [
   }
 ];
 
-async function fetchSheet(sheet) {
+async function fetchTable(sheet) {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Gagal mengambil sheet ${sheet}: HTTP ${res.status}`);
   const text = await res.text();
-  return tableToRecordsAuto(parseGvizResponse(text));
+  return parseGvizResponse(text);
 }
 
 async function main() {
   const specs = [];
   for (const spec of SPECS) {
-    const records = await fetchSheet(spec.sheet);
+    const table = await fetchTable(spec.sheet);
+    const records = spec.positions ? tableToPositionalRecords(table, spec.positions) : tableToRecordsAuto(table);
     specs.push({ ...spec, records });
     console.log(`${spec.sheet.padEnd(16)} -> ${spec.table.padEnd(16)} ${records.length} baris`);
   }
