@@ -268,6 +268,10 @@ $userEmail = $userEmail ?? '';
                                         <div v-if="detailItem.hasUpload" class="text-xs text-slate-500">Menunggu admin memverifikasi bukti unggahan Anda.</div>
                                         <p v-else class="text-xs text-slate-400">Menunggu admin memverifikasi bukti unggahan Anda.</p>
                                     </div>
+                                    <a v-if="detailItem.linkFinal" :href="detailItem.linkFinal" target="_blank" rel="noopener"
+                                        class="btn-primary mt-3 w-full !py-2.5 text-sm" style="display:inline-flex">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Unduh ACC Final (PDF)
+                                    </a>
                                 </div>
                             </div>
                         </div>

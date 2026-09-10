@@ -156,6 +156,7 @@ class PengajuanApi extends BaseApi
             return $this->respondOk([
                 'message'           => $res['message'],
                 'nomorSurat'        => $nomor,
+                'linkFinal'         => !empty($res['pathFinal']) ? '/files/final/' . $idPengajuan : '',
                 'studentEmailSent'  => $res['studentEmailSent'],
                 'bagianEmailSent'   => $res['bagianEmailSent'],
             ]);
@@ -186,7 +187,11 @@ class PengajuanApi extends BaseApi
         ]);
         audit_log_add($this->actor(), 'EMAIL_BAGIAN', $idPengajuan, 'status=' . $bagianStatus);
         if ($res['ok']) {
-            return $this->respondOk(['message' => $res['message'], 'bagianEmail' => $res['bagianEmail']]);
+            return $this->respondOk([
+                'message'     => $res['message'],
+                'bagianEmail' => $res['bagianEmail'],
+                'linkFinal'   => !empty($res['pathFinal']) ? '/files/final/' . $idPengajuan : '',
+            ]);
         }
         return $this->respondErr('Gagal mengirim email: ' . $res['message'], 500);
     }

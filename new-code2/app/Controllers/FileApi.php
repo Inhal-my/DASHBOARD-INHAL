@@ -23,7 +23,7 @@ class FileApi extends Api\BaseApi
             return $this->serveBa($auth, $idPengajuan);
         }
         if (!$admin && !$bagian) {
-            return $this->serveBuktiMahasiswa($idPengajuan);
+            return $this->serveOwnFile($idPengajuan, $jenis);
         }
 
         $p = (new PengajuanModel())->findByIdPengajuan($idPengajuan);
@@ -63,8 +63,12 @@ class FileApi extends Api\BaseApi
         return $this->respondErr('File belum tersedia.', 404);
     }
 
-    private function serveBuktiMahasiswa(string $idPengajuan)
+    private function serveOwnFile(string $idPengajuan, string $jenis)
     {
+        $cols = ['bukti' => 'path_bukti_bayar', 'final' => 'path_final'];
+        if (!isset($cols[$jenis])) {
+            return $this->respondErr('Tidak diizinkan.', 403);
+        }
         $p = (new PengajuanModel())->findByIdPengajuan($idPengajuan);
         if (!$p) {
             return $this->respondErr('Pengajuan tidak ditemukan.', 404);
@@ -73,10 +77,11 @@ class FileApi extends Api\BaseApi
         if ($npm === '' || $npm !== $p['npm']) {
             return $this->respondErr('Tidak diizinkan.', 403);
         }
-        if (empty($p['path_bukti_bayar'])) {
+        $path = $p[$cols[$jenis]] ?? null;
+        if (empty($path)) {
             return $this->respondErr('File belum tersedia.', 404);
         }
-        return $this->sendFile($p['path_bukti_bayar']);
+        return $this->sendFile($path);
     }
 
     private function sendFile(string $path): \CodeIgniter\HTTP\ResponseInterface

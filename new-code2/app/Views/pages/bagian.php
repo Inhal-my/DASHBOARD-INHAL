@@ -335,6 +335,10 @@ $pageTitle = $title ?? 'Bagian';
                                     <span class="check-npm">{{ p.npm }} · {{ p.blok }}</span>
                                 </span>
                                 <span class="chip" :class="statusClass(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                <a v-if="p.linkFinal" :href="p.linkFinal" target="_blank" rel="noopener" @click.stop
+                                    class="chip chip-soft" style="text-decoration:none" title="Unduh ACC Final">
+                                    <i class="bi bi-file-earmark-arrow-down"></i> Final
+                                </a>
                             </label>
                             <div v-if="!pickerPeserta.length" class="empty">
                                 <i class="bi bi-person-x"></i>
@@ -432,7 +436,8 @@ Vue.createApp({
                         npm: r.npm,
                         namaLengkap: r.namaLengkap,
                         blok: r.blok,
-                        statusPengajuan: r.status
+                        statusPengajuan: r.status,
+                        linkFinal: r.linkFinal || ''
                     });
                 }
                 if (finalOnly && r.status === 'Menunggu') g.blocked = true;

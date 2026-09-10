@@ -509,6 +509,10 @@ $userEmail = $userEmail ?? '';
                                         <a v-if="detail.p.linkFinal" class="file-link" :href="detail.p.linkFinal" target="_blank" title="Buka file final"><i class="bi bi-file-earmark-pdf"></i>Final</a>
                                         <a v-if="detail.p.linkSurat && isHttp(detail.p.linkSurat)" class="file-link is-ext" :href="detail.p.linkSurat" target="_blank" title="Buka surat keterangan"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
                                     </div>
+                                    <div v-if="detail.p.status === 'ACC'" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem">
+                                        <button class="btn btn-soft btn-sm" @click="resendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
+                                        <button class="btn btn-soft btn-sm" @click="resendBagianEmail()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                    </div>
                                 </div>
 
                                 <div class="panel" style="padding:0;overflow:hidden">
@@ -1370,8 +1374,40 @@ $userEmail = $userEmail ?? '';
                 try {
                     const res = await apiFetch('POST', 'pengajuan/' + encodeURIComponent(id) + '/' + ep);
                     this.showToast((res.data && res.data.message) || 'Email notifikasi terkirim ke mahasiswa.');
+                    this.syncFinalLink(res.data);
                 } catch (e) {
                     this.showToast('Status tersimpan, tetapi email gagal terkirim: ' + e.message, 'error');
+                }
+            },
+            syncFinalLink(data) {
+                if (data && data.linkFinal && this.detail.p) {
+                    this.detail.p.linkFinal = data.linkFinal;
+                }
+            },
+            async resendFinalEmail() {
+                const id = this.detail.p.idPengajuan;
+                this.loading = true;
+                try {
+                    const res = await apiFetch('POST', 'pengajuan/' + encodeURIComponent(id) + '/email-final');
+                    this.syncFinalLink(res.data);
+                    this.showToast((res.data && res.data.message) || 'Email ACC Final dikirim ulang.');
+                } catch (e) {
+                    this.showToast('Gagal mengirim email final: ' + e.message, 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            async resendBagianEmail() {
+                const id = this.detail.p.idPengajuan;
+                this.loading = true;
+                try {
+                    const res = await apiFetch('POST', 'pengajuan/' + encodeURIComponent(id) + '/email-bagian');
+                    this.syncFinalLink(res.data);
+                    this.showToast((res.data && res.data.message) || 'Email dikirim ulang khusus ke Bagian.');
+                } catch (e) {
+                    this.showToast('Gagal mengirim email ke Bagian: ' + e.message, 'error');
+                } finally {
+                    this.loading = false;
                 }
             },
             async quickStatus(status) {

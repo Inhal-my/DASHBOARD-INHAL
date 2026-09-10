@@ -39,6 +39,9 @@ class PortalApi extends BaseApi
                 'status'       => $p['status'],
                 'catatan'      => $p['catatan_admin'],
                 'hasUpload'    => !empty($p['path_acc_inhal']) || !empty($p['path_bukti_bayar']),
+                'linkFinal'    => !empty($p['path_final'])
+                    ? '/files/final/' . $p['id_pengajuan'] . '?npm=' . rawurlencode((string) $p['npm'])
+                    : '',
             ];
         }
         if ($nama === '') {

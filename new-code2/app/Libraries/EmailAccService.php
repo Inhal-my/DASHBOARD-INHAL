@@ -39,7 +39,16 @@ class EmailAccService
     public function sendFinal(array $pengajuan, array $details): array
     {
         $nomor = $this->ensureNomorSurat($pengajuan);
+        $pengajuan['nomor_surat'] = $nomor;
         $vars = $this->varsFor($pengajuan, $nomor);
+
+        $pdfNote = '';
+        $pdf = (new FinalPdfService())->ensurePdf($pengajuan, $details);
+        if ($pdf['ok']) {
+            $pengajuan['path_final'] = $pdf['path'];
+        } else {
+            $pdfNote = $pdf['message'];
+        }
 
         $studentEmail = trim((string) ($pengajuan['email'] ?? ''));
         $studentSent = false;
@@ -70,6 +79,9 @@ class EmailAccService
         }
 
         $notes = [];
+        if ($pdfNote !== '') {
+            $notes[] = $pdfNote;
+        }
         if (!$studentSent) {
             $notes[] = $studentNote;
         }
@@ -81,6 +93,7 @@ class EmailAccService
             'ok'               => $studentSent || $bagianSent,
             'message'          => $notes !== [] ? implode(' ', $notes) : 'Email final terkirim.',
             'nomorSurat'       => $nomor,
+            'pathFinal'        => $pdf['path'] ?? '',
             'studentEmailSent' => $studentSent,
             'bagianEmailSent'  => $bagianSent,
             'bagianName'       => $bagian['nama'],
@@ -103,6 +116,15 @@ class EmailAccService
         }
         $vars = $this->varsFor($pengajuan, $nomor);
         $vars['nama'] = 'Admin Bagian ' . $bagian['nama'];
+
+        $pdfNote = '';
+        $pdf = (new FinalPdfService())->ensurePdf($pengajuan, $details);
+        if ($pdf['ok']) {
+            $pengajuan['path_final'] = $pdf['path'];
+        } else {
+            $pdfNote = $pdf['message'];
+        }
+
         $res = $this->sendTemplate('acc_final', $vars, $bagian['email'], $this->finalAttachments($pengajuan));
         if (!$res['ok']) {
             return [
@@ -115,8 +137,9 @@ class EmailAccService
         }
         return [
             'ok'          => true,
-            'message'     => "Email final terkirim ke Bagian '" . $bagian['nama'] . "' (" . $bagian['email'] . ').',
+            'message'     => trim("Email final terkirim ke Bagian '" . $bagian['nama'] . "' (" . $bagian['email'] . '). ' . $pdfNote),
             'nomorSurat'  => $nomor,
+            'pathFinal'   => $pdf['path'] ?? '',
             'bagianName'  => $bagian['nama'],
             'bagianEmail' => $bagian['email'],
         ];

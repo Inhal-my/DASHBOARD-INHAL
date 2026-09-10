@@ -368,7 +368,9 @@ class BagianApi extends BaseApi
                 'bagian'      => $r['bagian'],
                 'status'      => $r['status'],
                 'linkSurat'   => $r['linkSurat'],
-                'linkFinal'   => $r['pathFinal'],
+                'linkFinal'   => !empty($r['pathFinal'])
+                    ? '/files/final/' . $r['idPengajuan']
+                    : '',
             ];
         }
 
