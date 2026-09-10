@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getMasterOptions, getBuktiMode, getStudentNameByNpm } from './repo.js';
+import { registerPengajuan } from './pengajuan.js';
 
 const app = new Hono();
 
@@ -25,6 +26,17 @@ app.get('/api/registration-options', async (c) => {
 app.get('/api/mahasiswa/:npm', async (c) => {
   const name = await getStudentNameByNpm(c.env.DB, c.req.param('npm'));
   return c.json(name);
+});
+
+app.post('/api/pengajuan', async (c) => {
+  let body;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ success: false, message: 'Data tidak valid.' }, 400);
+  }
+  const result = await registerPengajuan(c.env.DB, body);
+  return c.json(result, result.success ? 200 : 400);
 });
 
 export default app;
