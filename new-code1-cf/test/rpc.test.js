@@ -8,8 +8,8 @@ describe('dispatchRpc', () => {
     expect(res.error).toBe('Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.');
   });
   it('stubs unknown write functions', async () => {
-    const res = await dispatchRpc(env.DB, 'sendFinalEmail', ['x']);
-    expect(res).toEqual({ success: false, message: 'Fitur sendFinalEmail belum tersedia pada tahap ini.' });
+    const res = await dispatchRpc(env.DB, 'sendBulkFinalEmail', [['x']]);
+    expect(res).toEqual({ success: false, message: 'Fitur sendBulkFinalEmail belum tersedia pada tahap ini.' });
   });
   it('dispatches authenticateAdmin', async () => {
     await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();

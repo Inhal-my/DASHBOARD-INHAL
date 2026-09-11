@@ -83,3 +83,26 @@ export async function trashDriveFile(env, fileId) {
     return { ok: false };
   }
 }
+
+export async function callDriveBridge(env, payload) {
+  const cfg = bridgeConfig(env);
+  if (!cfg) return { ok: false, configured: false, message: 'Penyimpanan Drive belum dikonfigurasi.' };
+
+  let res;
+  try {
+    res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ token: cfg.token }, payload))
+    });
+  } catch (e) {
+    return { ok: false, configured: true, message: 'Gagal menghubungi penyimpanan Drive.' };
+  }
+
+  let data = {};
+  try { data = await res.json(); } catch (e) { data = {}; }
+  if (!res.ok || !data || data.success === false) {
+    return { ok: false, configured: true, message: (data && data.message) || 'Bridge Drive mengembalikan error.' };
+  }
+  return { ok: true, configured: true, data: data };
+}

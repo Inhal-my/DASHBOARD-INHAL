@@ -17,6 +17,9 @@ import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
   updatePengajuanStatus, deletePengajuanAdmin, syncLogDataToPengajuan
 } from './write/pengajuanAdmin.js';
+import {
+  sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian
+} from './write/email.js';
 
 const HANDLERS = {
   authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
@@ -52,6 +55,9 @@ const HANDLERS = {
   updatePengajuanStatus: (db, args, ctx) => updatePengajuanStatus(db, args[0], args[1], args[2], args[3], ctx),
   deletePengajuanAdmin: (db, args, ctx) => deletePengajuanAdmin(db, args[0], args[1], ctx),
   syncLogDataToPengajuan: (db, args, ctx) => syncLogDataToPengajuan(db, ctx),
+  sendStatusNotificationEmail: (db, args, ctx) => sendStatusNotificationEmail(db, args[0], ctx),
+  sendFinalEmail: (db, args, ctx) => sendFinalEmail(db, args[0], ctx),
+  sendAccFinalToBagian: (db, args, ctx) => sendAccFinalToBagian(db, args[0], ctx),
   uploadBeritaAcaraAdmin: (db, args, ctx) => saveBeritaAcaraAdmin(db, args[0], ctx),
   deleteBeritaAcaraAdmin: (db, args, ctx) => deleteBeritaAcaraAdmin(db, args[0], ctx),
   uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx)

@@ -1,5 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { resolveBagianFor } from '../read/common.js';
+import { processStatusNotification } from './email.js';
 
 const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
 
@@ -205,7 +206,26 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
   ).bind(ts, id, status, catatanVal, actor).run();
 
-  return { success: true, idPengajuan: id, nomorSurat: nomorSurat, message: 'Status diperbarui menjadi ' + status + '.' };
+  let notification = null;
+  if (status === 'Diterima' || status === 'Ditolak') {
+    try {
+      notification = await processStatusNotification(db, id, status, ctx.env);
+    } catch (e) {
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
+    }
+  }
+
+  const baseMessage = 'Status diperbarui menjadi ' + status + '.';
+  if (notification) {
+    return {
+      success: true,
+      idPengajuan: id,
+      nomorSurat: nomorSurat,
+      notification: notification,
+      message: baseMessage + (notification.ok ? ' Email notifikasi terkirim.' : ' Email notifikasi gagal: ' + notification.error)
+    };
+  }
+  return { success: true, idPengajuan: id, nomorSurat: nomorSurat, message: baseMessage };
 }
 
 export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {

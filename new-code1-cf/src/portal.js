@@ -1,6 +1,7 @@
 import { getBuktiMode, getStudentNameByNpm } from './repo.js';
 import { parseFileInput } from './uploads.js';
 import { saveDriveFile, ALLOWED_BA_MIME, MAX_BA_UPLOAD_BYTES } from './drive.js';
+import { sendReceiptEmail } from './write/email.js';
 
 const PORTAL_MIME = ALLOWED_BA_MIME;
 const PORTAL_MAX_BYTES = MAX_BA_UPLOAD_BYTES;
@@ -60,6 +61,13 @@ export async function uploadBuktiFiles(db, payload, env) {
 
   await db.prepare('UPDATE pengajuan SET link_acc_inhal = ?1, link_bukti_bayar = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
     .bind(accUrl, buktiUrl, nowIso(), idPengajuan).run();
+
+  await sendReceiptEmail(
+    db, idPengajuan,
+    accUrl || str(existing.link_acc_inhal),
+    buktiUrl || str(existing.link_bukti_bayar),
+    env
+  );
 
   return { success: true, message: 'Bukti berhasil disimpan.', linkAcc: accUrl, linkBukti: buktiUrl };
 }
