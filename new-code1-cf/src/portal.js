@@ -1,7 +1,67 @@
 import { getBuktiMode, getStudentNameByNpm } from './repo.js';
+import { parseFileInput } from './uploads.js';
+import { saveDriveFile, ALLOWED_BA_MIME, MAX_BA_UPLOAD_BYTES } from './drive.js';
+
+const PORTAL_MIME = ALLOWED_BA_MIME;
+const PORTAL_MAX_BYTES = MAX_BA_UPLOAD_BYTES;
 
 export function normalizeNpm(value) {
   return String(value == null ? '' : value).replace(/[^0-9]/g, '');
+}
+
+function str(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/\u00a0/g, ' ').trim();
+}
+
+function nowIso() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+}
+
+function startsWithPdf(base64) {
+  const clean = String(base64 || '').replace(/[^A-Za-z0-9+/=]/g, '');
+  if (clean.length < 8) return false;
+  try {
+    return atob(clean.slice(0, 8)).slice(0, 4) === '%PDF';
+  } catch (e) {
+    return false;
+  }
+}
+
+export async function uploadBuktiFiles(db, payload, env) {
+  const idPengajuan = str(payload && payload.idPengajuan);
+  if (!idPengajuan) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+  const existing = await db.prepare('SELECT id, link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
+  if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+
+  const bukti = parseFileInput(payload && payload.buktiFile);
+  const buktiMode = await getBuktiMode(db);
+  if (bukti && buktiMode === 'strict' && !startsWithPdf(bukti.data)) {
+    return { success: false, message: 'Maaf, bukti bayar bukan PDF portal. Gunakan PDF asli.' };
+  }
+
+  let accUrl = '';
+  if (payload && payload.accFile && payload.accFile.data) {
+    const up = await saveDriveFile(env, payload.accFile, 'acc-' + idPengajuan, { allowedMime: PORTAL_MIME, maxBytes: PORTAL_MAX_BYTES, label: 'ACC INHAL' });
+    if (!up.ok) return { success: false, message: up.message };
+    accUrl = up.url;
+  }
+  let buktiUrl = '';
+  if (payload && payload.buktiFile && payload.buktiFile.data) {
+    const up = await saveDriveFile(env, payload.buktiFile, 'bukti-' + idPengajuan, { allowedMime: PORTAL_MIME, maxBytes: PORTAL_MAX_BYTES, label: 'bukti bayar' });
+    if (!up.ok) return { success: false, message: up.message };
+    buktiUrl = up.url;
+  }
+  if (!accUrl && !buktiUrl) {
+    return { success: false, message: 'Tidak ada file yang diunggah.' };
+  }
+
+  await db.prepare('UPDATE pengajuan SET link_acc_inhal = ?1, link_bukti_bayar = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
+    .bind(accUrl, buktiUrl, nowIso(), idPengajuan).run();
+
+  return { success: true, message: 'Bukti berhasil disimpan.', linkAcc: accUrl, linkBukti: buktiUrl };
 }
 
 export async function getStudentPortalData(db, npm) {

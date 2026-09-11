@@ -3,6 +3,9 @@ main = "src/index.js"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
+[vars]
+GAS_DRIVE_URL = ""
+
 [assets]
 directory = "./public"
 binding = "ASSETS"

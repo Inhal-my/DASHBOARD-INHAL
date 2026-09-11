@@ -55,16 +55,16 @@ describe('portal endpoints', () => {
     expect(typeof (await res.json()).error).toBe('string');
   });
 
-  it('stubs the upload endpoint', async () => {
+  it('rejects an upload without an id pengajuan', async () => {
     const res = await SELF.fetch('http://example.com/api/portal/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{}'
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.message).toContain('tahap berikutnya');
+    expect(body.message).toContain('ID Pengajuan');
   });
 });
 

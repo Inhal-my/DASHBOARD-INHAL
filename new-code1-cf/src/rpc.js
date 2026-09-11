@@ -10,6 +10,13 @@ import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
   saveBagianStaff, saveAdminList, saveBagianBaSettings
 } from './write/master.js';
+import {
+  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian
+} from './write/beritaAcara.js';
+import {
+  updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
+  updatePengajuanStatus, deletePengajuanAdmin, syncLogDataToPengajuan
+} from './write/pengajuanAdmin.js';
 
 const HANDLERS = {
   authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
@@ -38,7 +45,16 @@ const HANDLERS = {
   saveConfig: (db, args, ctx) => saveConfig(db, args[0], ctx),
   saveBagianStaff: (db, args, ctx) => saveBagianStaff(db, args[0], ctx),
   saveAdminList: (db, args, ctx) => saveAdminList(db, args[0], ctx),
-  saveBagianBaSettings: (db, args, ctx) => saveBagianBaSettings(db, args[0], ctx)
+  saveBagianBaSettings: (db, args, ctx) => saveBagianBaSettings(db, args[0], ctx),
+  updatePengajuanFields: (db, args, ctx) => updatePengajuanFields(db, args[0], args[1], ctx),
+  updateDetailKegiatan: (db, args, ctx) => updateDetailKegiatan(db, args[0], args[1], args[2], ctx),
+  deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),
+  updatePengajuanStatus: (db, args, ctx) => updatePengajuanStatus(db, args[0], args[1], args[2], args[3], ctx),
+  deletePengajuanAdmin: (db, args, ctx) => deletePengajuanAdmin(db, args[0], args[1], ctx),
+  syncLogDataToPengajuan: (db, args, ctx) => syncLogDataToPengajuan(db, ctx),
+  uploadBeritaAcaraAdmin: (db, args, ctx) => saveBeritaAcaraAdmin(db, args[0], ctx),
+  deleteBeritaAcaraAdmin: (db, args, ctx) => deleteBeritaAcaraAdmin(db, args[0], ctx),
+  uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx)
 };
 
 export async function extractToken(db, args) {
@@ -54,14 +70,14 @@ export async function extractToken(db, args) {
   return { token: '', rest: list, session: null };
 }
 
-export async function dispatchRpc(db, fn, args, ip) {
+export async function dispatchRpc(db, fn, args, ip, env) {
   const handler = HANDLERS[String(fn)];
   if (!handler) {
     return { success: false, message: 'Fitur ' + String(fn) + ' belum tersedia pada tahap ini.' };
   }
   const { token, rest, session } = await extractToken(db, args);
   try {
-    return await handler(db, rest, { token, session, ip });
+    return await handler(db, rest, { token, session, ip, env });
   } catch (e) {
     return { error: (e && e.message) ? e.message : String(e) };
   }
