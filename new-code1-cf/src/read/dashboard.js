@@ -148,51 +148,156 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
 
 export async function getBagianAggregation(db, ctx) {
   await requireAdmin(db, ctx.token);
-  const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
-  const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
-  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
+  const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
+  const pengajuan = await all('pengajuan');
+  const details = await all('detail_kegiatan');
   const labs = await getMasterOptions(db, 'Lab');
+
   const pMap = {};
   for (const p of pengajuan) pMap[String(p.id_pengajuan || '').trim()] = toClientRow('pengajuan', p);
 
-  const bagianRows = [];
-  const bagianIndex = {};
-  const addRow = (sumber, bagian, blok, jenisKegiatan, tgl, jumlah, fileUrl, linkFinal) => {
-    blok = String(blok || '-').replace(/\s+/g, ' ').trim();
-    jenisKegiatan = String(jenisKegiatan || '-').replace(/\s+/g, ' ').trim();
-    tgl = String(tgl || '-').replace(/\s+/g, ' ').trim();
-    const key = [sumber, bagian, blok, jenisKegiatan, tgl].join('|');
-    if (bagianIndex[key] !== undefined) {
-      bagianRows[bagianIndex[key]].total += jumlah;
-      if (linkFinal && !bagianRows[bagianIndex[key]].linkFinal) bagianRows[bagianIndex[key]].linkFinal = linkFinal;
-    } else {
-      bagianIndex[key] = bagianRows.length;
-      bagianRows.push({ sumber, bagian, blok, jenisKegiatan, tanggalPelaksanaan: tgl, total: jumlah, fileUrl: fileUrl || '', linkFinal: linkFinal || '' });
-    }
+  const units = [];
+  const unitIndex = {};
+  const addPeserta = (unit, row) => {
+    const dup = unit.peserta.some((x) =>
+      (row.npm && x.npm === row.npm) || (!row.npm && row.idPengajuan && x.idPengajuan === row.idPengajuan));
+    if (!dup) unit.peserta.push(row);
   };
+
   for (const d of details) {
     const row = toClientRow('detail_kegiatan', d);
-    const p = pMap[String(row['ID Pengajuan'] || '').trim()] || {};
+    const idp = String(row['ID Pengajuan'] || '').trim();
+    const p = pMap[idp] || {};
     const bagian = resolveBagian12(row['Jenis Kegiatan'] || row.Bagian, row.Pilihan || row.Bagian, '', labs) || 'Lainnya';
+    const blok = String(p.Blok || row.Bagian || '').replace(/\s+/g, ' ').trim() || '-';
     const pilihan = String(row.Pilihan || '').trim();
     const detailText = String(row.Detail || '').trim();
-    const jenisKegiatan = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
-    addRow('Pengajuan', bagian, p.Blok, jenisKegiatan, row['Tanggal Pelaksanaan'], 1, '', p['Link Final']);
+    const label = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
+    const key = [norm(bagian), blok.toLowerCase(), norm(label)].join('|');
+    if (unitIndex[key] === undefined) {
+      unitIndex[key] = units.length;
+      units.push({ key, bagian, blok, pilihan, detail: detailText, label, tanggal: '', tanggalList: [], peserta: [], ba: [], linkFinal: '' });
+    }
+    const unit = units[unitIndex[key]];
+    addPeserta(unit, {
+      npm: String(p.NPM || '').trim(),
+      namaLengkap: String(p['Nama Lengkap'] || '').trim(),
+      blok: String(p.Blok || '').trim(),
+      statusPengajuan: String(p.Status || '').trim(),
+      idPengajuan: idp
+    });
+    const tgl = String(row['Tanggal Pelaksanaan'] || '').trim();
+    if (tgl && unit.tanggalList.indexOf(tgl) === -1) unit.tanggalList.push(tgl);
+    const lf = String(p['Link Final'] || '').trim();
+    if (lf && !unit.linkFinal) unit.linkFinal = lf;
   }
-  for (const b of ba) {
-    const row = toClientRow('berita_acara', b);
-    if (baSumber(row) !== 'Bagian') continue;
-    const bagian = resolveBagian12(row.Bagian, '', row['Nama Kegiatan'], labs);
-    if (!bagian) continue;
-    addRow('Berita Acara', bagian, row.Blok, String(row['Nama Kegiatan'] || '').trim() || 'Berita Acara', row['Tanggal Pelaksanaan'], parseInt(row['Jumlah Peserta'], 10) || 0, row['File URL']);
+
+  const normKegiatanText = (v) => norm(String(v || '').replace(/[\u2014\u2013]/g, '-'));
+
+  async function collectBa(table, pesertaTable, sumber) {
+    const rows = await all(table);
+    const ps = await all(pesertaTable);
+    const byId = {};
+    const out = [];
+    for (const r of rows) {
+      const c = toClientRow(table, r);
+      const baId = String(c['BA ID'] || '').trim();
+      const rec = {
+        baId, sumber,
+        bagian: String(c.Bagian || '').trim(),
+        blok: String(c.Blok || '').replace(/\s+/g, ' ').trim(),
+        namaKegiatan: String(c['Nama Kegiatan'] || '').replace(/\s+/g, ' ').trim(),
+        tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
+        fileUrl: String(c['File URL'] || '').trim(),
+        fileName: String(c['File Name'] || '').trim(),
+        catatan: String(c.Catatan || '').trim(),
+        timestamp: String(c.Timestamp || '').trim(),
+        peserta: []
+      };
+      byId[baId] = rec;
+      out.push(rec);
+    }
+    for (const p of ps) {
+      const baId = String(p.ba_id || '').trim();
+      if (byId[baId]) byId[baId].peserta.push({
+        npm: String(p.npm || '').trim(),
+        namaLengkap: String(p.nama_lengkap || '').trim(),
+        blok: String(p.blok || '').trim()
+      });
+    }
+    return out;
   }
-  const blokList = [];
-  bagianRows.forEach((r) => pushUnique(blokList, r.blok));
+
+  const seenBa = new Set();
+  const baList = [];
+  for (const b of [].concat(
+    await collectBa('berita_acara', 'berita_acara_peserta', 'Bagian'),
+    await collectBa('berita_acara_admin', 'berita_acara_admin_peserta', 'Admin')
+  )) {
+    const dk = [norm(b.bagian), b.blok.toLowerCase(), normKegiatanText(b.namaKegiatan), b.tanggal, b.fileUrl].join('|');
+    if (seenBa.has(dk)) continue;
+    seenBa.add(dk);
+    baList.push(b);
+  }
+
+  const bagKey = (bagian, blok) => norm(bagian) + '|' + String(blok || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const unitByBag = {};
+  for (const u of units) {
+    const k = bagKey(u.bagian, u.blok);
+    (unitByBag[k] = unitByBag[k] || []).push(u);
+  }
+
+  const orphanBa = [];
+  for (const b of baList) {
+    const bBagian = resolveBagian12(b.bagian, '', b.namaKegiatan, labs) || b.bagian;
+    const candidates = unitByBag[bagKey(bBagian, b.blok)] || [];
+    const bNpms = b.peserta.map((p) => p.npm).filter(Boolean);
+    let matched = candidates.filter((u) => u.peserta.some((p) => p.npm && bNpms.indexOf(p.npm) !== -1));
+    if (!matched.length) {
+      const bName = normKegiatanText(b.namaKegiatan);
+      matched = candidates.filter((u) => {
+        const l = normKegiatanText(u.label);
+        return !!l && (bName === l || bName.endsWith(l));
+      });
+    }
+    if (!matched.length) { orphanBa.push(b); continue; }
+    for (const u of matched) u.ba.push(b);
+  }
+
+  const npmSet = new Set();
+  for (const u of units) {
+    const covered = new Set();
+    for (const b of u.ba) for (const p of b.peserta) if (p.npm) covered.add(p.npm);
+    u.pesertaDenganBa = u.peserta.filter((p) => p.npm && covered.has(p.npm)).length;
+    u.jumlahPeserta = u.peserta.length;
+    u.statusBa = u.ba.length ? 'ada' : 'belum';
+    u.statusFinal = u.linkFinal ? 'ada' : 'belum';
+    u.tanggalList = u.tanggalList.slice().sort();
+    u.tanggal = u.tanggalList[0] || '';
+    for (const p of u.peserta) if (p.npm) npmSet.add(p.npm);
+  }
+
+  const blokSet = [];
+  for (const u of units) pushUnique(blokSet, u.blok);
+
+  const summary = {
+    totalKegiatan: units.length,
+    totalPeserta: npmSet.size,
+    denganBa: units.filter((u) => u.ba.length).length,
+    denganBaBagian: units.filter((u) => u.ba.some((b) => b.sumber === 'Bagian')).length,
+    denganBaAdmin: units.filter((u) => u.ba.some((b) => b.sumber === 'Admin')).length,
+    belumBa: units.filter((u) => !u.ba.length).length,
+    finalAcc: units.filter((u) => u.linkFinal).length
+  };
+  summary.persenLengkap = summary.totalKegiatan ? Math.round((summary.denganBa / summary.totalKegiatan) * 100) : 0;
+
   return {
     categories: getBagianOptions12(labs),
     labs,
-    rows: bagianRows,
-    filters: { bagian: getBagianOptions12(labs), blok: blokList, sumber: ['Pengajuan', 'Berita Acara'] }
+    filters: { bagian: getBagianOptions12(labs), blok: blokSet.sort(), sumber: ['Bagian', 'Admin'] },
+    summary,
+    units,
+    orphanBa
   };
 }
 
