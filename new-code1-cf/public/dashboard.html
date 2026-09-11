@@ -1419,7 +1419,7 @@
                     dosenOptions: [],
                     masterBiaya: [],
                     detail: { open: false, loading: false, showLengkap: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', baList: [], dForm: { dosen: '', tanggalPelaksanaan: '', biaya: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
-                    bagian: { rows: [], all: [], fBagian: '', fBlok: '', options: [], labs: [], bloks: [], detail: null },
+                    bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', fSumber: '', fStatusBa: '', fStatusFinal: '', q: '', onlyIncomplete: false, sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
                     bab: {
@@ -1588,83 +1588,109 @@
                 bagianBlokOptions() {
                     return (this.bagian.bloks || []).filter(b => b && b !== '-');
                 },
-                bagianMatrixCols() {
-                    const seen = [];
-                    (this.bagian.rows || []).forEach(r => {
-                        const b = String(r.blok || '').trim();
-                        if (b && b !== '-' && seen.indexOf(b) === -1) seen.push(b);
-                    });
-                    return seen.sort();
+                bagianSummary() {
+                    const units = this.bagianFilteredUnits;
+                    const npm = new Set();
+                    units.forEach(u => (u.peserta || []).forEach(p => { if (p.npm) npm.add(p.npm); }));
+                    const denganBa = units.filter(u => (u.ba || []).length).length;
+                    const total = units.length;
+                    return {
+                        totalKegiatan: total,
+                        totalPeserta: npm.size,
+                        denganBa,
+                        denganBaBagian: units.filter(u => (u.ba || []).some(b => b.sumber === 'Bagian')).length,
+                        denganBaAdmin: units.filter(u => (u.ba || []).some(b => b.sumber === 'Admin')).length,
+                        belumBa: total - denganBa,
+                        finalAcc: units.filter(u => u.linkFinal).length,
+                        persenLengkap: total ? Math.round((denganBa / total) * 100) : 0
+                    };
                 },
-                bagianMatrix() {
-                    const rows = this.bagian.rows || [];
-                    const normK = (r) => this.normBagian(r.bagian) + '|' + String(r.blok || '').trim() + '|' + this.normBagian(r.jenisKegiatan);
-                    const baRowByKey = {};
-                    rows.forEach(r => {
-                        if (r.sumber === 'Berita Acara') {
-                            const k = normK(r);
-                            if (!baRowByKey[k]) baRowByKey[k] = r;
+                bagianFilteredUnits() {
+                    const q = String(this.bagian.q || '').trim().toLowerCase();
+                    let units = this.bagian.units || [];
+                    if (this.bagian.fBagian) units = units.filter(u => u.bagian === this.bagian.fBagian);
+                    if (this.bagian.fBlok) units = units.filter(u => u.blok === this.bagian.fBlok);
+                    if (this.bagian.fSumber) units = units.filter(u => (u.ba || []).some(b => b.sumber === this.bagian.fSumber));
+                    if (this.bagian.fStatusBa) units = units.filter(u => u.statusBa === this.bagian.fStatusBa);
+                    if (this.bagian.fStatusFinal) units = units.filter(u => u.statusFinal === this.bagian.fStatusFinal);
+                    if (this.bagian.onlyIncomplete) units = units.filter(u => u.statusBa !== 'ada');
+                    if (q) {
+                        units = units.filter(u => {
+                            const hay = [u.bagian, u.blok, u.label, u.linkFinal, (u.ba || []).map(b => b.baId).join(' '),
+                                (u.peserta || []).map(p => p.npm + ' ' + p.namaLengkap).join(' ')].join(' ').toLowerCase();
+                            return hay.indexOf(q) !== -1;
+                        });
+                    }
+                    return units;
+                },
+                bagianSortedUnits() {
+                    const units = this.bagianFilteredUnits.slice();
+                    const key = this.bagian.sortKey;
+                    const dir = this.bagian.sortDir === 'asc' ? 1 : -1;
+                    const val = (u) => {
+                        if (key === 'bagian') return u.bagian;
+                        if (key === 'blok') return u.blok;
+                        if (key === 'kegiatan') return u.label;
+                        if (key === 'peserta') return Number(u.jumlahPeserta) || 0;
+                        if (key === 'ba') return u.statusBa === 'ada' ? 1 : 0;
+                        if (key === 'final') return u.statusFinal === 'ada' ? 1 : 0;
+                        return u.tanggal || '';
+                    };
+                    return units.sort((a, b) => {
+                        const va = val(a), vb = val(b);
+                        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+                        return String(va).localeCompare(String(vb)) * dir;
+                    });
+                },
+                bagianOrphanFiltered() {
+                    if (this.bagian.onlyIncomplete) return [];
+                    const q = String(this.bagian.q || '').trim().toLowerCase();
+                    return (this.bagian.orphanBa || []).filter(b => {
+                        if (this.bagian.fBagian && b.bagian !== this.bagian.fBagian) return false;
+                        if (this.bagian.fBlok && b.blok !== this.bagian.fBlok) return false;
+                        if (this.bagian.fSumber && b.sumber !== this.bagian.fSumber) return false;
+                        if (q) {
+                            const hay = [b.bagian, b.blok, b.namaKegiatan, b.baId, (b.peserta || []).map(p => p.npm + ' ' + p.namaLengkap).join(' ')].join(' ').toLowerCase();
+                            if (hay.indexOf(q) === -1) return false;
                         }
+                        return true;
                     });
-                    const cellMap = {};
-                    rows.forEach(r => {
-                        if (r.sumber !== 'Pengajuan') return;
-                        const ck = this.normBagian(r.bagian) + '|' + String(r.blok || '').trim();
-                        if (!cellMap[ck]) cellMap[ck] = { kegiatan: [], done: 0, total: 0 };
-                        const ba = baRowByKey[normK(r)];
-                        const hasBa = !!ba;
-                        const linkFinal = String(r.linkFinal || '').trim();
-                        cellMap[ck].kegiatan.push({
-                            jenisKegiatan: r.jenisKegiatan,
-                            tanggalPelaksanaan: r.tanggalPelaksanaan,
-                            total: r.total,
-                            hasBa: hasBa,
-                            fileUrl: hasBa ? ba.fileUrl : '',
-                            hasFinal: !!linkFinal,
-                            linkFinal: linkFinal
-                        });
-                        cellMap[ck].total += 1;
-                        if (hasBa) cellMap[ck].done += 1;
-                    });
-                    const cols = this.bagianMatrixCols;
-                    const colTotals = {};
-                    cols.forEach(b => { colTotals[b] = { total: 0, done: 0 }; });
-                    const bagRows = [];
-                    const rowsBags = [];
-                    (this.bagian.options || []).forEach(bag => {
-                        if (this.bagian.fBagian && bag !== this.bagian.fBagian) return;
-                        rowsBags.push(bag);
-                    });
-                    rows.forEach(r => {
-                        const b = r.bagian;
-                        if (b && rowsBags.indexOf(b) === -1 && (!this.bagian.fBagian || b === this.bagian.fBagian)) rowsBags.push(b);
-                    });
-                    rowsBags.forEach(bag => {
-                        const bKey = this.normBagian(bag);
-                        const cells = {};
-                        let rowTotal = 0, rowDone = 0;
-                        cols.forEach(blok => {
-                            const c = cellMap[bKey + '|' + blok] || { kegiatan: [], done: 0, total: 0 };
-                            cells[blok] = c;
-                            rowTotal += c.total;
-                            rowDone += c.done;
-                            colTotals[blok].total += c.total;
-                            colTotals[blok].done += c.done;
-                        });
-                        bagRows.push({ bagian: bag, cells: cells, total: rowTotal, done: rowDone });
-                    });
-                    let grandTotal = 0, grandDone = 0;
-                    bagRows.forEach(r => { grandTotal += r.total; grandDone += r.done; });
-                    return { rows: bagRows, cols: cols, colTotals: colTotals, grandTotal: grandTotal, grandDone: grandDone };
                 },
-                bagianCellDetail() {
-                    if (!this.bagian.detail) return [];
-                    const d = this.bagian.detail;
-                    const m = this.bagianMatrix;
-                    const row = m.rows.find(r => this.normBagian(r.bagian) === this.normBagian(d.bagian));
-                    if (!row) return [];
-                    const cell = row.cells[d.blok];
-                    return cell ? cell.kegiatan : [];
+                bagianTableRows() {
+                    const units = this.bagianSortedUnits.map(u => Object.assign({ __orphan: false }, u));
+                    const orphans = this.bagianOrphanFiltered.map(b => ({
+                        __orphan: true, key: 'orphan-' + b.sumber + '-' + b.baId, bagian: b.bagian, blok: b.blok,
+                        label: b.namaKegiatan, tanggal: b.tanggal, tanggalList: [b.tanggal], peserta: b.peserta,
+                        jumlahPeserta: (b.peserta || []).length, statusBa: 'ada', statusFinal: 'belum',
+                        linkFinal: '', ba: [b]
+                    }));
+                    return units.concat(orphans);
+                },
+                bagianBar() {
+                    const map = {};
+                    (this.bagianFilteredUnits || []).forEach(u => {
+                        if (!map[u.bagian]) map[u.bagian] = { bagian: u.bagian, total: 0, done: 0 };
+                        map[u.bagian].total += 1;
+                        if (u.statusBa === 'ada') map[u.bagian].done += 1;
+                    });
+                    return Object.values(map).map(g => Object.assign(g, { pct: g.total ? Math.round((g.done / g.total) * 100) : 0 }))
+                        .sort((a, b) => a.bagian.localeCompare(b.bagian));
+                },
+                bagianHeatmap() {
+                    const cols = [];
+                    (this.bagian.units || []).forEach(u => { if (u.blok && cols.indexOf(u.blok) === -1) cols.push(u.blok); });
+                    cols.sort();
+                    const bagSet = [];
+                    (this.bagian.units || []).forEach(u => { if (bagSet.indexOf(u.bagian) === -1) bagSet.push(u.bagian); });
+                    const rows = bagSet.map(bag => {
+                        const cells = {};
+                        cols.forEach(b => {
+                            const inCell = (this.bagianFilteredUnits || []).filter(u => u.bagian === bag && u.blok === b);
+                            cells[b] = { total: inCell.length, done: inCell.filter(u => u.statusBa === 'ada').length };
+                        });
+                        return { bagian: bag, cells };
+                    });
+                    return { cols, rows };
                 },
                 baDetailOptions() {
                     const blok = this.ba.form.blok;
@@ -2111,12 +2137,12 @@
                 async loadBagian() {
                     this.sectionLoading.bagian = true;
                     try {
-                        const data = await this.run('getBagianAggregation');
-                        this.bagian.all = (data && data.rows) || [];
-                        this.bagian.labs = (data && data.labs) || this.bagian.labs;
-                        this.bagian.options = (data && data.filters && data.filters.bagian) || this.bagian.options;
-                        this.bagian.bloks = (data && data.filters && data.filters.blok) || [];
-                        this.applyBagianFilter();
+                        const data = await this.run('getBagianAggregation') || {};
+                        this.bagian.units = data.units || [];
+                        this.bagian.orphanBa = data.orphanBa || [];
+                        this.bagian.labs = data.labs || this.bagian.labs;
+                        this.bagian.options = (data.filters && data.filters.bagian) || this.bagian.options;
+                        this.bagian.bloks = (data.filters && data.filters.blok) || [];
                         this.loaded.bagian = true;
                     } catch (e) {
                         this.notify('Gagal memuat laporan bagian: ' + e, false);
@@ -2645,22 +2671,59 @@
                 normBagian(v) {
                     return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
                 },
-                applyBagianFilter() {
-                    const rows = this.bagian.all.filter(r =>
-                        (!this.bagian.fBagian || r.bagian === this.bagian.fBagian) &&
-                        (!this.bagian.fBlok || r.blok === this.bagian.fBlok));
-                    this.bagian.rows = rows;
+                resetBagianFilter() {
+                    Object.assign(this.bagian, { fBagian: '', fBlok: '', fSumber: '', fStatusBa: '', fStatusFinal: '', q: '', onlyIncomplete: false });
                 },
-                openBagianCell(bagian, blok) {
-                    this.bagian.detail = { bagian: bagian, blok: blok };
+                sortBagian(key) {
+                    if (this.bagian.sortKey === key) {
+                        this.bagian.sortDir = this.bagian.sortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.bagian.sortKey = key;
+                        this.bagian.sortDir = 'asc';
+                    }
                 },
-                closeBagianDetail() {
-                    this.bagian.detail = null;
+                sortBagianIcon(key) {
+                    if (this.bagian.sortKey !== key) return 'bi-arrow-down-up opacity-40';
+                    return this.bagian.sortDir === 'asc' ? 'bi-sort-down-alt' : 'bi-sort-up-alt';
                 },
-                matrixCellClass(c) {
-                    if (c.done === c.total) return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-                    if (c.done > 0) return 'bg-amber-50 text-amber-700 ring-amber-200';
-                    return 'bg-rose-50 text-rose-700 ring-rose-200';
+                toggleBagianExpand(key) {
+                    this.bagian.expanded = Object.assign({}, this.bagian.expanded, { [key]: !this.bagian.expanded[key] });
+                },
+                openBagianFromBar(bagian) {
+                    this.bagian.fBagian = this.bagian.fBagian === bagian ? '' : bagian;
+                    this.bagian.fBlok = '';
+                },
+                openBagianFromCell(bagian, blok) {
+                    this.bagian.fBagian = bagian;
+                    this.bagian.fBlok = blok;
+                },
+                bagianStatusBaClass(status) {
+                    return status === 'ada' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700';
+                },
+                bagianStatusFinalClass(status) {
+                    return status === 'ada' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500';
+                },
+                exportBagianExcel() {
+                    if (!window.XLSX) { this.notify('Fungsi ekspor belum siap, muat ulang halaman.', false); return; }
+                    const rows = this.bagianTableRows.map(u => ({
+                        Tanggal: (u.tanggalList || [u.tanggal]).filter(Boolean).join(', '),
+                        Bagian: u.__orphan ? 'BA tanpa pengajuan' : u.bagian,
+                        Blok: u.blok,
+                        Kegiatan: u.label,
+                        'Jumlah Peserta': u.jumlahPeserta,
+                        'Status BA': u.statusBa === 'ada' ? 'Ada' : 'Belum',
+                        'Sumber BA': (u.ba || []).map(b => b.sumber).join(', '),
+                        'BA ID': (u.ba || []).map(b => b.baId).join(', '),
+                        'Link File BA': (u.ba || []).map(b => b.fileUrl).filter(Boolean).join(', '),
+                        'Status Final': u.statusFinal === 'ada' ? 'Ada' : 'Belum',
+                        'Link Final': u.linkFinal || ''
+                    }));
+                    const ws = window.XLSX.utils.json_to_sheet(rows.length ? rows : [{ Tanggal: '', Bagian: '', Blok: '', Kegiatan: '', 'Jumlah Peserta': '' }]);
+                    const wb = window.XLSX.utils.book_new();
+                    window.XLSX.utils.book_append_sheet(wb, ws, 'Laporan Bagian');
+                    const d = new Date();
+                    const p = (n) => String(n).padStart(2, '0');
+                    window.XLSX.writeFile(wb, 'laporan-bagian-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
                 },
 
                 // ---------- berita acara ----------
