@@ -1,12 +1,17 @@
 import { requireAdmin } from '../session.js';
 import { resolveBagianFor } from '../read/common.js';
 import { processStatusNotification } from './email.js';
+import { writeAuditLog } from '../audit.js';
 
 const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
 
 function str(v) {
   if (v === undefined || v === null) return '';
   return String(v).replace(/\u00a0/g, ' ').trim();
+}
+
+function actorName(ctx) {
+  return str(ctx && ctx.session && ctx.session.nama) || 'Admin';
 }
 
 function nowIso() {
@@ -124,6 +129,13 @@ export async function updatePengajuanFields(db, idPengajuan, payload, ctx) {
     vals.push(ts);
     await db.prepare('UPDATE pengajuan SET ' + assignments + ', updated_at = ?' + vals.length + ' WHERE id_pengajuan = ?' + (vals.length + 1))
       .bind(...vals, id).run();
+    await writeAuditLog(db, {
+      actor: actorName(ctx),
+      action: 'UPDATE',
+      target: 'Pengajuan',
+      detail: JSON.stringify(Object.assign({ idPengajuan: id }, clientValues)),
+      alasan: 'Pemeliharaan data admin'
+    });
   }
 
   let biayaMessage = '';
@@ -131,6 +143,13 @@ export async function updatePengajuanFields(db, idPengajuan, payload, ctx) {
     const biayaResult = await upsertBiayaCheckData(db, id, p.biaya, existing);
     if (biayaResult.success === false) return { success: false, message: biayaResult.message };
     biayaMessage = biayaResult.message || '';
+    await writeAuditLog(db, {
+      actor: actorName(ctx),
+      action: biayaResult.cleared ? 'DELETE' : 'UPDATE',
+      target: 'CheckData',
+      detail: JSON.stringify({ idPengajuan: id, biaya: str(p.biaya), cleared: !!biayaResult.cleared }),
+      alasan: 'Pemeliharaan biaya pengajuan'
+    });
   }
 
   return { success: true, message: 'Data pengajuan diperbarui.', values: clientValues, biayaMessage: biayaMessage };
@@ -164,15 +183,33 @@ export async function updateDetailKegiatan(db, idPengajuan, index, payload, ctx)
   if (cols.length) {
     const assignments = cols.map((c, i) => c + ' = ?' + (i + 1)).join(', ');
     await db.prepare('UPDATE detail_kegiatan SET ' + assignments + ' WHERE id = ?' + (vals.length + 1)).bind(...vals, rowId).run();
+    const logged = {};
+    cols.forEach((c, i) => { logged[c] = vals[i]; });
+    await writeAuditLog(db, {
+      actor: actorName(ctx),
+      action: 'UPDATE',
+      target: 'DetailKegiatan',
+      detail: JSON.stringify(Object.assign({ idPengajuan: id, index: index }, logged)),
+      alasan: 'Pemeliharaan data admin'
+    });
   }
   return { success: true, message: 'Detail kegiatan diperbarui.' };
 }
 
 export async function deleteDetailKegiatan(db, idPengajuan, index, ctx) {
   await requireAdmin(db, ctx.token);
-  const rowId = await findDetailRowId(db, str(idPengajuan), index);
+  const id = str(idPengajuan);
+  const rowId = await findDetailRowId(db, id, index);
   if (rowId === null) return { success: false, message: 'Detail kegiatan tidak ditemukan.' };
+  const row = await db.prepare('SELECT * FROM detail_kegiatan WHERE id = ?1').bind(rowId).first();
   await db.prepare('DELETE FROM detail_kegiatan WHERE id = ?1').bind(rowId).run();
+  await writeAuditLog(db, {
+    actor: actorName(ctx),
+    action: 'DELETE',
+    target: 'DetailKegiatan',
+    detail: JSON.stringify(Object.assign({ idPengajuan: id, index: index }, row || {})),
+    alasan: 'Pemeliharaan data admin'
+  });
   return { success: true, message: 'Detail kegiatan dihapus.' };
 }
 
@@ -235,7 +272,7 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
   const existing = await db.prepare('SELECT id FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
-  const tables = ['detail_kegiatan', 'status_history', 'check_data'];
+  const tables = ['detail_kegiatan', 'status_history', 'check_data', 'log_upload'];
   let deleted = 0;
   for (const table of tables) {
     const c = await db.prepare('SELECT COUNT(*) AS n FROM ' + table + ' WHERE id_pengajuan = ?1').bind(id).first();
@@ -245,6 +282,13 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
     ...tables.map((t) => db.prepare('DELETE FROM ' + t + ' WHERE id_pengajuan = ?1').bind(id)),
     db.prepare('DELETE FROM pengajuan WHERE id_pengajuan = ?1').bind(id)
   ]);
+  await writeAuditLog(db, {
+    actor: actorName(ctx),
+    action: 'DELETE',
+    target: 'Pengajuan',
+    detail: JSON.stringify({ idPengajuan: id, deleted: deleted }),
+    alasan: str(alasan)
+  });
   return { success: true, message: 'Pengajuan beserta data terkait berhasil dihapus (' + deleted + ' baris terkait).', deleted: deleted };
 }
 
@@ -323,4 +367,54 @@ export async function syncLogDataToPengajuan(db, ctx) {
     report: report,
     message: 'Sinkronisasi selesai. Dibuat: ' + report.created + ', dilewati: ' + report.skipped + ', error: ' + report.errors.length + '.'
   };
+}
+
+export async function updateCheckDataPartial(db, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const p = payload || {};
+  const id = str(p.idPengajuan || p['ID Pengajuan']);
+  if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+
+  const pilihan = str(p.pilihan);
+  const detail = str(p.detail);
+  const tanggal = str(p.tanggalPelaksanaan);
+  const ts = nowIso();
+  const found = await db.prepare(
+    'SELECT id FROM check_data WHERE id_pengajuan = ?1 AND pilihan = ?2 AND detail = ?3 AND tanggal_pelaksanaan = ?4 ORDER BY id LIMIT 1'
+  ).bind(id, pilihan, detail, tanggal).first();
+
+  const npm = str(p.npm);
+  const namaLengkap = str(p.namaLengkap);
+  const blok = str(p.blok);
+  const jenisKegiatan = str(p.jenisKegiatan);
+  const bagian = str(p.bagian);
+
+  if (found) {
+    const sets = ['npm = ?1', 'nama_lengkap = ?2', 'blok = ?3', 'jenis_kegiatan = ?4', 'bagian = ?5', 'updated_at = ?6'];
+    const vals = [npm, namaLengkap, blok, jenisKegiatan, bagian, ts];
+    if (p.dosen !== undefined) { sets.push('dosen = ?' + (vals.length + 1)); vals.push(str(p.dosen)); }
+    if (p.hadir !== undefined) { sets.push('hadir = ?' + (vals.length + 1)); vals.push(str(p.hadir)); }
+    if (p.catatan !== undefined) { sets.push('catatan = ?' + (vals.length + 1)); vals.push(str(p.catatan)); }
+    await db.prepare('UPDATE check_data SET ' + sets.join(', ') + ' WHERE id = ?' + (vals.length + 1)).bind(...vals, found.id).run();
+  } else {
+    await db.prepare(
+      'INSERT INTO check_data (timestamp, check_id, id_pengajuan, npm, nama_lengkap, blok, jenis_kegiatan, pilihan, detail, tanggal_pelaksanaan, bagian, dosen, hadir, catatan, updated_at, biaya) ' +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, '')"
+    ).bind(
+      ts, 'CHK-' + crypto.randomUUID(), id, npm, namaLengkap, blok, jenisKegiatan, pilihan, detail, tanggal,
+      bagian, str(p.dosen), str(p.hadir), str(p.catatan), ts
+    ).run();
+  }
+
+  const sets = [];
+  const vals = [];
+  if (p.dosen !== undefined) { sets.push('dosen = ?' + (vals.length + 1)); vals.push(str(p.dosen)); }
+  if (tanggal) { sets.push('tanggal_pelaksanaan = ?' + (vals.length + 1)); vals.push(tanggal); }
+  if (sets.length) {
+    sets.push('updated_at = ?' + (vals.length + 1));
+    vals.push(ts);
+    await db.prepare('UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1)).bind(...vals, id).run();
+  }
+
+  return { success: true, message: 'Data kehadiran berhasil disimpan.' };
 }

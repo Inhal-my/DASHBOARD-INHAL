@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env, SELF } from 'cloudflare:test';
+import { registerPengajuan } from '../src/pengajuan.js';
+
+afterEach(() => { vi.unstubAllGlobals(); });
 
 async function post(body) {
   return SELF.fetch('http://example.com/api/pengajuan', {
@@ -65,5 +68,30 @@ describe('POST /api/pengajuan', () => {
     expect((await res.json()).message).toContain('Data identik sudah pernah diajukan');
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM pengajuan WHERE id_pengajuan != 'INHAL-seed'").first();
     expect(n.n).toBe(0);
+  });
+
+  it('uploads the surat keterangan through the drive bridge', async () => {
+    const f = vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/SURAT1234567890ABCDEF/view' }),
+      { status: 200 }
+    ));
+    vi.stubGlobal('fetch', f);
+    const driveEnv = { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' };
+    const res = await registerPengajuan(env.DB, {
+      ...validBody,
+      fileSurat: { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' }
+    }, driveEnv);
+    expect(res.success).toBe(true);
+    const p = await env.DB.prepare('SELECT link_surat_keterangan FROM pengajuan WHERE id_pengajuan = ?1').bind(res.idPengajuan).first();
+    expect(p.link_surat_keterangan).toContain('SURAT1234567890ABCDEF');
+  });
+
+  it('fails registration when the drive bridge is not configured', async () => {
+    const res = await registerPengajuan(env.DB, {
+      ...validBody,
+      fileSurat: { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' }
+    }, {});
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('belum dikonfigurasi');
   });
 });

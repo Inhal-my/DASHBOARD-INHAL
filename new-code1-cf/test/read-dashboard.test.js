@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan } from '../src/read/dashboard.js';
 
+afterEach(() => { vi.unstubAllGlobals(); });
+
 async function adminCtx() {
-  return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }) };
+  return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } };
 }
 async function seed() {
   await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','Ujian','Diterima','')").run();
@@ -48,9 +50,13 @@ describe('dashboard read', () => {
     await seed();
     const file = { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' };
     await expect(uploadSuratKeterangan(env.DB, 'INHAL-1', file, {})).rejects.toThrow();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/SURAT1234567890ABCDEF/view' }),
+      { status: 200 }
+    )));
     const res = await uploadSuratKeterangan(env.DB, 'INHAL-1', file, await adminCtx());
     expect(res.success).toBe(true);
     const p = await env.DB.prepare('SELECT link_surat_keterangan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(p.link_surat_keterangan).toMatch(/^\/api\/files\/UPL-/);
+    expect(p.link_surat_keterangan).toContain('SURAT1234567890ABCDEF');
   });
 });

@@ -27,6 +27,15 @@ describe('session and auth', () => {
     expect(res.ok).toBe(false);
     expect(res.message).toBe('Password admin salah.');
   });
+  it('upgrades a legacy plaintext password to a hash on successful login', async () => {
+    await seedAuth();
+    const res = await authenticateAdmin(env.DB, 'rahasia');
+    expect(res.ok).toBe(true);
+    const stored = (await env.DB.prepare('SELECT password FROM admin').first()).password;
+    expect(stored).toMatch(/^pbkdf2\$/);
+    const again = await authenticateAdmin(env.DB, 'rahasia');
+    expect(again.ok).toBe(true);
+  });
   it('locks out after repeated failed admin logins from the same ip', async () => {
     await seedAuth();
     for (let i = 0; i < 5; i++) {

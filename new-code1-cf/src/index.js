@@ -38,7 +38,7 @@ app.post('/api/pengajuan', async (c) => {
   } catch {
     return c.json({ success: false, message: 'Data tidak valid.' }, 400);
   }
-  const result = await registerPengajuan(c.env.DB, body);
+  const result = await registerPengajuan(c.env.DB, body, c.env);
   return c.json(result, result.success ? 200 : 400);
 });
 

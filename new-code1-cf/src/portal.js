@@ -2,6 +2,7 @@ import { getBuktiMode, getStudentNameByNpm } from './repo.js';
 import { parseFileInput } from './uploads.js';
 import { saveDriveFile, ALLOWED_BA_MIME, MAX_BA_UPLOAD_BYTES } from './drive.js';
 import { sendReceiptEmail } from './write/email.js';
+import { writeLogUpload, getUploadLogDetail } from './audit.js';
 
 const PORTAL_MIME = ALLOWED_BA_MIME;
 const PORTAL_MAX_BYTES = MAX_BA_UPLOAD_BYTES;
@@ -34,7 +35,7 @@ function startsWithPdf(base64) {
 export async function uploadBuktiFiles(db, payload, env) {
   const idPengajuan = str(payload && payload.idPengajuan);
   if (!idPengajuan) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
-  const existing = await db.prepare('SELECT id, link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
+  const existing = await db.prepare('SELECT id, npm, nama_lengkap, blok, jenis_kegiatan, link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
   const bukti = parseFileInput(payload && payload.buktiFile);
@@ -61,6 +62,19 @@ export async function uploadBuktiFiles(db, payload, env) {
 
   await db.prepare('UPDATE pengajuan SET link_acc_inhal = ?1, link_bukti_bayar = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
     .bind(accUrl, buktiUrl, nowIso(), idPengajuan).run();
+
+  const summary = await getUploadLogDetail(db, idPengajuan);
+  await writeLogUpload(db, {
+    idPengajuan: idPengajuan,
+    npm: str(existing.npm),
+    namaLengkap: str(existing.nama_lengkap),
+    blok: str(existing.blok),
+    jenisKegiatan: str(existing.jenis_kegiatan),
+    detail: summary.detail,
+    tanggal: summary.tanggal,
+    linkAcc: accUrl,
+    linkBukti: buktiUrl
+  });
 
   await sendReceiptEmail(
     db, idPengajuan,

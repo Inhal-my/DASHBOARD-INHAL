@@ -28,6 +28,29 @@ export async function getStudentNameByNpm(db, npm) {
   return row ? (row.nama_lengkap || '') : '';
 }
 
+export async function getMahasiswaByNpm(db, npm) {
+  const row = await db.prepare('SELECT npm, nama_lengkap, email, blok, keterangan FROM mahasiswa WHERE npm = ?1').bind(String(npm || '').trim()).first();
+  if (!row) return null;
+  return {
+    NPM: row.npm || '',
+    'Nama Lengkap': row.nama_lengkap || '',
+    Email: row.email || '',
+    Blok: row.blok || '',
+    Keterangan: row.keterangan || ''
+  };
+}
+
+export async function getDosenOptions(db) {
+  return getMasterOptions(db, 'Dosen');
+}
+
+export async function getBagianStaffList(db) {
+  const { results } = await db.prepare('SELECT email, kategori, nama, pass FROM bagian_staff ORDER BY id').all();
+  return (results || []).map((r) => ({
+    Email: r.email || '', Kategori: r.kategori || '', Nama: r.nama || '', Pass: r.pass || ''
+  }));
+}
+
 export async function getBagianMap(db) {
   const { results } = await db.prepare('SELECT lab, kegiatan_lab, bagian FROM master_bagian').all();
   const map = new Map();

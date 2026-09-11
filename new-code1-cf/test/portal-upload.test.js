@@ -63,6 +63,12 @@ describe('portal uploadBuktiFiles', () => {
     expect(row.link_acc_inhal).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
     expect(row.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
     expect(row.updated_at).toBeTruthy();
+
+    const log = await env.DB.prepare('SELECT * FROM log_upload WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(log).toBeTruthy();
+    expect(log.npm).toBe('2201010001');
+    expect(log.link_acc_inhal).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
+    expect(log.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
   });
 
   it('rejects when no file is provided', async () => {

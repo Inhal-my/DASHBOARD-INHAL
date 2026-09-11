@@ -1,6 +1,7 @@
-import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass } from './session.js';
+import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass, requireAdmin } from './session.js';
 import { getBaginaConfig, getBagianBootstrap, getBeritaAcaraList } from './read/bagian.js';
 import { getLaporanBootstrap } from './read/laporan.js';
+import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList } from './repo.js';
 import {
   getDashboardBootstrap, getDashboardStats, getPengajuanList, getBagianAggregation,
   getBeritaAcaraAdminList, getLabOptions, getMasterDataMonitor, getPengajuanWithDetails,
@@ -15,10 +16,10 @@ import {
 } from './write/beritaAcara.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
-  updatePengajuanStatus, deletePengajuanAdmin, syncLogDataToPengajuan
+  updatePengajuanStatus, deletePengajuanAdmin, syncLogDataToPengajuan, updateCheckDataPartial
 } from './write/pengajuanAdmin.js';
 import {
-  sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian
+  sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
 } from './write/email.js';
 
 const HANDLERS = {
@@ -58,9 +59,14 @@ const HANDLERS = {
   sendStatusNotificationEmail: (db, args, ctx) => sendStatusNotificationEmail(db, args[0], ctx),
   sendFinalEmail: (db, args, ctx) => sendFinalEmail(db, args[0], ctx),
   sendAccFinalToBagian: (db, args, ctx) => sendAccFinalToBagian(db, args[0], ctx),
+  sendBulkFinalEmail: (db, args, ctx) => sendBulkFinalEmail(db, args[0], ctx),
   uploadBeritaAcaraAdmin: (db, args, ctx) => saveBeritaAcaraAdmin(db, args[0], ctx),
   deleteBeritaAcaraAdmin: (db, args, ctx) => deleteBeritaAcaraAdmin(db, args[0], ctx),
-  uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx)
+  uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx),
+  getMahasiswaByNpm: (db, args) => getMahasiswaByNpm(db, args[0]),
+  getDosenOptions: (db) => getDosenOptions(db),
+  getBagianStaffList: async (db, args, ctx) => { await requireAdmin(db, ctx.token); return getBagianStaffList(db); },
+  updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx)
 };
 
 export async function extractToken(db, args) {

@@ -1,5 +1,6 @@
 import { baginaHasAccess, getBagianAliasMap } from './read/common.js';
 import { throttleKey, getThrottleState, recordFailure, clearFailures, lockoutMessage } from './throttle.js';
+import { verifyPassword, hashPassword, isHashed } from './password.js';
 
 export const SESSION_TTL_SECS = 4 * 60 * 60;
 export const AUTH_ERROR = 'Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.';
@@ -73,9 +74,14 @@ export async function authenticateAdmin(db, password, ip) {
   if (lock.locked) return { ok: false, message: lockoutMessage(lock.retryAfterMs) };
   const pwd = String(password || '').trim();
   if (!pwd) return { ok: false, message: 'Masukkan password admin.' };
-  const { results } = await db.prepare('SELECT password, nama FROM admin').all();
+  const { results } = await db.prepare('SELECT id, password, nama FROM admin').all();
   for (const row of results || []) {
-    if (String(row.password || '').trim() && String(row.password).trim() === pwd) {
+    const stored = String(row.password || '').trim();
+    if (!stored) continue;
+    if (await verifyPassword(pwd, stored)) {
+      if (!isHashed(stored)) {
+        await db.prepare('UPDATE admin SET password = ?1 WHERE id = ?2').bind(await hashPassword(pwd), row.id).run();
+      }
       await clearFailures(db, key);
       const nama = String(row.nama || '').trim() || 'Admin';
       return { ok: true, token: await createSession(db, { role: 'admin', nama }), nama };
@@ -93,14 +99,18 @@ export async function authenticateBagian(db, password, kategori, subBagian, ip) 
   if (!pwd) return { ok: false, message: 'Masukkan password.' };
   const kat = String(kategori || '').trim();
   const sub = String(subBagian || '').trim();
-  const { results } = await db.prepare('SELECT email, kategori, nama, pass FROM bagian_staff').all();
+  const { results } = await db.prepare('SELECT id, email, kategori, nama, pass FROM bagian_staff').all();
   const { results: masterBagian } = await db.prepare('SELECT lab, kegiatan_lab, bagian FROM master_bagian').all();
   const aliasMap = getBagianAliasMap(masterBagian || []);
   let account = null;
   for (const r of results || []) {
-    if (String(r.pass || '').trim() && String(r.pass).trim() === pwd) {
+    const stored = String(r.pass || '').trim();
+    if (stored && await verifyPassword(pwd, stored)) {
       const entry = { kategoris: r.kategori ? [r.kategori] : [], nama: r.nama };
       if (baginaHasAccess(entry, kat, sub, aliasMap)) {
+        if (!isHashed(stored)) {
+          await db.prepare('UPDATE bagian_staff SET pass = ?1 WHERE id = ?2').bind(await hashPassword(pwd), r.id).run();
+        }
         account = { nama: String(r.nama || '').trim() || 'Bagian', kategori: String(r.kategori || '').trim(), kategoris: entry.kategoris };
         break;
       }

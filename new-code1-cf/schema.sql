@@ -70,6 +70,8 @@ DROP TABLE IF EXISTS bagian_staff;
 DROP TABLE IF EXISTS admin;
 DROP TABLE IF EXISTS uploads;
 DROP TABLE IF EXISTS auth_throttle;
+DROP TABLE IF EXISTS log_upload;
+DROP TABLE IF EXISTS audit_log;
 
 CREATE TABLE admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, password TEXT, nama TEXT
@@ -90,6 +92,16 @@ CREATE TABLE uploads (
   size INTEGER, content TEXT, created_at TEXT, created_by TEXT
 );
 CREATE INDEX idx_uploads_pengajuan ON uploads(pengajuan_id);
+CREATE TABLE log_upload (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, id_pengajuan TEXT, npm TEXT,
+  nama_lengkap TEXT, blok TEXT, jenis_kegiatan TEXT, detail TEXT, tanggal TEXT,
+  link_acc_inhal TEXT, link_bukti_bayar TEXT
+);
+CREATE INDEX idx_log_upload_pengajuan ON log_upload(id_pengajuan);
+CREATE TABLE audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, actor_email TEXT,
+  aksi TEXT, target TEXT, detail TEXT, alasan TEXT
+);
 CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jumlah_peserta TEXT, file_name TEXT,

@@ -76,29 +76,25 @@ describe('surat keterangan upload', () => {
     fileSurat: { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' }
   };
 
-  it('stores the surat upload and serves it back', async () => {
+  it('rejects a surat upload when the drive bridge is not configured', async () => {
     const res = await SELF.fetch('http://example.com/api/pengajuan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(suratBody)
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    const p = await env.DB.prepare('SELECT link_surat_keterangan FROM pengajuan WHERE id_pengajuan = ?1').bind(body.idPengajuan).first();
-    expect(p.link_surat_keterangan).toMatch(/^\/api\/files\/UPL-/);
-
-    const fileRes = await SELF.fetch('http://example.com' + p.link_surat_keterangan);
-    expect(fileRes.status).toBe(200);
-    expect(fileRes.headers.get('content-type')).toBe('application/pdf');
-    expect(await fileRes.text()).toBe('hello');
+    expect(body.success).toBe(false);
+    expect(body.message).toContain('belum dikonfigurasi');
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM pengajuan WHERE npm = ?1').bind('2201010002').first();
+    expect(n.n).toBe(0);
   });
 
   it('rejects an oversize surat upload and stores nothing', async () => {
     const res = await SELF.fetch('http://example.com/api/pengajuan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...suratBody, fileSurat: { data: 'A'.repeat(1_500_000), mimeType: 'application/pdf', name: 'big.pdf' } })
+      body: JSON.stringify({ ...suratBody, fileSurat: { data: 'A'.repeat(7_500_000), mimeType: 'application/pdf', name: 'big.pdf' } })
     });
     expect(res.status).toBe(400);
     expect((await res.json()).message).toContain('maksimal');

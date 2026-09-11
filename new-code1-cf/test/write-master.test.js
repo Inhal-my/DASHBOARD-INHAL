@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
+import { verifyPassword, isHashed } from '../src/password.js';
 import { getMasterDataMonitor } from '../src/read/dashboard.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
@@ -90,9 +91,21 @@ describe('master write handlers', () => {
     const staff = await env.DB.prepare('SELECT * FROM bagian_staff').all();
     const admins = await env.DB.prepare('SELECT * FROM admin').all();
     expect(staff.results).toHaveLength(1);
-    expect(staff.results[0].pass).toBe('rahasia');
+    expect(staff.results[0].pass).toMatch(/^pbkdf2\$/);
+    expect(await verifyPassword('rahasia', staff.results[0].pass)).toBe(true);
     expect(admins.results).toHaveLength(1);
-    expect(admins.results[0].password).toBe('p1');
+    expect(admins.results[0].password).toMatch(/^pbkdf2\$/);
+    expect(await verifyPassword('p1', admins.results[0].password)).toBe(true);
+  });
+
+  it('does not re-hash an already hashed password', async () => {
+    const ctx = await adminCtx();
+    await saveAdminList(env.DB, { rows: [{ Password: 'p1', Nama: 'Admin 1' }] }, ctx);
+    const first = (await env.DB.prepare('SELECT password FROM admin').first()).password;
+    expect(isHashed(first)).toBe(true);
+    await saveAdminList(env.DB, { rows: [{ Password: first, Nama: 'Admin 1' }] }, ctx);
+    const second = (await env.DB.prepare('SELECT password FROM admin').first()).password;
+    expect(second).toBe(first);
   });
 
   it('validates and persists bagian BA settings', async () => {

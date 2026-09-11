@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { toClientRow, toClientRows } from './columns.js';
-import { saveUpload } from '../uploads.js';
+import { saveDriveFile } from '../drive.js';
 import {
   norm, parseCurrency, formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
   resolveBiayaForPengajuan, normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
@@ -290,7 +290,9 @@ export async function diagnosticData(db, ctx) {
       StatusHistory: await count('status_history'),
       CheckData: await count('check_data'),
       Mahasiswa: await count('mahasiswa'),
-      LogData: await count('log_data')
+      LogData: await count('log_data'),
+      LogUpload: await count('log_upload'),
+      AuditLog: await count('audit_log')
     },
     npmDebug,
     portalResult: null,
@@ -311,9 +313,7 @@ export async function uploadSuratKeterangan(db, idPengajuan, file, ctx) {
   const row = await db.prepare('SELECT id_pengajuan FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
   const nowIso = new Date().toISOString();
-  const res = await saveUpload(db, file, {
-    pengajuanId: id, kind: 'surat', createdBy: 'admin', createdAt: nowIso
-  });
+  const res = await saveDriveFile(ctx.env, file, 'surat-' + id, { label: 'surat keterangan' });
   if (!res.ok) return { success: false, message: res.message };
   await db.prepare('UPDATE pengajuan SET link_surat_keterangan = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
     .bind(res.url, nowIso, id).run();

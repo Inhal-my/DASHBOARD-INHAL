@@ -35,9 +35,6 @@ export function parseDriveFileId(url) {
 }
 
 export async function saveDriveFile(env, input, prefix, opts) {
-  const cfg = bridgeConfig(env);
-  if (!cfg) return { ok: false, message: 'Penyimpanan Drive belum dikonfigurasi.' };
-
   const allowed = (opts && opts.allowedMime) || ALLOWED_BA_MIME;
   const maxBytes = (opts && opts.maxBytes) || MAX_BA_UPLOAD_BYTES;
   const label = (opts && opts.label) || 'BA';
@@ -45,6 +42,9 @@ export async function saveDriveFile(env, input, prefix, opts) {
   const parsed = parseFileInput(input);
   const valid = validateDriveFile(parsed, allowed, maxBytes, label);
   if (!valid.ok) return valid;
+
+  const cfg = bridgeConfig(env);
+  if (!cfg) return { ok: false, message: 'Penyimpanan Drive belum dikonfigurasi.' };
 
   let res;
   try {

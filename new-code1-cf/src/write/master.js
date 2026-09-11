@@ -1,4 +1,5 @@
 import { requireAdmin } from '../session.js';
+import { hashPassword, isHashed } from '../password.js';
 
 const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
 const MAX_ROWS = 5000;
@@ -123,6 +124,9 @@ export async function saveBagianStaff(db, payload, ctx) {
   ]).filter((r) => r.email || r.pass);
   const guard = tooMany(rows);
   if (guard) return guard;
+  for (const row of rows) {
+    if (row.pass && !isHashed(row.pass)) row.pass = await hashPassword(row.pass);
+  }
   await replaceAll(db, 'bagian_staff', ['email', 'kategori', 'nama', 'pass'], rows);
   return { success: true, message: 'Bagian staff diperbarui.' };
 }
@@ -135,6 +139,9 @@ export async function saveAdminList(db, payload, ctx) {
   ]).filter((r) => r.password);
   const guard = tooMany(rows);
   if (guard) return guard;
+  for (const row of rows) {
+    if (row.password && !isHashed(row.password)) row.password = await hashPassword(row.password);
+  }
   await replaceAll(db, 'admin', ['password', 'nama'], rows);
   return { success: true, message: 'Daftar admin diperbarui.' };
 }

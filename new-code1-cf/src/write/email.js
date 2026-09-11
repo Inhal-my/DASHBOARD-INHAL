@@ -235,6 +235,48 @@ export async function sendFinalEmail(db, idPengajuan, ctx) {
   }
 }
 
+export async function sendBulkFinalEmail(db, ids, ctx) {
+  await requireAdmin(db, ctx.token);
+  const list = Array.isArray(ids) ? ids.map((x) => str(x)).filter(Boolean) : [];
+  let targets;
+  if (list.length) {
+    const placeholders = list.map((_, i) => '?' + (i + 1)).join(', ');
+    targets = (await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan IN (' + placeholders + ') ORDER BY id').bind(...list).all()).results || [];
+  } else {
+    targets = (await db.prepare("SELECT * FROM pengajuan WHERE status = 'ACC' ORDER BY id").all()).results || [];
+  }
+
+  const results = { total: 0, sent: 0, failed: 0, details: [] };
+  for (const p of targets) {
+    const id = str(p.id_pengajuan);
+    if (!id) continue;
+    results.total++;
+    try {
+      const r = await sendFinalPdfEmails(db, id, ctx.env);
+      const notes = (r && r.notes) || [];
+      if (r && r.ok) {
+        results.sent++;
+        results.details.push({ idPengajuan: id, npm: str(p.npm), nama: str(p.nama_lengkap), ok: true, notes: notes });
+      } else {
+        results.failed++;
+        results.details.push({ idPengajuan: id, npm: str(p.npm), nama: str(p.nama_lengkap), ok: false, notes: notes.length ? notes : ['Gagal mengirim.'] });
+      }
+    } catch (e) {
+      results.failed++;
+      results.details.push({ idPengajuan: id, npm: str(p.npm), nama: str(p.nama_lengkap), ok: false, notes: [(e && e.message) ? e.message : String(e)] });
+    }
+  }
+
+  return {
+    success: true,
+    total: results.total,
+    sent: results.sent,
+    failed: results.failed,
+    details: results.details,
+    message: 'Email final diproses untuk ' + results.total + ' pengajuan: ' + results.sent + ' terkirim, ' + results.failed + ' gagal.'
+  };
+}
+
 export async function sendAccFinalToBagian(db, idPengajuan, ctx) {
   await requireAdmin(db, ctx.token);
   try {

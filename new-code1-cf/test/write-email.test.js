@@ -4,7 +4,7 @@ import { createSession } from '../src/session.js';
 import {
   buildEnhanced, formatIndonesianDate, resolveBagianEmail,
   processStatusNotification, sendStatusNotificationEmail,
-  sendFinalEmail, sendAccFinalToBagian
+  sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
 } from '../src/write/email.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -172,5 +172,45 @@ describe('sendAccFinalToBagian', () => {
     const res = await sendAccFinalToBagian(env.DB, 'INHAL-1', ctx);
     expect(res.success).toBe(false);
     expect(res.message).toContain('tidak ditemukan');
+  });
+});
+
+describe('sendBulkFinalEmail', () => {
+  it('requires admin', async () => {
+    await expect(sendBulkFinalEmail(env.DB, [], {})).rejects.toThrow();
+  });
+
+  it('processes the provided ids and reports per-item results', async () => {
+    await seedPengajuan({ linkAcc: 'https://drive.google.com/file/d/ACC1234567890/view' });
+    await seedDetail();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,jenis_kegiatan,status,link_acc_inhal) " +
+      "VALUES ('2026-09-10T08:00:00','INHAL-3','2201010003','Citra','citra@contoh.com','Ujian','Diterima','')"
+    ).run();
+    const calls = stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
+    const ctx = await adminCtx();
+    const res = await sendBulkFinalEmail(env.DB, ['INHAL-1', 'INHAL-3'], ctx);
+    expect(res.success).toBe(true);
+    expect(res.total).toBe(2);
+    expect(res.sent).toBe(1);
+    expect(res.failed).toBe(1);
+    expect(res.message).toContain('2 pengajuan');
+    expect(calls.filter((c) => c.action === 'sendFinalEmail')).toHaveLength(1);
+    const failed = res.details.find((d) => d.ok === false);
+    expect(failed.idPengajuan).toBe('INHAL-3');
+  });
+
+  it('defaults to every ACC pengajuan when no ids are given', async () => {
+    await seedPengajuan({ linkAcc: 'https://drive.google.com/file/d/ACC1234567890/view' });
+    await seedDetail();
+    await env.DB.prepare("UPDATE pengajuan SET status = 'ACC' WHERE id_pengajuan = 'INHAL-1'").run();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status) VALUES ('2026-09-10T08:00:00','INHAL-4','2201010004','Dewi','Diterima')"
+    ).run();
+    stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
+    const ctx = await adminCtx();
+    const res = await sendBulkFinalEmail(env.DB, [], ctx);
+    expect(res.total).toBe(1);
+    expect(res.details[0].idPengajuan).toBe('INHAL-1');
   });
 });

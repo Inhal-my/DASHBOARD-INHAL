@@ -1349,9 +1349,9 @@
                             { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], saveFn: 'saveMasterBagian', icon: 'bi-diagram-3' },
                             { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], saveFn: 'saveMasterBiaya', icon: 'bi-cash-stack' },
                             { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], saveFn: 'saveConfig', icon: 'bi-gear' },
-                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], saveFn: 'saveBagianStaff', icon: 'bi-people' },
+                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], saveFn: 'saveBagianStaff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan Bagian', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
-                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B).', cols: ['Password', 'Nama'], saveFn: 'saveAdminList', icon: 'bi-shield-lock' }
+                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], saveFn: 'saveAdminList', icon: 'bi-shield-lock' }
                         ]
                     }
                 };
