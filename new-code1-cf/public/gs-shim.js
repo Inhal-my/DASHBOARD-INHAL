@@ -16,13 +16,21 @@
     });
   }
 
-  function makeRunner() {
-    var onSuccess = function () {};
-    var onFailure = function () {};
+  function makeRunner(successHandler, failureHandler) {
+    var onSuccess = successHandler || function () {};
+    var onFailure = failureHandler || function () {};
     var proxy;
+
+    function derive(nextSuccess, nextFailure) {
+      return makeRunner(
+        nextSuccess === undefined ? onSuccess : nextSuccess,
+        nextFailure === undefined ? onFailure : nextFailure
+      );
+    }
+
     var base = {
-      withSuccessHandler: function (fn) { if (typeof fn === 'function') onSuccess = fn; return proxy; },
-      withFailureHandler: function (fn) { if (typeof fn === 'function') onFailure = fn; return proxy; }
+      withSuccessHandler: function (fn) { return derive(typeof fn === 'function' ? fn : onSuccess, undefined); },
+      withFailureHandler: function (fn) { return derive(undefined, typeof fn === 'function' ? fn : onFailure); }
     };
     proxy = new Proxy(base, {
       get: function (target, prop) {
