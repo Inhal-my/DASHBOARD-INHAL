@@ -706,6 +706,14 @@
                     this.baList = res.baList || [];
                     this.error = null;
                     this.writeCache();
+                    this.loadBaConfig();
+                },
+                loadBaConfig() {
+                    this.run('getBaginaConfig')
+                        .then(c => {
+                            this.baConfig = (c && c.ba) || { statuses: ['Diterima', 'ACC'], finalOnly: true };
+                        })
+                        .catch(() => {});
                 },
                 cacheKey() {
                     return 'bagian_panel_v3_' + (this.session && this.session.token ? this.session.token : 'anon') + '_' + (this.kategori || '') + '_' + (this.subBagian || '');
@@ -919,11 +927,14 @@
                         }
                     });
                 }
-                this.run('getBaginaConfig')
-                    .then(c => {
-                        c = c || {};
-                        this.config = c;
-                        this.baConfig = c.ba || { statuses: ['Diterima', 'ACC'], finalOnly: true };
+                fetch('/api/registration-options')
+                    .then(r => r.json())
+                    .then(o => {
+                        this.config = {
+                            categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'],
+                            labOptions: (o && o.lab) || [],
+                            kegiatanLabOptions: (o && o.kegiatanLab) || []
+                        };
                     })
                     .catch(() => { this.config = { labOptions: [] }; });
             }

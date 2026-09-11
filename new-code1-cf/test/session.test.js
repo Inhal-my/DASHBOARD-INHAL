@@ -27,6 +27,18 @@ describe('session and auth', () => {
     expect(res.ok).toBe(false);
     expect(res.message).toBe('Password admin salah.');
   });
+  it('locks out after repeated failed admin logins from the same ip', async () => {
+    await seedAuth();
+    for (let i = 0; i < 5; i++) {
+      const r = await authenticateAdmin(env.DB, 'salah', '10.0.0.9');
+      expect(r.message).toBe('Password admin salah.');
+    }
+    const locked = await authenticateAdmin(env.DB, 'rahasia', '10.0.0.9');
+    expect(locked.ok).toBe(false);
+    expect(locked.message).toContain('Terlalu banyak percobaan login');
+    const other = await authenticateAdmin(env.DB, 'rahasia', '10.0.0.10');
+    expect(other.ok).toBe(true);
+  });
   it('rejects invalid token with exact message', async () => {
     await expect(requireAdmin(env.DB, 'nope')).rejects.toThrow(AUTH_ERROR);
   });

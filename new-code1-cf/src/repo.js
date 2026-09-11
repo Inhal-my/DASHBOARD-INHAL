@@ -19,7 +19,7 @@ export async function getMasterOptions(db, kategori) {
 
 export async function getBuktiMode(db) {
   const row = await db.prepare("SELECT value FROM config WHERE key = 'BUKTI_MODE'").first();
-  const v = row ? String(row.value || '').trim() : '';
+  const v = row ? String(row.value || '').trim().toLowerCase() : '';
   return v === 'lenggang' ? 'lenggang' : 'strict';
 }
 

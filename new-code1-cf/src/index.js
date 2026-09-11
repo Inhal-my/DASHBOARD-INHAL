@@ -3,6 +3,7 @@ import { getMasterOptions, getBuktiMode, getStudentNameByNpm } from './repo.js';
 import { registerPengajuan } from './pengajuan.js';
 import { getStudentPortalData } from './portal.js';
 import { dispatchRpc } from './rpc.js';
+import { getUpload, base64ToBytes } from './uploads.js';
 
 const app = new Hono();
 
@@ -50,10 +51,24 @@ app.post('/api/portal/upload', (c) => {
   return c.json({ success: false, message: 'Fitur unggah berkas akan tersedia pada tahap berikutnya.' });
 });
 
+app.get('/api/files/:id', async (c) => {
+  const row = await getUpload(c.env.DB, c.req.param('id'));
+  if (!row) return c.json({ error: 'Berkas tidak ditemukan.' }, 404);
+  const name = String(row.file_name || row.id).replace(/"/g, '');
+  return new Response(base64ToBytes(row.content), {
+    headers: {
+      'Content-Type': row.mime_type || 'application/octet-stream',
+      'Content-Disposition': 'inline; filename="' + name + '"',
+      'Cache-Control': 'private, max-age=600'
+    }
+  });
+});
+
 app.post('/api/rpc', async (c) => {
   let body = {};
   try { body = await c.req.json(); } catch (e) { body = {}; }
-  const result = await dispatchRpc(c.env.DB, body.fn, body.args);
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-forwarded-for') || 'local';
+  const result = await dispatchRpc(c.env.DB, body.fn, body.args, ip);
   return c.json(result);
 });
 

@@ -14,8 +14,9 @@ async function seed() {
 }
 
 describe('bagian read', () => {
-  it('returns config without auth', async () => {
-    const cfg = await getBaginaConfig(env.DB, {});
+  it('requires a bagian session for config', async () => {
+    await expect(getBaginaConfig(env.DB, {})).rejects.toThrow();
+    const cfg = await getBaginaConfig(env.DB, await bagianCtx());
     expect(cfg.categories).toEqual(['SGD', 'KKD', 'Ujian', 'Praktikum']);
     expect(Array.isArray(cfg.labOptions)).toBe(true);
   });

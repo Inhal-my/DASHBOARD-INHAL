@@ -1,5 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { toClientRow, toClientRows } from './columns.js';
+import { saveUpload } from '../uploads.js';
 import {
   norm, parseCurrency, formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
   resolveBiayaForPengajuan, normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
@@ -124,7 +125,8 @@ export async function getPengajuanList(db, filters, ctx) {
   return buildPengajuanClientRows(selected.map((r) => r.raw), biayaMap, overrideMap);
 }
 
-export async function getLabOptions(db) {
+export async function getLabOptions(db, ctx) {
+  await requireAdmin(db, ctx.token);
   return getMasterOptions(db, 'Lab');
 }
 
@@ -300,4 +302,20 @@ export async function diagnosticData(db, ctx) {
 export async function getBagianBaSettingsHandler(db, ctx) {
   await requireAdmin(db, ctx.token);
   return getBagianBaSettings(db);
+}
+
+export async function uploadSuratKeterangan(db, idPengajuan, file, ctx) {
+  await requireAdmin(db, ctx.token);
+  const id = String(idPengajuan || '').trim();
+  if (!id) return { success: false, message: 'ID pengajuan tidak valid.' };
+  const row = await db.prepare('SELECT id_pengajuan FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
+  if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+  const nowIso = new Date().toISOString();
+  const res = await saveUpload(db, file, {
+    pengajuanId: id, kind: 'surat', createdBy: 'admin', createdAt: nowIso
+  });
+  if (!res.ok) return { success: false, message: res.message };
+  await db.prepare('UPDATE pengajuan SET link_surat_keterangan = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
+    .bind(res.url, nowIso, id).run();
+  return { success: true, url: res.url, message: 'Surat keterangan berhasil diunggah.' };
 }

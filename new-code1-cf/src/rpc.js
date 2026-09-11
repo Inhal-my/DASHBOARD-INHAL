@@ -4,12 +4,12 @@ import { getLaporanBootstrap } from './read/laporan.js';
 import {
   getDashboardBootstrap, getDashboardStats, getPengajuanList, getBagianAggregation,
   getBeritaAcaraAdminList, getLabOptions, getMasterDataMonitor, getPengajuanWithDetails,
-  getBaUploadOptions, diagnosticData, getBagianBaSettingsHandler
+  getBaUploadOptions, diagnosticData, getBagianBaSettingsHandler, uploadSuratKeterangan
 } from './read/dashboard.js';
 
 const HANDLERS = {
-  authenticateAdmin: (db, args) => authenticateAdmin(db, args[0]),
-  authenticateBagian: (db, args) => authenticateBagian(db, args[0], args[1], args[2]),
+  authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
+  authenticateBagian: (db, args, ctx) => authenticateBagian(db, args[0], args[1], args[2], ctx.ip),
   logoutSession: (db, args, ctx) => logoutSession(db, ctx.token),
   adminBagianBypass: (db, args, ctx) => adminBagianBypass(db, args[0], args[1], ctx.token),
   getBaginaConfig: (db, args, ctx) => getBaginaConfig(db, ctx),
@@ -26,6 +26,7 @@ const HANDLERS = {
   getMasterDataMonitor: (db, args, ctx) => getMasterDataMonitor(db, ctx),
   getPengajuanWithDetails: (db, args, ctx) => getPengajuanWithDetails(db, args[0], ctx),
   getBaUploadOptions: (db, args, ctx) => getBaUploadOptions(db, ctx),
+  uploadSuratKeterangan: (db, args, ctx) => uploadSuratKeterangan(db, args[0], args[1], ctx),
   diagnosticData: (db, args, ctx) => diagnosticData(db, ctx)
 };
 
@@ -42,14 +43,14 @@ export async function extractToken(db, args) {
   return { token: '', rest: list, session: null };
 }
 
-export async function dispatchRpc(db, fn, args) {
+export async function dispatchRpc(db, fn, args, ip) {
   const handler = HANDLERS[String(fn)];
   if (!handler) {
     return { success: false, message: 'Fitur ' + String(fn) + ' belum tersedia pada tahap ini.' };
   }
   const { token, rest, session } = await extractToken(db, args);
   try {
-    return await handler(db, rest, { token, session });
+    return await handler(db, rest, { token, session, ip });
   } catch (e) {
     return { error: (e && e.message) ? e.message : String(e) };
   }

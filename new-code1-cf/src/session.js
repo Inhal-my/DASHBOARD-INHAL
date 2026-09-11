@@ -1,4 +1,5 @@
 import { baginaHasAccess, getBagianAliasMap } from './read/common.js';
+import { throttleKey, getThrottleState, recordFailure, clearFailures, lockoutMessage } from './throttle.js';
 
 export const SESSION_TTL_SECS = 4 * 60 * 60;
 export const AUTH_ERROR = 'Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.';
@@ -66,20 +67,28 @@ export async function requireBagianSession(db, kategori, subBagian, token) {
   return s;
 }
 
-export async function authenticateAdmin(db, password) {
+export async function authenticateAdmin(db, password, ip) {
+  const key = throttleKey('admin', ip);
+  const lock = await getThrottleState(db, key);
+  if (lock.locked) return { ok: false, message: lockoutMessage(lock.retryAfterMs) };
   const pwd = String(password || '').trim();
   if (!pwd) return { ok: false, message: 'Masukkan password admin.' };
   const { results } = await db.prepare('SELECT password, nama FROM admin').all();
   for (const row of results || []) {
     if (String(row.password || '').trim() && String(row.password).trim() === pwd) {
+      await clearFailures(db, key);
       const nama = String(row.nama || '').trim() || 'Admin';
       return { ok: true, token: await createSession(db, { role: 'admin', nama }), nama };
     }
   }
+  await recordFailure(db, key);
   return { ok: false, message: 'Password admin salah.' };
 }
 
-export async function authenticateBagian(db, password, kategori, subBagian) {
+export async function authenticateBagian(db, password, kategori, subBagian, ip) {
+  const key = throttleKey('bagian', ip);
+  const lock = await getThrottleState(db, key);
+  if (lock.locked) return { ok: false, message: lockoutMessage(lock.retryAfterMs) };
   const pwd = String(password || '').trim();
   if (!pwd) return { ok: false, message: 'Masukkan password.' };
   const kat = String(kategori || '').trim();
@@ -98,8 +107,10 @@ export async function authenticateBagian(db, password, kategori, subBagian) {
     }
   }
   if (!account) {
+    await recordFailure(db, key);
     return { ok: false, message: 'Password tidak berlaku untuk bagian ' + (kat || 'yang dipilih') + ' ini.' };
   }
+  await clearFailures(db, key);
   const token = await createSession(db, {
     role: 'bagian', nama: account.nama, kategori: kat, subBagian: sub, kategoris: account.kategoris
   });

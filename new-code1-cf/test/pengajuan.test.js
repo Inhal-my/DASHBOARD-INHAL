@@ -54,4 +54,16 @@ describe('POST /api/pengajuan', () => {
     expect(res.status).toBe(400);
     expect((await res.json()).message).toBe('Data identik sudah pernah diajukan. Silakan cek status pengajuan Anda.');
   });
+
+  it('enforces the unique form_key atomically when the pre-check misses', async () => {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,form_key,npm,nama_lengkap,jenis_kegiatan,status) " +
+      "VALUES ('2026-09-10T08:00:00','INHAL-seed','2201010001||ujian||uas||2026-09-20','2201010001','Aisyah','Ujian','Menunggu')"
+    ).run();
+    const res = await post(validBody);
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toContain('Data identik sudah pernah diajukan');
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM pengajuan WHERE id_pengajuan != 'INHAL-seed'").first();
+    expect(n.n).toBe(0);
+  });
 });

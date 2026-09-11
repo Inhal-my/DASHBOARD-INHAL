@@ -10,6 +10,10 @@ describe('repo reads', () => {
   it('returns bukti mode', async () => {
     expect(await getBuktiMode(env.DB)).toBe('strict');
   });
+  it('reads bukti mode case-insensitively', async () => {
+    await env.DB.prepare("UPDATE config SET value = 'Lenggang' WHERE key = 'BUKTI_MODE'").run();
+    expect(await getBuktiMode(env.DB)).toBe('lenggang');
+  });
   it('returns student name by npm', async () => {
     expect(await getStudentNameByNpm(env.DB, '2201010001')).toBe('Aisyah Putri');
     expect(await getStudentNameByNpm(env.DB, '000')).toBe('');

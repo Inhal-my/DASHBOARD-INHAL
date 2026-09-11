@@ -18,7 +18,7 @@ CREATE TABLE master_bagian (
 CREATE TABLE config (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE pengajuan (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  timestamp TEXT, id_pengajuan TEXT UNIQUE, npm TEXT, nama_lengkap TEXT, email TEXT,
+  timestamp TEXT, id_pengajuan TEXT UNIQUE, form_key TEXT, npm TEXT, nama_lengkap TEXT, email TEXT,
   no_hp_wa TEXT, blok TEXT, jenis_kegiatan TEXT, dosen TEXT, tanggal_pelaksanaan TEXT,
   keterangan TEXT, link_surat_keterangan TEXT, status TEXT, catatan_admin TEXT,
   notifikasi_terkirim_pada TEXT, status_notifikasi_email TEXT, error_notifikasi_email TEXT,
@@ -35,6 +35,7 @@ CREATE TABLE status_history (
   status TEXT, catatan TEXT, actor_email TEXT
 );
 CREATE INDEX idx_pengajuan_npm ON pengajuan(npm);
+CREATE UNIQUE INDEX idx_pengajuan_form_key ON pengajuan(form_key);
 CREATE INDEX idx_detail_pengajuan ON detail_kegiatan(id_pengajuan);
 CREATE INDEX idx_history_pengajuan ON status_history(id_pengajuan);
 
@@ -67,6 +68,7 @@ DROP TABLE IF EXISTS berita_acara;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS bagian_staff;
 DROP TABLE IF EXISTS admin;
+DROP TABLE IF EXISTS uploads;
 
 CREATE TABLE admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, password TEXT, nama TEXT
@@ -78,6 +80,15 @@ CREATE TABLE sessions (
   token TEXT PRIMARY KEY, role TEXT, nama TEXT, kategori TEXT, sub_bagian TEXT,
   kategoris TEXT, created_at TEXT, expires_at TEXT
 );
+CREATE TABLE auth_throttle (
+  key TEXT PRIMARY KEY, fail_count INTEGER NOT NULL DEFAULT 0,
+  window_start TEXT, locked_until TEXT
+);
+CREATE TABLE uploads (
+  id TEXT PRIMARY KEY, pengajuan_id TEXT, kind TEXT, file_name TEXT, mime_type TEXT,
+  size INTEGER, content TEXT, created_at TEXT, created_by TEXT
+);
+CREATE INDEX idx_uploads_pengajuan ON uploads(pengajuan_id);
 CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jumlah_peserta TEXT, file_name TEXT,

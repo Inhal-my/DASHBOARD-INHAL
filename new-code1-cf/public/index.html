@@ -260,7 +260,7 @@
                             <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
                                 <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
                                 <div class="text-xs text-slate-500">
-                                    <span v-if="!fileSurat">Opsional. Maksimal 5 MB.</span>
+                                    <span v-if="!fileSurat">Opsional. Maksimal 700 KB.</span>
                                     <span v-else class="font-semibold text-slate-700">{{ fileSurat.name }}</span>
                                 </div>
                                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onFileSurat">
@@ -409,8 +409,8 @@
                         }
 
                         if (this.fileSurat) {
-                            if (this.fileSurat.size > 5 * 1024 * 1024) {
-                                alert('Ukuran file surat maksimal 5 MB.');
+                            if (this.fileSurat.size > 700 * 1024) {
+                                alert('Ukuran file surat maksimal 700 KB.');
                                 this.loading = false;
                                 return;
                             }

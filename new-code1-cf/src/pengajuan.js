@@ -3,9 +3,10 @@ import {
   isValidEmail, isValidPhone, nowLocalIso, newIdPengajuan
 } from './lib.js';
 import { getBagianMap, findDuplicatePengajuan } from './repo.js';
+import { prepareUpload, buildUploadStatement } from './uploads.js';
 
 const PENGAJUAN_COLUMNS = [
-  'timestamp', 'id_pengajuan', 'npm', 'nama_lengkap', 'email', 'no_hp_wa', 'blok',
+  'timestamp', 'id_pengajuan', 'form_key', 'npm', 'nama_lengkap', 'email', 'no_hp_wa', 'blok',
   'jenis_kegiatan', 'dosen', 'tanggal_pelaksanaan', 'keterangan', 'link_surat_keterangan',
   'status', 'catatan_admin', 'notifikasi_terkirim_pada', 'status_notifikasi_email',
   'error_notifikasi_email', 'lampiran_email', 'nomor_surat', 'link_acc_inhal',
@@ -41,12 +42,20 @@ export async function registerPengajuan(db, formData) {
     return { success: false, message: 'Detail kegiatan tidak valid.' };
   }
 
+  let surat = null;
+  if (formData.fileSurat) {
+    surat = prepareUpload(formData.fileSurat, {
+      pengajuanId: idPengajuan, kind: 'surat', createdBy: 'mahasiswa', createdAt: nowIso
+    });
+    if (!surat.ok) return { success: false, message: surat.message };
+  }
+
   const values = {
-    timestamp: nowIso, id_pengajuan: idPengajuan, npm, nama_lengkap: nama, email,
+    timestamp: nowIso, id_pengajuan: idPengajuan, form_key: formKey, npm, nama_lengkap: nama, email,
     no_hp_wa: noHp, blok: normalizeFormText(formData.blok),
     jenis_kegiatan: normalizeFormText(formData.jenisKegiatan), dosen: '',
     tanggal_pelaksanaan: '', keterangan: normalizeFormText(formData.keterangan),
-    link_surat_keterangan: '', status: 'Menunggu', catatan_admin: '',
+    link_surat_keterangan: surat ? surat.url : '', status: 'Menunggu', catatan_admin: '',
     notifikasi_terkirim_pada: '', status_notifikasi_email: '', error_notifikasi_email: '',
     lampiran_email: '', nomor_surat: '', link_acc_inhal: '', link_bukti_bayar: '',
     link_final: '', status_info_bagian: '', waktu_info_bagian: '', email_bagian: '',
@@ -67,11 +76,16 @@ export async function registerPengajuan(db, formData) {
     db.prepare('INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1,?2,?3,?4,?5)')
       .bind(nowIso, idPengajuan, 'Menunggu', 'Pengajuan dibuat.', '')
   );
+  if (surat) stmts.push(buildUploadStatement(db, surat.row));
 
   try {
     await db.batch(stmts);
   } catch (e) {
-    return { success: false, message: 'Gagal menyimpan pengajuan: ' + (e && e.message ? e.message : String(e)) };
+    const msg = e && e.message ? e.message : String(e);
+    if (/UNIQUE/i.test(msg) && /form_key/i.test(msg)) {
+      return { success: false, message: 'Data identik sudah pernah diajukan. Silakan cek status pengajuan Anda.' };
+    }
+    return { success: false, message: 'Gagal menyimpan pengajuan: ' + msg };
   }
   return { success: true, idPengajuan, message: 'Pengajuan berhasil didaftarkan.' };
 }

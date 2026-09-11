@@ -67,3 +67,47 @@ describe('portal endpoints', () => {
     expect(body.message).toContain('tahap berikutnya');
   });
 });
+
+describe('surat keterangan upload', () => {
+  const suratBody = {
+    npm: '2201010002', namaLengkap: 'Budi Santoso', email: 'budi@contoh.com',
+    noHp: '08123456789', blok: 'B', jenisKegiatan: 'Ujian',
+    detailKegiatan: 'UAS', tanggalKegiatan: '2026-09-21',
+    fileSurat: { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' }
+  };
+
+  it('stores the surat upload and serves it back', async () => {
+    const res = await SELF.fetch('http://example.com/api/pengajuan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(suratBody)
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    const p = await env.DB.prepare('SELECT link_surat_keterangan FROM pengajuan WHERE id_pengajuan = ?1').bind(body.idPengajuan).first();
+    expect(p.link_surat_keterangan).toMatch(/^\/api\/files\/UPL-/);
+
+    const fileRes = await SELF.fetch('http://example.com' + p.link_surat_keterangan);
+    expect(fileRes.status).toBe(200);
+    expect(fileRes.headers.get('content-type')).toBe('application/pdf');
+    expect(await fileRes.text()).toBe('hello');
+  });
+
+  it('rejects an oversize surat upload and stores nothing', async () => {
+    const res = await SELF.fetch('http://example.com/api/pengajuan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...suratBody, fileSurat: { data: 'A'.repeat(1_500_000), mimeType: 'application/pdf', name: 'big.pdf' } })
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toContain('maksimal');
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM pengajuan WHERE npm = ?1').bind('2201010002').first();
+    expect(n.n).toBe(0);
+  });
+
+  it('returns 404 for an unknown file id', async () => {
+    const res = await SELF.fetch('http://example.com/api/files/UPL-nope');
+    expect(res.status).toBe(404);
+  });
+});

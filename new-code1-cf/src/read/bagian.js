@@ -10,7 +10,8 @@ function baSumber(r) {
   return s === 'admin' ? 'Admin' : 'Bagian';
 }
 
-export async function getBaginaConfig(db) {
+export async function getBaginaConfig(db, ctx) {
+  await requireBagianSession(db, '', '', ctx.token);
   return {
     categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'],
     labOptions: await getMasterOptions(db, 'Lab'),

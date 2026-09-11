@@ -964,6 +964,22 @@
                                     <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
                                     <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
                                     <div><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
+                                    <div class="sm:col-span-2 md:col-span-3">
+                                        <div class="label">Surat Keterangan</div>
+                                        <div v-if="detail.p['Link Surat Keterangan']" class="value">
+                                            <a :href="detail.p['Link Surat Keterangan']" target="_blank" class="link inline-flex items-center gap-1"><i class="bi bi-file-earmark-text"></i>Lihat Surat Keterangan</a>
+                                        </div>
+                                        <div v-else class="mt-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onSuratFile">
+                                                <button class="btn-primary !px-3 !py-1.5 text-xs" :disabled="!detail.suratFile || detail.suratUploading" @click="uploadSurat">
+                                                    {{ detail.suratUploading ? 'Mengunggah...' : 'Upload Surat Keterangan' }}
+                                                </button>
+                                            </div>
+                                            <p class="mt-1 text-[11px] text-slate-400">PDF/JPG/PNG, maksimal 700 KB.</p>
+                                            <p v-if="detail.suratError" class="mt-1 text-[11px] font-semibold text-rose-600">{{ detail.suratError }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div v-else class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                                     <div><div class="label">NPM</div><div class="value font-semibold">{{ detail.p.NPM }}</div></div>
@@ -1257,7 +1273,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '', biaya: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, showLengkap: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', baList: [], dForm: { dosen: '', tanggalPelaksanaan: '', biaya: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { rows: [], all: [], fBagian: '', fBlok: '', options: [], labs: [], bloks: [], detail: null },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
@@ -2041,10 +2057,37 @@
                     this.detail.showLengkap = false;
                     this.detail.loading = false;
                 },
+                onSuratFile(e) {
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    this.detail.suratFile = f;
+                    this.detail.suratName = f ? f.name : '';
+                    this.detail.suratError = '';
+                },
+                async uploadSurat() {
+                    const f = this.detail.suratFile;
+                    if (!f || !this.detail.p) return;
+                    this.detail.suratUploading = true;
+                    this.detail.suratError = '';
+                    try {
+                        const payload = await this.readFileAsBase64(f);
+                        const res = await this.run('uploadSuratKeterangan', this.detail.p['ID Pengajuan'], payload);
+                        if (!res || res.success === false) {
+                            this.detail.suratError = (res && res.message) || 'Gagal mengunggah surat.';
+                            return;
+                        }
+                        this.detail.suratFile = null;
+                        this.detail.suratName = '';
+                        this.notify((res && res.message) || 'Surat keterangan diunggah.');
+                        await this.reloadDetail(this.detail.p['ID Pengajuan'], true);
+                    } catch (e) {
+                        this.detail.suratError = String(e);
+                    } finally {
+                        this.detail.suratUploading = false;
+                    }
+                },
                 startEditInduk() {
                     const p = this.detail.p;
-                    if (!p) return;
-                    this.detail.iForm = {
+                    if (!p) return;                    this.detail.iForm = {
                         email: p.Email || '',
                         noHp: p['No. HP/WA'] || '',
                         blok: p.Blok || '',
