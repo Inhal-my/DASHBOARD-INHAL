@@ -124,6 +124,51 @@
 @media (min-width: 768px) { .md\:block { display: block; } .md\:hidden { display: none; } }
 @media (min-width: 1024px) { .lg\:grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
     </style>
+    <style>
+.text-brand-600 { color: #4f46e5; }
+.border-0 { border-width: 0; }
+.border-brand-400 { border-color: #818cf8; }
+.hover\:border-brand-300:hover { border-color: #a5b4fc; }
+.hover\:text-brand-600:hover { color: #4f46e5; }
+.bg-brand-50\/40 { background-color: rgb(238 242 255 / 0.4); }
+.hover\:bg-slate-50\/80:hover { background-color: rgb(248 250 252 / 0.8); }
+.hover\:bg-emerald-700:hover { background-color: #047857; }
+.hover\:bg-rose-500\/15:hover { background-color: rgb(244 63 94 / 0.15); }
+.hover\:text-rose-300:hover { color: #fda4af; }
+.hover\:opacity-95:hover { opacity: .95; }
+.focus\:bg-white:focus { background-color: #fff; }
+.focus\:ring-brand-600:focus { --tw-ring-color: #4f46e5; }
+.focus\:ring-2:focus { --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color); --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color); box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000); }
+.outline-none { outline: 2px solid transparent; outline-offset: 2px; }
+.font-normal { font-weight: 400; }
+.leading-none { line-height: 1; }
+.whitespace-pre-line { white-space: pre-line; }
+.text-amber-600 { color: #d97706; }
+.h-7 { height: 1.75rem; }
+.w-7 { width: 1.75rem; }
+.max-h-52 { max-height: 13rem; }
+.max-w-lg { max-width: 32rem; }
+.max-w-\[120px\] { max-width: 120px; }
+.rounded-md { border-radius: .375rem; }
+.pb-4 { padding-bottom: 1rem; }
+.pt-3 { padding-top: .75rem; }
+.pt-6 { padding-top: 1.5rem; }
+.py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+.space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.25rem; }
+.z-\[130\] { z-index: 130; }
+.z-\[150\] { z-index: 150; }
+.from-brand-800 { --tw-gradient-from: #3730a3 var(--tw-gradient-from-position); --tw-gradient-to: rgb(55 48 163 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.via-brand-900 { --tw-gradient-to: rgb(49 46 129 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #312e81 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.to-brand-950 { --tw-gradient-to: #1e1b4b var(--tw-gradient-to-position); }
+@media (min-width: 640px) {
+    .sm\:flex-row { flex-direction: row; }
+    .sm\:items-center { align-items: center; }
+    .sm\:justify-between { justify-content: space-between; }
+}
+@media (min-width: 1024px) {
+    .lg\:col-span-3 { grid-column: span 3 / span 3; }
+}
+    </style>
 </head>
 <body>
     <div id="app" v-cloak class="font-sans text-ink antialiased">
