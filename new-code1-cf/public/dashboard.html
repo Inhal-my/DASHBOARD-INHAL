@@ -33,6 +33,9 @@
         .btn-soft:hover { background: #f1f5f9; }
         .btn-danger-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff1f2; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #e11d48; box-shadow: inset 0 0 0 1px #fecdd3; transition: all .15s ease; }
         .btn-danger-soft:hover { background: #ffe4e6; }
+        .btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #e11d48; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #fff; transition: background .15s ease; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+        .btn-danger:hover { background: #be123c; }
+        .btn-primary:disabled, .btn-soft:disabled, .btn-danger:disabled { opacity: .6; cursor: not-allowed; }
         .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
         .link:hover { text-decoration: underline; }
         @media (min-width: 1024px) {
@@ -142,6 +145,44 @@
                 <i :class="toast.icon" class="mt-0.5 text-lg"></i>
                 <div class="text-sm">{{ toast.msg }}</div>
                 <button class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </transition>
+
+        <!-- ============ DIALOG (konfirmasi / input / info) ============ -->
+        <transition name="fade">
+            <div v-if="dialog.open" class="fixed inset-0 z-[130] modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="cancelDialog()"></div>
+                <transition name="pop" appear>
+                    <div class="modal-panel max-w-md shadow-lift" role="dialog" aria-modal="true">
+                        <div class="flex shrink-0 items-start gap-3 px-6 pt-5">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg" :class="dialogIconClass()">
+                                <i :class="dialog.icon"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-sm font-bold text-slate-900">{{ dialog.title }}</h3>
+                                <p v-if="dialog.message" class="mt-1 whitespace-pre-line text-sm text-slate-500">{{ dialog.message }}</p>
+                            </div>
+                            <button class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="cancelDialog()"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body px-6 pb-4 pt-3">
+                            <ul v-if="dialog.details && dialog.details.length" class="space-y-1.5">
+                                <li v-for="(d, i) in dialog.details" :key="i" class="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                                    <i class="bi bi-dot mt-0.5 text-base leading-none text-slate-400"></i>
+                                    <span class="flex-1">{{ d }}</span>
+                                </li>
+                            </ul>
+                            <div v-if="dialog.input" class="mt-3">
+                                <label v-if="dialog.input.label" class="label">{{ dialog.input.label }}</label>
+                                <input v-model="dialog.inputValue" class="input" :placeholder="dialog.input.placeholder" @keyup.enter="confirmDialog()">
+                                <p v-if="dialog.inputError" class="mt-1 text-xs font-semibold text-rose-500">{{ dialog.inputError }}</p>
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button v-if="dialog.cancelLabel" class="btn-soft" @click="cancelDialog()">{{ dialog.cancelLabel }}</button>
+                            <button :class="dialogConfirmClass()" @click="confirmDialog()">{{ dialog.confirmLabel }}</button>
+                        </div>
+                    </div>
+                </transition>
             </div>
         </transition>
 
@@ -1266,6 +1307,7 @@
                     loginError: '',
                     loginLoading: false,
                     toast: { show: false, msg: '', icon: 'bi-check-circle' },
+                    dialog: { open: false, title: '', message: '', details: [], icon: 'bi-question-circle', tone: 'primary', confirmLabel: 'Lanjutkan', cancelLabel: 'Batal', input: null, inputValue: '', inputError: '', resolver: null },
                     stats: { total: 0, totalBiaya: 0, perStatus: {}, trend: {}, perJenis: {}, perBlok: {}, perBagian: {} },
                     diagnostic: '',
                     pengajuanRows: [],
@@ -1543,7 +1585,7 @@
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.bab.ba.confirm);
+                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.bab.ba.confirm || this.dialog.open);
                 }
             },
             watch: {
@@ -1752,6 +1794,63 @@
                     this.toast = { show: true, msg, icon: ok ? 'bi-check-circle text-emerald-400' : 'bi-exclamation-triangle text-amber-400' };
                     setTimeout(() => { this.toast.show = false; }, 3800);
                 },
+                openDialog(opts, inputMode) {
+                    const o = opts || {};
+                    return new Promise((resolve) => {
+                        this.dialog = {
+                            open: true,
+                            title: o.title || (inputMode ? 'Input' : 'Konfirmasi'),
+                            message: o.message || '',
+                            details: o.details || [],
+                            icon: o.icon || (inputMode ? 'bi-pencil-square' : 'bi-question-circle'),
+                            tone: o.tone || 'primary',
+                            confirmLabel: o.confirmLabel || (inputMode ? 'Simpan' : 'Lanjutkan'),
+                            cancelLabel: o.cancelLabel === undefined ? 'Batal' : o.cancelLabel,
+                            input: inputMode ? { label: o.label || '', placeholder: o.placeholder || '', required: !!o.required } : null,
+                            inputValue: o.value || '',
+                            inputError: '',
+                            resolver: resolve
+                        };
+                    });
+                },
+                askConfirm(opts) {
+                    return this.openDialog(opts, false);
+                },
+                askInput(opts) {
+                    return this.openDialog(opts, true);
+                },
+                showInfo(opts) {
+                    const o = Object.assign({}, opts, { cancelLabel: '' });
+                    return this.openDialog(o, false);
+                },
+                closeDialog(value) {
+                    const resolver = this.dialog.resolver;
+                    this.dialog.open = false;
+                    this.dialog.resolver = null;
+                    if (resolver) resolver(value);
+                },
+                confirmDialog() {
+                    if (this.dialog.input && this.dialog.input.required && !String(this.dialog.inputValue || '').trim()) {
+                        this.dialog.inputError = this.dialog.input.label ? (this.dialog.input.label + ' wajib diisi.') : 'Wajib diisi.';
+                        return;
+                    }
+                    this.closeDialog(this.dialog.input ? String(this.dialog.inputValue || '') : true);
+                },
+                cancelDialog() {
+                    this.closeDialog(this.dialog.input ? null : false);
+                },
+                dialogIconClass() {
+                    const map = {
+                        primary: 'bg-indigo-50 text-indigo-600',
+                        danger: 'bg-rose-50 text-rose-600',
+                        warning: 'bg-amber-50 text-amber-600',
+                        success: 'bg-emerald-50 text-emerald-600'
+                    };
+                    return map[this.dialog.tone] || map.primary;
+                },
+                dialogConfirmClass() {
+                    return this.dialog.tone === 'danger' ? 'btn-danger' : 'btn-primary';
+                },
                 formatRupiah(num) {
                     const n = Number(num) || 0;
                     return 'Rp ' + n.toLocaleString('id-ID');
@@ -1952,7 +2051,13 @@
                     this.notify('Rekap CSV berhasil diunduh.');
                 },
                 async syncLogData() {
-                    if (!confirm('Sinkronkan data dari sheet LogData (sistem lama) ke Pengajuan? Data yang sudah ada tidak akan diduplikasi.')) return;
+                    const ok = await this.askConfirm({
+                        title: 'Sinkronkan Data LogData',
+                        message: 'Sinkronkan data dari sheet LogData (sistem lama) ke Pengajuan? Data yang sudah ada tidak akan diduplikasi.',
+                        icon: 'bi-arrow-repeat',
+                        confirmLabel: 'Sinkronkan'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('syncLogDataToPengajuan');
@@ -2003,10 +2108,16 @@
                 },
                 async bulkFinalEmail() {
                     const sel = this.selectedIds;
-                    const msg = sel.length
-                        ? 'Kirim email ACC final (PDF) ke ' + sel.length + ' pengajuan terpilih?'
-                        : 'Kirim email ACC final (PDF) ke SEMUA pengajuan berstatus ACC?';
-                    if (!confirm(msg)) return;
+                    const ok = await this.askConfirm({
+                        title: 'Kirim Email ACC Final',
+                        message: sel.length
+                            ? 'Kirim email ACC final (PDF) ke ' + sel.length + ' pengajuan terpilih?'
+                            : 'Kirim email ACC final (PDF) ke SEMUA pengajuan berstatus ACC?',
+                        details: sel.length ? [] : ['Pastikan berkas ACC INHAL sudah diunggah pada setiap pengajuan.'],
+                        icon: 'bi-envelope-paper',
+                        confirmLabel: 'Kirim Email'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('sendBulkFinalEmail', sel);
@@ -2014,7 +2125,14 @@
                         if (res && res.details) {
                             const failed = res.details.filter(d => !d.ok);
                             if (failed.length) {
-                                setTimeout(() => alert('Rincian kegagalan (' + failed.length + '):\n' + failed.map(f => f.nama + ' (' + f.npm + '): ' + (f.notes || []).join(' ')).join('\n')), 200);
+                                await this.showInfo({
+                                    title: 'Sebagian Email Gagal',
+                                    tone: 'warning',
+                                    icon: 'bi-exclamation-triangle',
+                                    message: failed.length + ' dari ' + res.details.length + ' email gagal dikirim:',
+                                    details: failed.map(f => f.nama + ' (' + f.npm + '): ' + ((f.notes || []).join(' ') || 'gagal')),
+                                    confirmLabel: 'Tutup'
+                                });
                             }
                         }
                         await this.loadPengajuan();
@@ -2158,7 +2276,14 @@
                     }
                 },
                 async deleteDetailRow(i) {
-                    if (!confirm('Hapus detail kegiatan ini dari pengajuan ' + this.detail.p['ID Pengajuan'] + '?')) return;
+                    const ok = await this.askConfirm({
+                        title: 'Hapus Detail Kegiatan',
+                        message: 'Hapus detail kegiatan ini dari pengajuan ' + this.detail.p['ID Pengajuan'] + '?',
+                        icon: 'bi-trash',
+                        tone: 'danger',
+                        confirmLabel: 'Hapus'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('deleteDetailKegiatan', this.detail.p['ID Pengajuan'], i);
@@ -2265,16 +2390,33 @@
                 async quickStatus(status) {
                     this.detail.status = status;
                     if (status === 'Ditolak') {
-                        const alasan = prompt('Alasan penolakan (wajib):');
-                        if (!alasan || !alasan.trim()) { this.notify('Catatan wajib diisi saat menolak pengajuan.', false); return; }
-                        this.detail.catatan = alasan.trim();
+                        const alasan = await this.askInput({
+                            title: 'Tolak Pengajuan',
+                            message: 'Berikan alasan penolakan. Alasan ini akan tampil sebagai catatan admin dan pada pemberitahuan.',
+                            label: 'Alasan penolakan',
+                            placeholder: 'Tulis alasan penolakan...',
+                            required: true,
+                            icon: 'bi-x-octagon',
+                            tone: 'danger',
+                            confirmLabel: 'Tolak Pengajuan'
+                        });
+                        if (alasan === null) return;
+                        const val = String(alasan).trim();
+                        if (!val) { this.notify('Catatan wajib diisi saat menolak pengajuan.', false); return; }
+                        this.detail.catatan = val;
                     } else {
                         this.detail.catatan = '';
                     }
                     await this.updateStatus();
                 },
                 async sendStatusEmail() {
-                    if (!confirm('Kirim ulang email notifikasi status ke mahasiswa?')) return;
+                    const ok = await this.askConfirm({
+                        title: 'Kirim Ulang Notifikasi Status',
+                        message: 'Kirim ulang email notifikasi status ke mahasiswa?',
+                        icon: 'bi-send',
+                        confirmLabel: 'Kirim Email'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('sendStatusNotificationEmail', this.detail.p['ID Pengajuan']);
@@ -2288,10 +2430,20 @@
                 },
                 async sendFinalEmail() {
                     const alreadyAcc = this.detail.p.Status === 'ACC';
-                    const msg = alreadyAcc
-                        ? 'Kirim ulang email ACC final (PDF) ke mahasiswa dan bagian?'
-                        : 'ACC pengajuan ini lalu kirim email ACC final (PDF) ke mahasiswa dan bagian?';
-                    if (!confirm(msg)) return;
+                    const ok = await this.askConfirm({
+                        title: alreadyAcc ? 'Kirim Ulang Email ACC Final' : 'ACC & Kirim Email Final',
+                        message: alreadyAcc
+                            ? 'Kirim ulang email ACC final (PDF) ke mahasiswa dan bagian?'
+                            : 'ACC pengajuan ini lalu kirim email ACC final (PDF) ke mahasiswa dan bagian?',
+                        details: alreadyAcc ? [] : [
+                            'Status pengajuan akan diubah menjadi ACC.',
+                            'Mahasiswa menerima surat keterangan final (PDF).',
+                            'Bagian menerima salinan PDF final.'
+                        ],
+                        icon: 'bi-envelope-paper',
+                        confirmLabel: alreadyAcc ? 'Kirim Ulang' : 'ACC & Kirim'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('sendFinalEmail', this.detail.p['ID Pengajuan']);
@@ -2304,7 +2456,13 @@
                     }
                 },
                 async sendAccFinalToBagian() {
-                    if (!confirm('Kirim ulang email ACC final (PDF) khusus ke email Bagian?')) return;
+                    const ok = await this.askConfirm({
+                        title: 'Kirim Ulang ke Bagian',
+                        message: 'Kirim ulang email ACC final (PDF) khusus ke email Bagian?',
+                        icon: 'bi-send',
+                        confirmLabel: 'Kirim Email'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('sendAccFinalToBagian', this.detail.p['ID Pengajuan']);
@@ -2317,12 +2475,20 @@
                     }
                 },
                 async deletePengajuan() {
-                    if (!confirm('HAPUS pengajuan ' + this.detail.p['ID Pengajuan'] + ' beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.')) return;
-                    const alasan = prompt('Alasan penghapusan (opsional):');
+                    const alasan = await this.askInput({
+                        title: 'Hapus Pengajuan',
+                        message: 'HAPUS pengajuan ' + this.detail.p['ID Pengajuan'] + ' beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.',
+                        label: 'Alasan penghapusan (opsional)',
+                        placeholder: 'Tulis alasan penghapusan...',
+                        tone: 'danger',
+                        icon: 'bi-trash',
+                        confirmLabel: 'Hapus Permanen'
+                    });
                     if (alasan === null) return;
+                    const reason = String(alasan).trim();
                     this.loading = true;
                     try {
-                        const res = await this.run('deletePengajuanAdmin', this.detail.p['ID Pengajuan'], alasan);
+                        const res = await this.run('deletePengajuanAdmin', this.detail.p['ID Pengajuan'], reason);
                         this.notify((res && res.message) || 'Selesai.');
                         if (res && res.success) {
                             this.detail.open = false;
@@ -2478,7 +2644,14 @@
                     }
                 },
                 async deleteBa(baId) {
-                    if (!confirm('Hapus berita acara ' + baId + ' beserta peserta dan file terkait?')) return;
+                    const ok = await this.askConfirm({
+                        title: 'Hapus Berita Acara',
+                        message: 'Hapus berita acara ' + baId + ' beserta peserta dan file terkait?',
+                        icon: 'bi-trash',
+                        tone: 'danger',
+                        confirmLabel: 'Hapus'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
                         const res = await this.run('deleteBeritaAcaraAdmin', baId);
@@ -2575,6 +2748,13 @@
             mounted() {
                 this.session = readSession();
                 if (this.loggedIn) this.bootstrap();
+                this._onKeydown = (e) => {
+                    if (e.key === 'Escape' && this.dialog.open) this.cancelDialog();
+                };
+                document.addEventListener('keydown', this._onKeydown);
+            },
+            unmounted() {
+                if (this._onKeydown) document.removeEventListener('keydown', this._onKeydown);
             }
         }).mount('#app');
     </script>
