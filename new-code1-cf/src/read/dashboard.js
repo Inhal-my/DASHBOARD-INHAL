@@ -219,12 +219,12 @@ export async function getMasterDataMonitor(db, ctx) {
   await requireAdmin(db, ctx.token);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
   return {
-    masterKegiatan: await all('master_kegiatan'),
-    masterBagian: await all('master_bagian'),
-    masterBiaya: await all('master_biaya'),
-    config: await all('config'),
-    bagianStaff: await all('bagian_staff'),
-    admin: await all('admin'),
+    masterKegiatan: toClientRows('master_kegiatan', await all('master_kegiatan')),
+    masterBagian: toClientRows('master_bagian', await all('master_bagian')),
+    masterBiaya: toClientRows('master_biaya', await all('master_biaya')),
+    config: toClientRows('config', await all('config')),
+    bagianStaff: toClientRows('bagian_staff', await all('bagian_staff')),
+    admin: toClientRows('admin', await all('admin')),
     bagianSettings: await getBagianBaSettings(db)
   };
 }

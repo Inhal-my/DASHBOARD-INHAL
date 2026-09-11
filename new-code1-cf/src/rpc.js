@@ -6,6 +6,10 @@ import {
   getBeritaAcaraAdminList, getLabOptions, getMasterDataMonitor, getPengajuanWithDetails,
   getBaUploadOptions, diagnosticData, getBagianBaSettingsHandler, uploadSuratKeterangan
 } from './read/dashboard.js';
+import {
+  saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
+  saveBagianStaff, saveAdminList, saveBagianBaSettings
+} from './write/master.js';
 
 const HANDLERS = {
   authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
@@ -27,7 +31,14 @@ const HANDLERS = {
   getPengajuanWithDetails: (db, args, ctx) => getPengajuanWithDetails(db, args[0], ctx),
   getBaUploadOptions: (db, args, ctx) => getBaUploadOptions(db, ctx),
   uploadSuratKeterangan: (db, args, ctx) => uploadSuratKeterangan(db, args[0], args[1], ctx),
-  diagnosticData: (db, args, ctx) => diagnosticData(db, ctx)
+  diagnosticData: (db, args, ctx) => diagnosticData(db, ctx),
+  saveMasterKegiatan: (db, args, ctx) => saveMasterKegiatan(db, args[0], ctx),
+  saveMasterBagian: (db, args, ctx) => saveMasterBagian(db, args[0], ctx),
+  saveMasterBiaya: (db, args, ctx) => saveMasterBiaya(db, args[0], ctx),
+  saveConfig: (db, args, ctx) => saveConfig(db, args[0], ctx),
+  saveBagianStaff: (db, args, ctx) => saveBagianStaff(db, args[0], ctx),
+  saveAdminList: (db, args, ctx) => saveAdminList(db, args[0], ctx),
+  saveBagianBaSettings: (db, args, ctx) => saveBagianBaSettings(db, args[0], ctx)
 };
 
 export async function extractToken(db, args) {
