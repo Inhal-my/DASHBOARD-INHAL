@@ -307,7 +307,13 @@ export async function saveMasterRow(db, payload, ctx) {
   if (table === 'config') {
     const key = mapped.key;
     if (!key) return { success: false, message: 'Key wajib diisi.' };
+    const mode = str(raw.mode) === 'update' ? 'update' : 'insert';
     const found = await db.prepare('SELECT key FROM config WHERE lower(key) = lower(?1)').bind(key).first();
+    if (mode === 'update') {
+      if (!found) return { success: false, message: 'Config tidak ditemukan.' };
+      await db.prepare('UPDATE config SET value = ?2 WHERE lower(key) = lower(?1)').bind(key, mapped.value).run();
+      return { success: true, message: 'Config diperbarui.' };
+    }
     if (found) return { success: false, message: 'Key ' + key + ' sudah ada.' };
     await db.prepare('INSERT INTO config (key, value) VALUES (?1, ?2)').bind(key, mapped.value).run();
     return { success: true, message: 'Config ditambahkan.' };
