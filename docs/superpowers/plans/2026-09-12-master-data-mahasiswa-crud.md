@@ -330,14 +330,19 @@ describe('saveMasterRow and deleteMasterRow', () => {
     expect((await saveMasterRow(env.DB, { table: 'master_kegiatan', row: {} }, ctx)).success).toBe(false);
   });
 
-  it('inserts config and rejects duplicate key, never deletes config', async () => {
+  it('inserts config, rejects duplicate key, updates by key, and never deletes config', async () => {
     const ctx = await adminCtx();
     const ins = await saveMasterRow(env.DB, { table: 'config', row: { Key: 'TEMA', Value: 'indigo' } }, ctx);
     expect(ins.success).toBe(true);
     const dup = await saveMasterRow(env.DB, { table: 'config', row: { Key: 'tema', Value: 'x' } }, ctx);
     expect(dup.success).toBe(false);
-    const cfg = await env.DB.prepare("SELECT * FROM config WHERE key = 'TEMA'").first();
-    const del = await deleteMasterRow(env.DB, { table: 'config', id: cfg.id }, ctx);
+    const upd = await saveMasterRow(env.DB, { table: 'config', row: { Key: 'bukti_mode', Value: 'lenggang', mode: 'update' } }, ctx);
+    expect(upd.success).toBe(true);
+    const row = await env.DB.prepare("SELECT value FROM config WHERE lower(key) = 'bukti_mode'").first();
+    expect(row.value).toBe('lenggang');
+    const miss = await saveMasterRow(env.DB, { table: 'config', row: { Key: 'TIDAK_ADA', Value: 'x', mode: 'update' } }, ctx);
+    expect(miss.success).toBe(false);
+    const del = await deleteMasterRow(env.DB, { table: 'config' }, ctx);
     expect(del.success).toBe(false);
   });
 
@@ -448,15 +453,13 @@ export async function saveMasterRow(db, payload, ctx) {
   if (table === 'config') {
     const key = mapped.key;
     if (!key) return { success: false, message: 'Key wajib diisi.' };
-    if (id) {
-      const exists = await db.prepare('SELECT id FROM config WHERE id = ?1').bind(id).first();
-      if (!exists) return { success: false, message: 'Config tidak ditemukan.' };
-      const dup = await db.prepare('SELECT id FROM config WHERE lower(key) = lower(?1) AND id != ?2').bind(key, id).first();
-      if (dup) return { success: false, message: 'Key ' + key + ' sudah ada.' };
-      await db.prepare('UPDATE config SET key = ?2, value = ?3 WHERE id = ?1').bind(id, key, mapped.value).run();
+    const mode = str(raw.mode) === 'update' ? 'update' : 'insert';
+    const found = await db.prepare('SELECT key FROM config WHERE lower(key) = lower(?1)').bind(key).first();
+    if (mode === 'update') {
+      if (!found) return { success: false, message: 'Config tidak ditemukan.' };
+      await db.prepare('UPDATE config SET value = ?2 WHERE lower(key) = lower(?1)').bind(key, mapped.value).run();
       return { success: true, message: 'Config diperbarui.' };
     }
-    const found = await db.prepare('SELECT id FROM config WHERE lower(key) = lower(?1)').bind(key).first();
     if (found) return { success: false, message: 'Key ' + key + ' sudah ada.' };
     await db.prepare('INSERT INTO config (key, value) VALUES (?1, ?2)').bind(key, mapped.value).run();
     return { success: true, message: 'Config ditambahkan.' };
@@ -895,7 +898,7 @@ Tambahkan juga `table` pada kartu tabel lain agar tombol Aksi tahu target: `mast
                 },
                 async saveMasterRow() {
                     const rm = this.master.rowModal;
-                    const row = Object.assign({}, rm.fields);
+                    const row = Object.assign({}, rm.fields, { mode: rm.mode });
                     if (rm.originalId) row.id = rm.originalId;
                     this.master.saving = true;
                     try {
