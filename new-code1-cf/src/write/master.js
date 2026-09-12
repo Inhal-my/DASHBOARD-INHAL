@@ -167,3 +167,36 @@ export async function saveBagianBaSettings(db, payload, ctx) {
   await upsertConfig(db, 'BAGIAN_BA_FINAL_ONLY', finalOnly ? 'true' : 'false');
   return { success: true, message: 'Pengaturan Berita Acara Bagian diperbarui.' };
 }
+
+export async function saveMahasiswa(db, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const row = (payload && payload.row) || {};
+  const npm = str(row.npm !== undefined ? row.npm : row.NPM);
+  if (!npm) return { success: false, message: 'NPM wajib diisi.' };
+  const mode = str(row.mode) === 'update' ? 'update' : 'insert';
+  const nama = str(row.namaLengkap !== undefined ? row.namaLengkap : row['Nama Lengkap']);
+  const email = str(row.email !== undefined ? row.email : row.Email);
+  const blok = str(row.blok !== undefined ? row.blok : row.Blok);
+  const keterangan = str(row.keterangan !== undefined ? row.keterangan : row.Keterangan);
+  const existing = await db.prepare('SELECT npm FROM mahasiswa WHERE npm = ?1').bind(npm).first();
+  if (mode === 'insert') {
+    if (existing) return { success: false, message: 'NPM ' + npm + ' sudah ada.' };
+    await db.prepare('INSERT INTO mahasiswa (npm, nama_lengkap, email, blok, keterangan) VALUES (?1, ?2, ?3, ?4, ?5)')
+      .bind(npm, nama, email, blok, keterangan).run();
+    return { success: true, message: 'Mahasiswa ditambahkan.' };
+  }
+  if (!existing) return { success: false, message: 'NPM ' + npm + ' tidak ditemukan.' };
+  await db.prepare('UPDATE mahasiswa SET nama_lengkap = ?2, email = ?3, blok = ?4, keterangan = ?5 WHERE npm = ?1')
+    .bind(npm, nama, email, blok, keterangan).run();
+  return { success: true, message: 'Mahasiswa diperbarui.' };
+}
+
+export async function deleteMahasiswa(db, npm, ctx) {
+  await requireAdmin(db, ctx.token);
+  const key = str(npm);
+  if (!key) return { success: false, message: 'NPM wajib diisi.' };
+  const existing = await db.prepare('SELECT npm FROM mahasiswa WHERE npm = ?1').bind(key).first();
+  if (!existing) return { success: false, message: 'NPM ' + key + ' tidak ditemukan.' };
+  await db.prepare('DELETE FROM mahasiswa WHERE npm = ?1').bind(key).run();
+  return { success: true, message: 'Mahasiswa dihapus.' };
+}
