@@ -200,3 +200,44 @@ export async function deleteMahasiswa(db, npm, ctx) {
   await db.prepare('DELETE FROM mahasiswa WHERE npm = ?1').bind(key).run();
   return { success: true, message: 'Mahasiswa dihapus.' };
 }
+
+export async function importMahasiswaCsv(db, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const list = Array.isArray(payload && payload.rows) ? payload.rows : [];
+  const guard = tooMany(list);
+  if (guard) return guard;
+  const parsed = [];
+  const seen = new Set();
+  let skipped = 0;
+  for (const raw of list) {
+    const npm = str(raw && (raw.npm !== undefined ? raw.npm : raw.NPM));
+    if (!npm) { skipped++; continue; }
+    if (seen.has(npm)) return { success: false, message: 'NPM duplikat di file: ' + npm };
+    seen.add(npm);
+    const nama = str(raw && (raw.namaLengkap !== undefined ? raw.namaLengkap : raw['Nama Lengkap']));
+    parsed.push({ npm: npm, nama: nama });
+  }
+  if (!parsed.length) return { success: false, message: 'Tidak ada baris valid pada CSV.' };
+  const existingRows = (await db.prepare('SELECT npm FROM mahasiswa').all()).results || [];
+  const existing = new Set(existingRows.map((r) => String(r.npm)));
+  const statements = [];
+  let inserted = 0;
+  let updated = 0;
+  for (const row of parsed) {
+    if (existing.has(row.npm)) {
+      statements.push(db.prepare('UPDATE mahasiswa SET nama_lengkap = ?2 WHERE npm = ?1').bind(row.npm, row.nama));
+      updated++;
+    } else {
+      statements.push(db.prepare("INSERT INTO mahasiswa (npm, nama_lengkap, email, blok, keterangan) VALUES (?1, ?2, '', '', '')").bind(row.npm, row.nama));
+      inserted++;
+    }
+  }
+  await db.batch(statements);
+  return {
+    success: true,
+    message: 'Impor selesai: ' + inserted + ' baru, ' + updated + ' diperbarui.',
+    inserted: inserted,
+    updated: updated,
+    skipped: skipped
+  };
+}

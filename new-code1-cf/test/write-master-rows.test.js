@@ -62,3 +62,48 @@ describe('deleteMahasiswa', () => {
     expect(miss.success).toBe(false);
   });
 });
+
+import { importMahasiswaCsv } from '../src/write/master.js';
+
+describe('importMahasiswaCsv', () => {
+  it('inserts new NPM and updates existing NPM, keeping other columns', async () => {
+    const ctx = await adminCtx();
+    await env.DB.prepare("INSERT INTO mahasiswa (npm, nama_lengkap, email, blok, keterangan) VALUES ('8800000001','Lama','lama@x.id','Z','note')").run();
+    const res = await importMahasiswaCsv(env.DB, {
+      rows: [
+        { npm: '8800000001', namaLengkap: 'Nama Baru' },
+        { npm: '8800000002', namaLengkap: 'Siswa Dua' }
+      ]
+    }, ctx);
+    expect(res.success).toBe(true);
+    expect(res.inserted).toBe(1);
+    expect(res.updated).toBe(1);
+    const kept = await env.DB.prepare('SELECT * FROM mahasiswa WHERE npm = ?1').bind('8800000001').first();
+    expect(kept.nama_lengkap).toBe('Nama Baru');
+    expect(kept.email).toBe('lama@x.id');
+    expect(kept.blok).toBe('Z');
+    expect(kept.keterangan).toBe('note');
+    const fresh = await env.DB.prepare('SELECT * FROM mahasiswa WHERE npm = ?1').bind('8800000002').first();
+    expect(fresh.email).toBe('');
+    expect(fresh.blok).toBe('');
+  });
+
+  it('skips blank NPM and rejects duplicate NPM in the file', async () => {
+    const ctx = await adminCtx();
+    const res = await importMahasiswaCsv(env.DB, {
+      rows: [{ npm: '', namaLengkap: 'Kosong' }, { npm: '8800000003', namaLengkap: 'Tiga' }]
+    }, ctx);
+    expect(res.success).toBe(true);
+    expect(res.skipped).toBe(1);
+    const dup = await importMahasiswaCsv(env.DB, {
+      rows: [{ npm: '8800000004', namaLengkap: 'A' }, { npm: '8800000004', namaLengkap: 'B' }]
+    }, ctx);
+    expect(dup.success).toBe(false);
+    expect(await env.DB.prepare('SELECT npm FROM mahasiswa WHERE npm = ?1').bind('8800000004').first()).toBeNull();
+  });
+
+  it('rejects an empty payload', async () => {
+    const res = await importMahasiswaCsv(env.DB, { rows: [] }, await adminCtx());
+    expect(res.success).toBe(false);
+  });
+});
