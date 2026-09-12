@@ -9,7 +9,8 @@ import {
 } from './read/dashboard.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
-  saveBagianStaff, saveAdminList, saveBagianBaSettings
+  saveBagianStaff, saveAdminList, saveBagianBaSettings,
+  saveMahasiswa, deleteMahasiswa, importMahasiswaCsv, saveMasterRow, deleteMasterRow
 } from './write/master.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian
@@ -50,6 +51,11 @@ const HANDLERS = {
   saveBagianStaff: (db, args, ctx) => saveBagianStaff(db, args[0], ctx),
   saveAdminList: (db, args, ctx) => saveAdminList(db, args[0], ctx),
   saveBagianBaSettings: (db, args, ctx) => saveBagianBaSettings(db, args[0], ctx),
+  saveMahasiswa: (db, args, ctx) => saveMahasiswa(db, args[0], ctx),
+  deleteMahasiswa: (db, args, ctx) => deleteMahasiswa(db, args[0], ctx),
+  importMahasiswaCsv: (db, args, ctx) => importMahasiswaCsv(db, args[0], ctx),
+  saveMasterRow: (db, args, ctx) => saveMasterRow(db, args[0], ctx),
+  deleteMasterRow: (db, args, ctx) => deleteMasterRow(db, args[0], ctx),
   updatePengajuanFields: (db, args, ctx) => updatePengajuanFields(db, args[0], args[1], ctx),
   updateDetailKegiatan: (db, args, ctx) => updateDetailKegiatan(db, args[0], args[1], args[2], ctx),
   deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),
