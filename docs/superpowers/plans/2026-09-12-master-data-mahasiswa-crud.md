@@ -588,6 +588,7 @@ Append to `new-code1-cf/test/rpc.test.js`:
 
 ```js
   it('dispatches the new master row RPCs', async () => {
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();
     const sess = await dispatchRpc(env.DB, 'authenticateAdmin', ['rahasia']);
     const token = sess.token;
     const save = await dispatchRpc(env.DB, 'saveMahasiswa', [{ row: { npm: '6600000001', namaLengkap: 'RPC Test', mode: 'insert' } }, token]);
@@ -598,17 +599,6 @@ Append to `new-code1-cf/test/rpc.test.js`:
     expect(master.success).toBe(true);
     const del = await dispatchRpc(env.DB, 'deleteMahasiswa', ['6600000001', token]);
     expect(del.success).toBe(true);
-  });
-```
-
-Catatan: `rpc.test.js` sebelumnya menyisipkan admin `'rahasia'` di test lain dengan `admin` yang sama; pengujian ini membuat admin baru agar mandiri:
-
-Tambahkan tepat sebelum baris `it('dispatches the new master row RPCs'` di atas:
-
-```js
-  it('sets up an admin for row RPC tests', async () => {
-    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();
-    expect(true).toBe(true);
   });
 ```
 
@@ -1082,7 +1072,7 @@ Expected: FAIL — `master-table-dense` belum ada. (Assertion `editMaster` sudah
         .master-table-dense th, .master-table-dense td { padding-top: .4rem; padding-bottom: .4rem; }
 ```
 
-3c. Hapus modal editor lama (blok `<!-- ============ MODAL: MASTER EDITOR ============ -->`, baris 1282-1327) dan method `editMaster`, `addMasterRow`, `removeMasterRow`, `saveEdit` (baris 2960-3001) **hanya jika** tidak ada referensi lain. Cek dulu:
+3c. Hapus modal editor lama (blok `<!-- ============ MODAL: MASTER EDITOR ============ -->`, baris 1282-1327) dan method `editMaster`, `addMasterRow`, `removeMasterRow`, `saveEdit`, `isBuktiModeRow`, `isConfigKeyRow` (baris 2948-3001) — semuanya hanya dipakai modal lama. Pertahankan `masterCellValue` (masih dipakai tabel dan label Hapus). **Hanya jika** tidak ada referensi lain. Cek dulu:
 
 Run: `npx vitest run` — jika ada test lama yang memanggil `saveMasterKegiatan` langsung dari `write/master.js`, itu tetap hijau karena fungsi tidak dihapus.
 
