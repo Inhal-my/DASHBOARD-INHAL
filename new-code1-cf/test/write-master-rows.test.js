@@ -107,3 +107,65 @@ describe('importMahasiswaCsv', () => {
     expect(res.success).toBe(false);
   });
 });
+
+import { saveMasterRow, deleteMasterRow } from '../src/write/master.js';
+
+describe('saveMasterRow and deleteMasterRow', () => {
+  it('inserts and updates a master_kegiatan row by id', async () => {
+    const ctx = await adminCtx();
+    const ins = await saveMasterRow(env.DB, { table: 'master_kegiatan', row: { Kategori: 'Blok', Nilai: 'C' } }, ctx);
+    expect(ins.success).toBe(true);
+    const row = await env.DB.prepare("SELECT * FROM master_kegiatan WHERE nilai = 'C'").first();
+    const upd = await saveMasterRow(env.DB, { table: 'master_kegiatan', row: { id: row.id, Kategori: 'Blok', Nilai: 'D' } }, ctx);
+    expect(upd.success).toBe(true);
+    const after = await env.DB.prepare('SELECT nilai FROM master_kegiatan WHERE id = ?1').bind(row.id).first();
+    expect(after.nilai).toBe('D');
+  });
+
+  it('rejects unknown tables and empty rows', async () => {
+    const ctx = await adminCtx();
+    expect((await saveMasterRow(env.DB, { table: 'pengajuan', row: { npm: '1' } }, ctx)).success).toBe(false);
+    expect((await saveMasterRow(env.DB, { table: 'master_kegiatan', row: {} }, ctx)).success).toBe(false);
+  });
+
+  it('inserts config and rejects duplicate key, never deletes config', async () => {
+    const ctx = await adminCtx();
+    const ins = await saveMasterRow(env.DB, { table: 'config', row: { Key: 'TEMA', Value: 'indigo' } }, ctx);
+    expect(ins.success).toBe(true);
+    const dup = await saveMasterRow(env.DB, { table: 'config', row: { Key: 'tema', Value: 'x' } }, ctx);
+    expect(dup.success).toBe(false);
+    const cfg = await env.DB.prepare("SELECT * FROM config WHERE key = 'TEMA'").first();
+    const del = await deleteMasterRow(env.DB, { table: 'config', id: cfg.id }, ctx);
+    expect(del.success).toBe(false);
+  });
+
+  it('keeps the old password when the field is blank on update', async () => {
+    const ctx = await adminCtx();
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('pbkdf2$1000$YQ==$YQ==','Admin Lama')").run();
+    const row = await env.DB.prepare('SELECT * FROM admin ORDER BY id DESC LIMIT 1').first();
+    const upd = await saveMasterRow(env.DB, { table: 'admin', row: { id: row.id, Password: '', Nama: 'Admin Tetap' } }, ctx);
+    expect(upd.success).toBe(true);
+    const after = await env.DB.prepare('SELECT password, nama FROM admin WHERE id = ?1').bind(row.id).first();
+    expect(after.password).toBe('pbkdf2$1000$YQ==$YQ==');
+    expect(after.nama).toBe('Admin Tetap');
+  });
+
+  it('hashes a new password on update', async () => {
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('pbkdf2$1000$YQ==$YQ==','Admin Awal')").run();
+    const row = await env.DB.prepare('SELECT * FROM admin ORDER BY id DESC LIMIT 1').first();
+    const upd = await saveMasterRow(env.DB, { table: 'admin', row: { id: row.id, Password: 'rahasia2', Nama: 'Admin' } }, await adminCtx());
+    expect(upd.success).toBe(true);
+    const after = await env.DB.prepare('SELECT password FROM admin WHERE id = ?1').bind(row.id).first();
+    expect(after.password).toMatch(/^pbkdf2\$/);
+  });
+
+  it('deletes a non-config row and rejects a missing id', async () => {
+    await env.DB.prepare("INSERT INTO master_kegiatan (kategori, nilai) VALUES ('Blok','D')").run();
+    const row = await env.DB.prepare("SELECT * FROM master_kegiatan WHERE nilai = 'D'").first();
+    const ctx = await adminCtx();
+    const ok = await deleteMasterRow(env.DB, { table: 'master_kegiatan', id: row.id }, ctx);
+    expect(ok.success).toBe(true);
+    const miss = await deleteMasterRow(env.DB, { table: 'master_kegiatan', id: 999999 }, ctx);
+    expect(miss.success).toBe(false);
+  });
+});

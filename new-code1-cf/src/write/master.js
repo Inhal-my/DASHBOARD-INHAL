@@ -241,3 +241,107 @@ export async function importMahasiswaCsv(db, payload, ctx) {
     skipped: skipped
   };
 }
+
+const MASTER_TABLES = {
+  master_kegiatan: {
+    cols: [['kategori', ['Kategori', 'kategori']], ['nilai', ['Nilai', 'nilai']]]
+  },
+  master_bagian: {
+    cols: [
+      ['lab', ['Lab', 'lab']],
+      ['kegiatan_lab', ['Kegiatan Lab', 'KegiatanLab', 'kegiatanLab', 'kegiatan_lab']],
+      ['bagian', ['Bagian', 'bagian']],
+      ['email', ['Email', 'email']]
+    ]
+  },
+  master_biaya: {
+    cols: [['kegiatan', ['Kegiatan', 'kegiatan']], ['biaya', ['Biaya', 'biaya']]]
+  },
+  config: {
+    cols: [['key', ['Key', 'key']], ['value', ['Value', 'value']]]
+  },
+  bagian_staff: {
+    cols: [
+      ['email', ['Email', 'email']], ['kategori', ['Kategori', 'kategori']],
+      ['nama', ['Nama', 'nama']], ['pass', ['Pass', 'pass', 'Password', 'password']]
+    ],
+    passwordCol: 'pass',
+    uniqueCol: 'email'
+  },
+  admin: {
+    cols: [['password', ['Password', 'password', 'Email', 'email']], ['nama', ['Nama', 'nama']]],
+    passwordCol: 'password'
+  }
+};
+
+async function rejectDuplicate(db, table, spec, mapped, id) {
+  if (!spec.uniqueCol) return null;
+  const value = mapped[spec.uniqueCol];
+  if (!value) return null;
+  const found = await db.prepare('SELECT id FROM ' + table + ' WHERE lower(' + spec.uniqueCol + ') = lower(?1)').bind(value).first();
+  if (found && Number(found.id) !== Number(id)) {
+    return { success: false, message: 'Nilai ' + value + ' sudah ada.' };
+  }
+  return null;
+}
+
+export async function saveMasterRow(db, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const table = str(payload && payload.table);
+  const spec = MASTER_TABLES[table];
+  if (!spec) return { success: false, message: 'Tabel tidak dikenal.' };
+  const raw = (payload && payload.row) || {};
+  const mapped = {};
+  let filled = false;
+  for (const [field, keys] of spec.cols) {
+    const value = pick(raw, keys);
+    mapped[field] = value;
+    if (value !== '') filled = true;
+  }
+  if (!filled) return { success: false, message: 'Baris kosong.' };
+  const id = Number(raw.id) || 0;
+  if (spec.passwordCol) {
+    const pw = mapped[spec.passwordCol];
+    if (pw && !isHashed(pw)) mapped[spec.passwordCol] = await hashPassword(pw);
+  }
+  if (table === 'config') {
+    const key = mapped.key;
+    if (!key) return { success: false, message: 'Key wajib diisi.' };
+    const found = await db.prepare('SELECT key FROM config WHERE lower(key) = lower(?1)').bind(key).first();
+    if (found) return { success: false, message: 'Key ' + key + ' sudah ada.' };
+    await db.prepare('INSERT INTO config (key, value) VALUES (?1, ?2)').bind(key, mapped.value).run();
+    return { success: true, message: 'Config ditambahkan.' };
+  }
+  const dupRow = await rejectDuplicate(db, table, spec, mapped, id);
+  if (dupRow) return dupRow;
+  if (id) {
+    const exists = await db.prepare('SELECT id FROM ' + table + ' WHERE id = ?1').bind(id).first();
+    if (!exists) return { success: false, message: 'Baris tidak ditemukan.' };
+    const fields = spec.cols
+      .map(([field]) => field)
+      .filter((field) => !(spec.passwordCol === field && mapped[field] === ''));
+    const sets = fields.map((field, i) => field + ' = ?' + (i + 2)).join(', ');
+    const values = fields.map((field) => mapped[field]);
+    await db.prepare('UPDATE ' + table + ' SET ' + sets + ' WHERE id = ?1').bind(id, ...values).run();
+    return { success: true, message: 'Baris diperbarui.' };
+  }
+  const cols = spec.cols.map(([field]) => field);
+  const values = cols.map((field) => mapped[field]);
+  const placeholders = cols.map((_, i) => '?' + (i + 1)).join(', ');
+  await db.prepare('INSERT INTO ' + table + ' (' + cols.join(', ') + ') VALUES (' + placeholders + ')').bind(...values).run();
+  return { success: true, message: 'Baris ditambahkan.' };
+}
+
+export async function deleteMasterRow(db, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const table = str(payload && payload.table);
+  if (table === 'config') return { success: false, message: 'Config tidak boleh dihapus.' };
+  const spec = MASTER_TABLES[table];
+  if (!spec) return { success: false, message: 'Tabel tidak dikenal.' };
+  const id = Number(payload && payload.id) || 0;
+  if (!id) return { success: false, message: 'ID tidak valid.' };
+  const exists = await db.prepare('SELECT id FROM ' + table + ' WHERE id = ?1').bind(id).first();
+  if (!exists) return { success: false, message: 'Baris tidak ditemukan.' };
+  await db.prepare('DELETE FROM ' + table + ' WHERE id = ?1').bind(id).run();
+  return { success: true, message: 'Baris dihapus.' };
+}
