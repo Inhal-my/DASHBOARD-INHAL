@@ -92,4 +92,14 @@ describe('dashboard template', () => {
     expect(html).not.toContain("label: 'Laporan Bagian'");
     expect(html).not.toContain("label: 'Berita Acara Bagian'");
   });
+
+  it('adds the Mahasiswa master card with CSV upload and row actions', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("key: 'mahasiswa', title: 'Mahasiswa'");
+    expect(html).toContain('Unggah CSV');
+    expect(html).toContain('@click="openMasterRow(activeMasterCard.key)"');
+    expect(html).toContain('@click="deleteMasterRow(r)"');
+    expect(html).toContain('onMahasiswaCsv');
+    expect(html).toContain("master.rowModal");
+  });
 });

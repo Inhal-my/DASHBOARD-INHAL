@@ -57,6 +57,9 @@
             background: #eef2ff; color: #4f46e5; font-size: 1.05rem;
         }
         .master-table-scroll { max-height: 520px; overflow-y: auto; }
+        .master-row-btn { display: inline-flex; align-items: center; justify-content: center; height: 1.9rem; width: 1.9rem; border-radius: .5rem; color: #64748b; transition: all .15s ease; }
+        .master-row-btn:hover { background: #eef2ff; color: #4f46e5; }
+        .master-row-btn.danger:hover { background: #fff1f2; color: #e11d48; }
         .master-table thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; }
         .modal-overlay {
             display: flex;
@@ -1002,12 +1005,16 @@
                                         <p class="text-xs text-slate-500">{{ activeMasterCard.desc }}</p>
                                     </div>
                                 </div>
-                                <div v-if="!activeMasterCard.settings" class="flex items-center gap-2">
+                                <div v-if="!activeMasterCard.settings" class="flex flex-wrap items-center gap-2">
                                     <div class="master-search">
                                         <i class="bi bi-search"></i>
                                         <input v-model="master.search" type="text" class="input" placeholder="Cari..." />
                                     </div>
-                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" @click="editMaster(activeMasterCard.key)"><i class="bi bi-pencil"></i>Edit</button>
+                                    <label v-if="activeMasterCard.key === 'mahasiswa'" class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap cursor-pointer">
+                                        <i class="bi bi-upload"></i> Unggah CSV
+                                        <input type="file" accept=".csv,text/csv" class="hidden" @change="onMahasiswaCsv">
+                                    </label>
+                                    <button class="btn-primary !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openMasterRow(activeMasterCard.key)"><i class="bi bi-plus-lg"></i> Tambah</button>
                                 </div>
                             </div>
                             <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
@@ -1015,6 +1022,7 @@
                                     <thead>
                                         <tr class="text-[11px] uppercase tracking-wider text-slate-400">
                                             <th v-for="c in activeMasterCard.cols" class="px-5 py-3 font-semibold">{{ c }}</th>
+                                            <th class="px-5 py-3 font-semibold w-24">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1025,6 +1033,12 @@
                                         </tr>
                                         <tr v-for="(r,i) in activeMasterRows" class="border-t border-slate-50">
                                             <td v-for="c in activeMasterCard.cols" class="px-5 py-2.5 text-slate-600">{{ masterCellValue(r, c) }}</td>
+                                            <td class="px-5 py-2.5">
+                                                <div class="flex items-center gap-1">
+                                                    <button class="master-row-btn" title="Ubah" @click="openMasterRow(activeMasterCard.key, r)"><i class="bi bi-pencil"></i></button>
+                                                    <button v-if="activeMasterCard.key !== 'config'" class="master-row-btn danger" title="Hapus" @click="deleteMasterRow(r)"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1327,6 +1341,30 @@
             </div>
         </transition>
 
+        <transition name="fade">
+            <div v-if="master.rowModal.open" class="fixed inset-0 z-50 modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.rowModal.open=false"></div>
+                <transition name="pop" appear>
+                    <div class="modal-panel max-w-xl shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h3 class="text-sm font-bold text-slate-900">{{ master.rowModal.mode === 'update' ? 'Ubah' : 'Tambah' }} {{ master.rowModal.title }}</h3>
+                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.rowModal.open=false"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body px-6 py-4 space-y-3">
+                            <div v-for="c in master.rowModal.cols" :key="c">
+                                <label class="label">{{ c }}</label>
+                                <input v-model="master.rowModal.fields[c]" class="input" :disabled="master.rowModal.mode === 'update' && master.rowModal.disabled.includes(c)" :placeholder="c">
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="master.rowModal.open=false">Batal</button>
+                            <button class="btn-primary" :disabled="master.saving" @click="saveMasterRow()"><i class="bi bi-save"></i> Simpan</button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
         <!-- ============ MODAL: UPLOAD BA ============ -->
         <transition name="fade">
             <div v-if="ba.modal" class="fixed inset-0 z-50 modal-overlay">
@@ -1469,14 +1507,16 @@
                         saveFn: '',
                         tab: 'masterKegiatan',
                         search: '',
+                        rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, originalId: 0 },
                         cards: [
-                            { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], saveFn: 'saveMasterKegiatan', icon: 'bi-clipboard-check' },
-                            { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], saveFn: 'saveMasterBagian', icon: 'bi-diagram-3' },
-                            { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], saveFn: 'saveMasterBiaya', icon: 'bi-cash-stack' },
-                            { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], saveFn: 'saveConfig', icon: 'bi-gear' },
-                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], saveFn: 'saveBagianStaff', icon: 'bi-people' },
+                            { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'mahasiswa', icon: 'bi-mortarboard' },
+                            { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], saveFn: 'saveMasterKegiatan', table: 'master_kegiatan', icon: 'bi-clipboard-check' },
+                            { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], saveFn: 'saveMasterBagian', table: 'master_bagian', icon: 'bi-diagram-3' },
+                            { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], saveFn: 'saveMasterBiaya', table: 'master_biaya', icon: 'bi-cash-stack' },
+                            { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], saveFn: 'saveConfig', table: 'config', icon: 'bi-gear' },
+                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], saveFn: 'saveBagianStaff', table: 'bagian_staff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan Bagian', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
-                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], saveFn: 'saveAdminList', icon: 'bi-shield-lock' }
+                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], saveFn: 'saveAdminList', table: 'admin', icon: 'bi-shield-lock' }
                         ]
                     }
                 };
@@ -1743,7 +1783,7 @@
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.bab.ba.confirm || this.dialog.open);
+                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
                 }
             },
             watch: {
@@ -2965,6 +3005,152 @@
                 masterCount(m) {
                     if (m.settings) return 'Pengaturan';
                     return (this.master.data[m.key] || []).length + ' entri';
+                },
+                openMasterRow(cardKey, row) {
+                    const card = this.master.cards.find((c) => c.key === cardKey);
+                    if (!card) return;
+                    const fields = {};
+                    card.cols.forEach((c) => { fields[c] = row ? String(row[c] === undefined || row[c] === null ? '' : row[c]) : ''; });
+                    const isUpdate = !!row;
+                    const disabled = [];
+                    if (isUpdate && cardKey === 'mahasiswa') disabled.push('NPM');
+                    if (isUpdate && cardKey === 'config') disabled.push('Key');
+                    this.master.rowModal = {
+                        open: true,
+                        table: card.table,
+                        cardKey: cardKey,
+                        title: card.title,
+                        cols: (card.cols || []).slice(),
+                        disabled: disabled,
+                        mode: isUpdate ? 'update' : 'insert',
+                        fields: fields,
+                        originalId: row && row.id ? row.id : 0
+                    };
+                },
+                async saveMasterRow() {
+                    const rm = this.master.rowModal;
+                    const row = Object.assign({}, rm.fields, { mode: rm.mode });
+                    if (rm.originalId) row.id = rm.originalId;
+                    this.master.saving = true;
+                    try {
+                        let res;
+                        if (rm.table === 'mahasiswa') {
+                            res = await this.run('saveMahasiswa', {
+                                row: {
+                                    npm: String(rm.fields.NPM || '').trim(),
+                                    namaLengkap: String(rm.fields['Nama Lengkap'] || '').trim(),
+                                    email: String(rm.fields.Email || '').trim(),
+                                    blok: String(rm.fields.Blok || '').trim(),
+                                    keterangan: String(rm.fields.Keterangan || '').trim(),
+                                    mode: rm.mode
+                                }
+                            });
+                        } else {
+                            res = await this.run('saveMasterRow', { table: rm.table, row: row });
+                        }
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
+                        this.notify((res && res.message) || 'Disimpan.');
+                        this.master.rowModal.open = false;
+                        await this.loadMaster();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.master.saving = false;
+                    }
+                },
+                async deleteMasterRow(row) {
+                    const card = this.activeMasterCard;
+                    const isMhs = card.key === 'mahasiswa';
+                    const label = isMhs ? (row.NPM + ' - ' + row['Nama Lengkap']) : this.masterCellValue(row, card.cols[0]);
+                    const ok = await this.askConfirm({
+                        title: 'Hapus data',
+                        message: 'Hapus ' + label + '?',
+                        tone: 'danger',
+                        confirmLabel: 'Hapus'
+                    });
+                    if (!ok) return;
+                    try {
+                        const res = isMhs
+                            ? await this.run('deleteMahasiswa', row.NPM)
+                            : await this.run('deleteMasterRow', { table: card.table, id: row.id });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menghapus.', false); return; }
+                        this.notify((res && res.message) || 'Dihapus.');
+                        await this.loadMaster();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    }
+                },
+                parseCsv(text) {
+                    const lines = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim() !== '');
+                    if (!lines.length) return { error: 'CSV kosong.' };
+                    const splitLine = (line) => {
+                        const out = [];
+                        let cur = '';
+                        let quoted = false;
+                        for (let i = 0; i < line.length; i++) {
+                            const ch = line[i];
+                            if (quoted) {
+                                if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                                else if (ch === '"') quoted = false;
+                                else cur += ch;
+                            } else if (ch === '"') quoted = true;
+                            else if (ch === ',' || ch === ';') { out.push(cur); cur = ''; }
+                            else cur += ch;
+                        }
+                        out.push(cur);
+                        return out.map((v) => v.trim());
+                    };
+                    const header = splitLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, ' '));
+                    let npmIdx = header.findIndex((h) => h === 'npm');
+                    let namaIdx = header.findIndex((h) => h === 'nama lengkap' || h === 'nama_lengkap' || h === 'nama');
+                    if (npmIdx === -1 || namaIdx === -1) return { error: 'Header CSV harus memuat kolom NPM dan Nama Lengkap.' };
+                    const rows = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const cells = splitLine(lines[i]);
+                        rows.push({ npm: String(cells[npmIdx] || '').trim(), namaLengkap: String(cells[namaIdx] || '').trim() });
+                    }
+                    return { rows: rows };
+                },
+                async onMahasiswaCsv(e) {
+                    const input = e.target;
+                    const file = input.files && input.files[0];
+                    input.value = '';
+                    if (!file) return;
+                    let text = '';
+                    try {
+                        text = await file.text();
+                    } catch (err) {
+                        this.notify('Gagal membaca file CSV.', false);
+                        return;
+                    }
+                    const parsed = this.parseCsv(text);
+                    if (parsed.error) { this.notify(parsed.error, false); return; }
+                    const valid = (parsed.rows || []).filter((r) => r.npm);
+                    if (!valid.length) { this.notify('Tidak ada baris NPM valid.', false); return; }
+                    if (valid.length > 5000) { this.notify('Maksimal 5000 baris.', false); return; }
+                    const seen = {};
+                    let dup = '';
+                    valid.forEach((r) => { if (seen[r.npm]) dup = r.npm; seen[r.npm] = true; });
+                    if (dup) { this.notify('NPM duplikat di file: ' + dup, false); return; }
+                    const existing = new Set((this.master.data.mahasiswa || []).map((r) => String(r.NPM)));
+                    let insert = 0;
+                    let update = 0;
+                    valid.forEach((r) => { if (existing.has(r.npm)) update++; else insert++; });
+                    const ok = await this.askConfirm({
+                        title: 'Impor CSV Mahasiswa',
+                        message: 'Mengimpor ' + valid.length + ' baris.',
+                        details: [insert + ' mahasiswa baru', update + ' mahasiswa diperbarui', (parsed.rows.length - valid.length) + ' baris dilewati (NPM kosong)'],
+                        confirmLabel: 'Impor'
+                    });
+                    if (!ok) return;
+                    try {
+                        const res = await this.run('importMahasiswaCsv', { rows: valid });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal impor.', false); return; }
+                        this.notify((res && res.message) || 'Impor selesai.');
+                        await this.loadMaster();
+                    } catch (err2) {
+                        this.notify('Gagal: ' + err2, false);
+                    }
                 },
                 isBuktiModeRow(row) {
                     return this.master.editKey === 'config' && String((row && row.Key) || '').trim() === 'BUKTI_MODE';
