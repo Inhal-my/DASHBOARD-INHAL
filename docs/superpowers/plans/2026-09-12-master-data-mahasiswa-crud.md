@@ -67,34 +67,36 @@ describe('saveMahasiswa', () => {
   });
 
   it('rejects insert when NPM already exists', async () => {
-    const ctx = await adminCtx();
-    const res = await saveMahasiswa(env.DB, { row: { npm: '9900000001', namaLengkap: 'Dobel', mode: 'insert' } }, ctx);
+    await env.DB.prepare("INSERT INTO mahasiswa (npm, nama_lengkap) VALUES ('9900000001','Lama')").run();
+    const res = await saveMahasiswa(env.DB, { row: { npm: '9900000001', namaLengkap: 'Dobel', mode: 'insert' } }, await adminCtx());
     expect(res.success).toBe(false);
     const row = await env.DB.prepare('SELECT nama_lengkap FROM mahasiswa WHERE npm = ?1').bind('9900000001').first();
-    expect(row.nama_lengkap).toBe('Baru Satu');
+    expect(row.nama_lengkap).toBe('Lama');
   });
 
-  it('updates an existing mahasiswa and rejects missing NPM on update', async () => {
-    const ctx = await adminCtx();
+  it('updates an existing mahasiswa', async () => {
+    await env.DB.prepare("INSERT INTO mahasiswa (npm, nama_lengkap, email) VALUES ('9900000001','Lama','lama@x.id')").run();
     const ok = await saveMahasiswa(env.DB, {
       row: { npm: '9900000001', namaLengkap: 'Diubah', email: '', blok: '', keterangan: '', mode: 'update' }
-    }, ctx);
+    }, await adminCtx());
     expect(ok.success).toBe(true);
     const row = await env.DB.prepare('SELECT nama_lengkap, email FROM mahasiswa WHERE npm = ?1').bind('9900000001').first();
     expect(row.nama_lengkap).toBe('Diubah');
     expect(row.email).toBe('');
-    const miss = await saveMahasiswa(env.DB, { row: { npm: '0000000000', namaLengkap: 'X', mode: 'update' } }, ctx);
-    expect(miss.success).toBe(false);
   });
 
-  it('rejects empty NPM', async () => {
-    const res = await saveMahasiswa(env.DB, { row: { npm: '  ', mode: 'insert' } }, await adminCtx());
-    expect(res.success).toBe(false);
+  it('rejects update for a missing NPM and rejects empty NPM', async () => {
+    const ctx = await adminCtx();
+    const miss = await saveMahasiswa(env.DB, { row: { npm: '0000000000', namaLengkap: 'X', mode: 'update' } }, ctx);
+    expect(miss.success).toBe(false);
+    const empty = await saveMahasiswa(env.DB, { row: { npm: '  ', mode: 'insert' } }, ctx);
+    expect(empty.success).toBe(false);
   });
 });
 
 describe('deleteMahasiswa', () => {
   it('deletes an existing row and rejects a missing one', async () => {
+    await env.DB.prepare("INSERT INTO mahasiswa (npm, nama_lengkap) VALUES ('9900000001','Hapus')").run();
     const ctx = await adminCtx();
     const ok = await deleteMahasiswa(env.DB, '9900000001', ctx);
     expect(ok.success).toBe(true);
@@ -351,17 +353,18 @@ describe('saveMasterRow and deleteMasterRow', () => {
   });
 
   it('hashes a new password on update', async () => {
-    const ctx = await adminCtx();
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('pbkdf2$1000$YQ==$YQ==','Admin Awal')").run();
     const row = await env.DB.prepare('SELECT * FROM admin ORDER BY id DESC LIMIT 1').first();
-    const upd = await saveMasterRow(env.DB, { table: 'admin', row: { id: row.id, Password: 'rahasia2', Nama: 'Admin' } }, ctx);
+    const upd = await saveMasterRow(env.DB, { table: 'admin', row: { id: row.id, Password: 'rahasia2', Nama: 'Admin' } }, await adminCtx());
     expect(upd.success).toBe(true);
     const after = await env.DB.prepare('SELECT password FROM admin WHERE id = ?1').bind(row.id).first();
     expect(after.password).toMatch(/^pbkdf2\$/);
   });
 
   it('deletes a non-config row and rejects a missing id', async () => {
-    const ctx = await adminCtx();
+    await env.DB.prepare("INSERT INTO master_kegiatan (kategori, nilai) VALUES ('Blok','D')").run();
     const row = await env.DB.prepare("SELECT * FROM master_kegiatan WHERE nilai = 'D'").first();
+    const ctx = await adminCtx();
     const ok = await deleteMasterRow(env.DB, { table: 'master_kegiatan', id: row.id }, ctx);
     expect(ok.success).toBe(true);
     const miss = await deleteMasterRow(env.DB, { table: 'master_kegiatan', id: 999999 }, ctx);
