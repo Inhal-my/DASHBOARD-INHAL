@@ -123,6 +123,17 @@
 @media (min-width: 640px) { .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 768px) { .md\:block { display: block; } .md\:hidden { display: none; } }
 @media (min-width: 1024px) { .lg\:grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+.ba-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
+.ba-pair { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
+.heat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.heat-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; }
+.heat-table th, .heat-table td { padding: .25rem; text-align: center; }
+.heat-sticky { position: sticky; left: 0; background: #fff; z-index: 1; text-align: left; min-width: 7rem; font-weight: 600; }
+.heat-cell { min-width: 4rem; }
+@media (max-width: 1100px) {
+  .ba-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ba-pair { grid-template-columns: 1fr; }
+}
     </style>
     <style>
 .text-brand-600 { color: #4f46e5; }
@@ -507,14 +518,18 @@
                     </div>
                 </section>
 
-                <!-- ============ TAB: LAPORAN BAGIAN ============ -->
-                <section v-if="tab==='bagian'">
+                <!-- ============ TAB: BERITA ACARA ============ -->
+                <section v-if="tab==='ba'">
                     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
                         <div>
-                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Laporan Bagian</h1>
-                            <p class="mt-0.5 text-sm text-slate-500">Audit kelengkapan berita acara per kegiatan.</p>
+                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Berita Acara</h1>
+                            <p class="mt-0.5 text-sm text-slate-500">Dua tahap: unggah BA Pendukung sebelum keputusan, lalu BA Pelaksanaan setelah kegiatan di Bagian.</p>
                         </div>
-                        <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="btn-primary !py-2 text-xs" @click="openBaUpload()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
+                            <button class="btn-soft !py-2 text-xs" @click="openPelaksanaanPanel()"><i class="bi bi-journal-check"></i> Unggah BA Pelaksanaan</button>
+                            <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
+                        </div>
                     </div>
 
                     <div v-if="sectionLoading.bagian" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
@@ -522,45 +537,41 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        <span class="text-sm font-semibold">Memuat laporan bagian...</span>
+                        <span class="text-sm font-semibold">Memuat berita acara...</span>
                     </div>
 
                     <template v-else>
-                        <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                        <div class="ba-cards mb-4">
+                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Kegiatan</div>
                                 <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.totalKegiatan }}</div>
-                            </div>
+                                <div class="text-[11px] font-semibold text-slate-400">semua kegiatan</div>
+                            </button>
                             <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Peserta</div>
                                 <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.totalPeserta }}</div>
+                                <div class="text-[11px] font-semibold text-slate-400">mahasiswa</div>
                             </div>
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Punya BA</div>
-                                <div class="mt-1 text-xl font-extrabold text-emerald-600">{{ bagianSummary.denganBa }}/{{ bagianSummary.totalKegiatan }}</div>
-                                <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.persenLengkap }}%</div>
-                            </div>
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Bagian</div>
-                                <div class="mt-1 text-xl font-extrabold text-brand-700">{{ bagianSummary.denganBaBagian }}</div>
-                            </div>
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Admin</div>
-                                <div class="mt-1 text-xl font-extrabold text-indigo-600">{{ bagianSummary.denganBaAdmin }}</div>
-                            </div>
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Belum BA</div>
-                                <div class="mt-1 text-xl font-extrabold text-rose-600">{{ bagianSummary.belumBa }}</div>
-                            </div>
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">ACC Final</div>
-                                <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.finalAcc }}</div>
-                            </div>
+                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Pendukung</div>
+                                <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
+                                <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pendukungPct }}% sudah ada</div>
+                            </button>
+                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Pelaksanaan</div>
+                                <div class="mt-1 text-xl font-extrabold text-emerald-600">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
+                                <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pelaksanaanPct }}% dari yang Diterima</div>
+                            </button>
+                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Belum lengkap</div>
+                                <div class="mt-1 text-xl font-extrabold text-rose-600">{{ bagianSummary.belumLengkap }}</div>
+                                <div class="text-[11px] font-semibold text-slate-400">perlu ditindak</div>
+                            </button>
                         </div>
 
-                        <div class="mb-4 grid items-start gap-4 lg:grid-cols-2">
+                        <div class="ba-pair mb-4">
                             <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                                <h2 class="mb-3 text-sm font-bold text-slate-900">Kelengkapan per Bagian</h2>
+                                <h2 class="mb-3 text-sm font-bold text-slate-900">Kelengkapan Pelaksanaan per Bagian</h2>
                                 <div v-if="!bagianBar.length" class="py-6 text-center text-sm text-slate-400">Belum ada data.</div>
                                 <div v-else class="space-y-2.5">
                                     <button v-for="g in bagianBar" :key="g.bagian" class="w-full text-left" @click="openBagianFromBar(g.bagian)">
@@ -569,27 +580,27 @@
                                             <span class="text-slate-400">{{ g.done }}/{{ g.total }} · {{ g.pct }}%</span>
                                         </div>
                                         <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                                            <div class="h-full rounded-full" :class="g.pct === 100 ? 'bg-emerald-500' : (g.pct > 0 ? 'bg-amber-400' : 'bg-rose-400')" :style="{ width: g.pct + '%' }"></div>
+                                            <div class="h-full rounded-full" :class="heatFillClass(g.done, g.total)" :style="{ width: g.pct + '%' }"></div>
                                         </div>
                                     </button>
                                 </div>
                             </div>
-                            <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                                <h2 class="border-b border-slate-100 p-4 text-sm font-bold text-slate-900">Peta Kelengkapan Bagian x Blok</h2>
+                            <div class="min-w-0 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                <h2 class="border-b border-slate-100 p-4 text-sm font-bold text-slate-900">Peta Kelengkapan Bagian × Blok</h2>
                                 <div v-if="!bagianHeatmap.cols.length" class="px-4 py-8 text-center text-sm text-slate-400">Belum ada data.</div>
-                                <div v-else class="overflow-x-auto p-4">
-                                    <table class="w-full border-collapse text-xs">
+                                <div v-else class="heat-scroll p-4">
+                                    <table class="heat-table text-xs">
                                         <thead>
                                             <tr>
-                                                <th class="p-2 text-left font-bold text-slate-400">Bagian</th>
-                                                <th v-for="b in bagianHeatmap.cols" :key="'hc' + b" class="p-2 text-center font-bold text-slate-500">{{ b }}</th>
+                                                <th class="heat-sticky p-2 text-left font-bold text-slate-400">Bagian</th>
+                                                <th v-for="b in bagianHeatmap.cols" :key="'hc' + b" class="whitespace-nowrap p-2 text-center font-bold text-slate-500">{{ b }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr v-for="r in bagianHeatmap.rows" :key="'hr' + r.bagian">
-                                                <td class="p-2 font-semibold text-slate-700">{{ r.bagian }}</td>
+                                                <td class="heat-sticky p-2 font-semibold text-slate-700">{{ r.bagian }}</td>
                                                 <td v-for="b in bagianHeatmap.cols" :key="'h' + r.bagian + b" class="p-1 text-center">
-                                                    <button v-if="r.cells[b].total" class="w-full rounded-lg px-2 py-1.5 font-bold ring-1 ring-inset" :class="r.cells[b].done === r.cells[b].total ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : (r.cells[b].done > 0 ? 'bg-amber-50 text-amber-700 ring-amber-200' : 'bg-rose-50 text-rose-700 ring-rose-200')" @click="openBagianFromCell(r.bagian, b)">
+                                                    <button v-if="r.cells[b].total" class="heat-cell w-full rounded-lg px-2 py-1.5 font-bold ring-1 ring-inset" :class="heatCellClass(r.cells[b].done, r.cells[b].total)" @click="openBagianFromCell(r.bagian, b)">
                                                         {{ r.cells[b].done }}/{{ r.cells[b].total }}
                                                     </button>
                                                     <span v-else class="text-slate-300">–</span>
@@ -597,27 +608,23 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    <div class="mt-2 flex gap-3 text-[11px] text-slate-400">
+                                        <span>lengkap</span><span>sebagian</span><span>belum</span>
+                                        <span class="ml-auto">Geser ke kanan jika blok banyak.</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                            <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-4"><input v-model="bagian.q" class="input" placeholder="Cari kegiatan, BA ID, NPM, peserta..."></div>
-                                <div class="md:col-span-2"><select v-model="bagian.fBagian" class="input"><option value="">Semua Bagian</option><option v-for="o in bagian.options" :key="o" :value="o">{{ o }}</option></select></div>
-                                <div class="md:col-span-2"><select v-model="bagian.fBlok" class="input"><option value="">Semua Blok</option><option v-for="b in bagianBlokOptions" :key="b" :value="b">{{ b }}</option></select></div>
-                                <div class="md:col-span-2"><select v-model="bagian.fSumber" class="input"><option value="">Semua Sumber</option><option value="Bagian">BA Bagian</option><option value="Admin">BA Admin</option></select></div>
-                                <div class="md:col-span-2"><select v-model="bagian.fStatusBa" class="input"><option value="">Semua Status BA</option><option value="ada">BA Ada</option><option value="belum">BA Belum</option></select></div>
-                                <div class="md:col-span-2"><select v-model="bagian.fStatusFinal" class="input"><option value="">Semua Final</option><option value="ada">Final Ada</option><option value="belum">Final Belum</option></select></div>
-                                <div class="md:col-span-3 flex items-center gap-2">
-                                    <label class="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" v-model="bagian.onlyIncomplete" class="h-4 w-4 accent-brand-600"> Hanya belum lengkap</label>
-                                </div>
-                                <div class="md:col-span-3 flex items-center justify-between gap-2">
-                                    <span class="text-xs text-slate-400">Menampilkan {{ bagianTableRows.length }} kegiatan</span>
-                                    <button class="btn-soft !px-3 !py-1 text-xs" @click="resetBagianFilter">Reset</button>
-                                </div>
-                            </div>
+                        <div class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                            <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='semua' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('semua')">Semua</button>
+                            <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pendukung' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pendukung')">Belum Pendukung</button>
+                            <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pelaksanaan' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pelaksanaan')">Belum Pelaksanaan</button>
+                            <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='belum' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('belum')">Belum lengkap</button>
+                            <span class="ml-auto text-xs text-slate-400">Menampilkan {{ bagianTableRows.length }} kegiatan</span>
+                            <button class="btn-soft !px-3 !py-1 text-xs" @click="resetBagianFilter">Reset</button>
                         </div>
+                        <p v-if="bagianOrphanFiltered.length" class="mb-3 text-xs text-slate-500">{{ bagianOrphanFiltered.length }} BA tanpa pengajuan — tidak masuk hitungan kartu.</p>
 
                         <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                             <div v-if="!bagianTableRows.length" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data.</div>
@@ -627,12 +634,13 @@
                                     <thead>
                                         <tr class="border-b border-slate-100 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
                                             <th class="cursor-pointer p-3" @click="sortBagian('tanggal')">Tanggal <i class="bi" :class="sortBagianIcon('tanggal')"></i></th>
-                                            <th class="cursor-pointer p-3" @click="sortBagian('bagian')">Bagian <i class="bi" :class="sortBagianIcon('bagian')"></i></th>
-                                            <th class="cursor-pointer p-3" @click="sortBagian('blok')">Blok <i class="bi" :class="sortBagianIcon('blok')"></i></th>
-                                            <th class="cursor-pointer p-3" @click="sortBagian('kegiatan')">Kegiatan <i class="bi" :class="sortBagianIcon('kegiatan')"></i></th>
-                                            <th class="cursor-pointer p-3 text-center" @click="sortBagian('peserta')">Peserta <i class="bi" :class="sortBagianIcon('peserta')"></i></th>
-                                            <th class="cursor-pointer p-3" @click="sortBagian('ba')">BA <i class="bi" :class="sortBagianIcon('ba')"></i></th>
-                                            <th class="cursor-pointer p-3" @click="sortBagian('final')">ACC Final <i class="bi" :class="sortBagianIcon('final')"></i></th>
+                                            <th class="p-3">Bagian</th>
+                                            <th class="p-3">Blok</th>
+                                            <th class="p-3">Kegiatan</th>
+                                            <th class="p-3 text-center">Peserta</th>
+                                            <th class="p-3">BA Pendukung</th>
+                                            <th class="p-3">Keputusan</th>
+                                            <th class="p-3">BA Pelaksanaan</th>
                                             <th class="p-3">Aksi</th>
                                         </tr>
                                     </thead>
@@ -645,21 +653,31 @@
                                                 <td class="p-3 text-sm font-semibold text-slate-800">{{ r.label }}</td>
                                                 <td class="p-3 text-center"><button class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600" @click="toggleBagianExpand(r.key)">{{ r.jumlahPeserta }}</button></td>
                                                 <td class="p-3">
-                                                    <div class="flex flex-wrap items-center gap-1">
-                                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="bagianStatusBaClass(r.statusBa)">{{ r.statusBa === 'ada' ? 'Ada' : 'Belum' }}</span>
-                                                        <span v-for="(b, bi) in r.ba" :key="bi" class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber }}</span>
-                                                    </div>
+                                                    <template v-if="r.__orphan"><span class="text-xs text-slate-400">-</span></template>
+                                                    <template v-else>
+                                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
+                                                        <template v-for="(b, bi) in unitPendukungBa(r)" :key="'p'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                    </template>
                                                 </td>
-                                                <td class="p-3"><span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="bagianStatusFinalClass(r.statusFinal)">{{ r.statusFinal === 'ada' ? 'Ada' : 'Belum' }}</span></td>
+                                                <td class="p-3"><span v-if="!r.__orphan" class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(unitKeputusan(r))">{{ unitKeputusan(r) }}</span><span v-else class="text-xs text-slate-400">-</span></td>
+                                                <td class="p-3">
+                                                    <template v-if="r.__orphan"><span class="text-xs text-slate-400">-</span></template>
+                                                    <template v-else-if="!unitPelaksanaanEligible(r)"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">-</span></template>
+                                                    <template v-else>
+                                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPelaksanaan(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPelaksanaan(r) ? 'Ada' : 'Belum' }}</span>
+                                                        <template v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'l'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                    </template>
+                                                </td>
                                                 <td class="p-3">
                                                     <div class="flex flex-col gap-1 text-xs">
-                                                        <template v-for="(b, bi) in r.ba" :key="bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link"><i class="bi bi-file-earmark-pdf"></i> {{ b.baId }}</a></template>
-                                                        <a v-if="r.linkFinal" :href="r.linkFinal" target="_blank" class="link"><i class="bi bi-eye"></i> Final</a>
+                                                        <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
+                                                        <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel()">Unggah Pelaksanaan</button>
+                                                        <template v-else><template v-for="(b, bi) in r.ba" :key="'a'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link">Lihat file</a></template></template>
                                                     </div>
                                                 </td>
                                             </tr>
                                             <tr v-if="bagian.expanded[r.key]" class="border-b border-slate-50 bg-slate-50/40">
-                                                <td colspan="8" class="p-4">
+                                                <td colspan="9" class="p-4">
                                                     <div class="grid gap-4 lg:grid-cols-2">
                                                         <div>
                                                             <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta ({{ r.jumlahPeserta }})</div>
@@ -676,7 +694,7 @@
                                                             <div v-for="(b, bi) in r.ba" :key="bi" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
                                                                 <div class="flex flex-wrap items-center gap-2">
                                                                     <span class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
-                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber }}</span>
+                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
                                                                 </div>
                                                                 <div v-if="b.catatan" class="mt-1 text-slate-500">{{ b.catatan }}</div>
@@ -697,7 +715,7 @@
                                             <div class="truncate text-sm font-bold text-slate-900">{{ r.label }}</div>
                                             <div class="text-[11px] text-slate-400">{{ (r.tanggalList || [r.tanggal]).filter(Boolean).map(v => formatTanggal(v)).join(', ') || '-' }}</div>
                                         </div>
-                                        <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold" :class="bagianStatusBaClass(r.statusBa)">{{ r.statusBa === 'ada' ? 'BA Ada' : 'Belum BA' }}</span>
+                                        <span v-if="!r.__orphan" class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitIncomplete(r) ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'">{{ unitIncomplete(r) ? 'Belum lengkap' : 'Lengkap' }}</span>
                                     </div>
                                     <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                                         <span v-if="!r.__orphan" class="rounded bg-brand-50 px-2 py-0.5 font-bold text-brand-700">{{ r.bagian }}</span>
@@ -707,20 +725,21 @@
                                     </div>
                                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
                                         <template v-for="(b, bi) in r.ba" :key="bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link"><i class="bi bi-file-earmark-pdf"></i> {{ b.baId }}</a></template>
-                                        <a v-if="r.linkFinal" :href="r.linkFinal" target="_blank" class="link"><i class="bi bi-eye"></i> Final</a>
+                                        <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
+                                        <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel()">Unggah Pelaksanaan</button>
                                     </div>
                                 </div>
                             </div>
                             </template>
                         </div>
                     </template>
-                </section>
-
-                <!-- ============ TAB: BERITA ACARA BAGIAN ============ -->
-                <section v-if="tab==='baBagian'">
-                    <div class="mb-5">
-                        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Berita Acara Bagian</h1>
-                        <p class="mt-0.5 text-sm text-slate-500">Isi berita acara atas nama bagian (tampil di Laporan Bagian &amp; Laporan Detail).</p>
+                    <div v-if="tab==='ba' && bab.showPanel" class="mt-6">
+                    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Unggah BA Pelaksanaan</h2>
+                            <p class="mt-0.5 text-sm text-slate-500">Sesi Bagian: unggah BA pelaksanaan atas nama staf Bagian.</p>
+                        </div>
+                        <button class="btn-soft !py-2 text-xs" @click="closePelaksanaanPanel()"><i class="bi bi-x-lg"></i> Tutup</button>
                     </div>
 
                     <div v-if="!bab.active" class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
@@ -935,181 +954,8 @@
                             </transition>
                         </div>
                     </template>
-                </section>
-
-                <!-- ============ TAB: BERITA ACARA ============ -->
-                <section v-if="tab==='ba'">
-                    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Berita Acara</h1>
-                            <p class="mt-0.5 text-sm text-slate-500">Dokumen berita acara kegiatan yang telah diunggah.</p>
-                        </div>
-                        <button class="btn-primary" @click="openBaUpload()"><i class="bi bi-upload"></i>Upload Berita Acara</button>
                     </div>
 
-                    <div class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                        <div class="grid gap-3 md:grid-cols-12">
-                            <div class="md:col-span-4">
-                                <div class="master-search">
-                                    <i class="bi bi-search"></i>
-                                    <input v-model="ba.q" class="input" placeholder="Cari kegiatan, blok, bagian, BA ID...">
-                                </div>
-                            </div>
-                            <div class="md:col-span-3">
-                                <select v-model="ba.fBlok" class="input" @change="applyBaFilter()">
-                                    <option value="">Semua Blok</option>
-                                    <option v-for="b in baBlokOptions" :key="b" :value="b">{{ b }}</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-3">
-                                <select v-model="ba.fBagian" class="input" @change="applyBaFilter()">
-                                    <option value="">Semua Bagian</option>
-                                    <option v-for="o in bagian.options" :key="o" :value="o">{{ o }}</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-2 flex items-center justify-between gap-2">
-                                <span class="text-xs text-slate-400">{{ baView.length }} dari {{ ba.all.length }}</span>
-                                <button class="btn-soft !px-3 !py-1.5 text-xs" @click="baResetFilters()"><i class="bi bi-arrow-counterclockwise"></i>Reset</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                        <div class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                            <span class="master-stat-icon"><i class="bi bi-file-earmark-pdf"></i></span>
-                            <div class="min-w-0">
-                                <div class="text-2xl font-extrabold text-slate-900">{{ baStats.total }}</div>
-                                <div class="text-xs text-slate-500">Total BA</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                            <span class="master-stat-icon"><i class="bi bi-people"></i></span>
-                            <div class="min-w-0">
-                                <div class="text-2xl font-extrabold text-slate-900">{{ baStats.peserta }}</div>
-                                <div class="text-xs text-slate-500">Total Peserta</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                            <span class="master-stat-icon"><i class="bi bi-grid-3x3-gap"></i></span>
-                            <div class="min-w-0">
-                                <div class="text-2xl font-extrabold text-slate-900">{{ baStats.blok }}</div>
-                                <div class="text-xs text-slate-500">Jumlah Blok</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
-                            <span class="master-stat-icon"><i class="bi bi-diagram-3"></i></span>
-                            <div class="min-w-0">
-                                <div class="text-2xl font-extrabold text-slate-900">{{ baStats.bagian }}</div>
-                                <div class="text-xs text-slate-500">Jumlah Bagian</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                        <div v-if="sectionLoading.ba" class="flex items-center justify-center gap-3 py-12 text-slate-400">
-                            <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                            </svg>
-                            <span class="text-sm font-semibold">Memuat berita acara...</span>
-                        </div>
-                        <div v-else-if="!baView.length" class="px-4 py-12 text-center text-sm text-slate-400">
-                            {{ ba.all.length ? 'Tidak ada berita acara yang cocok dengan filter.' : 'Belum ada data.' }}
-                        </div>
-                        <template v-else>
-                            <div class="ba-desktop overflow-x-auto">
-                                <table class="master-table w-full text-left text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold" @click="baSort('Tanggal Pelaksanaan')">Tanggal Pelaksanaan <i :class="baSortIcon('Tanggal Pelaksanaan')"></i></th>
-                                            <th class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold" @click="baSort('Blok')">Blok <i :class="baSortIcon('Blok')"></i></th>
-                                            <th class="cursor-pointer px-4 py-3 font-semibold" @click="baSort('Nama Kegiatan')">Nama Kegiatan <i :class="baSortIcon('Nama Kegiatan')"></i></th>
-                                            <th class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold" @click="baSort('Bagian')">Bagian <i :class="baSortIcon('Bagian')"></i></th>
-                                            <th class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold" @click="baSort('Peserta')">Peserta <i :class="baSortIcon('Peserta')"></i></th>
-                                            <th class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold" @click="baSort('Timestamp')">Waktu Unggah <i :class="baSortIcon('Timestamp')"></i></th>
-                                            <th class="px-4 py-3 font-semibold">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template v-for="r in baView" :key="r['BA ID']">
-                                            <tr class="border-t border-slate-100">
-                                                <td class="whitespace-nowrap px-4 py-3">{{ formatTanggalWaktu(r['Tanggal Pelaksanaan']) }}</td>
-                                                <td class="px-4 py-3">{{ r.Blok }}</td>
-                                                <td class="px-4 py-3">
-                                                    <div class="font-semibold text-slate-900">{{ r['Nama Kegiatan'] }}</div>
-                                                    <div class="font-mono text-[11px] text-slate-400">{{ r['BA ID'] }}</div>
-                                                </td>
-                                                <td class="whitespace-nowrap px-4 py-3"><span class="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ resolveBaBagian(r) }}</span></td>
-                                                <td class="whitespace-nowrap px-4 py-3">
-                                                    <button class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700" @click="toggleBaExpand(r['BA ID'])">
-                                                        <i class="bi bi-people"></i>{{ r['Jumlah Peserta'] }}
-                                                        <i :class="expandedBa[r['BA ID']] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                                                    </button>
-                                                </td>
-                                                <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
-                                                <td class="px-4 py-3">
-                                                    <div class="flex items-center gap-2 whitespace-nowrap">
-                                                        <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link text-xs"><i class="bi bi-eye"></i> Lihat File</a>
-                                                        <button class="btn-danger-soft !px-3 !py-1.5 text-xs" @click="deleteBa(r['BA ID'])"><i class="bi bi-trash"></i></button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr v-if="expandedBa[r['BA ID']]" class="bg-slate-50">
-                                                <td colspan="7" class="px-4 py-3">
-                                                    <div v-if="r.peserta && r.peserta.length" class="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-                                                        <div v-for="(p, j) in r.peserta" :key="j" class="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs text-slate-600 ring-1 ring-slate-100">
-                                                            <i class="bi bi-person text-slate-400"></i>
-                                                            <span class="font-semibold">{{ p.namaLengkap }}</span>
-                                                            <span class="font-mono text-[11px] text-slate-400">({{ p.npm }})</span>
-                                                            <span v-if="p.blok" class="ml-auto text-[11px] text-slate-400">{{ p.blok }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div v-else class="text-xs text-slate-400">Tidak ada data peserta.</div>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="ba-mobile divide-y divide-slate-50">
-                                <div v-for="r in baView" :key="r['BA ID']" class="p-4">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                                                <span class="font-mono">{{ r['BA ID'] }}</span>
-                                                <span>·</span>
-                                                <span>{{ formatTanggal(r.Timestamp) }}</span>
-                                            </div>
-                                            <div class="mt-1 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
-                                            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                                <i class="bi bi-calendar3"></i>
-                                                <span>{{ formatTanggalWaktu(r['Tanggal Pelaksanaan']) }}</span>
-                                            </div>
-                                            <div class="mt-1.5"><span class="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{{ resolveBaBagian(r) }}</span></div>
-                                        </div>
-                                        <button class="btn-danger-soft shrink-0 !px-3 !py-1.5 text-xs" @click="deleteBa(r['BA ID'])"><i class="bi bi-trash"></i></button>
-                                    </div>
-                                    <div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
-                                        <button class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600" @click="toggleBaExpand(r['BA ID'])">
-                                            <i class="bi bi-people"></i> {{ r['Jumlah Peserta'] }} peserta
-                                            <i :class="expandedBa[r['BA ID']] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                                        </button>
-                                        <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link"><i class="bi bi-eye"></i> Lihat File</a>
-                                    </div>
-                                    <div v-if="expandedBa[r['BA ID']]" class="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3">
-                                        <div v-for="(p, j) in (r.peserta || [])" :key="j" class="flex items-center gap-2 text-xs text-slate-600">
-                                            <i class="bi bi-person"></i>
-                                            <span class="font-semibold">{{ p.namaLengkap }}</span>
-                                            <span class="font-mono text-[11px] text-slate-400">({{ p.npm }})</span>
-                                            <span v-if="p.blok" class="ml-auto text-[11px] text-slate-400">{{ p.blok }}</span>
-                                        </div>
-                                        <div v-if="!r.peserta || !r.peserta.length" class="text-xs text-slate-400">Tidak ada data peserta.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
                 </section>
 
                 <!-- ============ TAB: MASTER DATA ============ -->
@@ -1593,7 +1439,7 @@
                     dosenOptions: [],
                     masterBiaya: [],
                     detail: { open: false, loading: false, showLengkap: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', baList: [], dForm: { dosen: '', tanggalPelaksanaan: '', biaya: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
-                    bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', fSumber: '', fStatusBa: '', fStatusFinal: '', q: '', onlyIncomplete: false, sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
+                    bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
                     bab: {
@@ -1602,6 +1448,7 @@
                         token: null,
                         nama: '',
                         active: false,
+                        showPanel: false,
                         loading: false,
                         rows: [],
                         baList: [],
@@ -1638,14 +1485,12 @@
                     return !!(this.session && this.session.token);
                 },
                 pageTitle() {
-                    return { pengajuan: 'Telaah Pengajuan', stats: 'Statistik', bagian: 'Laporan Bagian', baBagian: 'Berita Acara Bagian', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
+                    return { pengajuan: 'Telaah Pengajuan', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
                 },
                 navItems() {
                     return [
                         { key: 'pengajuan', icon: 'bi-inbox', label: 'Pengajuan', badge: true },
                         { key: 'stats', icon: 'bi-bar-chart-line', label: 'Statistik' },
-                        { key: 'bagian', icon: 'bi-diagram-3', label: 'Laporan Bagian' },
-                        { key: 'baBagian', icon: 'bi-journal-check', label: 'Berita Acara Bagian' },
                         { key: 'ba', icon: 'bi-file-earmark-pdf', label: 'Berita Acara' },
                         { key: 'master', icon: 'bi-sliders', label: 'Master Data' }
                     ];
@@ -1763,72 +1608,44 @@
                     return (this.bagian.bloks || []).filter(b => b && b !== '-');
                 },
                 bagianSummary() {
-                    const units = this.bagianFilteredUnits;
+                    const units = this.bagian.units || [];
                     const npm = new Set();
                     units.forEach(u => (u.peserta || []).forEach(p => { if (p.npm) npm.add(p.npm); }));
-                    const denganBa = units.filter(u => (u.ba || []).length).length;
                     const total = units.length;
+                    const dukung = units.filter(u => this.unitHasPendukung(u)).length;
+                    const diterima = units.filter(u => this.unitPelaksanaanEligible(u));
+                    const laksana = diterima.filter(u => this.unitHasPelaksanaan(u)).length;
+                    const belum = units.filter(u => this.unitIncomplete(u)).length;
                     return {
                         totalKegiatan: total,
                         totalPeserta: npm.size,
-                        denganBa,
-                        denganBaBagian: units.filter(u => (u.ba || []).some(b => b.sumber === 'Bagian')).length,
-                        denganBaAdmin: units.filter(u => (u.ba || []).some(b => b.sumber === 'Admin')).length,
-                        belumBa: total - denganBa,
-                        finalAcc: units.filter(u => u.linkFinal).length,
-                        persenLengkap: total ? Math.round((denganBa / total) * 100) : 0
+                        pendukungAda: dukung,
+                        pendukungPct: total ? Math.round(dukung / total * 100) : 0,
+                        pelaksanaanAda: laksana,
+                        pelaksanaanDen: diterima.length,
+                        pelaksanaanPct: diterima.length ? Math.round(laksana / diterima.length * 100) : 0,
+                        belumLengkap: belum
                     };
                 },
                 bagianFilteredUnits() {
-                    const q = String(this.bagian.q || '').trim().toLowerCase();
                     let units = this.bagian.units || [];
                     if (this.bagian.fBagian) units = units.filter(u => u.bagian === this.bagian.fBagian);
                     if (this.bagian.fBlok) units = units.filter(u => u.blok === this.bagian.fBlok);
-                    if (this.bagian.fSumber) units = units.filter(u => (u.ba || []).some(b => b.sumber === this.bagian.fSumber));
-                    if (this.bagian.fStatusBa) units = units.filter(u => u.statusBa === this.bagian.fStatusBa);
-                    if (this.bagian.fStatusFinal) units = units.filter(u => u.statusFinal === this.bagian.fStatusFinal);
-                    if (this.bagian.onlyIncomplete) units = units.filter(u => u.statusBa !== 'ada');
-                    if (q) {
-                        units = units.filter(u => {
-                            const hay = [u.bagian, u.blok, u.label, u.linkFinal, (u.ba || []).map(b => b.baId).join(' '),
-                                (u.peserta || []).map(p => p.npm + ' ' + p.namaLengkap).join(' ')].join(' ').toLowerCase();
-                            return hay.indexOf(q) !== -1;
-                        });
-                    }
+                    const chip = this.bagian.chip || 'semua';
+                    if (chip === 'pendukung') units = units.filter(u => !this.unitHasPendukung(u));
+                    if (chip === 'pelaksanaan') units = units.filter(u => this.unitPelaksanaanEligible(u) && !this.unitHasPelaksanaan(u));
+                    if (chip === 'belum') units = units.filter(u => this.unitIncomplete(u));
                     return units;
                 },
                 bagianSortedUnits() {
                     const units = this.bagianFilteredUnits.slice();
-                    const key = this.bagian.sortKey;
                     const dir = this.bagian.sortDir === 'asc' ? 1 : -1;
-                    const val = (u) => {
-                        if (key === 'bagian') return u.bagian;
-                        if (key === 'blok') return u.blok;
-                        if (key === 'kegiatan') return u.label;
-                        if (key === 'peserta') return Number(u.jumlahPeserta) || 0;
-                        if (key === 'ba') return u.statusBa === 'ada' ? 1 : 0;
-                        if (key === 'final') return u.statusFinal === 'ada' ? 1 : 0;
-                        return u.tanggal || '';
-                    };
-                    return units.sort((a, b) => {
-                        const va = val(a), vb = val(b);
-                        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-                        return String(va).localeCompare(String(vb)) * dir;
-                    });
+                    return units.sort((a, b) => String(a.tanggal || '').localeCompare(String(b.tanggal || '')) * dir);
                 },
                 bagianOrphanFiltered() {
-                    if (this.bagian.onlyIncomplete) return [];
-                    const q = String(this.bagian.q || '').trim().toLowerCase();
-                    return (this.bagian.orphanBa || []).filter(b => {
-                        if (this.bagian.fBagian && b.bagian !== this.bagian.fBagian) return false;
-                        if (this.bagian.fBlok && b.blok !== this.bagian.fBlok) return false;
-                        if (this.bagian.fSumber && b.sumber !== this.bagian.fSumber) return false;
-                        if (q) {
-                            const hay = [b.bagian, b.blok, b.namaKegiatan, b.baId, (b.peserta || []).map(p => p.npm + ' ' + p.namaLengkap).join(' ')].join(' ').toLowerCase();
-                            if (hay.indexOf(q) === -1) return false;
-                        }
-                        return true;
-                    });
+                    if ((this.bagian.chip || 'semua') !== 'semua') return [];
+                    if (this.bagian.fBagian || this.bagian.fBlok) return [];
+                    return this.bagian.orphanBa || [];
                 },
                 bagianTableRows() {
                     const units = this.bagianSortedUnits.map(u => Object.assign({ __orphan: false }, u));
@@ -1842,10 +1659,10 @@
                 },
                 bagianBar() {
                     const map = {};
-                    (this.bagianFilteredUnits || []).forEach(u => {
+                    (this.bagian.units || []).forEach(u => {
                         if (!map[u.bagian]) map[u.bagian] = { bagian: u.bagian, total: 0, done: 0 };
                         map[u.bagian].total += 1;
-                        if (u.statusBa === 'ada') map[u.bagian].done += 1;
+                        if (this.unitHasPelaksanaan(u)) map[u.bagian].done += 1;
                     });
                     return Object.values(map).map(g => Object.assign(g, { pct: g.total ? Math.round((g.done / g.total) * 100) : 0 }))
                         .sort((a, b) => a.bagian.localeCompare(b.bagian));
@@ -1859,8 +1676,8 @@
                     const rows = bagSet.map(bag => {
                         const cells = {};
                         cols.forEach(b => {
-                            const inCell = (this.bagianFilteredUnits || []).filter(u => u.bagian === bag && u.blok === b);
-                            cells[b] = { total: inCell.length, done: inCell.filter(u => u.statusBa === 'ada').length };
+                            const inCell = (this.bagian.units || []).filter(u => u.bagian === bag && u.blok === b);
+                            cells[b] = { total: inCell.length, done: inCell.filter(u => this.unitHasPelaksanaan(u)).length };
                         });
                         return { bagian: bag, cells };
                     });
@@ -2087,6 +1904,8 @@
                             const fileEl = document.querySelector('input[type=file]');
                             if (fileEl) fileEl.value = '';
                             await this.babLoadBaList();
+                            this.loaded.bagian = false;
+                            await this.loadBagian();
                         }
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
@@ -2257,11 +2076,12 @@
                     this.sidebarOpen = false;
                     if (tab === 'pengajuan' && !this.loaded.pengajuan) this.loadPengajuan();
                     if (tab === 'stats' && !this.loaded.stats) this.loadStats();
-                    if (tab === 'bagian' && !this.loaded.bagian) this.loadBagian();
-                    if (tab === 'ba' && !this.loaded.ba) this.loadBa();
+                    if (tab === 'ba') {
+                        if (!this.loaded.bagian) this.loadBagian();
+                        if (!this.loaded.ba) this.loadBa();
+                        if (this.bab.active) this.babLoad();
+                    }
                     if (tab === 'master' && !this.loaded.master) this.loadMaster();
-                    if (tab === 'baBagian' && this.bab.active) this.babLoad();
-                    if (tab === 'baBagian' && !this.loaded.bagian && !this.bagian.labs.length) this.loadBagian();
                 },
 
                 // ---------- loaders ----------
@@ -2845,16 +2665,56 @@
                 normBagian(v) {
                     return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
                 },
+                unitKeputusan(u) {
+                    const order = ['Ditolak', 'Dibatalkan', 'Menunggu', 'Diterima', 'ACC'];
+                    let best = '';
+                    let bestIdx = -1;
+                    (u.peserta || []).forEach(p => {
+                        const s = String(p.statusPengajuan || '').trim();
+                        const i = order.indexOf(s);
+                        if (i > bestIdx) { bestIdx = i; best = s; }
+                    });
+                    return best || '-';
+                },
+                unitHasPendukung(u) {
+                    return (u.ba || []).some(b => b.sumber === 'Admin');
+                },
+                unitHasPelaksanaan(u) {
+                    return (u.ba || []).some(b => b.sumber === 'Bagian');
+                },
+                unitPelaksanaanEligible(u) {
+                    const k = this.unitKeputusan(u);
+                    return k === 'Diterima' || k === 'ACC';
+                },
+                unitIncomplete(u) {
+                    return !this.unitHasPendukung(u) || (this.unitPelaksanaanEligible(u) && !this.unitHasPelaksanaan(u));
+                },
+                unitPendukungBa(u) {
+                    return (u.ba || []).filter(b => b.sumber === 'Admin');
+                },
+                unitPelaksanaanBa(u) {
+                    return (u.ba || []).filter(b => b.sumber === 'Bagian');
+                },
+                heatFillClass(done, total) {
+                    if (!total) return 'bg-rose-400';
+                    if (done === total) return 'bg-emerald-500';
+                    if (done > 0) return 'bg-amber-400';
+                    return 'bg-rose-400';
+                },
+                heatCellClass(done, total) {
+                    if (done === total) return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+                    if (done > 0) return 'bg-amber-50 text-amber-700 ring-amber-200';
+                    return 'bg-rose-50 text-rose-700 ring-rose-200';
+                },
+                setBagianChip(chip) {
+                    this.bagian.chip = chip;
+                },
                 resetBagianFilter() {
-                    Object.assign(this.bagian, { fBagian: '', fBlok: '', fSumber: '', fStatusBa: '', fStatusFinal: '', q: '', onlyIncomplete: false });
+                    Object.assign(this.bagian, { fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc' });
                 },
                 sortBagian(key) {
-                    if (this.bagian.sortKey === key) {
-                        this.bagian.sortDir = this.bagian.sortDir === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        this.bagian.sortKey = key;
-                        this.bagian.sortDir = 'asc';
-                    }
+                    if (key !== 'tanggal') return;
+                    this.bagian.sortDir = this.bagian.sortDir === 'asc' ? 'desc' : 'asc';
                 },
                 sortBagianIcon(key) {
                     if (this.bagian.sortKey !== key) return 'bi-arrow-down-up opacity-40';
@@ -2885,19 +2745,27 @@
                         Blok: u.blok,
                         Kegiatan: u.label,
                         'Jumlah Peserta': u.jumlahPeserta,
-                        'Status BA': u.statusBa === 'ada' ? 'Ada' : 'Belum',
-                        'Sumber BA': (u.ba || []).map(b => b.sumber).join(', '),
-                        'BA ID': (u.ba || []).map(b => b.baId).join(', '),
-                        'Link File BA': (u.ba || []).map(b => b.fileUrl).filter(Boolean).join(', '),
-                        'Status Final': u.statusFinal === 'ada' ? 'Ada' : 'Belum',
-                        'Link Final': u.linkFinal || ''
+                        'BA Pendukung': u.__orphan ? '-' : (this.unitHasPendukung(u) ? 'Ada' : 'Belum'),
+                        'Keputusan': u.__orphan ? '-' : this.unitKeputusan(u),
+                        'BA Pelaksanaan': u.__orphan ? '-' : (this.unitHasPelaksanaan(u) ? 'Ada' : (this.unitPelaksanaanEligible(u) ? 'Belum' : '-')),
+                        'BA ID Pendukung': this.unitPendukungBa(u).map(b => b.baId).join(', '),
+                        'BA ID Pelaksanaan': this.unitPelaksanaanBa(u).map(b => b.baId).join(', '),
+                        'Link File': (u.ba || []).map(b => b.fileUrl).filter(Boolean).join(', ')
                     }));
                     const ws = window.XLSX.utils.json_to_sheet(rows.length ? rows : [{ Tanggal: '', Bagian: '', Blok: '', Kegiatan: '', 'Jumlah Peserta': '' }]);
                     const wb = window.XLSX.utils.book_new();
-                    window.XLSX.utils.book_append_sheet(wb, ws, 'Laporan Bagian');
+                    window.XLSX.utils.book_append_sheet(wb, ws, 'Berita Acara');
                     const d = new Date();
                     const p = (n) => String(n).padStart(2, '0');
-                    window.XLSX.writeFile(wb, 'laporan-bagian-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
+                    window.XLSX.writeFile(wb, 'berita-acara-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
+                },
+                openPelaksanaanPanel() {
+                    this.bab.showPanel = true;
+                    if (!this.loaded.bagian && !this.bagian.labs.length) this.loadBagian();
+                },
+                closePelaksanaanPanel() {
+                    this.bab.showPanel = false;
+                    if (this.bab.active) this.babEnd();
                 },
 
                 // ---------- berita acara ----------
@@ -3042,6 +2910,8 @@
                         if (res && res.success) {
                             this.ba.modal = false;
                             await this.loadBa();
+                            this.loaded.bagian = false;
+                            await this.loadBagian();
                         }
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);

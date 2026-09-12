@@ -62,10 +62,27 @@ describe('dashboard template', () => {
     expect(errors).toEqual([]);
   });
 
-  it('contains the Laporan Bagian audit markers', async () => {
+  it('contains the unified Berita Acara process markers', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('Audit kelengkapan berita acara per kegiatan');
-    expect(html).toContain('Peta Kelengkapan Bagian x Blok');
+    expect(html).toContain('Dua tahap: unggah BA Pendukung');
+    expect(html).toContain('Peta Kelengkapan Bagian × Blok');
+    expect(html).toContain('Unggah BA Pendukung');
+    expect(html).toContain('Unggah BA Pelaksanaan');
+    expect(html).toContain('Belum Pendukung');
+    expect(html).toContain('Belum Pelaksanaan');
     expect(html).toContain('xlsx@0.18.5');
+  });
+
+  it('has a single Berita Acara tab without leftover menus', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain("tab==='baBagian'");
+    expect(html).not.toContain("tab==='bagian'");
+    expect(html).not.toContain('Audit kelengkapan berita acara per kegiatan');
+    expect(html).not.toContain('Isi berita acara atas nama bagian');
+    expect((html.match(/<section v-if="tab==='ba'">/g) || []).length).toBe(1);
+    expect(html).toContain('v-if="tab===\'ba\' && bab.showPanel"');
+    expect(html).toContain('key: \'ba\', icon: \'bi-file-earmark-pdf\', label: \'Berita Acara\'');
+    expect(html).not.toContain("label: 'Laporan Bagian'");
+    expect(html).not.toContain("label: 'Berita Acara Bagian'");
   });
 });
