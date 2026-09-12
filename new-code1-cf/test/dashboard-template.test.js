@@ -73,6 +73,13 @@ describe('dashboard template', () => {
     expect(html).toContain('xlsx@0.18.5');
   });
 
+  it('removes the header Pelaksanaan button and uses emerald for the row action', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('<i class="bi bi-journal-check"></i> Unggah BA Pelaksanaan');
+    expect(html).toContain('class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)"');
+    expect(html).toContain('id="bab-panel"');
+  });
+
   it('has a single Berita Acara tab without leftover menus', async () => {
     const html = await loadDashboardHtml();
     expect(html).not.toContain("tab==='baBagian'");

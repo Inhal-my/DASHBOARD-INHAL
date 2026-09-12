@@ -31,6 +31,8 @@
         .btn-primary:hover { background: #4338ca; }
         .btn-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #475569; box-shadow: inset 0 0 0 1px #e2e8f0; transition: all .15s ease; }
         .btn-soft:hover { background: #f1f5f9; }
+        .btn-emerald { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #059669; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #fff; transition: background .15s ease; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+        .btn-emerald:hover { background: #047857; }
         .btn-danger-soft { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #fff1f2; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #e11d48; box-shadow: inset 0 0 0 1px #fecdd3; transition: all .15s ease; }
         .btn-danger-soft:hover { background: #ffe4e6; }
         .btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #e11d48; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #fff; transition: background .15s ease; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
@@ -527,7 +529,6 @@
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button class="btn-primary !py-2 text-xs" @click="openBaUpload()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
-                            <button class="btn-soft !py-2 text-xs" @click="openPelaksanaanPanel()"><i class="bi bi-journal-check"></i> Unggah BA Pelaksanaan</button>
                             <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
                         </div>
                     </div>
@@ -671,7 +672,7 @@
                                                 <td class="p-3">
                                                     <div class="flex flex-col gap-1 text-xs">
                                                         <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
-                                                        <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel()">Unggah Pelaksanaan</button>
+                                                        <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
                                                         <template v-else><template v-for="(b, bi) in r.ba" :key="'a'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link">Lihat file</a></template></template>
                                                     </div>
                                                 </td>
@@ -726,14 +727,14 @@
                                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
                                         <template v-for="(b, bi) in r.ba" :key="bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link"><i class="bi bi-file-earmark-pdf"></i> {{ b.baId }}</a></template>
                                         <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
-                                        <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel()">Unggah Pelaksanaan</button>
+                                        <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
                                     </div>
                                 </div>
                             </div>
                             </template>
                         </div>
                     </template>
-                    <div v-if="tab==='ba' && bab.showPanel" class="mt-6">
+                    <div v-if="tab==='ba' && bab.showPanel" id="bab-panel" class="mt-6">
                     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
                         <div>
                             <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Unggah BA Pelaksanaan</h2>
@@ -2759,9 +2760,29 @@
                     const p = (n) => String(n).padStart(2, '0');
                     window.XLSX.writeFile(wb, 'berita-acara-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
                 },
-                openPelaksanaanPanel() {
+                openPelaksanaanPanel(row) {
                     this.bab.showPanel = true;
                     if (!this.loaded.bagian && !this.bagian.labs.length) this.loadBagian();
+                    const bagian = String((row && row.bagian) || '').trim();
+                    this.bab.subBagian = '';
+                    if (bagian) {
+                        const key = this.normBagian(bagian);
+                        if (key === this.normBagian('SGD')) this.bab.kategori = 'SGD';
+                        else if (key === this.normBagian('KKD')) this.bab.kategori = 'KKD';
+                        else if (key === this.normBagian('Ujian')) this.bab.kategori = 'Ujian';
+                        else {
+                            const labs = this.bagian.labs || [];
+                            const lab = labs.find((l) => this.normBagian(l) === key);
+                            if (lab) { this.bab.kategori = 'Praktikum'; this.bab.subBagian = lab; }
+                            else this.bab.kategori = '';
+                        }
+                    } else {
+                        this.bab.kategori = '';
+                    }
+                    this.$nextTick(() => {
+                        const el = document.getElementById('bab-panel');
+                        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
                 },
                 closePelaksanaanPanel() {
                     this.bab.showPanel = false;
