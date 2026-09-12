@@ -1023,6 +1023,14 @@ Tambahkan juga `table` pada kartu tabel lain agar tombol Aksi tahu target: `mast
                 },
 ```
 
+3i. Tambah modal baris baru ke `anyModalOpen` (baris 1746) agar body scroll terkunci saat modal terbuka:
+
+```js
+                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
+```
+
+Catatan: state `master.modal` lama masih dipakai modal editor lama sampai Task 8; `master.rowModal.open` ditambahkan bersamanya. Task 8 yang menghapus modal lama akan menyisakan hanya `master.rowModal.open`.
+
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/dashboard-template.test.js`
@@ -1079,6 +1087,14 @@ Expected: FAIL — `master-table-dense` belum ada. (Assertion `editMaster` sudah
 ```
 
 3c. Hapus modal editor lama (blok `<!-- ============ MODAL: MASTER EDITOR ============ -->`, baris 1282-1327) dan method `editMaster`, `addMasterRow`, `removeMasterRow`, `saveEdit`, `isBuktiModeRow`, `isConfigKeyRow` (baris 2948-3001) — semuanya hanya dipakai modal lama. Pertahankan `masterCellValue` (masih dipakai tabel dan label Hapus). **Hanya jika** tidak ada referensi lain. Cek dulu:
+
+3d. Karena modal lama dihapus, update `anyModalOpen` agar tidak lagi mereferensikan `master.modal` (cukup `master.rowModal.open` saja):
+
+```js
+                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
+```
+
+Hapus juga state `master` yang hanya dipakai modal lama bila tidak ada referensi lain: `modal`, `editKey`, `rows`, `cols`, `title`, `saveFn` (verifikasi dengan pencarian sebelum menghapus).
 
 Run: `npx vitest run` — jika ada test lama yang memanggil `saveMasterKegiatan` langsung dari `write/master.js`, itu tetap hijau karena fungsi tidak dihapus.
 
