@@ -324,6 +324,7 @@ export async function getMasterDataMonitor(db, ctx) {
   await requireAdmin(db, ctx.token);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
   return {
+    mahasiswa: toClientRows('mahasiswa', await all('mahasiswa')),
     masterKegiatan: toClientRows('master_kegiatan', await all('master_kegiatan')),
     masterBagian: toClientRows('master_bagian', await all('master_bagian')),
     masterBiaya: toClientRows('master_biaya', await all('master_biaya')),

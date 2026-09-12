@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { saveMahasiswa, deleteMahasiswa } from '../src/write/master.js';
+import { getMasterDataMonitor } from '../src/read/dashboard.js';
 
 async function adminCtx() {
   return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }) };
@@ -172,5 +173,16 @@ describe('saveMasterRow and deleteMasterRow', () => {
     expect(ok.success).toBe(true);
     const miss = await deleteMasterRow(env.DB, { table: 'master_kegiatan', id: 999999 }, ctx);
     expect(miss.success).toBe(false);
+  });
+});
+
+describe('getMasterDataMonitor mahasiswa', () => {
+  it('includes mahasiswa mapped to client columns', async () => {
+    await env.DB.prepare("INSERT INTO mahasiswa (npm, nama_lengkap, email, blok, keterangan) VALUES ('7700000001','Uji Map','u@x.id','B','ket')").run();
+    const data = await getMasterDataMonitor(env.DB, await adminCtx());
+    const row = data.mahasiswa.find((r) => r.NPM === '7700000001');
+    expect(row['Nama Lengkap']).toBe('Uji Map');
+    expect(row.Email).toBe('u@x.id');
+    expect(row.Blok).toBe('B');
   });
 });
