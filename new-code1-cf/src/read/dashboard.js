@@ -323,14 +323,15 @@ export async function getBeritaAcaraAdminList(db, ctx) {
 export async function getMasterDataMonitor(db, ctx) {
   await requireAdmin(db, ctx.token);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
+  const maskSecret = (rows, field) => (rows || []).map((r) => Object.assign({}, r, { [field]: '' }));
   return {
     mahasiswa: toClientRows('mahasiswa', await all('mahasiswa')),
     masterKegiatan: toClientRows('master_kegiatan', await all('master_kegiatan')),
     masterBagian: toClientRows('master_bagian', await all('master_bagian')),
     masterBiaya: toClientRows('master_biaya', await all('master_biaya')),
     config: toClientRows('config', await all('config')),
-    bagianStaff: toClientRows('bagian_staff', await all('bagian_staff')),
-    admin: toClientRows('admin', await all('admin')),
+    bagianStaff: maskSecret(toClientRows('bagian_staff', await all('bagian_staff')), 'Pass'),
+    admin: maskSecret(toClientRows('admin', await all('admin')), 'Password'),
     bagianSettings: await getBagianBaSettings(db)
   };
 }

@@ -269,7 +269,7 @@ const MASTER_TABLES = {
     uniqueCol: 'email'
   },
   admin: {
-    cols: [['password', ['Password', 'password', 'Email', 'email']], ['nama', ['Nama', 'nama']]],
+    cols: [['password', ['Password', 'password']], ['nama', ['Nama', 'nama']]],
     passwordCol: 'password'
   }
 };

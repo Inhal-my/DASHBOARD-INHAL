@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
-import { verifyPassword, isHashed } from '../src/password.js';
+import { verifyPassword, isHashed, hashPassword } from '../src/password.js';
 import { getMasterDataMonitor } from '../src/read/dashboard.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
@@ -25,6 +25,22 @@ describe('master read mapping', () => {
 
   it('requires an admin session', async () => {
     await expect(getMasterDataMonitor(env.DB, {})).rejects.toThrow();
+  });
+
+  it('masks password hashes in admin and bagian staff rows', async () => {
+    const hashedAdmin = await hashPassword('rahasia-admin');
+    const hashedStaff = await hashPassword('rahasia-staff');
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES (?1, 'Admin Uji')").bind(hashedAdmin).run();
+    await env.DB.prepare("INSERT INTO bagian_staff (email, kategori, nama, pass) VALUES ('uji@x.id', '*', 'Umum', ?1)").bind(hashedStaff).run();
+    const data = await getMasterDataMonitor(env.DB, await adminCtx());
+    expect(data.admin[0].Password).toBe('');
+    expect(data.bagianStaff[0].Pass).toBe('');
+    const adminRow = await env.DB.prepare("SELECT password FROM admin WHERE nama = 'Admin Uji'").first();
+    const staffRow = await env.DB.prepare("SELECT pass FROM bagian_staff WHERE email = 'uji@x.id'").first();
+    expect(adminRow.password).toBe(hashedAdmin);
+    expect(staffRow.pass).toBe(hashedStaff);
+    expect(adminRow.password.length).toBeGreaterThan(0);
+    expect(staffRow.pass.length).toBeGreaterThan(0);
   });
 });
 
