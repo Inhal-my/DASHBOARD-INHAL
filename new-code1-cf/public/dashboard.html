@@ -88,6 +88,7 @@
             overscroll-behavior: contain;
         }
         .master-table tbody tr:hover { background: #f8fafc; }
+        .master-table-dense th, .master-table-dense td { padding-top: .4rem; padding-bottom: .4rem; }
         .master-search { position: relative; }
         .master-search i { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .875rem; pointer-events: none; }
         .master-search .input { padding-left: 2.4rem; }
@@ -1018,7 +1019,7 @@
                                 </div>
                             </div>
                             <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
-                                <table class="master-table w-full text-left text-sm">
+                                <table class="master-table master-table-dense w-full text-left text-sm">
                                     <thead>
                                         <tr class="text-[11px] uppercase tracking-wider text-slate-400">
                                             <th v-for="c in activeMasterCard.cols" class="px-5 py-3 font-semibold">{{ c }}</th>
@@ -1027,7 +1028,7 @@
                                     </thead>
                                     <tbody>
                                         <tr v-if="!activeMasterRows.length">
-                                            <td :colspan="activeMasterCard.cols.length" class="px-5 py-12 text-center text-xs text-slate-400">
+                                            <td :colspan="activeMasterCard.cols.length + 1" class="px-5 py-12 text-center text-xs text-slate-400">
                                                 {{ master.search ? 'Tidak ada hasil untuk pencarian.' : 'Belum ada data.' }}
                                             </td>
                                         </tr>
@@ -1294,53 +1295,6 @@
             </div>
         </transition>
 
-        <!-- ============ MODAL: MASTER EDITOR ============ -->
-        <transition name="fade">
-            <div v-if="master.modal" class="fixed inset-0 z-50 modal-overlay">
-                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.modal=false"></div>
-                <transition name="pop" appear>
-                    <div class="modal-panel max-w-3xl shadow-lift">
-                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                            <h3 class="text-sm font-bold text-slate-900">Edit {{ master.title }}</h3>
-                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.modal=false"><i class="bi bi-x-lg"></i></button>
-                        </div>
-                        <div class="modal-body px-6 py-4">
-                            <div class="overflow-x-auto rounded-xl ring-1 ring-slate-100">
-                                <table class="w-full text-left text-sm">
-                                    <thead class="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-400">
-                                        <tr>
-                                            <th v-for="c in master.cols" class="px-3 py-2.5 font-semibold">{{ c }}</th>
-                                            <th class="w-12 px-2 py-2.5"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(row, i) in master.rows" :key="i" class="border-t border-slate-50">
-                                            <td v-for="c in master.cols" class="px-2 py-2">
-                                                <select v-if="isConfigKeyRow(row, c)" v-model="row[c]" class="input !py-2 text-xs">
-                                                    <option value="strict">Strict</option>
-                                                    <option value="lenggang">Bypass</option>
-                                                </select>
-                                                <input v-else-if="master.editKey === 'config' && isBuktiModeRow(row)" v-model="row[c]" class="input !py-2 text-xs" disabled>
-                                                <input v-else v-model="row[c]" class="input !py-2 text-xs">
-                                            </td>
-                                            <td class="px-2 py-2 text-center">
-                                                <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500" @click="removeMasterRow(i)"><i class="bi bi-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <button class="btn-soft mt-3" @click="addMasterRow()"><i class="bi bi-plus-lg"></i>Tambah Baris</button>
-                        </div>
-                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
-                            <button class="btn-soft" @click="master.modal=false">Batal</button>
-                            <button class="btn-primary" @click="saveEdit()"><i class="bi bi-save"></i>Simpan</button>
-                        </div>
-                    </div>
-                </transition>
-            </div>
-        </transition>
-
         <transition name="fade">
             <div v-if="master.rowModal.open" class="fixed inset-0 z-50 modal-overlay">
                 <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.rowModal.open=false"></div>
@@ -1496,15 +1450,9 @@
                         ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false }
                     },
                     master: {
-                        modal: false,
                         data: {},
                         baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
                         saving: false,
-                        editKey: '',
-                        rows: [],
-                        cols: [],
-                        title: '',
-                        saveFn: '',
                         tab: 'masterKegiatan',
                         search: '',
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, originalId: 0 },
@@ -1783,7 +1731,7 @@
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
+                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
                 }
             },
             watch: {
@@ -3152,59 +3100,11 @@
                         this.notify('Gagal: ' + err2, false);
                     }
                 },
-                isBuktiModeRow(row) {
-                    return this.master.editKey === 'config' && String((row && row.Key) || '').trim() === 'BUKTI_MODE';
-                },
-                isConfigKeyRow(row, c) {
-                    return c === 'Value' && this.isBuktiModeRow(row);
-                },
                 masterCellValue(r, c) {
                     if (c === 'Value' && String((r && r.Key) || '').trim() === 'BUKTI_MODE') {
                         return r[c] === 'lenggang' ? 'Bypass' : 'Strict';
                     }
                     return r[c] === undefined || r[c] === null ? '—' : r[c];
-                },
-                editMaster(key) {
-                    const card = this.master.cards.find(c => c.key === key);
-                    if (!card) return;
-                    this.master.editKey = key;
-                    this.master.cols = card.cols;
-                    this.master.title = card.title;
-                    this.master.saveFn = card.saveFn;
-                    this.master.rows = (this.master.data[key] || []).map(r => Object.assign({}, r));
-                    if (key === 'config') {
-                        this.master.rows.forEach(function(r) {
-                            if (String((r && r.Key) || '').trim() === 'BUKTI_MODE') {
-                                r.Value = (String(r.Value || '').trim() === 'lenggang') ? 'lenggang' : 'strict';
-                            }
-                        });
-                    }
-                    this.master.modal = true;
-                },
-                addMasterRow() {
-                    const row = {};
-                    this.master.cols.forEach(c => { row[c] = ''; });
-                    this.master.rows.push(row);
-                },
-                removeMasterRow(i) {
-                    if (this.master.rows.length === 1) { this.notify('Minimal satu baris.', false); return; }
-                    this.master.rows.splice(i, 1);
-                },
-                async saveEdit() {
-                    this.loading = true;
-                    try {
-                        const res = await this.run(this.master.saveFn, { rows: this.master.rows });
-                        this.notify((res && res.message) || 'Disimpan.');
-                        this.master.modal = false;
-                        await this.loadMaster();
-                        this.loaded.pengajuan = false;
-                        this.loaded.stats = false;
-                        await Promise.all([this.loadPengajuan(), this.loadStats()]);
-                    } catch (e) {
-                        this.notify('Gagal: ' + e, false);
-                    } finally {
-                        this.loading = false;
-                    }
                 },
                 toggleBaStatus(v) {
                     const arr = this.master.baSettings.statuses || [];

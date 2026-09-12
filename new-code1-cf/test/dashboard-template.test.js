@@ -102,4 +102,10 @@ describe('dashboard template', () => {
     expect(html).toContain('onMahasiswaCsv');
     expect(html).toContain("master.rowModal");
   });
+
+  it('removes the old replace-all master editor entrypoint', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('@click="editMaster(activeMasterCard.key)"');
+    expect(html).toContain('master-table-dense');
+  });
 });
