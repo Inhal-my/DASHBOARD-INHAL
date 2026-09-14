@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
-import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan } from '../src/read/dashboard.js';
+import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan, getBagianAggregation } from '../src/read/dashboard.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -46,6 +46,25 @@ describe('dashboard read', () => {
     expect(opts.blok).toContain('A');
     expect(opts.details[0].jenis).toBe('Ujian');
   });
+  it('mengembalikan progres dan realisasi per kegiatan', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','SGD','ACC','http://final')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-1','SGD','SGD 1','','2026-09-20','')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jam,dosen,kegiatan_key) VALUES ('2026-09-20T08:00:00','BA-2026-0001','SGD','A','SGD 1','2026-09-20','09:00','dr. Andi','sgd|a|sgd 1')"
+    ).run();
+    const res = await getBagianAggregation(env.DB, { token });
+    const unit = res.units.find((u) => u.key === 'sgd|a|sgd 1');
+    expect(unit).toBeTruthy();
+    expect(unit.progress.selesai).toBe('all');
+    expect(unit.pelaksanaan[0].jam).toBe('09:00');
+    expect(unit.dosenList).toEqual(['dr. Andi']);
+  });
+
   it('allows only admins to upload a surat keterangan', async () => {
     await seed();
     const file = { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' };

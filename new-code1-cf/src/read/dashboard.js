@@ -4,8 +4,9 @@ import { saveDriveFile } from '../drive.js';
 import {
   norm, parseCurrency, formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
   resolveBiayaForPengajuan, normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
-  getBagianBaSettings, pushUnique
+  getBagianBaSettings, pushUnique, kegiatanKey
 } from './common.js';
+import { computeUnitProgress } from './kegiatan.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
@@ -173,7 +174,7 @@ export async function getBagianAggregation(db, ctx) {
     const pilihan = String(row.Pilihan || '').trim();
     const detailText = String(row.Detail || '').trim();
     const label = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
-    const key = [norm(bagian), blok.toLowerCase(), norm(label)].join('|');
+    const key = kegiatanKey(bagian, blok, label);
     if (unitIndex[key] === undefined) {
       unitIndex[key] = units.length;
       units.push({ key, bagian, blok, pilihan, detail: detailText, label, tanggal: '', tanggalList: [], peserta: [], ba: [], linkFinal: '' });
@@ -184,6 +185,7 @@ export async function getBagianAggregation(db, ctx) {
       namaLengkap: String(p['Nama Lengkap'] || '').trim(),
       blok: String(p.Blok || '').trim(),
       statusPengajuan: String(p.Status || '').trim(),
+      linkFinal: String(p['Link Final'] || '').trim(),
       idPengajuan: idp
     });
     const tgl = String(row['Tanggal Pelaksanaan'] || '').trim();
@@ -208,6 +210,9 @@ export async function getBagianAggregation(db, ctx) {
         blok: String(c.Blok || '').replace(/\s+/g, ' ').trim(),
         namaKegiatan: String(c['Nama Kegiatan'] || '').replace(/\s+/g, ' ').trim(),
         tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
+        jam: String(c.Jam || '').trim(),
+        dosen: String(c.Dosen || '').trim(),
+        kegiatanKey: String(c['Kegiatan Key'] || '').trim(),
         fileUrl: String(c['File URL'] || '').trim(),
         fileName: String(c['File Name'] || '').trim(),
         catatan: String(c.Catatan || '').trim(),
@@ -247,8 +252,13 @@ export async function getBagianAggregation(db, ctx) {
     (unitByBag[k] = unitByBag[k] || []).push(u);
   }
 
+  const unitByKey = {};
+  for (const u of units) unitByKey[u.key] = u;
+
   const orphanBa = [];
   for (const b of baList) {
+    const direct = b.kegiatanKey ? unitByKey[b.kegiatanKey] : null;
+    if (direct) { direct.ba.push(b); continue; }
     const bBagian = resolveBagian12(b.bagian, '', b.namaKegiatan, labs) || b.bagian;
     const candidates = unitByBag[bagKey(bBagian, b.blok)] || [];
     const bNpms = b.peserta.map((p) => p.npm).filter(Boolean);
@@ -272,6 +282,14 @@ export async function getBagianAggregation(db, ctx) {
     u.jumlahPeserta = u.peserta.length;
     u.statusBa = u.ba.length ? 'ada' : 'belum';
     u.statusFinal = u.linkFinal ? 'ada' : 'belum';
+    u.baPendukung = u.ba.filter((b) => b.sumber === 'Admin');
+    u.baPelaksanaan = u.ba.filter((b) => b.sumber === 'Bagian');
+    u.pelaksanaan = u.baPelaksanaan.map((b) => ({ baId: b.baId, tanggal: b.tanggal, jam: b.jam || '', dosen: b.dosen || '' }));
+    const dosenSet = [];
+    for (const b of u.baPelaksanaan) if (b.dosen && dosenSet.indexOf(b.dosen) === -1) dosenSet.push(b.dosen);
+    u.dosenList = dosenSet;
+    u.progress = computeUnitProgress(u);
+    u.counts = u.progress.counts;
     u.tanggalList = u.tanggalList.slice().sort();
     u.tanggal = u.tanggalList[0] || '';
     for (const p of u.peserta) if (p.npm) npmSet.add(p.npm);
