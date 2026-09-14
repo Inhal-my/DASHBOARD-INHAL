@@ -86,6 +86,24 @@ describe('berita acara bagian', () => {
     expect(dup.message).toContain('sudah ada berita acara');
   });
 
+  it('menyimpan jam, dosen, dan kegiatan_key serta menyinkron ke pengajuan', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      jam: '09:00', dosen: 'dr. Andi', catatan: '',
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+    }, 'SGD', ctx);
+    expect(res.success).toBe(true);
+    const ba = await env.DB.prepare('SELECT jam, dosen, kegiatan_key FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(ba.jam).toBe('09:00');
+    expect(ba.dosen).toBe('dr. Andi');
+    expect(ba.kegiatan_key).toBe('sgd|a|sgd 1');
+    const p = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(p.dosen).toBe('dr. Andi');
+    expect(p.tanggal_pelaksanaan).toBe('2026-09-20T09:00');
+  });
+
   it('rejects peserta whose current status is not allowed', async () => {
     await seedPengajuan({ status: 'Menunggu' });
     const ctx = await bagianCtx(['SGD']);

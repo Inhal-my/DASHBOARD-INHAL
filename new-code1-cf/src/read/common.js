@@ -9,6 +9,10 @@ export function norm(s) {
     .trim();
 }
 
+export function kegiatanKey(bagian, blok, nama) {
+  return [norm(bagian), norm(blok), norm(nama)].join('|');
+}
+
 export function baginaKey(v) {
   return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 }

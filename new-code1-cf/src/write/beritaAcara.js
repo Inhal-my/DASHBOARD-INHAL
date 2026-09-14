@@ -1,5 +1,5 @@
 import { requireAdmin, requireBagianSession } from '../session.js';
-import { getBagianBaStatuses } from '../read/common.js';
+import { getBagianBaStatuses, kegiatanKey } from '../read/common.js';
 import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
 
 function str(v) {
@@ -122,26 +122,55 @@ async function findDuplicateBa(db, bagian, blok, nama, tanggal) {
   return null;
 }
 
-async function persistBa(db, table, pesertaTable, payload, { baId, bagian, fileName, fileUrl }) {
+async function persistBa(db, table, pesertaTable, payload, meta) {
   const ts = nowIso();
+  const cols = {
+    timestamp: ts,
+    ba_id: meta.baId,
+    bagian: meta.bagian,
+    blok: str(payload.blok),
+    nama_kegiatan: str(payload.namaKegiatan),
+    tanggal_pelaksanaan: str(payload.tanggalPelaksanaan),
+    jam: str(payload.jam),
+    jumlah_peserta: payload.__jumlah,
+    file_name: meta.fileName,
+    file_url: meta.fileUrl,
+    catatan: str(payload.catatan),
+    sumber: payload.__sumber,
+    kegiatan_key: meta.kegiatanKey
+  };
+  if (meta.withDosen) cols.dosen = str(payload.dosen);
+  const keys = Object.keys(cols);
+  const placeholders = keys.map((_, i) => '?' + (i + 1)).join(', ');
   const stmts = [
-    db.prepare(
-      `INSERT INTO ${table} (timestamp, ba_id, bagian, blok, nama_kegiatan, tanggal_pelaksanaan, jumlah_peserta, file_name, file_url, catatan, sumber) ` +
-      'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)'
-    ).bind(
-      ts, baId, bagian, str(payload.blok), str(payload.namaKegiatan), str(payload.tanggalPelaksanaan),
-      payload.__jumlah, fileName, fileUrl, str(payload.catatan), payload.__sumber
-    )
+    db.prepare(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`).bind(...keys.map((k) => cols[k]))
   ];
   for (const p of payload.__peserta) {
     stmts.push(
       db.prepare(
         `INSERT INTO ${pesertaTable} (timestamp, ba_id, npm, nama_lengkap, blok, bagian, status_pengajuan) ` +
         'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)'
-      ).bind(ts, baId, p.npm, p.namaLengkap, p.blok, bagian, p.statusPengajuan)
+      ).bind(ts, meta.baId, p.npm, p.namaLengkap, p.blok, meta.bagian, p.statusPengajuan)
     );
   }
   await db.batch(stmts);
+}
+
+async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
+  const tgl = str(tanggal);
+  const j = str(jam);
+  const value = tgl && j ? (tgl + 'T' + j) : tgl;
+  const ts = nowIso();
+  const stmts = [];
+  for (const p of peserta) {
+    const id = str(p.idPengajuan);
+    if (!id) continue;
+    stmts.push(
+      db.prepare('UPDATE pengajuan SET dosen = ?1, tanggal_pelaksanaan = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
+        .bind(str(dosen), value, ts, id)
+    );
+  }
+  if (stmts.length) await db.batch(stmts);
 }
 
 export async function saveBeritaAcaraAdmin(db, payload, ctx) {
@@ -168,7 +197,10 @@ export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   p.__peserta = peserta;
   p.__jumlah = peserta.length;
   p.__sumber = 'Admin';
-  await persistBa(db, 'berita_acara_admin', 'berita_acara_admin_peserta', p, { baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl });
+  await persistBa(db, 'berita_acara_admin', 'berita_acara_admin_peserta', p, {
+    baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
+    kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: false
+  });
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
@@ -251,7 +283,11 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   p.__peserta = peserta;
   p.__jumlah = peserta.length;
   p.__sumber = 'Bagian';
-  await persistBa(db, 'berita_acara', 'berita_acara_peserta', p, { baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl });
+  await persistBa(db, 'berita_acara', 'berita_acara_peserta', p, {
+    baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
+    kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true
+  });
+  await syncPengajuanPelaksanaan(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam));
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
