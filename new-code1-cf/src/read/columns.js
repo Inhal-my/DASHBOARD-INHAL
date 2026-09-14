@@ -23,9 +23,9 @@ export const TABLE_COLUMNS = {
   },
   berita_acara: {
     timestamp: 'Timestamp', ba_id: 'BA ID', bagian: 'Bagian', blok: 'Blok',
-    nama_kegiatan: 'Nama Kegiatan', tanggal_pelaksanaan: 'Tanggal Pelaksanaan',
-    jumlah_peserta: 'Jumlah Peserta', file_name: 'File Name', file_url: 'File URL',
-    catatan: 'Catatan', sumber: 'Sumber'
+    nama_kegiatan: 'Nama Kegiatan', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', jam: 'Jam',
+    dosen: 'Dosen', jumlah_peserta: 'Jumlah Peserta', file_name: 'File Name', file_url: 'File URL',
+    catatan: 'Catatan', sumber: 'Sumber', kegiatan_key: 'Kegiatan Key'
   },
   berita_acara_peserta: {
     timestamp: 'Timestamp', ba_id: 'BA ID', npm: 'NPM', nama_lengkap: 'Nama Lengkap',
@@ -33,9 +33,9 @@ export const TABLE_COLUMNS = {
   },
   berita_acara_admin: {
     timestamp: 'Timestamp', ba_id: 'BA ID', bagian: 'Bagian', blok: 'Blok',
-    nama_kegiatan: 'Nama Kegiatan', tanggal_pelaksanaan: 'Tanggal Pelaksanaan',
+    nama_kegiatan: 'Nama Kegiatan', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', jam: 'Jam',
     jumlah_peserta: 'Jumlah Peserta', file_name: 'File Name', file_url: 'File URL',
-    catatan: 'Catatan', sumber: 'Sumber'
+    catatan: 'Catatan', sumber: 'Sumber', kegiatan_key: 'Kegiatan Key'
   },
   berita_acara_admin_peserta: {
     timestamp: 'Timestamp', ba_id: 'BA ID', npm: 'NPM', nama_lengkap: 'Nama Lengkap',

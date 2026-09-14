@@ -104,8 +104,8 @@ CREATE TABLE audit_log (
 );
 CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
-  nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jumlah_peserta TEXT, file_name TEXT,
-  file_url TEXT, catatan TEXT, sumber TEXT
+  nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, dosen TEXT, jumlah_peserta TEXT,
+  file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT
 );
 CREATE TABLE berita_acara_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, npm TEXT,
@@ -113,8 +113,8 @@ CREATE TABLE berita_acara_peserta (
 );
 CREATE TABLE berita_acara_admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
-  nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jumlah_peserta TEXT, file_name TEXT,
-  file_url TEXT, catatan TEXT, sumber TEXT
+  nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, jumlah_peserta TEXT, file_name TEXT,
+  file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT
 );
 CREATE TABLE berita_acara_admin_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, npm TEXT,
@@ -137,6 +137,8 @@ CREATE TABLE log_data (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, payload TEXT
 );
 CREATE INDEX idx_ba_ba_id ON berita_acara(ba_id);
+CREATE INDEX idx_ba_kegiatan_key ON berita_acara(kegiatan_key);
+CREATE INDEX idx_ba_admin_kegiatan_key ON berita_acara_admin(kegiatan_key);
 CREATE INDEX idx_ba_peserta_ba_id ON berita_acara_peserta(ba_id);
 CREATE INDEX idx_check_data_pengajuan ON check_data(id_pengajuan);
 CREATE INDEX idx_sessions_expires ON sessions(expires_at);
