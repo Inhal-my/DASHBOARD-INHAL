@@ -19,4 +19,19 @@ describe('getLaporanBootstrap', () => {
     expect(boot.blok).toContain('A');
     expect(boot.bagian.labs).toContain('Lab Anatomi');
   });
+
+  it('mengembalikan unit kegiatan dengan progres', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','SGD','ACC','http://final')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-1','SGD','SGD 1','','2026-09-20','')"
+    ).run();
+    const data = await getLaporanBootstrap(env.DB, { token });
+    expect(Array.isArray(data.kegiatan)).toBe(true);
+    const unit = data.kegiatan.find((u) => u.key === 'sgd|a|sgd 1');
+    expect(unit).toBeTruthy();
+    expect(unit.progress.final).toBe('all');
+  });
 });

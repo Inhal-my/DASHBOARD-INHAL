@@ -1,6 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { toClientRow } from './columns.js';
-import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan } from './common.js';
+import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, resolveBagian12, kegiatanKey } from './common.js';
+import { computeUnitProgress } from './kegiatan.js';
 
 function baSumber(r) {
   const s = String((r && r.Sumber) || '').trim().toLowerCase();
@@ -78,12 +79,71 @@ export async function getLaporanBootstrap(db, ctx) {
   ba.forEach((b) => pushUnique(blok, toClientRow('berita_acara', b).Blok));
   blok.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
+  const labs = await getMasterOptions(db, 'Lab');
+  const baAdmin = (await db.prepare('SELECT * FROM berita_acara_admin').all()).results || [];
+  const baAdminClient = baAdmin.map((r) => toClientRow('berita_acara_admin', r));
+  const baClientUnits = sortedBa
+    .filter((r) => baSumber(toClientRow('berita_acara', r)) === 'Bagian')
+    .map((r) => {
+      const c = toClientRow('berita_acara', r);
+      c.peserta = pesertaMap[String(r.ba_id || '').trim()] || [];
+      return c;
+    });
+
+  const units = [];
+  const unitIndex = {};
+  for (const row of rows) {
+    const p = row.pengajuan;
+    const idp = String(p['ID Pengajuan'] || '').trim();
+    for (const d of row.details) {
+      const bagian = resolveBagian12(String(d['Jenis Kegiatan'] || d.Bagian || '').trim(), String(d.Pilihan || d.Bagian || '').trim(), '', labs) || String(d.Bagian || '').trim() || 'Lainnya';
+      const blokUnit = String(p.Blok || '').trim();
+      const pilihan = String(d.Pilihan || '').trim();
+      const detailText = String(d.Detail || '').trim();
+      const label = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
+      const key = kegiatanKey(bagian, blokUnit, label);
+      if (unitIndex[key] === undefined) {
+        unitIndex[key] = units.length;
+        units.push({ key, bagian, blok: blokUnit, label, peserta: [], baPendukung: [], baPelaksanaan: [], pelaksanaan: [], dosenList: [] });
+      }
+      const u = units[unitIndex[key]];
+      if (!u.peserta.some((x) => x.idPengajuan === idp)) {
+        u.peserta.push({
+          idPengajuan: idp,
+          npm: String(p.NPM || '').trim(),
+          namaLengkap: String(p['Nama Lengkap'] || '').trim(),
+          statusPengajuan: String(p.Status || '').trim(),
+          linkFinal: String(p['Link Final'] || '').trim()
+        });
+      }
+    }
+  }
+  const attach = (list, bucket) => {
+    for (const b of list) {
+      const key = b['Kegiatan Key'] || kegiatanKey(b.Bagian, b.Blok, b['Nama Kegiatan']);
+      const u = unitIndex[key] !== undefined ? units[unitIndex[key]] : null;
+      if (!u) continue;
+      u[bucket].push(b);
+    }
+  };
+  attach(baAdminClient, 'baPendukung');
+  attach(baClientUnits, 'baPelaksanaan');
+  for (const u of units) {
+    u.pelaksanaan = u.baPelaksanaan.map((b) => ({ baId: b['BA ID'], tanggal: b['Tanggal Pelaksanaan'], jam: b.Jam || '', dosen: b.Dosen || '' }));
+    const dosenSet = [];
+    for (const b of u.baPelaksanaan) if (b.Dosen && dosenSet.indexOf(b.Dosen) === -1) dosenSet.push(b.Dosen);
+    u.dosenList = dosenSet;
+    u.progress = computeUnitProgress(u);
+    u.counts = u.progress.counts;
+  }
+
   return {
     summary: { totalPendaftar, totalDiterima, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
     rows,
     beritaAcara,
     dosen,
     blok,
-    bagian: { categories: ['Ujian', 'SGD', 'KKD'], labs: await getMasterOptions(db, 'Lab') }
+    kegiatan: units,
+    bagian: { categories: ['Ujian', 'SGD', 'KKD'], labs }
   };
 }
