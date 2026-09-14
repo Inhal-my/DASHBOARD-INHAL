@@ -3,7 +3,7 @@ import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
-  updateBeritaAcaraBagian
+  updateBeritaAcaraBagian, updateBeritaAcaraAdmin
 } from '../src/write/beritaAcara.js';
 
 async function adminCtx() {
@@ -53,6 +53,28 @@ describe('berita acara admin', () => {
     const res = await saveBeritaAcaraAdmin(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'X', tanggalPelaksanaan: '2026-09-20', jenis: '', pilihan: '', detail: '' }, ctx);
     expect(res.success).toBe(false);
     expect(res.message).toContain('tidak ada peserta');
+  });
+
+  it('menolak BA Pendukung kedua untuk kegiatan yang sama', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const first = await saveBeritaAcaraAdmin(env.DB, { ...adminPayload, jam: '10:15' }, ctx);
+    expect(first.success).toBe(true);
+    const second = await saveBeritaAcaraAdmin(env.DB, { ...adminPayload, jam: '11:00' }, ctx);
+    expect(second.success).toBe(false);
+    expect(second.message).toContain('sudah ada');
+  });
+
+  it('memperbarui BA Pendukung', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const res = await saveBeritaAcaraAdmin(env.DB, { ...adminPayload, jam: '10:15' }, ctx);
+    const up = await updateBeritaAcaraAdmin(env.DB, res.baId, { tanggal: '2026-09-21', jam: '08:00', catatan: 'ok' }, ctx);
+    expect(up.success).toBe(true);
+    const ba = await env.DB.prepare('SELECT tanggal_pelaksanaan, jam, catatan FROM berita_acara_admin WHERE ba_id = ?1').bind(res.baId).first();
+    expect(ba.jam).toBe('08:00');
+    expect(ba.tanggal_pelaksanaan).toBe('2026-09-21');
+    expect(ba.catatan).toBe('ok');
   });
 
   it('deletes the BA and its peserta', async () => {

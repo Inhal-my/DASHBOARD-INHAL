@@ -14,7 +14,7 @@ import {
 } from './write/master.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
-  updateBeritaAcaraBagian
+  updateBeritaAcaraBagian, updateBeritaAcaraAdmin
 } from './write/beritaAcara.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
@@ -71,6 +71,7 @@ const HANDLERS = {
   deleteBeritaAcaraBagian: (db, args, ctx) => deleteBeritaAcaraBagian(db, args[0], ctx),
   uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx),
   updateBeritaAcaraBagian: (db, args, ctx) => updateBeritaAcaraBagian(db, args[0], args[1], ctx),
+  updateBeritaAcaraAdmin: (db, args, ctx) => updateBeritaAcaraAdmin(db, args[0], args[1], ctx),
   getMahasiswaByNpm: (db, args) => getMahasiswaByNpm(db, args[0]),
   getDosenOptions: (db) => getDosenOptions(db),
   getBagianStaffList: async (db, args, ctx) => { await requireAdmin(db, ctx.token); return getBagianStaffList(db); },

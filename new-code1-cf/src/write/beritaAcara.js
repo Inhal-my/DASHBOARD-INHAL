@@ -179,6 +179,12 @@ export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   const baId = await nextBaId(db, 'berita_acara_admin');
   const bagian = str(p.bagian) || 'Admin';
 
+  const key = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
+  const dup = await db.prepare('SELECT ba_id FROM berita_acara_admin WHERE kegiatan_key = ?1').bind(key).first();
+  if (dup) {
+    return { success: false, message: 'Upload dibatalkan: sudah ada berita acara pendukung untuk kegiatan ini.' };
+  }
+
   let peserta = await resolveBaPesertaFromDetail(db, p);
   if (!peserta.length) peserta = normalizeBaPeserta(p);
   if (!peserta.length) {
@@ -199,7 +205,7 @@ export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   p.__sumber = 'Admin';
   await persistBa(db, 'berita_acara_admin', 'berita_acara_admin_peserta', p, {
     baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
-    kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: false
+    kegiatanKey: key, withDosen: false
   });
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
@@ -222,6 +228,26 @@ export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
   if (fileId) await trashDriveFile(ctx.env, fileId);
 
   return { success: true, message: 'Berita acara berhasil dihapus.' };
+}
+
+export async function updateBeritaAcaraAdmin(db, baId, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const existing = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+
+  const p = payload || {};
+  const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
+  if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
+
+  const vals = [
+    tanggal,
+    p.jam !== undefined ? str(p.jam) : str(existing.jam),
+    p.catatan !== undefined ? str(p.catatan) : str(existing.catatan)
+  ];
+  await db.prepare('UPDATE berita_acara_admin SET tanggal_pelaksanaan = ?1, jam = ?2, catatan = ?3 WHERE ba_id = ?4').bind(...vals, id).run();
+  return { success: true, message: 'Berita acara pendukung diperbarui.' };
 }
 
 export async function deleteBeritaAcaraBagian(db, baId, ctx) {
