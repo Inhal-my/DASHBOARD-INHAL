@@ -88,6 +88,26 @@
             </div>
         </transition>
 
+        <!-- kelola ba -->
+        <div v-if="kelola.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4" @click.self="kelola.open = false">
+            <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
+                <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="kelola.tanggal" type="date" class="input"></div>
+                    <div><label class="label">Jam</label><input v-model="kelola.jam" type="time" class="input"></div>
+                    <div class="sm:col-span-2"><label class="label">Dosen</label><input v-model="kelola.dosen" class="input" list="dosenList"></div>
+                    <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
+                </div>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button class="btn-soft" @click="kelola.open = false">Batal</button>
+                    <button class="btn-primary" :disabled="loading" @click="submitKelolaBa">Simpan</button>
+                </div>
+            </div>
+        </div>
+        <datalist id="dosenList">
+            <option v-for="d in dosen" :key="d" :value="d"></option>
+        </datalist>
+
         <!-- navbar -->
         <nav v-if="loggedIn" class="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur">
             <div class="flex h-16 items-center justify-between px-4 sm:px-6">
@@ -707,16 +727,16 @@
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baGroupRows.length }} kelompok kegiatan</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baGroupBaTotal }} BA</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baGroupPesertaTotal }} mahasiswa</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanRows.length }} kegiatan</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanBaTotal }} BA</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanPesertaTotal }} mahasiswa</span>
                             </div>
                         </div>
                         <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                                 <div>
-                                    <div class="font-bold text-slate-800">Rekap Berita Acara per Bagian, Blok &amp; Kegiatan</div>
-                                    <div class="text-xs text-slate-400">Klik baris untuk melihat daftar file BA &amp; peserta</div>
+                                    <div class="font-bold text-slate-800">Rekap Kegiatan, Realisasi &amp; Berita Acara</div>
+                                    <div class="text-xs text-slate-400">Klik baris untuk melihat peserta &amp; file BA</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportBaTable">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -730,90 +750,119 @@
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
                                             <th class="px-3 py-2.5 text-left">Kegiatan</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Jumlah BA</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Progres</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Realisasi</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Dosen</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Pendukung</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Pelaksanaan</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-right">Biaya</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="s in baGroupSections" :key="s.type === 'row' ? s.row.key : ('sub-' + normBagian(s.bagian))">
-                                            <template v-if="s.type === 'subtotal'">
-                                                <tr class="bg-slate-100/80">
-                                                    <td class="px-3 py-2"></td>
-                                                    <td colspan="3" class="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtotal {{ s.bagian }}</td>
-                                                    <td class="px-3 py-2"></td>
-                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.jumlahBa }}</td>
-                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.pesertaCount }}</td>
-                                                    <td class="px-3 py-2 text-right font-bold text-teal-700">{{ fmtRupiah(s.biaya) }}</td>
-                                                </tr>
-                                            </template>
-                                            <template v-else>
-                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(s.row.key)">
+                                        <template v-for="r in baKegiatanRows" :key="r.key">
+                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(r.key)">
                                                 <td class="px-3 py-2.5 text-slate-400">
-                                                    <i :class="expanded[s.row.key] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                    <i :class="expanded[r.key] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                                                 </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ s.row.bagian }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ s.row.blok || '-' }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ r.bagian }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
+                                                <td class="px-3 py-2.5 font-semibold text-slate-800">{{ r.label }}</td>
                                                 <td class="px-3 py-2.5">
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">BA</span>
-                                                        <span class="font-semibold text-slate-800">{{ s.row.nama }}</span>
+                                                    <div class="flex items-center gap-1" :title="stageTooltip(r)">
+                                                        <span v-for="(s, si) in progresDots(r)" :key="si" class="inline-block h-2 w-2 rounded-full" :class="s === 'all' ? 'bg-emerald-500' : (s === 'partial' ? 'bg-amber-400' : 'bg-slate-200')"></span>
                                                     </div>
                                                 </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ s.row.tanggal ? fmtTanggalWaktu(s.row.tanggal) : '-' }}</td>
-                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">
-                                                    <div>{{ s.row.jumlahBa }}</div>
-                                                    <div v-if="s.row.items && s.row.items.length" class="mt-1 flex flex-wrap justify-center gap-1">
-                                                        <span v-for="b in s.row.items" :key="b['BA ID']" class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pl-2 pr-0.5 font-mono text-[10px] font-normal text-slate-500">
-                                                            {{ b['BA ID'] }}
-                                                            <button class="flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-100 hover:text-rose-600" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
-                                                        </span>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">
+                                                    <span v-if="r.pelaksanaan && r.pelaksanaan.length">{{ fmtTanggalWaktu(r.pelaksanaan[0].tanggal + (r.pelaksanaan[0].jam ? 'T' + r.pelaksanaan[0].jam : '')) }}</span>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                                <td class="px-3 py-2.5 text-slate-600">{{ (r.dosenList && r.dosenList.length) ? r.dosenList.join(', ') : '-' }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.peserta || []).length }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.baPendukung || []).length }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.baPelaksanaan || []).length }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(baKegiatanBiaya(r)) }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5">
+                                                    <div class="flex flex-wrap justify-end gap-1">
+                                                        <template v-for="(b, bi) in (r.baPendukung || [])" :key="'kp' + bi">
+                                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pl-2 pr-0.5 font-mono text-[10px] text-slate-500">
+                                                                {{ b['BA ID'] }}
+                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-[10px]"></i></button>
+                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-100 hover:text-rose-600" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
+                                                            </span>
+                                                        </template>
+                                                        <template v-for="(b, bi) in (r.baPelaksanaan || [])" :key="'kl' + bi">
+                                                            <span class="inline-flex items-center gap-1 rounded-full bg-brand-50 py-0.5 pl-2 pr-0.5 font-mono text-[10px] text-brand-700">
+                                                                {{ b['BA ID'] }}
+                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-brand-400 transition hover:bg-brand-100 hover:text-brand-700" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-[10px]"></i></button>
+                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-brand-400 transition hover:bg-rose-100 hover:text-rose-600" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
+                                                            </span>
+                                                        </template>
+                                                        <span v-if="!(r.baPendukung || []).length && !(r.baPelaksanaan || []).length" class="text-slate-300">-</span>
                                                     </div>
                                                 </td>
-                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ s.row.pesertaCount }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(s.row.biaya) }}</td>
                                             </tr>
-                                            <tr v-if="expanded[s.row.key]">
-                                                <td colspan="8" class="bg-slate-50/60 px-6 py-4">
-                                                    <div class="space-y-4">
-                                                        <div v-for="b in s.row.items" :key="b['BA ID']" class="rounded-xl bg-white p-3 ring-1 ring-slate-100">
-                                                            <div class="flex flex-wrap items-center gap-3">
-                                                                <span class="font-mono text-xs text-slate-400">{{ b['BA ID'] }}</span>
-                                                                <span class="text-xs text-slate-400">{{ b['Tanggal Pelaksanaan'] ? fmtTanggalWaktu(b['Tanggal Pelaksanaan']) : '-' }}</span>
-                                                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ (b.peserta || []).length }} peserta</span>
-                                                                <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="btn-soft ml-auto !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
-                                                                <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" :class="b['File URL'] ? '' : 'ml-auto'" title="Hapus BA" @click="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-sm"></i></button>
+                                            <tr v-if="expanded[r.key]">
+                                                <td colspan="12" class="bg-slate-50/60 px-6 py-4">
+                                                    <div class="grid gap-4 lg:grid-cols-2">
+                                                        <div>
+                                                            <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (r.peserta || []).length }})</div>
+                                                            <div class="space-y-1">
+                                                                <div v-for="(p, pi) in r.peserta" :key="pi" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs">
+                                                                    <span class="font-mono text-[10px] text-slate-400">{{ p.npm }}</span>
+                                                                    <span class="font-semibold text-slate-700">{{ p.namaLengkap || '-' }}</span>
+                                                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ p.statusPengajuan || '-' }}</span>
+                                                                    <span v-if="p.linkFinal" class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">ACC Final</span>
+                                                                    <span v-if="baKegiatanBiayaForNpm(r, p.npm)" class="ml-auto whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(baKegiatanBiayaForNpm(r, p.npm)) }}</span>
+                                                                </div>
+                                                                <div v-if="!(r.peserta || []).length" class="text-xs text-slate-400">Belum ada peserta.</div>
                                                             </div>
-                                                            <div v-if="b.peserta && b.peserta.length" class="mt-2 space-y-1">
-                                                                <div v-for="(p, i) in b.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs">
-                                                                    <span class="font-mono font-semibold text-slate-600">{{ p.npm || '-' }}</span>
-                                                                    <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
-                                                                    <a v-if="linkBuktiForNpm(p.npm)" :href="linkBuktiForNpm(p.npm)" target="_blank" class="link ml-auto whitespace-nowrap"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
-                                                                    <span v-else class="ml-auto text-slate-300">-</span>
+                                                        </div>
+                                                        <div>
+                                                            <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Berita Acara</div>
+                                                            <div v-if="!((r.baPendukung || []).length + (r.baPelaksanaan || []).length)" class="text-xs text-slate-400">Belum ada BA.</div>
+                                                            <div v-for="b in (r.baPendukung || [])" :key="'dp' + b['BA ID']" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
+                                                                <div class="flex flex-wrap items-center gap-2">
+                                                                    <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
+                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700">Pendukung</span>
+                                                                    <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
+                                                                    <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="link">Lihat</a>
+                                                                    <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-xs"></i></button>
+                                                                    <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
                                                             </div>
-                                                            <div v-else class="mt-2 text-xs text-slate-400">Tidak ada daftar peserta.</div>
+                                                            <div v-for="b in (r.baPelaksanaan || [])" :key="'dl' + b['BA ID']" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
+                                                                <div class="flex flex-wrap items-center gap-2">
+                                                                    <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
+                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-brand-50 text-brand-700">Pelaksanaan</span>
+                                                                    <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
+                                                                    <span v-if="b.Dosen" class="text-slate-500">{{ b.Dosen }}</span>
+                                                                    <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-xs"></i></button>
+                                                                    <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
+                                                                </div>
+                                                                <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
                                             </tr>
-                                            </template>
                                         </template>
-                                        <tr v-if="baGroupRows.length" class="bg-slate-200/70 font-extrabold">
+                                        <tr v-if="baKegiatanRows.length" class="bg-slate-200/70 font-extrabold">
                                             <td class="px-3 py-2.5"></td>
-                                            <td colspan="3" class="px-3 py-2.5 text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
+                                            <td colspan="6" class="px-3 py-2.5 text-right text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baKegiatanPesertaTotal }}</td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baKegiatanPendukungTotal }}</td>
+                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baKegiatanPelaksanaanTotal }}</td>
+                                            <td class="px-3 py-2.5 text-right text-teal-800">{{ fmtRupiah(baKegiatanGrandTotal) }}</td>
                                             <td class="px-3 py-2.5"></td>
-                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baGroupBaTotal }}</td>
-                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ baGroupPesertaTotal }}</td>
-                                            <td class="px-3 py-2.5 text-right text-teal-800">{{ fmtRupiah(baGroupGrandTotal) }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            <div v-if="!baGroupRows.length" class="px-4 py-14 text-center">
+                            <div v-if="!baKegiatanRows.length" class="px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>
-                                <p class="mt-3 text-sm text-slate-400">Belum ada berita acara.</p>
+                                <p class="mt-3 text-sm text-slate-400">Belum ada kegiatan.</p>
                             </div>
                         </div>
                         </template>
@@ -1006,6 +1055,7 @@
                     summary: {},
                     rows: [],
                     beritaAcara: [],
+                    kegiatan: [],
                     dosen: [],
                     blok: [],
                     bagian: { categories: [], labs: [] },
@@ -1019,6 +1069,7 @@
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalDiterima: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
                     barProgress: 0,
+                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
                     toast: { show: false, icon: '', msg: '' }
                 };
             },
@@ -1523,6 +1574,40 @@
                     const seen = {};
                     this.baGroupRows.forEach(g => g.items.forEach(b => (b.peserta || []).forEach(p => { const k = String(p.npm || '').trim(); if (k) seen[k] = 1; })));
                     return Object.keys(seen).length;
+                },
+                baKegiatanRows() {
+                    const bagian = this.baFilter.bagian;
+                    const blok = String(this.baFilter.blok || '').trim();
+                    const q = this.normSearch(this.baFilter.q);
+                    return (this.kegiatan || []).filter(r => {
+                        if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return false;
+                        if (blok && String(r.blok || '').trim() !== blok) return false;
+                        if (q) {
+                            if (this.normSearch(r.label).indexOf(q) !== -1) return true;
+                            if (this.normSearch((r.bagian || '') + ' ' + (r.blok || '')).indexOf(q) !== -1) return true;
+                            if ((r.baPendukung || []).some(b => this.normSearch(b['BA ID']).indexOf(q) !== -1)) return true;
+                            if ((r.baPelaksanaan || []).some(b => this.normSearch(b['BA ID']).indexOf(q) !== -1)) return true;
+                            return (r.peserta || []).some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
+                        }
+                        return true;
+                    });
+                },
+                baKegiatanPendukungTotal() {
+                    return this.baKegiatanRows.reduce((t, r) => t + (r.baPendukung || []).length, 0);
+                },
+                baKegiatanPelaksanaanTotal() {
+                    return this.baKegiatanRows.reduce((t, r) => t + (r.baPelaksanaan || []).length, 0);
+                },
+                baKegiatanBaTotal() {
+                    return this.baKegiatanPendukungTotal + this.baKegiatanPelaksanaanTotal;
+                },
+                baKegiatanPesertaTotal() {
+                    const seen = {};
+                    this.baKegiatanRows.forEach(r => (r.peserta || []).forEach(p => { const k = String(p.npm || '').trim(); if (k) seen[k] = 1; }));
+                    return Object.keys(seen).length;
+                },
+                baKegiatanGrandTotal() {
+                    return this.baKegiatanRows.reduce((t, r) => t + this.baKegiatanBiaya(r), 0);
                 }
             },
             watch: {
@@ -1789,6 +1874,70 @@
                         this.showToast('bi-x-circle', 'Gagal: ' + e);
                     }
                 },
+                async deleteBaAdmin(baId) {
+                    if (!confirm('Hapus BA ' + baId + ' beserta peserta dan file terkait? Tindakan ini tidak dapat dibatalkan.')) return;
+                    try {
+                        const res = await this.run('deleteBeritaAcaraAdmin', baId);
+                        this.showToast('bi-check-circle', (res && res.message) || 'BA dihapus.');
+                        await this.loadData();
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + e);
+                    }
+                },
+                baKegiatanBiayaForNpm(r, npm) {
+                    return this.biayaForNpm(String(npm || '').trim(), (r && r.blok) || '');
+                },
+                baKegiatanBiaya(r) {
+                    if (!r) return 0;
+                    const seen = {};
+                    let total = 0;
+                    (r.peserta || []).forEach(p => {
+                        const npm = String(p.npm || '').trim();
+                        if (!npm || seen[npm]) return;
+                        seen[npm] = 1;
+                        total += this.biayaForNpm(npm, r.blok);
+                    });
+                    return total;
+                },
+                progresDots(r) {
+                    const p = (r && r.progress) || {};
+                    return [p.pendaftaran, p.pendukung, p.keputusan, p.final, p.pelaksanaan, p.selesai];
+                },
+                stageTooltip(r) {
+                    const c = (r && r.counts) || {};
+                    const p = (r && r.progress) || {};
+                    return 'Pendaftaran: ' + (c.peserta || 0) + ' peserta' +
+                        ' · Pendukung: ' + (p.pendukung === 'all' ? 'ada' : 'belum') +
+                        ' · Keputusan: ' + (c.keputusan || 0) + '/' + (c.peserta || 0) +
+                        ' · ACC Final: ' + (c.final || 0) + '/' + (c.peserta || 0) +
+                        ' · Pelaksanaan: ' + (p.pelaksanaan === 'all' ? 'ada' : 'belum') +
+                        ' · Selesai: ' + (p.selesai === 'all' ? 'ya' : 'belum');
+                },
+                openKelolaBa(baId, sumber) {
+                    const list = (this.kegiatan || []).flatMap(u => (u.baPendukung || []).concat(u.baPelaksanaan || []));
+                    const found = list.find(b => b['BA ID'] === baId) || {};
+                    this.kelola = {
+                        open: true, baId: baId, sumber: sumber || found.Sumber || 'Bagian',
+                        tanggal: found['Tanggal Pelaksanaan'] || '', jam: found.Jam || '', dosen: found.Dosen || '', catatan: found.Catatan || ''
+                    };
+                },
+                async submitKelolaBa() {
+                    const k = this.kelola;
+                    this.loading = true;
+                    try {
+                        const fn = k.sumber === 'Admin' ? 'updateBeritaAcaraAdmin' : 'updateBeritaAcaraBagian';
+                        const res = await this.run(fn, k.baId, { tanggal: k.tanggal, jam: k.jam, dosen: k.dosen, catatan: k.catatan });
+                        this.showToast('bi-check-circle', (res && res.message) || 'BA diperbarui.');
+                        if (res && res.success) {
+                            k.open = false;
+                            await this.loadData();
+                        }
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
                 showToast(icon, msg) {
                     this.toast = { show: true, icon: icon, msg: msg };
                     setTimeout(() => { this.toast.show = false; }, 3200);
@@ -1802,6 +1951,7 @@
                         this.summary = data.summary || {};
                         this.rows = data.rows || [];
                         this.beritaAcara = data.beritaAcara || [];
+                        this.kegiatan = data.kegiatan || [];
                         this.dosen = data.dosen || [];
                         this.blok = data.blok || [];
                         this.bagian = data.bagian || { categories: [], labs: [] };
@@ -1815,6 +1965,7 @@
                         this.summary = {};
                         this.rows = [];
                         this.beritaAcara = [];
+                        this.kegiatan = [];
                         this.dosen = [];
                         this.blok = [];
                         this.bagian = { categories: [], labs: [] };
@@ -1981,14 +2132,16 @@
                     this._loadXlsx().then(() => {
                         try {
                             const wb = XLSX.utils.book_new();
-                            const rekapRows = this.baGroupRows.map(g => ({
-                                'Bagian': g.bagian,
-                                'Blok': g.blok || '',
-                                'Nama Kegiatan': g.nama,
-                                'Tanggal': fmtTanggalWaktu(g.tanggal),
-                                'Jumlah BA': g.jumlahBa,
-                                'Jumlah Peserta': g.pesertaCount,
-                                'Biaya': g.biaya || 0
+                            const rekapRows = this.baKegiatanRows.map(r => ({
+                                'Bagian': r.bagian,
+                                'Blok': r.blok || '',
+                                'Nama Kegiatan': r.label,
+                                'Realisasi': (r.pelaksanaan && r.pelaksanaan.length) ? fmtTanggalWaktu(r.pelaksanaan[0].tanggal + (r.pelaksanaan[0].jam ? 'T' + r.pelaksanaan[0].jam : '')) : '',
+                                'Dosen': (r.dosenList || []).join(', '),
+                                'Jumlah Peserta': (r.peserta || []).length,
+                                'BA Pendukung': (r.baPendukung || []).length,
+                                'BA Pelaksanaan': (r.baPelaksanaan || []).length,
+                                'Biaya': this.baKegiatanBiaya(r)
                             }));
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap BA');
 
