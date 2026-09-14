@@ -2630,6 +2630,9 @@
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
                     } finally {
+                        this.loading = false;
+                    }
+                },
                 async deletePengajuanRow(r) {
                     const id = r['ID Pengajuan'];
                     const alasan = await this.askInput({
