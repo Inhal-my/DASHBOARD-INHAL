@@ -366,7 +366,6 @@
                             <button class="btn-soft" @click="openDetailReport()"><i class="bi bi-file-earmark-text"></i>Laporan Detail</button>
                             <button class="btn-soft" @click="exportCsv()"><i class="bi bi-download"></i>Rekap (CSV)</button>
                             <button class="btn-soft" @click="runDiagnostic()"><i class="bi bi-bug"></i>Diagnostik</button>
-                            <button class="btn-soft" @click="syncLogData()"><i class="bi bi-arrow-repeat"></i>Sinkronkan</button>
                         </div>
                     </div>
 
@@ -438,6 +437,7 @@
                                         <th class="px-4 py-3 font-semibold">Status</th>
                                         <th class="px-4 py-3 font-semibold">Bukti Bayar</th>
                                         <th class="px-4 py-3 font-semibold">Link Final</th>
+                                        <th class="px-4 py-3 font-semibold text-right">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -460,6 +460,9 @@
                                         <td class="px-4 py-2.5">
                                             <a v-if="r['Link Final']" :href="r['Link Final']" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Final</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right" @click.stop>
+                                            <button class="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus pengajuan" @click="deletePengajuanRow(r)"><i class="bi bi-trash text-sm"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2199,25 +2202,6 @@
                     document.body.removeChild(a);
                     this.notify('Rekap CSV berhasil diunduh.');
                 },
-                async syncLogData() {
-                    const ok = await this.askConfirm({
-                        title: 'Sinkronkan Data LogData',
-                        message: 'Sinkronkan data dari sheet LogData (sistem lama) ke Pengajuan? Data yang sudah ada tidak akan diduplikasi.',
-                        icon: 'bi-arrow-repeat',
-                        confirmLabel: 'Sinkronkan'
-                    });
-                    if (!ok) return;
-                    this.loading = true;
-                    try {
-                        const res = await this.run('syncLogDataToPengajuan');
-                        this.notify((res && res.message) || 'Selesai.');
-                        await Promise.all([this.loadStats(), this.loadPengajuan()]);
-                    } catch (e) {
-                        this.notify('Gagal: ' + e, false);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
                 async runDiagnostic() {
                     this.loading = true;
                     try {
@@ -2641,6 +2625,30 @@
                         this.notify((res && res.message) || 'Selesai.');
                         if (res && res.success) {
                             this.detail.open = false;
+                            await Promise.all([this.loadStats(), this.loadPengajuan()]);
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                async deletePengajuanRow(r) {
+                    const id = r['ID Pengajuan'];
+                    const alasan = await this.askInput({
+                        title: 'Hapus Pengajuan',
+                        message: 'HAPUS pengajuan ' + id + ' (' + (r['Nama Lengkap'] || '') + ') beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.',
+                        label: 'Alasan penghapusan (opsional)',
+                        placeholder: 'Tulis alasan penghapusan...',
+                        tone: 'danger',
+                        icon: 'bi-trash',
+                        confirmLabel: 'Hapus Permanen'
+                    });
+                    if (alasan === null) return;
+                    const reason = String(alasan).trim();
+                    this.loading = true;
+                    try {
+                        const res = await this.run('deletePengajuanAdmin', id, reason);
+                        this.notify((res && res.message) || 'Selesai.');
+                        if (res && res.success) {
+                            if (this.detail.open && this.detail.p && this.detail.p['ID Pengajuan'] === id) this.detail.open = false;
                             await Promise.all([this.loadStats(), this.loadPengajuan()]);
                         }
                     } catch (e) {

@@ -3,7 +3,7 @@ import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
-  updatePengajuanStatus, deletePengajuanAdmin, syncLogDataToPengajuan, updateCheckDataPartial
+  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial
 } from '../src/write/pengajuanAdmin.js';
 
 async function adminCtx() {
@@ -29,7 +29,6 @@ describe('pengajuan admin writes', () => {
     await expect(deleteDetailKegiatan(env.DB, 'INHAL-1', 0, {})).rejects.toThrow();
     await expect(updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', {})).rejects.toThrow();
     await expect(deletePengajuanAdmin(env.DB, 'INHAL-1', '', {})).rejects.toThrow();
-    await expect(syncLogDataToPengajuan(env.DB, {})).rejects.toThrow();
     await expect(updateCheckDataPartial(env.DB, {}, {})).rejects.toThrow();
   });
 
@@ -167,38 +166,5 @@ describe('pengajuan admin status and delete', () => {
     const audit = await env.DB.prepare("SELECT * FROM audit_log WHERE target = 'Pengajuan' AND aksi = 'DELETE'").all();
     expect(audit.results).toHaveLength(1);
     expect(audit.results[0].alasan).toBe('Salah input');
-  });
-});
-
-describe('sync log data', () => {
-  it('reports when there is nothing to sync', async () => {
-    const ctx = await adminCtx();
-    const res = await syncLogDataToPengajuan(env.DB, ctx);
-    expect(res.success).toBe(true);
-    expect(res.report.total).toBe(0);
-  });
-
-  it('creates a pengajuan from a stored log row and skips duplicates', async () => {
-    const payload = {
-      'ID Pengajuan': 'INHAL-OLD-1', NPM: '2201010002', 'Nama Lengkap': 'Budi',
-      'Email': 'budi@contoh.com', Blok: 'B', 'Jenis Kegiatan': 'SGD', Status: 'Diterima',
-      'Pilihan SGD': 'SGD 1', 'Detail SGD': 'Materi A', 'Tanggal SGD': '2026-08-01'
-    };
-    await env.DB.prepare("INSERT INTO log_data (timestamp,payload) VALUES ('2026-08-01T08:00:00',?1)").bind(JSON.stringify(payload)).run();
-    const ctx = await adminCtx();
-
-    const res = await syncLogDataToPengajuan(env.DB, ctx);
-    expect(res.success).toBe(true);
-    expect(res.report.created).toBe(1);
-    const p = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-OLD-1').first();
-    expect(p).toBeTruthy();
-    expect(p.status).toBe('Diterima');
-    const d = await env.DB.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind('INHAL-OLD-1').all();
-    expect(d.results).toHaveLength(1);
-    expect(d.results[0].pilihan).toBe('SGD 1');
-
-    const again = await syncLogDataToPengajuan(env.DB, ctx);
-    expect(again.report.created).toBe(0);
-    expect(again.report.skipped).toBe(1);
   });
 });

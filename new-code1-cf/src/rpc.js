@@ -17,7 +17,7 @@ import {
 } from './write/beritaAcara.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
-  updatePengajuanStatus, deletePengajuanAdmin, syncLogDataToPengajuan, updateCheckDataPartial
+  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial
 } from './write/pengajuanAdmin.js';
 import {
   sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
@@ -61,7 +61,6 @@ const HANDLERS = {
   deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),
   updatePengajuanStatus: (db, args, ctx) => updatePengajuanStatus(db, args[0], args[1], args[2], args[3], ctx),
   deletePengajuanAdmin: (db, args, ctx) => deletePengajuanAdmin(db, args[0], args[1], ctx),
-  syncLogDataToPengajuan: (db, args, ctx) => syncLogDataToPengajuan(db, ctx),
   sendStatusNotificationEmail: (db, args, ctx) => sendStatusNotificationEmail(db, args[0], ctx),
   sendFinalEmail: (db, args, ctx) => sendFinalEmail(db, args[0], ctx),
   sendAccFinalToBagian: (db, args, ctx) => sendAccFinalToBagian(db, args[0], ctx),
