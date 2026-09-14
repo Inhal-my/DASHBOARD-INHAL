@@ -107,6 +107,7 @@ describe('dashboard template', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('progresDots');
     expect(html).toContain('openKelolaBa');
+    expect(html).toContain('dosenSuggestions');
   });
 
   it('menyediakan drawer Riwayat Proses', async () => {

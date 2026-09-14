@@ -142,6 +142,7 @@ export async function getLaporanBootstrap(db, ctx) {
     rows,
     beritaAcara,
     dosen,
+    dosenOptions: await getMasterOptions(db, 'Dosen'),
     blok,
     kegiatan: units,
     bagian: { categories: ['Ujian', 'SGD', 'KKD'], labs }

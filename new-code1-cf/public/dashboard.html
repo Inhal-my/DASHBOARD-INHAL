@@ -1314,9 +1314,6 @@
                                 </div>
                             </div>
                         </div>
-                        <datalist id="dosenList">
-                            <option v-for="d in dosenOptions" :value="d"></option>
-                        </datalist>
                     </div>
                 </transition>
             </div>
@@ -1413,7 +1410,13 @@
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div><label class="label">Tanggal Pelaksanaan</label><input v-model="kelola.tanggal" type="date" class="input"></div>
                     <div><label class="label">Jam</label><input v-model="kelola.jam" type="time" class="input"></div>
-                    <div class="sm:col-span-2"><label class="label">Dosen</label><input v-model="kelola.dosen" class="input" list="dosenList"></div>
+                    <div class="relative sm:col-span-2">
+                        <label class="label">Dosen</label>
+                        <input v-model="kelola.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @focus="dosenPick.open = true" @input="dosenPick.open = true" @blur="dosenPick.open = false">
+                        <div v-if="dosenPick.open && dosenSuggestions(dosenOptions).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                            <button v-for="d in dosenSuggestions(dosenOptions)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(d)">{{ d }}</button>
+                        </div>
+                    </div>
                     <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
                 </div>
                 <div class="mt-5 flex justify-end gap-2">
@@ -1500,6 +1503,7 @@
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
+                    dosenPick: { open: false },
                     riwayat: { open: false, unit: null },
                     bab: {
                         kategori: '',
@@ -2758,6 +2762,16 @@
                         ' · ACC Final: ' + (c.final || 0) + '/' + (c.peserta || 0) +
                         ' · Pelaksanaan: ' + (p.pelaksanaan === 'all' ? 'ada' : 'belum') +
                         ' · Selesai: ' + (p.selesai === 'all' ? 'ya' : 'belum');
+                },
+                dosenSuggestions(list) {
+                    const arr = list || [];
+                    const q = this.normBagian(this.kelola.dosen);
+                    const matched = q ? arr.filter(d => this.normBagian(d).indexOf(q) !== -1) : arr;
+                    return matched.slice(0, 50);
+                },
+                pickDosen(name) {
+                    this.kelola.dosen = name;
+                    this.dosenPick.open = false;
                 },
                 openKelolaBa(baId, sumber) {
                     const list = (this.bagian.units || []).flatMap((u) => (u.ba || []));

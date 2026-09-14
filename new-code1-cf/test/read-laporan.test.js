@@ -16,6 +16,7 @@ describe('getLaporanBootstrap', () => {
     expect(boot.rows[0].pengajuan['ID Pengajuan']).toBe('INHAL-1');
     expect(boot.rows[0].details).toHaveLength(1);
     expect(boot.dosen).toContain('dr. Andi');
+    expect(boot.dosenOptions).toContain('dr. Andi');
     expect(boot.blok).toContain('A');
     expect(boot.bagian.labs).toContain('Lab Anatomi');
   });

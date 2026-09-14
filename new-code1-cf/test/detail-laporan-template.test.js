@@ -71,6 +71,8 @@ describe('detail-laporan template', () => {
     expect(html).toContain('openKelolaBa');
     expect(html).toContain('deleteBaAdmin');
     expect(html).toContain('this.kegiatan = data.kegiatan || []');
+    expect(html).toContain('dosenSuggestions');
+    expect(html).toContain('dosenOptions');
   });
 
   it('menyediakan drawer Riwayat Proses', async () => {
