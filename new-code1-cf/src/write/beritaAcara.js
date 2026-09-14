@@ -192,6 +192,25 @@ export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
   return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
 
+export async function deleteBeritaAcaraBagian(db, baId, ctx) {
+  await requireAdmin(db, ctx.token);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+
+  const existing = await db.prepare('SELECT ba_id, file_url FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+
+  await db.batch([
+    db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
+    db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
+  ]);
+
+  const fileId = parseDriveFileId(existing.file_url);
+  if (fileId) await trashDriveFile(ctx.env, fileId);
+
+  return { success: true, message: 'Berita acara berhasil dihapus.' };
+}
+
 export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   const p = payload || {};
   await requireBagianSession(db, kategori, p.bagian, ctx.token);

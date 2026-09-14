@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
-  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian
+  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian
 } from '../src/write/beritaAcara.js';
 
 async function adminCtx() {
@@ -98,5 +98,27 @@ describe('berita acara bagian', () => {
     await seedPengajuan();
     const ctx = await bagianCtx(['KKD']);
     await expect(saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx)).rejects.toThrow();
+  });
+
+  it('deletes a BA and its peserta', async () => {
+    await seedPengajuan();
+    const bagian = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', bagian);
+    const admin = await adminCtx();
+    const del = await deleteBeritaAcaraBagian(env.DB, res.baId, admin);
+    expect(del.success).toBe(true);
+    const ba = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara').first();
+    const pes = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_peserta').first();
+    expect(Number(ba.n)).toBe(0);
+    expect(Number(pes.n)).toBe(0);
+  });
+
+  it('requires admin to delete and reports missing BA', async () => {
+    await seedPengajuan();
+    await expect(deleteBeritaAcaraBagian(env.DB, 'BA-2026-0001', {})).rejects.toThrow();
+    const admin = await adminCtx();
+    const missing = await deleteBeritaAcaraBagian(env.DB, 'BA-9999-9999', admin);
+    expect(missing.success).toBe(false);
+    expect(missing.message).toContain('tidak ditemukan');
   });
 });

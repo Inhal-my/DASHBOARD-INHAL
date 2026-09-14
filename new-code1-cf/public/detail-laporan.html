@@ -306,11 +306,12 @@
                                             <th class="px-3 py-3 font-semibold">Status</th>
                                             <th class="px-3 py-3 font-semibold">Biaya</th>
                                             <th class="px-4 py-3 font-semibold">Bukti</th>
+                                            <th class="px-4 py-3 font-semibold text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-if="!filteredRows.length">
-                                            <td colspan="11" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</td>
+                                            <td colspan="12" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</td>
                                         </tr>
                                         <template v-for="r in filteredRows" :key="r.pengajuan['ID Pengajuan']">
                                             <tr class="cursor-pointer border-b border-slate-50 transition hover:bg-brand-50/40" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
@@ -333,9 +334,12 @@
                                                     <i v-if="r.pengajuan['Link Bukti Bayar'] || r.pengajuan['Link ACC INHAL']" class="bi bi-check-circle-fill text-emerald-500"></i>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
+                                                <td class="px-4 py-3 text-right" @click.stop>
+                                                    <button class="ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus pengajuan" @click="deletePengajuanRow(r)"><i class="bi bi-trash text-sm"></i></button>
+                                                </td>
                                             </tr>
                                             <tr v-if="expanded[r.pengajuan['ID Pengajuan']]" class="border-b border-slate-100 bg-slate-50/60">
-                                                <td colspan="11" class="px-6 py-5"><expanded-detail :r="r"></expanded-detail></td>
+                                                <td colspan="12" class="px-6 py-5"><expanded-detail :r="r"></expanded-detail></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -771,6 +775,7 @@
                                                                 <span class="text-xs text-slate-400">{{ b['Tanggal Pelaksanaan'] ? fmtTanggalWaktu(b['Tanggal Pelaksanaan']) : '-' }}</span>
                                                                 <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ (b.peserta || []).length }} peserta</span>
                                                                 <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="btn-soft ml-auto !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
+                                                                <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" :class="b['File URL'] ? '' : 'ml-auto'" title="Hapus BA" @click="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-sm"></i></button>
                                                             </div>
                                                             <div v-if="b.peserta && b.peserta.length" class="mt-2 space-y-1">
                                                                 <div v-for="(p, i) in b.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs">
@@ -1752,6 +1757,29 @@
                         };
                         requestAnimationFrame(step);
                     });
+                },
+                async deletePengajuanRow(r) {
+                    const id = r.pengajuan['ID Pengajuan'];
+                    const nama = r.pengajuan['Nama Lengkap'] || '';
+                    if (!confirm('HAPUS pengajuan ' + id + (nama ? ' (' + nama + ')' : '') + ' beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.')) return;
+                    const reason = prompt('Alasan penghapusan (opsional):') || '';
+                    try {
+                        const res = await this.run('deletePengajuanAdmin', id, reason);
+                        this.showToast('bi-check-circle', (res && res.message) || 'Pengajuan dihapus.');
+                        await this.loadData();
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + e);
+                    }
+                },
+                async deleteBaBagian(baId) {
+                    if (!confirm('Hapus BA ' + baId + ' beserta peserta dan file terkait? Tindakan ini tidak dapat dibatalkan.')) return;
+                    try {
+                        const res = await this.run('deleteBeritaAcaraBagian', baId);
+                        this.showToast('bi-check-circle', (res && res.message) || 'BA dihapus.');
+                        await this.loadData();
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + e);
+                    }
                 },
                 showToast(icon, msg) {
                     this.toast = { show: true, icon: icon, msg: msg };

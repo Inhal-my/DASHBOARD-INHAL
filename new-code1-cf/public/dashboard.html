@@ -704,6 +704,7 @@
                                                                     <span class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
+                                                                    <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
                                                                 <div v-if="b.catatan" class="mt-1 text-slate-500">{{ b.catatan }}</div>
                                                                 <a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
@@ -907,6 +908,7 @@
                                                 <span class="font-mono">{{ r['BA ID'] }}</span>
                                                 <span>·</span>
                                                 <span>{{ formatTanggal(r.Timestamp) }}</span>
+                                                <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(r['BA ID'], 'Bagian')"><i class="bi bi-trash text-xs"></i></button>
                                             </div>
                                             <div class="mt-1 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
                                             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -2939,10 +2941,11 @@
                         this.loading = false;
                     }
                 },
-                async deleteBa(baId) {
+                async deleteBaRecord(baId, sumber) {
+                    const isAdminBa = String(sumber || '').trim().toLowerCase() !== 'bagian';
                     const ok = await this.askConfirm({
                         title: 'Hapus Berita Acara',
-                        message: 'Hapus berita acara ' + baId + ' beserta peserta dan file terkait?',
+                        message: 'Hapus BA ' + baId + ' beserta peserta dan file terkait? Tindakan ini tidak dapat dibatalkan.',
                         icon: 'bi-trash',
                         tone: 'danger',
                         confirmLabel: 'Hapus'
@@ -2950,9 +2953,10 @@
                     if (!ok) return;
                     this.loading = true;
                     try {
-                        const res = await this.run('deleteBeritaAcaraAdmin', baId);
+                        const res = await this.run(isAdminBa ? 'deleteBeritaAcaraAdmin' : 'deleteBeritaAcaraBagian', baId);
                         this.notify((res && res.message) || 'Selesai.');
-                        await this.loadBa();
+                        await this.loadBagian();
+                        if (this.bab.token) await this.babLoadBaList();
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
                     } finally {

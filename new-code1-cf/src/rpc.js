@@ -13,7 +13,7 @@ import {
   saveMahasiswa, deleteMahasiswa, importMahasiswaCsv, saveMasterRow, deleteMasterRow
 } from './write/master.js';
 import {
-  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian
+  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian
 } from './write/beritaAcara.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
@@ -67,6 +67,7 @@ const HANDLERS = {
   sendBulkFinalEmail: (db, args, ctx) => sendBulkFinalEmail(db, args[0], ctx),
   uploadBeritaAcaraAdmin: (db, args, ctx) => saveBeritaAcaraAdmin(db, args[0], ctx),
   deleteBeritaAcaraAdmin: (db, args, ctx) => deleteBeritaAcaraAdmin(db, args[0], ctx),
+  deleteBeritaAcaraBagian: (db, args, ctx) => deleteBeritaAcaraBagian(db, args[0], ctx),
   uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx),
   getMahasiswaByNpm: (db, args) => getMahasiswaByNpm(db, args[0]),
   getDosenOptions: (db) => getDosenOptions(db),
