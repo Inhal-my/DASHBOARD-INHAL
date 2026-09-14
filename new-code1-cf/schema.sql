@@ -108,7 +108,7 @@ CREATE TABLE berita_acara (
   file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT
 );
 CREATE TABLE berita_acara_peserta (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, npm TEXT,
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
   nama_lengkap TEXT, blok TEXT, bagian TEXT, status_pengajuan TEXT
 );
 CREATE TABLE berita_acara_admin (
@@ -117,7 +117,7 @@ CREATE TABLE berita_acara_admin (
   file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT
 );
 CREATE TABLE berita_acara_admin_peserta (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, npm TEXT,
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
   nama_lengkap TEXT, blok TEXT, bagian TEXT, status_pengajuan TEXT
 );
 CREATE TABLE master_biaya (

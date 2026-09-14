@@ -148,9 +148,9 @@ async function persistBa(db, table, pesertaTable, payload, meta) {
   for (const p of payload.__peserta) {
     stmts.push(
       db.prepare(
-        `INSERT INTO ${pesertaTable} (timestamp, ba_id, npm, nama_lengkap, blok, bagian, status_pengajuan) ` +
-        'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)'
-      ).bind(ts, meta.baId, p.npm, p.namaLengkap, p.blok, meta.bagian, p.statusPengajuan)
+        `INSERT INTO ${pesertaTable} (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan) ` +
+        'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)'
+      ).bind(ts, meta.baId, str(p.idPengajuan), p.npm, p.namaLengkap, p.blok, meta.bagian, p.statusPengajuan)
     );
   }
   await db.batch(stmts);
@@ -232,7 +232,15 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
   const existing = await db.prepare('SELECT ba_id, file_url FROM berita_acara WHERE ba_id = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
 
+  const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const ids = peserta.map((r) => str(r.id_pengajuan)).filter(Boolean);
+  const ts = nowIso();
+  const clears = ids.map((pid) =>
+    db.prepare('UPDATE pengajuan SET dosen = \'\', tanggal_pelaksanaan = \'\', updated_at = ?1 WHERE id_pengajuan = ?2').bind(ts, pid)
+  );
+
   await db.batch([
+    ...clears,
     db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
   ]);

@@ -131,6 +131,21 @@ describe('berita acara bagian', () => {
     expect(Number(pes.n)).toBe(0);
   });
 
+  it('menghapus BA mengosongkan dosen dan tanggal pelaksanaan peserta', async () => {
+    await seedPengajuan();
+    const bagian = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      jam: '09:00', dosen: 'dr. Andi', catatan: '',
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+    }, 'SGD', bagian);
+    const admin = await adminCtx();
+    await deleteBeritaAcaraBagian(env.DB, res.baId, admin);
+    const p = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(p.dosen).toBe('');
+    expect(p.tanggal_pelaksanaan).toBe('');
+  });
+
   it('requires admin to delete and reports missing BA', async () => {
     await seedPengajuan();
     await expect(deleteBeritaAcaraBagian(env.DB, 'BA-2026-0001', {})).rejects.toThrow();

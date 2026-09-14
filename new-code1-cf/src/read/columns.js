@@ -28,7 +28,7 @@ export const TABLE_COLUMNS = {
     catatan: 'Catatan', sumber: 'Sumber', kegiatan_key: 'Kegiatan Key'
   },
   berita_acara_peserta: {
-    timestamp: 'Timestamp', ba_id: 'BA ID', npm: 'NPM', nama_lengkap: 'Nama Lengkap',
+    timestamp: 'Timestamp', ba_id: 'BA ID', id_pengajuan: 'ID Pengajuan', npm: 'NPM', nama_lengkap: 'Nama Lengkap',
     blok: 'Blok', bagian: 'Bagian', status_pengajuan: 'Status Pengajuan'
   },
   berita_acara_admin: {
@@ -38,7 +38,7 @@ export const TABLE_COLUMNS = {
     catatan: 'Catatan', sumber: 'Sumber', kegiatan_key: 'Kegiatan Key'
   },
   berita_acara_admin_peserta: {
-    timestamp: 'Timestamp', ba_id: 'BA ID', npm: 'NPM', nama_lengkap: 'Nama Lengkap',
+    timestamp: 'Timestamp', ba_id: 'BA ID', id_pengajuan: 'ID Pengajuan', npm: 'NPM', nama_lengkap: 'Nama Lengkap',
     blok: 'Blok', bagian: 'Bagian', status_pengajuan: 'Status Pengajuan'
   },
   check_data: {
