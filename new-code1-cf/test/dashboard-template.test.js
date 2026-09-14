@@ -109,6 +109,13 @@ describe('dashboard template', () => {
     expect(html).toContain('openKelolaBa');
   });
 
+  it('menyediakan drawer Riwayat Proses', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('Riwayat Proses');
+    expect(html).toContain('openRiwayat');
+    expect(html).toContain('riwayatEvents');
+  });
+
   it('removes the old replace-all master editor entrypoint', async () => {
     const html = await loadDashboardHtml();
     expect(html).not.toContain('@click="editMaster(activeMasterCard.key)"');

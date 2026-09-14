@@ -700,6 +700,7 @@
                                                             <button class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click="openKelolaBa(b.baId, b.sumber)"><i class="bi bi-pencil text-[11px]"></i></button>
                                                             <button class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-[11px]"></i></button>
                                                         </div>
+                                                        <button class="btn-soft !px-2 !py-1 text-[11px]" @click="openRiwayat(r)">Riwayat</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1421,6 +1422,28 @@
                 </div>
             </div>
         </div>
+        <div v-if="riwayat.open" class="fixed inset-0 z-40 flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
+            <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift">
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900">Riwayat Proses</h3>
+                    <button class="text-slate-400 hover:text-slate-600" @click="riwayat.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="riwayat.unit" class="mb-4">
+                    <div class="text-sm font-bold text-slate-900">{{ riwayat.unit.label }}</div>
+                    <div class="text-[11px] text-slate-400">{{ riwayat.unit.bagian }} · {{ riwayat.unit.blok || '-' }}</div>
+                </div>
+                <ol class="space-y-3">
+                    <li v-for="(e, i) in riwayatEvents(riwayat.unit)" :key="i" class="flex gap-3">
+                        <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-500"></span>
+                        <div>
+                            <div class="text-sm font-semibold text-slate-800">{{ e.label }}</div>
+                            <div class="text-xs text-slate-500">{{ e.detail }}</div>
+                            <div v-if="e.time" class="text-[11px] text-slate-400">{{ e.time }}</div>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </div>
     </div>
 
     <script src="/gs-shim.js"></script>
@@ -1477,6 +1500,7 @@
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
+                    riwayat: { open: false, unit: null },
                     bab: {
                         kategori: '',
                         subBagian: '',
@@ -2759,6 +2783,27 @@
                     } finally {
                         this.loading = false;
                     }
+                },
+                openRiwayat(r) {
+                    this.riwayat = { open: true, unit: r };
+                },
+                riwayatEvents(r) {
+                    if (!r) return [];
+                    const out = [];
+                    const firstDate = (r.peserta || []).map((p) => p.tanggalDaftar).filter(Boolean).sort()[0];
+                    out.push({ label: 'Pendaftaran', detail: (r.counts && r.counts.peserta ? r.counts.peserta : (r.peserta || []).length) + ' mahasiswa', time: firstDate || '' });
+                    for (const b of (r.ba || [])) {
+                        const isPelaksanaan = b.sumber === 'Bagian';
+                        out.push({
+                            label: isPelaksanaan ? 'BA Pelaksanaan' : 'BA Pendukung',
+                            detail: b.baId + (isPelaksanaan && b.dosen ? ' · ' + b.dosen : '') + (isPelaksanaan && b.jam ? ' · ' + b.tanggal + ' ' + b.jam : ''),
+                            time: b.timestamp || ''
+                        });
+                    }
+                    out.push({ label: 'Keputusan', detail: (r.counts ? r.counts.keputusan : 0) + ' diputuskan', time: '' });
+                    out.push({ label: 'ACC Final', detail: (r.counts ? r.counts.final : 0) + ' terkirim', time: '' });
+                    out.push({ label: 'Selesai', detail: (r.progress && r.progress.selesai === 'all') ? 'lengkap' : 'belum', time: '' });
+                    return out;
                 },
                 unitPelaksanaanEligible(u) {
                     const k = this.unitKeputusan(u);

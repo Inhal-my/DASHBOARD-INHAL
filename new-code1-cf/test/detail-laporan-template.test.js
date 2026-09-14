@@ -72,4 +72,11 @@ describe('detail-laporan template', () => {
     expect(html).toContain('deleteBaAdmin');
     expect(html).toContain('this.kegiatan = data.kegiatan || []');
   });
+
+  it('menyediakan drawer Riwayat Proses', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('Riwayat Proses');
+    expect(html).toContain('openRiwayat');
+    expect(html).toContain('riwayatEvents');
+  });
 });

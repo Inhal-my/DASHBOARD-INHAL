@@ -104,6 +104,28 @@
                 </div>
             </div>
         </div>
+        <div v-if="riwayat.open" class="fixed inset-0 z-40 flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
+            <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift">
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900">Riwayat Proses</h3>
+                    <button class="text-slate-400 hover:text-slate-600" @click="riwayat.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="riwayat.unit" class="mb-4">
+                    <div class="text-sm font-bold text-slate-900">{{ riwayat.unit.label }}</div>
+                    <div class="text-[11px] text-slate-400">{{ riwayat.unit.bagian }} · {{ riwayat.unit.blok || '-' }}</div>
+                </div>
+                <ol class="space-y-3">
+                    <li v-for="(e, i) in riwayatEvents(riwayat.unit)" :key="i" class="flex gap-3">
+                        <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-500"></span>
+                        <div>
+                            <div class="text-sm font-semibold text-slate-800">{{ e.label }}</div>
+                            <div class="text-xs text-slate-500">{{ e.detail }}</div>
+                            <div v-if="e.time" class="text-[11px] text-slate-400">{{ e.time }}</div>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </div>
         <datalist id="dosenList">
             <option v-for="d in dosen" :key="d" :value="d"></option>
         </datalist>
@@ -800,6 +822,7 @@
                                                             </span>
                                                         </template>
                                                         <span v-if="!(r.baPendukung || []).length && !(r.baPelaksanaan || []).length" class="text-slate-300">-</span>
+                                                        <button class="btn-soft !px-2 !py-1 text-[11px]" @click.stop="openRiwayat(r)">Riwayat</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1070,6 +1093,7 @@
                     donutProgress: 0,
                     barProgress: 0,
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
+                    riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' }
                 };
             },
@@ -1937,6 +1961,24 @@
                     } finally {
                         this.loading = false;
                     }
+                },
+                openRiwayat(r) {
+                    this.riwayat = { open: true, unit: r };
+                },
+                riwayatEvents(r) {
+                    if (!r) return [];
+                    const out = [];
+                    out.push({ label: 'Pendaftaran', detail: ((r.counts && r.counts.peserta) ? r.counts.peserta : (r.peserta || []).length) + ' mahasiswa', time: '' });
+                    for (const b of (r.baPendukung || [])) {
+                        out.push({ label: 'BA Pendukung', detail: b['BA ID'], time: b.Timestamp || '' });
+                    }
+                    out.push({ label: 'Keputusan', detail: (r.counts ? r.counts.keputusan : 0) + ' diputuskan', time: '' });
+                    out.push({ label: 'ACC Final', detail: (r.counts ? r.counts.final : 0) + ' terkirim', time: '' });
+                    for (const b of (r.baPelaksanaan || [])) {
+                        out.push({ label: 'BA Pelaksanaan', detail: b['BA ID'] + (b.Dosen ? ' · ' + b.Dosen : '') + (b.Jam ? ' · ' + (b['Tanggal Pelaksanaan'] || '') + ' ' + b.Jam : ''), time: b.Timestamp || '' });
+                    }
+                    out.push({ label: 'Selesai', detail: (r.progress && r.progress.selesai === 'all') ? 'lengkap' : 'belum', time: '' });
+                    return out;
                 },
                 showToast(icon, msg) {
                     this.toast = { show: true, icon: icon, msg: msg };
