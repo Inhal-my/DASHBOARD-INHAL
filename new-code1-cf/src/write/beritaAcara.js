@@ -299,3 +299,29 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
+
+export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
+  await requireAdmin(db, ctx.token);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+
+  const p = payload || {};
+  const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
+  if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
+
+  const sets = ['tanggal_pelaksanaan = ?1', 'jam = ?2', 'dosen = ?3', 'catatan = ?4'];
+  const vals = [
+    tanggal,
+    p.jam !== undefined ? str(p.jam) : str(existing.jam),
+    p.dosen !== undefined ? str(p.dosen) : str(existing.dosen),
+    p.catatan !== undefined ? str(p.catatan) : str(existing.catatan)
+  ];
+  await db.prepare('UPDATE berita_acara SET ' + sets.join(', ') + ' WHERE ba_id = ?' + (vals.length + 1)).bind(...vals, id).run();
+
+  const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  await syncPengajuanPelaksanaan(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), vals[2], tanggal, vals[1]);
+
+  return { success: true, message: 'Berita acara diperbarui.' };
+}

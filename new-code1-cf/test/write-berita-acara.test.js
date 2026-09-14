@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
-  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian
+  saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
+  updateBeritaAcaraBagian
 } from '../src/write/beritaAcara.js';
 
 async function adminCtx() {
@@ -144,6 +145,24 @@ describe('berita acara bagian', () => {
     const p = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
     expect(p.dosen).toBe('');
     expect(p.tanggal_pelaksanaan).toBe('');
+  });
+
+  it('memperbarui jam dan dosen serta menyinkron ulang pengajuan', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+    }, 'SGD', await bagianCtx(['SGD']));
+    const up = await updateBeritaAcaraBagian(env.DB, res.baId, { tanggal: '2026-09-20', jam: '13:30', dosen: 'dr. Budi', catatan: 'revisi' }, ctx);
+    expect(up.success).toBe(true);
+    const ba = await env.DB.prepare('SELECT jam, dosen, catatan FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(ba.jam).toBe('13:30');
+    expect(ba.dosen).toBe('dr. Budi');
+    expect(ba.catatan).toBe('revisi');
+    const p = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(p.dosen).toBe('dr. Budi');
+    expect(p.tanggal_pelaksanaan).toBe('2026-09-20T13:30');
   });
 
   it('requires admin to delete and reports missing BA', async () => {
