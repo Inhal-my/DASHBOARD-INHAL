@@ -103,6 +103,12 @@ describe('dashboard template', () => {
     expect(html).toContain("master.rowModal");
   });
 
+  it('memuat progres kegiatan dan modal Kelola BA', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('progresDots');
+    expect(html).toContain('openKelolaBa');
+  });
+
   it('removes the old replace-all master editor entrypoint', async () => {
     const html = await loadDashboardHtml();
     expect(html).not.toContain('@click="editMaster(activeMasterCard.key)"');
