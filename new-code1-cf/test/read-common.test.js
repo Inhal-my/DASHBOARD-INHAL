@@ -2,12 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
   norm, baginaKey, parseCurrency, formatRupiah, getMasterOptions,
-  resolveBagian12, baginaHasAccess, getBagianBaStatuses
+  resolveBagian12, baginaHasAccess, getBagianBaStatuses, kegiatanKey
 } from '../src/read/common.js';
 
 describe('common helpers', () => {
   it('norm lowercases and strips spaces', () => {
     expect(norm(' Praktikum ')).toBe('praktikum');
+  });
+  it('kegiatanKey menyamakan variasi tanda hubung', () => {
+    const hyphen = kegiatanKey('SGD', 'A', 'SGD 2 - Remediasi');
+    expect(kegiatanKey('SGD', 'A', 'SGD 2 — Remediasi')).toBe(hyphen);
+    expect(kegiatanKey('SGD', 'A', 'SGD 2 – Remediasi')).toBe(hyphen);
+    expect(kegiatanKey('SGD', 'A', 'SGD 2 − Remediasi')).toBe(hyphen);
+    expect(hyphen).toBe('sgd|a|sgd 2 - remediasi');
   });
   it('baginaKey strips non-alphanumerics', () => {
     expect(baginaKey('Lab. Anatomi')).toBe('labanatomi');

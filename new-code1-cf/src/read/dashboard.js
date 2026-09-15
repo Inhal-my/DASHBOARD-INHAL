@@ -4,7 +4,7 @@ import { saveDriveFile } from '../drive.js';
 import {
   norm, parseCurrency, formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
   resolveBiayaForPengajuan, normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
-  getBagianBaSettings, pushUnique, kegiatanKey
+  getBagianBaSettings, pushUnique, kegiatanKey, normKegiatan
 } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
 
@@ -194,7 +194,7 @@ export async function getBagianAggregation(db, ctx) {
     if (lf && !unit.linkFinal) unit.linkFinal = lf;
   }
 
-  const normKegiatanText = (v) => norm(String(v || '').replace(/[\u2014\u2013]/g, '-'));
+  const normKegiatanText = normKegiatan;
 
   async function collectBa(table, pesertaTable, sumber) {
     const rows = await all(table);

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { getLaporanBootstrap } from '../src/read/laporan.js';
+import { saveBeritaAcaraAdmin } from '../src/write/beritaAcara.js';
 
 describe('getLaporanBootstrap', () => {
   it('summarizes pengajuan with biaya and BA', async () => {
@@ -39,5 +40,26 @@ describe('getLaporanBootstrap', () => {
     expect(unit.progress.final).toBe('all');
     expect(unit.baPelaksanaan).toHaveLength(1);
     expect(unit.progress.selesai).toBe('all');
+  });
+
+  it('menautkan BA Pendukung yang nama kegiatannya memakai em-dash', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','SGD','Diterima')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-1','SGD','SGD 1','Remediasi','2026-09-20','')"
+    ).run();
+    const saved = await saveBeritaAcaraAdmin(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1 — Remediasi', tanggalPelaksanaan: '2026-09-20',
+      jenis: 'SGD', pilihan: 'SGD 1', detail: 'Remediasi', catatan: ''
+    }, { token });
+    expect(saved.success).toBe(true);
+
+    const data = await getLaporanBootstrap(env.DB, { token });
+    const unit = data.kegiatan.find((u) => u.key === 'sgd|a|sgd 1 - remediasi');
+    expect(unit).toBeTruthy();
+    expect(unit.baPendukung).toHaveLength(1);
+    expect(unit.progress.pendukung).toBe('all');
   });
 });

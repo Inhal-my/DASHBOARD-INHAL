@@ -9,8 +9,12 @@ export function norm(s) {
     .trim();
 }
 
+export function normKegiatan(s) {
+  return norm(String(s || '').replace(/[\u2010-\u2015\u2212]/g, '-'));
+}
+
 export function kegiatanKey(bagian, blok, nama) {
-  return [norm(bagian), norm(blok), norm(nama)].join('|');
+  return [norm(bagian), norm(blok), normKegiatan(nama)].join('|');
 }
 
 export function baginaKey(v) {
