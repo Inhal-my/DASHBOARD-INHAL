@@ -49,6 +49,17 @@ async function loadHtml() {
   return res.text();
 }
 
+function cssSelectors(html) {
+  const css = (html.match(/<style[^>]*>[\s\S]*?<\/style>/g) || [])
+    .map((block) => block.replace(/<\/?style[^>]*>/g, ''))
+    .join('\n');
+  const set = new Set();
+  const re = /([^{}]+)\{/g;
+  let m;
+  while ((m = re.exec(css))) m[1].split(',').forEach((sel) => set.add(sel.trim()));
+  return set;
+}
+
 describe('detail-laporan template', () => {
   it('compiles without Vue template errors', async () => {
     installDocumentStub();
@@ -80,5 +91,13 @@ describe('detail-laporan template', () => {
     expect(html).toContain('Riwayat Proses');
     expect(html).toContain('openRiwayat');
     expect(html).toContain('riwayatEvents');
+  });
+
+  it('mendefinisikan seluruh kelas CSS untuk titik progres', async () => {
+    const html = await loadHtml();
+    const selectors = cssSelectors(html);
+    for (const sel of ['.inline-block', '.h-2\\.5', '.w-2\\.5', '.rounded-full', '.bg-emerald-500', '.bg-amber-400', '.bg-slate-200']) {
+      expect(selectors.has(sel)).toBe(true);
+    }
   });
 });
