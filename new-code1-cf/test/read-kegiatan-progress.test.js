@@ -36,6 +36,16 @@ describe('computeUnitProgress', () => {
     expect(p.keputusan).toBe('partial');
   });
 
+  it('membaca field BA bergaya klien (Dosen/Tanggal Pelaksanaan/Jam)', () => {
+    const unit = {
+      peserta: [{ statusPengajuan: 'ACC', linkFinal: 'x' }],
+      baPendukung: [],
+      baPelaksanaan: [{ 'BA ID': 'BA-2026-0001', 'Tanggal Pelaksanaan': '2026-09-02', Jam: '08:00', Dosen: 'dr. Ilham' }]
+    };
+    const p = computeUnitProgress(unit);
+    expect(p.selesai).toBe('all');
+  });
+
   it('selesai hanya bila dosen, tanggal, dan jam lengkap', () => {
     const unit = {
       peserta: [{ statusPengajuan: 'ACC', linkFinal: 'x' }],

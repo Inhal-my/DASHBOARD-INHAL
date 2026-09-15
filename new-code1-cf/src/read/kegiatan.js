@@ -3,6 +3,12 @@ function stage(done, total) {
   return done >= total ? 'all' : 'partial';
 }
 
+function field(obj, lowerKey, clientKey) {
+  if (!obj) return '';
+  const v = obj[lowerKey] !== undefined ? obj[lowerKey] : obj[clientKey];
+  return v == null ? '' : String(v).trim();
+}
+
 export function computeUnitProgress(unit) {
   const peserta = (unit && unit.peserta) || [];
   const baPendukung = (unit && unit.baPendukung) || [];
@@ -13,7 +19,9 @@ export function computeUnitProgress(unit) {
     return s === 'Diterima' || s === 'ACC' || s === 'Ditolak';
   }).length;
   const finalCount = peserta.filter((p) => p.linkFinal).length;
-  const selesai = baPelaksanaan.some((b) => b.dosen && b.tanggal && b.jam);
+  const selesai = baPelaksanaan.some((b) =>
+    field(b, 'dosen', 'Dosen') && field(b, 'tanggal', 'Tanggal Pelaksanaan') && field(b, 'jam', 'Jam')
+  );
   return {
     pendaftaran: total > 0 ? 'all' : 'none',
     pendukung: baPendukung.length ? 'all' : 'none',
