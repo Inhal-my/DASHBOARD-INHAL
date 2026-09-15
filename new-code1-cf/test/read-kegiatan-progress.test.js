@@ -21,6 +21,21 @@ describe('computeUnitProgress', () => {
     expect(p.counts).toEqual({ peserta: 2, keputusan: 1, final: 1 });
   });
 
+  it('menghitung ACC dan Diterima sama-sama sebagai keputusan', () => {
+    const unit = {
+      peserta: [
+        { statusPengajuan: 'Diterima', linkFinal: 'x' },
+        { statusPengajuan: 'ACC', linkFinal: 'y' },
+        { statusPengajuan: 'Menunggu', linkFinal: '' }
+      ],
+      baPendukung: [],
+      baPelaksanaan: []
+    };
+    const p = computeUnitProgress(unit);
+    expect(p.counts.keputusan).toBe(2);
+    expect(p.keputusan).toBe('partial');
+  });
+
   it('selesai hanya bila dosen, tanggal, dan jam lengkap', () => {
     const unit = {
       peserta: [{ statusPengajuan: 'ACC', linkFinal: 'x' }],

@@ -8,7 +8,10 @@ export function computeUnitProgress(unit) {
   const baPendukung = (unit && unit.baPendukung) || [];
   const baPelaksanaan = (unit && unit.baPelaksanaan) || [];
   const total = peserta.length;
-  const decided = peserta.filter((p) => p.statusPengajuan === 'Diterima' || p.statusPengajuan === 'Ditolak').length;
+  const decided = peserta.filter((p) => {
+    const s = String(p.statusPengajuan || '').trim();
+    return s === 'Diterima' || s === 'ACC' || s === 'Ditolak';
+  }).length;
   const finalCount = peserta.filter((p) => p.linkFinal).length;
   const selesai = baPelaksanaan.some((b) => b.dosen && b.tanggal && b.jam);
   return {
