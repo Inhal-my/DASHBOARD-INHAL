@@ -129,6 +129,21 @@ describe('dashboard template', () => {
     }
   });
 
+  it('renders a per-BA mahasiswa roster toggle and list', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('@click="toggleBaExpand(b.baId)"');
+    expect(html).toContain('Mahasiswa ({{ (b.peserta || []).length }})');
+    expect(html).toContain('v-for="(p, pi) in b.peserta"');
+    expect(html).toContain('Tidak ada peserta tercatat.');
+    expect(html).toContain('v-if="expandedBa[b.baId]"');
+  });
+
+  it('renders the per-BA roster on mobile too', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain(":key=\"'mb' + bi\"");
+    expect((html.match(/Tidak ada peserta tercatat\./g) || []).length).toBeGreaterThanOrEqual(2);
+  });
+
   it('menyediakan drawer Riwayat Proses', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('Riwayat Proses');
