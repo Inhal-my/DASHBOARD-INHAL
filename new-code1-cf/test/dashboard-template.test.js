@@ -131,11 +131,25 @@ describe('dashboard template', () => {
 
   it('renders a per-BA mahasiswa roster toggle and list', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('@click="toggleBaExpand(b.baId)"');
+    expect(html).toContain("toggleBaExpand(b.sumber + '|' + b.baId)");
     expect(html).toContain('Mahasiswa ({{ (b.peserta || []).length }})');
     expect(html).toContain('v-for="(p, pi) in b.peserta"');
     expect(html).toContain('Tidak ada peserta tercatat.');
-    expect(html).toContain('v-if="expandedBa[b.baId]"');
+    expect(html).toContain("expandedBa[b.sumber + '|' + b.baId]");
+  });
+
+  it('menjadikan nomor BA tautan file dan menghapus teks Lihat File', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('Lihat File');
+    expect(html).not.toContain('Lihat file');
+    expect(html).toContain(':href="b.fileUrl" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a>');
+  });
+
+  it('menampilkan ikon Kelola BA hanya untuk BA Pelaksanaan', async () => {
+    const html = await loadDashboardHtml();
+    const kelola = html.match(/<button[^>]*title="Kelola BA"/g) || [];
+    expect(kelola.length).toBeGreaterThan(0);
+    for (const btn of kelola) expect(btn).toContain("b.sumber === 'Bagian'");
   });
 
   it('renders the per-BA roster on mobile too', async () => {
