@@ -152,6 +152,21 @@ describe('dashboard template', () => {
     for (const btn of kelola) expect(btn).toContain("b.sumber === 'Bagian'");
   });
 
+  it('hanya menampilkan kontrol Aksi BA Pelaksanaan tanpa tombol Riwayat', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("v-for=\"(b, bi) in unitPelaksanaanBa(r)\" :key=\"'a'+bi\"");
+    expect(html).not.toContain("v-for=\"(b, bi) in r.ba\" :key=\"'a'+bi\"");
+    expect(html).not.toContain('@click="openRiwayat(r)">Riwayat</button>');
+  });
+
+  it('membuka riwayat saat isi kolom progres diklik', async () => {
+    const html = await loadDashboardHtml();
+    const m = html.match(/<button[^>]*@click="openRiwayat\(r\)"[^>]*>[\s\S]*?progresDots\(r\)[\s\S]*?<\/button>/);
+    expect(m).not.toBeNull();
+    expect(m[0]).toContain('cursor-pointer');
+    expect(m[0]).toContain('stageTooltip(r)');
+  });
+
   it('renders the per-BA roster on mobile too', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain(":key=\"'mb' + bi\"");
