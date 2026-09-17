@@ -38,7 +38,7 @@ describe('berita acara admin', () => {
     const ctx = await adminCtx();
     const res = await saveBeritaAcaraAdmin(env.DB, adminPayload, ctx);
     expect(res.success).toBe(true);
-    expect(res.baId).toMatch(/^BA-\d{4}-0001$/);
+    expect(res.baId).toMatch(/^BA-PEN-\d{4}-0001$/);
 
     const ba = await env.DB.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(res.baId).first();
     expect(ba.sumber).toBe('Admin');
@@ -102,6 +102,7 @@ describe('berita acara bagian', () => {
     const res = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
     expect(res.success).toBe(true);
     const ba = await env.DB.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(res.baId).toMatch(/^BA-PEL-\d{4}-0001$/);
     expect(ba.sumber).toBe('Bagian');
 
     const dup = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);

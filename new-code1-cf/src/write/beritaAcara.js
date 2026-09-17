@@ -23,9 +23,12 @@ function nowIso() {
   return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
 }
 
+const BA_ID_CODE = { berita_acara: 'PEL', berita_acara_admin: 'PEN' };
+
 async function nextBaId(db, table) {
   const year = new Date().getFullYear();
-  const prefix = 'BA-' + year + '-';
+  const code = BA_ID_CODE[table];
+  const prefix = code ? 'BA-' + code + '-' + year + '-' : 'BA-' + year + '-';
   const { results } = await db.prepare(`SELECT ba_id FROM ${table}`).all();
   let max = 0;
   for (const r of results || []) {
