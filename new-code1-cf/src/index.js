@@ -4,6 +4,7 @@ import { registerPengajuan } from './pengajuan.js';
 import { getStudentPortalData, uploadBuktiFiles } from './portal.js';
 import { dispatchRpc } from './rpc.js';
 import { getUpload, base64ToBytes } from './uploads.js';
+import { exportDatabase } from './databaseExport.js';
 
 const app = new Hono();
 
@@ -77,6 +78,14 @@ app.post('/api/rpc', async (c) => {
   const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-forwarded-for') || 'local';
   const result = await dispatchRpc(c.env.DB, body.fn, body.args, ip, c.env);
   return c.json(result);
+});
+
+app.post('/api/database-export', async (c) => {
+  let body = {};
+  try { body = await c.req.json(); } catch (e) { body = {}; }
+  const result = await exportDatabase(c.env.DB, body.token);
+  if (result.json) return c.json(result.json, result.status);
+  return new Response(result.body, { status: result.status, headers: result.headers });
 });
 
 export default app;

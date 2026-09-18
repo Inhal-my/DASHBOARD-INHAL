@@ -1093,6 +1093,27 @@
                                 </table>
                             </div>
 
+                            <div v-else-if="activeMasterCard.key === 'downloadDatabase'" class="p-6">
+                                <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-100">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm"><i class="bi bi-download"></i></div>
+                                        <div class="min-w-0 flex-1">
+                                            <h4 class="text-sm font-bold text-slate-800">Download Database</h4>
+                                            <p class="mt-0.5 text-xs text-slate-500">Satu file Excel (.xlsx), satu sheet per tabel, berisi seluruh data yang tersimpan di D1.</p>
+                                        </div>
+                                    </div>
+                                    <p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800 ring-1 ring-amber-100">File berisi data pribadi, hash password, token sesi, dan isi unggahan. Jangan bagikan.</p>
+                                    <button class="btn-primary mt-6 w-full" :disabled="master.downloading" @click="downloadDatabase">
+                                        <svg v-if="master.downloading" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
+                                        <i v-else class="bi bi-download"></i>
+                                        {{ master.downloading ? 'Menyiapkan...' : 'Download Database' }}
+                                    </button>
+                                </div>
+                            </div>
+
                             <div v-else class="p-6">
                                 <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-100">
                                     <div class="flex items-start gap-3">
@@ -1544,6 +1565,7 @@
                         data: {},
                         baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
                         saving: false,
+                        downloading: false,
                         tab: 'masterKegiatan',
                         search: '',
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, originalId: 0 },
@@ -1555,7 +1577,8 @@
                             { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], table: 'config', icon: 'bi-gear' },
                             { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'bagian_staff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan Bagian', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
-                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], table: 'admin', icon: 'bi-shield-lock' }
+                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], table: 'admin', icon: 'bi-shield-lock' },
+                            { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'Satu file Excel, satu sheet per tabel, seluruh data tersimpan.', icon: 'bi-download', settings: true, download: true }
                         ]
                     }
                 };
@@ -3122,8 +3145,52 @@
 
                 // ---------- master ----------
                 masterCount(m) {
+                    if (m.download) return 'Unduh Excel';
                     if (m.settings) return 'Pengaturan';
                     return (this.master.data[m.key] || []).length + ' entri';
+                },
+                async downloadDatabase() {
+                    if (this.master.downloading) return;
+                    this.master.downloading = true;
+                    try {
+                        const token = this.session && this.session.token ? this.session.token : '';
+                        const res = await fetch('/api/database-export', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: token })
+                        });
+                        const ctype = String(res.headers.get('content-type') || '');
+                        if (!res.ok || ctype.indexOf('spreadsheetml') === -1) {
+                            let msg = 'Gagal mengunduh database.';
+                            try {
+                                const data = await res.json();
+                                if (data && data.message) msg = data.message;
+                            } catch (e) {}
+                            if (isAuthError(msg)) {
+                                clearSession();
+                                this.session = null;
+                            }
+                            this.notify(msg, false);
+                            return;
+                        }
+                        const blob = await res.blob();
+                        const disp = res.headers.get('content-disposition') || '';
+                        const m = disp.match(/filename="([^"]+)"/);
+                        const name = m ? m[1] : 'inhal-database.xlsx';
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = name;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                        this.notify('Database berhasil diunduh.');
+                    } catch (e) {
+                        this.notify('Gagal mengunduh database.', false);
+                    } finally {
+                        this.master.downloading = false;
+                    }
                 },
                 openMasterRow(cardKey, row) {
                     const card = this.master.cards.find((c) => c.key === cardKey);

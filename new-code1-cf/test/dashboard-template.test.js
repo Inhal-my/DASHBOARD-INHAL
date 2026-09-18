@@ -185,4 +185,13 @@ describe('dashboard template', () => {
     expect(html).not.toContain('@click="editMaster(activeMasterCard.key)"');
     expect(html).toContain('master-table-dense');
   });
+
+  it('adds a Download Database settings card on Master Data', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("key: 'downloadDatabase', title: 'Download Database'");
+    expect(html).toContain('@click="downloadDatabase"');
+    expect(html).toContain('/api/database-export');
+    expect(html).toContain('File berisi data pribadi, hash password, token sesi');
+    expect(html.indexOf("key: 'admin'")).toBeLessThan(html.indexOf("key: 'downloadDatabase'"));
+  });
 });
