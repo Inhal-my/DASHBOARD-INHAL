@@ -77,4 +77,9 @@ describe('dashboard tab persistence', () => {
     assert.match(html, /loadPengajuan\(\{ silent: this\.loaded\.pengajuan \}\)/);
     assert.match(html, /async loadBa\(opts\)/);
   });
+  it('tab BA memakai satu panggilan gabungan', () => {
+    assert.match(html, /run\('getBaTabData'\)/);
+    assert.match(html, /async loadBaTab\(opts\)/);
+    assert.match(html, /this\.isTabStale\('bagian'\) \|\| this\.isTabStale\('ba'\)/);
+  });
 });

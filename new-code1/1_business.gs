@@ -1661,6 +1661,10 @@ function _attachBaToUnits(units, baList, resolveBagian12) {
 
 function getBagianAggregation() {
     requireAuthorized(arguments[arguments.length - 1]);
+    return _buildBagianAggregation();
+}
+
+function _buildBagianAggregation() {
     const __t0 = Date.now();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
@@ -1789,8 +1793,21 @@ function getBagianAggregation() {
     };
 }
 
+function getBaTabData() {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
+    const bagian = _buildBagianAggregation();
+    const adminBa = _buildBeritaAcaraAdminList();
+    _perfLog('getBaTabData', __t0, 'units=' + (bagian.units || []).length + ' adminBa=' + adminBa.length);
+    return { bagian: bagian, adminBa: adminBa, labs: bagian.labs || [] };
+}
+
 function getBeritaAcaraAdminList() {
     requireAuthorized(arguments[arguments.length - 1]);
+    return _buildBeritaAcaraAdminList();
+}
+
+function _buildBeritaAcaraAdminList() {
     const __t0 = Date.now();
     const rows = getAllRowsCached('BeritaAcaraAdmin').slice();
     rows.sort(function(a, b) {
@@ -1944,21 +1961,22 @@ function _planMahasiswaCsvUpsert(rows, existingMap) {
 
 function _withRowNumbers(sheetName) {
     const __t0 = Date.now();
-    const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
-    if (!sheet) return [];
-    const headers = getHeadersFromSheet(sheet);
-    if (sheet.getLastRow() < 2) return [];
-    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues();
+    let sheet;
+    try { sheet = _getSheet(sheetName); } catch (e) { return []; }
+    const values = sheet.getDataRange().getValues();
+    if (values.length < 2) return [];
+    const headers = values[0].map(String);
     const out = [];
-    values.forEach(function(row, i) {
+    for (let i = 1; i < values.length; i++) {
+        const row = values[i];
         const hasValue = row.some(function(cell) {
             return cell !== null && cell !== undefined && String(cell).trim() !== '';
         });
-        if (!hasValue) return;
+        if (!hasValue) continue;
         const obj = rowToObject(headers, row);
-        obj._row = i + 2;
+        obj._row = i + 1;
         out.push(obj);
-    });
+    }
     _perfLog('readNumbered ' + sheetName, __t0, 'rows=' + out.length);
     return out;
 }

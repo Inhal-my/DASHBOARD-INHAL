@@ -2123,8 +2123,7 @@
                     if (tab === 'pengajuan' && this.isTabStale('pengajuan')) this.loadPengajuan({ silent: this.loaded.pengajuan });
                     if (tab === 'stats' && this.isTabStale('stats')) this.loadStats({ silent: this.loaded.stats });
                     if (tab === 'ba') {
-                        if (this.isTabStale('bagian')) this.loadBagian({ silent: this.loaded.bagian });
-                        if (this.isTabStale('ba')) this.loadBa({ silent: this.loaded.ba });
+                        if (this.isTabStale('bagian') || this.isTabStale('ba')) this.loadBaTab({ silent: this.loaded.bagian && this.loaded.ba });
                         if (this.bab.active) this.babLoad();
                     }
                     if (tab === 'master' && this.isTabStale('master')) this.loadMaster({ silent: this.loaded.master });
@@ -2219,6 +2218,29 @@
                         if (!silent) this.notify('Gagal memuat berita acara: ' + e, false);
                     } finally {
                         if (!silent) this.sectionLoading.ba = false;
+                    }
+                },
+                async loadBaTab(opts) {
+                    const silent = !!(opts && opts.silent);
+                    if (!silent) { this.sectionLoading.bagian = true; this.sectionLoading.ba = true; }
+                    try {
+                        const data = await this.run('getBaTabData') || {};
+                        const agg = data.bagian || {};
+                        this.bagian.units = agg.units || [];
+                        this.bagian.orphanBa = agg.orphanBa || [];
+                        this.bagian.labs = agg.labs || data.labs || this.bagian.labs;
+                        this.bagian.options = (agg.filters && agg.filters.bagian) || this.bagian.options;
+                        this.bagian.bloks = (agg.filters && agg.filters.blok) || [];
+                        this.ba.all = data.adminBa || [];
+                        this.applyBaFilter();
+                        this.loaded.bagian = true;
+                        this.loaded.ba = true;
+                        this.loadedAt.bagian = Date.now();
+                        this.loadedAt.ba = Date.now();
+                    } catch (e) {
+                        if (!silent) this.notify('Gagal memuat berita acara: ' + e, false);
+                    } finally {
+                        if (!silent) { this.sectionLoading.bagian = false; this.sectionLoading.ba = false; }
                     }
                 },
                 async loadMaster(opts) {

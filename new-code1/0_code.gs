@@ -308,8 +308,10 @@ function getActorName() {
 // ---------- Caching layer (per-execution in-memory + cross-execution CacheService) ----------
 let _cachedSpreadsheet = null;
 let _rowsCache = {};
+let _sheetMap = null;
 const _SHEET_CACHE_PREFIX = 'cache_sheet_v1_';
-const _DEFAULT_CACHE_TTL = 45;
+const _DEFAULT_CACHE_TTL = 120;
+const _CACHE_CHUNK = 50000;
 
 function getGlobalSpreadsheet() {
     if (_cachedSpreadsheet) return _cachedSpreadsheet;
@@ -330,35 +332,83 @@ function _sheetCacheKey(sheetName) {
     return _SHEET_CACHE_PREFIX + sheetName;
 }
 
+function _getSheet(sheetName) {
+    if (!_sheetMap) {
+        _sheetMap = {};
+        getGlobalSpreadsheet().getSheets().forEach(function(s) { _sheetMap[s.getName()] = s; });
+    }
+    const sheet = _sheetMap[sheetName];
+    if (!sheet) throw new Error('Sheet ' + sheetName + ' tidak ditemukan.');
+    return sheet;
+}
+
+function _cacheGetChunked(key) {
+    try {
+        const cache = CacheService.getScriptCache();
+        const nRaw = cache.get(key + '__n');
+        if (!nRaw) return null;
+        const n = parseInt(nRaw, 10) || 0;
+        if (n < 1) return null;
+        const keys = [];
+        for (let i = 0; i < n; i++) keys.push(key + '__' + i);
+        const parts = cache.getAll(keys);
+        let s = '';
+        for (let i = 0; i < n; i++) {
+            const p = parts[key + '__' + i];
+            if (p == null) return null;
+            s += p;
+        }
+        return s;
+    } catch (e) { return null; }
+}
+
+function _cachePutChunked(key, payload, ttlSeconds) {
+    try {
+        const cache = CacheService.getScriptCache();
+        const n = Math.max(1, Math.ceil(payload.length / _CACHE_CHUNK));
+        const map = {};
+        for (let i = 0; i < n; i++) {
+            map[key + '__' + i] = payload.substring(i * _CACHE_CHUNK, (i + 1) * _CACHE_CHUNK);
+        }
+        map[key + '__n'] = String(n);
+        cache.putAll(map, ttlSeconds);
+        return true;
+    } catch (e) { return false; }
+}
+
+function _cacheRemoveChunked(key) {
+    try {
+        const cache = CacheService.getScriptCache();
+        const nRaw = cache.get(key + '__n');
+        const keys = [key, key + '__n'];
+        const n = parseInt(nRaw, 10) || 0;
+        for (let i = 0; i < n; i++) keys.push(key + '__' + i);
+        cache.removeAll(keys);
+    } catch (e) {}
+}
+
 function invalidateSheetCache(sheetName) {
     if (_rowsCache[sheetName]) delete _rowsCache[sheetName];
-    try {
-        CacheService.getScriptCache().remove(_sheetCacheKey(sheetName));
-    } catch (e) {}
+    _cacheRemoveChunked(_sheetCacheKey(sheetName));
 }
 
 function getAllRowsCached(sheetName, ttlSeconds) {
     const __t0 = Date.now();
     if (_rowsCache[sheetName]) { _perfLog('memCache ' + sheetName, __t0, 'rows=' + _rowsCache[sheetName].length); return _rowsCache[sheetName]; }
     const ttl = ttlSeconds || _DEFAULT_CACHE_TTL;
-    try {
-        const cached = CacheService.getScriptCache().get(_sheetCacheKey(sheetName));
-        if (cached) {
+    const cached = _cacheGetChunked(_sheetCacheKey(sheetName));
+    if (cached) {
+        try {
             const rows = JSON.parse(cached);
             _rowsCache[sheetName] = rows;
             _perfLog('cacheHit ' + sheetName, __t0, 'rows=' + rows.length);
             return rows;
-        }
-    } catch (e) {}
+        } catch (e) {}
+    }
     const rows = getAllRows(sheetName);
     _perfLog('cacheMiss ' + sheetName, __t0, 'rows=' + rows.length);
     _rowsCache[sheetName] = rows;
-    try {
-        const payload = JSON.stringify(rows);
-        if (payload.length <= 90000) {
-            CacheService.getScriptCache().put(_sheetCacheKey(sheetName), payload, ttl);
-        }
-    } catch (e) {}
+    try { _cachePutChunked(_sheetCacheKey(sheetName), JSON.stringify(rows), ttl); } catch (e) {}
     return rows;
 }
 
@@ -546,20 +596,17 @@ function getRowByKey(sheetName, keyColumn, keyValue) {
 
 function getAllRows(sheetName) {
     const __t0 = Date.now();
-    const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
-    if (!sheet) throw new Error('Sheet ' + sheetName + ' tidak ditemukan.');
-    const headers = getHeadersFromSheet(sheet);
-    if (sheet.getLastRow() < 2) return [];
-    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues();
+    const values = _getSheet(sheetName).getDataRange().getValues();
+    if (values.length < 2) return [];
+    const headers = values[0].map(String);
     const rows = [];
-    values.forEach(function(row) {
+    for (let i = 1; i < values.length; i++) {
+        const row = values[i];
         const hasValue = row.some(function(cell) {
             return cell !== null && cell !== undefined && String(cell).trim() !== '';
         });
-        if (hasValue) {
-            rows.push(rowToObject(headers, row));
-        }
-    });
+        if (hasValue) rows.push(rowToObject(headers, row));
+    }
     _perfLog('read ' + sheetName, __t0, 'rows=' + rows.length);
     return rows;
 }
