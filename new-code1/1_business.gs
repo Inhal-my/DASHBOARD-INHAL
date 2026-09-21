@@ -1823,6 +1823,79 @@ function deleteBeritaAcaraAdmin(baId) {
     return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
 
+function deleteBeritaAcaraBagian(baId) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const baIdVal = String(baId || '').trim();
+        if (!baIdVal) return { success: false, message: 'BA ID wajib diisi.' };
+        const existing = getRowByKey('BeritaAcara', 'BA ID', baIdVal);
+        if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        deleteRowByKey('BeritaAcara', 'BA ID', baIdVal, 'Dihapus dari Panel Admin', getActorName());
+        while (getRowByKey('BeritaAcaraPeserta', 'BA ID', baIdVal)) {
+            deleteRowByKey('BeritaAcaraPeserta', 'BA ID', baIdVal, 'Hapus peserta menyertai BA', getActorName());
+        }
+        const fileUrl = String(existing['File URL'] || '');
+        const idMatch = fileUrl.match(/[=\/]([\w\-]{20,})/);
+        if (idMatch) {
+            try {
+                DriveApp.getFileById(idMatch[1]).setTrashed(true);
+            } catch (e) { }
+        }
+        return { success: true, message: 'Berita acara berhasil dihapus.' };
+    });
+}
+
+function updateBeritaAcaraBagian(baId, payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const id = String(baId || '').trim();
+        if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+        const existing = getRowByKey('BeritaAcara', 'BA ID', id);
+        if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        const p = payload || {};
+        const tanggal = p.tanggal !== undefined ? String(p.tanggal || '').trim() : String(existing['Tanggal Pelaksanaan'] || '').trim();
+        if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
+        const sheet = getGlobalSpreadsheet().getSheetByName('BeritaAcara');
+        const headers = getHeadersFromSheet(sheet);
+        const idx = headers.indexOf('BA ID');
+        const rowIndex = findRowByColumnValue(sheet, idx + 1, id);
+        const merged = Object.assign({}, existing, {
+            'Tanggal Pelaksanaan': tanggal,
+            Jam: p.jam !== undefined ? String(p.jam || '').trim() : existing.Jam,
+            Dosen: p.dosen !== undefined ? String(p.dosen || '').trim() : existing.Dosen,
+            Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
+        });
+        sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
+        invalidateSheetCache('BeritaAcara');
+        return { success: true, message: 'Berita acara pelaksanaan diperbarui.' };
+    });
+}
+
+function updateBeritaAcaraAdmin(baId, payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const id = String(baId || '').trim();
+        if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+        const existing = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        const p = payload || {};
+        const tanggal = p.tanggal !== undefined ? String(p.tanggal || '').trim() : String(existing['Tanggal Pelaksanaan'] || '').trim();
+        if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
+        const sheet = getGlobalSpreadsheet().getSheetByName('BeritaAcaraAdmin');
+        const headers = getHeadersFromSheet(sheet);
+        const idx = headers.indexOf('BA ID');
+        const rowIndex = findRowByColumnValue(sheet, idx + 1, id);
+        const merged = Object.assign({}, existing, {
+            'Tanggal Pelaksanaan': tanggal,
+            Jam: p.jam !== undefined ? String(p.jam || '').trim() : existing.Jam,
+            Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
+        });
+        sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
+        invalidateSheetCache('BeritaAcaraAdmin');
+        return { success: true, message: 'Berita acara pendukung diperbarui.' };
+    });
+}
+
 function _rowFingerprint(row, cols) {
     return (cols || []).map(function(c) {
         return String(row && row[c] != null ? row[c] : '').replace(/\u00a0/g, ' ').trim();
