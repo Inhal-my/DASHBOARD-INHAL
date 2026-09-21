@@ -571,6 +571,14 @@
                             <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pendukung' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pendukung')">Belum Pendukung</button>
                             <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pelaksanaan' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pelaksanaan')">Belum Pelaksanaan</button>
                             <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='belum' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('belum')">Belum lengkap</button>
+                            <select v-model="bagian.fBlok" class="input !w-auto !py-1.5 !text-xs">
+                                <option value="">Semua Blok</option>
+                                <option v-for="b in bagianBlokOptions" :key="'fb'+b" :value="b">{{ b }}</option>
+                            </select>
+                            <select v-model="bagian.fBagian" class="input !w-auto !py-1.5 !text-xs">
+                                <option value="">Semua Bagian</option>
+                                <option v-for="b in bagian.options" :key="'fg'+b" :value="b">{{ b }}</option>
+                            </select>
                             <span class="ml-auto text-xs text-slate-400">Menampilkan {{ bagianTableRows.length }} kegiatan</span>
                             <button class="btn-soft !px-3 !py-1 text-xs" @click="resetBagianFilter">Reset</button>
                         </div>
@@ -1639,7 +1647,7 @@
                 bagianPagedRows() {
                     const rows = this.bagianTableRows;
                     const size = 20;
-                    const page = Math.max(1, this.bagian.page || 1);
+                    const page = this.bagianPageInfo.page;
                     const start = (page - 1) * size;
                     return rows.slice(start, start + size);
                 },
@@ -1739,7 +1747,7 @@
                 masterPagedRows() {
                     const rows = this.activeMasterRows;
                     const size = 20;
-                    const page = Math.max(1, this.master.page || 1);
+                    const page = this.masterPageInfo.page;
                     return rows.slice((page - 1) * size, page * size);
                 },
                 masterPageInfo() {

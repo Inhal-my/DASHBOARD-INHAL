@@ -28,6 +28,16 @@ describe('dashboard template BA', () => {
     assert.match(html, /bagianPagedRows/);
     assert.match(html, /Menampilkan \{\{ bagianPageInfo.start \}\}/);
   });
+  it('filter BA Zona 3 punya dropdown Blok dan Bagian', () => {
+    assert.match(html, /<select v-model="bagian\.fBlok"/);
+    assert.match(html, /<select v-model="bagian\.fBagian"/);
+    assert.match(html, /bagianBlokOptions/);
+    assert.match(html, /v-for="b in bagian\.options"/);
+  });
+  it('pager memakai pageInfo yang di-clamp', () => {
+    assert.match(html, /const page = this\.bagianPageInfo\.page/);
+    assert.match(html, /const page = this\.masterPageInfo\.page/);
+  });
   it('tidak ada Download Database', () => {
     assert.doesNotMatch(html, /downloadDatabase/);
     assert.doesNotMatch(html, /Download Database/);

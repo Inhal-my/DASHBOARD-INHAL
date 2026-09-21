@@ -1858,7 +1858,9 @@ function updateBeritaAcaraBagian(baId, payload) {
         const sheet = getGlobalSpreadsheet().getSheetByName('BeritaAcara');
         const headers = getHeadersFromSheet(sheet);
         const idx = headers.indexOf('BA ID');
+        if (idx < 0) return { success: false, message: 'Kolom BA ID tidak ditemukan.' };
         const rowIndex = findRowByColumnValue(sheet, idx + 1, id);
+        if (rowIndex < 2) return { success: false, message: 'Berita acara tidak ditemukan.' };
         const merged = Object.assign({}, existing, {
             'Tanggal Pelaksanaan': tanggal,
             Jam: p.jam !== undefined ? String(p.jam || '').trim() : existing.Jam,
@@ -1884,7 +1886,9 @@ function updateBeritaAcaraAdmin(baId, payload) {
         const sheet = getGlobalSpreadsheet().getSheetByName('BeritaAcaraAdmin');
         const headers = getHeadersFromSheet(sheet);
         const idx = headers.indexOf('BA ID');
+        if (idx < 0) return { success: false, message: 'Kolom BA ID tidak ditemukan.' };
         const rowIndex = findRowByColumnValue(sheet, idx + 1, id);
+        if (rowIndex < 2) return { success: false, message: 'Berita acara tidak ditemukan.' };
         const merged = Object.assign({}, existing, {
             'Tanggal Pelaksanaan': tanggal,
             Jam: p.jam !== undefined ? String(p.jam || '').trim() : existing.Jam,
@@ -2150,6 +2154,7 @@ function _saveStaffMasterRow(row, mapped, spec) {
     const origEmail = _masterCell(row.original || {}, 'Email') || (mode === 'update' ? email : '');
     const origLower = String(origEmail || '').trim().toLowerCase();
     const emailLower = String(email || '').trim().toLowerCase();
+    if (mode === 'insert' && !emailLower) return { success: false, message: 'Email wajib diisi.' };
     if (emailLower) {
         let dup = false;
         existingRows.forEach(function(r) {
