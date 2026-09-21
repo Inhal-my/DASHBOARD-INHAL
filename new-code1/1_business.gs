@@ -1573,78 +1573,211 @@ function getLaporanBootstrap() {
     };
 }
 
-function getBagianAggregation() {
-    requireAuthorized(arguments[arguments.length - 1]);
-    return _computeBagianAggregation(getAllRowsCached('Pengajuan'), getAllRowsCached('DetailKegiatan'), getAllRowsCached('BeritaAcara'));
+function _normKegiatan(s) {
+    return norm(String(s || '').replace(/[\u2010-\u2015\u2212]/g, '-'));
 }
 
-function _computeBagianAggregation(pengajuan, details, ba) {
-    const pMap = {};
-    pengajuan.forEach(function(p) { pMap[String(p['ID Pengajuan']).trim()] = p; });
+function _kegiatanKey(bagian, blok, nama) {
+    return [norm(bagian), norm(blok), _normKegiatan(nama)].join('|');
+}
 
-    const bagianRows = [];
-    const bagianIndex = {};
-    const labs = getMasterOptions('Lab');
-    const pushUnique = function(list, v) {
-        v = String(v || '').replace(/\s+/g, ' ').trim();
-        if (v && list.indexOf(v) === -1) list.push(v);
+function _computeUnitProgress(unit) {
+    const peserta = (unit && unit.peserta) || [];
+    const baPendukung = (unit && unit.baPendukung) || [];
+    const baPelaksanaan = (unit && unit.baPelaksanaan) || [];
+    const total = peserta.length;
+    const decided = peserta.filter(function(p) {
+        const s = String(p.statusPengajuan || '').trim();
+        return s === 'Diterima' || s === 'ACC' || s === 'Ditolak';
+    }).length;
+    const finalCount = peserta.filter(function(p) { return p.linkFinal; }).length;
+    const field = function(obj, lowerKey, clientKey) {
+        if (!obj) return '';
+        const v = obj[lowerKey] !== undefined ? obj[lowerKey] : obj[clientKey];
+        return v == null ? '' : String(v).trim();
     };
+    const stage = function(done, totalN) {
+        if (!totalN || done <= 0) return 'none';
+        return done >= totalN ? 'all' : 'partial';
+    };
+    const selesai = baPelaksanaan.some(function(b) {
+        return field(b, 'dosen', 'Dosen') && field(b, 'tanggal', 'Tanggal Pelaksanaan') && field(b, 'jam', 'Jam');
+    });
+    return {
+        pendaftaran: total > 0 ? 'all' : 'none',
+        pendukung: baPendukung.length ? 'all' : 'none',
+        keputusan: stage(decided, total),
+        final: stage(finalCount, total),
+        pelaksanaan: baPelaksanaan.length ? 'all' : 'none',
+        selesai: selesai ? 'all' : 'none',
+        counts: { peserta: total, keputusan: decided, final: finalCount }
+    };
+}
 
-    const addRow = function(sumber, bagian, blok, jenisKegiatan, tgl, jumlah, fileUrl, linkFinal) {
-        blok = String(blok || '-').replace(/\s+/g, ' ').trim();
-        jenisKegiatan = String(jenisKegiatan || '-').replace(/\s+/g, ' ').trim();
-        tgl = String(tgl || '-').replace(/\s+/g, ' ').trim();
-        const key = [sumber, bagian, blok, jenisKegiatan, tgl].join('|');
-        if (bagianIndex[key] !== undefined) {
-            bagianRows[bagianIndex[key]].total += jumlah;
-            if (linkFinal && !bagianRows[bagianIndex[key]].linkFinal) bagianRows[bagianIndex[key]].linkFinal = linkFinal;
-        } else {
-            bagianIndex[key] = bagianRows.length;
-            bagianRows.push({
-                sumber: sumber,
-                bagian: bagian,
-                blok: blok,
-                jenisKegiatan: jenisKegiatan,
-                tanggalPelaksanaan: tgl,
-                total: jumlah,
-                fileUrl: fileUrl || '',
-                linkFinal: linkFinal || ''
+function _attachBaToUnits(units, baList, resolveBagian12) {
+    const unitByKey = {};
+    const unitByBag = {};
+    const bagKey = function(bagian, blok) {
+        return norm(bagian) + '|' + String(blok || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    };
+    (units || []).forEach(function(u) {
+        unitByKey[u.key] = u;
+        const k = bagKey(u.bagian, u.blok);
+        (unitByBag[k] = unitByBag[k] || []).push(u);
+        if (!u.ba) u.ba = [];
+    });
+    const seen = {};
+    const orphanBa = [];
+    (baList || []).forEach(function(b) {
+        const dk = [norm(b.bagian), String(b.blok || '').toLowerCase(), _normKegiatan(b.namaKegiatan), b.tanggal || '', b.fileUrl || ''].join('|');
+        if (seen[dk]) return;
+        seen[dk] = 1;
+        const direct = b.kegiatanKey ? unitByKey[b.kegiatanKey] : null;
+        if (direct) { direct.ba.push(b); return; }
+        const resolved = resolveBagian12 ? (resolveBagian12(b.bagian, '', b.namaKegiatan) || b.bagian) : b.bagian;
+        const candidates = unitByBag[bagKey(resolved, b.blok)] || [];
+        const npms = (b.peserta || []).map(function(p) { return p.npm; }).filter(Boolean);
+        let matched = candidates.filter(function(u) {
+            return (u.peserta || []).some(function(p) { return p.npm && npms.indexOf(p.npm) !== -1; });
+        });
+        if (!matched.length) {
+            const bName = _normKegiatan(b.namaKegiatan);
+            matched = candidates.filter(function(u) {
+                const l = _normKegiatan(u.label);
+                return !!l && (bName === l || bName.endsWith(l));
             });
         }
+        if (!matched.length) { orphanBa.push(b); return; }
+        matched.forEach(function(u) { u.ba.push(b); });
+    });
+    return { units: units, orphanBa: orphanBa };
+}
+
+function getBagianAggregation() {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const pengajuan = getAllRowsCached('Pengajuan');
+    const details = getAllRowsCached('DetailKegiatan');
+    const labs = getMasterOptions('Lab');
+    const pMap = {};
+    pengajuan.forEach(function(p) { pMap[String(p['ID Pengajuan'] || '').trim()] = p; });
+
+    const units = [];
+    const unitIndex = {};
+    const addPeserta = function(unit, row) {
+        const dup = unit.peserta.some(function(x) {
+            return (row.npm && x.npm === row.npm) || (!row.npm && row.idPengajuan && x.idPengajuan === row.idPengajuan);
+        });
+        if (!dup) unit.peserta.push(row);
     };
 
     details.forEach(function(d) {
-        const id = String(d['ID Pengajuan'] || '').trim();
-        const p = pMap[id] || {};
+        const idp = String(d['ID Pengajuan'] || '').trim();
+        const p = pMap[idp] || {};
         const bagian = _resolveBagian12(d['Jenis Kegiatan'] || d.Bagian, d.Pilihan || d.Bagian, '', labs) || 'Lainnya';
+        const blok = String(p.Blok || '').replace(/\s+/g, ' ').trim() || '-';
         const pilihan = String(d.Pilihan || '').trim();
         const detailText = String(d.Detail || '').trim();
-        const jenisKegiatan = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
-        addRow('Pengajuan', bagian, p.Blok, jenisKegiatan, _clientDate(d['Tanggal Pelaksanaan']), 1, '', p['Link Final']);
+        const label = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
+        const key = _kegiatanKey(bagian, blok, label);
+        if (unitIndex[key] === undefined) {
+            unitIndex[key] = units.length;
+            units.push({ key: key, bagian: bagian, blok: blok, pilihan: pilihan, detail: detailText, label: label, tanggal: '', tanggalList: [], peserta: [], ba: [], linkFinal: '' });
+        }
+        const unit = units[unitIndex[key]];
+        addPeserta(unit, {
+            npm: String(p.NPM || '').trim(),
+            namaLengkap: String(p['Nama Lengkap'] || '').trim(),
+            blok: String(p.Blok || '').trim(),
+            statusPengajuan: String(p.Status || '').trim(),
+            linkFinal: String(p['Link Final'] || '').trim(),
+            idPengajuan: idp
+        });
+        const tgl = String(_clientDate(d['Tanggal Pelaksanaan']) || '').trim();
+        if (tgl && unit.tanggalList.indexOf(tgl) === -1) unit.tanggalList.push(tgl);
+        const lf = String(p['Link Final'] || '').trim();
+        if (lf && !unit.linkFinal) unit.linkFinal = lf;
     });
 
-    ba.forEach(function(b) {
-        if (_baSumber(b) !== 'Bagian') return;
-        const bagian = _resolveBagian12(b.Bagian, '', b['Nama Kegiatan'], labs);
-        if (!bagian) return;
-        const nama = String(b['Nama Kegiatan'] || '').trim();
-        const jenisKegiatan = nama || 'Berita Acara';
-        addRow('Berita Acara', bagian, b.Blok, jenisKegiatan, _clientDate(b['Tanggal Pelaksanaan']), parseInt(b['Jumlah Peserta'], 10) || 0, b['File URL']);
+    function collectBa(sheetName, pesertaMap, sumber) {
+        return getAllRowsCached(sheetName).map(function(r) {
+            const c = _clientRow(r);
+            const baId = String(c['BA ID'] || '').trim();
+            return {
+                baId: baId,
+                sumber: sumber,
+                bagian: String(c.Bagian || '').trim(),
+                blok: String(c.Blok || '').replace(/\s+/g, ' ').trim(),
+                namaKegiatan: String(c['Nama Kegiatan'] || '').replace(/\s+/g, ' ').trim(),
+                tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
+                jam: String(c.Jam || '').trim(),
+                dosen: String(c.Dosen || '').trim(),
+                kegiatanKey: String(c['Kegiatan Key'] || '').trim(),
+                fileUrl: String(c['File URL'] || '').trim(),
+                fileName: String(c['File Name'] || '').trim(),
+                catatan: String(c.Catatan || '').trim(),
+                timestamp: String(c.Timestamp || '').trim(),
+                peserta: pesertaMap[baId] || []
+            };
+        });
+    }
+
+    const baList = collectBa('BeritaAcara', _getBaPesertaMap(), 'Bagian')
+        .concat(collectBa('BeritaAcaraAdmin', _getBaPesertaMapAdmin(), 'Admin'));
+    const attached = _attachBaToUnits(units, baList, function(raw, pilihan, nama) {
+        return _resolveBagian12(raw, pilihan, nama, labs);
+    });
+    const orphanBa = attached.orphanBa || [];
+
+    const npmSet = {};
+    units.forEach(function(u) {
+        const covered = {};
+        (u.ba || []).forEach(function(b) {
+            (b.peserta || []).forEach(function(p) { if (p.npm) covered[p.npm] = 1; });
+        });
+        u.pesertaDenganBa = u.peserta.filter(function(p) { return p.npm && covered[p.npm]; }).length;
+        u.jumlahPeserta = u.peserta.length;
+        u.statusBa = u.ba.length ? 'ada' : 'belum';
+        u.statusFinal = u.linkFinal ? 'ada' : 'belum';
+        u.baPendukung = u.ba.filter(function(b) { return b.sumber === 'Admin'; });
+        u.baPelaksanaan = u.ba.filter(function(b) { return b.sumber === 'Bagian'; });
+        u.pelaksanaan = u.baPelaksanaan.map(function(b) {
+            return { baId: b.baId, tanggal: b.tanggal, jam: b.jam || '', dosen: b.dosen || '' };
+        });
+        const dosenSet = [];
+        u.baPelaksanaan.forEach(function(b) {
+            if (b.dosen && dosenSet.indexOf(b.dosen) === -1) dosenSet.push(b.dosen);
+        });
+        u.dosenList = dosenSet;
+        u.progress = _computeUnitProgress(u);
+        u.counts = u.progress.counts;
+        u.tanggalList = u.tanggalList.slice().sort();
+        u.tanggal = u.tanggalList[0] || '';
+        u.peserta.forEach(function(p) { if (p.npm) npmSet[p.npm] = 1; });
     });
 
+    const blokSet = [];
+    units.forEach(function(u) {
+        const b = String(u.blok || '').trim();
+        if (b && b !== '-' && blokSet.indexOf(b) === -1) blokSet.push(b);
+    });
+    const npmCount = Object.keys(npmSet).length;
+    const summary = {
+        totalKegiatan: units.length,
+        totalPeserta: npmCount,
+        denganBa: units.filter(function(u) { return u.ba.length; }).length,
+        denganBaBagian: units.filter(function(u) { return u.ba.some(function(b) { return b.sumber === 'Bagian'; }); }).length,
+        denganBaAdmin: units.filter(function(u) { return u.ba.some(function(b) { return b.sumber === 'Admin'; }); }).length,
+        belumBa: units.filter(function(u) { return !u.ba.length; }).length,
+        finalAcc: units.filter(function(u) { return u.linkFinal; }).length
+    };
+    summary.persenLengkap = summary.totalKegiatan ? Math.round((summary.denganBa / summary.totalKegiatan) * 100) : 0;
     return {
         categories: _getBagianOptions12(labs),
         labs: labs,
-        rows: bagianRows,
-        filters: {
-            bagian: _getBagianOptions12(labs),
-            blok: (function() {
-                const list = [];
-                bagianRows.forEach(function(r) { pushUnique(list, r.blok); });
-                return list;
-            })(),
-            sumber: ['Pengajuan', 'Berita Acara']
-        }
+        filters: { bagian: _getBagianOptions12(labs), blok: blokSet.sort(), sumber: ['Bagian', 'Admin'] },
+        summary: summary,
+        units: units,
+        orphanBa: orphanBa
     };
 }
 
