@@ -59,6 +59,12 @@ describe('dashboard template master', () => {
     assert.doesNotMatch(html, /lg:grid-cols-\[280px_1fr\]/);
     assert.match(html, /selectMasterCard\(m\.key\)/);
   });
+  it('pemilih kartu master berbentuk grid chip', () => {
+    assert.match(html, /grid grid-cols-2 gap-2 sm:grid-cols-4/);
+    assert.match(html, /\.sm\\:grid-cols-4/);
+    assert.match(html, /master-stat-label/);
+    assert.doesNotMatch(html, /master-stat !w-auto/);
+  });
   it('paginasi master 20', () => {
     assert.match(html, /masterPagedRows/);
   });
