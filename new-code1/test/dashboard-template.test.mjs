@@ -36,3 +36,20 @@ describe('dashboard template BA', () => {
     assert.match(html, /xlsx@0\.18\.5/);
   });
 });
+
+describe('dashboard template master', () => {
+  it('kartu mahasiswa dan tanpa saveFn replace-all di cards', () => {
+    assert.match(html, /key: 'mahasiswa'/);
+    assert.match(html, /table: 'Mahasiswa'/);
+    assert.match(html, /openMasterRow/);
+    assert.match(html, /onMahasiswaCsv/);
+    assert.doesNotMatch(html, /saveFn: 'saveMasterKegiatan'/);
+  });
+  it('chip picker horizontal bukan sidebar 280px', () => {
+    assert.doesNotMatch(html, /lg:grid-cols-\[280px_1fr\]/);
+    assert.match(html, /master\.tab = m\.key/);
+  });
+  it('paginasi master 20', () => {
+    assert.match(html, /masterPagedRows/);
+  });
+});

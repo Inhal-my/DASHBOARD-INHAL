@@ -57,6 +57,9 @@
             background: #eef2ff; color: #4f46e5; font-size: 1.05rem;
         }
         .master-table-scroll { max-height: 520px; overflow-y: auto; }
+        .master-row-btn { display: inline-flex; align-items: center; justify-content: center; height: 1.9rem; width: 1.9rem; border-radius: .5rem; color: #64748b; transition: all .15s ease; }
+        .master-row-btn:hover { background: #eef2ff; color: #4f46e5; }
+        .master-row-btn.danger:hover { background: #fff1f2; color: #e11d48; }
         .master-table thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; }
         .modal-overlay {
             display: flex;
@@ -969,26 +972,16 @@
                         </svg>
                         <span class="text-sm font-semibold">Memuat master data...</span>
                     </div>
-                    <div v-else class="grid gap-5 lg:grid-cols-[280px_1fr]">
-                        <aside>
-                            <div class="space-y-2.5">
-                                <button
-                                    v-for="m in masterCards"
-                                    :key="m.key"
-                                    @click="master.tab = m.key; master.search = ''"
-                                    class="master-stat"
-                                    :class="{ active: master.tab === m.key }"
-                                >
-                                    <span class="master-stat-icon"><i :class="m.icon"></i></span>
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-sm font-semibold text-slate-800">{{ m.title }}</span>
-                                        <span class="block text-xs text-slate-500">{{ masterCount(m) }}</span>
-                                    </span>
-                                    <i class="bi bi-chevron-right text-slate-300"></i>
-                                </button>
-                            </div>
-                        </aside>
-
+                    <div v-else>
+                        <div class="mb-4 flex flex-wrap gap-2">
+                            <button v-for="m in masterCards" :key="m.key" type="button"
+                                class="master-stat !w-auto"
+                                :class="{ active: master.tab === m.key }"
+                                @click="master.tab = m.key; master.search = ''; master.page = 1">
+                                <span class="master-stat-icon"><i :class="m.icon"></i></span>
+                                <span class="text-sm font-semibold text-slate-800">{{ m.short }}</span>
+                            </button>
+                        </div>
                         <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                             <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex items-center gap-3">
@@ -998,12 +991,16 @@
                                         <p class="text-xs text-slate-500">{{ activeMasterCard.desc }}</p>
                                     </div>
                                 </div>
-                                <div v-if="!activeMasterCard.settings" class="flex items-center gap-2">
+                                <div v-if="!activeMasterCard.settings" class="flex flex-wrap items-center gap-2">
                                     <div class="master-search">
                                         <i class="bi bi-search"></i>
                                         <input v-model="master.search" type="text" class="input" placeholder="Cari..." />
                                     </div>
-                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" @click="editMaster(activeMasterCard.key)"><i class="bi bi-pencil"></i>Edit</button>
+                                    <label v-if="activeMasterCard.key === 'mahasiswa'" class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap cursor-pointer">
+                                        <i class="bi bi-upload"></i> Unggah CSV
+                                        <input type="file" accept=".csv,text/csv" class="hidden" @change="onMahasiswaCsv">
+                                    </label>
+                                    <button class="btn-primary !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openMasterRow(activeMasterCard.key)"><i class="bi bi-plus-lg"></i> Tambah</button>
                                 </div>
                             </div>
                             <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
@@ -1011,22 +1008,36 @@
                                     <thead>
                                         <tr class="text-[11px] uppercase tracking-wider text-slate-400">
                                             <th v-for="c in activeMasterCard.cols" class="px-5 py-3 font-semibold">{{ c }}</th>
+                                            <th class="px-5 py-3 font-semibold w-24">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-if="!activeMasterRows.length">
-                                            <td :colspan="activeMasterCard.cols.length" class="px-5 py-12 text-center text-xs text-slate-400">
+                                            <td :colspan="activeMasterCard.cols.length + 1" class="px-5 py-12 text-center text-xs text-slate-400">
                                                 {{ master.search ? 'Tidak ada hasil untuk pencarian.' : 'Belum ada data.' }}
                                             </td>
                                         </tr>
-                                        <tr v-for="(r,i) in activeMasterRows" class="border-t border-slate-50">
+                                        <tr v-for="(r,i) in masterPagedRows" class="border-t border-slate-50">
                                             <td v-for="c in activeMasterCard.cols" class="px-5 py-2.5 text-slate-600">{{ masterCellValue(r, c) }}</td>
+                                            <td class="px-5 py-2.5">
+                                                <div class="flex flex-row items-center gap-1">
+                                                    <button class="master-row-btn" title="Ubah" @click="openMasterRow(activeMasterCard.key, r)"><i class="bi bi-pencil"></i></button>
+                                                    <button v-if="activeMasterCard.key !== 'config'" class="master-row-btn danger" title="Hapus" @click="deleteMasterRow(r)"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
+                            <div v-if="!activeMasterCard.settings && masterPageInfo.n" class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+                                <span>Menampilkan {{ masterPageInfo.start }}–{{ masterPageInfo.end }} dari {{ masterPageInfo.n }}</span>
+                                <div class="flex items-center gap-1">
+                                    <button class="btn-soft !px-2 !py-1" :disabled="masterPageInfo.page<=1" @click="master.page--">Prev</button>
+                                    <button class="btn-soft !px-2 !py-1" :disabled="masterPageInfo.page>=masterPageInfo.pages" @click="master.page++">Next</button>
+                                </div>
+                            </div>
 
-                            <div v-else class="p-6">
+                            <div v-if="activeMasterCard.settings" class="p-6">
                                 <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-100">
                                     <div class="flex items-start gap-3">
                                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm"><i class="bi bi-file-earmark-check"></i></div>
@@ -1260,47 +1271,28 @@
             </div>
         </transition>
 
-        <!-- ============ MODAL: MASTER EDITOR ============ -->
         <transition name="fade">
-            <div v-if="master.modal" class="fixed inset-0 z-50 modal-overlay">
-                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.modal=false"></div>
+            <div v-if="master.rowModal.open" class="fixed inset-0 z-50 modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="master.rowModal.open=false"></div>
                 <transition name="pop" appear>
-                    <div class="modal-panel max-w-3xl shadow-lift">
+                    <div class="modal-panel max-w-xl shadow-lift">
                         <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                            <h3 class="text-sm font-bold text-slate-900">Edit {{ master.title }}</h3>
-                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.modal=false"><i class="bi bi-x-lg"></i></button>
+                            <h3 class="text-sm font-bold text-slate-900">{{ master.rowModal.mode === 'update' ? 'Ubah' : 'Tambah' }} {{ master.rowModal.title }}</h3>
+                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.rowModal.open=false"><i class="bi bi-x-lg"></i></button>
                         </div>
-                        <div class="modal-body px-6 py-4">
-                            <div class="overflow-x-auto rounded-xl ring-1 ring-slate-100">
-                                <table class="w-full text-left text-sm">
-                                    <thead class="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-400">
-                                        <tr>
-                                            <th v-for="c in master.cols" class="px-3 py-2.5 font-semibold">{{ c }}</th>
-                                            <th class="w-12 px-2 py-2.5"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(row, i) in master.rows" :key="i" class="border-t border-slate-50">
-                                            <td v-for="c in master.cols" class="px-2 py-2">
-                                                <select v-if="isConfigKeyRow(row, c)" v-model="row[c]" class="input !py-2 text-xs">
-                                                    <option value="strict">Strict</option>
-                                                    <option value="lenggang">Bypass</option>
-                                                </select>
-                                                <input v-else-if="master.editKey === 'config' && isBuktiModeRow(row)" v-model="row[c]" class="input !py-2 text-xs" disabled>
-                                                <input v-else v-model="row[c]" class="input !py-2 text-xs">
-                                            </td>
-                                            <td class="px-2 py-2 text-center">
-                                                <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500" @click="removeMasterRow(i)"><i class="bi bi-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        <div class="modal-body px-6 py-4 space-y-3">
+                            <div v-for="c in master.rowModal.cols" :key="c">
+                                <label class="label">{{ c }}</label>
+                                <select v-if="c === 'Value' && master.rowModal.cardKey === 'config' && String(master.rowModal.fields.Key || '').trim() === 'BUKTI_MODE'" v-model="master.rowModal.fields[c]" class="input">
+                                    <option value="strict">Strict</option>
+                                    <option value="lenggang">Bypass</option>
+                                </select>
+                                <input v-else v-model="master.rowModal.fields[c]" class="input" :disabled="master.rowModal.mode === 'update' && master.rowModal.disabled.includes(c)" :placeholder="c">
                             </div>
-                            <button class="btn-soft mt-3" @click="addMasterRow()"><i class="bi bi-plus-lg"></i>Tambah Baris</button>
                         </div>
                         <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
-                            <button class="btn-soft" @click="master.modal=false">Batal</button>
-                            <button class="btn-primary" @click="saveEdit()"><i class="bi bi-save"></i>Simpan</button>
+                            <button class="btn-soft" @click="master.rowModal.open=false">Batal</button>
+                            <button class="btn-primary" :disabled="master.saving" @click="saveMasterRow()"><i class="bi bi-save"></i> Simpan</button>
                         </div>
                     </div>
                 </transition>
@@ -1484,25 +1476,22 @@
                         ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false }
                     },
                     master: {
-                        modal: false,
                         data: {},
                         baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
                         saving: false,
-                        editKey: '',
-                        rows: [],
-                        cols: [],
-                        title: '',
-                        saveFn: '',
-                        tab: 'masterKegiatan',
+                        tab: 'mahasiswa',
                         search: '',
+                        page: 1,
+                        rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, original: null, originalId: 0 },
                         cards: [
-                            { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], saveFn: 'saveMasterKegiatan', icon: 'bi-clipboard-check' },
-                            { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], saveFn: 'saveMasterBagian', icon: 'bi-diagram-3' },
-                            { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], saveFn: 'saveMasterBiaya', icon: 'bi-cash-stack' },
-                            { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], saveFn: 'saveConfig', icon: 'bi-gear' },
-                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], saveFn: 'saveBagianStaff', icon: 'bi-people' },
+                            { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'Mahasiswa', icon: 'bi-mortarboard' },
+                            { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], table: 'MasterKegiatan', icon: 'bi-clipboard-check' },
+                            { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], table: 'MasterBagian', icon: 'bi-diagram-3' },
+                            { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], table: 'MasterBiaya', icon: 'bi-cash-stack' },
+                            { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], table: 'Config', icon: 'bi-gear' },
+                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'BagianStaff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan Bagian', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
-                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B).', cols: ['Password', 'Nama'], saveFn: 'saveAdminList', icon: 'bi-shield-lock' }
+                            { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B).', cols: ['Password', 'Nama'], table: 'Admin', icon: 'bi-shield-lock' }
                         ]
                     }
                 };
@@ -1747,8 +1736,23 @@
                     if (!q) return rows;
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
                 },
+                masterPagedRows() {
+                    const rows = this.activeMasterRows;
+                    const size = 20;
+                    const page = Math.max(1, this.master.page || 1);
+                    return rows.slice((page - 1) * size, page * size);
+                },
+                masterPageInfo() {
+                    const n = this.activeMasterRows.length;
+                    const size = 20;
+                    const pages = Math.max(1, Math.ceil(n / size));
+                    const page = Math.min(this.master.page || 1, pages);
+                    const start = n ? (page - 1) * size + 1 : 0;
+                    const end = Math.min(page * size, n);
+                    return { n: n, pages: pages, page: page, start: start, end: end };
+                },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.modal || this.bab.ba.confirm || this.dialog.open);
+                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
                 }
             },
             watch: {
@@ -1760,7 +1764,9 @@
                 'bagian.fBlok'() { this.bagian.page = 1; },
                 'bagian.sortDir'() { this.bagian.page = 1; },
                 'bagian.sortKey'() { this.bagian.page = 1; },
-                'bagian.q'() { this.bagian.page = 1; }
+                'bagian.q'() { this.bagian.page = 1; },
+                'master.search'() { this.master.page = 1; },
+                'master.tab'() { this.master.page = 1; }
             },
             methods: {
                 // ---------- helpers ----------
@@ -2924,58 +2930,149 @@
                     if (m.settings) return 'Pengaturan';
                     return (this.master.data[m.key] || []).length + ' entri';
                 },
-                isBuktiModeRow(row) {
-                    return this.master.editKey === 'config' && String((row && row.Key) || '').trim() === 'BUKTI_MODE';
-                },
-                isConfigKeyRow(row, c) {
-                    return c === 'Value' && this.isBuktiModeRow(row);
-                },
                 masterCellValue(r, c) {
                     if (c === 'Value' && String((r && r.Key) || '').trim() === 'BUKTI_MODE') {
                         return r[c] === 'lenggang' ? 'Bypass' : 'Strict';
                     }
                     return r[c] === undefined || r[c] === null ? '—' : r[c];
                 },
-                editMaster(key) {
-                    const card = this.master.cards.find(c => c.key === key);
+                openMasterRow(cardKey, row) {
+                    const card = this.master.cards.find((c) => c.key === cardKey);
                     if (!card) return;
-                    this.master.editKey = key;
-                    this.master.cols = card.cols;
-                    this.master.title = card.title;
-                    this.master.saveFn = card.saveFn;
-                    this.master.rows = (this.master.data[key] || []).map(r => Object.assign({}, r));
-                    if (key === 'config') {
-                        this.master.rows.forEach(function(r) {
-                            if (String((r && r.Key) || '').trim() === 'BUKTI_MODE') {
-                                r.Value = (String(r.Value || '').trim() === 'lenggang') ? 'lenggang' : 'strict';
-                            }
-                        });
-                    }
-                    this.master.modal = true;
+                    const fields = {};
+                    card.cols.forEach((c) => { fields[c] = row ? String(row[c] === undefined || row[c] === null ? '' : row[c]) : ''; });
+                    const isUpdate = !!row;
+                    const disabled = [];
+                    if (isUpdate && cardKey === 'mahasiswa') disabled.push('NPM');
+                    if (isUpdate && cardKey === 'config') disabled.push('Key');
+                    this.master.rowModal = {
+                        open: true,
+                        table: card.table,
+                        cardKey: cardKey,
+                        title: card.title,
+                        cols: (card.cols || []).slice(),
+                        disabled: disabled,
+                        mode: isUpdate ? 'update' : 'insert',
+                        fields: fields,
+                        original: row ? Object.assign({}, row) : null,
+                        originalId: row && row._row
+                    };
                 },
-                addMasterRow() {
-                    const row = {};
-                    this.master.cols.forEach(c => { row[c] = ''; });
-                    this.master.rows.push(row);
-                },
-                removeMasterRow(i) {
-                    if (this.master.rows.length === 1) { this.notify('Minimal satu baris.', false); return; }
-                    this.master.rows.splice(i, 1);
-                },
-                async saveEdit() {
-                    this.loading = true;
+                async saveMasterRow() {
+                    const rm = this.master.rowModal;
+                    this.master.saving = true;
                     try {
-                        const res = await this.run(this.master.saveFn, { rows: this.master.rows });
+                        let res;
+                        if (rm.table === 'Mahasiswa') {
+                            res = await this.run('saveMahasiswa', {
+                                row: {
+                                    npm: String(rm.fields.NPM || '').trim(),
+                                    namaLengkap: String(rm.fields['Nama Lengkap'] || '').trim(),
+                                    email: String(rm.fields.Email || '').trim(),
+                                    blok: String(rm.fields.Blok || '').trim(),
+                                    keterangan: String(rm.fields.Keterangan || '').trim(),
+                                    mode: rm.mode
+                                }
+                            });
+                        } else {
+                            const row = Object.assign({}, rm.fields, { mode: rm.mode });
+                            if (rm.original && rm.original._row) {
+                                row._row = rm.original._row;
+                                row.original = rm.original;
+                            }
+                            res = await this.run('saveMasterRow', { table: rm.table, row: row });
+                        }
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
                         this.notify((res && res.message) || 'Disimpan.');
-                        this.master.modal = false;
+                        this.master.rowModal.open = false;
                         await this.loadMaster();
-                        this.loaded.pengajuan = false;
-                        this.loaded.stats = false;
-                        await Promise.all([this.loadPengajuan(), this.loadStats()]);
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
                     } finally {
-                        this.loading = false;
+                        this.master.saving = false;
+                    }
+                },
+                async deleteMasterRow(row) {
+                    const card = this.activeMasterCard;
+                    const isMhs = card.key === 'mahasiswa';
+                    const label = isMhs ? (row.NPM + ' - ' + row['Nama Lengkap']) : this.masterCellValue(row, card.cols[0]);
+                    if (!confirm('Hapus ' + label + '?')) return;
+                    try {
+                        const res = isMhs
+                            ? await this.run('deleteMahasiswa', row.NPM)
+                            : await this.run('deleteMasterRow', { table: card.table, _row: row._row, original: row, Key: row.Key, Email: row.Email });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menghapus.', false); return; }
+                        this.notify((res && res.message) || 'Dihapus.');
+                        await this.loadMaster();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    }
+                },
+                parseCsv(text) {
+                    const lines = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim() !== '');
+                    if (!lines.length) return { error: 'CSV kosong.' };
+                    const splitLine = (line) => {
+                        const out = [];
+                        let cur = '';
+                        let quoted = false;
+                        for (let i = 0; i < line.length; i++) {
+                            const ch = line[i];
+                            if (quoted) {
+                                if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                                else if (ch === '"') quoted = false;
+                                else cur += ch;
+                            } else if (ch === '"') quoted = true;
+                            else if (ch === ',' || ch === ';') { out.push(cur); cur = ''; }
+                            else cur += ch;
+                        }
+                        out.push(cur);
+                        return out.map((v) => v.trim());
+                    };
+                    const header = splitLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, ' '));
+                    let npmIdx = header.findIndex((h) => h === 'npm');
+                    let namaIdx = header.findIndex((h) => h === 'nama lengkap' || h === 'nama_lengkap' || h === 'nama');
+                    if (npmIdx === -1 || namaIdx === -1) return { error: 'Header CSV harus memuat kolom NPM dan Nama Lengkap.' };
+                    const rows = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const cells = splitLine(lines[i]);
+                        rows.push({ npm: String(cells[npmIdx] || '').trim(), namaLengkap: String(cells[namaIdx] || '').trim() });
+                    }
+                    return { rows: rows };
+                },
+                async onMahasiswaCsv(e) {
+                    const input = e.target;
+                    const file = input.files && input.files[0];
+                    input.value = '';
+                    if (!file) return;
+                    let text = '';
+                    try {
+                        text = await file.text();
+                    } catch (err) {
+                        this.notify('Gagal membaca file CSV.', false);
+                        return;
+                    }
+                    const parsed = this.parseCsv(text);
+                    if (parsed.error) { this.notify(parsed.error, false); return; }
+                    const valid = (parsed.rows || []).filter((r) => r.npm);
+                    if (!valid.length) { this.notify('Tidak ada baris NPM valid.', false); return; }
+                    if (valid.length > 500) { this.notify('Maksimal 500 baris.', false); return; }
+                    const seen = {};
+                    let dup = '';
+                    valid.forEach((r) => { if (seen[r.npm]) dup = r.npm; seen[r.npm] = true; });
+                    if (dup) { this.notify('NPM duplikat di file: ' + dup, false); return; }
+                    const existing = new Set((this.master.data.mahasiswa || []).map((r) => String(r.NPM)));
+                    let insert = 0;
+                    let update = 0;
+                    valid.forEach((r) => { if (existing.has(r.npm)) update++; else insert++; });
+                    const skipped = parsed.rows.length - valid.length;
+                    if (!confirm('Mengimpor ' + valid.length + ' baris.\n' + insert + ' mahasiswa baru\n' + update + ' mahasiswa diperbarui\n' + skipped + ' baris dilewati (NPM kosong)\n' + existing.size + ' mahasiswa terdaftar saat ini')) return;
+                    try {
+                        const res = await this.run('importMahasiswaCsv', { rows: valid });
+                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal impor.', false); return; }
+                        this.notify((res && res.message) || 'Impor selesai.');
+                        await this.loadMaster();
+                    } catch (err2) {
+                        this.notify('Gagal: ' + err2, false);
                     }
                 },
                 toggleBaStatus(v) {
