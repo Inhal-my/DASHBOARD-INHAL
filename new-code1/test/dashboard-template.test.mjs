@@ -57,10 +57,17 @@ describe('dashboard template master', () => {
   });
   it('chip picker horizontal bukan sidebar 280px', () => {
     assert.doesNotMatch(html, /lg:grid-cols-\[280px_1fr\]/);
-    assert.match(html, /master\.tab = m\.key/);
+    assert.match(html, /selectMasterCard\(m\.key\)/);
   });
   it('paginasi master 20', () => {
     assert.match(html, /masterPagedRows/);
+  });
+  it('mahasiswa memakai paginasi + pencarian server', () => {
+    assert.match(html, /getMasterMahasiswaPage/);
+    assert.match(html, /async loadMahasiswaPage\(page\)/);
+    assert.match(html, /onMasterSearch/);
+    assert.match(html, /gotoMasterPage\(masterPageInfo\.page-1\)/);
+    assert.match(html, /master\.mhsTotal/);
   });
 });
 

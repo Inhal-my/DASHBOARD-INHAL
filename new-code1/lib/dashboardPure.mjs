@@ -113,6 +113,21 @@ export function planMahasiswaCsvUpsert(rows, existingNpms) {
   return { insert: inserted, update: updated, skipped: skipped, parsed: parsed };
 }
 
+export function filterPageRows(rows, search, cols, page, pageSize) {
+  const list = Array.isArray(rows) ? rows : [];
+  const q = String(search || '').toLowerCase().trim();
+  const keys = cols && cols.length ? cols : Object.keys(list[0] || {});
+  const filtered = q
+    ? list.filter((r) => keys.some((c) => String(r && r[c] != null ? r[c] : '').toLowerCase().indexOf(q) !== -1))
+    : list;
+  const total = filtered.length;
+  const size = Math.max(1, parseInt(pageSize, 10) || 20);
+  const pages = Math.max(1, Math.ceil(total / size));
+  const safePage = Math.min(Math.max(1, parseInt(page, 10) || 1), pages);
+  const start = (safePage - 1) * size;
+  return { rows: filtered.slice(start, start + size), total: total, pages: pages, page: safePage, pageSize: size };
+}
+
 export function attachBaToUnits(units, baList, resolveBagian12) {
   const unitByKey = {};
   const unitByBag = {};

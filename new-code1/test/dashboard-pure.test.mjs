@@ -2,8 +2,39 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   kegiatanKey, computeUnitProgress, rowsMatchFingerprint,
-  parseMahasiswaCsv, planMahasiswaCsvUpsert, attachBaToUnits, MAHASISWA_CSV_MAX
+  parseMahasiswaCsv, planMahasiswaCsvUpsert, attachBaToUnits, filterPageRows, MAHASISWA_CSV_MAX
 } from '../lib/dashboardPure.mjs';
+
+const MHS_COLS = ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'];
+
+describe('filterPageRows', () => {
+  const rows = [];
+  for (let i = 1; i <= 45; i++) rows.push({ NPM: String(1000 + i), 'Nama Lengkap': 'Mhs ' + i, Email: '', Blok: 'B' + (i % 3), Keterangan: '' });
+  it('membagi halaman sesuai pageSize', () => {
+    const p1 = filterPageRows(rows, '', MHS_COLS, 1, 20);
+    assert.equal(p1.total, 45);
+    assert.equal(p1.pages, 3);
+    assert.equal(p1.rows.length, 20);
+    assert.equal(p1.rows[0].NPM, '1001');
+    const p3 = filterPageRows(rows, '', MHS_COLS, 3, 20);
+    assert.equal(p3.rows.length, 5);
+  });
+  it('menyaring lintas kolom lalu memaginasi', () => {
+    const p = filterPageRows(rows, 'B2', MHS_COLS, 1, 20);
+    assert.equal(p.total, 15);
+    assert.equal(p.rows.length, 15);
+    assert.ok(p.rows.every((r) => r.Blok === 'B2'));
+  });
+  it('meng-clamp halaman di luar rentang', () => {
+    const p = filterPageRows(rows, '', MHS_COLS, 99, 20);
+    assert.equal(p.page, 3);
+    assert.equal(p.rows.length, 5);
+  });
+  it('aman untuk data kosong', () => {
+    const p = filterPageRows([], 'abc', MHS_COLS, 1, 20);
+    assert.deepEqual(p, { rows: [], total: 0, pages: 1, page: 1, pageSize: 20 });
+  });
+});
 
 describe('kegiatanKey', () => {
   it('menormalkan spasi dan huruf', () => {

@@ -312,6 +312,9 @@ let _sheetMap = null;
 const _SHEET_CACHE_PREFIX = 'cache_sheet_v1_';
 const _DEFAULT_CACHE_TTL = 120;
 const _CACHE_CHUNK = 50000;
+const _MASTER_PAYLOAD_CACHE_KEY = 'cache_master_v1_';
+const _MASTER_PAYLOAD_TTL = 300;
+const _MASTER_SHEETS = ['Mahasiswa', 'MasterKegiatan', 'MasterBagian', 'MasterBiaya', 'Config', 'BagianStaff', 'Admin'];
 
 function getGlobalSpreadsheet() {
     if (_cachedSpreadsheet) return _cachedSpreadsheet;
@@ -390,6 +393,9 @@ function _cacheRemoveChunked(key) {
 function invalidateSheetCache(sheetName) {
     if (_rowsCache[sheetName]) delete _rowsCache[sheetName];
     _cacheRemoveChunked(_sheetCacheKey(sheetName));
+    if (_MASTER_SHEETS.indexOf(String(sheetName)) !== -1) {
+        _cacheRemoveChunked(_MASTER_PAYLOAD_CACHE_KEY);
+    }
 }
 
 function getAllRowsCached(sheetName, ttlSeconds) {

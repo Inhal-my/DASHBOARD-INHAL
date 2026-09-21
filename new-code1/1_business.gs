@@ -1991,11 +1991,43 @@ function _lockMutate(fn) {
     }
 }
 
-function getMasterDataMonitor() {
-    requireAuthorized(arguments[arguments.length - 1]);
+function _filterPageRows(rows, search, cols, page, pageSize) {
+    const list = Array.isArray(rows) ? rows : [];
+    const q = String(search || '').toLowerCase().trim();
+    const keys = cols && cols.length ? cols : Object.keys(list[0] || {});
+    const filtered = q
+        ? list.filter(function(r) {
+            return keys.some(function(c) {
+                return String(r && r[c] != null ? r[c] : '').toLowerCase().indexOf(q) !== -1;
+            });
+        })
+        : list;
+    const total = filtered.length;
+    const size = Math.max(1, parseInt(pageSize, 10) || 20);
+    const pages = Math.max(1, Math.ceil(total / size));
+    const safePage = Math.min(Math.max(1, parseInt(page, 10) || 1), pages);
+    const start = (safePage - 1) * size;
+    return { rows: filtered.slice(start, start + size), total: total, pages: pages, page: safePage, pageSize: size };
+}
+
+const _MAHASISWA_COLS = ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'];
+
+function _pageMahasiswa(search, page, pageSize) {
+    const rows = getAllRowsCached('Mahasiswa', _MASTER_PAYLOAD_TTL);
+    return _filterPageRows(rows, search, _MAHASISWA_COLS, page, pageSize);
+}
+
+function _getMasterMonitorStatic() {
     const __t0 = Date.now();
+    const cached = _cacheGetChunked(_MASTER_PAYLOAD_CACHE_KEY);
+    if (cached) {
+        try {
+            const parsed = JSON.parse(cached);
+            _perfLog('masterStatic', __t0, 'payloadCacheHit');
+            return parsed;
+        } catch (e) {}
+    }
     const result = {
-        mahasiswa: getAllRows('Mahasiswa'),
         masterKegiatan: _withRowNumbers('MasterKegiatan'),
         masterBagian: _withRowNumbers('MasterBagian'),
         masterBiaya: _withRowNumbers('MasterBiaya'),
@@ -2004,8 +2036,36 @@ function getMasterDataMonitor() {
         admin: _withRowNumbers('Admin'),
         bagianSettings: _getBagianBaSettings()
     };
-    _perfLog('getMasterDataMonitor', __t0, 'mahasiswa=' + result.mahasiswa.length + ' kegiatan=' + result.masterKegiatan.length + ' bagian=' + result.masterBagian.length + ' biaya=' + result.masterBiaya.length + ' staff=' + result.bagianStaff.length);
+    try { _cachePutChunked(_MASTER_PAYLOAD_CACHE_KEY, JSON.stringify(result), _MASTER_PAYLOAD_TTL); } catch (e) {}
+    _perfLog('masterStatic', __t0, 'payloadCacheMiss');
     return result;
+}
+
+function getMasterDataMonitor(opts) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
+    const options = (opts && typeof opts === 'object') ? opts : {};
+    const pageSize = Math.min(100, Math.max(5, parseInt(options.mahasiswaPageSize, 10) || 20));
+    const mhs = _pageMahasiswa(options.mahasiswaSearch, options.mahasiswaPage, pageSize);
+    const result = Object.assign({}, _getMasterMonitorStatic(), {
+        mahasiswa: mhs.rows,
+        mahasiswaTotal: mhs.total,
+        mahasiswaPage: mhs.page,
+        mahasiswaPages: mhs.pages,
+        mahasiswaPageSize: mhs.pageSize
+    });
+    _perfLog('getMasterDataMonitor', __t0, 'page=' + mhs.page + ' total=' + mhs.total + ' kegiatan=' + result.masterKegiatan.length + ' staff=' + result.bagianStaff.length);
+    return result;
+}
+
+function getMasterMahasiswaPage(opts) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
+    const options = (opts && typeof opts === 'object') ? opts : {};
+    const pageSize = Math.min(100, Math.max(5, parseInt(options.pageSize, 10) || 20));
+    const res = _pageMahasiswa(options.search, options.page, pageSize);
+    _perfLog('getMasterMahasiswaPage', __t0, 'page=' + res.page + '/' + res.pages + ' total=' + res.total);
+    return { mahasiswa: res.rows, mahasiswaTotal: res.total, mahasiswaPage: res.page, mahasiswaPages: res.pages, mahasiswaPageSize: res.pageSize };
 }
 
 function saveMahasiswa(payload) {

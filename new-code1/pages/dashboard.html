@@ -989,7 +989,7 @@
                             <button v-for="m in masterCards" :key="m.key" type="button"
                                 class="master-stat !w-auto"
                                 :class="{ active: master.tab === m.key }"
-                                @click="master.tab = m.key; master.search = ''; master.page = 1">
+                                @click="selectMasterCard(m.key)">
                                 <span class="master-stat-icon"><i :class="m.icon"></i></span>
                                 <span class="text-sm font-semibold text-slate-800">{{ m.short }}</span>
                             </button>
@@ -1006,7 +1006,7 @@
                                 <div v-if="!activeMasterCard.settings" class="flex flex-wrap items-center gap-2">
                                     <div class="master-search">
                                         <i class="bi bi-search"></i>
-                                        <input v-model="master.search" type="text" class="input" placeholder="Cari..." />
+                                        <input v-model="master.search" type="text" class="input" placeholder="Cari..." @input="onMasterSearch" />
                                     </div>
                                     <label v-if="activeMasterCard.key === 'mahasiswa'" class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap cursor-pointer">
                                         <i class="bi bi-upload"></i> Unggah CSV
@@ -1044,8 +1044,8 @@
                             <div v-if="!activeMasterCard.settings && masterPageInfo.n" class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
                                 <span>Menampilkan {{ masterPageInfo.start }}–{{ masterPageInfo.end }} dari {{ masterPageInfo.n }}</span>
                                 <div class="flex items-center gap-1">
-                                    <button class="btn-soft !px-2 !py-1" :disabled="masterPageInfo.page<=1" @click="master.page--">Prev</button>
-                                    <button class="btn-soft !px-2 !py-1" :disabled="masterPageInfo.page>=masterPageInfo.pages" @click="master.page++">Next</button>
+                                    <button class="btn-soft !px-2 !py-1" :disabled="master.mhsLoading || masterPageInfo.page<=1" @click="gotoMasterPage(masterPageInfo.page-1)">Prev</button>
+                                    <button class="btn-soft !px-2 !py-1" :disabled="master.mhsLoading || masterPageInfo.page>=masterPageInfo.pages" @click="gotoMasterPage(masterPageInfo.page+1)">Next</button>
                                 </div>
                             </div>
 
@@ -1487,6 +1487,9 @@
                         tab: 'mahasiswa',
                         search: '',
                         page: 1,
+                        mhsTotal: 0,
+                        mhsLoading: false,
+                        searchTimer: null,
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, original: null, originalId: 0 },
                         cards: [
                             { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'Mahasiswa', icon: 'bi-mortarboard' },
@@ -1737,18 +1740,21 @@
                 activeMasterRows() {
                     const card = this.activeMasterCard;
                     const rows = this.master.data[card.key] || [];
+                    if (card.key === 'mahasiswa') return rows;
                     const q = String(this.master.search || '').toLowerCase().trim();
                     if (!q) return rows;
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
                 },
                 masterPagedRows() {
                     const rows = this.activeMasterRows;
+                    if (this.activeMasterCard.key === 'mahasiswa') return rows;
                     const size = 20;
                     const page = this.masterPageInfo.page;
                     return rows.slice((page - 1) * size, page * size);
                 },
                 masterPageInfo() {
-                    const n = this.activeMasterRows.length;
+                    const isMhs = this.activeMasterCard.key === 'mahasiswa';
+                    const n = isMhs ? (this.master.mhsTotal || 0) : this.activeMasterRows.length;
                     const size = 20;
                     const pages = Math.max(1, Math.ceil(n / size));
                     const page = Math.min(this.master.page || 1, pages);
@@ -2247,8 +2253,15 @@
                     const silent = !!(opts && opts.silent);
                     if (!silent) this.sectionLoading.master = true;
                     try {
-                        const d = await this.run('getMasterDataMonitor') || {};
+                        const isMhs = this.master.tab === 'mahasiswa';
+                        const d = await this.run('getMasterDataMonitor', {
+                            mahasiswaPage: isMhs ? (this.master.page || 1) : 1,
+                            mahasiswaPageSize: 20,
+                            mahasiswaSearch: isMhs ? this.master.search : ''
+                        }) || {};
                         this.master.data = d;
+                        if (d.mahasiswaTotal != null) this.master.mhsTotal = d.mahasiswaTotal;
+                        if (d.mahasiswaPage) this.master.page = d.mahasiswaPage;
                         this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
                         this.loaded.master = true;
                         this.loadedAt.master = Date.now();
@@ -2257,6 +2270,43 @@
                     } finally {
                         if (!silent) this.sectionLoading.master = false;
                     }
+                },
+                async loadMahasiswaPage(page) {
+                    this.master.mhsLoading = true;
+                    try {
+                        const res = await this.run('getMasterMahasiswaPage', {
+                            page: page,
+                            pageSize: 20,
+                            search: this.master.search
+                        }) || {};
+                        this.master.data.mahasiswa = res.mahasiswa || [];
+                        this.master.mhsTotal = res.mahasiswaTotal || 0;
+                        this.master.page = res.mahasiswaPage || 1;
+                    } catch (e) {
+                        this.notify('Gagal memuat mahasiswa: ' + e, false);
+                    } finally {
+                        this.master.mhsLoading = false;
+                    }
+                },
+                selectMasterCard(key) {
+                    const changed = this.master.tab !== key || !!this.master.search;
+                    this.master.tab = key;
+                    this.master.search = '';
+                    this.master.page = 1;
+                    if (key === 'mahasiswa' && changed) this.loadMahasiswaPage(1);
+                },
+                onMasterSearch() {
+                    this.master.page = 1;
+                    clearTimeout(this.master.searchTimer);
+                    if (this.master.tab !== 'mahasiswa') return;
+                    this.master.searchTimer = setTimeout(() => this.loadMahasiswaPage(1), 350);
+                },
+                gotoMasterPage(p) {
+                    const info = this.masterPageInfo;
+                    const target = Math.min(Math.max(1, p), info.pages);
+                    if (target === info.page) return;
+                    if (this.master.tab === 'mahasiswa') { this.loadMahasiswaPage(target); return; }
+                    this.master.page = target;
                 },
 
                 // ---------- pengajuan ----------
@@ -2974,6 +3024,7 @@
                 // ---------- master ----------
                 masterCount(m) {
                     if (m.settings) return 'Pengaturan';
+                    if (m.key === 'mahasiswa') return (this.master.mhsTotal || 0) + ' entri';
                     return (this.master.data[m.key] || []).length + ' entri';
                 },
                 masterCellValue(r, c) {
@@ -3106,12 +3157,8 @@
                     let dup = '';
                     valid.forEach((r) => { if (seen[r.npm]) dup = r.npm; seen[r.npm] = true; });
                     if (dup) { this.notify('NPM duplikat di file: ' + dup, false); return; }
-                    const existing = new Set((this.master.data.mahasiswa || []).map((r) => String(r.NPM)));
-                    let insert = 0;
-                    let update = 0;
-                    valid.forEach((r) => { if (existing.has(r.npm)) update++; else insert++; });
                     const skipped = parsed.rows.length - valid.length;
-                    if (!confirm('Mengimpor ' + valid.length + ' baris.\n' + insert + ' mahasiswa baru\n' + update + ' mahasiswa diperbarui\n' + skipped + ' baris dilewati (NPM kosong)\n' + existing.size + ' mahasiswa terdaftar saat ini')) return;
+                    if (!confirm('Mengimpor ' + valid.length + ' baris CSV.\n' + skipped + ' baris dilewati (NPM kosong).\nNPM baru akan ditambahkan, NPM yang sudah ada akan diperbarui.')) return;
                     try {
                         const res = await this.run('importMahasiswaCsv', { rows: valid });
                         if (res && res.success === false) { this.notify((res && res.message) || 'Gagal impor.', false); return; }
