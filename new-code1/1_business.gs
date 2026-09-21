@@ -1331,12 +1331,10 @@ function getBagianBootstrap(kategori, subBagian, token) {
 
 function getDashboardStats() {
     requireAuthorized(arguments[arguments.length - 1]);
-    const __t0 = Date.now();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const ba = getAllRowsCached('BeritaAcara');
     const result = _computeDashboardStats(pengajuan, details, ba, _getBiayaMap(), _getBiayaOverrideMap());
-    _perfLog('getDashboardStats', __t0, 'pengajuan=' + pengajuan.length + ' detail=' + details.length + ' ba=' + ba.length);
     return result;
 }
 
@@ -1396,7 +1394,6 @@ function _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap) {
 
 function getPengajuanList(filters) {
     requireAuthorized(arguments[arguments.length - 1]);
-    const __t0 = Date.now();
     filters = filters || {};
     const fStatus = String(filters.status || '').trim();
     const fJenis = String(filters.jenis || '').trim();
@@ -1419,7 +1416,6 @@ function getPengajuanList(filters) {
     });
     const biayaMap = _getBiayaMap();
     const result = _buildPengajuanClientRows(rows, biayaMap, _getBiayaOverrideMap());
-    _perfLog('getPengajuanList', __t0, 'rows=' + result.length);
     return result;
 }
 
@@ -1437,7 +1433,6 @@ function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
 
 function getDashboardBootstrap() {
     requireAuthorized(arguments[arguments.length - 1]);
-    const __t0 = Date.now();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const ba = getAllRowsCached('BeritaAcara');
@@ -1468,7 +1463,6 @@ function getDashboardBootstrap() {
         masterBiaya: masterBiaya,
         dosen: getMasterOptions('Dosen')
     };
-    _perfLog('getDashboardBootstrap', __t0, 'pengajuan=' + pengajuan.length + ' detail=' + details.length);
     return __result;
 }
 
@@ -1665,7 +1659,6 @@ function getBagianAggregation() {
 }
 
 function _buildBagianAggregation() {
-    const __t0 = Date.now();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const labs = getMasterOptions('Lab');
@@ -1782,7 +1775,6 @@ function _buildBagianAggregation() {
         finalAcc: units.filter(function(u) { return u.linkFinal; }).length
     };
     summary.persenLengkap = summary.totalKegiatan ? Math.round((summary.denganBa / summary.totalKegiatan) * 100) : 0;
-    _perfLog('getBagianAggregation', __t0, 'units=' + units.length + ' ba=' + baList.length + ' orphan=' + orphanBa.length);
     return {
         categories: _getBagianOptions12(labs),
         labs: labs,
@@ -1795,10 +1787,8 @@ function _buildBagianAggregation() {
 
 function getBaTabData() {
     requireAuthorized(arguments[arguments.length - 1]);
-    const __t0 = Date.now();
     const bagian = _buildBagianAggregation();
     const adminBa = _buildBeritaAcaraAdminList();
-    _perfLog('getBaTabData', __t0, 'units=' + (bagian.units || []).length + ' adminBa=' + adminBa.length);
     return { bagian: bagian, adminBa: adminBa, labs: bagian.labs || [] };
 }
 
@@ -1808,7 +1798,6 @@ function getBeritaAcaraAdminList() {
 }
 
 function _buildBeritaAcaraAdminList() {
-    const __t0 = Date.now();
     const rows = getAllRowsCached('BeritaAcaraAdmin').slice();
     rows.sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
@@ -1819,7 +1808,6 @@ function _buildBeritaAcaraAdminList() {
         c.peserta = pesertaMap[String(r['BA ID'] || '').trim()] || [];
         return c;
     });
-    _perfLog('getBeritaAcaraAdminList', __t0, 'rows=' + result.length);
     return result;
 }
 
@@ -1960,7 +1948,6 @@ function _planMahasiswaCsvUpsert(rows, existingMap) {
 }
 
 function _withRowNumbers(sheetName) {
-    const __t0 = Date.now();
     let sheet;
     try { sheet = _getSheet(sheetName); } catch (e) { return []; }
     const values = sheet.getDataRange().getValues();
@@ -1977,7 +1964,6 @@ function _withRowNumbers(sheetName) {
         obj._row = i + 1;
         out.push(obj);
     }
-    _perfLog('readNumbered ' + sheetName, __t0, 'rows=' + out.length);
     return out;
 }
 
@@ -2018,13 +2004,10 @@ function _pageMahasiswa(search, page, pageSize) {
 }
 
 function _getMasterMonitorStatic() {
-    const __t0 = Date.now();
     const cached = _cacheGetChunked(_MASTER_PAYLOAD_CACHE_KEY);
     if (cached) {
         try {
-            const parsed = JSON.parse(cached);
-            _perfLog('masterStatic', __t0, 'payloadCacheHit');
-            return parsed;
+            return JSON.parse(cached);
         } catch (e) {}
     }
     const result = {
@@ -2037,34 +2020,28 @@ function _getMasterMonitorStatic() {
         bagianSettings: _getBagianBaSettings()
     };
     try { _cachePutChunked(_MASTER_PAYLOAD_CACHE_KEY, JSON.stringify(result), _MASTER_PAYLOAD_TTL); } catch (e) {}
-    _perfLog('masterStatic', __t0, 'payloadCacheMiss');
     return result;
 }
 
 function getMasterDataMonitor(opts) {
     requireAuthorized(arguments[arguments.length - 1]);
-    const __t0 = Date.now();
     const options = (opts && typeof opts === 'object') ? opts : {};
     const pageSize = Math.min(100, Math.max(5, parseInt(options.mahasiswaPageSize, 10) || 20));
     const mhs = _pageMahasiswa(options.mahasiswaSearch, options.mahasiswaPage, pageSize);
-    const result = Object.assign({}, _getMasterMonitorStatic(), {
+    return Object.assign({}, _getMasterMonitorStatic(), {
         mahasiswa: mhs.rows,
         mahasiswaTotal: mhs.total,
         mahasiswaPage: mhs.page,
         mahasiswaPages: mhs.pages,
         mahasiswaPageSize: mhs.pageSize
     });
-    _perfLog('getMasterDataMonitor', __t0, 'page=' + mhs.page + ' total=' + mhs.total + ' kegiatan=' + result.masterKegiatan.length + ' staff=' + result.bagianStaff.length);
-    return result;
 }
 
 function getMasterMahasiswaPage(opts) {
     requireAuthorized(arguments[arguments.length - 1]);
-    const __t0 = Date.now();
     const options = (opts && typeof opts === 'object') ? opts : {};
     const pageSize = Math.min(100, Math.max(5, parseInt(options.pageSize, 10) || 20));
     const res = _pageMahasiswa(options.search, options.page, pageSize);
-    _perfLog('getMasterMahasiswaPage', __t0, 'page=' + res.page + '/' + res.pages + ' total=' + res.total);
     return { mahasiswa: res.rows, mahasiswaTotal: res.total, mahasiswaPage: res.page, mahasiswaPages: res.pages, mahasiswaPageSize: res.pageSize };
 }
 
