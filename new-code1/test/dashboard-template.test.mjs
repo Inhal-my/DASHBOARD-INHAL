@@ -62,6 +62,11 @@ describe('dashboard template master', () => {
   it('paginasi master 20', () => {
     assert.match(html, /masterPagedRows/);
   });
+  it('overlay dialog konfirmasi di atas modal', () => {
+    assert.match(html, /z-\[130\] modal-overlay/);
+    assert.match(html, /\.z-\\\[130\\\] \{ z-index: 130; \}/);
+    assert.match(html, /\.z-\\\[150\\\] \{ z-index: 150; \}/);
+  });
   it('mahasiswa memakai paginasi + pencarian server', () => {
     assert.match(html, /getMasterMahasiswaPage/);
     assert.match(html, /async loadMahasiswaPage\(page\)/);
