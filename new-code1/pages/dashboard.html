@@ -1170,23 +1170,6 @@
                                 <a v-if="detail.p['Link Bukti Bayar']" :href="detail.p['Link Bukti Bayar']" target="_blank" class="btn-soft justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
                             </div>
 
-                            <!-- editable -->
-                            <div class="mt-5 rounded-2xl bg-slate-50/70 p-4">
-                                <button type="button" class="flex w-full items-center justify-between" @click="detail.showLengkap = !detail.showLengkap">
-                                    <span class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-pencil-square text-base text-brand-600"></i> Keterangan Dosen</span>
-                                    <i :class="detail.showLengkap ? 'bi-chevron-up' : 'bi-chevron-down'" class="text-slate-400"></i>
-                                </button>
-                                <div v-if="detail.showLengkap" class="mt-3 grid gap-3 sm:grid-cols-2">
-                                    <div><label class="label">Dosen</label><input v-model="detail.dForm.dosen" class="input" list="dosenList"></div>
-                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.dForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
-                                    <div><label class="label">Biaya</label><select v-model="detail.dForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in masterBiaya" :key="b.Kegiatan" :value="String(b.Biaya)">{{ b.Kegiatan }} - {{ formatRupiah(b.Biaya) }}</option></select></div>
-                                    <div class="mt-1 flex gap-2 sm:col-span-2">
-                                        <button class="btn-primary" @click="saveFields()"><i class="bi bi-save"></i>Simpan Perubahan</button>
-                                        <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- detail kegiatan + berita acara -->
                             <div v-if="(detail.p.details && detail.p.details.length) || (detail.baList && detail.baList.length)" class="mt-5 grid items-start gap-5 lg:grid-cols-2">
                                 <div v-if="detail.p.details && detail.p.details.length">
@@ -1255,6 +1238,7 @@
                                     <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
                                     <button class="btn-soft" @click="quickStatus('Diterima')"><i class="bi bi-hand-thumbs-up"></i>Terima</button>
                                     <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
+                                    <button class="btn-danger" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
                                 </div>
                             </div>
 
@@ -1275,9 +1259,6 @@
                                 </div>
                             </div>
                         </div>
-                        <datalist id="dosenList">
-                            <option v-for="d in dosenOptions" :value="d"></option>
-                        </datalist>
                     </div>
                 </transition>
             </div>
@@ -1465,8 +1446,7 @@
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
-                    masterBiaya: [],
-                    detail: { open: false, loading: false, showLengkap: false, p: null, baList: [], dForm: { dosen: '', tanggalPelaksanaan: '', biaya: '' }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [], page: 1 },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
                     expandedBa: {},
@@ -2121,7 +2101,6 @@
                         this.stats = b.stats || this.stats;
                         this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
                         this.detailMap = b.detailMap || {};
-                        this.masterBiaya = b.masterBiaya || [];
                         this.dosenOptions = b.dosen || this.dosenOptions;
                         this.loaded.pengajuan = true;
                         this.loaded.stats = true;
@@ -2194,9 +2173,6 @@
                         const d = await this.run('getMasterDataMonitor') || {};
                         this.master.data = d;
                         this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
-                        const mb = (d.masterBiaya || []).map(r => ({ Kegiatan: String((r && (r.Kegiatan || r.kegiatan)) || '').trim(), Biaya: parseInt(String((r && (r.Biaya || r.biaya)) || '').replace(/[^0-9]/g, ''), 10) || 0 })).filter(o => o.Kegiatan && o.Biaya > 0);
-                        mb.sort((a, b) => a.Biaya - b.Biaya);
-                        this.masterBiaya = mb;
                         this.loaded.master = true;
                     } catch (e) {
                         this.notify('Gagal memuat master data: ' + e, false);
@@ -2323,11 +2299,6 @@
                             if (this.detail.p) this.detail.baList = this.matchBaForPengajuan(this.detail.p);
                         }).catch(() => {});
                     }
-                    this.detail.dForm = {
-                        dosen: p.Dosen || '',
-                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan']),
-                        biaya: p.BiayaOverride ? String(p.BiayaOverride) : ''
-                    };
                     this.detail.iForm = {
                         email: p.Email || '',
                         noHp: p['No. HP/WA'] || '',
@@ -2341,7 +2312,6 @@
                     this.detail.status = 'Diterima';
                     this.detail.catatan = p['Catatan Admin'] || '';
                     this.detail.open = true;
-                    this.detail.showLengkap = false;
                     this.detail.loading = false;
                 },
                 startEditInduk() {
@@ -2444,7 +2414,7 @@
                 },
                 async reloadDetail(id, keepOpen) {
                     this.detail.loading = true;
-                    if (keepOpen) { this.detail.open = true; this.detail.showLengkap = false; }
+                    if (keepOpen) { this.detail.open = true; }
                     try {
                         const p = await this.run('getPengajuanWithDetails', id);
                         if (!p) { this.notify('Pengajuan tidak ditemukan.', false); return; }
@@ -2479,27 +2449,6 @@
                         if (!candidates.length && nama === jenis) return true;
                         return false;
                     });
-                },
-                async saveFields() {
-                    const d = this.detail.dForm;
-                    this.loading = true;
-                    try {
-                        const res = await this.run('updatePengajuanFields', this.detail.p['ID Pengajuan'], {
-                            dosen: (d.dosen || '').trim(),
-                            tanggalPelaksanaan: d.tanggalPelaksanaan || '',
-                            biaya: (d.biaya || '').trim()
-                        });
-                        if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
-                        this.notify((res && res.message) || 'Disimpan.');
-                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
-                        await this.loadStats();
-                        this.detail.open = false;
-                        this.switchTab('pengajuan');
-                    } catch (e) {
-                        this.notify('Gagal: ' + e, false);
-                    } finally {
-                        this.loading = false;
-                    }
                 },
                 async updateStatus() {
                     const status = this.detail.status;
@@ -2577,15 +2526,22 @@
                     }
                 },
                 async deletePengajuan() {
-                    if (!confirm('HAPUS pengajuan ' + this.detail.p['ID Pengajuan'] + ' beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.')) return;
-                    const alasan = prompt('Alasan penghapusan (opsional):');
-                    if (alasan === null) return;
+                    const id = this.detail.p['ID Pengajuan'];
+                    const ok = await this.askConfirm({
+                        title: 'Hapus Pengajuan',
+                        message: 'Hapus pengajuan ' + id + ' beserta detail, riwayat, dan data terkait? Tindakan ini tidak dapat dibatalkan.',
+                        icon: 'bi-trash',
+                        tone: 'danger',
+                        confirmLabel: 'Hapus'
+                    });
+                    if (!ok) return;
                     this.loading = true;
                     try {
-                        const res = await this.run('deletePengajuanAdmin', this.detail.p['ID Pengajuan'], alasan);
+                        const res = await this.run('deletePengajuanAdmin', id, '');
                         this.notify((res && res.message) || 'Selesai.');
                         if (res && res.success) {
                             this.detail.open = false;
+                            this.loaded.bagian = false;
                             await Promise.all([this.loadStats(), this.loadPengajuan()]);
                         }
                     } catch (e) {

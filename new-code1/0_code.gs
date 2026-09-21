@@ -137,7 +137,9 @@ const SCHEMAS = {
         'File Name',
         'File URL',
         'Catatan',
-        'Sumber'
+        'Sumber',
+        'Jam',
+        'Dosen'
     ],
     BeritaAcaraPeserta: [
         'Timestamp',
@@ -159,7 +161,9 @@ const SCHEMAS = {
         'File Name',
         'File URL',
         'Catatan',
-        'Sumber'
+        'Sumber',
+        'Jam',
+        'Dosen'
     ],
     BeritaAcaraAdminPeserta: [
         'Timestamp',
