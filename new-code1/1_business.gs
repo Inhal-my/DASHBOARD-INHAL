@@ -1331,13 +1331,13 @@ function getBagianBootstrap(kategori, subBagian, token) {
 
 function getDashboardStats() {
     requireAuthorized(arguments[arguments.length - 1]);
-    return _computeDashboardStats(
-        getAllRowsCached('Pengajuan'),
-        getAllRowsCached('DetailKegiatan'),
-        getAllRowsCached('BeritaAcara'),
-        _getBiayaMap(),
-        _getBiayaOverrideMap()
-    );
+    const __t0 = Date.now();
+    const pengajuan = getAllRowsCached('Pengajuan');
+    const details = getAllRowsCached('DetailKegiatan');
+    const ba = getAllRowsCached('BeritaAcara');
+    const result = _computeDashboardStats(pengajuan, details, ba, _getBiayaMap(), _getBiayaOverrideMap());
+    _perfLog('getDashboardStats', __t0, 'pengajuan=' + pengajuan.length + ' detail=' + details.length + ' ba=' + ba.length);
+    return result;
 }
 
 function _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap) {
@@ -1396,6 +1396,7 @@ function _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap) {
 
 function getPengajuanList(filters) {
     requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
     filters = filters || {};
     const fStatus = String(filters.status || '').trim();
     const fJenis = String(filters.jenis || '').trim();
@@ -1417,7 +1418,9 @@ function getPengajuanList(filters) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
     const biayaMap = _getBiayaMap();
-    return _buildPengajuanClientRows(rows, biayaMap, _getBiayaOverrideMap());
+    const result = _buildPengajuanClientRows(rows, biayaMap, _getBiayaOverrideMap());
+    _perfLog('getPengajuanList', __t0, 'rows=' + result.length);
+    return result;
 }
 
 function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
@@ -1434,6 +1437,7 @@ function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
 
 function getDashboardBootstrap() {
     requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const ba = getAllRowsCached('BeritaAcara');
@@ -1457,13 +1461,15 @@ function getDashboardBootstrap() {
     });
     masterBiaya.sort(function(a, b) { return a.Biaya - b.Biaya; });
 
-    return {
+    const __result = {
         stats: _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap),
         pengajuan: _buildPengajuanClientRows(sortedPengajuan, biayaMap, overrideMap),
         detailMap: detailMap,
         masterBiaya: masterBiaya,
         dosen: getMasterOptions('Dosen')
     };
+    _perfLog('getDashboardBootstrap', __t0, 'pengajuan=' + pengajuan.length + ' detail=' + details.length);
+    return __result;
 }
 
 function getLaporanBootstrap() {
@@ -1655,6 +1661,7 @@ function _attachBaToUnits(units, baList, resolveBagian12) {
 
 function getBagianAggregation() {
     requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const labs = getMasterOptions('Lab');
@@ -1771,6 +1778,7 @@ function getBagianAggregation() {
         finalAcc: units.filter(function(u) { return u.linkFinal; }).length
     };
     summary.persenLengkap = summary.totalKegiatan ? Math.round((summary.denganBa / summary.totalKegiatan) * 100) : 0;
+    _perfLog('getBagianAggregation', __t0, 'units=' + units.length + ' ba=' + baList.length + ' orphan=' + orphanBa.length);
     return {
         categories: _getBagianOptions12(labs),
         labs: labs,
@@ -1783,16 +1791,19 @@ function getBagianAggregation() {
 
 function getBeritaAcaraAdminList() {
     requireAuthorized(arguments[arguments.length - 1]);
+    const __t0 = Date.now();
     const rows = getAllRowsCached('BeritaAcaraAdmin').slice();
     rows.sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
     const pesertaMap = _getBaPesertaMapAdmin();
-    return rows.map(function(r) {
+    const result = rows.map(function(r) {
         const c = _clientRow(r);
         c.peserta = pesertaMap[String(r['BA ID'] || '').trim()] || [];
         return c;
     });
+    _perfLog('getBeritaAcaraAdminList', __t0, 'rows=' + result.length);
+    return result;
 }
 
 function deleteBeritaAcaraAdmin(baId) {
@@ -1932,6 +1943,7 @@ function _planMahasiswaCsvUpsert(rows, existingMap) {
 }
 
 function _withRowNumbers(sheetName) {
+    const __t0 = Date.now();
     const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
     if (!sheet) return [];
     const headers = getHeadersFromSheet(sheet);
@@ -1947,6 +1959,7 @@ function _withRowNumbers(sheetName) {
         obj._row = i + 2;
         out.push(obj);
     });
+    _perfLog('readNumbered ' + sheetName, __t0, 'rows=' + out.length);
     return out;
 }
 
@@ -1962,7 +1975,8 @@ function _lockMutate(fn) {
 
 function getMasterDataMonitor() {
     requireAuthorized(arguments[arguments.length - 1]);
-    return {
+    const __t0 = Date.now();
+    const result = {
         mahasiswa: getAllRows('Mahasiswa'),
         masterKegiatan: _withRowNumbers('MasterKegiatan'),
         masterBagian: _withRowNumbers('MasterBagian'),
@@ -1972,6 +1986,8 @@ function getMasterDataMonitor() {
         admin: _withRowNumbers('Admin'),
         bagianSettings: _getBagianBaSettings()
     };
+    _perfLog('getMasterDataMonitor', __t0, 'mahasiswa=' + result.mahasiswa.length + ' kegiatan=' + result.masterKegiatan.length + ' bagian=' + result.masterBagian.length + ' biaya=' + result.masterBiaya.length + ' staff=' + result.bagianStaff.length);
+    return result;
 }
 
 function saveMahasiswa(payload) {

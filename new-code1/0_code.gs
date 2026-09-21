@@ -232,6 +232,26 @@ function _clientRow(obj) {
     return out;
 }
 
+// ===== TEMP PERF (hapus setelah optimasi selesai) =====
+function _perfLog(label, t0, extra) {
+    try {
+        console.log('[PERF] ' + label + ' ' + (Date.now() - t0) + 'ms' + (extra ? ' ' + extra : ''));
+    } catch (e) {}
+}
+
+function getDataCounts() {
+    const ss = getGlobalSpreadsheet();
+    const names = ['Pengajuan', 'DetailKegiatan', 'BeritaAcara', 'BeritaAcaraPeserta', 'BeritaAcaraAdmin', 'BeritaAcaraAdminPeserta', 'Mahasiswa', 'MasterKegiatan', 'StatusHistory', 'LogUpload', 'CheckData', 'MasterBiaya', 'BagianStaff', 'Admin', 'Config'];
+    const out = {};
+    names.forEach(function(n) {
+        const sh = ss.getSheetByName(n);
+        out[n] = sh ? Math.max(0, sh.getLastRow() - 1) : -1;
+    });
+    try { console.log('[PERF] getDataCounts ' + JSON.stringify(out)); } catch (e) {}
+    return out;
+}
+// ===== END TEMP PERF =====
+
 function generateId(prefix) {
     return (prefix ? prefix + '-' : '') + Utilities.getUuid();
 }
@@ -318,17 +338,20 @@ function invalidateSheetCache(sheetName) {
 }
 
 function getAllRowsCached(sheetName, ttlSeconds) {
-    if (_rowsCache[sheetName]) return _rowsCache[sheetName];
+    const __t0 = Date.now();
+    if (_rowsCache[sheetName]) { _perfLog('memCache ' + sheetName, __t0, 'rows=' + _rowsCache[sheetName].length); return _rowsCache[sheetName]; }
     const ttl = ttlSeconds || _DEFAULT_CACHE_TTL;
     try {
         const cached = CacheService.getScriptCache().get(_sheetCacheKey(sheetName));
         if (cached) {
             const rows = JSON.parse(cached);
             _rowsCache[sheetName] = rows;
+            _perfLog('cacheHit ' + sheetName, __t0, 'rows=' + rows.length);
             return rows;
         }
     } catch (e) {}
     const rows = getAllRows(sheetName);
+    _perfLog('cacheMiss ' + sheetName, __t0, 'rows=' + rows.length);
     _rowsCache[sheetName] = rows;
     try {
         const payload = JSON.stringify(rows);
@@ -522,6 +545,7 @@ function getRowByKey(sheetName, keyColumn, keyValue) {
 }
 
 function getAllRows(sheetName) {
+    const __t0 = Date.now();
     const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
     if (!sheet) throw new Error('Sheet ' + sheetName + ' tidak ditemukan.');
     const headers = getHeadersFromSheet(sheet);
@@ -536,6 +560,7 @@ function getAllRows(sheetName) {
             rows.push(rowToObject(headers, row));
         }
     });
+    _perfLog('read ' + sheetName, __t0, 'rows=' + rows.length);
     return rows;
 }
 
