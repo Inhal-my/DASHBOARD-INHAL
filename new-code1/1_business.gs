@@ -1823,17 +1823,353 @@ function deleteBeritaAcaraAdmin(baId) {
     return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
 
+function _rowFingerprint(row, cols) {
+    return (cols || []).map(function(c) {
+        return String(row && row[c] != null ? row[c] : '').replace(/\u00a0/g, ' ').trim();
+    }).join('\u001f');
+}
+
+function _rowsMatchFingerprint(sheetRow, original, cols) {
+    return _rowFingerprint(sheetRow, cols) === _rowFingerprint(original, cols);
+}
+
+function _planMahasiswaCsvUpsert(rows, existingMap) {
+    const list = Array.isArray(rows) ? rows : [];
+    if (list.length > 500) return { error: 'Maksimal 500 baris.' };
+    const parsed = [];
+    const seen = {};
+    let skipped = 0;
+    for (let i = 0; i < list.length; i++) {
+        const npm = String((list[i] && list[i].npm) || '').trim();
+        if (!npm) { skipped++; continue; }
+        if (seen[npm]) return { error: 'NPM duplikat di file: ' + npm };
+        seen[npm] = 1;
+        parsed.push({ npm: npm, nama: String((list[i] && (list[i].namaLengkap != null ? list[i].namaLengkap : list[i].nama)) || '').trim() });
+    }
+    if (!parsed.length) return { error: 'Tidak ada baris valid pada CSV.' };
+    const existing = existingMap || {};
+    let inserted = 0;
+    let updated = 0;
+    parsed.forEach(function(row) { if (existing[row.npm]) updated++; else inserted++; });
+    return { insert: inserted, update: updated, skipped: skipped, parsed: parsed };
+}
+
+function _withRowNumbers(sheetName) {
+    const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) return [];
+    const headers = getHeadersFromSheet(sheet);
+    if (sheet.getLastRow() < 2) return [];
+    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues();
+    const out = [];
+    values.forEach(function(row, i) {
+        const hasValue = row.some(function(cell) {
+            return cell !== null && cell !== undefined && String(cell).trim() !== '';
+        });
+        if (!hasValue) return;
+        const obj = rowToObject(headers, row);
+        obj._row = i + 2;
+        out.push(obj);
+    });
+    return out;
+}
+
+function _lockMutate(fn) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        return fn();
+    } finally {
+        lock.releaseLock();
+    }
+}
+
 function getMasterDataMonitor() {
     requireAuthorized(arguments[arguments.length - 1]);
     return {
-        masterKegiatan: getAllRows('MasterKegiatan'),
-        masterBagian: getAllRows('MasterBagian'),
-        masterBiaya: getAllRows('MasterBiaya'),
+        mahasiswa: getAllRows('Mahasiswa'),
+        masterKegiatan: _withRowNumbers('MasterKegiatan'),
+        masterBagian: _withRowNumbers('MasterBagian'),
+        masterBiaya: _withRowNumbers('MasterBiaya'),
         config: getAllRows('Config'),
         bagianStaff: getAllRows('BagianStaff'),
-        admin: getAllRows('Admin'),
+        admin: _withRowNumbers('Admin'),
         bagianSettings: _getBagianBaSettings()
     };
+}
+
+function saveMahasiswa(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const row = (payload && payload.row) || {};
+        const npm = String(row.npm != null ? row.npm : row.NPM || '').trim();
+        if (!npm) return { success: false, message: 'NPM wajib diisi.' };
+        const mode = String(row.mode || '') === 'update' ? 'update' : 'insert';
+        const nama = String(row.namaLengkap != null ? row.namaLengkap : row['Nama Lengkap'] || '').trim();
+        const email = String(row.email != null ? row.email : row.Email || '').trim();
+        const blok = String(row.blok != null ? row.blok : row.Blok || '').trim();
+        const keterangan = String(row.keterangan != null ? row.keterangan : row.Keterangan || '').trim();
+        const existing = getRowByKey('Mahasiswa', 'NPM', npm);
+        if (mode === 'insert') {
+            if (existing) return { success: false, message: 'NPM ' + npm + ' sudah ada.' };
+            appendRowSafe('Mahasiswa', { NPM: npm, 'Nama Lengkap': nama, Email: email, Blok: blok, Keterangan: keterangan });
+            return { success: true, message: 'Mahasiswa ditambahkan.' };
+        }
+        if (!existing) return { success: false, message: 'NPM ' + npm + ' tidak ditemukan.' };
+        const sheet = getGlobalSpreadsheet().getSheetByName('Mahasiswa');
+        const headers = getHeadersFromSheet(sheet);
+        const npmIdx = headers.indexOf('NPM');
+        const rowIndex = findRowByColumnValue(sheet, npmIdx + 1, npm);
+        const obj = { NPM: npm, 'Nama Lengkap': nama, Email: email, Blok: blok, Keterangan: keterangan };
+        sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, Object.assign({}, existing, obj))]);
+        invalidateSheetCache('Mahasiswa');
+        return { success: true, message: 'Mahasiswa diperbarui.' };
+    });
+}
+
+function deleteMahasiswa(npm) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const key = String(npm || '').trim();
+        if (!key) return { success: false, message: 'NPM wajib diisi.' };
+        const existing = getRowByKey('Mahasiswa', 'NPM', key);
+        if (!existing) return { success: false, message: 'NPM ' + key + ' tidak ditemukan.' };
+        return deleteRowByKey('Mahasiswa', 'NPM', key, 'Hapus mahasiswa dari dashboard', getActorName());
+    });
+}
+
+function importMahasiswaCsv(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const list = (payload && payload.rows) || [];
+        const existingRows = getAllRows('Mahasiswa');
+        const existing = {};
+        existingRows.forEach(function(r) { existing[String(r.NPM || '').trim()] = 1; });
+        const plan = _planMahasiswaCsvUpsert(list, existing);
+        if (plan.error) return { success: false, message: plan.error };
+        let inserted = 0;
+        let updated = 0;
+        plan.parsed.forEach(function(row) {
+            if (existing[row.npm]) {
+                upsertRowByKey('Mahasiswa', 'NPM', row.npm, { 'Nama Lengkap': row.nama });
+                updated++;
+            } else {
+                appendRowSafe('Mahasiswa', { NPM: row.npm, 'Nama Lengkap': row.nama, Email: '', Blok: '', Keterangan: '' });
+                inserted++;
+            }
+        });
+        return {
+            success: true,
+            inserted: inserted,
+            updated: updated,
+            skipped: plan.skipped,
+            message: 'Impor selesai: ' + inserted + ' baru, ' + updated + ' diperbarui.'
+        };
+    });
+}
+
+var MASTER_ROW_SPECS = {
+    MasterKegiatan: { cols: ['Kategori', 'Nilai'], key: '_row' },
+    MasterBagian: { cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], key: '_row' },
+    MasterBiaya: { cols: ['Kegiatan', 'Biaya'], key: '_row' },
+    Config: { cols: ['Key', 'Value'], key: 'Key' },
+    BagianStaff: { cols: ['Email', 'Kategori', 'Nama', 'Pass'], key: 'Email', passwordCol: 'Pass', uniqueCol: 'Email' },
+    Admin: { cols: ['Password', 'Nama'], key: '_row', passwordCol: 'Password' }
+};
+
+function _masterCell(row, col) {
+    if (!row) return '';
+    if (row[col] !== undefined && row[col] !== null) {
+        return String(row[col]).replace(/\u00a0/g, ' ').trim();
+    }
+    var camel = String(col).replace(/[^A-Za-z0-9]+(.)/g, function(_, c) { return c.toUpperCase(); });
+    camel = camel.charAt(0).toLowerCase() + camel.slice(1);
+    if (row[camel] !== undefined && row[camel] !== null) {
+        return String(row[camel]).replace(/\u00a0/g, ' ').trim();
+    }
+    var lower = String(col).toLowerCase();
+    var keys = Object.keys(row);
+    for (var i = 0; i < keys.length; i++) {
+        if (String(keys[i]).replace(/_/g, ' ').toLowerCase() === lower && row[keys[i]] !== undefined && row[keys[i]] !== null) {
+            return String(row[keys[i]]).replace(/\u00a0/g, ' ').trim();
+        }
+    }
+    return '';
+}
+
+function _mapMasterCols(row, cols) {
+    const mapped = {};
+    let filled = false;
+    (cols || []).forEach(function(col) {
+        mapped[col] = _masterCell(row, col);
+        if (mapped[col] !== '') filled = true;
+    });
+    return { mapped: mapped, filled: filled };
+}
+
+function _findSheetRowIndexCI(sheet, colName, value) {
+    const headers = getHeadersFromSheet(sheet);
+    const idx = headers.indexOf(colName);
+    if (idx === -1) return -1;
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return -1;
+    const values = sheet.getRange(2, idx + 1, lastRow - 1, 1).getValues();
+    const target = String(value == null ? '' : value).trim().toLowerCase();
+    if (!target) return -1;
+    for (let i = 0; i < values.length; i++) {
+        if (String(values[i][0] == null ? '' : values[i][0]).trim().toLowerCase() === target) {
+            return i + 2;
+        }
+    }
+    return -1;
+}
+
+function _readSheetRowAt(sheet, rowIndex) {
+    if (!sheet || rowIndex < 2 || rowIndex > sheet.getLastRow()) return null;
+    const headers = getHeadersFromSheet(sheet);
+    const values = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+    return rowToObject(headers, values);
+}
+
+function _writeSheetRowAt(sheetName, sheet, rowIndex, obj) {
+    const headers = getHeadersFromSheet(sheet);
+    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, obj)]);
+    invalidateSheetCache(sheetName);
+}
+
+function _afterMasterKegiatanWrite(table) {
+    if (table === 'MasterKegiatan') {
+        applyDropdownValidation(getGlobalSpreadsheet(), 'MasterKegiatan', 'Kategori', KATEGORI_MASTER);
+    }
+}
+
+function _staleMasterRow() {
+    return { success: false, message: 'Baris sudah berubah. Muat ulang Master Data.' };
+}
+
+function _saveConfigMasterRow(row, mapped) {
+    const key = mapped.Key;
+    if (!key) return { success: false, message: 'Key wajib diisi.' };
+    const mode = String(row.mode || '') === 'update' ? 'update' : 'insert';
+    const existingRows = getAllRows('Config');
+    let storedKey = '';
+    existingRows.forEach(function(r) {
+        if (String(r.Key || '').trim().toLowerCase() === key.toLowerCase()) storedKey = String(r.Key || '').trim();
+    });
+    if (mode === 'update') {
+        if (!storedKey) return { success: false, message: 'Config tidak ditemukan.' };
+        const sheet = getGlobalSpreadsheet().getSheetByName('Config');
+        if (!sheet) return { success: false, message: 'Config tidak ditemukan.' };
+        const rowIndex = findRowByColumnValue(sheet, getHeadersFromSheet(sheet).indexOf('Key') + 1, storedKey);
+        if (rowIndex < 2) return { success: false, message: 'Config tidak ditemukan.' };
+        const existing = _readSheetRowAt(sheet, rowIndex) || {};
+        _writeSheetRowAt('Config', sheet, rowIndex, Object.assign({}, existing, { Key: storedKey, Value: mapped.Value }));
+        return { success: true, message: 'Config diperbarui.' };
+    }
+    if (storedKey) return { success: false, message: 'Key ' + key + ' sudah ada.' };
+    appendRowSafe('Config', { Key: key, Value: mapped.Value });
+    return { success: true, message: 'Config ditambahkan.' };
+}
+
+function _saveStaffMasterRow(row, mapped, spec) {
+    const email = mapped.Email;
+    const mode = String(row.mode || '') === 'update' ? 'update' : 'insert';
+    const existingRows = getAllRows('BagianStaff');
+    const origEmail = _masterCell(row.original || {}, 'Email') || (mode === 'update' ? email : '');
+    const origLower = String(origEmail || '').trim().toLowerCase();
+    const emailLower = String(email || '').trim().toLowerCase();
+    if (emailLower) {
+        let dup = false;
+        existingRows.forEach(function(r) {
+            const e = String(r.Email || '').trim().toLowerCase();
+            if (e && e === emailLower && e !== origLower) dup = true;
+        });
+        if (dup) return { success: false, message: 'Nilai ' + email + ' sudah ada.' };
+    }
+    if (mode === 'insert') {
+        appendRowSafe('BagianStaff', mapped);
+        return { success: true, message: 'Baris ditambahkan.' };
+    }
+    const lookup = origEmail || email;
+    if (!lookup) return { success: false, message: 'Baris tidak ditemukan.' };
+    const sheet = getGlobalSpreadsheet().getSheetByName('BagianStaff');
+    if (!sheet) return { success: false, message: 'Baris tidak ditemukan.' };
+    const rowIndex = _findSheetRowIndexCI(sheet, 'Email', lookup);
+    if (rowIndex < 2) return { success: false, message: 'Baris tidak ditemukan.' };
+    const existing = _readSheetRowAt(sheet, rowIndex) || {};
+    if (spec.passwordCol && mapped[spec.passwordCol] === '') {
+        mapped[spec.passwordCol] = existing[spec.passwordCol];
+    }
+    _writeSheetRowAt('BagianStaff', sheet, rowIndex, Object.assign({}, existing, mapped));
+    return { success: true, message: 'Baris diperbarui.' };
+}
+
+function _saveBySheetRow(table, spec, row, mapped) {
+    const rowNum = Number(row._row);
+    if (row._row == null || String(row._row).trim() === '') {
+        appendRowSafe(table, mapped);
+        _afterMasterKegiatanWrite(table);
+        return { success: true, message: 'Baris ditambahkan.' };
+    }
+    if (!rowNum || rowNum < 2) return _staleMasterRow();
+    const sheet = getGlobalSpreadsheet().getSheetByName(table);
+    if (!sheet) return { success: false, message: 'Baris tidak ditemukan.' };
+    const sheetObj = _readSheetRowAt(sheet, rowNum);
+    if (!sheetObj) return _staleMasterRow();
+    if (!_rowsMatchFingerprint(sheetObj, row.original || row, spec.cols)) return _staleMasterRow();
+    if (spec.passwordCol && mapped[spec.passwordCol] === '') {
+        mapped[spec.passwordCol] = sheetObj[spec.passwordCol];
+    }
+    _writeSheetRowAt(table, sheet, rowNum, Object.assign({}, sheetObj, mapped));
+    _afterMasterKegiatanWrite(table);
+    return { success: true, message: 'Baris diperbarui.' };
+}
+
+function saveMasterRow(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const table = String((payload && payload.table) || '').trim();
+        const spec = MASTER_ROW_SPECS[table];
+        if (!spec) return { success: false, message: 'Tabel tidak dikenal.' };
+        const row = (payload && payload.row) || {};
+        const packed = _mapMasterCols(row, spec.cols);
+        if (!packed.filled) return { success: false, message: 'Baris kosong.' };
+        if (table === 'Config') return _saveConfigMasterRow(row, packed.mapped);
+        if (spec.key === 'Email') return _saveStaffMasterRow(row, packed.mapped, spec);
+        return _saveBySheetRow(table, spec, row, packed.mapped);
+    });
+}
+
+function deleteMasterRow(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const table = String((payload && payload.table) || '').trim();
+        if (table === 'Config') return { success: false, message: 'Config tidak boleh dihapus.' };
+        const spec = MASTER_ROW_SPECS[table];
+        if (!spec) return { success: false, message: 'Tabel tidak dikenal.' };
+        const row = (payload && payload.row) || payload || {};
+        if (spec.key === 'Email') {
+            const email = _masterCell(row, 'Email') || _masterCell(row.original || {}, 'Email');
+            if (!email) return { success: false, message: 'Baris tidak ditemukan.' };
+            const sheet = getGlobalSpreadsheet().getSheetByName(table);
+            if (!sheet) return { success: false, message: 'Baris tidak ditemukan.' };
+            const rowIndex = _findSheetRowIndexCI(sheet, 'Email', email);
+            if (rowIndex < 2) return { success: false, message: 'Baris tidak ditemukan.' };
+            const existing = _readSheetRowAt(sheet, rowIndex);
+            const storedEmail = existing && existing.Email != null ? String(existing.Email).trim() : email;
+            return deleteRowByKey(table, 'Email', storedEmail, 'Hapus baris master dari dashboard', getActorName());
+        }
+        const rowNum = Number(row._row);
+        if (!rowNum || rowNum < 2) return _staleMasterRow();
+        const sheet = getGlobalSpreadsheet().getSheetByName(table);
+        if (!sheet) return { success: false, message: 'Baris tidak ditemukan.' };
+        const sheetObj = _readSheetRowAt(sheet, rowNum);
+        if (!sheetObj) return _staleMasterRow();
+        if (!_rowsMatchFingerprint(sheetObj, row.original || row, spec.cols)) return _staleMasterRow();
+        sheet.deleteRow(rowNum);
+        invalidateSheetCache(table);
+        _afterMasterKegiatanWrite(table);
+        return { success: true, message: 'Baris dihapus.' };
+    });
 }
 
 function saveMasterBagian(payload) {
