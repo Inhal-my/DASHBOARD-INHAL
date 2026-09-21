@@ -1421,6 +1421,9 @@
             return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
         }
 
+        const TAB_KEYS = ['pengajuan', 'stats', 'ba', 'master'];
+        const TAB_TTL_MS = 60000;
+
         const { createApp } = Vue;
 
         createApp({
@@ -1429,6 +1432,7 @@
                     loading: false,
                     sectionLoading: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
                     loaded: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
+                    loadedAt: { pengajuan: 0, stats: 0, bagian: 0, ba: 0, master: 0 },
                     tab: 'pengajuan',
                     sidebarOpen: false,
                     appUrl: APP_URL,
@@ -1932,7 +1936,8 @@
                             saveSession(s);
                             this.session = s;
                             this.loginPwd = '';
-                            this.bootstrap();
+                            await this.bootstrap();
+                            if (this.tab !== 'pengajuan') this.refreshTab(this.tab);
                         } else {
                             this.loginError = (res && res.message) || 'Password admin salah.';
                         }
@@ -1956,6 +1961,9 @@
                     this.bab.rows = [];
                     this.bab.baList = [];
                     this.loaded = { pengajuan: false, stats: false, bagian: false, ba: false, master: false };
+                    this.loadedAt = { pengajuan: 0, stats: 0, bagian: 0, ba: 0, master: 0 };
+                    this.tab = 'pengajuan';
+                    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
                 },
                 notify(msg, ok = true) {
                     this.toast = { show: true, msg, icon: ok ? 'bi-check-circle text-emerald-400' : 'bi-exclamation-triangle text-amber-400' };
@@ -2080,16 +2088,35 @@
                     return keys.map(k => ({ label: k, value: o[k], pct: max ? Math.round(o[k] / max * 100) : 0 }));
                 },
                 switchTab(tab) {
+                    if (TAB_KEYS.indexOf(tab) === -1) tab = 'pengajuan';
                     this.tab = tab;
                     this.sidebarOpen = false;
-                    if (tab === 'pengajuan' && !this.loaded.pengajuan) this.loadPengajuan();
-                    if (tab === 'stats' && !this.loaded.stats) this.loadStats();
+                    this.syncHash(tab);
+                    this.refreshTab(tab);
+                },
+                hashTab() {
+                    const h = String(location.hash || '').replace(/^#/, '').toLowerCase();
+                    return TAB_KEYS.indexOf(h) !== -1 ? h : 'pengajuan';
+                },
+                syncHash(tab) {
+                    const h = '#' + tab;
+                    if (location.hash !== h) {
+                        try { history.replaceState(null, '', h); } catch (e) { location.hash = h; }
+                    }
+                },
+                isTabStale(key) {
+                    if (!this.loaded[key]) return true;
+                    return (Date.now() - (this.loadedAt[key] || 0)) > TAB_TTL_MS;
+                },
+                refreshTab(tab) {
+                    if (tab === 'pengajuan' && this.isTabStale('pengajuan')) this.loadPengajuan({ silent: this.loaded.pengajuan });
+                    if (tab === 'stats' && this.isTabStale('stats')) this.loadStats({ silent: this.loaded.stats });
                     if (tab === 'ba') {
-                        if (!this.loaded.bagian) this.loadBagian();
-                        if (!this.loaded.ba) this.loadBa();
+                        if (this.isTabStale('bagian')) this.loadBagian({ silent: this.loaded.bagian });
+                        if (this.isTabStale('ba')) this.loadBa({ silent: this.loaded.ba });
                         if (this.bab.active) this.babLoad();
                     }
-                    if (tab === 'master' && !this.loaded.master) this.loadMaster();
+                    if (tab === 'master' && this.isTabStale('master')) this.loadMaster({ silent: this.loaded.master });
                 },
 
                 // ---------- loaders ----------
@@ -2104,6 +2131,8 @@
                         this.dosenOptions = b.dosen || this.dosenOptions;
                         this.loaded.pengajuan = true;
                         this.loaded.stats = true;
+                        this.loadedAt.pengajuan = Date.now();
+                        this.loadedAt.stats = Date.now();
                     } catch (e) {
                         this.notify('Gagal memuat dashboard: ' + e, false);
                     } finally {
@@ -2111,32 +2140,39 @@
                         this.sectionLoading.stats = false;
                     }
                 },
-                async loadStats() {
-                    this.sectionLoading.stats = true;
+                async loadStats(opts) {
+                    const silent = !!(opts && opts.silent);
+                    if (!silent) this.sectionLoading.stats = true;
                     try {
                         this.stats = await this.run('getDashboardStats');
                         this.loaded.stats = true;
+                        this.loadedAt.stats = Date.now();
                     } catch (e) {
-                        this.notify('Gagal memuat statistik: ' + e, false);
+                        if (!silent) this.notify('Gagal memuat statistik: ' + e, false);
                     } finally {
-                        this.sectionLoading.stats = false;
+                        if (!silent) this.sectionLoading.stats = false;
                     }
                 },
-                async loadPengajuan() {
-                    this.sectionLoading.pengajuan = true;
+                async loadPengajuan(opts) {
+                    const silent = !!(opts && opts.silent);
+                    if (!silent) this.sectionLoading.pengajuan = true;
                     try {
                         const rows = await this.run('getPengajuanList', { search: this.filters.search, jenis: this.filters.jenis, blok: this.filters.blok, status: this.filters.status });
                         this.pengajuanRows = (rows || []).map(r => Object.assign({}, r, { checked: false }));
                         this.loaded.pengajuan = true;
+                        this.loadedAt.pengajuan = Date.now();
                     } catch (e) {
-                        this.pengajuanRows = [];
-                        this.notify('Gagal memuat pengajuan: ' + e, false);
+                        if (!silent) {
+                            this.pengajuanRows = [];
+                            this.notify('Gagal memuat pengajuan: ' + e, false);
+                        }
                     } finally {
-                        this.sectionLoading.pengajuan = false;
+                        if (!silent) this.sectionLoading.pengajuan = false;
                     }
                 },
-                async loadBagian() {
-                    this.sectionLoading.bagian = true;
+                async loadBagian(opts) {
+                    const silent = !!(opts && opts.silent);
+                    if (!silent) this.sectionLoading.bagian = true;
                     try {
                         const data = await this.run('getBagianAggregation') || {};
                         this.bagian.units = data.units || [];
@@ -2145,39 +2181,45 @@
                         this.bagian.options = (data.filters && data.filters.bagian) || this.bagian.options;
                         this.bagian.bloks = (data.filters && data.filters.blok) || [];
                         this.loaded.bagian = true;
+                        this.loadedAt.bagian = Date.now();
                     } catch (e) {
-                        this.notify('Gagal memuat laporan bagian: ' + e, false);
+                        if (!silent) this.notify('Gagal memuat laporan bagian: ' + e, false);
                     } finally {
-                        this.sectionLoading.bagian = false;
+                        if (!silent) this.sectionLoading.bagian = false;
                     }
                 },
-                async loadBa() {
-                    this.sectionLoading.ba = true;
+                async loadBa(opts) {
+                    const silent = !!(opts && opts.silent);
+                    if (!silent) this.sectionLoading.ba = true;
                     try {
-                        this.ba.all = await this.run('getBeritaAcaraAdminList') || [];
+                        const list = await this.run('getBeritaAcaraAdminList') || [];
+                        this.ba.all = list;
                         if (!this.bagian.labs.length) {
                             this.bagian.labs = await this.run('getLabOptions') || [];
                             this.bagian.options = ['Ujian', 'SGD', 'KKD'].concat(this.bagian.labs);
                         }
                         this.applyBaFilter();
                         this.loaded.ba = true;
+                        this.loadedAt.ba = Date.now();
                     } catch (e) {
-                        this.notify('Gagal memuat berita acara: ' + e, false);
+                        if (!silent) this.notify('Gagal memuat berita acara: ' + e, false);
                     } finally {
-                        this.sectionLoading.ba = false;
+                        if (!silent) this.sectionLoading.ba = false;
                     }
                 },
-                async loadMaster() {
-                    this.sectionLoading.master = true;
+                async loadMaster(opts) {
+                    const silent = !!(opts && opts.silent);
+                    if (!silent) this.sectionLoading.master = true;
                     try {
                         const d = await this.run('getMasterDataMonitor') || {};
                         this.master.data = d;
                         this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
                         this.loaded.master = true;
+                        this.loadedAt.master = Date.now();
                     } catch (e) {
-                        this.notify('Gagal memuat master data: ' + e, false);
+                        if (!silent) this.notify('Gagal memuat master data: ' + e, false);
                     } finally {
-                        this.sectionLoading.master = false;
+                        if (!silent) this.sectionLoading.master = false;
                     }
                 },
 
@@ -3067,7 +3109,14 @@
             },
             mounted() {
                 this.session = readSession();
-                if (this.loggedIn) this.bootstrap();
+                this.tab = this.hashTab();
+                window.addEventListener('hashchange', () => {
+                    const t = this.hashTab();
+                    if (t !== this.tab) this.switchTab(t);
+                });
+                if (this.loggedIn) {
+                    this.bootstrap().then(() => { if (this.tab !== 'pengajuan') this.refreshTab(this.tab); });
+                }
             }
         }).mount('#app');
     </script>
