@@ -22,12 +22,12 @@ describe('buildPengajuanKey', () => {
     expect(buildPengajuanKey({ npm: '1', jenisKegiatan: 'Ujian', detailKegiatan: 'UAS', tanggalKegiatan: '2026-09-20' }))
       .toBe('1||ujian||uas||2026-09-20');
   });
-  it('builds key for Praktikum with sorted parts', () => {
+  it('builds key for Praktikum from first row', () => {
     const form = { npm: '1', jenisKegiatan: 'Praktikum', praktikum: [
       { lab: 'Lab B', kegiatanLab: 'X', tanggal: '2026-09-21' },
       { lab: 'Lab A', kegiatanLab: 'Y', tanggal: '2026-09-20' }
     ] };
-    expect(buildPengajuanKey(form)).toBe('1||praktikum||lab a | y | 2026-09-20 && lab b | x | 2026-09-21||2026-09-21');
+    expect(buildPengajuanKey(form)).toBe('1||praktikum||lab b | x||2026-09-21');
   });
 });
 
@@ -57,6 +57,17 @@ describe('buildDetailKegiatanRows', () => {
     const rows = buildDetailKegiatanRows({ jenisKegiatan: 'Ujian', detailKegiatan: 'UAS', tanggalKegiatan: '2026-09-20' }, 'INHAL-y', new Map(), '2026-09-10T08:00:00');
     expect(rows).toHaveLength(1);
     expect(rows[0].bagian).toBe('');
+  });
+  it('hanya memakai baris praktikum pertama', () => {
+    const rows = buildDetailKegiatanRows(
+      { jenisKegiatan: 'Praktikum', praktikum: [
+        { lab: 'Lab A', kegiatanLab: 'X', tanggal: '2026-09-20' },
+        { lab: 'Lab B', kegiatanLab: 'Y', tanggal: '2026-09-21' }
+      ] },
+      'INHAL-z', new Map(), '2026-09-10T08:00:00'
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].pilihan).toBe('Lab A');
   });
 });
 

@@ -195,3 +195,30 @@ describe('dashboard template', () => {
     expect(html.indexOf("key: 'admin'")).toBeLessThan(html.indexOf("key: 'downloadDatabase'"));
   });
 });
+
+describe('dashboard master chip picker', () => {
+  it('memakai grid chip horizontal, bukan sidebar 280px', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('lg:grid-cols-[280px_1fr]');
+    expect(html).toContain('selectMasterCard(m.key)');
+    expect(html).toContain('grid grid-cols-2 gap-2 sm:grid-cols-4');
+    expect(html).toContain('master-stat-label');
+    expect(html).not.toContain('master-stat !w-auto');
+  });
+  it('overlay dialog konfirmasi di atas modal', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('z-[130] modal-overlay');
+    expect(html).toContain('.z-\\[130\\] { z-index: 130; }');
+    expect(html).toContain('.z-\\[150\\] { z-index: 150; }');
+  });
+});
+
+describe('dashboard tab persistence', () => {
+  it('tab aktif dibaca dari hash dan disinkronkan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("const TAB_KEYS = ['pengajuan', 'stats', 'ba', 'master']");
+    expect(html).toContain('hashTab()');
+    expect(html).toContain("history.replaceState(null, '', h)");
+    expect(html).toContain('this.tab = this.hashTab()');
+  });
+});

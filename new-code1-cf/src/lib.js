@@ -38,12 +38,11 @@ export function buildPengajuanKey(formData) {
     detail = [norm(formData.pilihanKkd), norm(formData.detailKkd)].filter(Boolean).join(' | ');
     tanggal = norm(formData.tanggalKegiatan);
   } else if (jenis === 'praktikum' && Array.isArray(formData.praktikum) && formData.praktikum.length > 0) {
-    const parts = formData.praktikum
-      .map((p) => [norm(p.lab), norm(p.kegiatanLab), norm(p.tanggal)].filter(Boolean).join(' | '))
-      .filter(Boolean)
-      .sort();
-    detail = parts.join(' && ');
-    tanggal = norm(formData.praktikum[0].tanggal);
+    const first = formData.praktikum.find((p) => p && (norm(p.lab) || norm(p.kegiatanLab)));
+    if (first) {
+      detail = [norm(first.lab), norm(first.kegiatanLab)].filter(Boolean).join(' | ');
+      tanggal = norm(first.tanggal);
+    }
   }
   return [npm, jenis, detail, tanggal].join('||');
 }
@@ -82,12 +81,10 @@ export function buildDetailKegiatanRows(formData, idPengajuan, bagianMap, nowIso
   } else if (jenis === 'KKD') {
     addRow(normalizeFormText(formData.pilihanKkd), normalizeFormText(formData.detailKkd), normalizeFormText(formData.tanggalKegiatan));
   } else if (jenis === 'Praktikum' && Array.isArray(formData.praktikum)) {
-    formData.praktikum.forEach((p) => {
-      const lab = normalizeFormText(p && p.lab);
-      const kegiatan = normalizeFormText(p && p.kegiatanLab);
-      const tanggal = normalizeFormText(p && p.tanggal);
-      if (lab || kegiatan) addRow(lab, kegiatan, tanggal);
-    });
+    const first = formData.praktikum.find((p) => p && (normalizeFormText(p.lab) || normalizeFormText(p.kegiatanLab)));
+    if (first) {
+      addRow(normalizeFormText(first.lab), normalizeFormText(first.kegiatanLab), normalizeFormText(first.tanggal));
+    }
   }
   return rows;
 }

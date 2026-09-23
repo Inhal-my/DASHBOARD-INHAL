@@ -323,12 +323,14 @@
                         <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-6">
+                                    <label class="label">Jenis Kegiatan</label>
                                     <select v-model="filters.jenis" class="input">
                                         <option value="">Semua Jenis</option>
                                         <option v-for="j in jenisOptions" :value="j">{{ j }}</option>
                                     </select>
                                 </div>
                                 <div class="md:col-span-6">
+                                    <label class="label">Cari Mahasiswa</label>
                                     <div class="relative">
                                         <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
                                         <input v-model="filters.search" class="input pl-10" placeholder="Cari NPM / nama...">
@@ -446,8 +448,8 @@
                                     <label class="label">Sampai Tanggal</label>
                                     <input v-model="dosenFilter.to" type="date" class="input">
                                 </div>
-                                <div class="flex items-end md:col-span-6">
-                                    <button v-if="activeDosenCell" class="btn-soft w-full" @click="resetDosenCell">
+                                <div v-if="activeDosenCell" class="flex items-end md:col-span-6">
+                                    <button class="btn-soft w-full" @click="resetDosenCell">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                                     </button>
                                 </div>
@@ -463,7 +465,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                                 <div>
                                     <div class="font-bold text-slate-800">Rekap Berita Acara per Dosen &amp; Bagian</div>
-                                    <div class="text-xs text-slate-400">Klik angka pada sel untuk melihat daftar BA-nya</div>
+                                    <div class="text-xs text-slate-400">Baris = Dosen, kolom = Bagian. Klik angka pada sel untuk melihat daftar BA-nya</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportDosenMatrix">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -473,7 +475,7 @@
                                 <table class="w-full text-sm">
                                     <thead>
                                         <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
-                                            <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Dosen</th>
+                                            <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Dosen \ Bagian</th>
                                             <th v-for="b in dosenMatrix.cols" :key="b" class="whitespace-nowrap px-3 py-2.5 text-center">{{ b }}</th>
                                             <th class="px-3 py-2.5 text-center">Total</th>
                                         </tr>
@@ -570,8 +572,8 @@
                                     <label class="label">Cari</label>
                                     <input v-model="bagianFilter.q" class="input" placeholder="Kegiatan, NPM, atau nama mahasiswa...">
                                 </div>
-                                <div class="flex items-end md:col-span-2">
-                                    <button v-if="activeMatrixCell" class="btn-soft w-full" @click="resetMatrixCell">
+                                <div v-if="activeMatrixCell" class="flex items-end md:col-span-2">
+                                    <button class="btn-soft w-full" @click="resetMatrixCell">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                                     </button>
                                 </div>
@@ -588,7 +590,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                                 <div>
                                     <div class="font-bold text-slate-800">Detail Kegiatan per Bagian &amp; Blok</div>
-                                    <div class="text-xs text-slate-400">Klik baris untuk melihat daftar peserta &amp; bukti bayar</div>
+                                    <div class="text-xs text-slate-400">Klik baris untuk melihat daftar peserta &amp; bukti bayar. Kolom Bukti Bayar = jumlah peserta yang sudah unggah bukti / total peserta kegiatan.</div>
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
@@ -602,7 +604,7 @@
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-right">Biaya</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Bukti Bayar</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center" title="Peserta yang sudah unggah bukti bayar / total peserta kegiatan">Bukti Bayar</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">BA</th>
                                         </tr>
                                     </thead>
@@ -635,7 +637,7 @@
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(s.row.biaya || 0) }}</td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ s.row.jumlahPeserta }}</td>
                                                 <td class="px-3 py-2.5 text-center">
-                                                    <span v-if="s.row.peserta.length" :class="s.row.countBukti === s.row.peserta.length ? 'bg-emerald-50 text-emerald-700' : (s.row.countBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold">{{ s.row.countBukti }}/{{ s.row.peserta.length }}</span>
+                                                    <span v-if="s.row.peserta.length" :class="s.row.countBukti === s.row.peserta.length ? 'bg-emerald-50 text-emerald-700' : (s.row.countBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Peserta yang sudah unggah bukti bayar / total peserta kegiatan">{{ s.row.countBukti }}/{{ s.row.peserta.length }}</span>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
@@ -680,13 +682,13 @@
                         <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                             <div class="border-b border-slate-100 px-4 py-3">
                                 <div class="font-bold text-slate-800">Rekap Jumlah Kegiatan per Bagian &amp; Blok</div>
-                                <div class="text-xs text-slate-400">Klik angka pada cell untuk melihat detail kegiatan &amp; pesertanya</div>
+                                <div class="text-xs text-slate-400">Baris = Blok, kolom = Bagian. Klik angka pada cell untuk melihat detail kegiatan &amp; pesertanya</div>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
                                         <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
-                                            <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Blok</th>
+                                            <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Blok \ Bagian</th>
                                             <th v-for="b in bagianAllLabels" :key="b" class="whitespace-nowrap px-3 py-2.5 text-center">{{ b }}</th>
                                             <th class="px-3 py-2.5 text-center">Total</th>
                                         </tr>
@@ -756,7 +758,7 @@
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                                 <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanRows.length }} kegiatan</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanBaTotal }} BA</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanBaTotal }} BA total</span>
                                 <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanPesertaTotal }} mahasiswa</span>
                             </div>
                         </div>
@@ -892,6 +894,124 @@
                             <div v-if="!baKegiatanRows.length" class="px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>
                                 <p class="mt-3 text-sm text-slate-400">Belum ada kegiatan.</p>
+                            </div>
+                        </div>
+                        </template>
+                    </section>
+
+                    <!-- ===================== TAB 5: DATA PEMBAYARAN ===================== -->
+                    <section v-if="activeTab === 'bayar'" class="space-y-4">
+                        <div v-if="loading" class="space-y-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="grid gap-3 md:grid-cols-12">
+                                    <div v-for="i in 5" :key="i" class="h-10 animate-pulse rounded-xl bg-slate-200/70 md:col-span-3"></div>
+                                </div>
+                            </div>
+                            <div v-for="i in 4" :key="i" class="h-14 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                        </div>
+                        <template v-else>
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-4">
+                                    <label class="label">Cari Mahasiswa</label>
+                                    <input v-model="bayarFilter.q" class="input" placeholder="NPM atau nama mahasiswa...">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="label">Status Pengajuan</label>
+                                    <select v-model="bayarFilter.status" class="input">
+                                        <option value="">Semua Status</option>
+                                        <option v-for="o in statusOptions" :key="o" :value="o">{{ o }}</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="label">Kelengkapan Bukti</label>
+                                    <select v-model="bayarFilter.kelengkapan" class="input">
+                                        <option value="">Semua</option>
+                                        <option value="ada">Sudah ada bukti</option>
+                                        <option value="belum">Belum ada bukti</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end md:col-span-2">
+                                    <button class="btn-soft w-full" @click="bayarFilter = { q: '', status: '', kelengkapan: '' }">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ pembayaranSummary.total }} mahasiswa</span>
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">{{ pembayaranSummary.sudah }} sudah ada bukti</span>
+                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700">{{ pembayaranSummary.belum }} belum ada bukti</span>
+                                <span class="rounded-full bg-teal-50 px-2.5 py-0.5 font-semibold text-teal-700">Total {{ fmtRupiah(pembayaranSummary.biaya) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                                <div>
+                                    <div class="font-bold text-slate-800">Data Pembayaran per Mahasiswa</div>
+                                    <div class="text-xs text-slate-400">Klik baris untuk melihat rincian pengajuan &amp; tautan bukti bayar</div>
+                                </div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportExcel()">
+                                    <i class="bi bi-file-earmark-excel"></i> Export XLSX
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="w-8 px-3 py-2.5"></th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">NPM</th>
+                                            <th class="px-3 py-2.5 text-left">Nama</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Jml Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Status</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Total Biaya</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center" title="Jumlah pengajuan dengan bukti bayar dibanding total pengajuan mahasiswa">Bukti Bayar</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-if="!pembayaranFiltered.length">
+                                            <td colspan="8" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data pembayaran untuk filter ini.</td>
+                                        </tr>
+                                        <template v-for="m in pembayaranFiltered" :key="m.npm">
+                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand('bayar:' + m.npm)">
+                                                <td class="px-3 py-2.5 text-slate-400">
+                                                    <i :class="expanded['bayar:' + m.npm] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-slate-700">{{ m.npm }}</td>
+                                                <td class="px-3 py-2.5 font-semibold text-slate-800">{{ m.nama }}</td>
+                                                <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ m.jumlahPengajuan }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center">
+                                                    <span v-for="s in statusList(m)" :key="s" :class="statusBadgeCls(s)" class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ s }}</span>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(m.totalBiaya) }}</td>
+                                                <td class="px-3 py-2.5 text-center">
+                                                    <span :class="m.lunas ? 'bg-emerald-50 text-emerald-700' : (m.jumlahBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
+                                                </td>
+                                                <td class="whitespace-nowrap px-3 py-2.5">
+                                                    <a v-if="bayarBuktiUrl(m)" :href="bayarBuktiUrl(m)" target="_blank" class="link text-xs" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="expanded['bayar:' + m.npm]">
+                                                <td colspan="8" class="bg-slate-50/60 px-6 py-4">
+                                                    <div class="space-y-2">
+                                                        <div v-for="(it, i) in m.items" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs ring-1 ring-slate-100">
+                                                            <span class="font-semibold text-slate-800">{{ it.jenis }}</span>
+                                                            <span class="text-slate-400">{{ it.blok }}</span>
+                                                            <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
+                                                            <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
+                                                            <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
+                                                            <a v-if="it.linkBukti" :href="it.linkBukti" target="_blank" class="link ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
+                                                            <a v-if="it.linkAcc" :href="it.linkAcc" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                         </template>
@@ -1079,7 +1199,8 @@
                         { key: 'rekap', label: 'Rekap Keseluruhan', icon: 'bi-pie-chart-fill' },
                         { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
                         { key: 'bagian', label: 'Laporan Bagian', icon: 'bi-diagram-3' },
-                        { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' }
+                        { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
+                        { key: 'bayar', label: 'Data Pembayaran', icon: 'bi-cash-coin' }
                     ],
                     summary: {},
                     rows: [],
@@ -1095,6 +1216,7 @@
                     activeDosenCell: null,
                     bagianFilter: { bagian: '', blok: '', q: '' },
                     baFilter: { bagian: '', blok: '', q: '' },
+                    bayarFilter: { q: '', status: '', kelengkapan: '' },
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalDiterima: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
@@ -1234,6 +1356,65 @@
                         });
                     });
                     return map;
+                },
+                npmPembayaranMap() {
+                    const map = {};
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const npm = String(p.NPM || '').trim();
+                        if (!npm) return;
+                        if (!map[npm]) map[npm] = { npm: npm, nama: String(p['Nama Lengkap'] || '').trim(), items: [] };
+                        map[npm].items.push({
+                            id: p['ID Pengajuan'] || '',
+                            jenis: String(p['Jenis Kegiatan'] || '').trim() || '-',
+                            blok: String(p.Blok || '').trim() || '-',
+                            tanggal: p['Tanggal Pelaksanaan'] || '',
+                            status: String(p.Status || '').trim() || '-',
+                            biaya: Number(p.Biaya) || 0,
+                            linkBukti: String(p['Link Bukti Bayar'] || '').trim(),
+                            linkAcc: String(p['Link ACC INHAL'] || '').trim()
+                        });
+                    });
+                    return map;
+                },
+                pembayaranRows() {
+                    return Object.values(this.npmPembayaranMap).map(m => {
+                        const totalBiaya = m.items.reduce((t, x) => t + x.biaya, 0);
+                        const jumlahBukti = m.items.filter(x => x.linkBukti).length;
+                        const jumlahAcc = m.items.filter(x => x.linkAcc).length;
+                        return {
+                            npm: m.npm,
+                            nama: m.nama || '-',
+                            items: m.items,
+                            jumlahPengajuan: m.items.length,
+                            totalBiaya: totalBiaya,
+                            jumlahBukti: jumlahBukti,
+                            jumlahAcc: jumlahAcc,
+                            lunas: m.items.length > 0 && jumlahBukti === m.items.length
+                        };
+                    }).sort((a, b) => a.nama.localeCompare(b.nama) || a.npm.localeCompare(b.npm));
+                },
+                pembayaranFiltered() {
+                    const q = this.normSearch(this.bayarFilter.q);
+                    const status = this.bayarFilter.status;
+                    const kel = this.bayarFilter.kelengkapan;
+                    return this.pembayaranRows.filter(m => {
+                        if (q && this.normSearch(m.npm).indexOf(q) === -1 && this.normSearch(m.nama).indexOf(q) === -1) return false;
+                        if (status && !m.items.some(x => x.status === status)) return false;
+                        if (kel === 'ada' && m.jumlahBukti === 0) return false;
+                        if (kel === 'belum' && m.jumlahBukti > 0) return false;
+                        return true;
+                    });
+                },
+                pembayaranSummary() {
+                    const list = this.pembayaranFiltered;
+                    const sudah = list.filter(m => m.jumlahBukti > 0).length;
+                    return {
+                        total: list.length,
+                        sudah: sudah,
+                        belum: list.length - sudah,
+                        biaya: list.reduce((t, m) => t + m.totalBiaya, 0)
+                    };
                 },
                 bagianBlokOptions() {
                     const sel = this.bagianFilter.bagian;
@@ -1717,6 +1898,18 @@
                 normSearch(s) {
                     return String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
                 },
+                statusList(m) {
+                    const seen = {};
+                    const out = [];
+                    (m.items || []).forEach(x => {
+                        if (!seen[x.status]) { seen[x.status] = 1; out.push(x.status); }
+                    });
+                    return out;
+                },
+                bayarBuktiUrl(m) {
+                    const it = (m.items || []).find(x => x.linkBukti);
+                    return it ? it.linkBukti : '';
+                },
                 normBagian(v) {
                     return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
                 },
@@ -2146,6 +2339,39 @@
                             const wsBa = XLSX.utils.json_to_sheet(baRows);
                             setUrlHyperlinks(wsBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsBa, 'Berita Acara');
+
+                            const bayarRows = this.pembayaranFiltered.map(m => ({
+                                'NPM': m.npm,
+                                'Nama': m.nama,
+                                'Jumlah Kegiatan': m.jumlahPengajuan,
+                                'Total Biaya': m.totalBiaya,
+                                'Bukti Bayar': m.jumlahBukti + '/' + m.jumlahPengajuan,
+                                'Status Bukti': m.lunas ? 'Lunas' : (m.jumlahBukti ? 'Sebagian' : 'Belum ada bukti'),
+                                'Link Bukti Bayar': this.bayarBuktiUrl(m)
+                            }));
+                            const wsBayar = XLSX.utils.json_to_sheet(bayarRows);
+                            setUrlHyperlinks(wsBayar, 'Link Bukti Bayar', 'Buka link bukti bayar');
+                            XLSX.utils.book_append_sheet(wb, wsBayar, 'Pembayaran Mahasiswa');
+
+                            const bayarDetailRows = [];
+                            this.pembayaranFiltered.forEach(m => m.items.forEach(it => {
+                                bayarDetailRows.push({
+                                    'NPM': m.npm,
+                                    'Nama': m.nama,
+                                    'Kegiatan': it.jenis,
+                                    'Blok': it.blok,
+                                    'Tanggal': it.tanggal ? fmtTanggalWaktu(it.tanggal) : '',
+                                    'Status': it.status,
+                                    'Biaya': it.biaya,
+                                    'Bukti Bayar': it.linkBukti ? 'Ada' : 'Belum',
+                                    'Link Bukti Bayar': it.linkBukti,
+                                    'Link ACC INHAL': it.linkAcc
+                                });
+                            }));
+                            const wsBayarDetail = XLSX.utils.json_to_sheet(bayarDetailRows);
+                            setUrlHyperlinks(wsBayarDetail, 'Link Bukti Bayar', 'Buka link bukti bayar');
+                            setUrlHyperlinks(wsBayarDetail, 'Link ACC INHAL', 'Buka link ACC INHAL');
+                            XLSX.utils.book_append_sheet(wb, wsBayarDetail, 'Pembayaran Detail');
 
                             XLSX.writeFile(wb, 'Laporan-INHAL-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export .xlsx berhasil diunduh.');

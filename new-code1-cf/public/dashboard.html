@@ -44,18 +44,28 @@
             .ba-align-card { margin-top: 1.625rem; }
         }
         .master-stat {
-            display: flex; align-items: center; gap: .75rem; width: 100%;
-            border-radius: 1rem; background: #fff; padding: .875rem 1rem; text-align: left;
-            cursor: pointer; box-shadow: 0 1px 2px rgba(15,23,42,.06), inset 0 0 0 1px #e2e8f0;
-            transition: transform .15s ease, box-shadow .15s ease;
+            display: flex; align-items: center; gap: .625rem; min-width: 0;
+            border-radius: .75rem; background: #fff; padding: .5rem .75rem; text-align: left;
+            cursor: pointer; box-shadow: 0 1px 2px rgba(15,23,42,.04), inset 0 0 0 1px #e2e8f0;
+            transition: background .15s ease, box-shadow .15s ease;
         }
-        .master-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15,23,42,.10), inset 0 0 0 1px #e2e8f0; }
-        .master-stat.active { box-shadow: 0 8px 22px rgba(79,70,229,.16), inset 0 0 0 2px #4f46e5; }
+        .master-stat:hover { background: #f8fafc; box-shadow: 0 1px 2px rgba(15,23,42,.06), inset 0 0 0 1px #cbd5e1; }
+        .master-stat.active { background: #eef2ff; box-shadow: inset 0 0 0 1.5px #4f46e5; }
+        .master-stat-label {
+            min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-size: .8125rem; font-weight: 600; color: #334155; transition: color .15s ease;
+        }
+        .master-stat.active .master-stat-label { color: #3730a3; }
         .master-stat-icon {
             display: flex; flex-shrink: 0; align-items: center; justify-content: center;
             width: 2.25rem; height: 2.25rem; border-radius: .75rem;
             background: #eef2ff; color: #4f46e5; font-size: 1.05rem;
         }
+        .master-stat .master-stat-icon {
+            width: 1.75rem; height: 1.75rem; border-radius: .5rem;
+            font-size: .9rem; transition: background .15s ease, color .15s ease;
+        }
+        .master-stat.active .master-stat-icon { background: #4f46e5; color: #fff; }
         .master-table-scroll { max-height: 520px; overflow-y: auto; }
         .master-row-btn { display: inline-flex; align-items: center; justify-content: center; height: 1.9rem; width: 1.9rem; border-radius: .5rem; color: #64748b; transition: all .15s ease; }
         .master-row-btn:hover { background: #eef2ff; color: #4f46e5; }
@@ -98,6 +108,8 @@
         .ring-rose-200 { --tw-ring-color: #fecdd3; }
         .text-indigo-600 { color: #4f46e5; }
         .accent-brand-600 { accent-color: #4f46e5; }
+        .z-\[130\] { z-index: 130; }
+        .z-\[150\] { z-index: 150; }
         .bg-amber-400 { background-color: #fbbf24; }
         .bg-rose-400 { background-color: #fb7185; }
         .bg-slate-50\/40 { background-color: rgb(248 250 252 / 0.4); }
@@ -1025,25 +1037,20 @@
                         </svg>
                         <span class="text-sm font-semibold">Memuat master data...</span>
                     </div>
-                    <div v-else class="grid gap-5 lg:grid-cols-[280px_1fr]">
-                        <aside>
-                            <div class="space-y-2.5">
-                                <button
-                                    v-for="m in masterCards"
-                                    :key="m.key"
-                                    @click="master.tab = m.key; master.search = ''"
-                                    class="master-stat"
-                                    :class="{ active: master.tab === m.key }"
-                                >
-                                    <span class="master-stat-icon"><i :class="m.icon"></i></span>
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-sm font-semibold text-slate-800">{{ m.title }}</span>
-                                        <span class="block text-xs text-slate-500">{{ masterCount(m) }}</span>
-                                    </span>
-                                    <i class="bi bi-chevron-right text-slate-300"></i>
-                                </button>
-                            </div>
-                        </aside>
+                    <div v-else>
+                        <div class="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            <button
+                                v-for="m in masterCards"
+                                :key="m.key"
+                                type="button"
+                                @click="selectMasterCard(m.key)"
+                                class="master-stat"
+                                :class="{ active: master.tab === m.key }"
+                            >
+                                <span class="master-stat-icon"><i :class="m.icon"></i></span>
+                                <span class="master-stat-label">{{ m.short }}</span>
+                            </button>
+                        </div>
 
                         <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                             <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1515,6 +1522,8 @@
             return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
         }
 
+        const TAB_KEYS = ['pengajuan', 'stats', 'ba', 'master'];
+
         const { createApp } = Vue;
 
         createApp({
@@ -1575,8 +1584,8 @@
                             { key: 'masterBagian', title: 'Master Bagian', short: 'Bagian', desc: 'Pemetaan lab & kegiatan ke bagian beserta email tujuan notifikasi.', cols: ['Lab', 'Kegiatan Lab', 'Bagian', 'Email'], table: 'master_bagian', icon: 'bi-diagram-3' },
                             { key: 'masterBiaya', title: 'Master Biaya', short: 'Biaya', desc: 'Referensi biaya untuk setiap jenis kegiatan.', cols: ['Kegiatan', 'Biaya'], table: 'master_biaya', icon: 'bi-cash-stack' },
                             { key: 'config', title: 'Config', short: 'Config', desc: 'Pengaturan nilai sistem (mis. mode bukti bayar).', cols: ['Key', 'Value'], table: 'config', icon: 'bi-gear' },
-                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Bagian Staff', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'bagian_staff', icon: 'bi-people' },
-                            { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan Bagian', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
+                            { key: 'bagianStaff', title: 'Bagian Staff', short: 'Staf', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'bagian_staff', icon: 'bi-people' },
+                            { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
                             { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], table: 'admin', icon: 'bi-shield-lock' },
                             { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'Satu file Excel, satu sheet per tabel, seluruh data tersimpan.', icon: 'bi-download', settings: true, download: true }
                         ]
@@ -2027,7 +2036,7 @@
                             saveSession(s);
                             this.session = s;
                             this.loginPwd = '';
-                            this.bootstrap();
+                            this.bootstrap().then(() => { if (this.tab !== 'pengajuan') this.refreshTab(this.tab); });
                         } else {
                             this.loginError = (res && res.message) || 'Password admin salah.';
                         }
@@ -2051,6 +2060,8 @@
                     this.bab.rows = [];
                     this.bab.baList = [];
                     this.loaded = { pengajuan: false, stats: false, bagian: false, ba: false, master: false };
+                    this.tab = 'pengajuan';
+                    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
                 },
                 notify(msg, ok = true) {
                     this.toast = { show: true, msg, icon: ok ? 'bi-check-circle text-emerald-400' : 'bi-exclamation-triangle text-amber-400' };
@@ -2175,8 +2186,23 @@
                     return keys.map(k => ({ label: k, value: o[k], pct: max ? Math.round(o[k] / max * 100) : 0 }));
                 },
                 switchTab(tab) {
+                    if (TAB_KEYS.indexOf(tab) === -1) tab = 'pengajuan';
                     this.tab = tab;
                     this.sidebarOpen = false;
+                    this.syncHash(tab);
+                    this.refreshTab(tab);
+                },
+                hashTab() {
+                    const h = String(location.hash || '').replace(/^#/, '').toLowerCase();
+                    return TAB_KEYS.indexOf(h) !== -1 ? h : 'pengajuan';
+                },
+                syncHash(tab) {
+                    const h = '#' + tab;
+                    if (location.hash !== h) {
+                        try { history.replaceState(null, '', h); } catch (e) { location.hash = h; }
+                    }
+                },
+                refreshTab(tab) {
                     if (tab === 'pengajuan' && !this.loaded.pengajuan) this.loadPengajuan();
                     if (tab === 'stats' && !this.loaded.stats) this.loadStats();
                     if (tab === 'ba') {
@@ -3149,6 +3175,10 @@
                     if (m.settings) return 'Pengaturan';
                     return (this.master.data[m.key] || []).length + ' entri';
                 },
+                selectMasterCard(key) {
+                    this.master.tab = key;
+                    this.master.search = '';
+                },
                 async downloadDatabase() {
                     if (this.master.downloading) return;
                     this.master.downloading = true;
@@ -3365,7 +3395,15 @@
             },
             mounted() {
                 this.session = readSession();
-                if (this.loggedIn) this.bootstrap();
+                this.tab = this.hashTab();
+                this._onHashchange = () => {
+                    const t = this.hashTab();
+                    if (t !== this.tab) this.switchTab(t);
+                };
+                window.addEventListener('hashchange', this._onHashchange);
+                if (this.loggedIn) {
+                    this.bootstrap().then(() => { if (this.tab !== 'pengajuan') this.refreshTab(this.tab); });
+                }
                 this._onKeydown = (e) => {
                     if (e.key === 'Escape' && this.dialog.open) this.cancelDialog();
                 };
@@ -3373,6 +3411,7 @@
             },
             unmounted() {
                 if (this._onKeydown) document.removeEventListener('keydown', this._onKeydown);
+                if (this._onHashchange) window.removeEventListener('hashchange', this._onHashchange);
             }
         }).mount('#app');
     </script>
