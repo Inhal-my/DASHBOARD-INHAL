@@ -1,0 +1,17 @@
+name = "inhal-form"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+GAS_DRIVE_URL = "https://script.google.com/a/macros/umsu.ac.id/s/AKfycbxwaFSaFkMiK5OGNNi4yK8eUVKx1l7KG-Dvs8WalYqwBtRAZSoR4ZtmMXvnMu26V8Ri/exec"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc"
+database_id = "8f412848-d213-4bb3-aeb7-0aff221f9ee3"
