@@ -108,14 +108,12 @@ function _buildDetailKegiatanRows(formData, idPengajuan) {
     } else if (jenis === 'KKD') {
         addRow(_normalizeFormText(formData.pilihanKkd), _normalizeFormText(formData.detailKkd), _normalizeFormText(formData.tanggalKegiatan));
     } else if (jenis === 'Praktikum' && Array.isArray(formData.praktikum)) {
-        formData.praktikum.forEach(function(p) {
-            const lab = _normalizeFormText(p && p.lab);
-            const kegiatan = _normalizeFormText(p && p.kegiatanLab);
-            const tanggal = _normalizeFormText(p && p.tanggal);
-            if (lab || kegiatan) {
-                addRow(lab, kegiatan, tanggal);
-            }
+        const first = formData.praktikum.find(function(p) {
+            return p && (_normalizeFormText(p.lab) || _normalizeFormText(p.kegiatanLab));
         });
+        if (first) {
+            addRow(_normalizeFormText(first.lab), _normalizeFormText(first.kegiatanLab), _normalizeFormText(first.tanggal));
+        }
     }
     return rows;
 }
@@ -291,11 +289,13 @@ function _buildPengajuanKey(formData) {
         detail = [norm(formData.pilihanKkd), norm(formData.detailKkd)].filter(Boolean).join(' | ');
         tanggal = norm(formData.tanggalKegiatan);
     } else if (jenis === 'praktikum' && Array.isArray(formData.praktikum) && formData.praktikum.length > 0) {
-        const parts = formData.praktikum.map(function(p) {
-            return [norm(p.lab), norm(p.kegiatanLab), norm(p.tanggal)].filter(Boolean).join(' | ');
-        }).filter(Boolean).sort();
-        detail = parts.join(' && ');
-        tanggal = norm(formData.praktikum[0].tanggal);
+        const first = formData.praktikum.find(function(p) {
+            return p && (norm(p.lab) || norm(p.kegiatanLab));
+        });
+        if (first) {
+            detail = [norm(first.lab), norm(first.kegiatanLab)].filter(Boolean).join(' | ');
+            tanggal = norm(first.tanggal);
+        }
     }
     return [npm, jenis, detail, tanggal].join('||');
 }
