@@ -7,10 +7,10 @@ Panduan langkah demi langkah memindahkan isi `new-code1-cf` ke Cloudflare (Worke
 | Item | Nilai |
 |---|---|
 | Akun Cloudflare | `inhal1` (`e2efd255f61d2b81c7f54c92eb57b946`) |
-| Worker name | `inhal-poc` |
-| URL | https://inhal-poc.new-code1-cf.workers.dev |
+| Worker name | `inhal-form` |
+| URL | https://inhal-form.prodi.workers.dev |
 | D1 database | `inhal-poc` (`8f412848-d213-4bb3-aeb7-0aff221f9ee3`, region APAC) |
-| Workers.dev subdomain | `new-code1-cf` |
+| Workers.dev subdomain | `prodi` |
 
 ## 0. Prasyarat
 
@@ -95,7 +95,7 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
 ```
 
-Output akan menampilkan URL Worker, mis. `https://inhal-poc.<subdomain>.workers.dev`.
+Output akan menampilkan URL Worker, mis. `https://inhal-form.<subdomain>.workers.dev`.
 
 Jika muncul peringatan `You need to register a workers.dev subdomain`, daftarkan dulu subdomain di:
 
@@ -109,12 +109,12 @@ Buka URL Worker di browser, atau:
 
 ```bash
 # ganti URL sesuai hasil deploy
-curl https://inhal-poc.new-code1-cf.workers.dev/api/health
-curl https://inhal-poc.new-code1-cf.workers.dev/api/registration-options
-curl -o /dev/null -w "%{http_code}\n" https://inhal-poc.new-code1-cf.workers.dev/dashboard
-curl -o /dev/null -w "%{http_code}\n" https://inhal-poc.new-code1-cf.workers.dev/detail-laporan
-curl -o /dev/null -w "%{http_code}\n" https://inhal-poc.new-code1-cf.workers.dev/bagian
-curl -s https://inhal-poc.new-code1-cf.workers.dev/api/rpc -H 'Content-Type: application/json' -d '{"fn":"getBaginaConfig","args":[]}'
+curl https://inhal-form.prodi.workers.dev/api/health
+curl https://inhal-form.prodi.workers.dev/api/registration-options
+curl -o /dev/null -w "%{http_code}\n" https://inhal-form.prodi.workers.dev/dashboard
+curl -o /dev/null -w "%{http_code}\n" https://inhal-form.prodi.workers.dev/detail-laporan
+curl -o /dev/null -w "%{http_code}\n" https://inhal-form.prodi.workers.dev/bagian
+curl -s https://inhal-form.prodi.workers.dev/api/rpc -H 'Content-Type: application/json' -d '{"fn":"getBaginaConfig","args":[]}'
 ```
 
 Cek data D1 remote:
