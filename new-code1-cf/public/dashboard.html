@@ -382,7 +382,7 @@
                 <section v-if="tab==='pengajuan'">
                     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
                         <div>
-                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Telaah Pengajuan</h1>
+                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Verifikasi Pengajuan</h1>
                             <p class="mt-0.5 text-sm text-slate-500">Periksa dan tentukan pengajuan diterima, ditolak, atau ACC.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -1614,7 +1614,7 @@
                     return !!(this.session && this.session.token);
                 },
                 pageTitle() {
-                    return { pengajuan: 'Telaah Pengajuan', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
+                    return { pengajuan: 'Verifikasi Pengajuan', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
                 },
                 navItems() {
                     return [
