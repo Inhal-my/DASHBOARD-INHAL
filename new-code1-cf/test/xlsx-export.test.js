@@ -39,44 +39,66 @@ describe('prepareCell', () => {
 });
 
 describe('buildXlsx', () => {
-  it('returns a zip workbook with one sheet per table', () => {
+  it('writes friendly headers, typed numbers and no _truncated column', () => {
     const bytes = buildXlsx([
       {
-        name: 'admin',
-        columns: ['password', 'nama'],
-        rows: [{ password: 'pbkdf2$abc', nama: 'Admin Utama' }]
-      },
-      {
         name: 'mahasiswa',
-        columns: ['npm', 'nama_lengkap'],
-        rows: []
+        columns: [
+          { key: 'npm', label: 'NPM' },
+          { key: 'nama_lengkap', label: 'Nama Lengkap' },
+          { key: 'angkatan', label: 'Angkatan', numeric: true }
+        ],
+        rows: [{ npm: '2201010001', nama_lengkap: 'Aisyah Putri', angkatan: '2022' }]
       }
     ]);
     expect(bytes).toBeInstanceOf(Uint8Array);
     expect(String.fromCharCode(bytes[0], bytes[1])).toBe('PK');
     const files = unzipStore(bytes);
-    expect(files['xl/workbook.xml']).toContain('name="admin"');
     expect(files['xl/workbook.xml']).toContain('name="mahasiswa"');
-    expect(files['xl/worksheets/sheet1.xml']).toContain('pbkdf2$abc');
-    expect(files['xl/worksheets/sheet1.xml']).toContain('Admin Utama');
-    expect(files['xl/worksheets/sheet1.xml']).toContain('_truncated');
-    expect(files['xl/worksheets/sheet2.xml']).toContain('npm');
-    expect(files['xl/worksheets/sheet2.xml']).toContain('_truncated');
-    expect(files['xl/worksheets/sheet2.xml']).not.toContain('2201010001');
+    const sheet = files['xl/worksheets/sheet1.xml'];
+    expect(sheet).toContain('Nama Lengkap');
+    expect(sheet).not.toContain('_truncated');
+    expect(sheet).toContain('Aisyah Putri');
+    expect(sheet).toContain('<c r="C2" s="0"><v>2022</v></c>');
+    expect(sheet).toContain('t="inlineStr"');
+    expect(sheet).toContain('state="frozen"');
+    expect(sheet).toContain('autoFilter');
+    expect(files['xl/styles.xml']).toContain('<b/>');
   });
 
-  it('marks truncated rows and keeps secrets', () => {
+  it('writes JS numbers as numeric cells', () => {
+    const bytes = buildXlsx([
+      {
+        name: 'nomor_surat',
+        columns: [{ key: 'last_number', label: 'LastNumber' }],
+        rows: [{ last_number: 42 }]
+      }
+    ]);
+    const sheet = unzipStore(bytes)['xl/worksheets/sheet1.xml'];
+    expect(sheet).toContain('<c r="A2" s="0"><v>42</v></c>');
+  });
+
+  it('truncates oversized cell text without an extra marker column', () => {
     const long = 'x'.repeat(EXCEL_MAX_CELL + 1);
     const bytes = buildXlsx([
       {
-        name: 'uploads',
-        columns: ['id', 'content'],
-        rows: [{ id: 'u1', content: long }]
+        name: 'catatan',
+        columns: [{ key: 'catatan', label: 'Catatan' }],
+        rows: [{ catatan: long }]
       }
     ]);
-    const xml = unzipStore(bytes)['xl/worksheets/sheet1.xml'];
-    expect(xml).toContain('u1');
-    expect(xml).not.toContain('x'.repeat(EXCEL_MAX_CELL + 1));
-    expect(xml).toContain('<t>1</t>');
+    const sheet = unzipStore(bytes)['xl/worksheets/sheet1.xml'];
+    expect(sheet).not.toContain('_truncated');
+    expect(sheet).not.toContain(long);
+    expect(sheet).toContain('x'.repeat(EXCEL_MAX_CELL));
+  });
+
+  it('handles a table with no rows (headers only)', () => {
+    const bytes = buildXlsx([
+      { name: 'kosong', columns: [{ key: 'a', label: 'Kolom A' }], rows: [] }
+    ]);
+    const sheet = unzipStore(bytes)['xl/worksheets/sheet1.xml'];
+    expect(sheet).toContain('Kolom A');
+    expect(sheet).toContain('autoFilter');
   });
 });

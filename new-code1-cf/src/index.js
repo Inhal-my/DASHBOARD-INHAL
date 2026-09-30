@@ -83,7 +83,7 @@ app.post('/api/rpc', async (c) => {
 app.post('/api/database-export', async (c) => {
   let body = {};
   try { body = await c.req.json(); } catch (e) { body = {}; }
-  const result = await exportDatabase(c.env.DB, body.token);
+  const result = await exportDatabase(c.env.DB, body.token, body.scope);
   if (result.json) return c.json(result.json, result.status);
   return new Response(result.body, { status: result.status, headers: result.headers });
 });

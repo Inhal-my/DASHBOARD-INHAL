@@ -191,7 +191,8 @@ describe('dashboard template', () => {
     expect(html).toContain("key: 'downloadDatabase', title: 'Download Database'");
     expect(html).toContain('@click="downloadDatabase"');
     expect(html).toContain('/api/database-export');
-    expect(html).toContain('File berisi data pribadi, hash password, token sesi');
+    expect(html).toContain('tidak pernah ikut diekspor');
+    expect(html).toContain("v-model=\"master.downloadScope\"");
     expect(html.indexOf("key: 'admin'")).toBeLessThan(html.indexOf("key: 'downloadDatabase'"));
   });
 });

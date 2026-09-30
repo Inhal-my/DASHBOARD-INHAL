@@ -1106,10 +1106,17 @@
                                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm"><i class="bi bi-download"></i></div>
                                         <div class="min-w-0 flex-1">
                                             <h4 class="text-sm font-bold text-slate-800">Download Database</h4>
-                                            <p class="mt-0.5 text-xs text-slate-500">Satu file Excel (.xlsx), satu sheet per tabel, berisi seluruh data yang tersimpan di D1.</p>
+                                            <p class="mt-0.5 text-xs text-slate-500">Satu file Excel (.xlsx), satu sheet per tabel, header ramah, baris judul dibekukan, lebar kolom otomatis. Angka tersimpan sebagai angka.</p>
                                         </div>
                                     </div>
-                                    <p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800 ring-1 ring-amber-100">File berisi data pribadi, hash password, token sesi, dan isi unggahan. Jangan bagikan.</p>
+                                    <div class="mt-4">
+                                        <label class="text-xs font-semibold text-slate-600">Cakupan data</label>
+                                        <select v-model="master.downloadScope" class="input mt-1 w-full">
+                                            <option value="master">Data master &amp; operasional (tanpa tabel sistem)</option>
+                                            <option value="all">Semua tabel (kolom password/token dihilangkan)</option>
+                                        </select>
+                                    </div>
+                                    <p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800 ring-1 ring-amber-100">File berisi data pribadi. Kolom password, token sesi, dan isi unggahan tidak pernah ikut diekspor. Jangan bagikan.</p>
                                     <button class="btn-primary mt-6 w-full" :disabled="master.downloading" @click="downloadDatabase">
                                         <svg v-if="master.downloading" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1575,6 +1582,7 @@
                         baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
                         saving: false,
                         downloading: false,
+                        downloadScope: 'master',
                         tab: 'masterKegiatan',
                         search: '',
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, originalId: 0 },
@@ -1587,7 +1595,7 @@
                             { key: 'bagianStaff', title: 'Bagian Staff', short: 'Staf', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'bagian_staff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
                             { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], table: 'admin', icon: 'bi-shield-lock' },
-                            { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'Satu file Excel, satu sheet per tabel, seluruh data tersimpan.', icon: 'bi-download', settings: true, download: true }
+                            { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'File Excel siap pakai: header ramah, baris judul dibekukan, filter aktif, angka sebagai angka.', icon: 'bi-download', settings: true, download: true }
                         ]
                     }
                 };
@@ -3187,7 +3195,7 @@
                         const res = await fetch('/api/database-export', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ token: token })
+                            body: JSON.stringify({ token: token, scope: this.master.downloadScope })
                         });
                         const ctype = String(res.headers.get('content-type') || '');
                         if (!res.ok || ctype.indexOf('spreadsheetml') === -1) {

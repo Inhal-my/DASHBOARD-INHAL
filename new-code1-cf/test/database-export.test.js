@@ -3,6 +3,7 @@ import { env, SELF } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { dispatchRpc } from '../src/rpc.js';
 import { AUTH_ERROR } from '../src/session.js';
+import { listUserTables, readAllTables, isExportableTable, tableGroup } from '../src/databaseExport.js';
 
 function unzipStore(buf) {
   const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
@@ -48,7 +49,7 @@ describe('POST /api/database-export', () => {
     expect(await res.json()).toEqual({ success: false, message: AUTH_ERROR });
   });
 
-  it('returns xlsx for an admin with all user tables and secrets', async () => {
+  it('defaults to master scope: no system sheets and no secrets', async () => {
     const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
     await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('pbkdf2$secret','Admin Utama')").run();
     await env.DB.prepare(
@@ -68,15 +69,155 @@ describe('POST /api/database-export', () => {
     const files = unzipStore(buf);
     const wb = files['xl/workbook.xml'];
     expect(wb).toContain('name="mahasiswa"');
+    expect(wb).toContain('name="master_kegiatan"');
+    expect(wb).not.toContain('name="admin"');
+    expect(wb).not.toContain('name="uploads"');
+    expect(wb).not.toContain('name="sessions"');
+    expect(wb).not.toContain('sqlite_');
+    expect(wb).not.toContain('_cf_');
+    const xmlBlob = Object.values(files).join('\n');
+    expect(xmlBlob).toContain('Aisyah Putri');
+    expect(xmlBlob).toContain('Nama Lengkap');
+    expect(xmlBlob).not.toContain('pbkdf2$secret');
+    expect(xmlBlob).not.toContain('aGVsbG8=');
+    expect(xmlBlob).not.toContain(token);
+    expect(xmlBlob).not.toContain('_truncated');
+  });
+
+  it('all scope keeps system sheets but strips sensitive columns', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('pbkdf2$secret','Admin Utama')").run();
+    await env.DB.prepare(
+      "INSERT INTO uploads (id, pengajuan_id, kind, file_name, mime_type, size, content, created_at, created_by) VALUES ('UPL-1','INHAL-1','acc','a.pdf','application/pdf',4,'aGVsbG8=','2026-09-18T00:00:00','admin')"
+    ).run();
+    const res = await SELF.fetch('http://example.com/api/database-export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, scope: 'all' })
+    });
+    expect(res.status).toBe(200);
+    const files = unzipStore(new Uint8Array(await res.arrayBuffer()));
+    const wb = files['xl/workbook.xml'];
     expect(wb).toContain('name="admin"');
     expect(wb).toContain('name="uploads"');
     expect(wb).toContain('name="sessions"');
-    expect(wb).not.toContain('sqlite_');
     const xmlBlob = Object.values(files).join('\n');
-    expect(xmlBlob).toContain('Aisyah Putri');
-    expect(xmlBlob).toContain('pbkdf2$secret');
-    expect(xmlBlob).toContain('aGVsbG8=');
-    expect(xmlBlob).toContain(token);
+    expect(xmlBlob).toContain('Admin Utama');
+    expect(xmlBlob).toContain('UPL-1');
+    expect(xmlBlob).not.toContain('pbkdf2$secret');
+    expect(xmlBlob).not.toContain('aGVsbG8=');
+    expect(xmlBlob).not.toContain(token);
+  });
+});
+
+describe('internal table filtering', () => {
+  it('isExportableTable rejects sqlite_ and _cf_ tables', () => {
+    expect(isExportableTable('pengajuan')).toBe(true);
+    expect(isExportableTable('')).toBe(false);
+    expect(isExportableTable('sqlite_master')).toBe(false);
+    expect(isExportableTable('_cf_KV')).toBe(false);
+    expect(isExportableTable('_cf_METADATA')).toBe(false);
+  });
+
+  it('listUserTables drops _cf_ tables even if the database returns them', async () => {
+    const called = [];
+    const db = {
+      prepare(sql) {
+        called.push(sql);
+        return {
+          async all() {
+            return {
+              results: [
+                { name: '_cf_KV' },
+                { name: '_cf_METADATA' },
+                { name: 'sqlite_sequence' },
+                { name: 'pengajuan' },
+                { name: 'admin' }
+              ]
+            };
+          }
+        };
+      }
+    };
+    const names = await listUserTables(db);
+    expect(names.slice().sort()).toEqual(['admin', 'pengajuan']);
+    expect(called[0]).toContain('_cf_');
+  });
+
+  it('readAllTables never selects an internal _cf_ table', async () => {
+    const selected = [];
+    const db = {
+      prepare(sql) {
+        return {
+          async all() {
+            if (sql.indexOf('sqlite_master') !== -1) {
+              return { results: [{ name: '_cf_KV' }, { name: 'pengajuan' }] };
+            }
+            selected.push(sql);
+            if (sql.indexOf('_cf_') !== -1) {
+              throw new Error('access to _cf_KV.key is prohibited: SQLITE_AUTH');
+            }
+            return { results: [{ id: 1 }] };
+          }
+        };
+      }
+    };
+    const tables = await readAllTables(db);
+    expect(tables.map((t) => t.name)).toEqual(['pengajuan']);
+    expect(selected.some((s) => s.indexOf('_cf_') !== -1)).toBe(false);
+  });
+});
+
+describe('export scope and security', () => {
+  it('tableGroup separates system tables from master data', () => {
+    expect(tableGroup('admin')).toBe('system');
+    expect(tableGroup('sessions')).toBe('system');
+    expect(tableGroup('uploads')).toBe('system');
+    expect(tableGroup('mahasiswa')).toBe('master');
+    expect(tableGroup('pengajuan')).toBe('master');
+    expect(tableGroup('berita_acara')).toBe('master');
+  });
+
+  it('master scope excludes system tables', async () => {
+    const db = {
+      prepare(sql) {
+        return {
+          async all() {
+            if (sql.indexOf('sqlite_master') !== -1) {
+              return { results: [{ name: 'admin' }, { name: 'mahasiswa' }] };
+            }
+            if (sql.indexOf('PRAGMA') !== -1) {
+              return { results: [{ name: 'npm' }, { name: 'nama_lengkap' }] };
+            }
+            return { results: [] };
+          }
+        };
+      }
+    };
+    const tables = await readAllTables(db, 'master');
+    expect(tables.map((t) => t.name)).toEqual(['mahasiswa']);
+  });
+
+  it('readAllTables strips sensitive columns', async () => {
+    const db = {
+      prepare(sql) {
+        return {
+          async all() {
+            if (sql.indexOf('sqlite_master') !== -1) {
+              return { results: [{ name: 'admin' }] };
+            }
+            if (sql.indexOf('PRAGMA') !== -1) {
+              return { results: [{ name: 'id' }, { name: 'password' }, { name: 'nama' }] };
+            }
+            return { results: [] };
+          }
+        };
+      }
+    };
+    const tables = await readAllTables(db, 'all');
+    expect(tables.map((t) => t.name)).toEqual(['admin']);
+    expect(tables[0].columns.map((c) => c.key)).toEqual(['id', 'nama']);
+    expect(tables[0].columns.map((c) => c.label)).toEqual(['id', 'Nama']);
   });
 });
 
