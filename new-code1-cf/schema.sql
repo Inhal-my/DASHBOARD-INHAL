@@ -59,6 +59,7 @@ INSERT INTO config (key, value) VALUES ('BUKTI_MODE','strict');
 
 DROP TABLE IF EXISTS log_data;
 DROP TABLE IF EXISTS nomor_surat;
+DROP TABLE IF EXISTS id_sequence;
 DROP TABLE IF EXISTS check_data;
 DROP TABLE IF EXISTS master_biaya;
 DROP TABLE IF EXISTS berita_acara_admin_peserta;
@@ -133,6 +134,9 @@ CREATE TABLE nomor_surat (
   id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, tahun TEXT, last_number INTEGER,
   updated_at TEXT
 );
+CREATE TABLE id_sequence (
+  scope TEXT PRIMARY KEY, last_number INTEGER NOT NULL DEFAULT 0, updated_at TEXT
+);
 CREATE TABLE log_data (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, payload TEXT
 );
@@ -142,3 +146,4 @@ CREATE INDEX idx_ba_admin_kegiatan_key ON berita_acara_admin(kegiatan_key);
 CREATE INDEX idx_ba_peserta_ba_id ON berita_acara_peserta(ba_id);
 CREATE INDEX idx_check_data_pengajuan ON check_data(id_pengajuan);
 CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+CREATE UNIQUE INDEX idx_nomor_surat_type_tahun ON nomor_surat(type, tahun);

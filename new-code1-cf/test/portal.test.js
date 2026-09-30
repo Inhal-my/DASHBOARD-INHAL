@@ -18,6 +18,8 @@ describe('getStudentPortalData', () => {
     expect(data.error).toBeUndefined();
     expect(data.nama).toBe('Aisyah Putri');
     expect(data.buktiMode).toBe('strict');
+    expect(data.email).toBeUndefined();
+    expect(data.noHp).toBeUndefined();
     expect(data.history).toHaveLength(1);
     const h = data.history[0];
     expect(h.idPengajuan).toBe('INHAL-a');

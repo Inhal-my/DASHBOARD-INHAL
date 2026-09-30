@@ -1,8 +1,8 @@
-// PBKDF2 iteration count. Kept low so hashing fits within the Cloudflare Workers
-// CPU budget (the free/paid per-request CPU limits are tight). Raise this on a
-// plan with more CPU headroom; the stored format carries the count so old hashes
-// keep verifying.
-const ITERATIONS = 1000;
+// PBKDF2 iteration count. The stored hash carries its own count, so raising
+// this value only affects new hashes and legacy-plaintext upgrades; existing
+// hashes keep verifying with their original count. Keep it within the Worker
+// CPU budget (lower it if logins start hitting the limit).
+const ITERATIONS = 100000;
 const KEY_BITS = 256;
 const PREFIX = 'pbkdf2';
 

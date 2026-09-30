@@ -1,5 +1,6 @@
 import { requireAdmin, requireBagianSession } from '../session.js';
 import { getBagianBaStatuses, kegiatanKey } from '../read/common.js';
+import { nextIdNumber } from '../sequence.js';
 import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
 
 function str(v) {
@@ -37,7 +38,8 @@ async function nextBaId(db, table) {
     const n = parseInt(id.slice(prefix.length), 10);
     if (!isNaN(n) && n > max) max = n;
   }
-  return prefix + String(max + 1).padStart(4, '0');
+  const n = await nextIdNumber(db, 'ba:' + prefix, max);
+  return prefix + String(n).padStart(4, '0');
 }
 
 function normalizeBaPeserta(payload) {

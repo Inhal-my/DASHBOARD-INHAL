@@ -13,7 +13,8 @@ export const SYSTEM_TABLES = new Set([
   'auth_throttle',
   'uploads',
   'audit_log',
-  'log_data'
+  'log_data',
+  'id_sequence'
 ]);
 
 export const NUMERIC_COLUMNS = new Set([

@@ -30,14 +30,12 @@ async function nextSuratNumberYearly(db, type) {
   const year = new Date().getFullYear();
   const romanMonth = getRomanMonth(new Date().getMonth() + 1);
   const ts = nowIso();
-  const existing = await db.prepare('SELECT id, last_number FROM nomor_surat WHERE type = ?1 AND CAST(tahun AS TEXT) = ?2').bind(t, String(year)).first();
-  let nextNum = 1;
-  if (existing) {
-    nextNum = (parseInt(existing.last_number, 10) || 0) + 1;
-    await db.prepare('UPDATE nomor_surat SET last_number = ?1, updated_at = ?2 WHERE id = ?3').bind(nextNum, ts, existing.id).run();
-  } else {
-    await db.prepare('INSERT INTO nomor_surat (type, tahun, last_number, updated_at) VALUES (?1, ?2, ?3, ?4)').bind(t, year, nextNum, ts).run();
-  }
+  const row = await db.prepare(
+    'INSERT INTO nomor_surat (type, tahun, last_number, updated_at) VALUES (?1, ?2, 1, ?3) ' +
+    'ON CONFLICT(type, tahun) DO UPDATE SET last_number = nomor_surat.last_number + 1, updated_at = excluded.updated_at ' +
+    'RETURNING last_number'
+  ).bind(t, String(year), ts).first();
+  const nextNum = Number(row && row.last_number) || 1;
   const seq = String(nextNum).padStart(3, '0');
   return seq + '/' + t + '/FKIK-UMSU/' + romanMonth + '/' + year;
 }

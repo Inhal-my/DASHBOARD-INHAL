@@ -148,6 +148,21 @@ describe('pengajuan admin status and delete', () => {
     expect(hist.results[0].status).toBe('Diterima');
   });
 
+  it('issues consecutive nomor surat for concurrent approvals', async () => {
+    await seedPengajuan();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,no_hp_wa,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010002','Budi','budi@contoh.com','0813','A','SGD','Menunggu')"
+    ).run();
+    const ctx = await adminCtx();
+    const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
+    const second = await updatePengajuanStatus(env.DB, 'INHAL-2', 'Diterima', '', '', ctx);
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    expect(first.nomorSurat).not.toBe(second.nomorSurat);
+    const numbers = [first.nomorSurat, second.nomorSurat].map((s) => parseInt(s.slice(0, 3), 10)).sort((a, b) => a - b);
+    expect(numbers).toEqual([1, 2]);
+  });
+
   it('deletes a pengajuan with its related rows', async () => {
     await seedPengajuan();
     await seedDetail();

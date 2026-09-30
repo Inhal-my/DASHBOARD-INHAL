@@ -142,22 +142,11 @@ export async function getStudentPortalData(db, npm) {
 
   history.sort((a, b) => String(b.tanggalAjuan || '').localeCompare(String(a.tanggalAjuan || '')));
 
-  let latestEmail = '';
-  let latestNoHp = '';
-  const sortedRows = rows.slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
-  for (const r of sortedRows) {
-    if (!latestEmail && r.email) latestEmail = String(r.email).trim();
-    if (!latestNoHp && r.no_hp_wa) latestNoHp = String(r.no_hp_wa).trim();
-    if (latestEmail && latestNoHp) break;
-  }
-
   const buktiMode = await getBuktiMode(db);
 
   return {
     nama: namaLengkap || 'Mahasiswa',
     npm: npmRaw,
-    email: latestEmail,
-    noHp: latestNoHp,
     buktiMode: buktiMode,
     history: history
   };

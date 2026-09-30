@@ -110,6 +110,18 @@ describe('berita acara bagian', () => {
     expect(dup.message).toContain('sudah ada berita acara');
   });
 
+  it('issues consecutive BA ids', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const first = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
+    const second = await saveBeritaAcaraBagian(env.DB, { ...payload, namaKegiatan: 'SGD 2' }, 'SGD', ctx);
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    const nums = [first.baId, second.baId].map((id) => parseInt(id.slice(-4), 10)).sort((a, b) => a - b);
+    expect(nums).toEqual([1, 2]);
+    expect(first.baId).not.toBe(second.baId);
+  });
+
   it('menyimpan jam, dosen, dan kegiatan_key serta menyinkron ke pengajuan', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx(['SGD']);
