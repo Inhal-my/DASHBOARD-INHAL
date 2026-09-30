@@ -103,6 +103,28 @@ Jika muncul peringatan `You need to register a workers.dev subdomain`, daftarkan
 https://dash.cloudflare.com/<ACCOUNT_ID>/workers/subdomain
 ```
 
+### 4.1 Secret wajib: bridge Google Drive
+
+Fitur unggah berkas (surat keterangan, ACC INHAL, bukti bayar, berita acara) memakai bridge Apps Script. Worker membutuhkan dua nilai berikut:
+
+- `GAS_DRIVE_URL` (variable biasa di `wrangler.toml`): URL Web App Apps Script.
+- `GAS_DRIVE_TOKEN` (**secret**, wajib): token bersama, harus sama dengan `DRIVE_BRIDGE_TOKEN` di Apps Script.
+
+`GAS_DRIVE_TOKEN` tidak ditulis di `wrangler.toml` maupun kode. Set sekali per environment:
+
+```bash
+# jalankan di terminal Anda, jangan tempel nilai token ke chat
+printf '%s' '<TOKEN_BRIDGE>' | CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler secret put GAS_DRIVE_TOKEN
+```
+
+Cek daftar secret yang sudah terpasang (nilai tidak ditampilkan):
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler secret list
+```
+
+Tanpa secret ini, semua unggahan akan gagal dengan pesan "Penyimpanan Drive belum dikonfigurasi."
+
 ## 5. Verifikasi
 
 Buka URL Worker di browser, atau:

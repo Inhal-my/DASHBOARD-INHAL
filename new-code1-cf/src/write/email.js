@@ -65,16 +65,31 @@ export function buildEnhanced(pengajuan, details, status) {
 }
 
 export async function resolveBagianEmail(db, pengajuan, details) {
-  const { results } = await db.prepare('SELECT lab, kegiatan_lab, bagian, email FROM master_bagian').all();
   const map = {};
-  for (const r of results || []) {
+  const add = (field, email) => {
+    const k = norm(field);
+    if (k && !map[k]) map[k] = email;
+  };
+
+  const bagianRows = (await db.prepare('SELECT lab, kegiatan_lab, bagian, email FROM master_bagian').all()).results || [];
+  for (const r of bagianRows) {
     const email = str(r.email);
     if (!email) continue;
-    for (const field of [r.lab, r.kegiatan_lab, r.bagian]) {
-      const k = norm(field);
-      if (k) map[k] = email;
-    }
+    add(r.lab, email);
+    add(r.kegiatan_lab, email);
+    add(r.bagian, email);
   }
+
+  const staffRows = (await db.prepare('SELECT kategori, email FROM bagian_staff').all()).results || [];
+  for (const r of staffRows) {
+    const email = str(r.email);
+    if (!email) continue;
+    const kategori = str(r.kategori);
+    add(kategori, email);
+    add(kategori.replace(/^lab\s+/i, ''), email);
+    add('lab ' + kategori, email);
+  }
+
   const candidates = [];
   const added = {};
   const push = (v) => {

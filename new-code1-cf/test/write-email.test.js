@@ -65,6 +65,19 @@ describe('email helpers', () => {
     expect(match.name).toBe('Lab Anatomi');
   });
 
+  it('resolves the bagian email from the staff kategori for non-lab activities', async () => {
+    await env.DB.prepare("INSERT INTO bagian_staff (email, kategori, nama, pass) VALUES ('sgd@contoh.com','SGD','Staff SGD','x')").run();
+    const match = await resolveBagianEmail(env.DB, { blok: 'Z', jenis_kegiatan: 'SGD' }, [{ pilihan: 'S G D 3', detail: 'Inhal' }]);
+    expect(match.email).toBe('sgd@contoh.com');
+    expect(match.name).toBe('SGD');
+  });
+
+  it('maps the "Lab " staff kategori to the plain lab name', async () => {
+    await env.DB.prepare("INSERT INTO bagian_staff (email, kategori, nama, pass) VALUES ('lab@contoh.com','Lab Biokimia','Staff Biokimia','x')").run();
+    const match = await resolveBagianEmail(env.DB, { jenis_kegiatan: 'Praktikum' }, [{ pilihan: 'Biokimia', detail: 'PostTest' }]);
+    expect(match.email).toBe('lab@contoh.com');
+  });
+
   it('returns an empty bagian email when nothing matches', async () => {
     const match = await resolveBagianEmail(env.DB, { blok: 'Z', jenis_kegiatan: 'SGD' }, [{ pilihan: 'SGD 9', detail: 'X' }]);
     expect(match.email).toBe('');

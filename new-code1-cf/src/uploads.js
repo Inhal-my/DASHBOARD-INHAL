@@ -1,4 +1,4 @@
-export const MAX_UPLOAD_BYTES = 700 * 1024;
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 
 export function decodeBase64Size(base64) {
@@ -63,7 +63,7 @@ export function validateUpload(file) {
   const size = decodeBase64Size(file.data);
   if (size <= 0) return { ok: false, message: 'Berkas kosong atau tidak valid.' };
   if (size > MAX_UPLOAD_BYTES) {
-    return { ok: false, message: 'Ukuran berkas maksimal ' + Math.floor(MAX_UPLOAD_BYTES / 1024) + ' KB.' };
+    return { ok: false, message: 'Ukuran berkas maksimal ' + Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024)) + ' MB.' };
   }
   return { ok: true, size: size, mime: mime };
 }
