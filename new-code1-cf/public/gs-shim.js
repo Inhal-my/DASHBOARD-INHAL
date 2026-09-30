@@ -47,4 +47,11 @@
   window.google = window.google || {};
   window.google.script = window.google.script || {};
   window.google.script.run = makeRunner();
+
+  window.MAX_UPLOAD_FILE_BYTES = 5 * 1024 * 1024;
+  window.uploadFileSizeError = function (file, maxBytes) {
+    var max = maxBytes || window.MAX_UPLOAD_FILE_BYTES;
+    if (!file || typeof file.size !== 'number' || file.size <= max) return '';
+    return 'Ukuran berkas maksimal ' + Math.round(max / 1048576) + ' MB (berkas Anda ' + (file.size / 1048576).toFixed(1) + ' MB).';
+  };
 })();

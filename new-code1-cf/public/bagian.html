@@ -820,8 +820,17 @@
                     }.bind(this));
                 },
                 onBaFile(e) {
-                    this.ba.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
-                    this.ba.fileName = this.ba.file ? this.ba.file.name : '';
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
+                    if (sizeError) {
+                        this.ba.file = null;
+                        this.ba.fileName = '';
+                        e.target.value = '';
+                        this.showToast(sizeError, 'error');
+                        return;
+                    }
+                    this.ba.file = f;
+                    this.ba.fileName = f ? f.name : '';
                 },
                 readFileAsBase64(file) {
                     return new Promise((resolve, reject) => {

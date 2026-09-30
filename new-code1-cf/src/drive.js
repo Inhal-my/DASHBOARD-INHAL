@@ -1,4 +1,4 @@
-import { parseFileInput, decodeBase64Size } from './uploads.js';
+import { parseFileInput, decodeBase64Size, resolveMime } from './uploads.js';
 
 export const MAX_BA_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_BA_MIME = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -6,7 +6,7 @@ export const ALLOWED_BA_MIME = ['application/pdf', 'image/jpeg', 'image/jpg', 'i
 export function validateDriveFile(file, allowed, maxBytes, label) {
   const name = label || 'berkas';
   if (!file || !file.data) return { ok: false, message: 'Berkas ' + name + ' wajib diunggah.' };
-  const mime = String(file.mimeType || '').toLowerCase();
+  const mime = resolveMime(file.mimeType, file.data);
   if (allowed.indexOf(mime) === -1) {
     return { ok: false, message: 'Format berkas ' + name + ' tidak didukung.' };
   }
@@ -63,7 +63,7 @@ export async function saveDriveFile(env, input, prefix, opts) {
   let data = {};
   try { data = await res.json(); } catch (e) { data = {}; }
   if (!res.ok || !data || !data.success || !data.url) {
-    return { ok: false, message: (data && data.message) || 'Gagal mengunggah berkas ke Drive.' };
+    return { ok: false, message: (data && data.message) || 'Gagal mengunggah berkas ke penyimpanan (berkas mungkin terlalu besar atau layanan penyimpanan sedang sibuk). Coba lagi atau perkecil ukuran berkas.' };
   }
   return { ok: true, url: data.url, fileId: data.fileId || parseDriveFileId(data.url), size: valid.size, mime: valid.mime, name: valid.name };
 }

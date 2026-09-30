@@ -555,6 +555,11 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script>
         const APP_URL = '';
+        const MAX_UPLOAD_FILE_BYTES = 5 * 1024 * 1024;
+        function uploadFileSizeError(file) {
+            if (!file || typeof file.size !== 'number' || file.size <= MAX_UPLOAD_FILE_BYTES) return '';
+            return 'Ukuran berkas maksimal 5 MB (berkas Anda ' + (file.size / 1048576).toFixed(1) + ' MB).';
+        }
         const { createApp } = Vue;
 
         createApp({
@@ -621,7 +626,7 @@
                         body: body ? JSON.stringify(body) : undefined
                     }).then(async (res) => {
                         const data = await res.json().catch(() => ({ success: false, message: 'Respons tidak valid' }));
-                        if (!res.ok) throw new Error((data && data.message) || ('HTTP ' + res.status));
+                        if (!res.ok) { console.error('[API] ' + method + ' ' + url + ' -> ' + res.status, data); throw new Error((data && data.message) || ('HTTP ' + res.status)); }
                         return data;
                     });
                 },
@@ -844,12 +849,30 @@
                     if (!this.upload.submitting) this.upload.open = false;
                 },
                 onAccFile(e) {
-                    this.upload.accFile = e.target.files && e.target.files.length ? e.target.files[0] : null;
-                    this.upload.accName = this.upload.accFile ? this.upload.accFile.name : '';
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = uploadFileSizeError(f);
+                    if (sizeError) {
+                        this.upload.accFile = null;
+                        this.upload.accName = '';
+                        e.target.value = '';
+                        this.showToast(sizeError, 'error');
+                        return;
+                    }
+                    this.upload.accFile = f;
+                    this.upload.accName = f ? f.name : '';
                 },
                 onBuktiFile(e) {
-                    this.upload.buktiFile = e.target.files && e.target.files.length ? e.target.files[0] : null;
-                    this.upload.buktiName = this.upload.buktiFile ? this.upload.buktiFile.name : '';
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = uploadFileSizeError(f);
+                    if (sizeError) {
+                        this.upload.buktiFile = null;
+                        this.upload.buktiName = '';
+                        e.target.value = '';
+                        this.showToast(sizeError, 'error');
+                        return;
+                    }
+                    this.upload.buktiFile = f;
+                    this.upload.buktiName = f ? f.name : '';
                     this.validateBukti();
                 },
                 readFileHeader(file, bytes) {

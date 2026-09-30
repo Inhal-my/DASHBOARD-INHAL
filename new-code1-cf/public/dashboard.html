@@ -37,6 +37,15 @@
         .btn-danger-soft:hover { background: #ffe4e6; }
         .btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; background: #e11d48; padding: .625rem 1rem; font-size: .875rem; font-weight: 600; color: #fff; transition: background .15s ease; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
         .btn-danger:hover { background: #be123c; }
+        .btn-acc { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; padding: .625rem 1rem; font-size: .875rem; font-weight: 700; color: #fff; letter-spacing: .01em; background-image: linear-gradient(135deg, #34d399 0%, #059669 55%, #047857 100%); box-shadow: 0 8px 18px -6px rgba(5,150,105,.65), inset 0 0 0 1px rgba(255,255,255,.22); transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; animation: accGlow 2.4s ease-in-out infinite; }
+        .btn-acc:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 12px 24px -6px rgba(5,150,105,.7), inset 0 0 0 1px rgba(255,255,255,.3); }
+        .btn-bukti { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border-radius: .75rem; padding: .625rem 1rem; font-size: .875rem; font-weight: 700; color: #fff; letter-spacing: .01em; background-image: linear-gradient(135deg, #fbbf24 0%, #ea580c 60%, #c2410c 100%); box-shadow: 0 8px 18px -6px rgba(234,88,12,.65), inset 0 0 0 1px rgba(255,255,255,.22); transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; animation: buktiGlow 2.4s ease-in-out infinite; }
+        .btn-bukti:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 12px 24px -6px rgba(234,88,12,.7), inset 0 0 0 1px rgba(255,255,255,.3); }
+        @keyframes accGlow { 0%, 100% { box-shadow: 0 8px 18px -6px rgba(5,150,105,.5), inset 0 0 0 1px rgba(255,255,255,.22); } 50% { box-shadow: 0 10px 26px -4px rgba(5,150,105,.85), inset 0 0 0 1px rgba(255,255,255,.35); } }
+        @keyframes buktiGlow { 0%, 100% { box-shadow: 0 8px 18px -6px rgba(234,88,12,.5), inset 0 0 0 1px rgba(255,255,255,.22); } 50% { box-shadow: 0 10px 26px -4px rgba(234,88,12,.85), inset 0 0 0 1px rgba(255,255,255,.35); } }
+        @media (prefers-reduced-motion: reduce) { .btn-acc, .btn-bukti { animation: none; } }
+        .chip-bukti { display: inline-flex; align-items: center; gap: .25rem; border-radius: 9999px; padding: .2rem .62rem; font-size: .68rem; font-weight: 700; color: #fff; background-image: linear-gradient(135deg, #fbbf24, #ea580c 60%, #c2410c); box-shadow: 0 2px 8px -2px rgba(234,88,12,.55), inset 0 0 0 1px rgba(255,255,255,.2); transition: filter .15s ease, transform .15s ease; }
+        .chip-bukti:hover { filter: brightness(1.08); transform: translateY(-1px); }
         .btn-primary:disabled, .btn-soft:disabled, .btn-danger:disabled { opacity: .6; cursor: not-allowed; }
         .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
         .link:hover { text-decoration: underline; }
@@ -468,7 +477,7 @@
                                         <td class="px-4 py-2.5 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
                                         <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
                                         <td class="px-4 py-2.5">
-                                            <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" class="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
+                                            <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" class="chip-bukti" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
                                         </td>
                                         <td class="px-4 py-2.5">
@@ -1261,8 +1270,8 @@
                             <!-- links -->
                             <div v-if="detail.p['Link Surat Keterangan'] || detail.p['Link ACC INHAL'] || detail.p['Link Bukti Bayar']" class="mt-4 grid gap-3 sm:grid-cols-3">
                                 <a v-if="detail.p['Link Surat Keterangan']" :href="detail.p['Link Surat Keterangan']" target="_blank" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
-                                <a v-if="detail.p['Link ACC INHAL']" :href="detail.p['Link ACC INHAL']" target="_blank" class="btn-soft justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
-                                <a v-if="detail.p['Link Bukti Bayar']" :href="detail.p['Link Bukti Bayar']" target="_blank" class="btn-soft justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
+                                <a v-if="detail.p['Link ACC INHAL']" :href="detail.p['Link ACC INHAL']" target="_blank" class="btn-acc justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
+                                <a v-if="detail.p['Link Bukti Bayar']" :href="detail.p['Link Bukti Bayar']" target="_blank" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
                             </div>
 
                             <!-- editable -->
@@ -1993,8 +2002,17 @@
                     this.babSelectedGroup.peserta.forEach(p => { this.bab.ba.selected[p.idPengajuan] = target; });
                 },
                 babOnBaFile(e) {
-                    this.bab.ba.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
-                    this.bab.ba.fileName = this.bab.ba.file ? this.bab.ba.file.name : '';
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
+                    if (sizeError) {
+                        this.bab.ba.file = null;
+                        this.bab.ba.fileName = '';
+                        e.target.value = '';
+                        this.notify(sizeError, false);
+                        return;
+                    }
+                    this.bab.ba.file = f;
+                    this.bab.ba.fileName = f ? f.name : '';
                 },
                 babSubmitBa() {
                     if (!this.babSelectedGroup) { this.notify('Pilih kegiatan terlebih dahulu.', false); return; }
@@ -2455,6 +2473,14 @@
                 },
                 onSuratFile(e) {
                     const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
+                    if (sizeError) {
+                        this.detail.suratFile = null;
+                        this.detail.suratName = '';
+                        this.detail.suratError = sizeError;
+                        e.target.value = '';
+                        return;
+                    }
                     this.detail.suratFile = f;
                     this.detail.suratName = f ? f.name : '';
                     this.detail.suratError = '';
@@ -3111,7 +3137,15 @@
                     if (nama) this.ba.form.nama = nama;
                 },
                 onBaFile(e) {
-                    this.ba.form.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
+                    if (sizeError) {
+                        this.ba.form.file = null;
+                        e.target.value = '';
+                        this.notify(sizeError, false);
+                        return;
+                    }
+                    this.ba.form.file = f;
                 },
                 readFileAsBase64(file) {
                     return new Promise((resolve, reject) => {

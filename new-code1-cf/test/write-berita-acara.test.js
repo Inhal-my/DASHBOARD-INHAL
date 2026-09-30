@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
   updateBeritaAcaraBagian, updateBeritaAcaraAdmin
 } from '../src/write/beritaAcara.js';
+
+afterEach(() => { vi.unstubAllGlobals(); });
 
 async function adminCtx() {
   return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: {} };
@@ -108,6 +110,47 @@ describe('berita acara bagian', () => {
     const dup = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
     expect(dup.success).toBe(false);
     expect(dup.message).toContain('sudah ada berita acara');
+  });
+
+  it('mengunggah dan menyimpan file BA ke Drive', async () => {
+    await seedPengajuan();
+    const ctx = {
+      token: await createSession(env.DB, { role: 'bagian', nama: 'Bagian', kategoris: ['SGD'] }),
+      env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' }
+    };
+    const f = vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view', fileId: 'x' }),
+      { status: 200 }
+    ));
+    vi.stubGlobal('fetch', f);
+
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      ...payload,
+      file: { data: btoa('%PDF-1.4 berkas berita acara'), mimeType: 'application/pdf', name: 'ba.pdf' }
+    }, 'SGD', ctx);
+    expect(res.success).toBe(true);
+    expect(f).toHaveBeenCalledTimes(1);
+
+    const ba = await env.DB.prepare('SELECT file_url, file_name FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(ba.file_url).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
+    expect(ba.file_name).toBe('ba.pdf');
+  });
+
+  it('menerima berkas BA walau browser tidak mengirim mimeType', async () => {
+    await seedPengajuan();
+    const ctx = {
+      token: await createSession(env.DB, { role: 'bagian', nama: 'Bagian', kategoris: ['SGD'] }),
+      env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' }
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view' }),
+      { status: 200 }
+    )));
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      ...payload,
+      file: { data: btoa('%PDF-1.4 berkas berita acara'), mimeType: '', name: 'ba.pdf' }
+    }, 'SGD', ctx);
+    expect(res.success).toBe(true);
   });
 
   it('issues consecutive BA ids', async () => {

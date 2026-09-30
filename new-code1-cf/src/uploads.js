@@ -8,6 +8,35 @@ export function decodeBase64Size(base64) {
   return Math.floor((clean.length * 3) / 4) - padding;
 }
 
+const MAGIC_SIGNATURES = [
+  { mime: 'application/pdf', bytes: [0x25, 0x50, 0x44, 0x46] },
+  { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
+  { mime: 'image/png', bytes: [0x89, 0x50, 0x4e, 0x47] }
+];
+
+export function sniffMime(base64) {
+  const clean = String(base64 || '').replace(/[^A-Za-z0-9+/=]/g, '');
+  if (clean.length < 8) return '';
+  let head;
+  try { head = atob(clean.slice(0, 16)); } catch (e) { return ''; }
+  const codes = [];
+  for (let i = 0; i < head.length; i++) codes.push(head.charCodeAt(i) & 0xff);
+  for (const sig of MAGIC_SIGNATURES) {
+    let match = true;
+    for (let i = 0; i < sig.bytes.length; i++) {
+      if (codes[i] !== sig.bytes[i]) { match = false; break; }
+    }
+    if (match) return sig.mime;
+  }
+  return '';
+}
+
+export function resolveMime(mimeType, base64) {
+  const mime = String(mimeType || '').toLowerCase().trim();
+  if (mime && mime !== 'application/octet-stream') return mime;
+  return sniffMime(base64);
+}
+
 export function parseFileInput(input) {
   if (!input) return null;
   if (typeof input === 'string') {
@@ -27,7 +56,7 @@ export function parseFileInput(input) {
 
 export function validateUpload(file) {
   if (!file || !file.data) return { ok: false, message: 'Berkas tidak valid.' };
-  const mime = String(file.mimeType || '').toLowerCase();
+  const mime = resolveMime(file.mimeType, file.data);
   if (ALLOWED_MIME.indexOf(mime) === -1) {
     return { ok: false, message: 'Format berkas harus PDF, JPG, atau PNG.' };
   }

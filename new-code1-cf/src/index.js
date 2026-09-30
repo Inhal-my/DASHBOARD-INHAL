@@ -3,7 +3,7 @@ import { getMasterOptions, getBuktiMode, getStudentNameByNpm } from './repo.js';
 import { registerPengajuan } from './pengajuan.js';
 import { getStudentPortalData, uploadBuktiFiles } from './portal.js';
 import { dispatchRpc } from './rpc.js';
-import { getUpload, base64ToBytes } from './uploads.js';
+import { getUpload, base64ToBytes, decodeBase64Size } from './uploads.js';
 import { exportDatabase } from './databaseExport.js';
 
 const app = new Hono();
@@ -56,6 +56,10 @@ app.post('/api/portal/upload', async (c) => {
     return c.json({ success: false, message: 'Data tidak valid.' }, 400);
   }
   const result = await uploadBuktiFiles(c.env.DB, body, c.env);
+  if (!result.success) {
+    const meta = (f) => (f && f.data) ? { mime: String(f.mimeType || ''), bytes: decodeBase64Size(f.data) } : null;
+    console.log('portal.upload failed: ' + JSON.stringify({ acc: meta(body && body.accFile), bukti: meta(body && body.buktiFile), message: result.message }));
+  }
   return c.json(result, result.success ? 200 : 400);
 });
 

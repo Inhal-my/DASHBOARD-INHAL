@@ -26,6 +26,11 @@
         .btn-soft:hover { background: #f1f5f9; }
         .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
         .link:hover { text-decoration: underline; }
+        .btn-acc, .btn-bukti { display: inline-flex; align-items: center; gap: .3rem; border-radius: 9999px; padding: .22rem .62rem; font-size: .7rem; font-weight: 700; color: #fff; text-decoration: none; white-space: nowrap; transition: filter .15s ease, transform .15s ease, box-shadow .15s ease; }
+        .btn-acc { background-image: linear-gradient(135deg, #34d399, #059669 60%, #047857); box-shadow: 0 2px 8px -2px rgba(5, 150, 105, .55), inset 0 0 0 1px rgba(255,255,255,.2); }
+        .btn-bukti { background-image: linear-gradient(135deg, #fbbf24, #ea580c 60%, #c2410c); box-shadow: 0 2px 8px -2px rgba(234, 88, 12, .55), inset 0 0 0 1px rgba(255,255,255,.2); }
+        .btn-acc:hover, .btn-bukti:hover { filter: brightness(1.08); transform: translateY(-1px); text-decoration: none; box-shadow: 0 6px 14px -3px rgba(15, 23, 42, .4); }
+        .btn-acc .bi, .btn-bukti .bi { font-size: .78rem; }
         .section-title { display: flex; align-items: center; gap: .5rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #4f46e5; margin-bottom: .85rem; }
         .timeline { position: relative; border-left: 2px solid #e2e8f0; margin-left: 6px; padding-left: 20px; }
         .timeline-item { position: relative; padding-bottom: 12px; }
@@ -653,7 +658,7 @@
                                                             <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
                                                             <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
                                                             <span v-if="biayaForNpm(p.npm, s.row.blok)" class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(biayaForNpm(p.npm, s.row.blok)) }}</span>
-                                                            <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="btn-bukti whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="text-slate-300">-</span>
                                                         </div>
                                                     </div>
@@ -989,7 +994,7 @@
                                                     <span :class="m.lunas ? 'bg-emerald-50 text-emerald-700' : (m.jumlahBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="bayarBuktiUrl(m)" :href="bayarBuktiUrl(m)" target="_blank" class="link text-xs" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                                    <a v-if="bayarBuktiUrl(m)" :href="bayarBuktiUrl(m)" target="_blank" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
@@ -1002,9 +1007,9 @@
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
                                                             <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
-                                                            <a v-if="it.linkBukti" :href="it.linkBukti" target="_blank" class="link ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="it.linkBukti" :href="it.linkBukti" target="_blank" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
-                                                            <a v-if="it.linkAcc" :href="it.linkAcc" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
+                                                            <a v-if="it.linkAcc" :href="it.linkAcc" target="_blank" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -1135,11 +1140,11 @@
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">ACC INHAL</div>
-                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="r.pengajuan['Link ACC INHAL']" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="r.pengajuan['Link ACC INHAL']" target="_blank" class="btn-acc">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Bukti Bayar</div>
-                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="r.pengajuan['Link Bukti Bayar']" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="r.pengajuan['Link Bukti Bayar']" target="_blank" class="btn-bukti">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Link Final</div>

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
-  parseFileInput, validateUpload, saveUpload, getUpload, base64ToBytes, MAX_UPLOAD_BYTES
+  parseFileInput, validateUpload, saveUpload, getUpload, base64ToBytes, MAX_UPLOAD_BYTES,
+  sniffMime, resolveMime
 } from '../src/uploads.js';
 
 describe('uploads', () => {
@@ -20,6 +21,22 @@ describe('uploads', () => {
     expect(validateUpload(null).ok).toBe(false);
     const big = { data: 'A'.repeat(Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 200), mimeType: 'application/pdf' };
     expect(validateUpload(big).ok).toBe(false);
+  });
+
+  it('infers mime from the file signature when the browser omits it', () => {
+    expect(sniffMime(btoa('%PDF-1.4 data'))).toBe('application/pdf');
+    expect(sniffMime(btoa('\xff\xd8\xff\x00jpeg'))).toBe('image/jpeg');
+    expect(sniffMime(btoa('\x89PNG\r\n\x1a\n'))).toBe('image/png');
+    expect(sniffMime(btoa('hello world'))).toBe('');
+    expect(resolveMime('', btoa('%PDF-1.4 data'))).toBe('application/pdf');
+    expect(resolveMime('application/octet-stream', btoa('%PDF-1.4 data'))).toBe('application/pdf');
+    expect(resolveMime('application/pdf', btoa('hello'))).toBe('application/pdf');
+  });
+
+  it('accepts uploads with a missing mime when the content is a real PDF', () => {
+    expect(validateUpload({ data: btoa('%PDF-1.4 real'), mimeType: '' }).ok).toBe(true);
+    expect(validateUpload({ data: btoa('%PDF-1.4 real'), mimeType: 'application/octet-stream' }).ok).toBe(true);
+    expect(validateUpload({ data: btoa('hello world'), mimeType: '' }).ok).toBe(false);
   });
 
   it('saves and reads an upload back', async () => {

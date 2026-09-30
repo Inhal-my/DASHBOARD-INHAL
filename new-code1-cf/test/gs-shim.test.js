@@ -60,4 +60,12 @@ describe('gs-shim google.script.run', () => {
     expect(results[1].status).toBe('rejected');
     expect(results[1].reason.message).toBe('b failed');
   });
+
+  it('menyediakan pemeriksa ukuran berkas maksimal 5 MB', () => {
+    const win = loadShim(makeTransport({}));
+    expect(win.MAX_UPLOAD_FILE_BYTES).toBe(5 * 1024 * 1024);
+    expect(win.uploadFileSizeError({ size: 4 * 1024 * 1024 })).toBe('');
+    expect(win.uploadFileSizeError({ size: 6 * 1024 * 1024 })).toContain('maksimal 5 MB');
+    expect(win.uploadFileSizeError(null)).toBe('');
+  });
 });
