@@ -39,7 +39,7 @@ npm test
 
 Halaman:
 - `/` — Pendaftaran
-- `/portal` — Portal Mahasiswa (login cukup NPM)
+- `/portal` — Pengajuan INHAL (login cukup NPM)
 - `/dashboard` — Panel admin (dashboard)
 - `/detail-laporan` — Laporan detail (admin)
 - `/bagian` — Panel bagian

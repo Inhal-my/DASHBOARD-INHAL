@@ -62,7 +62,7 @@
                     </div>
                 </a>
                 <div class="flex items-center gap-2">
-                    <a :href="appUrl + '?page=portal'" class="btn-soft !py-2 text-xs"><i class="bi bi-search"></i><span class="hidden sm:inline">Portal Mahasiswa</span></a>
+                    <a :href="appUrl + '?page=portal'" class="btn-soft !py-2 text-xs"><i class="bi bi-search"></i><span class="hidden sm:inline">Pengajuan INHAL</span></a>
                     <a :href="appUrl + '?page=bagian'" class="btn-soft !py-2 text-xs"><i class="bi bi-people"></i><span class="hidden sm:inline">Panel Bagian</span></a>
                 </div>
             </div>
@@ -82,7 +82,7 @@
                             <div v-if="result.success && result.idPengajuan" class="mt-3 rounded-xl bg-white/70 p-3 text-sm">
                                 <div class="text-slate-600">Simpan ID Pengajuan Anda:</div>
                                 <div class="mt-1 font-mono text-base font-bold text-slate-900">{{ result.idPengajuan }}</div>
-                                <a :href="appUrl + '?page=portal'" class="link mt-1 inline-block text-sm">Cek status di Portal Mahasiswa</a>
+                                <a :href="appUrl + '?page=portal'" class="link mt-1 inline-block text-sm">Cek status di Pengajuan INHAL</a>
                             </div>
                         </div>
                         <button class="text-slate-400 hover:text-slate-600" @click="result=null"><i class="bi bi-x-lg"></i></button>
