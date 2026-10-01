@@ -53,3 +53,14 @@ describe('getStudentPortalData', () => {
     expect(data.error).toBe('NPM tidak boleh kosong');
   });
 });
+
+describe('portal.html lazy pdf.js', () => {
+  it('loads pdf.js on demand instead of in the head', async () => {
+    const res = await env.ASSETS.fetch(new Request('https://example.com/portal.html'));
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('_loadPdfJs()');
+    expect(html).toContain('pdf.js/3.11.174/pdf.min.js');
+    expect(html).not.toContain('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>');
+  });
+});

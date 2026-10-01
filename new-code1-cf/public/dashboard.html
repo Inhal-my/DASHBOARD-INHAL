@@ -1516,7 +1516,6 @@
 
     <script src="/gs-shim.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         const APP_URL = '/';
         const USER_EMAIL = '';
@@ -2978,8 +2977,25 @@
                 bagianStatusFinalClass(status) {
                     return status === 'ada' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500';
                 },
-                exportBagianExcel() {
-                    if (!window.XLSX) { this.notify('Fungsi ekspor belum siap, muat ulang halaman.', false); return; }
+                _loadXlsx() {
+                    if (window.XLSX) return Promise.resolve();
+                    if (this._xlsxPromise) return this._xlsxPromise;
+                    this._xlsxPromise = new Promise((resolve, reject) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                        s.onload = () => resolve();
+                        s.onerror = () => { this._xlsxPromise = null; reject(new Error('Gagal memuat library export.')); };
+                        document.head.appendChild(s);
+                    });
+                    return this._xlsxPromise;
+                },
+                async exportBagianExcel() {
+                    try {
+                        await this._loadXlsx();
+                    } catch (e) {
+                        this.notify('Gagal memuat fungsi ekspor. Periksa koneksi lalu coba lagi.', false);
+                        return;
+                    }
                     const rows = this.bagianTableRows.map(u => ({
                         Tanggal: (u.tanggalList || [u.tanggal]).filter(Boolean).join(', '),
                         Bagian: u.__orphan ? 'BA tanpa pengajuan' : u.bagian,
