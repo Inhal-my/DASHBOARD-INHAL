@@ -16,16 +16,16 @@ describe('scaffold', () => {
 });
 
 describe('portal entry redirect', () => {
-  it('redirects / to /portal.html', async () => {
+  it('redirects / to /portal', async () => {
     const res = await app.request('http://example.com/', { redirect: 'manual' });
     expect(res.status).toBe(302);
-    expect(res.headers.get('location')).toBe('/portal.html');
+    expect(res.headers.get('location')).toBe('/portal');
   });
 
-  it('redirects /index.html to /portal.html', async () => {
+  it('redirects /index.html to /portal', async () => {
     const res = await app.request('http://example.com/index.html', { redirect: 'manual' });
     expect(res.status).toBe(302);
-    expect(res.headers.get('location')).toBe('/portal.html');
+    expect(res.headers.get('location')).toBe('/portal');
   });
 });
 
