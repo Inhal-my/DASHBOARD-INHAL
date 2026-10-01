@@ -10,6 +10,9 @@ const app = new Hono();
 
 app.get('/api/health', (c) => c.json({ ok: true }));
 
+app.get('/', (c) => c.redirect('/portal.html', 302));
+app.get('/index.html', (c) => c.redirect('/portal.html', 302));
+
 app.get('/api/registration-options', async (c) => {
   const db = c.env.DB;
   const [blok, ujian, sgd, detailSgd, kkd, detailKkd, lab, kegiatanLab, dosen, buktiMode] = await Promise.all([

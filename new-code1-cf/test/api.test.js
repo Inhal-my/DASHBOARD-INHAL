@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { env, SELF } from 'cloudflare:test';
+import app from '../src/index.js';
 
 describe('scaffold', () => {
   it('responds ok on health', async () => {
@@ -11,6 +12,20 @@ describe('scaffold', () => {
   it('applies schema and seed to D1', async () => {
     const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM mahasiswa').first();
     expect(row.n).toBe(3);
+  });
+});
+
+describe('portal entry redirect', () => {
+  it('redirects / to /portal.html', async () => {
+    const res = await app.request('http://example.com/', { redirect: 'manual' });
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe('/portal.html');
+  });
+
+  it('redirects /index.html to /portal.html', async () => {
+    const res = await app.request('http://example.com/index.html', { redirect: 'manual' });
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe('/portal.html');
   });
 });
 
