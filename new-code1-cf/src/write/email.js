@@ -152,7 +152,7 @@ export async function processStatusNotification(db, idPengajuan, status, env) {
 }
 
 export async function sendStatusNotificationEmail(db, idPengajuan, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const pengajuan = await getPengajuan(db, idPengajuan);
   if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
   const status = str(pengajuan.status);
@@ -234,7 +234,7 @@ export async function sendFinalPdfEmails(db, idPengajuan, env) {
 }
 
 export async function sendFinalEmail(db, idPengajuan, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   try {
     const result = await sendFinalPdfEmails(db, idPengajuan, ctx.env);
     return {
@@ -251,7 +251,7 @@ export async function sendFinalEmail(db, idPengajuan, ctx) {
 }
 
 export async function sendBulkFinalEmail(db, ids, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const list = Array.isArray(ids) ? ids.map((x) => str(x)).filter(Boolean) : [];
   let targets;
   if (list.length) {
@@ -293,7 +293,7 @@ export async function sendBulkFinalEmail(db, ids, ctx) {
 }
 
 export async function sendAccFinalToBagian(db, idPengajuan, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   try {
     const pengajuan = await getPengajuan(db, idPengajuan);
     if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };

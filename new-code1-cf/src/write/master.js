@@ -59,7 +59,7 @@ async function upsertConfig(db, key, value) {
 }
 
 export async function saveMasterKegiatan(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = normalizeRows(payload && payload.rows, [
     ['kategori', ['Kategori', 'kategori']],
     ['nilai', ['Nilai', 'nilai']]
@@ -71,7 +71,7 @@ export async function saveMasterKegiatan(db, payload, ctx) {
 }
 
 export async function saveMasterBagian(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = normalizeRows(payload && payload.rows, [
     ['lab', ['Lab', 'lab']],
     ['kegiatan_lab', ['Kegiatan Lab', 'KegiatanLab', 'kegiatanLab', 'kegiatan_lab']],
@@ -85,7 +85,7 @@ export async function saveMasterBagian(db, payload, ctx) {
 }
 
 export async function saveMasterBiaya(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = normalizeRows(payload && payload.rows, [
     ['kegiatan', ['Kegiatan', 'kegiatan']],
     ['biaya', ['Biaya', 'biaya']]
@@ -97,7 +97,7 @@ export async function saveMasterBiaya(db, payload, ctx) {
 }
 
 export async function saveConfig(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = normalizeRows(payload && payload.rows, [
     ['key', ['Key', 'key']],
     ['value', ['Value', 'value']]
@@ -115,7 +115,7 @@ export async function saveConfig(db, payload, ctx) {
 }
 
 export async function saveBagianStaff(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = normalizeRows(payload && payload.rows, [
     ['email', ['Email', 'email']],
     ['kategori', ['Kategori', 'kategori']],
@@ -132,7 +132,7 @@ export async function saveBagianStaff(db, payload, ctx) {
 }
 
 export async function saveAdminList(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = normalizeRows(payload && payload.rows, [
     ['password', ['Password', 'password', 'Email', 'email']],
     ['nama', ['Nama', 'nama']]
@@ -147,7 +147,7 @@ export async function saveAdminList(db, payload, ctx) {
 }
 
 export async function saveBagianBaSettings(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const raw = payload && payload.statuses ? payload.statuses : [];
   const statuses = [];
   const seen = new Set();
@@ -169,7 +169,7 @@ export async function saveBagianBaSettings(db, payload, ctx) {
 }
 
 export async function saveMahasiswa(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const row = (payload && payload.row) || {};
   const npm = str(row.npm !== undefined ? row.npm : row.NPM);
   if (!npm) return { success: false, message: 'NPM wajib diisi.' };
@@ -192,7 +192,7 @@ export async function saveMahasiswa(db, payload, ctx) {
 }
 
 export async function deleteMahasiswa(db, npm, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const key = str(npm);
   if (!key) return { success: false, message: 'NPM wajib diisi.' };
   const existing = await db.prepare('SELECT npm FROM mahasiswa WHERE npm = ?1').bind(key).first();
@@ -202,7 +202,7 @@ export async function deleteMahasiswa(db, npm, ctx) {
 }
 
 export async function importMahasiswaCsv(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const list = Array.isArray(payload && payload.rows) ? payload.rows : [];
   const guard = tooMany(list);
   if (guard) return guard;
@@ -286,7 +286,7 @@ async function rejectDuplicate(db, table, spec, mapped, id) {
 }
 
 export async function saveMasterRow(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const table = str(payload && payload.table);
   const spec = MASTER_TABLES[table];
   if (!spec) return { success: false, message: 'Tabel tidak dikenal.' };
@@ -339,7 +339,7 @@ export async function saveMasterRow(db, payload, ctx) {
 }
 
 export async function deleteMasterRow(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const table = str(payload && payload.table);
   if (table === 'config') return { success: false, message: 'Config tidak boleh dihapus.' };
   const spec = MASTER_TABLES[table];

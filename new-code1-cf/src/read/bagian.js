@@ -11,7 +11,7 @@ function baSumber(r) {
 }
 
 export async function getBaginaConfig(db, ctx) {
-  await requireBagianSession(db, '', '', ctx.token);
+  await requireBagianSession(db, '', '', ctx.token, ctx.session);
   return {
     categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'],
     labOptions: await getMasterOptions(db, 'Lab'),
@@ -110,7 +110,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
     rows: [], baList: []
   };
   try {
-    const s = await getSession(db, ctx.token);
+    const s = ctx.session ? ctx.session : await getSession(db, ctx.token);
     if (!s || s.role !== 'bagian') { out.message = AUTH_ERROR; return out; }
     const kat = out.kategori;
     if (kat) {
@@ -135,7 +135,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
 
 export async function getBeritaAcaraList(db, bagianFilter, kategori, ctx) {
   try {
-    await requireBagianSession(db, kategori, '', ctx.token);
+    await requireBagianSession(db, kategori, '', ctx.token, ctx.session);
     return await computeBaList(db, bagianFilter, kategori);
   } catch (e) {
     return [];

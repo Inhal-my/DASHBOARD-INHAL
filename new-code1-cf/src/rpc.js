@@ -28,7 +28,7 @@ const HANDLERS = {
   authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
   authenticateBagian: (db, args, ctx) => authenticateBagian(db, args[0], args[1], args[2], ctx.ip),
   logoutSession: (db, args, ctx) => logoutSession(db, ctx.token),
-  adminBagianBypass: (db, args, ctx) => adminBagianBypass(db, args[0], args[1], ctx.token),
+  adminBagianBypass: (db, args, ctx) => adminBagianBypass(db, args[0], args[1], ctx.token, ctx.session),
   getBaginaConfig: (db, args, ctx) => getBaginaConfig(db, ctx),
   getBagianBaSettings: (db, args, ctx) => getBagianBaSettingsHandler(db, ctx),
   getBagianBootstrap: (db, args, ctx) => getBagianBootstrap(db, args[0], args[1], ctx),
@@ -74,7 +74,7 @@ const HANDLERS = {
   updateBeritaAcaraAdmin: (db, args, ctx) => updateBeritaAcaraAdmin(db, args[0], args[1], ctx),
   getMahasiswaByNpm: (db, args) => getMahasiswaByNpm(db, args[0]),
   getDosenOptions: (db) => getDosenOptions(db),
-  getBagianStaffList: async (db, args, ctx) => { await requireAdmin(db, ctx.token); return getBagianStaffList(db); },
+  getBagianStaffList: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getBagianStaffList(db); },
   updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx)
 };
 

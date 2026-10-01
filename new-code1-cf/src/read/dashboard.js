@@ -27,17 +27,11 @@ function buildPengajuanClientRows(rows, biayaMap, overrideMap) {
 }
 
 export async function getDashboardStats(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   return computeDashboardStats(db);
 }
 
-async function computeDashboardStats(db) {
-  const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
-  const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
-  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
-  const biayaMap = await getBiayaMap(db);
-  const overrideMap = await getBiayaOverrideMap(db);
-  const labs = await getMasterOptions(db, 'Lab');
+function computeDashboardStatsFromRows(pengajuan, details, ba, biayaMap, overrideMap, labs) {
   const perStatus = {}, perJenis = {}, perBlok = {}, trend = {}, perBagian = {};
   let totalBiaya = 0;
   for (const p of pengajuan) {
@@ -72,13 +66,25 @@ async function computeDashboardStats(db) {
   return { total: pengajuan.length, perStatus, perJenis, perBlok, trend, perBagian, totalBiaya, biayaMap };
 }
 
-export async function getDashboardBootstrap(db, ctx) {
-  await requireAdmin(db, ctx.token);
+async function computeDashboardStats(db) {
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
+  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
-  const stats = await computeDashboardStats(db);
+  const labs = await getMasterOptions(db, 'Lab');
+  return computeDashboardStatsFromRows(pengajuan, details, ba, biayaMap, overrideMap, labs);
+}
+
+export async function getDashboardBootstrap(db, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
+  const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
+  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
+  const biayaMap = await getBiayaMap(db);
+  const overrideMap = await getBiayaOverrideMap(db);
+  const labs = await getMasterOptions(db, 'Lab');
+  const stats = computeDashboardStatsFromRows(pengajuan, details, ba, biayaMap, overrideMap, labs);
 
   const sorted = pengajuan.slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
   const detailMap = {};
@@ -101,7 +107,7 @@ export async function getDashboardBootstrap(db, ctx) {
 }
 
 export async function getPengajuanList(db, filters, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   filters = filters || {};
   const fStatus = String(filters.status || '').trim();
   const fJenis = String(filters.jenis || '').trim();
@@ -127,12 +133,12 @@ export async function getPengajuanList(db, filters, ctx) {
 }
 
 export async function getLabOptions(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   return getMasterOptions(db, 'Lab');
 }
 
 export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(String(idPengajuan || '').trim()).first();
   if (!p) return null;
   const copy = toClientRow('pengajuan', p);
@@ -148,7 +154,7 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
 }
 
 export async function getBagianAggregation(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
   const pengajuan = await all('pengajuan');
   const details = await all('detail_kegiatan');
@@ -320,7 +326,7 @@ export async function getBagianAggregation(db, ctx) {
 }
 
 export async function getBeritaAcaraAdminList(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const rows = (await db.prepare('SELECT * FROM berita_acara_admin').all()).results || [];
   rows.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
   const peserta = (await db.prepare('SELECT * FROM berita_acara_admin_peserta').all()).results || [];
@@ -339,7 +345,7 @@ export async function getBeritaAcaraAdminList(db, ctx) {
 }
 
 export async function getMasterDataMonitor(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
   const maskSecret = (rows, field) => (rows || []).map((r) => Object.assign({}, r, { [field]: '' }));
   return {
@@ -355,7 +361,7 @@ export async function getMasterDataMonitor(db, ctx) {
 }
 
 export async function getBaUploadOptions(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   try {
     const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
     const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
@@ -393,7 +399,7 @@ export async function getBaUploadOptions(db, ctx) {
 }
 
 export async function diagnosticData(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const count = async (table) => (await db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first()).n || 0;
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const npmDebug = pengajuan.map((p) => {
@@ -427,12 +433,12 @@ export async function diagnosticData(db, ctx) {
 }
 
 export async function getBagianBaSettingsHandler(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   return getBagianBaSettings(db);
 }
 
 export async function uploadSuratKeterangan(db, idPengajuan, file, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = String(idPengajuan || '').trim();
   if (!id) return { success: false, message: 'ID pengajuan tidak valid.' };
   const row = await db.prepare('SELECT id_pengajuan FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();

@@ -179,7 +179,7 @@ async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
 }
 
 export async function saveBeritaAcaraAdmin(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const p = payload || {};
   const baId = await nextBaId(db, 'berita_acara_admin');
   const bagian = str(p.bagian) || 'Admin';
@@ -217,7 +217,7 @@ export async function saveBeritaAcaraAdmin(db, payload, ctx) {
 }
 
 export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
 
@@ -236,7 +236,7 @@ export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
 }
 
 export async function updateBeritaAcaraAdmin(db, baId, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
   const existing = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
@@ -256,7 +256,7 @@ export async function updateBeritaAcaraAdmin(db, baId, payload, ctx) {
 }
 
 export async function deleteBeritaAcaraBagian(db, baId, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
 
@@ -284,7 +284,7 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
 
 export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   const p = payload || {};
-  await requireBagianSession(db, kategori, p.bagian, ctx.token);
+  await requireBagianSession(db, kategori, p.bagian, ctx.token, ctx.session);
   const bagian = str(p.bagian) || str(kategori);
 
   const peserta = normalizeBaPeserta(p);
@@ -332,7 +332,7 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
 }
 
 export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
   const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();

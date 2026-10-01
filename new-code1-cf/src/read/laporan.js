@@ -9,7 +9,7 @@ function baSumber(r) {
 }
 
 export async function getLaporanBootstrap(db, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
   const histories = (await db.prepare('SELECT * FROM status_history').all()).results || [];

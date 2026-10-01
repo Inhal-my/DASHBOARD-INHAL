@@ -90,7 +90,7 @@ async function findDetailRowId(db, idPengajuan, index) {
 }
 
 export async function updatePengajuanFields(db, idPengajuan, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
   if (!id) return { success: false, message: 'ID Pengajuan wajib diisi.' };
   const existing = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
@@ -154,7 +154,7 @@ export async function updatePengajuanFields(db, idPengajuan, payload, ctx) {
 }
 
 export async function updateDetailKegiatan(db, idPengajuan, index, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
   const rowId = await findDetailRowId(db, id, index);
   if (rowId === null) return { success: false, message: 'Detail kegiatan tidak ditemukan.' };
@@ -195,7 +195,7 @@ export async function updateDetailKegiatan(db, idPengajuan, index, payload, ctx)
 }
 
 export async function deleteDetailKegiatan(db, idPengajuan, index, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
   const rowId = await findDetailRowId(db, id, index);
   if (rowId === null) return { success: false, message: 'Detail kegiatan tidak ditemukan.' };
@@ -212,7 +212,7 @@ export async function deleteDetailKegiatan(db, idPengajuan, index, ctx) {
 }
 
 export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan, actorEmail, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
   const status = str(newStatus);
   if (STATUS_VALID.indexOf(status) === -1) {
@@ -264,7 +264,7 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
 }
 
 export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
   if (!id) return { success: false, message: 'ID Pengajuan wajib diisi.' };
   const existing = await db.prepare('SELECT id FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
@@ -291,7 +291,7 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
 }
 
 export async function updateCheckDataPartial(db, payload, ctx) {
-  await requireAdmin(db, ctx.token);
+  await requireAdmin(db, ctx.token, ctx.session);
   const p = payload || {};
   const id = str(p.idPengajuan || p['ID Pengajuan']);
   if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };

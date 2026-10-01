@@ -48,14 +48,14 @@ export async function destroySession(db, token) {
   await db.prepare('DELETE FROM sessions WHERE token = ?1').bind(String(token)).run();
 }
 
-export async function requireAdmin(db, token) {
-  const s = await getSession(db, token);
+export async function requireAdmin(db, token, session) {
+  const s = session ? session : await getSession(db, token);
   if (!s || s.role !== 'admin') throw new Error(AUTH_ERROR);
   return s;
 }
 
-export async function requireBagianSession(db, kategori, subBagian, token) {
-  const s = await getSession(db, token);
+export async function requireBagianSession(db, kategori, subBagian, token, session) {
+  const s = session ? session : await getSession(db, token);
   if (!s || s.role !== 'bagian') throw new Error(AUTH_ERROR);
   const kat = String(kategori || '').trim();
   if (kat) {
@@ -127,8 +127,8 @@ export async function authenticateBagian(db, password, kategori, subBagian, ip) 
   return { ok: true, token, nama: account.nama, kategori: kat, subBagian: sub };
 }
 
-export async function adminBagianBypass(db, kategori, subBagian, token) {
-  const admin = await requireAdmin(db, token);
+export async function adminBagianBypass(db, kategori, subBagian, token, session) {
+  const admin = await requireAdmin(db, token, session);
   const kat = String(kategori || '').trim();
   const allowedCats = ['SGD', 'KKD', 'Ujian', 'Praktikum'];
   if (allowedCats.indexOf(kat) === -1) return { ok: false, message: 'Pilih kategori kegiatan terlebih dahulu.' };
