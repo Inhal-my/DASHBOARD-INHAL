@@ -209,6 +209,7 @@
     .lg\:col-span-3 { grid-column: span 3 / span 3; }
 }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
 </head>
 <body>
     <div id="app" v-cloak class="font-sans text-ink antialiased">
@@ -1620,8 +1621,8 @@
     </div>
 
     <script src="/gs-shim.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script>
+        function bootDashboard() {
         const APP_URL = '/';
         const USER_EMAIL = '';
 
@@ -3666,6 +3667,13 @@
                 if (this._onHashchange) window.removeEventListener('hashchange', this._onHashchange);
             }
         }).mount('#app');
+        }
+
+        if (window.Vue) {
+            bootDashboard();
+        } else {
+            window.addEventListener('DOMContentLoaded', bootDashboard);
+        }
     </script>
 </body>
 </html>
