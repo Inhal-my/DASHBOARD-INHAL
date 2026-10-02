@@ -360,6 +360,12 @@ export async function getMasterDataMonitor(db, ctx) {
   };
 }
 
+export async function getUploadMonitor(db, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const rows = (await db.prepare("SELECT * FROM pengajuan WHERE status IN ('Diterima','ACC') ORDER BY id DESC").all()).results || [];
+  return { rows: rows.map((r) => toClientRow('pengajuan', r)) };
+}
+
 export async function getBaUploadOptions(db, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   try {

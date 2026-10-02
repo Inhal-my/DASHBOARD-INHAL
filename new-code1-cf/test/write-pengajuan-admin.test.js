@@ -3,7 +3,7 @@ import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
-  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial
+  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti
 } from '../src/write/pengajuanAdmin.js';
 
 async function adminCtx() {
@@ -30,6 +30,7 @@ describe('pengajuan admin writes', () => {
     await expect(updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', {})).rejects.toThrow();
     await expect(deletePengajuanAdmin(env.DB, 'INHAL-1', '', {})).rejects.toThrow();
     await expect(updateCheckDataPartial(env.DB, {}, {})).rejects.toThrow();
+    await expect(resetUploadBukti(env.DB, 'INHAL-1', {}, {})).rejects.toThrow();
   });
 
   it('upserts check data and mirrors dosen and tanggal to the pengajuan', async () => {
@@ -181,5 +182,55 @@ describe('pengajuan admin status and delete', () => {
     const audit = await env.DB.prepare("SELECT * FROM audit_log WHERE target = 'Pengajuan' AND aksi = 'DELETE'").all();
     expect(audit.results).toHaveLength(1);
     expect(audit.results[0].alasan).toBe('Salah input');
+  });
+});
+
+describe('reset upload bukti', () => {
+  async function seedWithLinks(status = 'Diterima') {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,status,link_acc_inhal,link_bukti_bayar,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','aisyah@contoh.com',?1,'https://drive/acc','https://drive/bukti','https://drive/final')"
+    ).bind(status).run();
+    await seedDetail();
+  }
+
+  it('rejects when status is not Diterima or ACC', async () => {
+    await seedWithLinks('Menunggu');
+    const ctx = await adminCtx();
+    const res = await resetUploadBukti(env.DB, 'INHAL-1', {}, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('Diterima atau ACC');
+  });
+
+  it('rejects when there is nothing to reset', async () => {
+    await seedPengajuan({ status: 'Diterima' });
+    const ctx = await adminCtx();
+    const res = await resetUploadBukti(env.DB, 'INHAL-1', {}, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('Tidak ada berkas');
+  });
+
+  it('clears links, sets the reset flag, and records the snapshot', async () => {
+    await seedWithLinks('ACC');
+    const ctx = await adminCtx();
+    const res = await resetUploadBukti(env.DB, 'INHAL-1', { note: 'File salah' }, ctx);
+    expect(res.success).toBe(true);
+
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.link_acc_inhal).toBe('');
+    expect(row.link_bukti_bayar).toBe('');
+    expect(row.link_final).toBe('');
+    expect(row.upload_reset_at).toBeTruthy();
+    expect(row.upload_reset_by).toBe('Admin');
+    expect(row.upload_reset_note).toBe('File salah');
+    expect(row.status).toBe('ACC');
+
+    const log = await env.DB.prepare("SELECT * FROM log_upload WHERE id_pengajuan = 'INHAL-1'").all();
+    expect(log.results).toHaveLength(1);
+    expect(log.results[0].link_acc_inhal).toBe('https://drive/acc');
+    expect(log.results[0].link_bukti_bayar).toBe('https://drive/bukti');
+
+    const audit = await env.DB.prepare("SELECT * FROM audit_log WHERE aksi = 'RESET_UPLOAD'").all();
+    expect(audit.results).toHaveLength(1);
+    expect(audit.results[0].alasan).toBe('File salah');
   });
 });

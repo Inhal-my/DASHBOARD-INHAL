@@ -52,6 +52,18 @@ describe('getStudentPortalData', () => {
     const data = await getStudentPortalData(env.DB, '');
     expect(data.error).toBe('NPM tidak boleh kosong');
   });
+
+  it('exposes upload reset info for the portal banner', async () => {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,upload_reset_at,upload_reset_by,upload_reset_note) VALUES ('2026-09-10T08:00:00','INHAL-r','2201010001','Aisyah Putri','Diterima','2026-10-01T10:00:00','Admin','File ACC salah')"
+    ).run();
+    const data = await getStudentPortalData(env.DB, '2201010001');
+    const h = data.history.find((x) => x.idPengajuan === 'INHAL-r');
+    expect(h.uploadResetAt).toBe('2026-10-01T10:00:00');
+    expect(h.uploadResetBy).toBe('Admin');
+    expect(h.uploadResetNote).toBe('File ACC salah');
+    expect(h.hasUpload).toBe(false);
+  });
 });
 
 describe('portal.html lazy pdf.js', () => {
@@ -62,5 +74,13 @@ describe('portal.html lazy pdf.js', () => {
     expect(html).toContain('_loadPdfJs()');
     expect(html).toContain('pdf.js/3.11.174/pdf.min.js');
     expect(html).not.toContain('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>');
+  });
+
+  it('shows an upload reset banner driven by admin reset', async () => {
+    const res = await env.ASSETS.fetch(new Request('https://example.com/portal.html'));
+    const html = await res.text();
+    expect(html).toContain('detailItem.uploadResetAt');
+    expect(html).toContain('Admin meminta Anda mengunggah ulang berkas');
+    expect(html).toContain('detailItem.uploadResetNote');
   });
 });

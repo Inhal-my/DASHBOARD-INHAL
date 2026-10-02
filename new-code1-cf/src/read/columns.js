@@ -15,7 +15,8 @@ export const TABLE_COLUMNS = {
     nomor_surat: 'Nomor Surat', link_acc_inhal: 'Link ACC INHAL', link_bukti_bayar: 'Link Bukti Bayar',
     link_final: 'Link Final', status_info_bagian: 'Status Info Bagian', waktu_info_bagian: 'Waktu Info Bagian',
     email_bagian: 'Email Bagian', catatan_info_bagian: 'Catatan Info Bagian', updated_at: 'UpdatedAt',
-    dosen: 'Dosen', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', lampiran_email: 'Lampiran Email'
+    dosen: 'Dosen', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', lampiran_email: 'Lampiran Email',
+    upload_reset_at: 'Upload Reset At', upload_reset_by: 'Upload Reset By', upload_reset_note: 'Upload Reset Note'
   },
   detail_kegiatan: {
     timestamp: 'Timestamp', id_pengajuan: 'ID Pengajuan', jenis_kegiatan: 'Jenis Kegiatan',

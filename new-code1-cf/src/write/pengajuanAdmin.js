@@ -1,7 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { resolveBagianFor } from '../read/common.js';
 import { processStatusNotification } from './email.js';
-import { writeAuditLog } from '../audit.js';
+import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 
 const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
 
@@ -338,4 +338,56 @@ export async function updateCheckDataPartial(db, payload, ctx) {
   }
 
   return { success: true, message: 'Data kehadiran berhasil disimpan.' };
+}
+
+export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(idPengajuan);
+  if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+
+  const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
+  if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+
+  const status = str(p.status);
+  if (status !== 'Diterima' && status !== 'ACC') {
+    return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus Diterima atau ACC.' };
+  }
+
+  const acc = str(p.link_acc_inhal);
+  const bukti = str(p.link_bukti_bayar);
+  const final = str(p.link_final);
+  if (!acc && !bukti && !final) {
+    return { success: false, message: 'Tidak ada berkas unggahan untuk direset.' };
+  }
+
+  const note = str(payload && payload.note);
+  const actor = actorName(ctx);
+  const ts = nowIso();
+
+  const summary = await getUploadLogDetail(db, id);
+  await writeLogUpload(db, {
+    idPengajuan: id,
+    npm: str(p.npm),
+    namaLengkap: str(p.nama_lengkap),
+    blok: str(p.blok),
+    jenisKegiatan: str(p.jenis_kegiatan),
+    detail: summary.detail,
+    tanggal: summary.tanggal,
+    linkAcc: acc,
+    linkBukti: bukti
+  });
+
+  await db.prepare(
+    "UPDATE pengajuan SET link_acc_inhal = '', link_bukti_bayar = '', link_final = '', upload_reset_at = ?1, upload_reset_by = ?2, upload_reset_note = ?3, updated_at = ?1 WHERE id_pengajuan = ?4"
+  ).bind(ts, actor, note, id).run();
+
+  await writeAuditLog(db, {
+    actor: actor,
+    action: 'RESET_UPLOAD',
+    target: 'Pengajuan',
+    detail: JSON.stringify({ idPengajuan: id, linkAcc: acc, linkBukti: bukti, linkFinal: final }),
+    alasan: note || 'Reset unggahan oleh admin'
+  });
+
+  return { success: true, message: 'Unggahan direset. Mahasiswa dapat mengunggah ulang.' };
 }

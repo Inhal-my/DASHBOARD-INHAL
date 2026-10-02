@@ -218,6 +218,16 @@
                                 </div>
                             </div>
 
+                            <!-- upload reset banner -->
+                            <div v-if="!detailItem.hasUpload && detailItem.uploadResetAt"
+                                class="mx-4 mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-4 ring-1 ring-amber-100">
+                                <i class="bi bi-arrow-counterclockwise mt-0.5 text-amber-600"></i>
+                                <div class="text-sm">
+                                    <div class="font-bold text-amber-800">Admin meminta Anda mengunggah ulang berkas</div>
+                                    <p class="mt-0.5 text-amber-700">{{ detailItem.uploadResetNote || 'Silakan unggah kembali ACC INHAL dan Bukti Bayar yang benar.' }}</p>
+                                </div>
+                            </div>
+
                             <!-- info grid -->
                             <div class="grid grid-cols-2 gap-x-4 gap-y-3 p-5">
                                 <div><div class="label">NPM</div><div class="value font-mono text-sm">{{ user.npm }}</div></div>

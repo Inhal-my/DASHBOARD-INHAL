@@ -26,17 +26,36 @@ describe('portal uploadBuktiFiles', () => {
     await seedPengajuan();
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
+      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: btoa('not a pdf'), mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
     expect(res.success).toBe(false);
     expect(res.message).toContain('bukan PDF');
   });
 
+  it('rejects a partial upload when only one file is provided', async () => {
+    await seedPengajuan();
+    const onlyAcc = await uploadBuktiFiles(env.DB, {
+      idPengajuan: 'INHAL-1',
+      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' }
+    }, driveEnv);
+    expect(onlyAcc.success).toBe(false);
+    expect(onlyAcc.message).toContain('kedua file');
+
+    const onlyBukti = await uploadBuktiFiles(env.DB, {
+      idPengajuan: 'INHAL-1',
+      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
+    }, driveEnv);
+    expect(onlyBukti.success).toBe(false);
+    expect(onlyBukti.message).toContain('kedua file');
+  });
+
   it('reports an error when the drive bridge is not configured', async () => {
     await seedPengajuan();
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' }
+      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
+      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, {});
     expect(res.success).toBe(false);
     expect(res.message).toContain('belum dikonfigurasi');
@@ -95,6 +114,7 @@ describe('portal uploadBuktiFiles', () => {
 
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-9',
+      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
     expect(res.success).toBe(true);
@@ -102,5 +122,24 @@ describe('portal uploadBuktiFiles', () => {
     expect(receipt).toBeTruthy();
     expect(receipt.data.recipient).toBe('budi@contoh.com');
     expect(receipt.data.buktiUrl).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
+  });
+
+  it('clears the upload reset flag after a successful re-upload', async () => {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,status,upload_reset_at,upload_reset_by,upload_reset_note) VALUES ('2026-09-10T08:00:00','INHAL-7','2201010007','Citra','citra@contoh.com','ACC','2026-09-30T00:00:00','Admin','perbaiki')"
+    ).run();
+    const f = vi.fn(async () => new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view' }), { status: 200 }));
+    vi.stubGlobal('fetch', f);
+
+    const res = await uploadBuktiFiles(env.DB, {
+      idPengajuan: 'INHAL-7',
+      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
+      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
+    }, driveEnv);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-7').first();
+    expect(row.upload_reset_at).toBe('');
+    expect(row.upload_reset_by).toBe('');
+    expect(row.upload_reset_note).toBe('');
   });
 });

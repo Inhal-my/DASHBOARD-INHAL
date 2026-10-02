@@ -24,7 +24,8 @@ CREATE TABLE pengajuan (
   notifikasi_terkirim_pada TEXT, status_notifikasi_email TEXT, error_notifikasi_email TEXT,
   lampiran_email TEXT, nomor_surat TEXT, link_acc_inhal TEXT, link_bukti_bayar TEXT,
   link_final TEXT, status_info_bagian TEXT, waktu_info_bagian TEXT, email_bagian TEXT,
-  catatan_info_bagian TEXT, updated_at TEXT
+  catatan_info_bagian TEXT, updated_at TEXT,
+  upload_reset_at TEXT, upload_reset_by TEXT, upload_reset_note TEXT
 );
 CREATE TABLE detail_kegiatan (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, id_pengajuan TEXT,

@@ -5,7 +5,7 @@ import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList } from './repo.j
 import {
   getDashboardBootstrap, getDashboardStats, getPengajuanList, getBagianAggregation,
   getBeritaAcaraAdminList, getLabOptions, getMasterDataMonitor, getPengajuanWithDetails,
-  getBaUploadOptions, diagnosticData, getBagianBaSettingsHandler, uploadSuratKeterangan
+  getBaUploadOptions, diagnosticData, getBagianBaSettingsHandler, uploadSuratKeterangan, getUploadMonitor
 } from './read/dashboard.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
@@ -18,7 +18,7 @@ import {
 } from './write/beritaAcara.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
-  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial
+  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti
 } from './write/pengajuanAdmin.js';
 import {
   sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
@@ -41,6 +41,7 @@ const HANDLERS = {
   getBeritaAcaraAdminList: (db, args, ctx) => getBeritaAcaraAdminList(db, ctx),
   getLabOptions: (db, args, ctx) => getLabOptions(db, ctx),
   getMasterDataMonitor: (db, args, ctx) => getMasterDataMonitor(db, ctx),
+  getUploadMonitor: (db, args, ctx) => getUploadMonitor(db, ctx),
   getPengajuanWithDetails: (db, args, ctx) => getPengajuanWithDetails(db, args[0], ctx),
   getBaUploadOptions: (db, args, ctx) => getBaUploadOptions(db, ctx),
   uploadSuratKeterangan: (db, args, ctx) => uploadSuratKeterangan(db, args[0], args[1], ctx),
@@ -75,7 +76,8 @@ const HANDLERS = {
   getMahasiswaByNpm: (db, args) => getMahasiswaByNpm(db, args[0]),
   getDosenOptions: (db) => getDosenOptions(db),
   getBagianStaffList: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getBagianStaffList(db); },
-  updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx)
+  updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx),
+  resetUploadBukti: (db, args, ctx) => resetUploadBukti(db, args[0], args[1], ctx)
 };
 
 export async function extractToken(db, args) {

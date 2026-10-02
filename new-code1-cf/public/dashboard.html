@@ -1137,6 +1137,77 @@
                                 </div>
                             </div>
 
+                            <div v-else-if="activeMasterCard.key === 'kelolaUnggahan'" class="p-5">
+                                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="master-search">
+                                        <i class="bi bi-search"></i>
+                                        <input v-model="master.uploads.q" type="text" class="input" placeholder="Cari nama, NPM, atau ID..." />
+                                    </div>
+                                    <select v-model="master.uploads.filter" class="input sm:w-60">
+                                        <option value="">Semua status unggahan</option>
+                                        <option value="sudah">Sudah upload</option>
+                                        <option value="belum">Belum upload</option>
+                                        <option value="reset">Menunggu unggah ulang</option>
+                                    </select>
+                                </div>
+                                <div class="master-table-scroll overflow-x-auto">
+                                    <table class="master-table master-table-dense w-full text-left text-sm">
+                                        <thead>
+                                            <tr class="text-[11px] uppercase tracking-wider text-slate-400">
+                                                <th class="px-4 py-3 font-semibold">ID</th>
+                                                <th class="px-4 py-3 font-semibold">Nama</th>
+                                                <th class="px-4 py-3 font-semibold">Jenis</th>
+                                                <th class="px-4 py-3 font-semibold">Status</th>
+                                                <th class="px-4 py-3 font-semibold">ACC INHAL</th>
+                                                <th class="px-4 py-3 font-semibold">Bukti Bayar</th>
+                                                <th class="px-4 py-3 font-semibold">ACC Final</th>
+                                                <th class="px-4 py-3 font-semibold">Status Unggahan</th>
+                                                <th class="px-4 py-3 font-semibold w-28">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-if="master.uploads.loading">
+                                                <td colspan="9" class="px-4 py-12 text-center text-xs text-slate-400">Memuat data unggahan...</td>
+                                            </tr>
+                                            <tr v-else-if="!uploadMonitorRows.length">
+                                                <td colspan="9" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data pengajuan berstatus Diterima/ACC.</td>
+                                            </tr>
+                                            <tr v-for="r in uploadMonitorRows" :key="r['ID Pengajuan']" class="border-t border-slate-50">
+                                                <td class="px-4 py-2.5 font-mono text-[11px] text-slate-500">{{ r['ID Pengajuan'] }}</td>
+                                                <td class="px-4 py-2.5">
+                                                    <div class="font-semibold text-slate-700">{{ r['Nama Lengkap'] || '-' }}</div>
+                                                    <div class="font-mono text-[11px] text-slate-400">{{ r.NPM }}</div>
+                                                </td>
+                                                <td class="px-4 py-2.5 text-slate-600">{{ r['Jenis Kegiatan'] || '-' }}</td>
+                                                <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
+                                                <td class="px-4 py-2.5">
+                                                    <a v-if="r['Link ACC INHAL']" :href="r['Link ACC INHAL']" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                                <td class="px-4 py-2.5">
+                                                    <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                                <td class="px-4 py-2.5">
+                                                    <a v-if="r['Link Final']" :href="r['Link Final']" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
+                                                    <span v-else class="text-slate-300">-</span>
+                                                </td>
+                                                <td class="px-4 py-2.5">
+                                                    <span class="chip" :class="uploadStatusOf(r).cls">{{ uploadStatusOf(r).label }}</span>
+                                                    <div v-if="r['Upload Reset At']" class="mt-1 text-[10px] text-slate-400">oleh {{ r['Upload Reset By'] || 'Admin' }} &middot; {{ formatTanggal(r['Upload Reset At']) }}</div>
+                                                </td>
+                                                <td class="px-4 py-2.5">
+                                                    <div class="flex items-center gap-1">
+                                                        <button class="master-row-btn" title="Lihat Detail" @click="openUploadDetail(r['ID Pengajuan'])"><i class="bi bi-eye"></i></button>
+                                                        <button class="master-row-btn" title="Reset Unggahan" :disabled="!canResetUpload(r)" @click="openResetUpload(r)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                             <div v-else class="p-6">
                                 <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-100">
                                     <div class="flex items-start gap-3">
@@ -1408,6 +1479,40 @@
             </div>
         </transition>
 
+        <!-- ============ MODAL: RESET UNGGAHAN ============ -->
+        <transition name="fade">
+            <div v-if="master.uploads.reset.open" class="fixed inset-0 z-50 modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeResetUpload()"></div>
+                <transition name="pop" appear>
+                    <div class="modal-panel max-w-md shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><i class="bi bi-arrow-counterclockwise"></i></div>
+                                <div>
+                                    <div class="text-sm font-bold text-slate-900">Reset Unggahan</div>
+                                    <div class="font-mono text-[11px] text-slate-400">{{ master.uploads.reset.row && master.uploads.reset.row['ID Pengajuan'] }}</div>
+                                </div>
+                            </div>
+                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeResetUpload()"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body px-6 py-4 space-y-3">
+                            <p class="text-sm text-slate-600">Tautan ACC INHAL, Bukti Bayar, dan ACC Final akan dikosongkan sehingga mahasiswa dapat mengunggah ulang. File lama tetap tersimpan di Drive dan diarsipkan ke log.</p>
+                            <div>
+                                <label class="label">Catatan untuk mahasiswa (opsional)</label>
+                                <input v-model="master.uploads.reset.note" class="input" placeholder="mis. File ACC tidak terbaca, mohon unggah ulang.">
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="closeResetUpload()">Batal</button>
+                            <button class="btn-danger-soft" :disabled="master.uploads.reset.saving" @click="confirmResetUpload()">
+                                <i class="bi bi-arrow-counterclockwise"></i> {{ master.uploads.reset.saving ? 'Memproses...' : 'Reset Unggahan' }}
+                            </button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
         <!-- ============ MODAL: UPLOAD BA ============ -->
         <transition name="fade">
             <div v-if="ba.modal" class="fixed inset-0 z-50 modal-overlay">
@@ -1594,6 +1699,7 @@
                         tab: 'masterKegiatan',
                         search: '',
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, originalId: 0 },
+                        uploads: { rows: [], loading: false, loaded: false, q: '', filter: '', reset: { open: false, row: null, note: '', saving: false } },
                         cards: [
                             { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'mahasiswa', icon: 'bi-mortarboard' },
                             { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], table: 'master_kegiatan', icon: 'bi-clipboard-check' },
@@ -1603,7 +1709,8 @@
                             { key: 'bagianStaff', title: 'Bagian Staff', short: 'Staf', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian. Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'bagian_staff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
                             { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], table: 'admin', icon: 'bi-shield-lock' },
-                            { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'File Excel siap pakai: header ramah, baris judul dibekukan, filter aktif, angka sebagai angka.', icon: 'bi-download', settings: true, download: true }
+                            { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'File Excel siap pakai: header ramah, baris judul dibekukan, filter aktif, angka sebagai angka.', icon: 'bi-download', settings: true, download: true },
+                            { key: 'kelolaUnggahan', title: 'Kelola Unggahan', short: 'Kelola Unggahan', desc: 'Pantau dan reset berkas ACC INHAL & Bukti Bayar agar mahasiswa dapat mengunggah ulang.', icon: 'bi-cloud-arrow-up', settings: true }
                         ]
                     }
                 };
@@ -1869,8 +1976,25 @@
                     if (!q) return rows;
                     return rows.filter(r => card.cols.some(c => String(r[c] === undefined || r[c] === null ? '' : r[c]).toLowerCase().indexOf(q) !== -1));
                 },
+                uploadMonitorRows() {
+                    const q = String(this.master.uploads.q || '').toLowerCase().trim();
+                    const filter = this.master.uploads.filter || '';
+                    return (this.master.uploads.rows || []).filter((r) => {
+                        const hasUpload = !!(r['Link ACC INHAL'] || r['Link Bukti Bayar']);
+                        const isReset = !!r['Upload Reset At'];
+                        if (filter === 'sudah' && !hasUpload) return false;
+                        if (filter === 'belum' && (hasUpload || isReset)) return false;
+                        if (filter === 'reset' && !(isReset && !hasUpload)) return false;
+                        if (q) {
+                            const hay = [r['ID Pengajuan'], r['Nama Lengkap'], r['NPM'], r['Jenis Kegiatan']]
+                                .map(v => String(v === undefined || v === null ? '' : v).toLowerCase()).join(' ');
+                            if (hay.indexOf(q) === -1) return false;
+                        }
+                        return true;
+                    });
+                },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open);
+                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open);
                 }
             },
             watch: {
@@ -3236,6 +3360,76 @@
                 selectMasterCard(key) {
                     this.master.tab = key;
                     this.master.search = '';
+                    if (key === 'kelolaUnggahan' && !this.master.uploads.loaded) this.loadUploadMonitor();
+                },
+                async loadUploadMonitor() {
+                    this.master.uploads.loading = true;
+                    try {
+                        const res = await this.run('getUploadMonitor') || {};
+                        this.master.uploads.rows = res.rows || [];
+                        this.master.uploads.loaded = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat data unggahan: ' + e, false);
+                    } finally {
+                        this.master.uploads.loading = false;
+                    }
+                },
+                openUploadDetail(id) {
+                    this.reloadDetail(id, true);
+                },
+                uploadStatusOf(r) {
+                    const hasUpload = !!(r['Link ACC INHAL'] || r['Link Bukti Bayar']);
+                    if (hasUpload) return { label: 'Sudah upload', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' };
+                    if (r['Upload Reset At']) return { label: 'Menunggu unggah ulang', cls: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20' };
+                    return { label: 'Belum upload', cls: 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-500/20' };
+                },
+                canResetUpload(r) {
+                    const hasFile = !!(r['Link ACC INHAL'] || r['Link Bukti Bayar'] || r['Link Final']);
+                    return hasFile && (r.Status === 'Diterima' || r.Status === 'ACC');
+                },
+                openResetUpload(r) {
+                    if (!this.canResetUpload(r)) {
+                        this.notify('Tidak ada berkas untuk direset.', false);
+                        return;
+                    }
+                    this.master.uploads.reset = { open: true, row: r, note: '', saving: false };
+                },
+                closeResetUpload() {
+                    if (this.master.uploads.reset.saving) return;
+                    this.master.uploads.reset.open = false;
+                },
+                async confirmResetUpload() {
+                    const state = this.master.uploads.reset;
+                    if (!state.row || state.saving) return;
+                    const id = state.row['ID Pengajuan'];
+                    const note = state.note;
+                    state.saving = true;
+                    try {
+                        const res = await this.run('resetUploadBukti', id, { note: note });
+                        if (res && res.success === false) { this.notify(res.message || 'Gagal reset.', false); return; }
+                        this.notify((res && res.message) || 'Unggahan direset.');
+                        state.open = false;
+                        const row = this.master.uploads.rows.find(x => x['ID Pengajuan'] === id);
+                        if (row) {
+                            row['Link ACC INHAL'] = '';
+                            row['Link Bukti Bayar'] = '';
+                            row['Link Final'] = '';
+                            row['Upload Reset At'] = new Date().toISOString();
+                            row['Upload Reset By'] = (this.session && this.session.nama) || 'Admin';
+                            row['Upload Reset Note'] = note || '';
+                        }
+                        if (this.detail.open && this.detail.p && this.detail.p['ID Pengajuan'] === id) {
+                            this.detail.p['Link ACC INHAL'] = '';
+                            this.detail.p['Link Bukti Bayar'] = '';
+                            this.detail.p['Link Final'] = '';
+                        }
+                        this.master.uploads.loaded = false;
+                        this.loadUploadMonitor();
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        state.saving = false;
+                    }
                 },
                 async downloadDatabase() {
                     if (this.master.downloading) return;

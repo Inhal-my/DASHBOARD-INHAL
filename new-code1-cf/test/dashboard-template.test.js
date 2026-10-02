@@ -197,6 +197,18 @@ describe('dashboard template', () => {
     expect(html).toContain("v-model=\"master.downloadScope\"");
     expect(html.indexOf("key: 'admin'")).toBeLessThan(html.indexOf("key: 'downloadDatabase'"));
   });
+
+  it('adds the Kelola Unggahan master card with reset controls', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("key: 'kelolaUnggahan', title: 'Kelola Unggahan'");
+    expect(html).toContain('@click="openResetUpload(r)"');
+    expect(html).toContain('@click="confirmResetUpload()"');
+    expect(html).toContain('resetUploadBukti');
+    expect(html).toContain('getUploadMonitor');
+    expect(html).toContain('uploadMonitorRows');
+    expect(html).toContain('Menunggu unggah ulang');
+    expect(html.indexOf("key: 'downloadDatabase'")).toBeLessThan(html.indexOf("key: 'kelolaUnggahan'"));
+  });
 });
 
 describe('dashboard master chip picker', () => {

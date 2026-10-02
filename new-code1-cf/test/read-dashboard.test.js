@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
-import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan, getBagianAggregation } from '../src/read/dashboard.js';
+import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan, getBagianAggregation, getUploadMonitor } from '../src/read/dashboard.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -45,6 +45,18 @@ describe('dashboard read', () => {
     const opts = await getBaUploadOptions(env.DB, ctx);
     expect(opts.blok).toContain('A');
     expect(opts.details[0].jenis).toBe('Ujian');
+  });
+  it('lists only Diterima/ACC pengajuan for the upload monitor', async () => {
+    await seed();
+    await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_acc_inhal,upload_reset_at,upload_reset_by,upload_reset_note) VALUES ('2026-09-11T08:00:00','INHAL-2','2201010002','Budi','Menunggu','','','','')").run();
+    await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_acc_inhal,link_bukti_bayar) VALUES ('2026-09-12T08:00:00','INHAL-3','2201010003','Citra','ACC','https://drive/acc','https://drive/bukti')").run();
+    await expect(getUploadMonitor(env.DB, {})).rejects.toThrow();
+    const ctx = await adminCtx();
+    const res = await getUploadMonitor(env.DB, ctx);
+    expect(res.rows.map((r) => r['ID Pengajuan']).sort()).toEqual(['INHAL-1', 'INHAL-3']);
+    const citra = res.rows.find((r) => r['ID Pengajuan'] === 'INHAL-3');
+    expect(citra['Link ACC INHAL']).toBe('https://drive/acc');
+    expect(citra['Upload Reset At']).toBe('');
   });
   it('mengembalikan progres dan realisasi per kegiatan', async () => {
     const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
