@@ -967,6 +967,10 @@
                                                                 <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
                                                                 <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
                                                                 <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pelaksanaan')">x</button>
+                                                                <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pelaksanaan')"><i class="bi bi-arrow-left"></i></button>
+                                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === bab.ba.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pelaksanaan')"><i class="bi bi-arrow-right"></i></button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <p v-if="bab.ba.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
@@ -1599,6 +1603,10 @@
                                             <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
                                             <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
                                             <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pendukung')">x</button>
+                                            <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                                <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pendukung')"><i class="bi bi-arrow-left"></i></button>
+                                                <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === ba.form.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pendukung')"><i class="bi bi-arrow-right"></i></button>
+                                            </div>
                                         </div>
                                     </div>
                                     <p v-if="ba.form.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
@@ -3359,6 +3367,15 @@
                     if (!it) return;
                     try { URL.revokeObjectURL(it.url); } catch (e) { /* abaikan */ }
                     t.scanItems.splice(idx, 1);
+                },
+                scanMove(idx, delta, which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    const j = idx + delta;
+                    if (!t.scanItems[idx] || j < 0 || j >= t.scanItems.length) return;
+                    const tmp = t.scanItems[idx];
+                    t.scanItems[idx] = t.scanItems[j];
+                    t.scanItems[j] = tmp;
                 },
                 async scanOnPhotos(e, which) {
                     const t = this.scanTarget(which);

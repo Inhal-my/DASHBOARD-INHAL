@@ -89,6 +89,8 @@ describe('bagian.html integrasi scan kamera', () => {
     expect(html).toContain('@click="buildScanPdf"');
     expect(html).toContain('onScanPhotos(e) {');
     expect(html).toContain('buildScanPdf() {');
+    expect(html).toContain('@click="moveScanItem(idx, -1)"');
+    expect(html).toContain('moveScanItem(idx, delta) {');
     expect(html).toContain('window.ScanPdf.compressToJpeg');
     expect(html).toContain('window.ScanPdf.buildPdf');
   });
@@ -107,6 +109,7 @@ describe('dashboard.html integrasi scan kamera (Pendukung & Pelaksanaan)', () =>
     expect(html).toContain("@click=\"scanBuildPdf('pendukung')\"");
     expect(html).toContain("scanClear('pendukung')");
     expect(html).toContain("scanRemove(idx, 'pendukung')");
+    expect(html).toContain("scanMove(idx, -1, 'pendukung')");
   });
 
   it('menyediakan scan untuk BA Pelaksanaan', async () => {
@@ -116,11 +119,12 @@ describe('dashboard.html integrasi scan kamera (Pendukung & Pelaksanaan)', () =>
     expect(html).toContain("@click=\"scanBuildPdf('pelaksanaan')\"");
     expect(html).toContain("scanClear('pelaksanaan')");
     expect(html).toContain("scanRemove(idx, 'pelaksanaan')");
+    expect(html).toContain("scanMove(idx, -1, 'pelaksanaan')");
   });
 
   it('mendefinisikan helper scan generik', async () => {
     const html = await loadHtml('dashboard.html');
-    for (const marker of ['scanTarget(which) {', 'scanClear(which) {', 'scanRemove(idx, which) {', 'scanOnPhotos(e, which) {', 'scanBuildPdf(which) {']) {
+    for (const marker of ['scanTarget(which) {', 'scanClear(which) {', 'scanRemove(idx, which) {', 'scanMove(idx, delta, which) {', 'scanOnPhotos(e, which) {', 'scanBuildPdf(which) {']) {
       expect(html).toContain(marker);
     }
   });
