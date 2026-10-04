@@ -400,7 +400,8 @@ export async function getBaUploadOptions(db, ctx) {
     detailList.sort((a, b) => (a.blok.toLowerCase() + a.label.toLowerCase()).localeCompare(b.blok.toLowerCase() + b.label.toLowerCase()));
     return { blok: blokList, details: detailList, labs: await getMasterOptions(db, 'Lab') };
   } catch (e) {
-    return { blok: [], details: [], labs: [] };
+    console.error('Gagal menyiapkan opsi BA: ' + (e && e.message ? e.message : e));
+    throw e;
   }
 }
 

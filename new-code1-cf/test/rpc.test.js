@@ -7,6 +7,12 @@ describe('dispatchRpc', () => {
     const res = await dispatchRpc(env.DB, 'getDashboardBootstrap', []);
     expect(res.error).toBe('Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.');
   });
+  it('masks internal errors instead of leaking them', async () => {
+    const boom = { prepare() { throw new Error('SQLITE_ERROR: no such table: rahasia'); } };
+    const res = await dispatchRpc(boom, 'authenticateAdmin', [[]]);
+    expect(res.error).toBe('Terjadi kesalahan pada server. Silakan coba lagi.');
+    expect(res.error).not.toContain('SQLITE');
+  });
   it('stubs unknown write functions', async () => {
     const res = await dispatchRpc(env.DB, 'fiturTidakAda', [['x']]);
     expect(res).toEqual({ success: false, message: 'Fitur fiturTidakAda belum tersedia pada tahap ini.' });

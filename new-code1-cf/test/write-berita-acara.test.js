@@ -67,6 +67,20 @@ describe('berita acara admin', () => {
     expect(second.message).toContain('sudah ada');
   });
 
+  it('tidak menyimpan BA Pendukung ganda saat dua unggahan bersamaan', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    await Promise.all([
+      saveBeritaAcaraAdmin(env.DB, { ...adminPayload, jam: '10:15' }, ctx),
+      saveBeritaAcaraAdmin(env.DB, { ...adminPayload, jam: '11:00' }, ctx)
+    ]);
+    const ba = await env.DB.prepare("SELECT ba_id FROM berita_acara_admin WHERE nama_kegiatan = 'SGD 1'").all();
+    expect(ba.results).toHaveLength(1);
+    const pes = await env.DB.prepare('SELECT ba_id FROM berita_acara_admin_peserta').all();
+    expect(pes.results).toHaveLength(1);
+    expect(pes.results[0].ba_id).toBe(ba.results[0].ba_id);
+  });
+
   it('memperbarui BA Pendukung', async () => {
     await seedPengajuan();
     const ctx = await adminCtx();

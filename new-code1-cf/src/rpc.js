@@ -1,4 +1,4 @@
-import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass, requireAdmin } from './session.js';
+import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass, requireAdmin, AUTH_ERROR } from './session.js';
 import { getBaginaConfig, getBagianBootstrap, getBeritaAcaraList } from './read/bagian.js';
 import { getLaporanBootstrap } from './read/laporan.js';
 import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList } from './repo.js';
@@ -102,6 +102,9 @@ export async function dispatchRpc(db, fn, args, ip, env) {
   try {
     return await handler(db, rest, { token, session, ip, env });
   } catch (e) {
-    return { error: (e && e.message) ? e.message : String(e) };
+    const raw = (e && e.message) ? String(e.message) : String(e);
+    console.error('RPC ' + String(fn) + ' gagal: ' + (e && e.stack ? e.stack : raw));
+    const safe = raw === AUTH_ERROR || raw.indexOf('Akses ditolak') === 0;
+    return { error: safe ? raw : 'Terjadi kesalahan pada server. Silakan coba lagi.' };
   }
 }

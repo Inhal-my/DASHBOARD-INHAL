@@ -261,7 +261,7 @@
             <div v-if="toast.show" class="fixed bottom-6 right-6 z-[120] flex max-w-sm items-start gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lift">
                 <i :class="toast.icon" class="mt-0.5 text-lg"></i>
                 <div class="text-sm">{{ toast.msg }}</div>
-                <button class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
+                <button type="button" aria-label="Tutup notifikasi" class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
             </div>
         </transition>
 
@@ -346,7 +346,7 @@
                     </div>
                 </div>
                 <div class="mt-2 grid grid-cols-2 gap-2">
-                    <a :href="'/detail-laporan'" target="_blank" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
+                    <a :href="'/detail-laporan'" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
                         <i class="bi bi-file-earmark-text"></i> Laporan
                     </a>
                     <a :href="appUrl" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
@@ -372,7 +372,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <a :href="'/detail-laporan'" target="_blank" class="btn-soft"><i class="bi bi-file-earmark-text"></i><span class="hidden md:inline">Laporan Detail</span></a>
+                    <a :href="'/detail-laporan'" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-file-earmark-text"></i><span class="hidden md:inline">Laporan Detail</span></a>
                     <a :href="appUrl" class="btn-soft"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
                     <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
                 </div>
@@ -479,11 +479,11 @@
                                         <td class="px-4 py-2.5 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
                                         <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
                                         <td class="px-4 py-2.5">
-                                            <a v-if="r['Link Bukti Bayar']" :href="safeUrl(r['Link Bukti Bayar'])" target="_blank" class="chip-bukti" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
+                                            <a v-if="r['Link Bukti Bayar']" :href="safeUrl(r['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="chip-bukti" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
                                         </td>
                                         <td class="px-4 py-2.5">
-                                            <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Final</a>
+                                            <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" rel="noopener noreferrer" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Final</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
                                         </td>
                                         <td class="px-4 py-2.5 text-right" @click.stop>
@@ -692,7 +692,7 @@
                                                     <template v-if="r.__orphan"><span class="text-xs text-slate-400">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in unitPendukungBa(r)" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in r.__pendukungBa" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3"><span v-if="!r.__orphan" class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(unitKeputusan(r))">{{ unitKeputusan(r) }}</span><span v-else class="text-xs text-slate-400">-</span></td>
@@ -701,12 +701,12 @@
                                                     <template v-else-if="!unitPelaksanaanEligible(r)"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPelaksanaan(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPelaksanaan(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in r.__pelaksanaanBa" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3">
                                                     <button type="button" class="flex cursor-pointer items-center gap-1" :title="stageTooltip(r) + ' - klik untuk riwayat'" @click="openRiwayat(r)">
-                                                        <span v-for="(s, si) in progresDots(r)" :key="si" class="inline-block h-2.5 w-2.5 rounded-full" :class="s === 'all' ? 'bg-emerald-500' : (s === 'partial' ? 'bg-amber-400' : 'bg-slate-200')"></span>
+                                                        <span v-for="(s, si) in r.__progres" :key="si" class="inline-block h-2.5 w-2.5 rounded-full" :class="s === 'all' ? 'bg-emerald-500' : (s === 'partial' ? 'bg-amber-400' : 'bg-slate-200')"></span>
                                                     </button>
                                                 </td>
                                                 <td class="p-3 text-xs text-slate-600">
@@ -720,7 +720,7 @@
                                                     <div class="flex flex-col gap-1 text-xs">
                                                         <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
                                                         <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
-                                                        <div v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'a'+bi" class="flex items-center gap-1.5">
+                                                        <div v-for="(b, bi) in r.__pelaksanaanBa" :key="'a'+bi" class="flex items-center gap-1.5">
                                                             <button v-if="b.sumber === 'Bagian'" class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click="openKelolaBa(b.baId, b.sumber)"><i class="bi bi-pencil text-[11px]"></i></button>
                                                             <button v-if="b.sumber === 'Bagian'" class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-[11px]"></i></button>
                                                         </div>
@@ -744,7 +744,7 @@
                                                             <div v-if="!r.ba.length" class="text-xs text-slate-400">Belum ada BA.</div>
                                                             <div v-for="(b, bi) in r.ba" :key="bi" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
                                                                 <div class="flex flex-wrap items-center gap-2">
-                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
                                                                     <button class="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
@@ -786,7 +786,7 @@
                                     <div v-if="r.ba.length" class="mt-2 space-y-1">
                                         <div v-for="(b, bi) in r.ba" :key="'mb' + bi" class="rounded-lg bg-white p-2 text-xs ring-1 ring-slate-100">
                                             <div class="flex flex-wrap items-center gap-2">
-                                                <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                 <span class="text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'text-brand-700' : 'text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                 <button class="ml-auto text-[10px] font-bold text-slate-500" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
                                             </div>
@@ -894,7 +894,7 @@
                                                 <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(r.tanggal) }}</span>
                                             </div>
                                             <div class="mt-1 text-xs text-slate-600">{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></div>
-                                            <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
+                                            <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" rel="noopener noreferrer" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
                                         </div>
                                     </div>
                                 </div>
@@ -995,7 +995,7 @@
                                     <div v-else class="divide-y divide-slate-50">
                                         <div v-for="(r, i) in bab.baList" :key="i" class="p-4">
                                             <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" class="link font-mono">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
+                                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" rel="noopener noreferrer" class="link font-mono">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
                                                 <span>·</span>
                                                 <span>{{ formatTanggal(r.Timestamp) }}</span>
                                                 <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(r['BA ID'], 'Bagian')"><i class="bi bi-trash text-xs"></i></button>
@@ -1334,7 +1334,7 @@
                                     <div class="sm:col-span-2 md:col-span-3">
                                         <div class="label">Surat Keterangan</div>
                                         <div v-if="detail.p['Link Surat Keterangan']" class="value">
-                                            <a :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" class="link inline-flex items-center gap-1"><i class="bi bi-file-earmark-text"></i>Lihat Surat Keterangan</a>
+                                            <a :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1"><i class="bi bi-file-earmark-text"></i>Lihat Surat Keterangan</a>
                                         </div>
                                         <div v-else class="mt-1">
                                             <div class="flex flex-wrap items-center gap-2">
@@ -1365,9 +1365,9 @@
 
                             <!-- links -->
                             <div v-if="detail.p['Link Surat Keterangan'] || detail.p['Link ACC INHAL'] || detail.p['Link Bukti Bayar']" class="mt-4 grid gap-3 sm:grid-cols-3">
-                                <a v-if="detail.p['Link Surat Keterangan']" :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
-                                <a v-if="detail.p['Link ACC INHAL']" :href="safeUrl(detail.p['Link ACC INHAL'])" target="_blank" class="btn-acc justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
-                                <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
+                                <a v-if="detail.p['Link Surat Keterangan']" :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" rel="noopener noreferrer" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
+                                <a v-if="detail.p['Link ACC INHAL']" :href="safeUrl(detail.p['Link ACC INHAL'])" target="_blank" rel="noopener noreferrer" class="btn-acc justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
+                                <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
                             </div>
 
                             <!-- detail kegiatan + berita acara -->
@@ -1412,7 +1412,7 @@
                                 <div v-if="detail.baList && detail.baList.length" class="ba-align-card rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                                     <div class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-pdf text-base text-rose-600"></i> Berita Acara</div>
                                     <div class="flex flex-wrap gap-2">
-                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="safeUrl(b['File URL'])" target="_blank" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
+                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
                                     </div>
                                 </div>
                             </div>
@@ -1471,7 +1471,7 @@
                     <div class="modal-panel max-w-xl shadow-lift">
                         <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                             <h3 class="text-sm font-bold text-slate-900">{{ master.rowModal.mode === 'update' ? 'Ubah' : 'Tambah' }} {{ master.rowModal.title }}</h3>
-                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.rowModal.open=false"><i class="bi bi-x-lg"></i></button>
+                            <button type="button" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="master.rowModal.open=false"><i class="bi bi-x-lg"></i></button>
                         </div>
                         <div class="modal-body px-6 py-4 space-y-3">
                             <div v-for="c in master.rowModal.cols" :key="c">
@@ -1652,6 +1652,7 @@
     </div>
 
     <script src="/gs-shim.js"></script>
+    <script src="/app-common.js"></script>
     <script>
         function bootDashboard() {
         const APP_URL = '/';
@@ -1678,9 +1679,8 @@
 
         const { createApp } = Vue;
 
-        createApp({
-            data() {
-                return {
+        function initialData() {
+            return {
                     loading: false,
                     sectionLoading: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
                     loaded: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
@@ -1693,6 +1693,7 @@
                     loginError: '',
                     loginLoading: false,
                     toast: { show: false, msg: '', icon: 'bi-check-circle' },
+                    toastTimer: null,
                     dialog: { open: false, title: '', message: '', details: [], icon: 'bi-question-circle', tone: 'primary', confirmLabel: 'Lanjutkan', cancelLabel: 'Batal', input: null, inputValue: '', inputError: '', resolver: null },
                     stats: { total: 0, totalBiaya: 0, perStatus: {}, trend: {}, perJenis: {}, perBlok: {}, perBagian: {} },
                     diagnostic: '',
@@ -1746,6 +1747,11 @@
                         ]
                     }
                 };
+        }
+
+        createApp({
+            data() {
+                return initialData();
             },
             computed: {
                 loggedIn() {
@@ -1922,7 +1928,11 @@
                         jumlahPeserta: (b.peserta || []).length, statusBa: 'ada', statusFinal: 'belum',
                         linkFinal: '', ba: [b]
                     }));
-                    return units.concat(orphans);
+                    return units.concat(orphans).map(r => Object.assign(r, {
+                        __pendukungBa: this.unitPendukungBa(r),
+                        __pelaksanaanBa: this.unitPelaksanaanBa(r),
+                        __progres: this.progresDots(r)
+                    }));
                 },
                 bagianBar() {
                     const map = {};
@@ -2036,8 +2046,7 @@
             },
             methods: {
                 safeUrl(v) {
-                    const s = String(v == null ? '' : v).trim();
-                    return /^https?:\/\//i.test(s) ? s : '#';
+                    return AppCommon.safeUrl(v);
                 },
                 // ---------- helpers ----------
                 run(fn, ...args) {
@@ -2241,20 +2250,14 @@
                         this.run('logoutSession', this.session.token).catch(() => {});
                     }
                     clearSession();
+                    Object.assign(this.$data, initialData());
                     this.session = null;
-                    this.loginPwd = '';
-                    this.loginError = '';
-                    this.bab.active = false;
-                    this.bab.token = null;
-                    this.bab.rows = [];
-                    this.bab.baList = [];
-                    this.loaded = { pengajuan: false, stats: false, bagian: false, ba: false, master: false };
-                    this.tab = 'pengajuan';
                     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
                 },
                 notify(msg, ok = true) {
                     this.toast = { show: true, msg, icon: ok ? 'bi-check-circle text-emerald-400' : 'bi-exclamation-triangle text-amber-400' };
-                    setTimeout(() => { this.toast.show = false; }, 3800);
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3800);
                 },
                 openDialog(opts, inputMode) {
                     const o = opts || {};
@@ -2314,30 +2317,13 @@
                     return this.dialog.tone === 'danger' ? 'btn-danger' : 'btn-primary';
                 },
                 formatRupiah(num) {
-                    const n = Number(num) || 0;
-                    return 'Rp ' + n.toLocaleString('id-ID');
+                    return AppCommon.formatRupiah(num);
                 },
                 formatTanggal(v) {
-                    if (!v) return '—';
-                    if (v instanceof Date) return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear();
-                    const s = String(v);
-                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m[3] + '/' + m[2] + '/' + m[1]; }
-                    return s;
+                    return AppCommon.formatTanggal(v);
                 },
                 formatTanggalWaktu(v) {
-                    if (!v) return '—';
-                    if (v instanceof Date) {
-                        const p = n => (n < 10 ? '0' : '') + n;
-                        return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear() + ' ' + p(v.getHours()) + ':' + p(v.getMinutes());
-                    }
-                    const s = String(v);
-                    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
-                    if (m) {
-                        const datePart = m[3] + '/' + m[2] + '/' + m[1];
-                        const timePart = (m[4] !== undefined && m[5] !== undefined) ? (' ' + m[4] + ':' + m[5]) : '';
-                        return datePart + timePart;
-                    }
-                    return s;
+                    return AppCommon.formatTanggalWaktu(v);
                 },
                 toDatetimeLocalInputValue(v) {
                     if (!v) return '';
@@ -2970,7 +2956,7 @@
 
                 // ---------- bagian ----------
                 normBagian(v) {
-                    return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+                    return AppCommon.normBagian(v);
                 },
                 unitKeputusan(u) {
                     const order = ['Ditolak', 'Dibatalkan', 'Menunggu', 'Diterima', 'ACC'];
@@ -3184,27 +3170,10 @@
 
                 // ---------- berita acara ----------
                 resolveBaBagian(b) {
-                    const key = this.normBagian(b.Bagian);
-                    const categories = ['Ujian', 'SGD', 'KKD'];
-                    if (key) {
-                        for (let i = 0; i < categories.length; i++) {
-                            if (this.normBagian(categories[i]) === key) return categories[i];
-                        }
-                    }
-                    const labs = this.bagian.labs || [];
-                    if (key) {
-                        for (let i = 0; i < labs.length; i++) {
-                            if (this.normBagian(labs[i]) === key) return labs[i];
-                        }
-                    }
-                    const nKey = this.normBagian(b['Nama Kegiatan']);
-                    if (nKey) {
-                        const sorted = labs.slice().sort((a, b) => this.normBagian(b).length - this.normBagian(a).length);
-                        for (let i = 0; i < sorted.length; i++) {
-                            if (nKey.indexOf(this.normBagian(sorted[i])) !== -1) return sorted[i];
-                        }
-                    }
-                    return '';
+                    return AppCommon.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan'], {
+                        categories: ['Ujian', 'SGD', 'KKD'],
+                        labs: this.bagian.labs
+                    });
                 },
                 applyBaFilter() {
                     const rows = (this.ba.all || []).filter(b => {

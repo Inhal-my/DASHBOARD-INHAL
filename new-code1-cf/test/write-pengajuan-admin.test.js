@@ -149,6 +149,17 @@ describe('pengajuan admin status and delete', () => {
     expect(hist.results[0].status).toBe('Diterima');
   });
 
+  it('keeps the existing nomor surat on a repeated approval', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
+    const second = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
+    expect(second.success).toBe(true);
+    expect(second.nomorSurat).toBe(first.nomorSurat);
+    const row = await env.DB.prepare('SELECT nomor_surat FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.nomor_surat).toBe(first.nomorSurat);
+  });
+
   it('issues consecutive nomor surat for concurrent approvals', async () => {
     await seedPengajuan();
     await env.DB.prepare(

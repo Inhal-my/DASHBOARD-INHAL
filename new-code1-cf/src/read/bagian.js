@@ -134,6 +134,13 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
 }
 
 export async function getBeritaAcaraList(db, bagianFilter, kategori, ctx) {
-  await requireBagianSession(db, kategori, '', ctx.token, ctx.session);
+  const s = ctx.session ? ctx.session : await getSession(db, ctx.token);
+  if (!s || s.role !== 'bagian') throw new Error(AUTH_ERROR);
+  const kat = String(kategori || '').trim();
+  const sub = String(bagianFilter || '').trim();
+  const masterBagian = (await db.prepare('SELECT lab, kegiatan_lab, bagian FROM master_bagian').all()).results || [];
+  if (!baginaHasAccess({ kategoris: s.kategoris || [] }, kat, sub, getBagianAliasMap(masterBagian))) {
+    throw new Error('Akses ditolak. Akun ini terdaftar untuk kategori: ' + ((s.kategoris || []).join(', ') || '(semua)') + '.');
+  }
   return await computeBaList(db, bagianFilter, kategori);
 }

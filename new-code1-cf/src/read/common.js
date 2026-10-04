@@ -80,7 +80,8 @@ export async function getBiayaMap(db) {
     }
     return map;
   } catch (e) {
-    return {};
+    console.error('Gagal membaca master_biaya: ' + (e && e.message ? e.message : e));
+    throw e;
   }
 }
 
@@ -99,7 +100,8 @@ export async function getBiayaOverrideMap(db) {
     }
     return map;
   } catch (e) {
-    return {};
+    console.error('Gagal membaca BIAYA-OVERRIDE: ' + (e && e.message ? e.message : e));
+    throw e;
   }
 }
 

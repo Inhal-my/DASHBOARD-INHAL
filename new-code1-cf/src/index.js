@@ -81,6 +81,7 @@ app.get('/api/files/:id', async (c) => {
     headers: {
       'Content-Type': row.mime_type || 'application/octet-stream',
       'Content-Disposition': 'inline; filename="' + name + '"',
+      'X-Content-Type-Options': 'nosniff',
       'Cache-Control': 'private, max-age=600'
     }
   });

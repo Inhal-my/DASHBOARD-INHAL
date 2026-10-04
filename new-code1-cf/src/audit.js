@@ -19,6 +19,7 @@ export async function writeAuditLog(db, entry) {
     ).run();
   } catch (err) {
     console.error('Gagal menulis AuditLog: ' + (err && err.message ? err.message : err));
+    throw err;
   }
 }
 
@@ -34,6 +35,7 @@ export async function writeLogUpload(db, entry) {
     ).run();
   } catch (err) {
     console.error('Gagal menulis LogUpload: ' + (err && err.message ? err.message : err));
+    throw err;
   }
 }
 

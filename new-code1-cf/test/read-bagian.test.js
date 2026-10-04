@@ -40,4 +40,12 @@ describe('bagian read', () => {
     expect(list).toHaveLength(1);
     expect(list[0]['BA ID']).toBe('BA-2026-0001');
   });
+  it('denies BA list requests outside the session scope', async () => {
+    await seed();
+    const scoped = await bagianCtx(['SGD']);
+    await expect(getBeritaAcaraList(env.DB, 'Ujian', 'Ujian', scoped)).rejects.toThrow();
+    await expect(getBeritaAcaraList(env.DB, '', '', scoped)).rejects.toThrow();
+    const own = await getBeritaAcaraList(env.DB, 'SGD', 'SGD', scoped);
+    expect(own).toHaveLength(0);
+  });
 });

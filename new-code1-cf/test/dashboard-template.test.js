@@ -144,7 +144,7 @@ describe('dashboard template', () => {
     const html = await loadDashboardHtml();
     expect(html).not.toContain('Lihat File');
     expect(html).not.toContain('Lihat file');
-    expect(html).toContain(':href="safeUrl(b.fileUrl)" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a>');
+    expect(html).toContain(':href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a>');
   });
 
   it('menampilkan ikon Kelola BA hanya untuk BA Pelaksanaan', async () => {
@@ -156,14 +156,14 @@ describe('dashboard template', () => {
 
   it('hanya menampilkan kontrol Aksi BA Pelaksanaan tanpa tombol Riwayat', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain("v-for=\"(b, bi) in unitPelaksanaanBa(r)\" :key=\"'a'+bi\"");
+    expect(html).toContain("v-for=\"(b, bi) in r.__pelaksanaanBa\" :key=\"'a'+bi\"");
     expect(html).not.toContain("v-for=\"(b, bi) in r.ba\" :key=\"'a'+bi\"");
     expect(html).not.toContain('@click="openRiwayat(r)">Riwayat</button>');
   });
 
   it('membuka riwayat saat isi kolom progres diklik', async () => {
     const html = await loadDashboardHtml();
-    const m = html.match(/<button[^>]*@click="openRiwayat\(r\)"[^>]*>[\s\S]*?progresDots\(r\)[\s\S]*?<\/button>/);
+    const m = html.match(/<button[^>]*@click="openRiwayat\(r\)"[^>]*>[\s\S]*?r\.__progres[\s\S]*?<\/button>/);
     expect(m).not.toBeNull();
     expect(m[0]).toContain('cursor-pointer');
     expect(m[0]).toContain('stageTooltip(r)');

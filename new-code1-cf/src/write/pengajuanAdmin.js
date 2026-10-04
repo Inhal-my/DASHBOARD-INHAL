@@ -229,17 +229,36 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   const sets = ['status = ?1', 'updated_at = ?2'];
   const vals = [status, ts];
   if (catatanVal !== '') { sets.push('catatan_admin = ?' + (vals.length + 1)); vals.push(catatanVal); }
-  if (status === 'Diterima' && !nomorSurat) {
+  const claimNumber = status === 'Diterima' && !nomorSurat;
+  if (claimNumber) {
     nomorSurat = await nextSuratNumberYearly(db, 'INHAL');
     sets.push('nomor_surat = ?' + (vals.length + 1));
     vals.push(nomorSurat);
   }
-  await db.prepare('UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1)).bind(...vals, id).run();
-
   const actor = str(actorEmail) || str(ctx.session && ctx.session.nama) || 'Admin';
-  await db.prepare(
-    'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
-  ).bind(ts, id, status, catatanVal, actor).run();
+  const updateSql = 'UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1)
+    + (claimNumber ? " AND (nomor_surat IS NULL OR nomor_surat = '')" : '');
+  const historyStmt = claimNumber
+    ? db.prepare(
+      'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) ' +
+      'SELECT ?1, ?2, ?3, ?4, ?5 WHERE EXISTS (SELECT 1 FROM pengajuan WHERE id_pengajuan = ?2 AND nomor_surat = ?6)'
+    ).bind(ts, id, status, catatanVal, actor, nomorSurat)
+    : db.prepare(
+      'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
+    ).bind(ts, id, status, catatanVal, actor);
+  await db.batch([db.prepare(updateSql).bind(...vals, id), historyStmt]);
+
+  if (claimNumber) {
+    const after = await db.prepare('SELECT nomor_surat FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
+    if (str(after && after.nomor_surat) !== nomorSurat) {
+      return {
+        success: false,
+        idPengajuan: id,
+        nomorSurat: str(after && after.nomor_surat),
+        message: 'Pengajuan ini sudah diproses admin lain (nomor surat sudah terbit).'
+      };
+    }
+  }
 
   let notification = null;
   if (status === 'Diterima' || status === 'Ditolak') {
@@ -368,6 +387,18 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
   const ts = nowIso();
 
   const summary = await getUploadLogDetail(db, id);
+
+  await db.prepare(
+    'UPDATE pengajuan SET link_acc_inhal = ?5, link_bukti_bayar = ?6, link_final = ?7, upload_reset_at = ?1, upload_reset_by = ?2, upload_reset_note = ?3, updated_at = ?4 ' +
+    'WHERE id_pengajuan = ?8 AND IFNULL(link_acc_inhal, \'\') = ?9 AND IFNULL(link_bukti_bayar, \'\') = ?10 AND IFNULL(link_final, \'\') = ?11'
+  ).bind(ts, actor, note, ts, '', '', '', id, acc, bukti, final).run();
+  const after = await db.prepare(
+    'SELECT link_acc_inhal, upload_reset_at FROM pengajuan WHERE id_pengajuan = ?1'
+  ).bind(id).first();
+  if (str(after && after.upload_reset_at) !== ts || str(after && after.link_acc_inhal) !== '') {
+    return { success: false, message: 'Unggahan berubah sejak dibaca. Muat ulang data sebelum mereset.' };
+  }
+
   await writeLogUpload(db, {
     idPengajuan: id,
     npm: str(p.npm),
@@ -379,10 +410,6 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
     linkAcc: acc,
     linkBukti: bukti
   });
-
-  await db.prepare(
-    "UPDATE pengajuan SET link_acc_inhal = '', link_bukti_bayar = '', link_final = '', upload_reset_at = ?1, upload_reset_by = ?2, upload_reset_note = ?3, updated_at = ?1 WHERE id_pengajuan = ?4"
-  ).bind(ts, actor, note, id).run();
 
   await writeAuditLog(db, {
     actor: actor,

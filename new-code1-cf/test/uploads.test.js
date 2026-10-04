@@ -39,6 +39,14 @@ describe('uploads', () => {
     expect(validateUpload({ data: btoa('hello world'), mimeType: '' }).ok).toBe(false);
   });
 
+  it('rejects when the declared mime conflicts with the file signature', () => {
+    const png = btoa('\x89PNG\r\n\x1a\nxxxx');
+    expect(resolveMime('application/pdf', png)).toBe('');
+    expect(validateUpload({ data: png, mimeType: 'application/pdf' }).ok).toBe(false);
+    expect(validateUpload({ data: png, mimeType: 'image/png' }).ok).toBe(true);
+    expect(resolveMime('image/jpg', btoa('\xff\xd8\xff\x00jpeg'))).toBe('image/jpeg');
+  });
+
   it('saves and reads an upload back', async () => {
     const res = await saveUpload(
       env.DB,

@@ -51,6 +51,24 @@ describe('master write handlers', () => {
     await expect(saveBagianBaSettings(env.DB, { statuses: ['ACC'] }, {})).rejects.toThrow();
   });
 
+  it('rejects an empty row set without wiping the table', async () => {
+    const before = (await env.DB.prepare('SELECT COUNT(*) AS n FROM master_kegiatan').first()).n;
+    expect(before).toBeGreaterThan(0);
+    const ctx = await adminCtx();
+    const res = await saveMasterKegiatan(env.DB, { rows: [{ Kategori: '', Nilai: '' }] }, ctx);
+    expect(res.success).toBe(false);
+    const after = (await env.DB.prepare('SELECT COUNT(*) AS n FROM master_kegiatan').first()).n;
+    expect(after).toBe(before);
+  });
+
+  it('rejects an empty config payload without wiping config', async () => {
+    const ctx = await adminCtx();
+    const res = await saveConfig(env.DB, { rows: [{ Key: '', Value: '' }] }, ctx);
+    expect(res.success).toBe(false);
+    const row = await env.DB.prepare("SELECT value FROM config WHERE key = 'BUKTI_MODE'").first();
+    expect(row.value).toBe('strict');
+  });
+
   it('replaces master kegiatan rows and keeps only new data', async () => {
     await env.DB.prepare("INSERT INTO master_kegiatan (kategori, nilai) VALUES ('Lama','X')").run();
     const ctx = await adminCtx();

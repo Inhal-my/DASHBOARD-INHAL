@@ -33,8 +33,16 @@ export function sniffMime(base64) {
 
 export function resolveMime(mimeType, base64) {
   const mime = String(mimeType || '').toLowerCase().trim();
+  const sniffed = sniffMime(base64);
+  if (sniffed) {
+    const equivalent = mime === sniffed || (mime === 'image/jpg' && sniffed === 'image/jpeg');
+    if (mime && mime !== 'application/octet-stream' && !equivalent) {
+      return '';
+    }
+    return sniffed;
+  }
   if (mime && mime !== 'application/octet-stream') return mime;
-  return sniffMime(base64);
+  return '';
 }
 
 export function parseFileInput(input) {

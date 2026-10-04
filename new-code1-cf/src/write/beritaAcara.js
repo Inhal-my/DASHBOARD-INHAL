@@ -127,7 +127,7 @@ async function findDuplicateBa(db, bagian, blok, nama, tanggal) {
   return null;
 }
 
-async function persistBa(db, table, pesertaTable, payload, meta) {
+function buildPersistBaStmts(db, table, pesertaTable, payload, meta) {
   const ts = nowIso();
   const cols = {
     timestamp: ts,
@@ -147,21 +147,30 @@ async function persistBa(db, table, pesertaTable, payload, meta) {
   if (meta.withDosen) cols.dosen = str(payload.dosen);
   const keys = Object.keys(cols);
   const placeholders = keys.map((_, i) => '?' + (i + 1)).join(', ');
-  const stmts = [
-    db.prepare(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`).bind(...keys.map((k) => cols[k]))
-  ];
+  const key = str(meta.kegiatanKey);
+  const insertBa = key
+    ? db.prepare(
+      `INSERT INTO ${table} (${keys.join(', ')}) SELECT ${placeholders} ` +
+      `WHERE NOT EXISTS (SELECT 1 FROM ${table} WHERE kegiatan_key = ?${keys.length + 1})`
+    ).bind(...keys.map((k) => cols[k]), key)
+    : db.prepare(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`).bind(...keys.map((k) => cols[k]));
+  const stmts = [insertBa];
   for (const p of payload.__peserta) {
     stmts.push(
       db.prepare(
         `INSERT INTO ${pesertaTable} (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan) ` +
-        'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)'
+        `SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 WHERE EXISTS (SELECT 1 FROM ${table} WHERE ba_id = ?2)`
       ).bind(ts, meta.baId, str(p.idPengajuan), p.npm, p.namaLengkap, p.blok, meta.bagian, p.statusPengajuan)
     );
   }
-  await db.batch(stmts);
+  return stmts;
 }
 
-async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
+async function persistBa(db, table, pesertaTable, payload, meta) {
+  await db.batch(buildPersistBaStmts(db, table, pesertaTable, payload, meta));
+}
+
+function buildSyncStmts(db, peserta, dosen, tanggal, jam) {
   const tgl = str(tanggal);
   const j = str(jam);
   const value = tgl && j ? (tgl + 'T' + j) : tgl;
@@ -175,6 +184,11 @@ async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
         .bind(str(dosen), value, ts, id)
     );
   }
+  return stmts;
+}
+
+async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
+  const stmts = buildSyncStmts(db, peserta, dosen, tanggal, jam);
   if (stmts.length) await db.batch(stmts);
 }
 
@@ -322,11 +336,13 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   p.__peserta = peserta;
   p.__jumlah = peserta.length;
   p.__sumber = 'Bagian';
-  await persistBa(db, 'berita_acara', 'berita_acara_peserta', p, {
-    baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
-    kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true
-  });
-  await syncPengajuanPelaksanaan(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam));
+  await db.batch([
+    ...buildPersistBaStmts(db, 'berita_acara', 'berita_acara_peserta', p, {
+      baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
+      kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true
+    }),
+    ...buildSyncStmts(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam))
+  ]);
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
@@ -349,10 +365,11 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
     p.dosen !== undefined ? str(p.dosen) : str(existing.dosen),
     p.catatan !== undefined ? str(p.catatan) : str(existing.catatan)
   ];
-  await db.prepare('UPDATE berita_acara SET ' + sets.join(', ') + ' WHERE ba_id = ?' + (vals.length + 1)).bind(...vals, id).run();
-
   const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
-  await syncPengajuanPelaksanaan(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), vals[2], tanggal, vals[1]);
+  await db.batch([
+    db.prepare('UPDATE berita_acara SET ' + sets.join(', ') + ' WHERE ba_id = ?' + (vals.length + 1)).bind(...vals, id),
+    ...buildSyncStmts(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), vals[2], tanggal, vals[1])
+  ]);
 
   return { success: true, message: 'Berita acara diperbarui.' };
 }

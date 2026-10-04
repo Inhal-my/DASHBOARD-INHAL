@@ -82,7 +82,7 @@ describe('detail-laporan template', () => {
     expect(html).toContain('openKelolaBa');
     expect(html).toContain('deleteBaAdmin');
     expect(html).toContain('this.kegiatan = data.kegiatan || []');
-    expect(html).toContain('dosenSuggestions');
+    expect(html).toContain('dosenSuggestionsList');
     expect(html).toContain('dosenOptions');
   });
 
@@ -90,7 +90,7 @@ describe('detail-laporan template', () => {
     const html = await loadHtml();
     expect(html).toContain('Riwayat Proses');
     expect(html).toContain('openRiwayat');
-    expect(html).toContain('riwayatEvents');
+    expect(html).toContain('riwayatEventList');
   });
 
   it('mendefinisikan seluruh kelas CSS untuk titik progres', async () => {
@@ -116,7 +116,7 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('pembayaranFiltered()');
     expect(html).toContain('pembayaranSummary()');
     expect(html).toContain('bayarBuktiUrl(m)');
-    expect(html).toContain('statusList(m)');
+    expect(html).toContain('m.statuses');
   });
   it('kolom Bukti Bayar punya keterangan rasio', async () => {
     const html = await loadHtml();

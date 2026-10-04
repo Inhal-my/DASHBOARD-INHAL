@@ -92,7 +92,7 @@
             <div v-if="toast.show" class="fixed bottom-6 right-6 z-[120] flex max-w-sm items-start gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lift">
                 <i :class="toast.icon" class="mt-0.5 text-lg"></i>
                 <div class="text-sm">{{ toast.msg }}</div>
-                <button class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
+                <button type="button" aria-label="Tutup notifikasi" class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
             </div>
         </transition>
 
@@ -106,8 +106,8 @@
                     <div class="relative sm:col-span-2">
                         <label class="label">Dosen</label>
                         <input v-model="kelola.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @focus="dosenPick.open = true" @input="dosenPick.open = true" @blur="dosenPick.open = false">
-                        <div v-if="dosenPick.open && dosenSuggestions(dosenOptions).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                            <button v-for="d in dosenSuggestions(dosenOptions)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(d)">{{ d }}</button>
+                        <div v-if="dosenPick.open && dosenSuggestionsList.length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                            <button v-for="d in dosenSuggestionsList" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(d)">{{ d }}</button>
                         </div>
                     </div>
                     <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
@@ -129,7 +129,7 @@
                     <div class="text-[11px] text-slate-400">{{ riwayat.unit.bagian }} · {{ riwayat.unit.blok || '-' }}</div>
                 </div>
                 <ol class="space-y-3">
-                    <li v-for="(e, i) in riwayatEvents(riwayat.unit)" :key="i" class="flex gap-3">
+                    <li v-for="(e, i) in riwayatEventList" :key="i" class="flex gap-3">
                         <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-500"></span>
                         <div>
                             <div class="text-sm font-semibold text-slate-800">{{ e.label }}</div>
@@ -369,7 +369,7 @@
                                             <td colspan="12" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</td>
                                         </tr>
                                         <template v-for="r in filteredRows" :key="r.pengajuan['ID Pengajuan']">
-                                            <tr class="cursor-pointer border-b border-slate-50 transition hover:bg-brand-50/40" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
+                                            <tr class="cursor-pointer border-b border-slate-50 transition hover:bg-brand-50/40" role="button" tabindex="0" :aria-expanded="!!expanded[r.pengajuan['ID Pengajuan']]" @keydown.enter.prevent="toggleExpand(r.pengajuan['ID Pengajuan'])" @keydown.space.prevent="toggleExpand(r.pengajuan['ID Pengajuan'])" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
                                                 <td class="px-3 py-3 text-slate-400">
                                                     <i :class="expanded[r.pengajuan['ID Pengajuan']] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
                                                 </td>
@@ -537,7 +537,7 @@
                                         <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(d.tanggal) }}</div>
                                     </div>
                                     <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ d.jumlahPeserta }} peserta</span>
-                                    <a v-if="d.fileUrl" :href="safeUrl(d.fileUrl)" target="_blank" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                    <a v-if="d.fileUrl" :href="safeUrl(d.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
                                     <span v-if="d.biaya" class="whitespace-nowrap rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-700">{{ fmtRupiah(d.biaya) }}</span>
                                 </div>
                             </div>
@@ -646,7 +646,7 @@
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="s.row.fileUrl" :href="safeUrl(s.row.fileUrl)" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
+                                                    <a v-if="s.row.fileUrl" :href="safeUrl(s.row.fileUrl)" target="_blank" rel="noopener noreferrer" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
@@ -658,7 +658,7 @@
                                                             <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
                                                             <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
                                                             <span v-if="biayaForNpm(p.npm, s.row.blok)" class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(biayaForNpm(p.npm, s.row.blok)) }}</span>
-                                                            <a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" class="btn-bukti whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="text-slate-300">-</span>
                                                         </div>
                                                     </div>
@@ -863,7 +863,7 @@
                                                                     <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700">Pendukung</span>
                                                                     <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
-                                                                    <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" class="link">Lihat</a>
+                                                                    <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="link">Lihat</a>
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
@@ -877,7 +877,7 @@
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
-                                                                <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                                                <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -987,14 +987,14 @@
                                                 <td class="px-3 py-2.5 font-semibold text-slate-800">{{ m.nama }}</td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ m.jumlahPengajuan }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-center">
-                                                    <span v-for="s in statusList(m)" :key="s" :class="statusBadgeCls(s)" class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ s }}</span>
+                                                    <span v-for="s in m.statuses" :key="s" :class="statusBadgeCls(s)" class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ s }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(m.totalBiaya) }}</td>
                                                 <td class="px-3 py-2.5 text-center">
                                                     <span :class="m.lunas ? 'bg-emerald-50 text-emerald-700' : (m.jumlahBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                                    <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
@@ -1007,9 +1007,9 @@
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
                                                             <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
-                                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
-                                                            <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
+                                                            <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" rel="noopener noreferrer" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -1028,6 +1028,7 @@
     </div>
 
     <script src="/gs-shim.js"></script>
+    <script src="/app-common.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script>
         function bootDetailLaporan() {
@@ -1052,30 +1053,13 @@
         }
 
         function fmtRupiah(num) {
-            const n = Number(num) || 0;
-            return 'Rp ' + n.toLocaleString('id-ID');
+            return AppCommon.formatRupiah(num);
         }
         function fmtTanggal(v) {
-            if (!v) return '-';
-            if (v instanceof Date) return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear();
-            const s = String(v);
-            if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m[3] + '/' + m[2] + '/' + m[1]; }
-            return s;
+            return AppCommon.formatTanggal(v);
         }
         function fmtTanggalWaktu(v) {
-            if (!v) return '-';
-            if (v instanceof Date) {
-                const p = n => (n < 10 ? '0' : '') + n;
-                return v.getDate() + '/' + (v.getMonth() + 1) + '/' + v.getFullYear() + ' ' + p(v.getHours()) + ':' + p(v.getMinutes());
-            }
-            const s = String(v);
-            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
-            if (m) {
-                const datePart = m[3] + '/' + m[2] + '/' + m[1];
-                const timePart = (m[4] !== undefined && m[5] !== undefined) ? (' ' + m[4] + ':' + m[5]) : '';
-                return datePart + timePart;
-            }
-            return s;
+            return AppCommon.formatTanggalWaktu(v);
         }
         function setUrlHyperlinks(ws, header, tooltip) {
             if (!ws || !ws['!ref']) return;
@@ -1136,19 +1120,19 @@
                         <div><div class="label">Dosen</div><div class="value">{{ r.pengajuan.Dosen || '—' }}</div></div>
                         <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</div></div>
                         <div><div class="label">Surat Keterangan</div>
-                            <a v-if="r.pengajuan['Link Surat Keterangan']" :href="safeUrl(r.pengajuan['Link Surat Keterangan'])" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link Surat Keterangan']" :href="safeUrl(r.pengajuan['Link Surat Keterangan'])" target="_blank" rel="noopener noreferrer" class="link">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">ACC INHAL</div>
-                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="safeUrl(r.pengajuan['Link ACC INHAL'])" target="_blank" class="btn-acc">Lihat</a>
+                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="safeUrl(r.pengajuan['Link ACC INHAL'])" target="_blank" rel="noopener noreferrer" class="btn-acc">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Bukti Bayar</div>
-                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" class="btn-bukti">Lihat</a>
+                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Link Final</div>
-                            <a v-if="r.pengajuan['Link Final']" :href="safeUrl(r.pengajuan['Link Final'])" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link Final']" :href="safeUrl(r.pengajuan['Link Final'])" target="_blank" rel="noopener noreferrer" class="link">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Status Info Bagian</div><div class="value">{{ r.pengajuan['Status Info Bagian'] || '—' }}</div></div>
@@ -1186,10 +1170,8 @@
 
         const { createApp } = Vue;
 
-        const app = createApp({
-            components: { ExpandedDetail },
-            data() {
-                return {
+        function initialData() {
+            return {
                     loading: false,
                     loadTimeMs: 0,
                     exporting: false,
@@ -1229,8 +1211,17 @@
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
                     dosenPick: { open: false },
                     riwayat: { open: false, unit: null },
-                    toast: { show: false, icon: '', msg: '' }
+                    toast: { show: false, icon: '', msg: '' },
+                    toastTimer: null,
+                    rafNumbers: null,
+                    rafCharts: null
                 };
+        }
+
+        const app = createApp({
+            components: { ExpandedDetail },
+            data() {
+                return initialData();
             },
             computed: {
                 loggedIn() {
@@ -1409,6 +1400,14 @@
                         if (kel === 'ada' && m.jumlahBukti === 0) return false;
                         if (kel === 'belum' && m.jumlahBukti > 0) return false;
                         return true;
+                    }).map(m => {
+                        const seen = {};
+                        const statuses = [];
+                        (m.items || []).forEach(x => {
+                            if (!seen[x.status]) { seen[x.status] = 1; statuses.push(x.status); }
+                        });
+                        m.statuses = statuses;
+                        return m;
                     });
                 },
                 pembayaranSummary() {
@@ -1420,6 +1419,28 @@
                         belum: list.length - sudah,
                         biaya: list.reduce((t, m) => t + m.totalBiaya, 0)
                     };
+                },
+                dosenSuggestionsList() {
+                    const arr = this.dosenOptions || [];
+                    const q = this.normSearch(this.kelola.dosen);
+                    const matched = q ? arr.filter(d => this.normSearch(d).indexOf(q) !== -1) : arr;
+                    return matched.slice(0, 50);
+                },
+                riwayatEventList() {
+                    const r = this.riwayat.unit;
+                    if (!r) return [];
+                    const out = [];
+                    out.push({ label: 'Pendaftaran', detail: ((r.counts && r.counts.peserta) ? r.counts.peserta : (r.peserta || []).length) + ' mahasiswa', time: '' });
+                    for (const b of (r.baPendukung || [])) {
+                        out.push({ label: 'BA Pendukung', detail: b['BA ID'], time: b.Timestamp || '' });
+                    }
+                    out.push({ label: 'Keputusan', detail: (r.counts ? r.counts.keputusan : 0) + ' diputuskan', time: '' });
+                    out.push({ label: 'ACC Final', detail: (r.counts ? r.counts.final : 0) + ' terkirim', time: '' });
+                    for (const b of (r.baPelaksanaan || [])) {
+                        out.push({ label: 'BA Pelaksanaan', detail: b['BA ID'] + (b.Dosen ? ' · ' + b.Dosen : '') + (b.Jam ? ' · ' + (b['Tanggal Pelaksanaan'] || '') + ' ' + b.Jam : ''), time: b.Timestamp || '' });
+                    }
+                    out.push({ label: 'Selesai', detail: (r.progress && r.progress.selesai === 'all') ? 'lengkap' : 'belum', time: '' });
+                    return out;
                 },
                 bagianBlokOptions() {
                     const sel = this.bagianFilter.bagian;
@@ -1849,8 +1870,7 @@
             },
             methods: {
                 safeUrl(v) {
-                    const s = String(v == null ? '' : v).trim();
-                    return /^https?:\/\//i.test(s) ? s : '#';
+                    return AppCommon.safeUrl(v);
                 },
                 fmtRupiah,
                 fmtTanggal,
@@ -1900,56 +1920,24 @@
                         this.run('logoutSession', this.session.token).catch(() => {});
                     }
                     clearSession();
+                    Object.assign(this.$data, initialData());
                     this.session = null;
-                    this.loginPwd = '';
-                    this.loginError = '';
                 },
                 normSearch(s) {
                     return String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
-                },
-                statusList(m) {
-                    const seen = {};
-                    const out = [];
-                    (m.items || []).forEach(x => {
-                        if (!seen[x.status]) { seen[x.status] = 1; out.push(x.status); }
-                    });
-                    return out;
                 },
                 bayarBuktiUrl(m) {
                     const it = (m.items || []).find(x => x.linkBukti);
                     return it ? it.linkBukti : '';
                 },
                 normBagian(v) {
-                    return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+                    return AppCommon.normBagian(v);
                 },
                 resolveBagianLabel(v, pilihan, namaKegiatan) {
-                    const key = this.normBagian(v);
-                    const categories = (this.bagian.categories && this.bagian.categories.length) ? this.bagian.categories : ['Ujian', 'SGD', 'KKD'];
-                    if (key) {
-                        for (let i = 0; i < categories.length; i++) {
-                            if (this.normBagian(categories[i]) === key) return categories[i];
-                        }
-                    }
-                    const labs = this.bagian.labs || [];
-                    if (key) {
-                        for (let i = 0; i < labs.length; i++) {
-                            if (this.normBagian(labs[i]) === key) return labs[i];
-                        }
-                    }
-                    const pKey = this.normBagian(pilihan);
-                    if (pKey) {
-                        for (let i = 0; i < labs.length; i++) {
-                            if (this.normBagian(labs[i]) === pKey) return labs[i];
-                        }
-                    }
-                    const nKey = this.normBagian(namaKegiatan);
-                    if (nKey) {
-                        const sorted = labs.slice().sort((a, b) => this.normBagian(b).length - this.normBagian(a).length);
-                        for (let i = 0; i < sorted.length; i++) {
-                            if (nKey.indexOf(this.normBagian(sorted[i])) !== -1) return sorted[i];
-                        }
-                    }
-                    return '';
+                    return AppCommon.resolveBagianLabel(v, pilihan, namaKegiatan, {
+                        categories: this.bagian.categories,
+                        labs: this.bagian.labs
+                    });
                 },
                 npmInfoFor(npm, baBlok) {
                     const list = this.dosenNpmMap[String(npm || '').trim()] || [];
@@ -2064,10 +2052,11 @@
                         const t = Math.min(1, (now - start) / dur);
                         const ease = 1 - Math.pow(1 - t, 3);
                         Object.keys(targets).forEach(k => { this.animated[k] = Math.round(targets[k] * ease); });
-                        if (t < 1) requestAnimationFrame(step);
-                        else Object.keys(targets).forEach(k => { this.animated[k] = targets[k]; });
+                        if (t < 1) this.rafNumbers = requestAnimationFrame(step);
+                        else { this.rafNumbers = null; Object.keys(targets).forEach(k => { this.animated[k] = targets[k]; }); }
                     };
-                    requestAnimationFrame(step);
+                    if (this.rafNumbers) cancelAnimationFrame(this.rafNumbers);
+                    this.rafNumbers = requestAnimationFrame(step);
                 },
                 animateCharts() {
                     this.donutProgress = 0;
@@ -2080,9 +2069,11 @@
                             const ease = 1 - Math.pow(1 - t, 3);
                             this.donutProgress = ease;
                             this.barProgress = ease;
-                            if (t < 1) requestAnimationFrame(step);
+                            if (t < 1) this.rafCharts = requestAnimationFrame(step);
+                            else this.rafCharts = null;
                         };
-                        requestAnimationFrame(step);
+                        if (this.rafCharts) cancelAnimationFrame(this.rafCharts);
+                        this.rafCharts = requestAnimationFrame(step);
                     });
                 },
                 async deletePengajuanRow(r) {
@@ -2147,12 +2138,6 @@
                         ' · Pelaksanaan: ' + (p.pelaksanaan === 'all' ? 'ada' : 'belum') +
                         ' · Selesai: ' + (p.selesai === 'all' ? 'ya' : 'belum');
                 },
-                dosenSuggestions(list) {
-                    const arr = list || [];
-                    const q = this.normSearch(this.kelola.dosen);
-                    const matched = q ? arr.filter(d => this.normSearch(d).indexOf(q) !== -1) : arr;
-                    return matched.slice(0, 50);
-                },
                 pickDosen(name) {
                     this.kelola.dosen = name;
                     this.dosenPick.open = false;
@@ -2185,24 +2170,10 @@
                 openRiwayat(r) {
                     this.riwayat = { open: true, unit: r };
                 },
-                riwayatEvents(r) {
-                    if (!r) return [];
-                    const out = [];
-                    out.push({ label: 'Pendaftaran', detail: ((r.counts && r.counts.peserta) ? r.counts.peserta : (r.peserta || []).length) + ' mahasiswa', time: '' });
-                    for (const b of (r.baPendukung || [])) {
-                        out.push({ label: 'BA Pendukung', detail: b['BA ID'], time: b.Timestamp || '' });
-                    }
-                    out.push({ label: 'Keputusan', detail: (r.counts ? r.counts.keputusan : 0) + ' diputuskan', time: '' });
-                    out.push({ label: 'ACC Final', detail: (r.counts ? r.counts.final : 0) + ' terkirim', time: '' });
-                    for (const b of (r.baPelaksanaan || [])) {
-                        out.push({ label: 'BA Pelaksanaan', detail: b['BA ID'] + (b.Dosen ? ' · ' + b.Dosen : '') + (b.Jam ? ' · ' + (b['Tanggal Pelaksanaan'] || '') + ' ' + b.Jam : ''), time: b.Timestamp || '' });
-                    }
-                    out.push({ label: 'Selesai', detail: (r.progress && r.progress.selesai === 'all') ? 'lengkap' : 'belum', time: '' });
-                    return out;
-                },
                 showToast(icon, msg) {
                     this.toast = { show: true, icon: icon, msg: msg };
-                    setTimeout(() => { this.toast.show = false; }, 3200);
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3200);
                 },
                 async loadData() {
                     this.loading = true;
@@ -2479,6 +2450,11 @@
             mounted() {
                 this.session = readSession();
                 if (this.loggedIn) this.loadData();
+            },
+            beforeUnmount() {
+                if (this.rafNumbers) cancelAnimationFrame(this.rafNumbers);
+                if (this.rafCharts) cancelAnimationFrame(this.rafCharts);
+                if (this.toastTimer) clearTimeout(this.toastTimer);
             }
         });
 

@@ -557,6 +557,7 @@
         </div>
     </div>
 
+    <script src="/app-common.js"></script>
     <script>
         function bootPortal() {
         const APP_URL = '';
@@ -615,8 +616,7 @@
             },
             methods: {
                 safeUrl(v) {
-                    const s = String(v == null ? '' : v).trim();
-                    return /^https?:\/\//i.test(s) ? s : '#';
+                    return AppCommon.safeUrl(v);
                 },
                 run(fn, ...args) {
                     const map = {
@@ -679,18 +679,10 @@
                     }[code] || 'bg-slate-100';
                 },
                 formatTanggal(v) {
-                    if (!v) return '-';
-                    const d = new Date(v);
-                    if (!isNaN(d.getTime())) return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
-                    const s = String(v);
-                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
-                    return s;
+                    return AppCommon.formatTanggal(v);
                 },
                 formatDateTime(v) {
-                    if (!v) return '-';
-                    const d = new Date(v);
-                    if (isNaN(d.getTime())) return String(v);
-                    return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
+                    return AppCommon.formatTanggalWaktu(v);
                 },
                 async doLogin() {
                     const npm = this.npmInput.trim();

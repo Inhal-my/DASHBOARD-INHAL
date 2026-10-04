@@ -45,7 +45,10 @@ async function replaceAll(db, table, columns, rows) {
   await db.batch(statements);
 }
 
-function tooMany(rows) {
+function guardRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { success: false, message: 'Tidak ada baris valid untuk disimpan.' };
+  }
   if (rows.length > MAX_ROWS) {
     return { success: false, message: 'Terlalu banyak baris (maks ' + MAX_ROWS + ').' };
   }
@@ -64,7 +67,7 @@ export async function saveMasterKegiatan(db, payload, ctx) {
     ['kategori', ['Kategori', 'kategori']],
     ['nilai', ['Nilai', 'nilai']]
   ]);
-  const guard = tooMany(rows);
+  const guard = guardRows(rows);
   if (guard) return guard;
   await replaceAll(db, 'master_kegiatan', ['kategori', 'nilai'], rows);
   return { success: true, message: 'Master kegiatan diperbarui.' };
@@ -78,7 +81,7 @@ export async function saveMasterBagian(db, payload, ctx) {
     ['bagian', ['Bagian', 'bagian']],
     ['email', ['Email', 'email']]
   ]);
-  const guard = tooMany(rows);
+  const guard = guardRows(rows);
   if (guard) return guard;
   await replaceAll(db, 'master_bagian', ['lab', 'kegiatan_lab', 'bagian', 'email'], rows);
   return { success: true, message: 'Master bagian diperbarui.' };
@@ -90,7 +93,7 @@ export async function saveMasterBiaya(db, payload, ctx) {
     ['kegiatan', ['Kegiatan', 'kegiatan']],
     ['biaya', ['Biaya', 'biaya']]
   ]);
-  const guard = tooMany(rows);
+  const guard = guardRows(rows);
   if (guard) return guard;
   await replaceAll(db, 'master_biaya', ['kegiatan', 'biaya'], rows);
   return { success: true, message: 'Master biaya diperbarui.' };
@@ -102,14 +105,14 @@ export async function saveConfig(db, payload, ctx) {
     ['key', ['Key', 'key']],
     ['value', ['Value', 'value']]
   ]);
-  const guard = tooMany(rows);
-  if (guard) return guard;
   const byKey = new Map();
   for (const row of rows) {
     if (!row.key) continue;
     byKey.set(row.key.toLowerCase(), row);
   }
   const clean = Array.from(byKey.values());
+  const guard = guardRows(clean);
+  if (guard) return guard;
   await replaceAll(db, 'config', ['key', 'value'], clean);
   return { success: true, message: 'Config diperbarui.' };
 }
@@ -122,7 +125,7 @@ export async function saveBagianStaff(db, payload, ctx) {
     ['nama', ['Nama', 'nama']],
     ['pass', ['Pass', 'pass', 'Password', 'password']]
   ]).filter((r) => r.email || r.pass);
-  const guard = tooMany(rows);
+  const guard = guardRows(rows);
   if (guard) return guard;
   for (const row of rows) {
     if (row.pass && !isHashed(row.pass)) row.pass = await hashPassword(row.pass);
@@ -137,7 +140,7 @@ export async function saveAdminList(db, payload, ctx) {
     ['password', ['Password', 'password', 'Email', 'email']],
     ['nama', ['Nama', 'nama']]
   ]).filter((r) => r.password);
-  const guard = tooMany(rows);
+  const guard = guardRows(rows);
   if (guard) return guard;
   for (const row of rows) {
     if (row.password && !isHashed(row.password)) row.password = await hashPassword(row.password);
@@ -204,7 +207,7 @@ export async function deleteMahasiswa(db, npm, ctx) {
 export async function importMahasiswaCsv(db, payload, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const list = Array.isArray(payload && payload.rows) ? payload.rows : [];
-  const guard = tooMany(list);
+  const guard = guardRows(list);
   if (guard) return guard;
   const parsed = [];
   const seen = new Set();

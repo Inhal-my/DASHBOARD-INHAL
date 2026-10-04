@@ -158,7 +158,7 @@
                     <div class="mb-6 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                         <div class="flex items-center gap-3 border-b border-slate-100 p-5">
                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-list-ul"></i></div>
-                            <div class="min-w-0 flex-1 cursor-pointer select-none" @click="listOpen = !listOpen">
+                            <div class="min-w-0 flex-1 cursor-pointer select-none" role="button" tabindex="0" :aria-expanded="listOpen" @keydown.enter.prevent="listOpen = !listOpen" @keydown.space.prevent="listOpen = !listOpen" @click="listOpen = !listOpen">
                                 <h2 class="text-base font-bold text-slate-900">Daftar Peserta</h2>
                                 <p class="text-xs text-slate-400">{{ filteredRows.length }} data pengajuan</p>
                             </div>
@@ -180,8 +180,7 @@
                         </transition>
                         <transition name="drop">
                             <div v-if="listOpen">
-                                <div v-if="error" class="p-6 text-center text-sm text-rose-500">{{ error }}</div>
-                        <div v-else-if="loading && !rows.length" class="divide-y divide-slate-50">
+                        <div v-if="loading && !rows.length" class="divide-y divide-slate-50">
                             <div v-for="n in 4" :key="'skp'+n" class="flex items-start gap-3 p-4">
                                 <div class="skeleton h-10 w-10 shrink-0 rounded-xl"></div>
                                 <div class="flex-1 space-y-2">
@@ -214,7 +213,7 @@
                                         <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(r.tanggal) }}</span>
                                     </div>
                                     <div class="mt-1 text-xs text-slate-600">{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></div>
-                                    <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
+                                    <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" rel="noopener noreferrer" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
                                 </div>
                             </div>
                         </div>
@@ -398,7 +397,7 @@
                                         <i class="bi bi-person"></i>{{ p.namaLengkap }}
                                     </span>
                                 </div>
-                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" class="link mt-2 inline-block text-xs"><i class="bi bi-eye"></i> Lihat File</a>
+                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" rel="noopener noreferrer" class="link mt-2 inline-block text-xs"><i class="bi bi-eye"></i> Lihat File</a>
                             </div>
                         </div>
                     </div>
@@ -459,12 +458,13 @@
             <div v-if="toast.show" class="app-toast" :class="'app-toast-' + (toast.type || 'info')">
                 <i class="mt-0.5 shrink-0 text-lg" :class="toast.type==='error' ? 'bi bi-x-circle' : (toast.type==='success' ? 'bi bi-check-circle' : 'bi bi-info-circle')"></i>
                 <div class="min-w-0 flex-1">{{ toast.message }}</div>
-                <button class="ml-1 shrink-0" style="color:rgba(255,255,255,.7)" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
+                <button type="button" aria-label="Tutup notifikasi" class="ml-1 shrink-0" style="color:rgba(255,255,255,.7)" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
             </div>
         </transition>
     </div>
 
     <script src="/gs-shim.js"></script>
+    <script src="/app-common.js"></script>
     <script>
         function bootBagian() {
         const APP_URL = '/';
@@ -508,7 +508,6 @@
                     fBlok: '',
                     listOpen: false,
                     filterOpen: false,
-                    error: null,
                     ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 },
                     baList: [],
                     toast: { show: false, type: 'info', message: '' },
@@ -608,8 +607,7 @@
             },
             methods: {
                 safeUrl(v) {
-                    const s = String(v == null ? '' : v).trim();
-                    return /^https?:\/\//i.test(s) ? s : '#';
+                    return AppCommon.safeUrl(v);
                 },
                 run(fn, ...args) {
                     if (this.session && this.session.token) args.push(this.session.token);
@@ -634,12 +632,7 @@
                     this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3200);
                 },
                 formatTanggal(v) {
-                    if (!v) return '-';
-                    const d = new Date(v);
-                    if (!isNaN(d.getTime())) return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
-                    const s = String(v);
-                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
-                    return s;
+                    return AppCommon.formatTanggal(v);
                 },
                 dateOnly(v) {
                     if (!v) return '';
@@ -687,7 +680,6 @@
                             this.namaBagian = cached.nama || '';
                             this.rows = cached.rows || [];
                             this.baList = cached.baList || [];
-                            this.error = null;
                         }
                         this.loggedIn = true;
                         this.startPolling();
@@ -702,14 +694,12 @@
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
-                                this.error = null;
                             } else if (!cached) {
                                 this.showToast('Gagal: ' + msg, 'error');
                                 this.loggedIn = false;
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
-                                this.error = null;
                             } else {
                                 this.showToast('Gagal memuat data terbaru: ' + msg, 'error');
                             }
@@ -733,7 +723,6 @@
                     this.namaBagian = res.nama || '';
                     this.rows = res.rows || [];
                     this.baList = res.baList || [];
-                    this.error = null;
                     this.writeCache();
                     this.loadBaConfig();
                 },
@@ -1017,7 +1006,6 @@
                     this.namaBagian = '';
                     this.rows = [];
                     this.baList = [];
-                    this.error = null;
                     this.ba = { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 };
                 }
             },
@@ -1033,7 +1021,6 @@
                         this.namaBagian = cached.nama || '';
                         this.rows = cached.rows || [];
                         this.baList = cached.baList || [];
-                        this.error = null;
                     }
                     this.startPolling();
                     this._fetchBootstrap().then(res => {
