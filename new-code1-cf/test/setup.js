@@ -5,7 +5,7 @@ import schemaSql from '../schema.sql?raw';
 const statements = String(schemaSql)
   .split(';')
   .map((s) => s.trim())
-  .filter(Boolean);
+  .filter((s) => s.replace(/--[^\n]*/g, '').trim());
 
 beforeEach(async () => {
   for (const stmt of statements) {

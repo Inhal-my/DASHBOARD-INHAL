@@ -321,7 +321,7 @@
                                         <label class="label">Blok <span class="text-rose-500">*</span></label>
                                         <select v-model="regForm.blok" class="input">
                                             <option value="">-- Pilih Blok --</option>
-                                            <option v-for="b in regOptions.blok" :value="b">{{ b }}</option>
+                                            <option v-for="b in regOptions.blok" :key="b" :value="b">{{ b }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -350,7 +350,7 @@
                                             <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
                                             <select v-model="regUjian.pilihan" class="input">
                                                 <option value="">-- Pilih Ujian --</option>
-                                                <option v-for="o in regOptions.ujian" :value="o">{{ o }}</option>
+                                                <option v-for="o in regOptions.ujian" :key="o" :value="o">{{ o }}</option>
                                             </select>
                                         </div>
                                         <div>
@@ -368,14 +368,14 @@
                                             <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
                                             <select v-model="regSgd.pilihan" class="input">
                                                 <option value="">-- Pilih SGD --</option>
-                                                <option v-for="o in regOptions.sgd" :value="o">{{ o }}</option>
+                                                <option v-for="o in regOptions.sgd" :key="o" :value="o">{{ o }}</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label class="label">Detail SGD</label>
                                             <select v-model="regSgd.detail" class="input">
                                                 <option value="">-- Pilih Detail --</option>
-                                                <option v-for="o in regOptions.detailSgd" :value="o">{{ o }}</option>
+                                                <option v-for="o in regOptions.detailSgd" :key="o" :value="o">{{ o }}</option>
                                             </select>
                                         </div>
                                         <div>
@@ -393,14 +393,14 @@
                                             <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
                                             <select v-model="regKkd.pilihan" class="input">
                                                 <option value="">-- Pilih KKD --</option>
-                                                <option v-for="o in regOptions.kkd" :value="o">{{ o }}</option>
+                                                <option v-for="o in regOptions.kkd" :key="o" :value="o">{{ o }}</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label class="label">Detail KKD</label>
                                             <select v-model="regKkd.detail" class="input">
                                                 <option value="">-- Pilih Detail --</option>
-                                                <option v-for="o in regOptions.detailKkd" :value="o">{{ o }}</option>
+                                                <option v-for="o in regOptions.detailKkd" :key="o" :value="o">{{ o }}</option>
                                             </select>
                                         </div>
                                         <div>
@@ -422,14 +422,14 @@
                                                     <label class="label">Pilihan Lab</label>
                                                     <select v-model="lab.lab" class="input !py-2 text-sm">
                                                         <option value="">-- Lab --</option>
-                                                        <option v-for="o in regOptions.lab" :value="o">{{ o }}</option>
+                                                        <option v-for="o in regOptions.lab" :key="o" :value="o">{{ o }}</option>
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label class="label">Kegiatan Lab</label>
                                                     <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
                                                         <option value="">-- Kegiatan --</option>
-                                                        <option v-for="o in regOptions.kegiatanLab" :value="o">{{ o }}</option>
+                                                        <option v-for="o in regOptions.kegiatanLab" :key="o" :value="o">{{ o }}</option>
                                                     </select>
                                                 </div>
                                                 <div>
@@ -631,7 +631,7 @@
                         body: body ? JSON.stringify(body) : undefined
                     }).then(async (res) => {
                         const data = await res.json().catch(() => ({ success: false, message: 'Respons tidak valid' }));
-                        if (!res.ok) { console.error('[API] ' + method + ' ' + url + ' -> ' + res.status, data); throw new Error((data && data.message) || ('HTTP ' + res.status)); }
+                        if (!res.ok) { throw new Error((data && data.message) || ('HTTP ' + res.status)); }
                         return data;
                     });
                 },
@@ -976,13 +976,11 @@
                             if (p < pdf.numPages) text += '\n';
                         }
                     } catch (e) {
-                        console.error('validateBukti - gagal ekstrak teks PDF:', e);
                         this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }
                     const m = text.match(/NPM[\s:：]*(\d{10})/);
                     if (!m) {
-                        console.warn('validateBukti - NPM tidak ditemukan. Teks PDF:', text.slice(0, 300));
                         this.upload.validMsg = 'cek berkas gagal, gunakan file pdf dari portal mahasiswa';
                         return;
                     }

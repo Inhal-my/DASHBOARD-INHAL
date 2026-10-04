@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= PAGE_TITLES.index ?></title>
+    <title>Pendaftaran INHAL</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -124,7 +124,7 @@
                             <label class="label">Blok <span class="text-rose-500">*</span></label>
                             <select v-model="form.blok" class="input">
                                 <option value="">-- Pilih Blok --</option>
-                                <option v-for="b in options.blok" :value="b">{{ b }}</option>
+                                <option v-for="b in options.blok" :key="b" :value="b">{{ b }}</option>
                             </select>
                         </div>
                     </div>
@@ -153,7 +153,7 @@
                                 <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
                                 <select v-model="ujian.pilihan" class="input">
                                     <option value="">-- Pilih Ujian --</option>
-                                    <option v-for="o in options.ujian" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.ujian" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
@@ -171,14 +171,14 @@
                                 <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
                                 <select v-model="sgd.pilihan" class="input">
                                     <option value="">-- Pilih SGD --</option>
-                                    <option v-for="o in options.sgd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.sgd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="label">Detail SGD</label>
                                 <select v-model="sgd.detail" class="input">
                                     <option value="">-- Pilih Detail --</option>
-                                    <option v-for="o in options.detailSgd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.detailSgd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
@@ -196,14 +196,14 @@
                                 <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
                                 <select v-model="kkd.pilihan" class="input">
                                     <option value="">-- Pilih KKD --</option>
-                                    <option v-for="o in options.kkd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.kkd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="label">Detail KKD</label>
                                 <select v-model="kkd.detail" class="input">
                                     <option value="">-- Pilih Detail --</option>
-                                    <option v-for="o in options.detailKkd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.detailKkd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
@@ -225,14 +225,14 @@
                                         <label class="label">Pilihan Lab</label>
                                         <select v-model="lab.lab" class="input !py-2 text-sm">
                                             <option value="">-- Lab --</option>
-                                            <option v-for="o in options.lab" :value="o">{{ o }}</option>
+                                            <option v-for="o in options.lab" :key="o" :value="o">{{ o }}</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-4">
                                         <label class="label">Kegiatan Lab</label>
                                         <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
                                             <option value="">-- Kegiatan --</option>
-                                            <option v-for="o in options.kegiatanLab" :value="o">{{ o }}</option>
+                                            <option v-for="o in options.kegiatanLab" :key="o" :value="o">{{ o }}</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-4">
@@ -275,7 +275,7 @@
 
     <script>
         function bootIndex() {
-        const APP_URL = '<?= appUrl ?>';
+        const APP_URL = '';
         const MAX_UPLOAD_FILE_BYTES = 5 * 1024 * 1024;
         const { createApp } = Vue;
 

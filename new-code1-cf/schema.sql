@@ -1,3 +1,10 @@
+-- CATATAN URUTAN SKEMA
+-- schema.sql ini adalah skema LENGKAP & TERKINI, sudah memuat kolom hasil migrasi
+-- (form_key, jam, dosen, kegiatan_key, id_pengajuan, upload_reset_*, dll).
+-- Untuk instalasi BARU cukup jalankan file ini. JANGAN menjalankan migrations/*.sql
+-- setelahnya, karena ALTER TABLE ADD COLUMN akan gagal "duplicate column name".
+-- File di migrations/ hanya untuk database lama yang belum memiliki kolom terkait.
+
 DROP TABLE IF EXISTS status_history;
 DROP TABLE IF EXISTS detail_kegiatan;
 DROP TABLE IF EXISTS pengajuan;

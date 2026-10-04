@@ -270,14 +270,17 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
   const existing = await db.prepare('SELECT id FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
-  const tables = ['detail_kegiatan', 'status_history', 'check_data', 'log_upload'];
+  const tables = ['detail_kegiatan', 'status_history', 'check_data', 'log_upload', 'berita_acara_peserta', 'berita_acara_admin_peserta'];
   let deleted = 0;
   for (const table of tables) {
     const c = await db.prepare('SELECT COUNT(*) AS n FROM ' + table + ' WHERE id_pengajuan = ?1').bind(id).first();
     deleted += Number(c && c.n) || 0;
   }
+  const uploadCount = await db.prepare('SELECT COUNT(*) AS n FROM uploads WHERE pengajuan_id = ?1').bind(id).first();
+  deleted += Number(uploadCount && uploadCount.n) || 0;
   await db.batch([
     ...tables.map((t) => db.prepare('DELETE FROM ' + t + ' WHERE id_pengajuan = ?1').bind(id)),
+    db.prepare('DELETE FROM uploads WHERE pengajuan_id = ?1').bind(id),
     db.prepare('DELETE FROM pengajuan WHERE id_pengajuan = ?1').bind(id)
   ]);
   await writeAuditLog(db, {

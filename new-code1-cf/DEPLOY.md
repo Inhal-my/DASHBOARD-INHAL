@@ -89,6 +89,13 @@ Migrasi panel admin (`CREATE TABLE IF NOT EXISTS`, aman untuk data yang sudah ad
 CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-09-10-admin-panels.sql
 ```
 
+> **Penting — jangan campur `schema.sql` dengan `migrations/*.sql`.** `schema.sql` sudah
+> memuat seluruh kolom terkini. Untuk database **baru**, jalankan `schema.sql` saja. File di
+> `migrations/` hanya untuk database **lama** yang belum punya kolom hasil migrasi, karena
+> `ALTER TABLE ADD COLUMN` akan gagal `duplicate column name` bila dijalankan di atas
+> `schema.sql`. Jalankan migrasi berurutan sesuai tanggal dan jangan mengulang migrasi yang
+> sudah pernah diterapkan.
+
 ## 4. Deploy Worker + aset
 
 ```bash

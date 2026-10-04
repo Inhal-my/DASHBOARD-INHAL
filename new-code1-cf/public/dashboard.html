@@ -324,7 +324,7 @@
             <div class="px-3 pt-5">
                 <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Menu</div>
                 <nav class="space-y-1">
-                    <a v-for="n in navItems" href="#" @click.prevent="switchTab(n.key)"
+                    <a v-for="n in navItems" :key="n.key" href="#" @click.prevent="switchTab(n.key)"
                        :class="tab===n.key ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition">
                         <i :class="n.icon" class="w-5 text-base"></i>
@@ -396,7 +396,7 @@
 
                     <!-- status chips -->
                     <div class="mb-4 flex flex-wrap items-center gap-2">
-                        <button v-for="c in statusChips" @click="setStatusChip(c.key)"
+                        <button v-for="c in statusChips" :key="c.key" @click="setStatusChip(c.key)"
                                 :class="filters.status===c.key ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'"
                                 class="rounded-full px-3.5 py-1.5 text-xs font-semibold ring-1 transition">
                             {{ c.label }}
@@ -425,7 +425,7 @@
                             <div class="md:col-span-3">
                                 <select v-model="filters.blok" class="input">
                                     <option value="">Semua Blok</option>
-                                    <option v-for="b in blokOptions" :value="b">{{ b }}</option>
+                                    <option v-for="b in blokOptions" :key="b" :value="b">{{ b }}</option>
                                 </select>
                             </div>
                             <div class="md:col-span-2 flex gap-2">
@@ -523,7 +523,7 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-7">
-                        <div v-for="c in statCards" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div v-for="c in statCards" :key="c.label" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                             <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
                                 <i :class="c.icon" class="text-base" :style="{color:c.color}"></i>
                             </div>
@@ -533,14 +533,14 @@
                     </div>
 
                     <div class="mt-6 grid gap-5 lg:grid-cols-2">
-                        <div v-for="ch in statCharts" class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                        <div v-for="ch in statCharts" :key="ch.title" class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
                             <div class="mb-4 flex items-center gap-2">
                                 <i :class="ch.icon" class="text-brand-500"></i>
                                 <h3 class="text-sm font-bold text-slate-800">{{ ch.title }}</h3>
                             </div>
                             <div v-if="!ch.bars.length" class="py-6 text-center text-xs text-slate-400">Belum ada data.</div>
                             <div v-else class="space-y-3">
-                                <div v-for="b in ch.bars" class="flex items-center gap-3">
+                                <div v-for="b in ch.bars" :key="b.label" class="flex items-center gap-3">
                                     <div class="w-36 shrink-0 truncate text-right text-xs font-medium text-slate-500">{{ b.label }}</div>
                                     <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                                         <div class="h-full rounded-full transition-all duration-500" :style="{width: b.pct + '%', background: ch.grad}"></div>
@@ -831,7 +831,7 @@
                                 <label class="label">Sub Bagian / Lab</label>
                                 <select v-model="bab.subBagian" class="input">
                                     <option value="">(Pilih Lab)</option>
-                                    <option v-for="l in babLabOptions" :value="l">{{ l }}</option>
+                                    <option v-for="l in babLabOptions" :key="l" :value="l">{{ l }}</option>
                                 </select>
                             </div>
                             <div class="md:col-span-4 flex items-end">
@@ -1111,7 +1111,7 @@
                                 <table class="master-table master-table-dense w-full text-left text-sm">
                                     <thead>
                                         <tr class="text-[11px] uppercase tracking-wider text-slate-400">
-                                            <th v-for="c in activeMasterCard.cols" class="px-5 py-3 font-semibold">{{ c }}</th>
+                                            <th v-for="c in activeMasterCard.cols" :key="c" class="px-5 py-3 font-semibold">{{ c }}</th>
                                             <th class="px-5 py-3 font-semibold w-24">Aksi</th>
                                         </tr>
                                     </thead>
@@ -1121,8 +1121,8 @@
                                                 {{ master.search ? 'Tidak ada hasil untuk pencarian.' : 'Belum ada data.' }}
                                             </td>
                                         </tr>
-                                        <tr v-for="(r,i) in activeMasterRows" class="border-t border-slate-50">
-                                            <td v-for="c in activeMasterCard.cols" class="px-5 py-2.5 text-slate-600">{{ masterCellValue(r, c) }}</td>
+                                        <tr v-for="(r,i) in activeMasterRows" :key="i" class="border-t border-slate-50">
+                                            <td v-for="c in activeMasterCard.cols" :key="c" class="px-5 py-2.5 text-slate-600">{{ masterCellValue(r, c) }}</td>
                                             <td class="px-5 py-2.5">
                                                 <div class="flex items-center gap-1">
                                                     <button class="master-row-btn" title="Ubah" @click="openMasterRow(activeMasterCard.key, r)"><i class="bi bi-pencil"></i></button>
@@ -1438,7 +1438,7 @@
                                     <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
                                     <button class="btn-soft" @click="quickStatus('Diterima')"><i class="bi bi-hand-thumbs-up"></i>Terima</button>
                                     <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
-                                    <button class="btn-danger-soft ml-auto" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
+                                    <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
                                 </div>
                             </div>
 
@@ -1538,14 +1538,14 @@
                                     <label class="label">Blok</label>
                                     <select v-model="ba.form.blok" class="input" :disabled="ba.loadingOptions" @change="onBaBlokChange">
                                         <option value="">(Pilih Blok)</option>
-                                        <option v-for="b in ba.opts.blok" :value="b">{{ b }}</option>
+                                        <option v-for="b in ba.opts.blok" :key="b" :value="b">{{ b }}</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="label">Detail Kegiatan</label>
                                     <select v-model="ba.form.detailKey" class="input" :disabled="!ba.form.blok || ba.loadingOptions" @change="onBaDetailChange">
                                         <option value="">(Pilih Kegiatan)</option>
-                                        <option v-for="(d, i) in baDetailOptions" :value="i">{{ d.label }}<span v-if="d.count"> ({{ d.count }} mhs)</span></option>
+                                        <option v-for="(d, i) in baDetailOptions" :key="i" :value="i">{{ d.label }}<span v-if="d.count"> ({{ d.count }} mhs)</span></option>
                                     </select>
                                 </div>
                                 <div>
@@ -1554,7 +1554,7 @@
                                         <option value="">(Pilih Bagian)</option>
                                         <option>Admin</option><option>SGD</option><option>KKD</option><option>Ujian</option><option>Praktikum</option>
                                         <optgroup label="Lab Praktikum">
-                                            <option v-for="l in ba.opts.labs" :value="l">{{ l }}</option>
+                                            <option v-for="l in ba.opts.labs" :key="l" :value="l">{{ l }}</option>
                                         </optgroup>
                                     </select>
                                 </div>
@@ -2026,7 +2026,7 @@
                     });
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open);
+                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
                 }
             },
             watch: {

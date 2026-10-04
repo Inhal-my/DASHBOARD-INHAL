@@ -4,6 +4,7 @@ import { registerPengajuan } from './pengajuan.js';
 import { getStudentPortalData, uploadBuktiFiles } from './portal.js';
 import { dispatchRpc } from './rpc.js';
 import { getUpload, base64ToBytes, decodeBase64Size } from './uploads.js';
+import { getSession } from './session.js';
 import { exportDatabase } from './databaseExport.js';
 
 const app = new Hono();
@@ -69,6 +70,12 @@ app.post('/api/portal/upload', async (c) => {
 app.get('/api/files/:id', async (c) => {
   const row = await getUpload(c.env.DB, c.req.param('id'));
   if (!row) return c.json({ error: 'Berkas tidak ditemukan.' }, 404);
+  const header = c.req.header('Authorization') || '';
+  const token = c.req.query('token') || header.replace(/^Bearer\s+/i, '');
+  const session = await getSession(c.env.DB, token);
+  if (!session || session.role !== 'admin') {
+    return c.json({ error: 'Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.' }, 401);
+  }
   const name = String(row.file_name || row.id).replace(/"/g, '');
   return new Response(base64ToBytes(row.content), {
     headers: {

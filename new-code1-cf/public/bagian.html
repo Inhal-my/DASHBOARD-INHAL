@@ -93,7 +93,7 @@
                                     <label class="label">Sub Bagian / Lab</label>
                                     <select v-model="subBagian" class="input">
                                         <option value="">-- Semua Lab --</option>
-                                        <option v-for="o in config.labOptions" :value="o">{{ o }}</option>
+                                        <option v-for="o in config.labOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
                                 </div>
                                 <div>
@@ -1014,7 +1014,7 @@
                     this.rows = [];
                     this.baList = [];
                     this.error = null;
-                    this.ba = { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {} };
+                    this.ba = { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 };
                 }
             },
             mounted() {

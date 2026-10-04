@@ -196,14 +196,14 @@
                         <label class="label">Blok</label>
                         <select v-model="filters.blok" class="input">
                             <option value="">Semua Blok</option>
-                            <option v-for="b in blok" :value="b">{{ b }}</option>
+                            <option v-for="b in blok" :key="b" :value="b">{{ b }}</option>
                         </select>
                     </div>
                     <div class="md:col-span-2">
                         <label class="label">Status</label>
                         <select v-model="filters.status" class="input">
                             <option value="">Semua Status</option>
-                            <option v-for="s in statusOptions" :value="s">{{ s }}</option>
+                            <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
                         </select>
                     </div>
                     <div class="flex items-end md:col-span-2">
@@ -331,7 +331,7 @@
                                     <label class="label">Jenis Kegiatan</label>
                                     <select v-model="filters.jenis" class="input">
                                         <option value="">Semua Jenis</option>
-                                        <option v-for="j in jenisOptions" :value="j">{{ j }}</option>
+                                        <option v-for="j in jenisOptions" :key="j" :value="j">{{ j }}</option>
                                     </select>
                                 </div>
                                 <div class="md:col-span-6">
@@ -1158,7 +1158,7 @@
                     <div v-if="r.details && r.details.length" class="mt-5">
                         <div class="section-title"><i class="bi bi-list-check"></i> Detail Kegiatan</div>
                         <div class="grid gap-2 sm:grid-cols-2">
-                            <div v-for="d in r.details" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                            <div v-for="(d, di) in r.details" :key="di" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
                                 <div class="text-sm font-bold text-slate-800">{{ d.Pilihan }}</div>
                                 <div class="mt-0.5 text-xs text-slate-500">{{ d.Detail }}</div>
                                 <div class="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-400">
@@ -1172,7 +1172,7 @@
                     <div v-if="r.history && r.history.length" class="mt-5">
                         <div class="section-title"><i class="bi bi-clock-history"></i> Riwayat Status</div>
                         <div class="timeline">
-                            <div v-for="h in r.history" class="timeline-item">
+                            <div v-for="(h, hi) in r.history" :key="hi" class="timeline-item">
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm font-semibold text-slate-800">{{ h.Status }}</span>
                                     <span class="text-xs text-slate-400">{{ fmtTanggal(h.Timestamp) }}</span>

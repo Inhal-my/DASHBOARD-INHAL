@@ -16,11 +16,16 @@ describe('dispatchRpc', () => {
     const res = await dispatchRpc(env.DB, 'authenticateAdmin', ['rahasia']);
     expect(res.ok).toBe(true);
   });
-  it('dispatches public repo reads and protects the staff list', async () => {
-    const m = await dispatchRpc(env.DB, 'getMahasiswaByNpm', ['2201010001']);
-    expect(m['Nama Lengkap']).toBe('Aisyah Putri');
+  it('dispatches admin repo reads and protects them without a token', async () => {
+    const deniedRead = await dispatchRpc(env.DB, 'getMahasiswaByNpm', ['2201010001']);
+    expect(deniedRead.error).toBe('Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.');
     const denied = await dispatchRpc(env.DB, 'getBagianStaffList', []);
     expect(denied.error).toBe('Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.');
+
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();
+    const sess = await dispatchRpc(env.DB, 'authenticateAdmin', ['rahasia']);
+    const m = await dispatchRpc(env.DB, 'getMahasiswaByNpm', ['2201010001', sess.token]);
+    expect(m['Nama Lengkap']).toBe('Aisyah Putri');
   });
   it('dispatches the new master row RPCs', async () => {
     await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();

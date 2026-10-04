@@ -134,10 +134,6 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
 }
 
 export async function getBeritaAcaraList(db, bagianFilter, kategori, ctx) {
-  try {
-    await requireBagianSession(db, kategori, '', ctx.token, ctx.session);
-    return await computeBaList(db, bagianFilter, kategori);
-  } catch (e) {
-    return [];
-  }
+  await requireBagianSession(db, kategori, '', ctx.token, ctx.session);
+  return await computeBaList(db, bagianFilter, kategori);
 }

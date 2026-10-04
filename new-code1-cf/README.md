@@ -34,8 +34,8 @@ npm test
 | GET | `/api/mahasiswa/:npm` | Nama mahasiswa (string) |
 | POST | `/api/pengajuan` | Simpan pendaftaran |
 | GET | `/api/portal/:npm` | Data portal (riwayat) mahasiswa |
-| POST | `/api/portal/upload` | Stub unggah berkas (belum aktif) |
-| POST | `/api/rpc` | Dispatcher RPC panel admin (mode baca) |
+| POST | `/api/portal/upload` | Unggah berkas ACC INHAL & bukti bayar |
+| POST | `/api/rpc` | Dispatcher RPC panel admin (baca & tulis) |
 
 Halaman:
 - `/` — Pendaftaran
@@ -44,19 +44,21 @@ Halaman:
 - `/detail-laporan` — Laporan detail (admin)
 - `/bagian` — Panel bagian
 
-Unggah berkas ACC/bukti bayar belum aktif (ditunda ke tahap berikutnya).
+Unggah berkas (surat keterangan, ACC INHAL, bukti bayar, berita acara) aktif melalui bridge Google Drive (butuh secret `GAS_DRIVE_TOKEN`).
 
-## Panel admin (mode baca)
+## Panel admin
 
 Halaman `dashboard`, `detail-laporan`, dan `bagian` disajikan dari Worker. Setiap
 halaman memuat `/gs-shim.js` yang menyediakan `google.script.run` dan meneruskan
 panggilan ke `POST /api/rpc` dengan body `{ fn, args }`.
 
-- Semua endpoint baca mengembalikan data asli dari D1.
-- Aksi tulis belum aktif dan mengembalikan `Fitur <fn> belum tersedia pada tahap ini.`
+- D1 adalah sumber data utama (baca dan tulis).
+- Aksi tulis (master data, pengajuan, berita acara, email, reset unggahan) aktif dan
+  tercatat di `audit_log` / `status_history`.
 - Auth admin/bagian memakai sesi di D1 (token, masa berlaku 4 jam). Sesi tidak valid
   menghasilkan `Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.`
-- D1 berperan sebagai replika baca; perbarui data dengan menjalankan ulang importer.
+- Data dapat diimpor ulang dari Google Sheets (idempotent `DELETE` lalu `INSERT`) dan
+  diekspor ke `.xlsx`; lihat bagian impor dan endpoint `POST /api/database-export`.
 
 ## Impor data asli dari Google Sheets
 
@@ -88,6 +90,7 @@ Lihat `DEPLOY.md`.
 
 ## Cakupan
 
-Termasuk: halaman index, portal, dashboard, detail-laporan, bagian, endpoint terkait,
-D1 (18 tabel), auth admin/bagian + sesi, RPC baca panel admin, impor data asli, test otomatis.
-Belum termasuk: aksi tulis panel admin, email, R2, unggah berkas.
+Termasuk: halaman portal, dashboard, detail-laporan, bagian, endpoint terkait, D1,
+auth admin/bagian + sesi, RPC baca & tulis panel admin, email notifikasi, unggah berkas
+via bridge Google Drive, reset unggahan, impor data asli, ekspor `.xlsx`, test otomatis.
+Belum termasuk: penyimpanan R2 (berkas disimpan di Google Drive).

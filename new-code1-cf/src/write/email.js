@@ -165,7 +165,7 @@ export async function sendStatusNotificationEmail(db, idPengajuan, ctx) {
     : { success: false, message: 'Email notifikasi gagal: ' + result.error };
 }
 
-export async function sendFinalPdfEmails(db, idPengajuan, env) {
+export async function sendFinalPdfEmails(db, idPengajuan, env, actor) {
   const pengajuan = await getPengajuan(db, idPengajuan);
   if (!pengajuan) return { ok: false, pdfUrl: '', studentEmailSent: false, bagianEmailSent: false, bagianEmail: '', bagianName: '', notes: ['Pengajuan tidak ditemukan.'] };
 
@@ -188,7 +188,7 @@ export async function sendFinalPdfEmails(db, idPengajuan, env) {
     await db.prepare('UPDATE pengajuan SET status = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
       .bind('ACC', nowIso(), str(idPengajuan)).run();
     await db.prepare('INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)')
-      .bind(nowIso(), str(idPengajuan), 'ACC', '', str(env && env.actor) || 'Admin').run();
+      .bind(nowIso(), str(idPengajuan), 'ACC', '', str(actor) || str(env && env.actor) || 'Admin').run();
     pengajuan.status = 'ACC';
   }
 
@@ -236,7 +236,7 @@ export async function sendFinalPdfEmails(db, idPengajuan, env) {
 export async function sendFinalEmail(db, idPengajuan, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   try {
-    const result = await sendFinalPdfEmails(db, idPengajuan, ctx.env);
+    const result = await sendFinalPdfEmails(db, idPengajuan, ctx.env, ctx.session && ctx.session.nama);
     return {
       success: result.ok,
       linkFinal: result.pdfUrl,
@@ -267,7 +267,7 @@ export async function sendBulkFinalEmail(db, ids, ctx) {
     if (!id) continue;
     results.total++;
     try {
-      const r = await sendFinalPdfEmails(db, id, ctx.env);
+      const r = await sendFinalPdfEmails(db, id, ctx.env, ctx.session && ctx.session.nama);
       const notes = (r && r.notes) || [];
       if (r && r.ok) {
         results.sent++;
