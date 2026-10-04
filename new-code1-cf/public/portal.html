@@ -270,7 +270,7 @@
                                         <div class="t-dot" :class="step3DotClass"></div>
                                         <div class="text-sm font-bold" :class="step3TitleClass">Validasi Akhir</div>
                                         <div class="mt-1.5">
-                                            <a v-if="detailItem.linkFinal" :href="detailItem.linkFinal" target="_blank" rel="noopener"
+                                            <a v-if="detailItem.linkFinal" :href="safeUrl(detailItem.linkFinal)" target="_blank" rel="noopener"
                                                 class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition active:scale-[.98]">
                                                 <i class="bi bi-file-earmark-arrow-down-fill"></i> Unduh Bukti ACC Final
                                             </a>
@@ -614,6 +614,10 @@
                 }
             },
             methods: {
+                safeUrl(v) {
+                    const s = String(v == null ? '' : v).trim();
+                    return /^https?:\/\//i.test(s) ? s : '#';
+                },
                 run(fn, ...args) {
                     const map = {
                         getRegistrationOptions: () => ({ method: 'GET', url: '/api/registration-options' }),
@@ -1014,6 +1018,7 @@
                     try {
                         const payload = {
                             idPengajuan: this.detailItem.idPengajuan,
+                            npm: (this.user && this.user.npm) || '',
                             accFile: await this.readFileAsBase64(this.upload.accFile),
                             buktiFile: await this.readFileAsBase64(this.upload.buktiFile)
                         };

@@ -38,6 +38,12 @@ export async function uploadBuktiFiles(db, payload, env) {
   const existing = await db.prepare('SELECT id, npm, nama_lengkap, blok, jenis_kegiatan, link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
+  const ownerNpm = normalizeNpm(existing.npm);
+  const payloadNpm = normalizeNpm(payload && payload.npm);
+  if (!ownerNpm || payloadNpm !== ownerNpm) {
+    return { success: false, message: 'NPM tidak cocok dengan pengajuan ini.' };
+  }
+
   const hasAcc = !!(payload && payload.accFile && payload.accFile.data);
   const hasBukti = !!(payload && payload.buktiFile && payload.buktiFile.data);
   if (!hasAcc && !hasBukti) {

@@ -537,7 +537,7 @@
                                         <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(d.tanggal) }}</div>
                                     </div>
                                     <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ d.jumlahPeserta }} peserta</span>
-                                    <a v-if="d.fileUrl" :href="d.fileUrl" target="_blank" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                    <a v-if="d.fileUrl" :href="safeUrl(d.fileUrl)" target="_blank" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
                                     <span v-if="d.biaya" class="whitespace-nowrap rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-700">{{ fmtRupiah(d.biaya) }}</span>
                                 </div>
                             </div>
@@ -646,7 +646,7 @@
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="s.row.fileUrl" :href="s.row.fileUrl" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
+                                                    <a v-if="s.row.fileUrl" :href="safeUrl(s.row.fileUrl)" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Lihat</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
@@ -658,7 +658,7 @@
                                                             <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
                                                             <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
                                                             <span v-if="biayaForNpm(p.npm, s.row.blok)" class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(biayaForNpm(p.npm, s.row.blok)) }}</span>
-                                                            <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="btn-bukti whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" class="btn-bukti whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="text-slate-300">-</span>
                                                         </div>
                                                     </div>
@@ -863,7 +863,7 @@
                                                                     <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700">Pendukung</span>
                                                                     <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
-                                                                    <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="link">Lihat</a>
+                                                                    <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" class="link">Lihat</a>
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
@@ -877,7 +877,7 @@
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
-                                                                <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                                                <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -994,7 +994,7 @@
                                                     <span :class="m.lunas ? 'bg-emerald-50 text-emerald-700' : (m.jumlahBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="bayarBuktiUrl(m)" :href="bayarBuktiUrl(m)" target="_blank" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                                    <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
@@ -1007,9 +1007,9 @@
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
                                                             <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
-                                                            <a v-if="it.linkBukti" :href="it.linkBukti" target="_blank" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
-                                                            <a v-if="it.linkAcc" :href="it.linkAcc" target="_blank" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
+                                                            <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -1136,19 +1136,19 @@
                         <div><div class="label">Dosen</div><div class="value">{{ r.pengajuan.Dosen || '—' }}</div></div>
                         <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</div></div>
                         <div><div class="label">Surat Keterangan</div>
-                            <a v-if="r.pengajuan['Link Surat Keterangan']" :href="r.pengajuan['Link Surat Keterangan']" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link Surat Keterangan']" :href="safeUrl(r.pengajuan['Link Surat Keterangan'])" target="_blank" class="link">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">ACC INHAL</div>
-                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="r.pengajuan['Link ACC INHAL']" target="_blank" class="btn-acc">Lihat</a>
+                            <a v-if="r.pengajuan['Link ACC INHAL']" :href="safeUrl(r.pengajuan['Link ACC INHAL'])" target="_blank" class="btn-acc">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Bukti Bayar</div>
-                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="r.pengajuan['Link Bukti Bayar']" target="_blank" class="btn-bukti">Lihat</a>
+                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" class="btn-bukti">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Link Final</div>
-                            <a v-if="r.pengajuan['Link Final']" :href="r.pengajuan['Link Final']" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link Final']" :href="safeUrl(r.pengajuan['Link Final'])" target="_blank" class="link">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Status Info Bagian</div><div class="value">{{ r.pengajuan['Status Info Bagian'] || '—' }}</div></div>
@@ -1848,6 +1848,10 @@
                 'dosenFilter.q': function () { this.activeDosenCell = null; },
             },
             methods: {
+                safeUrl(v) {
+                    const s = String(v == null ? '' : v).trim();
+                    return /^https?:\/\//i.test(s) ? s : '#';
+                },
                 fmtRupiah,
                 fmtTanggal,
                 fmtTanggalWaktu,

@@ -144,7 +144,7 @@ describe('dashboard template', () => {
     const html = await loadDashboardHtml();
     expect(html).not.toContain('Lihat File');
     expect(html).not.toContain('Lihat file');
-    expect(html).toContain(':href="b.fileUrl" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a>');
+    expect(html).toContain(':href="safeUrl(b.fileUrl)" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a>');
   });
 
   it('menampilkan ikon Kelola BA hanya untuk BA Pelaksanaan', async () => {

@@ -206,7 +206,7 @@
                                             <div class="truncate text-sm font-bold text-slate-900">{{ r.namaLengkap }}</div>
                                             <div class="font-mono text-[11px] text-slate-400">NPM {{ r.npm }}</div>
                                         </div>
-                                        <a v-if="r.status==='ACC' && r.linkFinal" :href="r.linkFinal" target="_blank" rel="noopener" class="chip shrink-0 cursor-pointer" :class="statusBadge(r.status)">{{ r.status }} <i class="bi bi-box-arrow-up-right"></i></a>
+                                        <a v-if="r.status==='ACC' && r.linkFinal" :href="safeUrl(r.linkFinal)" target="_blank" rel="noopener" class="chip shrink-0 cursor-pointer" :class="statusBadge(r.status)">{{ r.status }} <i class="bi bi-box-arrow-up-right"></i></a>
                                         <span v-else class="chip shrink-0" :class="statusBadge(r.status)">{{ r.status || '-' }}</span>
                                     </div>
                                     <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
@@ -214,7 +214,7 @@
                                         <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(r.tanggal) }}</span>
                                     </div>
                                     <div class="mt-1 text-xs text-slate-600">{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></div>
-                                    <a v-if="r.linkSurat" :href="r.linkSurat" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
+                                    <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
                                 </div>
                             </div>
                         </div>
@@ -398,7 +398,7 @@
                                         <i class="bi bi-person"></i>{{ p.namaLengkap }}
                                     </span>
                                 </div>
-                                <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link mt-2 inline-block text-xs"><i class="bi bi-eye"></i> Lihat File</a>
+                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" class="link mt-2 inline-block text-xs"><i class="bi bi-eye"></i> Lihat File</a>
                             </div>
                         </div>
                     </div>
@@ -607,6 +607,10 @@
                 }
             },
             methods: {
+                safeUrl(v) {
+                    const s = String(v == null ? '' : v).trim();
+                    return /^https?:\/\//i.test(s) ? s : '#';
+                },
                 run(fn, ...args) {
                     if (this.session && this.session.token) args.push(this.session.token);
                     return new Promise((resolve, reject) => {

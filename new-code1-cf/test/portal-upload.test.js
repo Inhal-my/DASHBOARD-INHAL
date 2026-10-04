@@ -22,10 +22,26 @@ describe('portal uploadBuktiFiles', () => {
     expect(b.message).toContain('tidak ditemukan');
   });
 
+  it('rejects an upload when the npm does not own the pengajuan', async () => {
+    await seedPengajuan();
+    const res = await uploadBuktiFiles(env.DB, {
+      idPengajuan: 'INHAL-1',
+      npm: '2201099999',
+      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
+      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
+    }, driveEnv);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('NPM tidak cocok');
+    const row = await env.DB.prepare('SELECT link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.link_acc_inhal).toBeNull();
+    expect(row.link_bukti_bayar).toBeNull();
+  });
+
   it('rejects a non-PDF bukti in strict mode', async () => {
     await seedPengajuan();
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
+      npm: '2201010001',
       accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: btoa('not a pdf'), mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
@@ -37,6 +53,7 @@ describe('portal uploadBuktiFiles', () => {
     await seedPengajuan();
     const onlyAcc = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
+      npm: '2201010001',
       accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' }
     }, driveEnv);
     expect(onlyAcc.success).toBe(false);
@@ -44,6 +61,7 @@ describe('portal uploadBuktiFiles', () => {
 
     const onlyBukti = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
+      npm: '2201010001',
       buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
     expect(onlyBukti.success).toBe(false);
@@ -54,6 +72,7 @@ describe('portal uploadBuktiFiles', () => {
     await seedPengajuan();
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
+      npm: '2201010001',
       accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, {});
@@ -72,6 +91,7 @@ describe('portal uploadBuktiFiles', () => {
 
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
+      npm: '2201010001',
       accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
@@ -92,7 +112,7 @@ describe('portal uploadBuktiFiles', () => {
 
   it('rejects when no file is provided', async () => {
     await seedPengajuan();
-    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1' }, driveEnv);
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001' }, driveEnv);
     expect(res.success).toBe(false);
     expect(res.message).toContain('Tidak ada file');
   });
@@ -114,6 +134,7 @@ describe('portal uploadBuktiFiles', () => {
 
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-9',
+      npm: '2201010009',
       accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
@@ -133,6 +154,7 @@ describe('portal uploadBuktiFiles', () => {
 
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-7',
+      npm: '2201010007',
       accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);

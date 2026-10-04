@@ -479,11 +479,11 @@
                                         <td class="px-4 py-2.5 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
                                         <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
                                         <td class="px-4 py-2.5">
-                                            <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" class="chip-bukti" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
+                                            <a v-if="r['Link Bukti Bayar']" :href="safeUrl(r['Link Bukti Bayar'])" target="_blank" class="chip-bukti" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
                                         </td>
                                         <td class="px-4 py-2.5">
-                                            <a v-if="r['Link Final']" :href="r['Link Final']" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Final</a>
+                                            <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> Final</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
                                         </td>
                                         <td class="px-4 py-2.5 text-right" @click.stop>
@@ -692,7 +692,7 @@
                                                     <template v-if="r.__orphan"><span class="text-xs text-slate-400">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in unitPendukungBa(r)" :key="'p'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in unitPendukungBa(r)" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3"><span v-if="!r.__orphan" class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(unitKeputusan(r))">{{ unitKeputusan(r) }}</span><span v-else class="text-xs text-slate-400">-</span></td>
@@ -701,7 +701,7 @@
                                                     <template v-else-if="!unitPelaksanaanEligible(r)"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPelaksanaan(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPelaksanaan(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'l'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3">
@@ -744,7 +744,7 @@
                                                             <div v-if="!r.ba.length" class="text-xs text-slate-400">Belum ada BA.</div>
                                                             <div v-for="(b, bi) in r.ba" :key="bi" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
                                                                 <div class="flex flex-wrap items-center gap-2">
-                                                                    <a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
                                                                     <button class="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
@@ -786,7 +786,7 @@
                                     <div v-if="r.ba.length" class="mt-2 space-y-1">
                                         <div v-for="(b, bi) in r.ba" :key="'mb' + bi" class="rounded-lg bg-white p-2 text-xs ring-1 ring-slate-100">
                                             <div class="flex flex-wrap items-center gap-2">
-                                                <a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                 <span class="text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'text-brand-700' : 'text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                 <button class="ml-auto text-[10px] font-bold text-slate-500" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
                                             </div>
@@ -894,7 +894,7 @@
                                                 <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(r.tanggal) }}</span>
                                             </div>
                                             <div class="mt-1 text-xs text-slate-600">{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></div>
-                                            <a v-if="r.linkSurat" :href="r.linkSurat" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
+                                            <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
                                         </div>
                                     </div>
                                 </div>
@@ -995,7 +995,7 @@
                                     <div v-else class="divide-y divide-slate-50">
                                         <div v-for="(r, i) in bab.baList" :key="i" class="p-4">
                                             <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                                                <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link font-mono">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
+                                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" class="link font-mono">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
                                                 <span>·</span>
                                                 <span>{{ formatTanggal(r.Timestamp) }}</span>
                                                 <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(r['BA ID'], 'Bagian')"><i class="bi bi-trash text-xs"></i></button>
@@ -1206,15 +1206,15 @@
                                                 <td class="px-4 py-2.5 text-slate-600">{{ r['Jenis Kegiatan'] || '-' }}</td>
                                                 <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
                                                 <td class="px-4 py-2.5">
-                                                    <a v-if="r['Link ACC INHAL']" :href="r['Link ACC INHAL']" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
+                                                    <a v-if="r['Link ACC INHAL']" :href="safeUrl(r['Link ACC INHAL'])" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="px-4 py-2.5">
-                                                    <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
+                                                    <a v-if="r['Link Bukti Bayar']" :href="safeUrl(r['Link Bukti Bayar'])" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="px-4 py-2.5">
-                                                    <a v-if="r['Link Final']" :href="r['Link Final']" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
+                                                    <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline"><i class="bi bi-box-arrow-up-right"></i> Lihat</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                                 <td class="px-4 py-2.5">
@@ -1334,7 +1334,7 @@
                                     <div class="sm:col-span-2 md:col-span-3">
                                         <div class="label">Surat Keterangan</div>
                                         <div v-if="detail.p['Link Surat Keterangan']" class="value">
-                                            <a :href="detail.p['Link Surat Keterangan']" target="_blank" class="link inline-flex items-center gap-1"><i class="bi bi-file-earmark-text"></i>Lihat Surat Keterangan</a>
+                                            <a :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" class="link inline-flex items-center gap-1"><i class="bi bi-file-earmark-text"></i>Lihat Surat Keterangan</a>
                                         </div>
                                         <div v-else class="mt-1">
                                             <div class="flex flex-wrap items-center gap-2">
@@ -1365,9 +1365,9 @@
 
                             <!-- links -->
                             <div v-if="detail.p['Link Surat Keterangan'] || detail.p['Link ACC INHAL'] || detail.p['Link Bukti Bayar']" class="mt-4 grid gap-3 sm:grid-cols-3">
-                                <a v-if="detail.p['Link Surat Keterangan']" :href="detail.p['Link Surat Keterangan']" target="_blank" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
-                                <a v-if="detail.p['Link ACC INHAL']" :href="detail.p['Link ACC INHAL']" target="_blank" class="btn-acc justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
-                                <a v-if="detail.p['Link Bukti Bayar']" :href="detail.p['Link Bukti Bayar']" target="_blank" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
+                                <a v-if="detail.p['Link Surat Keterangan']" :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
+                                <a v-if="detail.p['Link ACC INHAL']" :href="safeUrl(detail.p['Link ACC INHAL'])" target="_blank" class="btn-acc justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
+                                <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
                             </div>
 
                             <!-- detail kegiatan + berita acara -->
@@ -1412,7 +1412,7 @@
                                 <div v-if="detail.baList && detail.baList.length" class="ba-align-card rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                                     <div class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-pdf text-base text-rose-600"></i> Berita Acara</div>
                                     <div class="flex flex-wrap gap-2">
-                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="b['File URL']" target="_blank" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
+                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="safeUrl(b['File URL'])" target="_blank" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
                                     </div>
                                 </div>
                             </div>
@@ -2035,6 +2035,10 @@
                 }
             },
             methods: {
+                safeUrl(v) {
+                    const s = String(v == null ? '' : v).trim();
+                    return /^https?:\/\//i.test(s) ? s : '#';
+                },
                 // ---------- helpers ----------
                 run(fn, ...args) {
                     if (this.session && this.session.token) args.push(this.session.token);
