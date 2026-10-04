@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mockup — Tab Berita Acara (proses)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --brand: #4f46e5;
+      --ink: #0f172a;
+      --sidebar: #0f172a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--ink); background: #f8fafc; }
+    .banner { background: #312e81; color: #e0e7ff; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-align: center; padding: 8px 16px; }
+    .layout { display: flex; min-height: 100vh; }
+    aside { width: 268px; background: var(--sidebar); color: #cbd5e1; flex-shrink: 0; padding: 20px 12px; }
+    .brand { display: flex; gap: 12px; align-items: center; padding: 4px 12px 20px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 20px; }
+    .brand-mark { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #818cf8, #8b5cf6); color: #fff; display: flex; align-items: center; justify-content: center; }
+    .brand b { display: block; color: #fff; font-size: 15px; }
+    .brand span { font-size: 11px; color: #94a3b8; }
+    .nav-label { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #64748b; padding: 0 12px 8px; }
+    .nav a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 500; }
+    .nav a.active { background: rgba(255,255,255,.1); color: #fff; }
+    main { flex: 1; min-width: 0; }
+    header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: rgba(255,255,255,.85); border-bottom: 1px solid #f1f5f9; position: sticky; top: 0; backdrop-filter: blur(8px); z-index: 10; }
+    header b { font-size: 15px; }
+    header small { display: block; color: #94a3b8; font-size: 11px; }
+    .page { padding: 28px 32px 48px; }
+    h1 { margin: 0; font-size: 20px; }
+    .sub { margin: 4px 0 20px; color: #64748b; font-size: 14px; }
+    .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .card { background: #fff; border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 2px rgb(15 23 42 / .06); ring: 1px solid #f1f5f9; border: 1px solid #f1f5f9; text-align: left; cursor: pointer; }
+    .card.static { cursor: default; }
+    .card.active { outline: 2px solid var(--brand); }
+    .card .k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
+    .card .n { margin-top: 4px; font-size: 22px; font-weight: 800; }
+    .card .p { font-size: 11px; font-weight: 600; color: #94a3b8; }
+    .card.warn .n { color: #e11d48; }
+    .card.ok .n { color: #059669; }
+    .pair { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr); gap: 16px; margin-bottom: 16px; align-items: start; }
+    .panel { background: #fff; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px rgb(15 23 42 / .06); overflow: hidden; min-width: 0; }
+    .panel h2 { margin: 0; padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+    .panel-body { padding: 16px; }
+    .heat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .heat-scroll::-webkit-scrollbar { height: 8px; }
+    .heat-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    .bar-row { width: 100%; background: none; border: 0; padding: 0 0 10px; text-align: left; cursor: pointer; }
+    .bar-row.active .name { color: var(--brand); }
+    .bar-top { display: flex; justify-content: space-between; font-size: 12px; }
+    .name { font-weight: 600; }
+    .meta { color: #94a3b8; }
+    .track { margin-top: 4px; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+    .fill { height: 100%; border-radius: 99px; }
+    .fill.g { background: #10b981; }
+    .fill.y { background: #fbbf24; }
+    .fill.r { background: #fb7185; }
+    table.heat { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+    table.heat th { padding: 8px 10px; color: #64748b; font-weight: 700; white-space: nowrap; min-width: 72px; }
+    table.heat td { padding: 4px; text-align: center; }
+    table.heat th.lab, table.heat td.lab { text-align: left; font-weight: 600; position: sticky; left: 0; background: #fff; z-index: 1; min-width: 110px; padding-left: 0; }
+    .cell { min-width: 64px; border-radius: 8px; padding: 6px 8px; font-weight: 700; border: 1px solid transparent; cursor: pointer; }
+    .cell.g { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .cell.y { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .cell.r { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .cell.active { outline: 2px solid var(--brand); }
+    .dash { color: #cbd5e1; }
+    .legend { display: flex; gap: 12px; font-size: 11px; color: #64748b; margin-top: 10px; }
+    .dot { width: 8px; height: 8px; border-radius: 99px; display: inline-block; margin-right: 4px; }
+    .filters { background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .chip { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; }
+    .chip.on { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .muted { margin-left: auto; font-size: 12px; color: #94a3b8; }
+    .btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .table-wrap { background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; }
+    table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.data th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; padding: 12px; border-bottom: 1px solid #f1f5f9; }
+    table.data th.sort { cursor: pointer; user-select: none; white-space: nowrap; }
+    table.data th.sort:hover { color: #0f172a; }
+    table.data td { padding: 12px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .badge { display: inline-block; border-radius: 8px; padding: 3px 8px; font-size: 11px; font-weight: 700; }
+    .b-brand { background: #eef2ff; color: #4338ca; }
+    .b-wait { background: #fffbeb; color: #b45309; }
+    .b-ok { background: #ecfdf5; color: #047857; }
+    .b-no { background: #fff1f2; color: #be123c; }
+    .b-mute { background: #f1f5f9; color: #64748b; }
+    .b-dec { background: #eef2ff; color: #4338ca; }
+    .link { color: var(--brand); font-size: 12px; font-weight: 600; text-decoration: none; }
+    .act { display: inline-flex; align-items: center; gap: 4px; border: 0; background: var(--brand); color: #fff; border-radius: 8px; padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .note { font-size: 12px; color: #64748b; margin: 10px 0 0; }
+    @media (max-width: 1100px) {
+      aside { display: none; }
+      .cards { grid-template-columns: 1fr 1fr; }
+      .pair { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">MOCKUP — data dummy 9 kegiatan, bukan dashboard produksi</div>
+  <div class="layout">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark"><i class="bi bi-shield-check"></i></div>
+        <div><b>INHAL Admin</b><span>Manajemen Pendaftaran</span></div>
+      </div>
+      <div class="nav-label">Menu</div>
+      <nav class="nav">
+        <a href="#"><i class="bi bi-inbox"></i> Pengajuan</a>
+        <a href="#"><i class="bi bi-bar-chart-line"></i> Statistik</a>
+        <a class="active" href="#"><i class="bi bi-file-earmark-pdf"></i> Berita Acara</a>
+        <a href="#"><i class="bi bi-sliders"></i> Master Data</a>
+      </nav>
+    </aside>
+    <main>
+      <header>
+        <div><b>Berita Acara</b><small>Dashboard Admin INHAL — mockup proses</small></div>
+      </header>
+      <div class="page">
+        <h1>Berita Acara</h1>
+        <p class="sub">Dua tahap: unggah BA Pendukung sebelum keputusan, lalu BA Pelaksanaan setelah kegiatan di Bagian.</p>
+
+        <div class="cards" id="cards"></div>
+
+        <div class="pair">
+          <div class="panel">
+            <h2>Kelengkapan Pelaksanaan per Bagian</h2>
+            <div class="panel-body" id="bars"></div>
+          </div>
+          <div class="panel">
+            <h2>Peta Kelengkapan Bagian × Blok</h2>
+            <div class="panel-body">
+              <div class="heat-scroll" id="heat"></div>
+              <div class="legend">
+                <span><i class="dot" style="background:#10b981"></i>lengkap</span>
+                <span><i class="dot" style="background:#fbbf24"></i>sebagian</span>
+                <span><i class="dot" style="background:#fb7185"></i>belum</span>
+              </div>
+              <p class="note">Angka sel: sudah ada BA Pelaksanaan / jumlah kegiatan. Geser ke kanan jika blok banyak. Kolom Bagian tetap terlihat.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="filters">
+          <button class="chip on" data-chip="semua">Semua</button>
+          <button class="chip" data-chip="pendukung">Belum Pendukung</button>
+          <button class="chip" data-chip="pelaksanaan">Belum Pelaksanaan</button>
+          <button class="chip" data-chip="belum">Belum lengkap</button>
+          <span class="muted" id="count"></span>
+          <button class="btn" id="reset"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+        </div>
+        <p class="note" id="orphanNote" hidden></p>
+
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th class="sort" id="thTanggal">Tanggal <i class="bi bi-chevron-expand" id="sortIcon"></i></th>
+                <th>Bagian</th>
+                <th>Blok</th>
+                <th>Kegiatan</th>
+                <th>Peserta</th>
+                <th>BA Pendukung</th>
+                <th>Keputusan</th>
+                <th>BA Pelaksanaan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const rows = [
+      { id:1, tanggal:'2026-09-20', bagian:'Ujian', blok:'A', kegiatan:'UAS', peserta:3, pendukung:true, keputusan:'Diterima', pelaksanaan:true, incomplete:false },
+      { id:2, tanggal:'2026-09-21', bagian:'Ujian', blok:'B', kegiatan:'UAS', peserta:2, pendukung:true, keputusan:'Diterima', pelaksanaan:false, incomplete:true },
+      { id:3, tanggal:'2026-09-18', bagian:'SGD', blok:'A', kegiatan:'SGD 1 — Remediasi', peserta:4, pendukung:true, keputusan:'Diterima', pelaksanaan:true, incomplete:false },
+      { id:4, tanggal:'2026-09-22', bagian:'SGD', blok:'A', kegiatan:'SGD 2', peserta:3, pendukung:false, keputusan:'Menunggu', pelaksanaan:false, incomplete:true },
+      { id:5, tanggal:'2026-09-22', bagian:'SGD', blok:'B', kegiatan:'SGD 1', peserta:2, pendukung:false, keputusan:'Menunggu', pelaksanaan:false, incomplete:true },
+      { id:6, tanggal:'2026-09-19', bagian:'KKD', blok:'A', kegiatan:'KKD 3', peserta:3, pendukung:false, keputusan:'Menunggu', pelaksanaan:false, incomplete:true },
+      { id:7, tanggal:'2026-09-23', bagian:'KKD', blok:'B', kegiatan:'KKD 3', peserta:2, pendukung:false, keputusan:'Menunggu', pelaksanaan:false, incomplete:true },
+      { id:8, tanggal:'2026-09-24', bagian:'Lab Anatomi', blok:'A', kegiatan:'Praktikum 1', peserta:3, pendukung:false, keputusan:'Menunggu', pelaksanaan:false, incomplete:true },
+      { id:9, tanggal:'2026-09-24', bagian:'Lab Anatomi', blok:'B', kegiatan:'Praktikum 1', peserta:2, pendukung:false, keputusan:'Menunggu', pelaksanaan:false, incomplete:true }
+    ];
+    const orphan = { baId:'BA-2026-0099', bagian:'KKD', blok:'Z', kegiatan:'KKD 9' };
+
+    const state = { chip:'semua', bagian:'', blok:'', sortDir:'desc' };
+
+    function fmt(d) {
+      return new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+    }
+    function heatClass(done, total) {
+      if (!total) return '';
+      if (done === total) return 'g';
+      if (done > 0) return 'y';
+      return 'r';
+    }
+    function filtered() {
+      return rows.filter(r => {
+        if (state.bagian && r.bagian !== state.bagian) return false;
+        if (state.blok && r.blok !== state.blok) return false;
+        if (state.chip === 'pendukung') return !r.pendukung;
+        if (state.chip === 'pelaksanaan') return r.keputusan === 'Diterima' && !r.pelaksanaan;
+        if (state.chip === 'belum') return !r.pendukung || (r.keputusan === 'Diterima' && !r.pelaksanaan);
+        return true;
+      }).slice().sort((a,b) => state.sortDir === 'asc' ? a.tanggal.localeCompare(b.tanggal) : b.tanggal.localeCompare(a.tanggal));
+    }
+    function render() {
+      const total = rows.length;
+      const peserta = rows.reduce((s,r) => s + r.peserta, 0);
+      const dukung = rows.filter(r => r.pendukung).length;
+      const diterima = rows.filter(r => r.keputusan === 'Diterima');
+      const laksana = diterima.filter(r => r.pelaksanaan).length;
+      const belum = rows.filter(r => !r.pendukung || (r.keputusan === 'Diterima' && !r.pelaksanaan)).length;
+
+      document.getElementById('cards').innerHTML = [
+        card('kegiatan', 'Kegiatan', String(total), 'semua kegiatan', state.chip==='semua' && !state.bagian, false),
+        card('', 'Peserta', String(peserta), 'mahasiswa', false, true),
+        card('pendukung', 'BA Pendukung', dukung + '/' + total, Math.round(dukung/total*100) + '% sudah ada', state.chip==='pendukung', false),
+        card('pelaksanaan', 'BA Pelaksanaan', laksana + '/' + diterima.length, Math.round(laksana/diterima.length*100) + '% dari yang Diterima', state.chip==='pelaksanaan', false, 'ok'),
+        card('belum', 'Belum lengkap', String(belum), 'perlu ditindak', state.chip==='belum', false, 'warn')
+      ].join('');
+
+      const bagians = ['Ujian','SGD','KKD','Lab Anatomi'];
+      const bloks = ['A','B','C','D','E','F'];
+      document.getElementById('bars').innerHTML = bagians.map(b => {
+        const list = rows.filter(r => r.bagian === b);
+        const done = list.filter(r => r.pelaksanaan).length;
+        const pct = list.length ? Math.round(done/list.length*100) : 0;
+        const cls = heatClass(done, list.length);
+        return `<button class="bar-row ${state.bagian===b && !state.blok ? 'active':''}" data-bar="${b}">
+          <div class="bar-top"><span class="name">${b}</span><span class="meta">${done}/${list.length} · ${pct}%</span></div>
+          <div class="track"><div class="fill ${cls}" style="width:${pct}%"></div></div>
+        </button>`;
+      }).join('');
+
+      let heat = '<table class="heat"><thead><tr><th class="lab">Bagian</th>';
+      bloks.forEach(b => { heat += `<th>Blok ${b}</th>`; });
+      heat += '</tr></thead><tbody>';
+      bagians.forEach(bag => {
+        heat += `<tr><td class="lab">${bag}</td>`;
+        bloks.forEach(blok => {
+          const list = rows.filter(r => r.bagian===bag && r.blok===blok);
+          if (!list.length) { heat += '<td><span class="dash">–</span></td>'; return; }
+          const done = list.filter(r => r.pelaksanaan).length;
+          const cls = heatClass(done, list.length);
+          const on = state.bagian===bag && state.blok===blok ? ' active' : '';
+          heat += `<td><button class="cell ${cls}${on}" data-heat="${bag}|${blok}">${done}/${list.length}</button></td>`;
+        });
+        heat += '</tr>';
+      });
+      heat += '</tbody></table>';
+      document.getElementById('heat').innerHTML = heat;
+
+      document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.chip === state.chip));
+
+      const view = filtered();
+      const icon = document.getElementById('sortIcon');
+      icon.className = state.sortDir === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill';
+      document.getElementById('count').textContent = 'Menampilkan ' + view.length + ' kegiatan';
+      const showOrphan = state.chip === 'semua' && !state.bagian;
+      const on = document.getElementById('orphanNote');
+      on.hidden = !showOrphan;
+      on.textContent = showOrphan ? '1 BA tanpa pengajuan — tidak masuk hitungan kartu: ' + orphan.baId + ' · ' + orphan.bagian + ' Blok ' + orphan.blok + ' · ' + orphan.kegiatan : '';
+
+      document.getElementById('tbody').innerHTML = view.map(r => {
+        const dukung = r.pendukung
+          ? '<span class="badge b-ok">Ada</span> <a class="link" href="#">BA-P-00' + r.id + '</a>'
+          : '<span class="badge b-no">Belum</span>';
+        const laksana = r.keputusan !== 'Diterima'
+          ? '<span class="badge b-mute">—</span>'
+          : (r.pelaksanaan
+            ? '<span class="badge b-ok">Ada</span> <a class="link" href="#">BA-L-00' + r.id + '</a>'
+            : '<span class="badge b-no">Belum</span>');
+        const kepCls = r.keputusan === 'Diterima' ? 'b-ok' : 'b-wait';
+        let aksi = '';
+        if (!r.pendukung) aksi = '<button class="act">Unggah Pendukung</button>';
+        else if (r.keputusan === 'Diterima' && !r.pelaksanaan) aksi = '<button class="act">Unggah Pelaksanaan</button>';
+        else aksi = '<a class="link" href="#">Lihat file</a>';
+        return `<tr>
+          <td>${fmt(r.tanggal)}</td>
+          <td><span class="badge b-brand">${r.bagian}</span></td>
+          <td>${r.blok}</td>
+          <td><b>${r.kegiatan}</b></td>
+          <td>${r.peserta}</td>
+          <td>${dukung}</td>
+          <td><span class="badge ${kepCls}">${r.keputusan}</span></td>
+          <td>${laksana}</td>
+          <td>${aksi}</td>
+        </tr>`;
+      }).join('');
+    }
+    function card(key, label, num, pct, active, staticCard, tone) {
+      const cls = ['card', staticCard ? 'static' : '', active ? 'active' : '', tone || ''].filter(Boolean).join(' ');
+      const data = staticCard ? '' : `data-card="${key}"`;
+      return `<button class="${cls}" ${data}><div class="k">${label}</div><div class="n">${num}</div><div class="p">${pct}</div></button>`;
+    }
+
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-card]');
+      if (card) { state.chip = card.dataset.card === 'kegiatan' ? 'semua' : card.dataset.card; render(); return; }
+      const chip = e.target.closest('[data-chip]');
+      if (chip) { state.chip = chip.dataset.chip; render(); return; }
+      const bar = e.target.closest('[data-bar]');
+      if (bar) { state.bagian = bar.dataset.bar; state.blok = ''; render(); return; }
+      const heat = e.target.closest('[data-heat]');
+      if (heat) { const [b,k] = heat.dataset.heat.split('|'); state.bagian = b; state.blok = k; render(); return; }
+      if (e.target.closest('#thTanggal')) { state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc'; render(); return; }
+      if (e.target.closest('#reset')) { state.chip = 'semua'; state.bagian = ''; state.blok = ''; state.sortDir = 'desc'; render(); }
+    });
+    render();
+  </script>
+</body>
+</html>

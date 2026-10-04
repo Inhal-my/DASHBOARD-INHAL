@@ -1,0 +1,170 @@
+# Deploy `new-code1-cf` ke Cloudflare
+
+Panduan langkah demi langkah memindahkan isi `new-code1-cf` ke Cloudflare (Worker + Static Assets + D1). Semua perintah dijalankan dari dalam direktori `new-code1-cf/`.
+
+## Info deploy saat ini
+
+| Item | Nilai |
+|---|---|
+| Akun Cloudflare | `inhal1` (`e2efd255f61d2b81c7f54c92eb57b946`) |
+| Worker name | `inhal-form` |
+| URL | https://inhal-form.prodi.workers.dev |
+| D1 database | `inhal-poc` (`8f412848-d213-4bb3-aeb7-0aff221f9ee3`, region APAC) |
+| Workers.dev subdomain | `prodi` |
+
+## 0. Prasyarat
+
+- Node.js 22+ dan npm
+- Akun Cloudflare
+- Dependency terpasang:
+
+```bash
+npm install
+```
+
+## 1. Autentikasi
+
+Pilih salah satu.
+
+### Opsi 1a: Login interaktif (butuh browser di mesin yang sama)
+
+```bash
+npx wrangler login
+```
+
+### Opsi 1b: API token (untuk server/headless)
+
+Buat token di dashboard: ikon profil > **My Profile** > **API Tokens** > **Create Token** > template **Edit Cloudflare Workers**, lalu tambahkan permission **Account > D1 > Edit**.
+
+Simpan token ke environment variable (jangan tulis ke `wrangler.toml`, jangan commit ke Git):
+
+```bash
+# jalankan di terminal Anda, bukan lewat chat
+printf '%s' '<TOKEN_ANDA>' > /root/.cf_token
+chmod 600 /root/.cf_token
+```
+
+Setiap perintah wrangler berikutnya dijalankan dengan token dari file:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler <perintah>
+```
+
+Cek akun yang aktif:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler whoami
+```
+
+## 2. Siapkan database D1
+
+Buat database (lewati jika sudah ada):
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 create inhal-poc
+```
+
+Salin `database_id` dari output ke `wrangler.toml`, bagian `[[d1_databases]]`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc"
+database_id = "<database_id dari output>"
+```
+
+## 3. Terapkan skema ke D1
+
+Untuk PoC (berisi `DROP TABLE` + seed data dummy):
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./schema.sql
+```
+
+Untuk produksi, buat file migrasi terpisah tanpa `DROP TABLE` dan tanpa seed, lalu jalankan file itu.
+
+Migrasi panel admin (`CREATE TABLE IF NOT EXISTS`, aman untuk data yang sudah ada):
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-09-10-admin-panels.sql
+```
+
+> **Penting — jangan campur `schema.sql` dengan `migrations/*.sql`.** `schema.sql` sudah
+> memuat seluruh kolom terkini. Untuk database **baru**, jalankan `schema.sql` saja. File di
+> `migrations/` hanya untuk database **lama** yang belum punya kolom hasil migrasi, karena
+> `ALTER TABLE ADD COLUMN` akan gagal `duplicate column name` bila dijalankan di atas
+> `schema.sql`. Jalankan migrasi berurutan sesuai tanggal dan jangan mengulang migrasi yang
+> sudah pernah diterapkan.
+
+## 4. Deploy Worker + aset
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
+```
+
+Output akan menampilkan URL Worker, mis. `https://inhal-form.<subdomain>.workers.dev`.
+
+Jika muncul peringatan `You need to register a workers.dev subdomain`, daftarkan dulu subdomain di:
+
+```
+https://dash.cloudflare.com/<ACCOUNT_ID>/workers/subdomain
+```
+
+### 4.1 Secret wajib: bridge Google Drive
+
+Fitur unggah berkas (surat keterangan, ACC INHAL, bukti bayar, berita acara) memakai bridge Apps Script. Worker membutuhkan dua nilai berikut:
+
+- `GAS_DRIVE_URL` (variable biasa di `wrangler.toml`): URL Web App Apps Script.
+- `GAS_DRIVE_TOKEN` (**secret**, wajib): token bersama, harus sama dengan `DRIVE_BRIDGE_TOKEN` di Apps Script.
+
+`GAS_DRIVE_TOKEN` tidak ditulis di `wrangler.toml` maupun kode. Set sekali per environment:
+
+```bash
+# jalankan di terminal Anda, jangan tempel nilai token ke chat
+printf '%s' '<TOKEN_BRIDGE>' | CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler secret put GAS_DRIVE_TOKEN
+```
+
+Cek daftar secret yang sudah terpasang (nilai tidak ditampilkan):
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler secret list
+```
+
+Tanpa secret ini, semua unggahan akan gagal dengan pesan "Penyimpanan Drive belum dikonfigurasi."
+
+## 5. Verifikasi
+
+Buka URL Worker di browser, atau:
+
+```bash
+# ganti URL sesuai hasil deploy
+curl https://inhal-form.prodi.workers.dev/api/health
+curl https://inhal-form.prodi.workers.dev/api/registration-options
+curl -o /dev/null -w "%{http_code}\n" https://inhal-form.prodi.workers.dev/dashboard
+curl -o /dev/null -w "%{http_code}\n" https://inhal-form.prodi.workers.dev/detail-laporan
+curl -o /dev/null -w "%{http_code}\n" https://inhal-form.prodi.workers.dev/bagian
+curl -s https://inhal-form.prodi.workers.dev/api/rpc -H 'Content-Type: application/json' -d '{"fn":"getBaginaConfig","args":[]}'
+```
+
+Cek data D1 remote:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --command "SELECT id_pengajuan, npm, status FROM pengajuan ORDER BY id DESC LIMIT 5"
+```
+
+## 6. Update / deploy ulang
+
+Setelah mengubah kode di `src/` atau `public/`:
+
+```bash
+npm test
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
+```
+
+Jika skema berubah, jalankan ulang langkah 3 dengan file migrasi yang sesuai.
+
+## 7. Catatan keamanan
+
+- Jangan pernah menaruh API token di `wrangler.toml`, kode, atau commit Git. Gunakan environment variable `CLOUDFLARE_API_TOKEN`.
+- Jika token sempat terekspos (mis. ter-paste di chat atau ter-commit), segera **Roll** token tersebut di dashboard Cloudflare.
+- Data seed di `schema.sql` hanya untuk demo; hapus/ ganti sebelum dipakai produksi.
