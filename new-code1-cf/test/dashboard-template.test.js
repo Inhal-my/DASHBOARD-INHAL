@@ -237,3 +237,55 @@ describe('dashboard tab persistence', () => {
     expect(html).toContain('this.tab = this.hashTab()');
   });
 });
+
+describe('dashboard responsive shell', () => {
+  it('memakai app shell dengan sidebar yang bisa dilipat', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('class="app-shell font-sans text-ink antialiased"');
+    expect(html).toContain(":class=\"sidebarCollapsed ? 'sidebar-collapsed' : ''\"");
+    expect(html).toContain('sidebar-toggle');
+    expect(html).toContain('sidebarCollapsed = !sidebarCollapsed');
+    expect(html).toContain('sidebar-aside');
+    expect(html).toContain('main-wrap');
+    expect(html).toContain('content-wrap');
+  });
+
+  it('menyediakan bottom nav HP dengan 3 tab dan tombol Menu', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('bottom-nav');
+    expect(html).toContain('bnav-btn');
+    expect(html).toContain("@click=\"switchTab('pengajuan')\"");
+    expect(html).toContain("@click=\"switchTab('ba')\"");
+    expect(html).toContain("@click=\"switchTab('master')\"");
+    expect(html).toContain('mobileMenuOpen = true');
+    expect(html).toContain('sheet-panel');
+    expect(html).toContain('sheet-item');
+  });
+
+  it('FAB (+) memanggil openBaUpload untuk BA Pendukung', async () => {
+    const html = await loadDashboardHtml();
+    const m = html.match(/<button[^>]*class="fab-btn[^"]*"[^>]*>/);
+    expect(m).not.toBeNull();
+    expect(m[0]).toContain('@click="openBaUpload()"');
+    expect(m[0]).toContain('Tambah Berita Acara Pendukung');
+  });
+
+  it('topbar menampilkan pencarian dan notifikasi menunggu', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('topbar-search');
+    expect(html).toContain('@keyup.enter="runTopbarSearch()"');
+    expect(html).toContain('topbar-bell');
+    expect(html).toContain('@click="goMenunggu()"');
+    expect(html).toContain('menungguCount');
+    expect(html).toContain('runTopbarSearch()');
+    expect(html).toContain('goMenunggu()');
+  });
+
+  it('mendefinisikan CSS shell responsif', async () => {
+    const html = await loadDashboardHtml();
+    const selectors = cssSelectors(html);
+    for (const sel of ['.app-shell', '.sidebar-aside', '.main-wrap', '.content-wrap', '.sidebar-toggle', '.bottom-nav', '.bnav-btn', '.fab-btn', '.sheet-panel', '.sheet-item', '.topbar-search', '.topbar-bell', '.stat-trend']) {
+      expect(selectors.has(sel)).toBe(true);
+    }
+  });
+});
