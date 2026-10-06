@@ -152,3 +152,28 @@ describe('detail laporan kejelasan tampilan', () => {
     expect(html).toContain('<div v-if="activeMatrixCell" class="flex items-end md:col-span-2">');
   });
 });
+
+describe('detail laporan filter mobile (bottom sheet ala dashboard)', () => {
+  it('menyediakan mini-bar filter dan sheet bawah', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('filter-mobile-bar');
+    expect(html).toContain('filterSheetOpen');
+    expect(html).toContain('class="filter-mobile sheet-overlay"');
+    expect(html).toContain('class="filter-mobile sheet-panel"');
+    expect(html).toContain('Filter Laporan');
+  });
+  it('kartu filter desktop hanya tampil di layar besar', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('filter-desktop sticky top-16');
+    const selectors = cssSelectors(html);
+    for (const sel of ['.filter-desktop', '.filter-mobile-bar', '.sheet-overlay', '.sheet-panel', '.sheet-handle']) {
+      expect(selectors.has(sel)).toBe(true);
+    }
+  });
+  it('menyediakan hitungan filter aktif dan reset filter global', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('activeFilterCount');
+    expect(html).toContain('resetGlobalFilters()');
+    expect(html).toContain('scroll-margin-top');
+  });
+});
