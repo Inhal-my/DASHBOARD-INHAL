@@ -1,0 +1,14 @@
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '‐', '-');
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '‑', '-');
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '‒', '-');
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '–', '-');
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '—', '-');
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '―', '-');
+UPDATE berita_acara SET kegiatan_key = replace(kegiatan_key, '−', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '‐', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '‑', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '‒', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '–', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '—', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '―', '-');
+UPDATE berita_acara_admin SET kegiatan_key = replace(kegiatan_key, '−', '-');
