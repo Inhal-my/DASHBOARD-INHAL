@@ -177,3 +177,13 @@ describe('detail laporan filter mobile (bottom sheet ala dashboard)', () => {
     expect(html).toContain('scroll-margin-top');
   });
 });
+
+describe('modal Kelola BA', () => {
+  it('menampilkan ikon pada field Tanggal Pelaksanaan dan Jam', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('bi bi-calendar3 pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400');
+    expect(html).toContain('bi bi-clock pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400');
+    expect(html).toContain('v-model="kelola.tanggal" type="date" class="input pl-10 cursor-pointer"');
+    expect(html).toContain('v-model="kelola.jam" type="time" class="input pl-10 cursor-pointer"');
+  });
+});

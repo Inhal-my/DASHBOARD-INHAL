@@ -114,8 +114,20 @@
             <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
                 <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
                 <div class="grid gap-3 sm:grid-cols-2">
-                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="kelola.tanggal" type="date" class="input"></div>
-                    <div><label class="label">Jam</label><input v-model="kelola.jam" type="time" class="input"></div>
+                    <div>
+                        <label class="label">Tanggal Pelaksanaan</label>
+                        <div class="relative">
+                            <i class="bi bi-calendar3 pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input v-model="kelola.tanggal" type="date" class="input pl-10 cursor-pointer">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label">Jam</label>
+                        <div class="relative">
+                            <i class="bi bi-clock pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input v-model="kelola.jam" type="time" class="input pl-10 cursor-pointer">
+                        </div>
+                    </div>
                     <div class="relative sm:col-span-2">
                         <label class="label">Dosen</label>
                         <input v-model="kelola.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @focus="dosenPick.open = true" @input="dosenPick.open = true" @blur="dosenPick.open = false">
