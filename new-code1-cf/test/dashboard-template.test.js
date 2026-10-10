@@ -318,3 +318,17 @@ describe('dashboard manual entry tab', () => {
     expect(html).toContain("'Sumber'");
   });
 });
+
+describe('dashboard ubah status ke ACC', () => {
+  it('menyediakan opsi ACC pada dropdown status', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('<option>ACC</option>');
+  });
+  it('menyediakan tombol Jadikan ACC tanpa kirim email', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("@click=\"quickStatus('ACC')\"");
+    expect(html).toContain('Jadikan ACC');
+    expect(html).toContain("status === 'ACC'");
+    expect(html).toContain('Tidak ada email yang dikirim');
+  });
+});
