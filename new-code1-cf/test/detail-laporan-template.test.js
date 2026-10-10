@@ -213,6 +213,17 @@ describe('detail laporan kolom Sumber', () => {
   });
 });
 
+describe('detail laporan kolom Detail Kegiatan pada Pembayaran Detail', () => {
+  it('menyertakan kolom Detail Kegiatan (Pilihan) di sheet Pembayaran Detail', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("'Detail Kegiatan': it.detail || ''");
+  });
+  it('mengambil Detail Kegiatan dari Pilihan detail pengajuan', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("detail: (r.details || []).map(d => String(d.Pilihan || '').trim()).filter(Boolean).join('; ')");
+  });
+});
+
 describe('detail laporan export xlsx hyperlink bergaya', () => {
   it('menulis hyperlink dengan gaya biru + underline tanpa dependensi baru', async () => {
     const html = await loadHtml();

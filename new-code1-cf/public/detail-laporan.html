@@ -1597,6 +1597,7 @@
                         map[npm].items.push({
                             id: p['ID Pengajuan'] || '',
                             jenis: String(p['Jenis Kegiatan'] || '').trim() || '-',
+                            detail: (r.details || []).map(d => String(d.Pilihan || '').trim()).filter(Boolean).join('; '),
                             blok: String(p.Blok || '').trim() || '-',
                             tanggal: p['Tanggal Pelaksanaan'] || '',
                             status: String(p.Status || '').trim() || '-',
@@ -2579,6 +2580,7 @@
                                     'NPM': m.npm,
                                     'Nama': m.nama,
                                     'Kegiatan': it.jenis,
+                                    'Detail Kegiatan': it.detail || '',
                                     'Blok': it.blok,
                                     'Tanggal': it.tanggal ? fmtTanggalWaktu(it.tanggal) : '',
                                     'Status': it.status,
