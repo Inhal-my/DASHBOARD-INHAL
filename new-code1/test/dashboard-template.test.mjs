@@ -126,6 +126,23 @@ describe('dashboard unggah bukti bayar oleh admin', () => {
   });
 });
 
+describe('dashboard scan kamera', () => {
+  it('menyisipkan ScanPdf dan kontrol scan kamera untuk bukti, BA pendukung, dan pelaksanaan', () => {
+    assert.match(html, /window\.ScanPdf = \{ buildPdf: buildPdf, compressToJpeg: compressToJpeg \}/);
+    assert.match(html, /scanBuildPdf\('bukti'\)/);
+    assert.match(html, /scanBuildPdf\('pendukung'\)/);
+    assert.match(html, /scanBuildPdf\('pelaksanaan'\)/);
+    assert.match(html, /ref="buktiCamera"/);
+    assert.match(html, /ref="pendukungCamera"/);
+    assert.match(html, /ref="pelaksanaanCamera"/);
+    assert.match(html, /scanOnPhotos\(\$event, 'bukti'\)/);
+    assert.match(html, /scanTarget\(which\)/);
+    assert.match(html, /Bukti-Bayar-Scan-/);
+    assert.match(html, /BA-Pendukung-Scan-/);
+    assert.match(html, /BA-Pelaksanaan-Scan-/);
+  });
+});
+
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', () => {
     assert.match(html, /const TAB_KEYS = \['pengajuan', 'manual', 'stats', 'ba', 'master'\]/);

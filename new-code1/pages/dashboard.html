@@ -1075,11 +1075,34 @@
                                                         <div class="flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-3">
                                                             <i class="bi bi-cloud-arrow-up text-xl text-brand-400"></i>
                                                             <div class="min-w-0 flex-1 truncate text-xs text-slate-500">
-                                                                <span v-if="!bab.ba.file">Pilih file...</span>
+                                                                <span v-if="!bab.ba.file">Pilih file atau scan kamera...</span>
                                                                 <span v-else class="font-semibold text-slate-700">{{ bab.ba.fileName }}</span>
                                                             </div>
                                                             <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="max-w-[120px] text-xs" @change="babOnBaFile">
                                                         </div>
+                                                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                                                            <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="$refs.pelaksanaanCamera.click()">
+                                                                <i class="bi bi-camera"></i> Scan Kamera
+                                                            </button>
+                                                            <span v-if="bab.ba.scanItems.length" class="text-[11px] text-slate-500">{{ bab.ba.scanItems.length }} halaman</span>
+                                                            <button v-if="bab.ba.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="scanBuildPdf('pelaksanaan')">
+                                                                <i class="bi bi-file-earmark-pdf"></i> Buat PDF
+                                                            </button>
+                                                            <button v-if="bab.ba.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('pelaksanaan')">Bersihkan</button>
+                                                        </div>
+                                                        <input ref="pelaksanaanCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'pelaksanaan')">
+                                                        <div v-if="bab.ba.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                                            <div v-for="(it, idx) in bab.ba.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
+                                                                <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
+                                                                <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
+                                                                <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pelaksanaan')">x</button>
+                                                                <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pelaksanaan')"><i class="bi bi-arrow-left"></i></button>
+                                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === bab.ba.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pelaksanaan')"><i class="bi bi-arrow-right"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <p v-if="bab.ba.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
                                                     </div>
                                                     <div class="sm:col-span-2"><label class="label">Catatan <span class="font-normal text-slate-400">(opsional)</span></label><textarea v-model="bab.ba.catatan" rows="2" class="input"></textarea></div>
                                                 </div>
@@ -1371,11 +1394,12 @@
                                     <label class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 px-4 py-3">
                                         <i class="bi bi-file-earmark-arrow-up text-xl text-brand-400"></i>
                                         <span class="text-xs text-slate-500">
-                                            <span v-if="!detail.buktiFile">Pilih berkas bukti bayar</span>
+                                            <span v-if="!detail.buktiFile">Pilih berkas bukti bayar atau scan kamera...</span>
                                             <span v-else class="font-semibold text-slate-700">{{ detail.buktiFile.name }}</span>
                                         </span>
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onBuktiFile($event)">
                                     </label>
+                                    <button type="button" class="btn-soft" :disabled="detail.scanBusy" @click="$refs.buktiCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
                                     <button class="btn-primary" :disabled="detail.buktiUploading" @click="uploadBuktiBayar()">
                                         <svg v-if="detail.buktiUploading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1386,6 +1410,24 @@
                                     </button>
                                     <a v-if="detail.p['Link Bukti Bayar']" :href="detail.p['Link Bukti Bayar']" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-box-arrow-up-right"></i>Lihat saat ini</a>
                                 </div>
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <span v-if="detail.scanItems.length" class="text-[11px] text-slate-500">{{ detail.scanItems.length }} halaman</span>
+                                    <button v-if="detail.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="detail.scanBusy" @click="scanBuildPdf('bukti')"><i class="bi bi-file-earmark-pdf"></i> Buat PDF</button>
+                                    <button v-if="detail.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('bukti')">Bersihkan</button>
+                                </div>
+                                <input ref="buktiCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'bukti')">
+                                <div v-if="detail.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                    <div v-for="(it, idx) in detail.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
+                                        <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
+                                        <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
+                                        <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'bukti')">x</button>
+                                        <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'bukti')"><i class="bi bi-arrow-left"></i></button>
+                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === detail.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'bukti')"><i class="bi bi-arrow-right"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-if="detail.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
                                 <p v-if="detail.buktiError" class="mt-2 text-xs text-rose-500">{{ detail.buktiError }}</p>
                             </div>
 
@@ -1558,11 +1600,34 @@
                                     <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
                                         <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
                                         <div class="text-xs text-slate-500">
-                                            <span v-if="!ba.form.file">Pilih file berita acara...</span>
+                                            <span v-if="!ba.form.file">Pilih file berita acara atau scan kamera...</span>
                                             <span v-else class="font-semibold text-slate-700">{{ ba.form.file.name }}</span>
                                         </div>
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onBaFile">
                                     </div>
+                                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                                        <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="ba.form.scanBusy" @click="$refs.pendukungCamera.click()">
+                                            <i class="bi bi-camera"></i> Scan Kamera
+                                        </button>
+                                        <span v-if="ba.form.scanItems.length" class="text-[11px] text-slate-500">{{ ba.form.scanItems.length }} halaman</span>
+                                        <button v-if="ba.form.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="ba.form.scanBusy" @click="scanBuildPdf('pendukung')">
+                                            <i class="bi bi-file-earmark-pdf"></i> Buat PDF
+                                        </button>
+                                        <button v-if="ba.form.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('pendukung')">Bersihkan</button>
+                                    </div>
+                                    <input ref="pendukungCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'pendukung')">
+                                    <div v-if="ba.form.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                        <div v-for="(it, idx) in ba.form.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
+                                            <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
+                                            <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
+                                            <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pendukung')">x</button>
+                                            <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                                <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pendukung')"><i class="bi bi-arrow-left"></i></button>
+                                                <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === ba.form.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pendukung')"><i class="bi bi-arrow-right"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p v-if="ba.form.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
                                 </div>
                                 <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="ba.form.catatan" rows="2" class="input"></textarea></div>
                             </div>
@@ -1622,6 +1687,114 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+        (function () {
+            'use strict';
+            var A4_SHORT = 595.28;
+            var A4_LONG = 841.89;
+            var PAGE_MARGIN = 24;
+
+            function buildPdf(jpegs) {
+                if (!jpegs || !jpegs.length) throw new Error('Tidak ada halaman untuk dibuat PDF.');
+                var encoder = new TextEncoder();
+                var parts = [];
+                var length = 0;
+                var objOffsets = [];
+                function push(data) {
+                    var bytes = typeof data === 'string' ? encoder.encode(data) : data;
+                    parts.push(bytes);
+                    length += bytes.length;
+                }
+                function startObj(num) { objOffsets[num] = length; push(num + ' 0 obj\n'); }
+                function endObj() { push('endobj\n'); }
+                var n = jpegs.length;
+                push('%PDF-1.4\n');
+                startObj(1); push('<< /Type /Catalog /Pages 2 0 R >>\n'); endObj();
+                var kids = [];
+                for (var k = 0; k < n; k += 1) kids.push((3 + k * 3) + ' 0 R');
+                startObj(2); push('<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>\n'); endObj();
+                for (var i = 0; i < n; i += 1) {
+                    var pageId = 3 + i * 3;
+                    var contentId = pageId + 1;
+                    var imgId = pageId + 2;
+                    var img = jpegs[i];
+                    var iw = img.width;
+                    var ih = img.height;
+                    var landscape = iw > ih;
+                    var pw = landscape ? A4_LONG : A4_SHORT;
+                    var ph = landscape ? A4_SHORT : A4_LONG;
+                    var availW = pw - PAGE_MARGIN * 2;
+                    var availH = ph - PAGE_MARGIN * 2;
+                    var scale = Math.min(availW / iw, availH / ih);
+                    var dw = iw * scale;
+                    var dh = ih * scale;
+                    var x = (pw - dw) / 2;
+                    var y = (ph - dh) / 2;
+                    var contentBytes = encoder.encode(
+                        'q\n' + dw.toFixed(2) + ' 0 0 ' + dh.toFixed(2) + ' ' + x.toFixed(2) + ' ' + y.toFixed(2) + ' cm\n/Im0 Do\nQ\n'
+                    );
+                    startObj(pageId);
+                    push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pw.toFixed(2) + ' ' + ph.toFixed(2) + '] /Resources << /XObject << /Im0 ' + imgId + ' 0 R >> >> /Contents ' + contentId + ' 0 R >>\n');
+                    endObj();
+                    startObj(contentId);
+                    push('<< /Length ' + contentBytes.length + ' >>\nstream\n');
+                    push(contentBytes);
+                    push('endstream\n');
+                    endObj();
+                    startObj(imgId);
+                    push('<< /Type /XObject /Subtype /Image /Width ' + iw + ' /Height ' + ih + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + img.bytes.length + ' >>\nstream\n');
+                    push(img.bytes);
+                    push('\nendstream\n');
+                    endObj();
+                }
+                var objCount = 2 + n * 3;
+                var xrefStart = length;
+                var xref = 'xref\n0 ' + (objCount + 1) + '\n0000000000 65535 f \n';
+                for (var id = 1; id <= objCount; id += 1) {
+                    xref += String(objOffsets[id] || 0).padStart(10, '0') + ' 00000 n \n';
+                }
+                push(xref);
+                push('trailer\n<< /Size ' + (objCount + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefStart + '\n%%EOF\n');
+                return new Blob(parts, { type: 'application/pdf' });
+            }
+
+            function loadImageElement(file) {
+                return new Promise(function (resolve, reject) {
+                    var url = URL.createObjectURL(file);
+                    var img = new Image();
+                    img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+                    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Gagal membaca gambar.')); };
+                    img.src = url;
+                });
+            }
+
+            async function compressToJpeg(file, options) {
+                var opts = options || {};
+                var maxDim = opts.maxDim || 1600;
+                var quality = typeof opts.quality === 'number' ? opts.quality : 0.72;
+                var img = await loadImageElement(file);
+                var w = img.naturalWidth || img.width;
+                var h = img.naturalHeight || img.height;
+                if (!w || !h) throw new Error('Gambar tidak valid.');
+                var scale = Math.min(1, maxDim / Math.max(w, h));
+                var cw = Math.max(1, Math.round(w * scale));
+                var ch = Math.max(1, Math.round(h * scale));
+                var canvas = document.createElement('canvas');
+                canvas.width = cw;
+                canvas.height = ch;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, cw, ch);
+                ctx.drawImage(img, 0, 0, cw, ch);
+                var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', quality); });
+                if (!blob) throw new Error('Gagal mengompres gambar.');
+                var buf = await blob.arrayBuffer();
+                return { bytes: new Uint8Array(buf), width: cw, height: ch };
+            }
+
+            window.ScanPdf = { buildPdf: buildPdf, compressToJpeg: compressToJpeg };
+        })();
+    </script>
     <script>
         const APP_URL = '<?= appUrl ?>';
         const USER_EMAIL = '<?= userEmail ?>';
@@ -1684,9 +1857,9 @@
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
-                    detail: { open: false, loading: false, p: null, baList: [], status: 'Diterima', catatan: '', editInduk: false, buktiFile: null, buktiUploading: false, buktiError: '', iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, baList: [], status: 'Diterima', catatan: '', editInduk: false, buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [], page: 1 },
-                    ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null } },
+                    ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
                     dosenPick: { open: false },
@@ -1703,7 +1876,7 @@
                         baList: [],
                         fBlok: '',
                         baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
-                        ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false }
+                        ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
                     },
                     master: {
                         data: {},
@@ -2201,6 +2374,8 @@
                     this.bab.ba.file = null;
                     this.bab.ba.fileName = '';
                     this.bab.ba.confirm = false;
+                    this.scanClear('pelaksanaan');
+                    this.bab.ba.scanSeq = 0;
                 },
                 babCloseBaPicker() {
                     this.bab.ba.open = false;
@@ -2765,6 +2940,8 @@
                     this.detail.buktiFile = null;
                     this.detail.buktiUploading = false;
                     this.detail.buktiError = '';
+                    this.scanClear('bukti');
+                    this.detail.scanSeq = 0;
                     this.detail.open = true;
                     this.detail.loading = false;
                 },
@@ -2969,6 +3146,7 @@
                         }
                         this.notify(res.message || 'Bukti bayar berhasil diunggah.');
                         this.detail.buktiFile = null;
+                        this.scanClear('bukti');
                         await this.reloadDetail(this.detail.p['ID Pengajuan'], true);
                     } catch (e) {
                         this.detail.buktiError = 'Gagal: ' + e;
@@ -3278,7 +3456,8 @@
                     this.expandedBa[baId] = !this.expandedBa[baId];
                 },
                 openBaUpload() {
-                    this.ba.form = { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null };
+                    this.scanClear('pendukung');
+                    this.ba.form = { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 };
                     this.ba.modal = true;
                     this.loadBaUploadOptions();
                 },
@@ -3323,6 +3502,113 @@
                 onBaFile(e) {
                     this.ba.form.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
                 },
+                scanTarget(which) {
+                    if (which === 'pelaksanaan') return this.bab.ba;
+                    if (which === 'bukti') return this.detail;
+                    return this.ba.form;
+                },
+                scanEnsure(t) {
+                    if (!Array.isArray(t.scanItems)) t.scanItems = [];
+                    if (typeof t.scanSeq !== 'number') t.scanSeq = 0;
+                    if (typeof t.scanBusy !== 'boolean') t.scanBusy = false;
+                },
+                scanClear(which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    t.scanItems.forEach(function (it) {
+                        try { URL.revokeObjectURL(it.url); } catch (e) { /* abaikan */ }
+                    });
+                    t.scanItems = [];
+                },
+                scanRemove(idx, which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    const it = t.scanItems[idx];
+                    if (!it) return;
+                    try { URL.revokeObjectURL(it.url); } catch (e) { /* abaikan */ }
+                    t.scanItems.splice(idx, 1);
+                },
+                scanMove(idx, delta, which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    const j = idx + delta;
+                    if (!t.scanItems[idx] || j < 0 || j >= t.scanItems.length) return;
+                    const tmp = t.scanItems[idx];
+                    t.scanItems[idx] = t.scanItems[j];
+                    t.scanItems[j] = tmp;
+                },
+                async scanOnPhotos(e, which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    const input = e.target;
+                    const files = input.files ? Array.prototype.slice.call(input.files) : [];
+                    if (!files.length) return;
+                    if (!window.ScanPdf) {
+                        this.notify('Fitur scan belum siap. Muat ulang halaman.', false);
+                        input.value = '';
+                        return;
+                    }
+                    t.scanBusy = true;
+                    try {
+                        for (const file of files) {
+                            if (!/^image\//.test(file.type)) continue;
+                            const out = await window.ScanPdf.compressToJpeg(file, { maxDim: 1600, quality: 0.72 });
+                            const blob = new Blob([out.bytes], { type: 'image/jpeg' });
+                            t.scanSeq += 1;
+                            t.scanItems.push({
+                                id: 'scan-' + which + '-' + t.scanSeq,
+                                url: URL.createObjectURL(blob),
+                                bytes: out.bytes,
+                                width: out.width,
+                                height: out.height
+                            });
+                        }
+                        if (!t.scanItems.length) this.notify('Tidak ada gambar yang bisa diproses.', false);
+                    } catch (err) {
+                        this.notify('Gagal memproses gambar: ' + ((err && err.message) ? err.message : err), false);
+                    } finally {
+                        t.scanBusy = false;
+                        input.value = '';
+                    }
+                },
+                scanBuildPdf(which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    if (!t.scanItems.length) {
+                        this.notify('Belum ada hasil scan.', false);
+                        return;
+                    }
+                    if (!window.ScanPdf) {
+                        this.notify('Fitur scan belum siap. Muat ulang halaman.', false);
+                        return;
+                    }
+                    try {
+                        const pages = t.scanItems.map(function (it) {
+                            return { bytes: it.bytes, width: it.width, height: it.height };
+                        });
+                        const blob = window.ScanPdf.buildPdf(pages);
+                        const maxBytes = 5 * 1024 * 1024;
+                        if (blob.size > maxBytes) {
+                            this.notify('Hasil PDF ' + (blob.size / 1048576).toFixed(1) + ' MB melebihi batas 5 MB. Kurangi jumlah halaman.', false);
+                            return;
+                        }
+                        const now = new Date();
+                        const stamp = this.dateOnly(now).replace(/-/g, '') + '-' +
+                            String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+                        const prefix = which === 'pelaksanaan' ? 'BA-Pelaksanaan-Scan-' : (which === 'bukti' ? 'Bukti-Bayar-Scan-' : 'BA-Pendukung-Scan-');
+                        const name = prefix + stamp + '.pdf';
+                        const file = new File([blob], name, { type: 'application/pdf' });
+                        if (which === 'bukti') {
+                            t.buktiFile = file;
+                        } else {
+                            t.file = file;
+                            if ('fileName' in t) t.fileName = name;
+                        }
+                        this.notify('PDF berhasil dibuat (' + pages.length + ' halaman).');
+                    } catch (err) {
+                        this.notify('Gagal membuat PDF: ' + ((err && err.message) ? err.message : err), false);
+                    }
+                },
                 readFileAsBase64(file) {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -3354,6 +3640,7 @@
                         this.notify((res && res.message) || 'Selesai.');
                         if (res && res.success) {
                             this.ba.modal = false;
+                            this.scanClear('pendukung');
                             await this.loadBa();
                             this.loaded.bagian = false;
                             await this.loadBagian();
