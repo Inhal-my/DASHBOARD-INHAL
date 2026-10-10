@@ -731,6 +731,54 @@ function uploadBuktiFiles(payload) {
     }
 }
 
+function uploadBuktiAdmin(idPengajuan, filePayload) {
+    try {
+        requireAuthorized(arguments[arguments.length - 1]);
+        const id = String(idPengajuan || '').trim();
+        if (!id) return { success: false, message: 'ID Pengajuan tidak valid.' };
+        const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', id);
+        if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+
+        const file = filePayload || {};
+        if (!file.data) return { success: false, message: 'Berkas bukti bayar tidak valid.' };
+        const mime = String(file.mimeType || '').trim();
+        const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        if (allowed.indexOf(mime) === -1) {
+            return { success: false, message: 'Format berkas tidak didukung. Gunakan PDF / JPG / PNG.' };
+        }
+
+        const buktiUrl = _saveFileToDrive(file.data, mime, file.name, 'bukti-' + id);
+        const detail = _getPengajuanDetailSummary(id);
+        appendRowSafe('LogUpload', {
+            Timestamp: new Date(),
+            'ID Pengajuan': id,
+            'NPM': pengajuan.NPM || '',
+            'Nama Lengkap': pengajuan['Nama Lengkap'] || '',
+            'Blok': pengajuan.Blok || '',
+            'Jenis Kegiatan': pengajuan['Jenis Kegiatan'] || '',
+            'Detail': 'Unggah bukti bayar oleh admin',
+            'Tanggal': detail.tanggal,
+            'Link ACC INHAL': pengajuan['Link ACC INHAL'] || '',
+            'Link Bukti Bayar': buktiUrl
+        });
+        upsertRowByKey('Pengajuan', 'ID Pengajuan', id, {
+            'Link Bukti Bayar': buktiUrl,
+            'UpdatedAt': new Date()
+        });
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'UPLOAD_BUKTI_ADMIN',
+            target: 'Pengajuan',
+            detail: JSON.stringify({ idPengajuan: id, sumber: pengajuan['Sumber'] || '', linkBukti: buktiUrl }),
+            alasan: 'Unggah bukti bayar oleh admin'
+        });
+
+        return { success: true, url: buktiUrl, message: 'Bukti bayar berhasil diunggah.' };
+    } catch (e) {
+        return { success: false, message: e.message };
+    }
+}
+
 // Portal mahasiswa: kembalikan payload ringkas dalam kontrak info.html
 // { nama, npm, buktiMode, history[] } atau { error }.
 function getStudentPortalData(npm) {

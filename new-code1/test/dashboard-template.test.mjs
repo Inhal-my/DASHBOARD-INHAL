@@ -116,6 +116,16 @@ describe('dashboard opsi status ACC', () => {
   });
 });
 
+describe('dashboard unggah bukti bayar oleh admin', () => {
+  it('menyediakan kartu unggah bukti bayar di detail', () => {
+    assert.match(html, /Unggah Bukti Bayar \(oleh Admin\)/);
+    assert.match(html, /uploadBuktiBayar\(\)/);
+    assert.match(html, /onBuktiFile\(\$event\)/);
+    assert.match(html, /uploadBuktiAdmin/);
+    assert.match(html, /detail\.buktiFile/);
+  });
+});
+
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', () => {
     assert.match(html, /const TAB_KEYS = \['pengajuan', 'manual', 'stats', 'ba', 'master'\]/);
