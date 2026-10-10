@@ -186,6 +186,18 @@ describe('modal Kelola BA', () => {
     expect(html).toContain('v-model="kelola.tanggal" type="date" class="input pl-10 cursor-pointer"');
     expect(html).toContain('v-model="kelola.jam" type="time" class="input pl-10 cursor-pointer"');
   });
+  it('menyembunyikan field Dosen untuk BA Pendukung (Admin)', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("v-if=\"kelola.sumber !== 'Admin'\" class=\"relative sm:col-span-2\"");
+  });
+});
+
+describe('detail laporan komponen ExpandedDetail', () => {
+  it('menyediakan safeUrl pada methods agar href aman tanpa error runtime', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('function safeUrl(v) {');
+    expect(html).toContain('methods: { fmtTanggal, fmtRupiah, safeUrl }');
+  });
 });
 
 describe('detail laporan kolom Sumber', () => {

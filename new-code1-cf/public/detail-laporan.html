@@ -128,7 +128,7 @@
                             <input v-model="kelola.jam" type="time" class="input pl-10 cursor-pointer">
                         </div>
                     </div>
-                    <div class="relative sm:col-span-2">
+                    <div v-if="kelola.sumber !== 'Admin'" class="relative sm:col-span-2">
                         <label class="label">Dosen</label>
                         <input v-model="kelola.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @focus="dosenPick.open = true" @input="dosenPick.open = true" @blur="dosenPick.open = false">
                         <div v-if="dosenPick.open && dosenSuggestionsList.length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
@@ -1148,6 +1148,9 @@
         function fmtTanggalWaktu(v) {
             return AppCommon.formatTanggalWaktu(v);
         }
+        function safeUrl(v) {
+            return AppCommon.safeUrl(v);
+        }
         function setUrlHyperlinks(ws, header, tooltip) {
             if (!ws || !ws['!ref']) return;
             const range = XLSX.utils.decode_range(ws['!ref']);
@@ -1336,7 +1339,7 @@
 
         const ExpandedDetail = {
             props: ['r'],
-            methods: { fmtTanggal, fmtRupiah },
+            methods: { fmtTanggal, fmtRupiah, safeUrl },
             template: `
                 <div>
                     <div class="grid gap-x-6 gap-y-3 sm:grid-cols-3">

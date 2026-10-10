@@ -353,3 +353,22 @@ describe('dashboard unggah bukti bayar oleh admin', () => {
     expect(html).toContain("Bukti-Bayar-Scan-");
   });
 });
+
+describe('dashboard biaya override per pengajuan', () => {
+  it('menyediakan dropdown biaya di modal detail dengan opsi Master Biaya', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('v-model="detail.iForm.biaya"');
+    expect(html).toContain('Default (Master Biaya)');
+    expect(html).toContain('v-for="b in biayaOptions"');
+  });
+  it('mengisi dari BiayaOverride dan mengirim field biaya saat simpan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("biaya: p.BiayaOverride ? String(p.BiayaOverride) : ''");
+    expect(html).toContain("biaya: (f.biaya || '').trim()");
+  });
+  it('menghitung opsi biaya unik dari Master Biaya', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('biayaOptions() {');
+    expect(html).toContain('Object.keys(seen).map(Number).sort((a, b) => a - b)');
+  });
+});

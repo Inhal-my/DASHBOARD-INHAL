@@ -1610,6 +1610,7 @@
                                     <div><label class="label">Blok</label><input v-model="detail.iForm.blok" class="input"></div>
                                     <div><label class="label">Jenis Kegiatan</label><input v-model="detail.iForm.jenisKegiatan" class="input"></div>
                                     <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.iForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
+                                    <div><label class="label">Biaya</label><select v-model="detail.iForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in biayaOptions" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
                                     <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
                                         <button class="btn-primary" @click="saveIndukFields()"><i class="bi bi-save"></i>Simpan</button>
                                         <button class="btn-soft" @click="cancelEditInduk()">Batal</button>
@@ -2066,7 +2067,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
@@ -2126,6 +2127,14 @@
                 },
                 menungguCount() {
                     return (this.stats.perStatus || {})['Menunggu'] || 0;
+                },
+                biayaOptions() {
+                    const seen = {};
+                    (this.masterBiaya || []).forEach((r) => {
+                        const v = parseInt(String((r && r.Biaya) || '').replace(/[^0-9]/g, ''), 10) || 0;
+                        if (v > 0) seen[v] = 1;
+                    });
+                    return Object.keys(seen).map(Number).sort((a, b) => a - b);
                 },
                 totalTrend() {
                     const t = this.stats.trend || {};
@@ -3197,7 +3206,8 @@
                         noHp: p['No. HP/WA'] || '',
                         blok: p.Blok || '',
                         jenisKegiatan: p['Jenis Kegiatan'] || '',
-                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan'])
+                        tanggalPelaksanaan: this.toDatetimeLocalInputValue(p['Tanggal Pelaksanaan']),
+                        biaya: p.BiayaOverride ? String(p.BiayaOverride) : ''
                     };
                     this.detail.editInduk = true;
                 },
@@ -3213,7 +3223,8 @@
                             noHp: (f.noHp || '').trim(),
                             blok: (f.blok || '').trim(),
                             jenisKegiatan: (f.jenisKegiatan || '').trim(),
-                            tanggalPelaksanaan: f.tanggalPelaksanaan || ''
+                            tanggalPelaksanaan: f.tanggalPelaksanaan || '',
+                            biaya: (f.biaya || '').trim()
                         });
                         if (res && res.success === false) { this.notify((res && res.message) || 'Gagal menyimpan.', false); return; }
                         this.notify((res && res.message) || 'Data pengajuan diperbarui.');
