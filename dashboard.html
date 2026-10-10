@@ -1255,6 +1255,10 @@
                     <i class="bi bi-folder2-open"></i>
                     <span>Pengajuan</span>
                 </a>
+                <a href="#" class="sidebar-link" onclick="switchTab('manual', this)">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Input Manual</span>
+                </a>
                 <a href="#" class="sidebar-link" onclick="switchTab('validasi', this)">
                     <i class="bi bi-clipboard2-check"></i>
                     <span>Validasi</span>
@@ -1512,6 +1516,97 @@
                     <div class="data-card-body p-4 text-center text-muted">
                         <i class="bi bi-tools" style="font-size: 3rem;"></i>
                         <p class="mt-3">Modul Pengajuan sedang dalam pengembangan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: INPUT MANUAL -->
+            <div id="tab-manual" class="tab-pane d-none">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2 class="data-card-title"><i class="bi bi-pencil-square me-2 text-primary"></i>Input Pengajuan Manual</h2>
+                    </div>
+                    <div class="data-card-body">
+                        <p class="text-muted small">Buat pengajuan atas nama mahasiswa. Email dan No. HP opsional. Tidak ada notifikasi email yang dikirim dari input manual.</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">NPM <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="manual-npm" placeholder="cth: 2108260012">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="manual-nama" placeholder="Nama mahasiswa">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Blok <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="manual-blok" placeholder="cth: Blok Kedokteran Tropis">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Jenis Kegiatan <span class="text-danger">*</span></label>
+                                <select class="form-select" id="manual-jenis" onchange="onManualJenisChange()">
+                                    <option value="">Pilih jenis...</option>
+                                    <option value="Ujian">Ujian</option>
+                                    <option value="SGD">SGD</option>
+                                    <option value="KKD">KKD</option>
+                                    <option value="Praktikum">Praktikum</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Status Awal</label>
+                                <select class="form-select" id="manual-status">
+                                    <option value="Menunggu">Menunggu</option>
+                                    <option value="Diterima">Diterima</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Email (opsional)</label>
+                                <input type="email" class="form-control" id="manual-email" placeholder="email@contoh.com">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">No. HP/WA (opsional)</label>
+                                <input type="text" class="form-control" id="manual-hp" placeholder="08xxxxxxxxxx">
+                            </div>
+                            <div class="col-md-8"></div>
+
+                            <div class="col-12 manual-detail d-none" data-jenis="Ujian">
+                                <div class="row g-3">
+                                    <div class="col-md-6"><label class="form-label fw-bold small">Pilihan Ujian</label><input type="text" class="form-control" id="manual-ujian-pilihan" placeholder="cth: Ujian CBT"></div>
+                                    <div class="col-md-6"><label class="form-label fw-bold small">Tanggal Ujian</label><input type="date" class="form-control" id="manual-ujian-tanggal"></div>
+                                </div>
+                            </div>
+                            <div class="col-12 manual-detail d-none" data-jenis="SGD">
+                                <div class="row g-3">
+                                    <div class="col-md-4"><label class="form-label fw-bold small">Pilihan SGD</label><input type="text" class="form-control" id="manual-sgd-pilihan"></div>
+                                    <div class="col-md-4"><label class="form-label fw-bold small">Detail SGD</label><input type="text" class="form-control" id="manual-sgd-detail"></div>
+                                    <div class="col-md-4"><label class="form-label fw-bold small">Tanggal SGD</label><input type="date" class="form-control" id="manual-sgd-tanggal"></div>
+                                </div>
+                            </div>
+                            <div class="col-12 manual-detail d-none" data-jenis="KKD">
+                                <div class="row g-3">
+                                    <div class="col-md-4"><label class="form-label fw-bold small">Pilihan KKD</label><input type="text" class="form-control" id="manual-kkd-pilihan"></div>
+                                    <div class="col-md-4"><label class="form-label fw-bold small">Detail KKD</label><input type="text" class="form-control" id="manual-kkd-detail"></div>
+                                    <div class="col-md-4"><label class="form-label fw-bold small">Tanggal KKD</label><input type="date" class="form-control" id="manual-kkd-tanggal"></div>
+                                </div>
+                            </div>
+                            <div class="col-12 manual-detail d-none" data-jenis="Praktikum">
+                                <label class="form-label fw-bold small">Detail Praktikum</label>
+                                <div id="manual-praktikum-list"></div>
+                                <button type="button" class="btn btn-sm btn-light border mt-2" onclick="manualPraktikumAddRow()"><i class="bi bi-plus-lg me-1"></i>Tambah Baris</button>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small">Keterangan</label>
+                                <textarea class="form-control" id="manual-keterangan" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Surat Keterangan (opsional, PDF)</label>
+                                <input type="file" class="form-control" id="manual-surat" accept=".pdf,application/pdf">
+                            </div>
+                        </div>
+                        <div class="mt-4 d-flex gap-2">
+                            <button class="btn btn-primary" id="manual-submit-btn" onclick="submitManualPengajuan()"><i class="bi bi-save me-1"></i>Simpan Pengajuan</button>
+                            <button class="btn btn-light border" onclick="resetManualForm()">Reset</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2463,6 +2558,7 @@
                     detail: item.Detail || item['Detail Kegiatan'] || item.DetailKegiatan || '',
                     tanggal: item.TanggalKegiatan || item['Tanggal Kegiatan'] || item.Tanggal || '',
                     status: normalizeStatus(item.Status || item.statusFinal || 'Menunggu'),
+                    sumber: item.Sumber || 'Portal',
                     dosen: item.Dosen || '',
                     tgl_pelaksanaan: item.TanggalPelaksanaan || item['Tanggal Pelaksanaan'] || '',
                     biaya: item.BiayaKegiatan || item.Biaya || 0,
@@ -2710,7 +2806,7 @@
                 const row = `<tr style="cursor:pointer; transition: all 0.2s; ${rowBg}" onclick="openPaperView(${item.id})" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='var(--card-shadow)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
                     <td class="text-center" width="40" style="vertical-align: middle;" data-label="Pilih"><input class="form-check-input row-checkbox" type="checkbox" value="${item.id}" onclick="event.stopPropagation(); updateBulkActionBar()"></td>
                     <td style="vertical-align: middle;" data-label="No"><div class="avatar bg-${avatarColor.split(' ')[0]} text-white ${avatarColor.split(' ')[1] || ''} shadow-sm">${startIndex + index + 1}</div></td>
-                    <td style="vertical-align: middle;" data-label="Mahasiswa"><div class="fw-bold text-dark fs-6">${item.nama}</div><div class="small text-muted"><i class="bi bi-person-badge me-1"></i>${item.npm}</div></td>
+                    <td style="vertical-align: middle;" data-label="Mahasiswa"><div class="fw-bold text-dark fs-6">${item.nama}</div><div class="small text-muted"><i class="bi bi-person-badge me-1"></i>${item.npm} ${item.sumber === 'Manual' ? '<span class="badge bg-warning text-dark ms-1" title="Dibuat manual oleh admin"><i class="bi bi-pencil-square me-1"></i>Manual</span>' : ''}</div></td>
                     <td style="vertical-align: middle;" data-label="Blok / Kegiatan"><div class="fw-semibold text-primary small"><i class="bi bi-journal-bookmark-fill me-1"></i>${item.blok}</div><div class="small text-muted mt-1">${item.jenis}</div></td>
                     <td class="text-center" style="vertical-align: middle;" data-label="Berkas">${docIcons}</td>
                     <td class="text-center" style="vertical-align: middle;" data-label="Status"><span class="${badgeClass} px-3 py-2 shadow-sm rounded-pill"><i class="bi ${icon} me-1"></i> ${item.status}</span></td>
@@ -3408,6 +3504,121 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                 .updateStatusAndSendEmail(id, status, reason);
         }
 
+        // === 12b. INPUT MANUAL OLEH ADMIN ===
+        function onManualJenisChange() {
+            const jenis = $('#manual-jenis').val();
+            $('.manual-detail').addClass('d-none');
+            if (jenis) $(`.manual-detail[data-jenis="${jenis}"]`).removeClass('d-none');
+            if (jenis === 'Praktikum' && $('#manual-praktikum-list').children().length === 0) {
+                manualPraktikumAddRow();
+            }
+        }
+
+        function manualPraktikumAddRow() {
+            const row = $(`<div class="row g-2 align-items-end mb-2 manual-praktikum-row">
+                <div class="col-md-4"><label class="form-label small mb-1">Nama Lab</label><input type="text" class="form-control form-control-sm mp-lab"></div>
+                <div class="col-md-5"><label class="form-label small mb-1">Kegiatan</label><input type="text" class="form-control form-control-sm mp-kegiatan"></div>
+                <div class="col-md-2"><label class="form-label small mb-1">Tanggal</label><input type="date" class="form-control form-control-sm mp-tanggal"></div>
+                <div class="col-md-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger" title="Hapus baris" onclick="$(this).closest('.manual-praktikum-row').remove()"><i class="bi bi-trash"></i></button></div>
+            </div>`);
+            $('#manual-praktikum-list').append(row);
+        }
+
+        function resetManualForm() {
+            ['#manual-npm','#manual-nama','#manual-blok','#manual-email','#manual-hp','#manual-keterangan',
+             '#manual-ujian-pilihan','#manual-ujian-tanggal','#manual-sgd-pilihan','#manual-sgd-detail','#manual-sgd-tanggal',
+             '#manual-kkd-pilihan','#manual-kkd-detail','#manual-kkd-tanggal'].forEach(sel => $(sel).val(''));
+            $('#manual-jenis').val('');
+            $('#manual-status').val('Menunggu');
+            $('#manual-surat').val('');
+            $('#manual-praktikum-list').empty();
+            $('.manual-detail').addClass('d-none');
+        }
+
+        function submitManualPengajuan() {
+            const jenis = $('#manual-jenis').val();
+            const payload = {
+                npm: $('#manual-npm').val().trim(),
+                namaLengkap: $('#manual-nama').val().trim(),
+                blok: $('#manual-blok').val().trim(),
+                jenisKegiatan: jenis,
+                status: $('#manual-status').val() || 'Menunggu',
+                email: $('#manual-email').val().trim(),
+                noHp: $('#manual-hp').val().trim(),
+                keterangan: $('#manual-keterangan').val().trim()
+            };
+            if (!payload.npm || !payload.namaLengkap || !payload.blok || !jenis) {
+                showToast('Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan.', 'error');
+                return;
+            }
+            if (jenis === 'Ujian') {
+                payload.detailKegiatan = $('#manual-ujian-pilihan').val().trim();
+                payload.tanggalKegiatan = $('#manual-ujian-tanggal').val();
+            } else if (jenis === 'SGD') {
+                payload.pilihanSgd = $('#manual-sgd-pilihan').val().trim();
+                payload.detailSgd = $('#manual-sgd-detail').val().trim();
+                payload.tanggalKegiatan = $('#manual-sgd-tanggal').val();
+            } else if (jenis === 'KKD') {
+                payload.pilihanKkd = $('#manual-kkd-pilihan').val().trim();
+                payload.detailKkd = $('#manual-kkd-detail').val().trim();
+                payload.tanggalKegiatan = $('#manual-kkd-tanggal').val();
+            } else if (jenis === 'Praktikum') {
+                const rows = [];
+                $('#manual-praktikum-list .manual-praktikum-row').each(function () {
+                    const lab = $(this).find('.mp-lab').val().trim();
+                    const kegiatanLab = $(this).find('.mp-kegiatan').val().trim();
+                    const tanggal = $(this).find('.mp-tanggal').val();
+                    if (lab || kegiatanLab) rows.push({ lab: lab, kegiatanLab: kegiatanLab, tanggal: tanggal });
+                });
+                if (!rows.length) { showToast('Isi minimal satu detail praktikum.', 'error'); return; }
+                payload.praktikum = rows;
+            }
+
+            const fileInput = document.getElementById('manual-surat');
+            const file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
+            if (file && file.size > 5 * 1024 * 1024) { showToast('Ukuran file surat melebihi 5 MB.', 'error'); return; }
+
+            const btn = document.getElementById('manual-submit-btn');
+            const finish = () => { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-save me-1"></i>Simpan Pengajuan'; } };
+
+            const send = (fileData) => {
+                if (fileData) payload.fileSurat = fileData;
+                if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                    showToast('Simpan hanya tersedia saat dijalankan di Apps Script.', 'error');
+                    finish();
+                    return;
+                }
+                google.script.run
+                    .withSuccessHandler(function (resp) {
+                        finish();
+                        if (resp && resp.success) {
+                            showToast(resp.message || 'Pengajuan manual berhasil disimpan.', 'success');
+                            resetManualForm();
+                            loadDataFromServer(true);
+                        } else {
+                            showToast((resp && resp.message) || 'Gagal menyimpan pengajuan manual.', 'error');
+                        }
+                    })
+                    .withFailureHandler(function (err) {
+                        finish();
+                        showToast('Gagal: ' + (err && err.message ? err.message : err), 'error');
+                    })
+                    .registerManualPengajuan(payload);
+            };
+
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...'; }
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    send({ base64: String(e.target.result).split(',')[1] || '', type: file.type || 'application/pdf', name: file.name });
+                };
+                reader.onerror = function () { finish(); showToast('Gagal membaca file surat.', 'error'); };
+                reader.readAsDataURL(file);
+            } else {
+                send(null);
+            }
+        }
+
         // === 13. UPLOAD SURAT ===
         let _uploadSuratTargetId = null, _uploadSuratFile = null;
 
@@ -3579,6 +3790,7 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
 
             let title = 'Dashboard Pengajuan';
             if (tabId === 'pengajuan') title = 'Pengajuan Mahasiswa';
+            else if (tabId === 'manual') title = 'Input Pengajuan Manual';
             else if (tabId === 'validasi') title = 'Validasi Berkas';
             else if (tabId === 'dokumen') {
                 title = 'Berita Acara';

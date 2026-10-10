@@ -344,7 +344,7 @@ function processRegistration(formData) {
                 'Pilihan LAB 8', 'Kegiatan LAB 8', 'Tanggal Praktikum 8',
                 'Pilihan LAB 9', 'Kegiatan LAB 9', 'Tanggal Praktikum 9',
                 'Keterangan', 'Link Surat Keterangan', 'Status', 'Catatan Admin',
-                'Notifikasi Terkirim Pada', 'Nomor Surat', 'Lampiran Email'
+                'Notifikasi Terkirim Pada', 'Nomor Surat', 'Lampiran Email', 'Sumber'
             ];
             sheet.appendRow(headers);
         }
@@ -2839,7 +2839,8 @@ function _getCheckPageData(options) {
             iKegLab8: findHeaderIndex(logHeaderMap, ['Kegiatan LAB 8']),
             iPilLab9: findHeaderIndex(logHeaderMap, ['Pilihan LAB 9']),
             iKegLab9: findHeaderIndex(logHeaderMap, ['Kegiatan LAB 9']),
-            iIdPengajuanLog: findHeaderIndex(logHeaderMap, ['ID Pengajuan', 'IdPengajuan'])
+            iIdPengajuanLog: findHeaderIndex(logHeaderMap, ['ID Pengajuan', 'IdPengajuan']),
+            iSumber: findHeaderIndex(logHeaderMap, ['Sumber'])
         };
         debug.iNpm = indexes.iNpm;
 
@@ -2907,7 +2908,8 @@ function _getCheckPageData(options) {
                 LinkFinal: checks.LinkFinal || '',
                 StatusInfoBagian: checks.StatusInfoBagian || '',
                 WaktuInfoBagian: checks.WaktuInfoBagian || '',
-                uploadTimestamp: uploads.timestamp || ''
+                uploadTimestamp: uploads.timestamp || '',
+                Sumber: indexes.iSumber >= 0 ? stringifyCell(logRow[indexes.iSumber]) : ''
             });
         }
 
@@ -4633,7 +4635,7 @@ function submitPendaftaranBagian(payload, kategori) {
                 'Pilihan LAB 8', 'Kegiatan LAB 8', 'Tanggal Praktikum 8',
                 'Pilihan LAB 9', 'Kegiatan LAB 9', 'Tanggal Praktikum 9',
                 'Keterangan', 'Link Surat Keterangan', 'Status', 'Catatan Admin',
-                'Notifikasi Terkirim Pada', 'Nomor Surat', 'Lampiran Email'
+                'Notifikasi Terkirim Pada', 'Nomor Surat', 'Lampiran Email', 'Sumber'
             ];
             sheet.appendRow(headers);
         }
@@ -4684,6 +4686,139 @@ function submitPendaftaranBagian(payload, kategori) {
     } catch (e) {
         console.error("Error submitPendaftaranBagian: " + e.message);
         throw new Error("Gagal menyimpan data ke Spreadsheet: " + e.message);
+    }
+}
+
+
+// ============== INPUT MANUAL OLEH ADMIN (DASHBOARD) ================
+
+/**
+ * Memastikan sebuah kolom ada di sheet LogData, membuat header bila belum ada.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+ * @param {string} headerName
+ * @return {number} index kolom (0-based)
+ */
+function _ensureLogDataColumn(sheet, headerName) {
+    let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    let idx = headers.indexOf(headerName);
+    if (idx >= 0) return idx;
+    idx = headers.length;
+    sheet.getRange(1, idx + 1).setValue(headerName);
+    return idx;
+}
+
+/**
+ * Membuat pengajuan baru secara manual oleh admin dari dashboard.
+ * Email/No. HP opsional. Status awal dapat 'Menunggu' atau 'Diterima'.
+ * Tanpa pengiriman email notifikasi.
+ * @param {Object} payload
+ * @return {Object} { success, message, idPengajuan }
+ */
+function registerManualPengajuan(payload) {
+    try {
+        requireAuthorized();
+        const data = payload || {};
+        const npm = String(data.npm || '').trim();
+        const namaLengkap = String(data.namaLengkap || '').trim();
+        const blok = String(data.blok || '').trim();
+        const jenisKegiatan = String(data.jenisKegiatan || '').trim();
+        if (!npm || !namaLengkap || !blok || !jenisKegiatan) {
+            return { success: false, message: 'NPM, Nama Lengkap, Blok, dan Jenis Kegiatan wajib diisi.' };
+        }
+        const status = data.status === 'Diterima' ? 'Diterima' : 'Menunggu';
+
+        const lock = LockService.getScriptLock();
+        lock.waitLock(30000);
+
+        const ss = getGlobalSpreadsheet();
+        const sheet = ss.getSheetByName(LOG_SHEET_NAME);
+        if (!sheet) {
+            return { success: false, message: 'Sheet LogData tidak ditemukan.' };
+        }
+        if (sheet.getLastRow() === 0) {
+            sheet.appendRow([
+                'Timestamp', 'ID Pengajuan', 'Nama Lengkap', 'NPM', 'Email Address', 'No. HP/WA', 'Blok',
+                'Jenis Kegiatan', 'Pilihan Ujian', 'Tanggal Ujian',
+                'Pilihan SGD', 'Detail SGD', 'Tanggal SGD',
+                'Pilihan KKD', 'Detail KKD', 'Tanggal KKD',
+                'Pilihan LAB 1', 'Kegiatan LAB 1', 'Tanggal Praktikum 1',
+                'Pilihan LAB 2', 'Kegiatan LAB 2', 'Tanggal Praktikum 2',
+                'Pilihan LAB 3', 'Kegiatan LAB 3', 'Tanggal Praktikum 3',
+                'Pilihan LAB 4', 'Kegiatan LAB 4', 'Tanggal Praktikum 4',
+                'Pilihan LAB 5', 'Kegiatan LAB 5', 'Tanggal Praktikum 5',
+                'Pilihan LAB 6', 'Kegiatan LAB 6', 'Tanggal Praktikum 6',
+                'Pilihan LAB 7', 'Kegiatan LAB 7', 'Tanggal Praktikum 7',
+                'Pilihan LAB 8', 'Kegiatan LAB 8', 'Tanggal Praktikum 8',
+                'Pilihan LAB 9', 'Kegiatan LAB 9', 'Tanggal Praktikum 9',
+                'Keterangan', 'Link Surat Keterangan', 'Status', 'Catatan Admin',
+                'Notifikasi Terkirim Pada', 'Nomor Surat', 'Lampiran Email', 'Sumber'
+            ]);
+        }
+        _ensureLogDataColumn(sheet, 'Sumber');
+
+        const idPengajuan = Utilities.getUuid();
+        let fileUrl = '';
+        if (data.fileSurat && data.fileSurat.base64) {
+            const folder = DriveApp.getFolderById(FOLDER_ID);
+            const blob = Utilities.newBlob(
+                Utilities.base64Decode(data.fileSurat.base64),
+                data.fileSurat.type || 'application/pdf',
+                data.fileSurat.name || ('Surat-' + npm + '.pdf')
+            );
+            const file = folder.createFile(blob);
+            trySetDriveFileSharing(file);
+            fileUrl = file.getUrl();
+        }
+
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const newRow = new Array(headers.length).fill('');
+        const headerMap = {};
+        headers.forEach((h, i) => headerMap[h] = i);
+        const setVal = (header, value) => {
+            if (headerMap[header] !== undefined) newRow[headerMap[header]] = value || '';
+        };
+
+        setVal('Timestamp', new Date());
+        setVal('ID Pengajuan', idPengajuan);
+        setVal('Nama Lengkap', namaLengkap);
+        setVal('NPM', npm);
+        setVal('Email Address', String(data.email || '').trim());
+        setVal('No. HP/WA', String(data.noHp || '').trim());
+        setVal('Blok', blok);
+        setVal('Jenis Kegiatan', jenisKegiatan);
+        setVal('Keterangan', String(data.keterangan || '').trim() || 'Pengajuan dibuat manual oleh admin.');
+        setVal('Link Surat Keterangan', fileUrl);
+        setVal('Status', status);
+        setVal('Sumber', 'Manual');
+
+        if (jenisKegiatan === 'Ujian') {
+            setVal('Pilihan Ujian', data.detailKegiatan || '');
+            setVal('Tanggal Ujian', data.tanggalKegiatan || '');
+        } else if (jenisKegiatan === 'SGD') {
+            setVal('Pilihan SGD', data.pilihanSgd || '');
+            setVal('Detail SGD', data.detailSgd || '');
+            setVal('Tanggal SGD', data.tanggalKegiatan || '');
+        } else if (jenisKegiatan === 'KKD') {
+            setVal('Pilihan KKD', data.pilihanKkd || '');
+            setVal('Detail KKD', data.detailKkd || '');
+            setVal('Tanggal KKD', data.tanggalKegiatan || '');
+        } else if (jenisKegiatan === 'Praktikum' && Array.isArray(data.praktikum)) {
+            data.praktikum.forEach(function (p, i) {
+                if (i < 9) {
+                    setVal('Pilihan LAB ' + (i + 1), p.lab || '');
+                    setVal('Kegiatan LAB ' + (i + 1), p.kegiatanLab || '');
+                    setVal('Tanggal Praktikum ' + (i + 1), p.tanggal || '');
+                }
+            });
+        }
+
+        sheet.appendRow(newRow);
+        _clearStudentPortalCache(npm);
+        _clearCheckPageCache();
+
+        return { success: true, idPengajuan: idPengajuan, message: 'Pengajuan manual berhasil disimpan.' };
+    } catch (e) {
+        return { success: false, message: 'Gagal menyimpan pengajuan manual: ' + e.message };
     }
 }
 
