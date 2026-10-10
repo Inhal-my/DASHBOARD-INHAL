@@ -102,6 +102,20 @@ describe('dashboard input manual', () => {
   });
 });
 
+describe('dashboard opsi status ACC', () => {
+  it('dropdown status punya opsi ACC', () => {
+    assert.match(html, /<select v-model="detail\.status" class="input">[\s\S]*<option>ACC<\/option>[\s\S]*<\/select>/);
+  });
+  it('tombol cepat Jadikan ACC', () => {
+    assert.match(html, /quickStatus\('ACC'\)/);
+    assert.match(html, /Jadikan ACC/);
+  });
+  it('quickStatus ACC memakai konfirmasi tanpa email', () => {
+    assert.match(html, /status === 'ACC'/);
+    assert.match(html, /Tidak ada email yang dikirim/);
+  });
+});
+
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', () => {
     assert.match(html, /const TAB_KEYS = \['pengajuan', 'manual', 'stats', 'ba', 'master'\]/);

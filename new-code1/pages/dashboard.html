@@ -1418,6 +1418,7 @@
                                         <label class="label">Status</label>
                                         <select v-model="detail.status" class="input">
                                             <option>Diterima</option>
+                                            <option>ACC</option>
                                             <option>Ditolak</option>
                                             <option>Dibatalkan</option>
                                         </select>
@@ -1430,6 +1431,7 @@
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
                                     <button class="btn-soft" @click="quickStatus('Diterima')"><i class="bi bi-hand-thumbs-up"></i>Terima</button>
+                                    <button class="btn-soft" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
                                     <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
                                     <button class="btn-danger" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
                                 </div>
@@ -2900,6 +2902,19 @@
                         const alasan = prompt('Alasan penolakan (wajib):');
                         if (!alasan || !alasan.trim()) { this.notify('Catatan wajib diisi saat menolak pengajuan.', false); return; }
                         this.detail.catatan = alasan.trim();
+                    } else if (status === 'ACC') {
+                        const ok = await this.askConfirm({
+                            title: 'Jadikan ACC',
+                            message: 'Ubah status pengajuan ini menjadi ACC?',
+                            details: [
+                                'Status berubah menjadi ACC.',
+                                'Tidak ada email yang dikirim. Untuk mengirim surat final, gunakan "Kirim Email ACC Final".'
+                            ],
+                            icon: 'bi-patch-check',
+                            confirmLabel: 'Jadikan ACC'
+                        });
+                        if (!ok) return;
+                        this.detail.catatan = '';
                     } else {
                         this.detail.catatan = '';
                     }
