@@ -1367,6 +1367,19 @@
                     <div class="summary-card">
                         <div class="summary-card-header">
                             <div>
+                                <div class="summary-card-title">ACC</div>
+                                <div class="summary-card-value" id="totalACC">0</div>
+                                <div class="summary-card-subtitle">Disetujui tanpa email</div>
+                            </div>
+                            <div class="summary-card-icon primary">
+                                <i class="bi bi-patch-check"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div>
                                 <div class="summary-card-title">Ditolak</div>
                                 <div class="summary-card-value" id="totalDitolak">0</div>
                                 <div class="summary-card-subtitle">Dikembalikan</div>
@@ -1452,6 +1465,7 @@
                             <option value="">Semua Status</option>
                             <option value="Menunggu">Menunggu</option>
                             <option value="Diterima">Diterima</option>
+                            <option value="ACC">ACC</option>
                             <option value="Ditolak">Ditolak</option>
                         </select>
 
@@ -2676,7 +2690,8 @@
         function normalizeStatus(status) {
             if (!status) return 'Menunggu';
             const s = String(status).toLowerCase();
-            if (s.includes('diterima') || s.includes('acc') || s.includes('setuju')) return 'Diterima';
+            if (s.includes('diterima')) return 'Diterima';
+            if (s.includes('acc') || s.includes('setuju') || s.includes('approve')) return 'ACC';
             if (s.includes('ditolak')) return 'Ditolak';
             return 'Menunggu';
         }
@@ -2685,11 +2700,13 @@
         function updateSummaryCards() {
             const total = mockData.length;
             const diterima = mockData.filter(x => x.status === 'Diterima').length;
+            const acc = mockData.filter(x => x.status === 'ACC').length;
             const ditolak = mockData.filter(x => x.status === 'Ditolak').length;
             const menunggu = mockData.filter(x => x.status === 'Menunggu').length;
 
             $('#totalPengajuan').text(total);
             $('#totalDiterima').text(diterima);
+            if ($('#totalACC').length) $('#totalACC').text(acc);
             $('#totalDitolak').text(ditolak);
             $('#totalMenunggu').text(menunggu);
         }
@@ -2783,6 +2800,11 @@
                     icon = 'bi-check-circle-fill'; 
                     rowBg = 'background-color: rgba(5, 150, 105, 0.03);'; 
                 }
+                if (item.status === 'ACC') { 
+                    badgeClass = 'status-badge approved'; 
+                    icon = 'bi-patch-check-fill'; 
+                    rowBg = 'background-color: rgba(37, 99, 235, 0.04);'; 
+                }
                 if (item.status === 'Ditolak') { 
                     badgeClass = 'status-badge rejected'; 
                     icon = 'bi-x-circle-fill'; 
@@ -2870,6 +2892,7 @@
                 <button class="btn btn-outline-primary" onclick="editEmailAdmin(${item.id})"><i class="bi bi-envelope-pencil me-1"></i>Edit Email</button>
                 <button class="btn btn-outline-danger" onclick="deleteSubmissionAdmin(${item.id})"><i class="bi bi-trash me-1"></i>Hapus Data</button>
                 ${item.status !== 'Ditolak' ? `<button class="btn btn-outline-danger" onclick="updateStatus(${item.id},'Ditolak')"><i class="bi bi-x-circle me-1"></i>Tolak</button>` : ''}
+                ${item.status !== 'ACC' ? `<button class="btn btn-outline-primary" onclick="setAccStatus(${item.id})" title="Set status ACC tanpa mengirim email"><i class="bi bi-patch-check me-1"></i>Jadikan ACC</button>` : ''}
                 ${item.status !== 'Diterima' ? `<button class="btn btn-primary" onclick="updateStatus(${item.id},'Diterima')"><i class="bi bi-check-lg me-1"></i>Diterima</button>` : ''}`;
             } else {
                 const isFinalSent = item.link_final && item.link_final.length > 5;
@@ -2883,6 +2906,7 @@
 
             let statusBadge = '';
             if (item.status === 'Diterima') statusBadge = '<span class="badge bg-success rounded-pill ms-2 px-3 py-2 shadow-sm"><i class="bi bi-check-circle-fill"></i> Diterima</span>';
+            else if (item.status === 'ACC') statusBadge = '<span class="badge bg-primary rounded-pill ms-2 px-3 py-2 shadow-sm"><i class="bi bi-patch-check-fill"></i> ACC</span>';
             else if (item.status === 'Ditolak') statusBadge = '<span class="badge bg-danger rounded-pill ms-2 px-3 py-2 shadow-sm"><i class="bi bi-x-circle-fill"></i> Ditolak</span>';
             else statusBadge = '<span class="badge bg-warning text-dark rounded-pill ms-2 px-3 py-2 shadow-sm"><i class="bi bi-hourglass-split"></i> MENUNGGU</span>';
 
@@ -3502,6 +3526,37 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                     showToast('Gagal memperbarui status: ' + err.message, 'error');
                 })
                 .updateStatusAndSendEmail(id, status, reason);
+        }
+
+        function setAccStatus(id) {
+            const idx = mockData.findIndex(x => x.id === id);
+            const prevStatus = idx > -1 ? mockData[idx].status : null;
+            if (idx > -1) { mockData[idx].status = 'ACC'; applyFilters(false); }
+
+            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                if (idx > -1) mockData[idx].timestamps.updated = new Date().toLocaleString('id-ID');
+                showToast('Status ACC disimpan (Mode Lokal). Tidak ada email dikirim.', 'success');
+                openPaperView(id); updateSummaryCards();
+                return;
+            }
+
+            showToast('Menyimpan status ACC...', 'info');
+            google.script.run
+                .withSuccessHandler(function (resp) {
+                    if (resp && resp.success) {
+                        if (idx > -1) { mockData[idx].status = 'ACC'; mockData[idx].timestamps.updated = new Date().toLocaleString('id-ID'); }
+                        showToast(resp.message || 'Status ACC disimpan. Tidak ada email dikirim.', 'success');
+                        applyFilters(false); openPaperView(id); updateSummaryCards();
+                    } else {
+                        if (idx > -1 && prevStatus != null) { mockData[idx].status = prevStatus; applyFilters(false); }
+                        showToast((resp && resp.message) || 'Gagal menyimpan status ACC.', 'error');
+                    }
+                })
+                .withFailureHandler(function (err) {
+                    if (idx > -1 && prevStatus != null) { mockData[idx].status = prevStatus; applyFilters(false); }
+                    showToast('Gagal memperbarui status: ' + (err && err.message ? err.message : err), 'error');
+                })
+                .updateStatusAndSendEmail(id, 'ACC', '-');
         }
 
         // === 12b. INPUT MANUAL OLEH ADMIN ===

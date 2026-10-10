@@ -3592,6 +3592,34 @@ function updateStatusAndSendEmail(rowIndex, newStatus, rejectionReason) {
         sheet.getRange(rowIndex, emailStatusColIndex).setValue('Menunggu');
         sheet.getRange(rowIndex, emailErrorColIndex).setValue('');
 
+        // Status ACC: simpan tanpa membuat PDF atau mengirim email notifikasi.
+        if (newStatus === 'ACC') {
+            const accDataRow = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+            const accRowData = {};
+            headers.forEach((header, i) => { accRowData[header] = accDataRow[i]; });
+            accRowData['Status'] = 'ACC';
+            accRowData['Catatan Admin'] = adminNote;
+            sheet.getRange(rowIndex, emailStatusColIndex).setValue('Tidak dikirim (ACC)');
+            sheet.getRange(rowIndex, emailErrorColIndex).setValue('');
+            const accWarnings = [];
+            const accSync = _upsertCheckDataFromLogRow(accRowData, {
+                idPengajuan: accRowData['ID Pengajuan'],
+                statusFinal: 'ACC',
+                catatanAdmin: adminNote,
+                linkSurat: accRowData['Link Surat Keterangan'] || accRowData['Link Surat'] || ''
+            });
+            if (!accSync || !accSync.success) {
+                accWarnings.push('Sinkronisasi CheckData gagal: ' + ((accSync && accSync.message) ? accSync.message : 'unknown error'));
+            }
+            _clearCheckPageCache();
+            _clearStudentPortalCache(accRowData['NPM']);
+            return {
+                success: true,
+                message: "Status 'ACC' berhasil disimpan untuk " + (accRowData['Nama Lengkap'] || 'mahasiswa') + '. Tidak ada email yang dikirim.',
+                warnings: accWarnings
+            };
+        }
+
         let nsColIndex = headers.indexOf('Nomor Surat') + 1;
         let nomorSurat = '';
         if (newStatus === 'Diterima') {
