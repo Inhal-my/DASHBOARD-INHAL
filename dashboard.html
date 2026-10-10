@@ -2971,6 +2971,14 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                                         <div class="col-6">${item.bukti_acc_url ? `<a href="${item.bukti_acc_url}" target="_blank" class="btn btn-sm btn-outline-success w-100"><i class="bi bi-check-circle-fill me-2"></i>Form ACC</a>` : `<button class="btn btn-sm btn-outline-secondary w-100" disabled><i class="bi bi-file-earmark-x me-2"></i>ACC Kosong</button>`}</div>
                                         <div class="col-6">${item.bukti_bayar_url ? `<a href="${item.bukti_bayar_url}" target="_blank" class="btn btn-sm btn-outline-info w-100"><i class="bi bi-credit-card-fill me-2"></i>Bukti Bayar</a>` : `<button class="btn btn-sm btn-outline-secondary w-100" disabled><i class="bi bi-file-earmark-x me-2"></i>Bayar Kosong</button>`}</div>
                                     </div>
+                                    ${isReportMode ? '' : `<div class="mt-2">
+                                        <div class="info-label mb-1">Unggah Bukti Bayar (oleh Admin)</div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="file" class="form-control" id="buktiAdminInput_${currentId}" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                            <button class="btn btn-outline-info" id="buktiAdminBtn_${currentId}" onclick="submitBuktiBayarAdmin(${currentId})"><i class="bi bi-upload me-1"></i>Unggah</button>
+                                        </div>
+                                        <div class="form-text">PDF / JPG / PNG, maksimal 5 MB. Untuk data manual atau saat mahasiswa tidak dapat mengunggah sendiri.</div>
+                                    </div>`}
                                 </div>
                             </div>
                         </div>
@@ -3557,6 +3565,47 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                     showToast('Gagal memperbarui status: ' + (err && err.message ? err.message : err), 'error');
                 })
                 .updateStatusAndSendEmail(id, 'ACC', '-');
+        }
+
+        function submitBuktiBayarAdmin(id) {
+            const input = document.getElementById('buktiAdminInput_' + id);
+            const btn = document.getElementById('buktiAdminBtn_' + id);
+            const file = input && input.files && input.files.length ? input.files[0] : null;
+            if (!file) { showToast('Pilih berkas bukti bayar terlebih dahulu.', 'error'); return; }
+            if (file.size > 5 * 1024 * 1024) { showToast('Ukuran berkas melebihi 5 MB.', 'error'); return; }
+
+            const item = mockData.find(x => x.id === id);
+            const existingAcc = item && item.bukti_acc_url ? item.bukti_acc_url : '';
+            const restore = () => { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-upload me-1"></i>Unggah'; } };
+
+            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                showToast('Unggah hanya tersedia saat dijalankan di Apps Script.', 'error');
+                return;
+            }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Mengunggah...'; }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const payload = { base64: String(e.target.result).split(',')[1] || '', type: file.type, name: file.name };
+                google.script.run
+                    .withSuccessHandler(function (resp) {
+                        restore();
+                        if (resp && resp.success) {
+                            if (item) { item.bukti_bayar_url = resp.url || ''; }
+                            showToast(resp.message || 'Bukti bayar berhasil diunggah.', 'success');
+                            openPaperView(id);
+                        } else {
+                            showToast((resp && resp.message) || 'Gagal mengunggah bukti bayar.', 'error');
+                        }
+                    })
+                    .withFailureHandler(function (err) {
+                        restore();
+                        showToast('Gagal: ' + (err && err.message ? err.message : err), 'error');
+                    })
+                    .uploadBuktiAdmin(id, payload, existingAcc);
+            };
+            reader.onerror = function () { restore(); showToast('Gagal membaca berkas.', 'error'); };
+            reader.readAsDataURL(file);
         }
 
         // === 12b. INPUT MANUAL OLEH ADMIN ===

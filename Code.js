@@ -4258,6 +4258,67 @@ function _getAcceptedStudentByNpm(npm) {
     return null;
 }
 
+/**
+ * Mengunggah bukti bayar atas nama mahasiswa oleh admin dari dashboard.
+ * Hanya mengunggah berkas; tidak mengirim email. URL ACC yang sudah ada
+ * dipertahankan agar tidak terhapus.
+ * @param {number} rowIndex - Baris data di LogData (1-based).
+ * @param {Object} fileData - { base64, type, name }
+ * @param {string} existingAccUrl - URL ACC INHAL yang sudah ada (opsional).
+ * @return {Object} { success, message, url }
+ */
+function uploadBuktiAdmin(rowIndex, fileData, existingAccUrl) {
+    try {
+        requireAuthorized();
+        const sheet = getGlobalSpreadsheet().getSheetByName(LOG_SHEET_NAME);
+        if (!sheet || sheet.getLastRow() < 2 || rowIndex < 2 || rowIndex > sheet.getLastRow()) {
+            return { success: false, message: 'Baris data tidak valid.' };
+        }
+        if (!fileData || !fileData.base64) {
+            return { success: false, message: 'Berkas bukti bayar tidak valid.' };
+        }
+        const mime = String(fileData.type || 'application/pdf').toLowerCase();
+        const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        if (allowed.indexOf(mime) === -1) {
+            return { success: false, message: 'Format berkas tidak didukung. Gunakan PDF / JPG / PNG.' };
+        }
+
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const dataRow = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const rowData = {};
+        headers.forEach((h, i) => { rowData[h] = dataRow[i]; });
+
+        const blob = Utilities.newBlob(
+            Utilities.base64Decode(fileData.base64),
+            mime,
+            fileData.name || ('Bukti-Bayar-' + (rowData['NPM'] || rowIndex) + '.pdf')
+        );
+        const folder = DriveApp.getFolderById(FOLDER_ID);
+        const file = folder.createFile(blob);
+        trySetDriveFileSharing(file);
+        const buktiUrl = file.getUrl();
+
+        const uploadData = {
+            npm: rowData['NPM'] || '',
+            namaLengkap: rowData['Nama Lengkap'] || '',
+            blok: rowData['Blok'] || '',
+            jenisKegiatan: rowData['Jenis Kegiatan'] || '',
+            detail: '',
+            tanggal: '',
+            idPengajuan: rowData['ID Pengajuan'] || ''
+        };
+        const res = _saveToLogUpload(uploadData, existingAccUrl || '', buktiUrl);
+        if (res && res.success === false) {
+            return { success: false, message: res.message || 'Gagal menyimpan bukti bayar.' };
+        }
+        _clearCheckPageCache();
+        _clearStudentPortalCache(rowData['NPM']);
+        return { success: true, url: buktiUrl, message: 'Bukti bayar berhasil diunggah.' };
+    } catch (e) {
+        return { success: false, message: 'Gagal mengunggah bukti bayar: ' + e.message };
+    }
+}
+
 function _saveToLogUpload(uploadData, accUrl, buktiUrl) {
     try {
         if (!uploadData) {
