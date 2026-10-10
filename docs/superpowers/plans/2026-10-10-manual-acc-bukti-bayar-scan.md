@@ -91,3 +91,35 @@
 
 **Branch:** `feat/new-code2-ci4-inhal` (GitHub `Inhal-my/DASHBOARD-INHAL`).
 **Worker:** `inhal-form` — https://inhal-form.prodi.workers.dev
+
+---
+
+## Port ke Google Apps Script (GAS)
+
+Empat fitur yang sama diport ke dua aplikasi GAS: `new-code1/` (Vue 3 CDN di `pages/dashboard.html`, `0_code.gs`/`1_business.gs`) dan aplikasi legacy di root (`Code.js` + `dashboard.html` jQuery/Bootstrap + `bagian.html`). Aplikasi GAS tidak memakai D1; sumber data adalah Google Sheets/Drive.
+
+### new-code1
+
+| Fitur | Ringkasan | Commit |
+|---|---|---|
+| A Tab Manual + kolom `Sumber` | `SCHEMAS.Pengajuan` + `Sumber`; `registerManualPengajuan` + `_createPengajuan`; tab & form Manual; badge; email nonaktif | `fec949e` |
+| B Opsi status ACC | opsi `ACC` + tombol cepat; `askConfirm` tanpa email | `c7dca6b` |
+| C Unggah bukti bayar admin | kartu di modal detail; backend `uploadBuktiAdmin` (Drive `bukti-<id>`, update `Link Bukti Bayar`, `writeAuditLog` `UPLOAD_BUKTI_ADMIN`) | `c5cdd72` |
+| D Scan kamera (bukti + BA) | `ScanPdf` di-inline di `dashboard.html`; target `bukti`/`pendukung`/`pelaksanaan`; `scanBuildPdf` → `*.pdf` | `26abde2` |
+
+- Tes: `node --test 'test/*.test.mjs'` → 53/53. Deploy GAS manual (Apps Script editor → New version).
+
+### Root GAS (legacy)
+
+| Fitur | Ringkasan | Commit |
+|---|---|---|
+| A Tab Manual + kolom `Sumber` | Tab sidebar baru + `#tab-manual`; backend `registerManualPengajuan` (`requireAuthorized`, `_ensureLogDataColumn('Sumber')`); `Sumber` di `getCheckPageData`; badge Manual. Tab `#tab-pengajuan` (stub) dibiarkan | `c8ad247` |
+| B Status ACC asli | `normalizeStatus` → `ACC` (bukan Diterima); kartu ringkasan ACC; filter + badge; tombol "Jadikan ACC"; backend `updateStatusAndSendEmail` cabang `ACC` menyimpan tanpa PDF/email | `42fd1d8` |
+| C Unggah bukti bayar admin | kontrol unggah di modal detail; backend `uploadBuktiAdmin(rowIndex,fileData,existingAccUrl)` → Drive + `_saveToLogUpload`, mempertahankan URL ACC | `4a3a155` |
+| D Scan kamera (bukti + BA) | `ScanPdf` di-inline di `dashboard.html` & `bagian.html`; scan pada bukti bayar, BA admin (`#baCameraInput`), dan BA bagian (`#ba-camera-input`); `Buat PDF` menghasilkan `File` yang dipakai jalur unggah yang ada | `fc39a67` |
+
+**Keputusan desain (dikonfirmasi pengguna):**
+- Tab Manual di root = tab sidebar **baru** (bukan mengisi stub `#tab-pengajuan`).
+- `ACC` = status tersimpan terpisah, **tanpa** email/PDF (template root tidak punya varian ACC).
+- Engine scan = builder PDF vanilla di-inline (tanpa jsPDF/CDN), sama seperti `new-code1-cf/public/scan-pdf.js`.
+- Batas berkas: bukti bayar 5 MB; BA admin tetap 10 MB sesuai UI lama; scan PDF mengikuti batas masing-masing.
