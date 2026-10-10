@@ -213,10 +213,14 @@ describe('detail laporan kolom Sumber', () => {
   });
 });
 
-describe('detail laporan kolom Detail Kegiatan pada Pembayaran Detail', () => {
+describe('detail laporan kolom Detail Kegiatan pada export xlsx', () => {
   it('menyertakan kolom Detail Kegiatan (Pilihan) di sheet Pembayaran Detail', async () => {
     const html = await loadHtml();
     expect(html).toContain("'Detail Kegiatan': it.detail || ''");
+  });
+  it('menyertakan kolom Detail Kegiatan (Pilihan) di sheet Rekap', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("'Detail Kegiatan': (r.details || [])");
   });
   it('mengambil Detail Kegiatan dari Pilihan detail pengajuan', async () => {
     const html = await loadHtml();

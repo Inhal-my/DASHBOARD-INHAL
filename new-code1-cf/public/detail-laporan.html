@@ -2469,7 +2469,8 @@
                                 const p = r.pengajuan;
                                 return {
                                     'ID Pengajuan': p['ID Pengajuan'], NPM: p.NPM, Nama: p['Nama Lengkap'],
-                                    'Jenis Kegiatan': p['Jenis Kegiatan'], Blok: p.Blok, Dosen: p.Dosen,
+                                    'Jenis Kegiatan': p['Jenis Kegiatan'],
+                                    'Detail Kegiatan': (r.details || []).map(d => String(d.Pilihan || '').trim()).filter(Boolean).join('; '), Blok: p.Blok, Dosen: p.Dosen,
                                     'Tanggal Pelaksanaan': fmtTanggalWaktu(p['Tanggal Pelaksanaan']),
                                     'Nomor Surat': p['Nomor Surat'] || '', Status: p.Status || '', Sumber: p.Sumber || 'Portal', Biaya: Number(p.Biaya) || 0,
                                     Link: p['Link Bukti Bayar'] || ''
