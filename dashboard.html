@@ -2299,6 +2299,15 @@
                 </div>
                 <input type="file" id="baAdminFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="d-none"
                     onchange="handleBAAdminFileSelect(this.files[0])">
+                <!-- Scan kamera -->
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="baScanBtn" onclick="document.getElementById('baCameraInput').click()"><i class="bi bi-camera me-1"></i>Scan Kamera</button>
+                    <span id="baScanCount" class="small text-muted d-none"></span>
+                    <button type="button" class="btn btn-sm btn-outline-primary d-none" id="baScanBuildBtn" onclick="buildBaAdminScanPdf()"><i class="bi bi-file-earmark-pdf me-1"></i>Buat PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger d-none" id="baScanClearBtn" onclick="clearBaAdminScan()">Bersihkan</button>
+                </div>
+                <input type="file" id="baCameraInput" accept="image/*" capture="environment" multiple class="d-none" onchange="onBaScanPhotos(event)">
+                <div id="baScanThumbs" class="d-flex flex-wrap gap-2 mb-2"></div>
                 <!-- Preview file -->
                 <div id="baAdminFilePreview" class="small text-muted mb-2 d-none">
                     <i class="bi bi-file-earmark-check-fill text-success me-1"></i>
@@ -2414,6 +2423,116 @@
     <!-- JS LIBRARIES -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SCAN-TO-PDF HELPER (tanpa dependensi eksternal) -->
+    <script>
+        (function () {
+            'use strict';
+            var A4_SHORT = 595.28;
+            var A4_LONG = 841.89;
+            var PAGE_MARGIN = 24;
+
+            function buildPdf(jpegs) {
+                if (!jpegs || !jpegs.length) throw new Error('Tidak ada halaman untuk dibuat PDF.');
+                var encoder = new TextEncoder();
+                var parts = [];
+                var length = 0;
+                var objOffsets = [];
+                function push(data) {
+                    var bytes = typeof data === 'string' ? encoder.encode(data) : data;
+                    parts.push(bytes);
+                    length += bytes.length;
+                }
+                function startObj(num) { objOffsets[num] = length; push(num + ' 0 obj\n'); }
+                function endObj() { push('endobj\n'); }
+                var n = jpegs.length;
+                push('%PDF-1.4\n');
+                startObj(1); push('<< /Type /Catalog /Pages 2 0 R >>\n'); endObj();
+                var kids = [];
+                for (var k = 0; k < n; k += 1) kids.push((3 + k * 3) + ' 0 R');
+                startObj(2); push('<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>\n'); endObj();
+                for (var i = 0; i < n; i += 1) {
+                    var pageId = 3 + i * 3;
+                    var contentId = pageId + 1;
+                    var imgId = pageId + 2;
+                    var img = jpegs[i];
+                    var iw = img.width;
+                    var ih = img.height;
+                    var landscape = iw > ih;
+                    var pw = landscape ? A4_LONG : A4_SHORT;
+                    var ph = landscape ? A4_SHORT : A4_LONG;
+                    var availW = pw - PAGE_MARGIN * 2;
+                    var availH = ph - PAGE_MARGIN * 2;
+                    var scale = Math.min(availW / iw, availH / ih);
+                    var dw = iw * scale;
+                    var dh = ih * scale;
+                    var x = (pw - dw) / 2;
+                    var y = (ph - dh) / 2;
+                    var contentBytes = encoder.encode(
+                        'q\n' + dw.toFixed(2) + ' 0 0 ' + dh.toFixed(2) + ' ' + x.toFixed(2) + ' ' + y.toFixed(2) + ' cm\n/Im0 Do\nQ\n'
+                    );
+                    startObj(pageId);
+                    push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pw.toFixed(2) + ' ' + ph.toFixed(2) + '] /Resources << /XObject << /Im0 ' + imgId + ' 0 R >> >> /Contents ' + contentId + ' 0 R >>\n');
+                    endObj();
+                    startObj(contentId);
+                    push('<< /Length ' + contentBytes.length + ' >>\nstream\n');
+                    push(contentBytes);
+                    push('endstream\n');
+                    endObj();
+                    startObj(imgId);
+                    push('<< /Type /XObject /Subtype /Image /Width ' + iw + ' /Height ' + ih + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + img.bytes.length + ' >>\nstream\n');
+                    push(img.bytes);
+                    push('\nendstream\n');
+                    endObj();
+                }
+                var objCount = 2 + n * 3;
+                var xrefStart = length;
+                var xref = 'xref\n0 ' + (objCount + 1) + '\n0000000000 65535 f \n';
+                for (var id = 1; id <= objCount; id += 1) {
+                    xref += String(objOffsets[id] || 0).padStart(10, '0') + ' 00000 n \n';
+                }
+                push(xref);
+                push('trailer\n<< /Size ' + (objCount + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefStart + '\n%%EOF\n');
+                return new Blob(parts, { type: 'application/pdf' });
+            }
+
+            function loadImageElement(file) {
+                return new Promise(function (resolve, reject) {
+                    var url = URL.createObjectURL(file);
+                    var img = new Image();
+                    img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+                    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Gagal membaca gambar.')); };
+                    img.src = url;
+                });
+            }
+
+            async function compressToJpeg(file, options) {
+                var opts = options || {};
+                var maxDim = opts.maxDim || 1600;
+                var quality = typeof opts.quality === 'number' ? opts.quality : 0.72;
+                var img = await loadImageElement(file);
+                var w = img.naturalWidth || img.width;
+                var h = img.naturalHeight || img.height;
+                if (!w || !h) throw new Error('Gambar tidak valid.');
+                var scale = Math.min(1, maxDim / Math.max(w, h));
+                var cw = Math.max(1, Math.round(w * scale));
+                var ch = Math.max(1, Math.round(h * scale));
+                var canvas = document.createElement('canvas');
+                canvas.width = cw;
+                canvas.height = ch;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, cw, ch);
+                ctx.drawImage(img, 0, 0, cw, ch);
+                var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', quality); });
+                if (!blob) throw new Error('Gagal mengompres gambar.');
+                var buf = await blob.arrayBuffer();
+                return { bytes: new Uint8Array(buf), width: cw, height: ch };
+            }
+
+            window.ScanPdf = { buildPdf: buildPdf, compressToJpeg: compressToJpeg };
+        })();
+    </script>
 
     <script>
         // === 1. DATA & STATE ===
@@ -2977,6 +3096,14 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
                                             <input type="file" class="form-control" id="buktiAdminInput_${currentId}" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
                                             <button class="btn btn-outline-info" id="buktiAdminBtn_${currentId}" onclick="submitBuktiBayarAdmin(${currentId})"><i class="bi bi-upload me-1"></i>Unggah</button>
                                         </div>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('buktiCameraInput_${currentId}').click()"><i class="bi bi-camera me-1"></i>Scan Kamera</button>
+                                            <span id="buktiScanCount_${currentId}" class="small text-muted d-none"></span>
+                                            <button type="button" class="btn btn-sm btn-outline-primary d-none" id="buktiScanBuildBtn_${currentId}" onclick="buildBuktiScanPdf(${currentId})"><i class="bi bi-file-earmark-pdf me-1"></i>Buat PDF</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger d-none" id="buktiScanClearBtn_${currentId}" onclick="clearBuktiScan(${currentId})">Bersihkan</button>
+                                        </div>
+                                        <input type="file" id="buktiCameraInput_${currentId}" accept="image/*" capture="environment" multiple class="d-none" onchange="onBuktiScanPhotos(event, ${currentId})">
+                                        <div id="buktiScanThumbs_${currentId}" class="d-flex flex-wrap gap-2 mt-2"></div>
                                         <div class="form-text">PDF / JPG / PNG, maksimal 5 MB. Untuk data manual atau saat mahasiswa tidak dapat mengunggah sendiri.</div>
                                     </div>`}
                                 </div>
@@ -3570,7 +3697,8 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
         function submitBuktiBayarAdmin(id) {
             const input = document.getElementById('buktiAdminInput_' + id);
             const btn = document.getElementById('buktiAdminBtn_' + id);
-            const file = input && input.files && input.files.length ? input.files[0] : null;
+            let file = input && input.files && input.files.length ? input.files[0] : null;
+            if (!file && window._buktiScanFiles && window._buktiScanFiles[id]) file = window._buktiScanFiles[id];
             if (!file) { showToast('Pilih berkas bukti bayar terlebih dahulu.', 'error'); return; }
             if (file.size > 5 * 1024 * 1024) { showToast('Ukuran berkas melebihi 5 MB.', 'error'); return; }
 
@@ -3606,6 +3734,154 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             };
             reader.onerror = function () { restore(); showToast('Gagal membaca berkas.', 'error'); };
             reader.readAsDataURL(file);
+        }
+
+        // === 12c. SCAN KAMERA KE PDF ===
+        window._scanStore = {};
+        window._buktiScanFiles = {};
+        window._baScannedFile = null;
+
+        function _scanState(key) {
+            if (!window._scanStore[key]) window._scanStore[key] = { items: [], seq: 0, busy: false };
+            return window._scanStore[key];
+        }
+
+        function _scanRenderThumbs(containerId, key) {
+            const st = _scanState(key);
+            const c = document.getElementById(containerId);
+            if (!c) return;
+            c.innerHTML = st.items.map(function (it, idx) {
+                return '<div style="position:relative;width:72px;">' +
+                    '<img src="' + it.url + '" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;">' +
+                    '<button type="button" class="btn btn-sm btn-danger" style="position:absolute;top:-6px;right:-6px;padding:0 5px;line-height:1.2;" onclick="_scanRemove(\'' + key + '\',\'' + containerId + '\',' + idx + ')">&times;</button>' +
+                    '<div class="d-flex justify-content-between" style="margin-top:2px;">' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary" style="padding:0 5px;" ' + (idx === 0 ? 'disabled' : '') + ' onclick="_scanMove(\'' + key + '\',\'' + containerId + '\',' + idx + ',-1)">&larr;</button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary" style="padding:0 5px;" ' + (idx === st.items.length - 1 ? 'disabled' : '') + ' onclick="_scanMove(\'' + key + '\',\'' + containerId + '\',' + idx + ',1)">&rarr;</button>' +
+                    '</div></div>';
+            }).join('');
+        }
+
+        function _scanUpdateButtons(key, countId, buildId, clearId) {
+            const st = _scanState(key);
+            const count = document.getElementById(countId);
+            const build = document.getElementById(buildId);
+            const clear = document.getElementById(clearId);
+            if (count) {
+                count.textContent = st.items.length + ' halaman';
+                count.classList.toggle('d-none', st.items.length === 0);
+            }
+            if (build) build.classList.toggle('d-none', st.items.length === 0);
+            if (clear) clear.classList.toggle('d-none', st.items.length === 0);
+        }
+
+        function _scanRemove(key, containerId, idx) {
+            const st = _scanState(key);
+            const it = st.items[idx];
+            if (!it) return;
+            try { URL.revokeObjectURL(it.url); } catch (e) { }
+            st.items.splice(idx, 1);
+            _scanRenderThumbs(containerId, key);
+        }
+
+        function _scanMove(key, containerId, idx, delta) {
+            const st = _scanState(key);
+            const j = idx + delta;
+            if (!st.items[idx] || j < 0 || j >= st.items.length) return;
+            const tmp = st.items[idx];
+            st.items[idx] = st.items[j];
+            st.items[j] = tmp;
+            _scanRenderThumbs(containerId, key);
+        }
+
+        async function _scanIngest(files, key, containerId, countId, buildId, clearId) {
+            const st = _scanState(key);
+            if (!window.ScanPdf) { showToast('Fitur scan belum siap. Muat ulang halaman.', 'error'); return; }
+            st.busy = true;
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (!/^image\//.test(file.type)) continue;
+                    const out = await window.ScanPdf.compressToJpeg(file, { maxDim: 1600, quality: 0.72 });
+                    const blob = new Blob([out.bytes], { type: 'image/jpeg' });
+                    st.seq += 1;
+                    st.items.push({ id: key + '-' + st.seq, url: URL.createObjectURL(blob), bytes: out.bytes, width: out.width, height: out.height });
+                }
+                if (!st.items.length) showToast('Tidak ada gambar yang bisa diproses.', 'error');
+            } catch (err) {
+                showToast('Gagal memproses gambar: ' + (err && err.message ? err.message : err), 'error');
+            } finally {
+                st.busy = false;
+                _scanRenderThumbs(containerId, key);
+                _scanUpdateButtons(key, countId, buildId, clearId);
+            }
+        }
+
+        function _scanClearState(key, containerId, countId, buildId, clearId) {
+            const st = _scanState(key);
+            st.items.forEach(function (it) { try { URL.revokeObjectURL(it.url); } catch (e) { } });
+            st.items = [];
+            _scanRenderThumbs(containerId, key);
+            _scanUpdateButtons(key, countId, buildId, clearId);
+        }
+
+        function _scanBuildFile(key, prefix) {
+            const st = _scanState(key);
+            if (!st.items.length) { showToast('Belum ada hasil scan.', 'error'); return null; }
+            if (!window.ScanPdf) { showToast('Fitur scan belum siap. Muat ulang halaman.', 'error'); return null; }
+            try {
+                const pages = st.items.map(function (it) { return { bytes: it.bytes, width: it.width, height: it.height }; });
+                const blob = window.ScanPdf.buildPdf(pages);
+                if (blob.size > 5 * 1024 * 1024) {
+                    showToast('Hasil PDF ' + (blob.size / 1048576).toFixed(1) + ' MB melebihi batas 5 MB. Kurangi jumlah halaman.', 'error');
+                    return null;
+                }
+                const now = new Date();
+                const stamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+                const name = prefix + stamp + '.pdf';
+                showToast('PDF berhasil dibuat (' + pages.length + ' halaman).', 'success');
+                return new File([blob], name, { type: 'application/pdf' });
+            } catch (err) {
+                showToast('Gagal membuat PDF: ' + (err && err.message ? err.message : err), 'error');
+                return null;
+            }
+        }
+
+        // -- Bukti bayar (paper view) --
+        function onBuktiScanPhotos(e, id) {
+            const files = e.target.files ? Array.prototype.slice.call(e.target.files) : [];
+            e.target.value = '';
+            if (!files.length) return;
+            _scanIngest(files, 'bukti_' + id, 'buktiScanThumbs_' + id, 'buktiScanCount_' + id, 'buktiScanBuildBtn_' + id, 'buktiScanClearBtn_' + id);
+        }
+        function buildBuktiScanPdf(id) {
+            const f = _scanBuildFile('bukti_' + id, 'Bukti-Bayar-Scan-');
+            if (f) { window._buktiScanFiles[id] = f; }
+        }
+        function clearBuktiScan(id) {
+            window._buktiScanFiles[id] = null;
+            _scanClearState('bukti_' + id, 'buktiScanThumbs_' + id, 'buktiScanCount_' + id, 'buktiScanBuildBtn_' + id, 'buktiScanClearBtn_' + id);
+        }
+
+        // -- Berita Acara admin --
+        function onBaScanPhotos(e) {
+            const files = e.target.files ? Array.prototype.slice.call(e.target.files) : [];
+            e.target.value = '';
+            if (!files.length) return;
+            _scanIngest(files, 'baAdmin', 'baScanThumbs', 'baScanCount', 'baScanBuildBtn', 'baScanClearBtn');
+        }
+        function buildBaAdminScanPdf() {
+            const f = _scanBuildFile('baAdmin', 'BA-Pendukung-Scan-');
+            if (f) {
+                window._baAdminSelectedFile = f;
+                const prev = document.getElementById('baAdminFilePreview');
+                const nameEl = document.getElementById('baAdminFileName');
+                if (nameEl) nameEl.textContent = f.name;
+                if (prev) prev.classList.remove('d-none');
+                checkDokumenSubmitReady();
+            }
+        }
+        function clearBaAdminScan() {
+            _scanClearState('baAdmin', 'baScanThumbs', 'baScanCount', 'baScanBuildBtn', 'baScanClearBtn');
         }
 
         // === 12b. INPUT MANUAL OLEH ADMIN ===
@@ -5332,6 +5608,9 @@ ${hasSurat ? `<a href="${item.surat_url}" target="_blank" class="btn btn-sm btn-
             modal.show();
         }
         window._baAdminSelectedFile = null;
+        if (typeof clearBaAdminScan === 'function') clearBaAdminScan();
+        const baPrevEl = document.getElementById('baAdminFilePreview');
+        if (baPrevEl) baPrevEl.classList.add('d-none');
     }
 
     // --- Handle Jenis Kegiatan Change ---
