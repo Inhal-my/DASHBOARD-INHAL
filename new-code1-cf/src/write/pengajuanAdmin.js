@@ -2,6 +2,7 @@ import { requireAdmin } from '../session.js';
 import { resolveBagianFor } from '../read/common.js';
 import { processStatusNotification } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
+import { saveDriveFile } from '../drive.js';
 
 const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
 
@@ -420,4 +421,45 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
   });
 
   return { success: true, message: 'Unggahan direset. Mahasiswa dapat mengunggah ulang.' };
+}
+
+export async function uploadBuktiAdmin(db, idPengajuan, file, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(idPengajuan);
+  if (!id) return { success: false, message: 'ID pengajuan tidak valid.' };
+  const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
+  if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+
+  const res = await saveDriveFile(ctx.env, file, 'bukti-' + id, { label: 'bukti bayar' });
+  if (!res.ok) return { success: false, message: res.message };
+
+  const ts = nowIso();
+  await db.prepare('UPDATE pengajuan SET link_bukti_bayar = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
+    .bind(res.url, ts, id).run();
+
+  const actor = actorName(ctx);
+  try {
+    await writeLogUpload(db, {
+      idPengajuan: id,
+      npm: str(p.npm),
+      namaLengkap: str(p.nama_lengkap),
+      blok: str(p.blok),
+      jenisKegiatan: str(p.jenis_kegiatan),
+      detail: 'Unggah bukti bayar oleh admin',
+      tanggal: ts,
+      linkAcc: str(p.link_acc_inhal),
+      linkBukti: res.url
+    });
+    await writeAuditLog(db, {
+      actor: actor,
+      action: 'UPLOAD_BUKTI_ADMIN',
+      target: 'Pengajuan',
+      detail: JSON.stringify({ idPengajuan: id, sumber: str(p.sumber), linkBukti: res.url }),
+      alasan: 'Unggah bukti bayar oleh admin'
+    });
+  } catch (e) {
+    console.error('Gagal menulis log unggah bukti admin: ' + (e && e.message ? e.message : e));
+  }
+
+  return { success: true, url: res.url, message: 'Bukti bayar berhasil diunggah.' };
 }

@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env, SELF } from 'cloudflare:test';
 import { registerManualPengajuan } from '../src/pengajuan.js';
+import { uploadBuktiAdmin } from '../src/write/pengajuanAdmin.js';
+import { createSession } from '../src/session.js';
 import { dispatchRpc } from '../src/rpc.js';
+
+afterEach(() => { vi.unstubAllGlobals(); });
 
 async function adminToken() {
   await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();
@@ -93,5 +97,32 @@ describe('manual RPCs', () => {
     expect(Array.isArray(res.blok)).toBe(true);
     expect(res.blok).toContain('A');
     expect(res.ujian).toContain('UAS');
+  });
+});
+
+describe('admin upload bukti bayar', () => {
+  it('rejects non-admin sessions', async () => {
+    const file = { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'bukti.pdf' };
+    await expect(uploadBuktiAdmin(env.DB, 'INHAL-x', file, {})).rejects.toThrow();
+  });
+
+  it('stores the bukti bayar link for a manual pengajuan', async () => {
+    const created = await registerManualPengajuan(env.DB, { ...manualBody }, {});
+    const token = await adminToken();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BUKTI1234567890ABCDEF/view' }),
+      { status: 200 }
+    )));
+    const res = await uploadBuktiAdmin(env.DB, created.idPengajuan, { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'bukti.pdf' }, { token, env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } });
+    expect(res.success).toBe(true);
+    const p = await env.DB.prepare('SELECT link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(created.idPengajuan).first();
+    expect(p.link_bukti_bayar).toContain('BUKTI1234567890ABCDEF');
+  });
+
+  it('rejects unsupported file types', async () => {
+    const created = await registerManualPengajuan(env.DB, { ...manualBody }, {});
+    const token = await adminToken();
+    const res = await uploadBuktiAdmin(env.DB, created.idPengajuan, { data: 'aGVsbG8=', mimeType: 'text/plain', name: 'note.txt' }, { token, env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } });
+    expect(res.success).toBe(false);
   });
 });

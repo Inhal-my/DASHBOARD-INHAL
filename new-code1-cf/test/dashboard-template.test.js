@@ -332,3 +332,14 @@ describe('dashboard ubah status ke ACC', () => {
     expect(html).toContain('Tidak ada email yang dikirim');
   });
 });
+
+describe('dashboard unggah bukti bayar oleh admin', () => {
+  it('menyediakan kartu unggah bukti bayar di detail pengajuan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('Unggah Bukti Bayar (oleh Admin)');
+    expect(html).toContain('uploadBuktiBayar()');
+    expect(html).toContain('onBuktiFile($event)');
+    expect(html).toContain('uploadBuktiAdmin');
+    expect(html).toContain('detail.buktiFile');
+  });
+});

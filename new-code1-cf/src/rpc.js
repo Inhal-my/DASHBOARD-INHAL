@@ -19,7 +19,7 @@ import {
 } from './write/beritaAcara.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
-  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti
+  updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti, uploadBuktiAdmin
 } from './write/pengajuanAdmin.js';
 import {
   sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
@@ -96,7 +96,8 @@ const HANDLERS = {
     return registerManualPengajuan(db, args[0], ctx.env);
   },
   updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx),
-  resetUploadBukti: (db, args, ctx) => resetUploadBukti(db, args[0], args[1], ctx)
+  resetUploadBukti: (db, args, ctx) => resetUploadBukti(db, args[0], args[1], ctx),
+  uploadBuktiAdmin: (db, args, ctx) => uploadBuktiAdmin(db, args[0], args[1], ctx)
 };
 
 export async function extractToken(db, args) {

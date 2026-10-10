@@ -1624,6 +1624,32 @@
                                 <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
                             </div>
 
+                            <!-- upload bukti bayar (admin) -->
+                            <div class="mt-5 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="label mb-2"><i class="bi bi-cloud-arrow-up"></i> Unggah Bukti Bayar (oleh Admin)</div>
+                                <p class="mb-3 text-[11px] text-slate-400">Berkas PDF / JPG / PNG, maksimal 5 MB. Untuk data manual atau saat mahasiswa tidak dapat mengunggah sendiri.</p>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <label class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 px-4 py-3">
+                                        <i class="bi bi-file-earmark-arrow-up text-xl text-brand-400"></i>
+                                        <span class="text-xs text-slate-500">
+                                            <span v-if="!detail.buktiFile">Pilih berkas bukti bayar</span>
+                                            <span v-else class="font-semibold text-slate-700">{{ detail.buktiFile.name }}</span>
+                                        </span>
+                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onBuktiFile($event)">
+                                    </label>
+                                    <button class="btn-primary" :disabled="detail.buktiUploading" @click="uploadBuktiBayar()">
+                                        <svg v-if="detail.buktiUploading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
+                                        <i v-else class="bi bi-upload"></i>
+                                        {{ detail.buktiUploading ? 'Mengunggah...' : 'Unggah Bukti Bayar' }}
+                                    </button>
+                                    <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti"><i class="bi bi-box-arrow-up-right"></i>Lihat saat ini</a>
+                                </div>
+                                <p v-if="detail.buktiError" class="mt-2 text-xs text-rose-500">{{ detail.buktiError }}</p>
+                            </div>
+
                             <!-- detail kegiatan + berita acara -->
                             <div v-if="(detail.p.details && detail.p.details.length) || (detail.baList && detail.baList.length)" class="mt-5 grid items-start gap-5 lg:grid-cols-2">
                                 <div v-if="detail.p.details && detail.p.details.length">
@@ -2021,7 +2047,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
@@ -3068,6 +3094,9 @@
                     this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
                     this.detail.status = 'Diterima';
                     this.detail.catatan = p['Catatan Admin'] || '';
+                    this.detail.buktiFile = null;
+                    this.detail.buktiUploading = false;
+                    this.detail.buktiError = '';
                     this.detail.open = true;
                     this.detail.loading = false;
                 },
@@ -3105,6 +3134,39 @@
                         this.detail.suratError = String(e);
                     } finally {
                         this.detail.suratUploading = false;
+                    }
+                },
+                onBuktiFile(e) {
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
+                    if (sizeError) {
+                        this.detail.buktiFile = null;
+                        this.detail.buktiError = sizeError;
+                        e.target.value = '';
+                        return;
+                    }
+                    this.detail.buktiFile = f;
+                    this.detail.buktiError = '';
+                },
+                async uploadBuktiBayar() {
+                    const f = this.detail.buktiFile;
+                    if (!f || !this.detail.p) return;
+                    this.detail.buktiUploading = true;
+                    this.detail.buktiError = '';
+                    try {
+                        const payload = await this.readFileAsBase64(f);
+                        const res = await this.run('uploadBuktiAdmin', this.detail.p['ID Pengajuan'], payload);
+                        if (!res || res.success === false) {
+                            this.detail.buktiError = (res && res.message) || 'Gagal mengunggah bukti bayar.';
+                            return;
+                        }
+                        this.detail.buktiFile = null;
+                        this.notify((res && res.message) || 'Bukti bayar diunggah.');
+                        await this.reloadDetail(this.detail.p['ID Pengajuan'], true);
+                    } catch (e) {
+                        this.detail.buktiError = String(e);
+                    } finally {
+                        this.detail.buktiUploading = false;
                     }
                 },
                 startEditInduk() {
