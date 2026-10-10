@@ -397,23 +397,30 @@
                                         <th class="px-4 py-3 font-semibold">Jenis Kegiatan</th>
                                         <th class="px-4 py-3 font-semibold">Tanggal Daftar</th>
                                         <th class="px-4 py-3 font-semibold">Status</th>
+                                        <th class="px-4 py-3 font-semibold">Sumber</th>
                                         <th class="px-4 py-3 font-semibold">Bukti Bayar</th>
                                         <th class="px-4 py-3 font-semibold">Link Final</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-for="r in pengajuanRows" :key="r['ID Pengajuan']"
+                                        :class="r['ID Pengajuan']===manualHighlightId ? 'bg-brand-50/70' : ''"
                                         class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/80"
                                         @click="openDetail(r['ID Pengajuan'])">
                                         <td class="px-4 py-2.5" @click.stop>
                                             <input type="checkbox" class="check" v-model="r.checked">
                                         </td>
                                         <td class="px-4 py-2.5 font-mono text-xs text-slate-500">{{ r.NPM }}</td>
-                                        <td class="px-4 py-2.5 font-semibold text-slate-800">{{ r['Nama Lengkap'] }}</td>
+                                        <td class="px-4 py-2.5 font-semibold text-slate-800">{{ r['Nama Lengkap'] }}
+                                            <span v-if="isManual(r)" class="ml-1.5 inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-pencil-square"></i>Manual</span>
+                                        </td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ r.Blok }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ r['Jenis Kegiatan'] }}</td>
                                         <td class="px-4 py-2.5 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
                                         <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
+                                        <td class="px-4 py-2.5">
+                                            <span :class="isManual(r) ? 'bg-violet-50 text-violet-600 ring-violet-200' : 'bg-slate-50 text-slate-500 ring-slate-200'" class="rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset">{{ isManual(r) ? 'Manual' : 'Portal' }}</span>
+                                        </td>
                                         <td class="px-4 py-2.5">
                                             <a v-if="r['Link Bukti Bayar']" :href="r['Link Bukti Bayar']" target="_blank" class="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700" @click.stop><i class="bi bi-cash-coin"></i>Bayar</a>
                                             <span v-else class="text-xs text-slate-300">—</span>
@@ -426,6 +433,180 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </section>
+
+                <!-- ============ TAB: MANUAL ============ -->
+                <section v-if="tab==='manual'">
+                    <div class="mb-5">
+                        <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Input Pengajuan Manual</h1>
+                        <p class="mt-0.5 text-sm text-slate-500">Daftarkan pengajuan atas nama mahasiswa tanpa melalui portal. Email &amp; No. HP tidak wajib.</p>
+                    </div>
+
+                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="flex items-center gap-3 border-b border-slate-100 p-5">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-pencil-square"></i></div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Form Pengajuan Manual</h2>
+                                <p class="text-xs text-slate-400">Sumber data akan ditandai <span class="font-semibold text-slate-500">Manual</span></p>
+                            </div>
+                        </div>
+
+                        <form class="p-5" @submit.prevent="submitManual()">
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label class="label">NPM <span class="text-rose-500">*</span></label>
+                                    <input v-model="manual.form.npm" class="input" placeholder="Contoh: 2201010001" @blur="onManualNpmBlur()">
+                                    <p class="mt-1 text-[11px] text-slate-400">Nama akan terisi otomatis bila NPM terdaftar.</p>
+                                </div>
+                                <div>
+                                    <label class="label">Nama Lengkap <span class="text-rose-500">*</span></label>
+                                    <input v-model="manual.form.namaLengkap" class="input" placeholder="Nama sesuai KTP">
+                                </div>
+                                <div>
+                                    <label class="label">Blok <span class="text-rose-500">*</span></label>
+                                    <select v-model="manual.form.blok" class="input">
+                                        <option value="">-- Pilih Blok --</option>
+                                        <option v-for="b in manual.options.blok" :key="'mb'+b" :value="b">{{ b }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label">Jenis Kegiatan <span class="text-rose-500">*</span></label>
+                                    <select v-model="manual.form.jenisKegiatan" class="input">
+                                        <option value="">-- Pilih Jenis --</option>
+                                        <option>Ujian</option><option>SGD</option><option>KKD</option><option>Praktikum</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div v-if="manual.form.jenisKegiatan==='Ujian'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                <div class="section-title"><i class="bi bi-pencil-square"></i> Detail Ujian</div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
+                                        <select v-model="manual.ujian.pilihan" class="input">
+                                            <option value="">-- Pilih Ujian --</option>
+                                            <option v-for="o in manual.options.ujian" :key="'mu'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Tanggal Ujian <span class="text-rose-500">*</span></label>
+                                        <input v-model="manual.ujian.tanggal" type="date" class="input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="manual.form.jenisKegiatan==='SGD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                <div class="section-title"><i class="bi bi-people"></i> Detail SGD</div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
+                                        <select v-model="manual.sgd.pilihan" class="input">
+                                            <option value="">-- Pilih SGD --</option>
+                                            <option v-for="o in manual.options.sgd" :key="'ms'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Detail SGD</label>
+                                        <select v-model="manual.sgd.detail" class="input">
+                                            <option value="">-- Pilih Detail --</option>
+                                            <option v-for="o in manual.options.detailSgd" :key="'msd'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Tanggal SGD <span class="text-rose-500">*</span></label>
+                                        <input v-model="manual.sgd.tanggal" type="date" class="input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="manual.form.jenisKegiatan==='KKD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                <div class="section-title"><i class="bi bi-journal-text"></i> Detail KKD</div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
+                                        <select v-model="manual.kkd.pilihan" class="input">
+                                            <option value="">-- Pilih KKD --</option>
+                                            <option v-for="o in manual.options.kkd" :key="'mk'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Detail KKD</label>
+                                        <select v-model="manual.kkd.detail" class="input">
+                                            <option value="">-- Pilih Detail --</option>
+                                            <option v-for="o in manual.options.detailKkd" :key="'mkd'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Tanggal KKD <span class="text-rose-500">*</span></label>
+                                        <input v-model="manual.kkd.tanggal" type="date" class="input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="manual.form.jenisKegiatan==='Praktikum'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                <div class="section-title"><i class="bi bi-ui-checks"></i> Detail Praktikum</div>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div>
+                                        <label class="label">Pilihan Lab</label>
+                                        <select v-model="manual.labs[0].lab" class="input">
+                                            <option value="">-- Lab --</option>
+                                            <option v-for="o in manual.options.lab" :key="'mlab'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Kegiatan Lab</label>
+                                        <select v-model="manual.labs[0].kegiatanLab" class="input">
+                                            <option value="">-- Kegiatan --</option>
+                                            <option v-for="o in manual.options.kegiatanLab" :key="'mkl'+o" :value="o">{{ o }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Tanggal Praktikum</label>
+                                        <input v-model="manual.labs[0].tanggal" type="date" class="input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="my-5 h-px bg-slate-100"></div>
+
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="md:col-span-2">
+                                    <label class="label">Keterangan (Opsional)</label>
+                                    <textarea v-model="manual.form.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="label">Upload Surat Keterangan (PDF / JPG / PNG, Opsional)</label>
+                                    <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
+                                        <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
+                                        <div class="text-xs text-slate-500">
+                                            <span v-if="!manual.fileSurat">Opsional. Maksimal 5 MB.</span>
+                                            <span v-else class="font-semibold text-slate-700">{{ manual.fileSurat.name }}</span>
+                                        </div>
+                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onManualFileSurat($event)">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="label">Status Awal</label>
+                                    <select v-model="manual.form.status" class="input">
+                                        <option value="Menunggu">Menunggu</option>
+                                        <option value="Diterima">Diterima</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex flex-wrap gap-2">
+                                <button type="submit" class="btn-primary !py-3" :disabled="manual.saving">
+                                    <svg v-if="manual.saving" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <i v-else class="bi bi-save"></i>
+                                    {{ manual.saving ? 'Menyimpan...' : 'Simpan Pengajuan Manual' }}
+                                </button>
+                                <button type="button" class="btn-soft !py-3" :disabled="manual.saving" @click="resetManualForm()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                            </div>
+                        </form>
                     </div>
                 </section>
 
@@ -1264,10 +1445,11 @@
                                     <div class="sm:col-span-3"><span class="label">Error:</span> <span class="text-slate-600">{{ detail.p['Error Notifikasi Email'] || '—' }}</span></div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
-                                    <button v-if="detail.p.Status==='Diterima' || detail.p.Status==='Ditolak'" class="btn-soft" @click="sendStatusEmail()"><i class="bi bi-send"></i>Kirim Ulang Email Notifikasi</button>
-                                    <button v-if="detail.p.Status!=='ACC' && detail.p['Link ACC INHAL']" class="btn-primary" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Email ACC Final</button>
-                                    <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
-                                    <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                    <button v-if="!isManual(detail.p) && (detail.p.Status==='Diterima' || detail.p.Status==='Ditolak')" class="btn-soft" @click="sendStatusEmail()"><i class="bi bi-send"></i>Kirim Ulang Email Notifikasi</button>
+                                    <button v-if="!isManual(detail.p) && detail.p.Status!=='ACC' && detail.p['Link ACC INHAL']" class="btn-primary" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Email ACC Final</button>
+                                    <button v-if="!isManual(detail.p) && detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
+                                    <button v-if="!isManual(detail.p) && detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                    <span v-if="isManual(detail.p)" class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-info-circle"></i>Pengajuan manual tanpa email — notifikasi email dinonaktifkan.</span>
                                 </div>
                             </div>
                         </div>
@@ -1433,7 +1615,7 @@
             return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
         }
 
-        const TAB_KEYS = ['pengajuan', 'stats', 'ba', 'master'];
+        const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'master'];
         const TAB_TTL_MS = 60000;
 
         const { createApp } = Vue;
@@ -1459,6 +1641,18 @@
                     stats: { total: 0, totalBiaya: 0, perStatus: {}, trend: {}, perJenis: {}, perBlok: {}, perBagian: {} },
                     diagnostic: '',
                     pengajuanRows: [],
+                    manualHighlightId: '',
+                    manual: {
+                        loadedOptions: false,
+                        saving: false,
+                        form: { npm: '', namaLengkap: '', blok: '', jenisKegiatan: '', keterangan: '', status: 'Menunggu' },
+                        ujian: { pilihan: '', tanggal: '' },
+                        sgd: { pilihan: '', detail: '', tanggal: '' },
+                        kkd: { pilihan: '', detail: '', tanggal: '' },
+                        labs: [{ lab: '', kegiatanLab: '', tanggal: '' }],
+                        fileSurat: null,
+                        options: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], lab: [], kegiatanLab: [] }
+                    },
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
@@ -1512,11 +1706,12 @@
                     return !!(this.session && this.session.token);
                 },
                 pageTitle() {
-                    return { pengajuan: 'Telaah Pengajuan', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
+                    return { pengajuan: 'Telaah Pengajuan', manual: 'Input Manual', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
                 },
                 navItems() {
                     return [
                         { key: 'pengajuan', icon: 'bi-inbox', label: 'Pengajuan', badge: true },
+                        { key: 'manual', icon: 'bi-pencil-square', label: 'Manual' },
                         { key: 'stats', icon: 'bi-bar-chart-line', label: 'Statistik' },
                         { key: 'ba', icon: 'bi-file-earmark-pdf', label: 'Berita Acara' },
                         { key: 'master', icon: 'bi-sliders', label: 'Master Data' }
@@ -1820,6 +2015,107 @@
                     const s = String(v);
                     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
                     return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
+                },
+                isManual(r) {
+                    return String((r && r.Sumber) || '').trim() === 'Manual';
+                },
+                async loadManualOptions() {
+                    try {
+                        const res = await this.run('getRegistrationOptions');
+                        this.manual.options = {
+                            blok: res.blok || [],
+                            ujian: res.ujian || [],
+                            sgd: res.sgd || [],
+                            detailSgd: res.detailSgd || [],
+                            kkd: res.kkd || [],
+                            detailKkd: res.detailKkd || [],
+                            lab: res.lab || [],
+                            kegiatanLab: res.kegiatanLab || []
+                        };
+                        this.manual.loadedOptions = true;
+                    } catch (e) {
+                        this.notify('Gagal memuat opsi kegiatan: ' + e, false);
+                    }
+                },
+                async onManualNpmBlur() {
+                    const npm = String(this.manual.form.npm || '').trim();
+                    if (!npm || String(this.manual.form.namaLengkap || '').trim()) return;
+                    try {
+                        const m = await this.run('getMahasiswaByNpm', npm);
+                        const nama = m && (m['Nama Lengkap'] || m.namaLengkap);
+                        if (nama && !String(this.manual.form.namaLengkap || '').trim()) this.manual.form.namaLengkap = nama;
+                    } catch (e) { /* non-blokir */ }
+                },
+                onManualFileSurat(e) {
+                    this.manual.fileSurat = (e.target.files && e.target.files.length) ? e.target.files[0] : null;
+                },
+                resetManualForm() {
+                    this.manual.form = { npm: '', namaLengkap: '', blok: '', jenisKegiatan: '', keterangan: '', status: 'Menunggu' };
+                    this.manual.ujian = { pilihan: '', tanggal: '' };
+                    this.manual.sgd = { pilihan: '', detail: '', tanggal: '' };
+                    this.manual.kkd = { pilihan: '', detail: '', tanggal: '' };
+                    this.manual.labs = [{ lab: '', kegiatanLab: '', tanggal: '' }];
+                    this.manual.fileSurat = null;
+                },
+                async submitManual() {
+                    const f = this.manual.form;
+                    const jenis = f.jenisKegiatan;
+                    if (!String(f.npm || '').trim() || !String(f.namaLengkap || '').trim() || !f.blok || !jenis) {
+                        this.notify('Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan.', false);
+                        return;
+                    }
+                    const formData = {
+                        npm: String(f.npm).trim(),
+                        namaLengkap: String(f.namaLengkap).trim(),
+                        blok: f.blok,
+                        jenisKegiatan: jenis,
+                        keterangan: String(f.keterangan || '').trim(),
+                        status: f.status
+                    };
+                    if (jenis === 'Ujian') {
+                        if (!this.manual.ujian.pilihan) { this.notify('Pilih ujian terlebih dahulu.', false); return; }
+                        formData.detailKegiatan = this.manual.ujian.pilihan;
+                        formData.tanggalKegiatan = this.manual.ujian.tanggal;
+                    } else if (jenis === 'SGD') {
+                        if (!this.manual.sgd.pilihan) { this.notify('Pilih SGD terlebih dahulu.', false); return; }
+                        formData.pilihanSgd = this.manual.sgd.pilihan;
+                        formData.detailSgd = this.manual.sgd.detail;
+                        formData.tanggalKegiatan = this.manual.sgd.tanggal;
+                    } else if (jenis === 'KKD') {
+                        if (!this.manual.kkd.pilihan) { this.notify('Pilih KKD terlebih dahulu.', false); return; }
+                        formData.pilihanKkd = this.manual.kkd.pilihan;
+                        formData.detailKkd = this.manual.kkd.detail;
+                        formData.tanggalKegiatan = this.manual.kkd.tanggal;
+                    } else if (jenis === 'Praktikum') {
+                        const labs = this.manual.labs.filter(l => l.lab || l.kegiatanLab);
+                        if (!labs.length) { this.notify('Isi minimal satu detail praktikum.', false); return; }
+                        formData.praktikum = labs;
+                    }
+
+                    this.manual.saving = true;
+                    try {
+                        if (this.manual.fileSurat) {
+                            if (this.manual.fileSurat.size > 5 * 1024 * 1024) { this.notify('Ukuran file surat melebihi 5 MB.', false); return; }
+                            formData.fileSurat = await this.readFileAsBase64(this.manual.fileSurat);
+                        }
+                        const res = await this.run('registerManualPengajuan', formData);
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal menyimpan pengajuan manual.', false);
+                            return;
+                        }
+                        this.notify(res.message || 'Pengajuan manual berhasil disimpan.');
+                        this.resetManualForm();
+                        this.filters = { search: '', jenis: '', blok: '', status: '' };
+                        this.loaded.pengajuan = false;
+                        await Promise.all([this.loadStats(), this.loadPengajuan()]);
+                        this.manualHighlightId = res.idPengajuan || '';
+                        this.switchTab('pengajuan');
+                        setTimeout(() => { this.manualHighlightId = ''; }, 4000);
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.manual.saving = false;
+                    }
                 },
                 async babStart() {
                     if (!this.bab.kategori) { this.notify('Pilih kategori kegiatan terlebih dahulu.', false); return; }
@@ -2128,6 +2424,7 @@
                 },
                 refreshTab(tab) {
                     if (tab === 'pengajuan' && this.isTabStale('pengajuan')) this.loadPengajuan({ silent: this.loaded.pengajuan });
+                    if (tab === 'manual' && !this.manual.loadedOptions) this.loadManualOptions();
                     if (tab === 'stats' && this.isTabStale('stats')) this.loadStats({ silent: this.loaded.stats });
                     if (tab === 'ba') {
                         if (this.isTabStale('bagian') || this.isTabStale('ba')) this.loadBaTab({ silent: this.loaded.bagian && this.loaded.ba });

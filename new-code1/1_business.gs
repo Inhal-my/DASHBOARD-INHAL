@@ -188,7 +188,28 @@ function _resolveBagian12(rawLabel, pilihan, namaKegiatan, labs) {
     return '';
 }
 
+const MANUAL_STATUSES = ['Menunggu', 'Diterima'];
+
 function registerPengajuan(formData) {
+    return _createPengajuan(formData, { manual: false });
+}
+
+function registerManualPengajuan(formData) {
+    try {
+        requireAuthorized(arguments[arguments.length - 1]);
+    } catch (e) {
+        return { success: false, message: e.message };
+    }
+    return _createPengajuan(formData, { manual: true, status: formData && formData.status });
+}
+
+function _createPengajuan(formData, opts) {
+    const options = opts || {};
+    const manual = !!options.manual;
+    const status = manual && MANUAL_STATUSES.indexOf(_normalizeFormText(options.status)) !== -1
+        ? _normalizeFormText(options.status)
+        : STATUS.MENUNGGU;
+    const sumber = manual ? 'Manual' : 'Portal';
     const lock = LockService.getScriptLock();
     lock.waitLock(30000);
     try {
@@ -199,11 +220,13 @@ function registerPengajuan(formData) {
         if (!npm || !nama) {
             return { success: false, message: 'NPM dan Nama Lengkap wajib diisi.' };
         }
-        if (!email || !_isValidEmail(email)) {
-            return { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
-        }
-        if (!noHp || !_isValidPhone(noHp)) {
-            return { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
+        if (!manual) {
+            if (!email || !_isValidEmail(email)) {
+                return { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
+            }
+            if (!noHp || !_isValidPhone(noHp)) {
+                return { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
+            }
         }
 
         const dup = checkDuplicatePengajuan(formData);
@@ -232,7 +255,7 @@ function registerPengajuan(formData) {
             'Jenis Kegiatan': _normalizeFormText(formData.jenisKegiatan),
             'Keterangan': _normalizeFormText(formData.keterangan),
             'Link Surat Keterangan': suratUrl,
-            'Status': STATUS.MENUNGGU,
+            'Status': status,
             'Catatan Admin': '',
             'Notifikasi Terkirim Pada': '',
             'Status Notifikasi Email': '',
@@ -245,7 +268,8 @@ function registerPengajuan(formData) {
             'Waktu Info Bagian': '',
             'Email Bagian': '',
             'Catatan Info Bagian': '',
-            'UpdatedAt': now
+            'UpdatedAt': now,
+            'Sumber': sumber
         };
 
         const detailRows = _buildDetailKegiatanRows(formData, idPengajuan);
@@ -260,12 +284,12 @@ function registerPengajuan(formData) {
         appendRowSafe('StatusHistory', {
             Timestamp: now,
             'ID Pengajuan': idPengajuan,
-            'Status': STATUS.MENUNGGU,
-            'Catatan': 'Pengajuan dibuat.',
+            'Status': status,
+            'Catatan': manual ? 'Pengajuan dibuat manual oleh admin.' : 'Pengajuan dibuat.',
             'Actor Email': getActorName()
         });
 
-        return { success: true, idPengajuan: idPengajuan, message: 'Pengajuan berhasil didaftarkan.' };
+        return { success: true, idPengajuan: idPengajuan, status: status, sumber: sumber, message: 'Pengajuan berhasil didaftarkan.' };
     } catch (e) {
         console.error('registerPengajuan error: ' + e.message);
         return { success: false, message: e.message };

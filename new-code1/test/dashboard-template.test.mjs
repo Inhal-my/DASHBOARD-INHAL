@@ -82,9 +82,29 @@ describe('dashboard template master', () => {
   });
 });
 
+describe('dashboard input manual', () => {
+  it('punya tab Manual di navigasi', () => {
+    assert.match(html, /key: 'manual', icon: 'bi-pencil-square', label: 'Manual'/);
+    assert.match(html, /<section v-if="tab==='manual'">/);
+    assert.match(html, /Input Pengajuan Manual/);
+  });
+  it('form manual tanpa field Email dan No. HP', () => {
+    assert.match(html, /registerManualPengajuan/);
+    assert.match(html, /submitManual\(\)/);
+    assert.match(html, /manual\.form\.status/);
+    assert.doesNotMatch(html, /manual\.form\.email/);
+    assert.doesNotMatch(html, /manual\.form\.noHp/);
+  });
+  it('kolom Sumber dan badge Manual', () => {
+    assert.match(html, /isManual\(r\)/);
+    assert.match(html, />Sumber</);
+    assert.match(html, /Pengajuan manual tanpa email/);
+  });
+});
+
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', () => {
-    assert.match(html, /const TAB_KEYS = \['pengajuan', 'stats', 'ba', 'master'\]/);
+    assert.match(html, /const TAB_KEYS = \['pengajuan', 'manual', 'stats', 'ba', 'master'\]/);
     assert.match(html, /hashTab\(\)/);
     assert.match(html, /history\.replaceState\(null, '', h\)/);
     assert.match(html, /this\.tab = this\.hashTab\(\)/);

@@ -47,7 +47,8 @@ const SCHEMAS = {
         'Waktu Info Bagian',
         'Email Bagian',
         'Catatan Info Bagian',
-        'UpdatedAt'
+        'UpdatedAt',
+        'Sumber'
     ],
     DetailKegiatan: [
         'Timestamp',
