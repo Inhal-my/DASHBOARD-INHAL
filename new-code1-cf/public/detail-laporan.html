@@ -1165,6 +1165,146 @@
                 if (/^https?:\/\//i.test(url)) XLSX.utils.cell_set_hyperlink(cell, url, tooltip);
             }
         }
+        const HL_FONT = '<font><u/><sz val="12"/><color rgb="FF0563C1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font>';
+        const HL_XF = '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>';
+        function xlsxCrc32(u8) {
+            let crc = 0xFFFFFFFF;
+            for (let i = 0; i < u8.length; i++) {
+                let c = (crc ^ u8[i]) & 0xFF;
+                for (let j = 0; j < 8; j++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1;
+                crc = (crc >>> 8) ^ c;
+            }
+            return (crc ^ 0xFFFFFFFF) >>> 0;
+        }
+        function xlsxParseZip(u8) {
+            const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+            const entries = [];
+            let i = 0;
+            while (i + 4 <= u8.length && dv.getUint32(i, true) === 0x04034b50) {
+                const comp = dv.getUint32(i + 18, true);
+                const nameLen = dv.getUint16(i + 26, true);
+                const extraLen = dv.getUint16(i + 28, true);
+                const name = new TextDecoder().decode(u8.subarray(i + 30, i + 30 + nameLen));
+                const start = i + 30 + nameLen + extraLen;
+                entries.push({ name, data: u8.subarray(start, start + comp) });
+                i = start + comp;
+            }
+            return entries;
+        }
+        function xlsxConcat(parts) {
+            let n = 0;
+            for (const p of parts) n += p.length;
+            const out = new Uint8Array(n);
+            let o = 0;
+            for (const p of parts) { out.set(p, o); o += p.length; }
+            return out;
+        }
+        function xlsxBuildZip(entries) {
+            const chunks = [];
+            const central = [];
+            let offset = 0;
+            for (const e of entries) {
+                const nameBytes = new TextEncoder().encode(e.name);
+                const data = e.data;
+                const crc = xlsxCrc32(data);
+                const size = data.length;
+                const lh = new Uint8Array(30 + nameBytes.length);
+                const dv = new DataView(lh.buffer);
+                dv.setUint32(0, 0x04034b50, true);
+                dv.setUint16(4, 20, true);
+                dv.setUint16(6, 0, true);
+                dv.setUint16(8, 0, true);
+                dv.setUint16(10, 0, true);
+                dv.setUint16(12, 0, true);
+                dv.setUint32(14, crc, true);
+                dv.setUint32(18, size, true);
+                dv.setUint32(22, size, true);
+                dv.setUint16(26, nameBytes.length, true);
+                dv.setUint16(28, 0, true);
+                lh.set(nameBytes, 30);
+                chunks.push(lh, data);
+                central.push({ crc, size, nameBytes, offset });
+                offset += lh.length + size;
+            }
+            const cdChunks = [];
+            let cdSize = 0;
+            for (const c of central) {
+                const ch = new Uint8Array(46 + c.nameBytes.length);
+                const dv = new DataView(ch.buffer);
+                dv.setUint32(0, 0x02014b50, true);
+                dv.setUint16(4, 20, true);
+                dv.setUint16(6, 20, true);
+                dv.setUint16(8, 0, true);
+                dv.setUint16(10, 0, true);
+                dv.setUint16(12, 0, true);
+                dv.setUint16(14, 0, true);
+                dv.setUint32(16, c.crc, true);
+                dv.setUint32(20, c.size, true);
+                dv.setUint32(24, c.size, true);
+                dv.setUint16(28, c.nameBytes.length, true);
+                dv.setUint16(30, 0, true);
+                dv.setUint16(32, 0, true);
+                dv.setUint16(34, 0, true);
+                dv.setUint16(36, 0, true);
+                dv.setUint32(38, 0, true);
+                dv.setUint32(42, c.offset, true);
+                ch.set(c.nameBytes, 46);
+                cdChunks.push(ch);
+                cdSize += ch.length;
+            }
+            const eocd = new Uint8Array(22);
+            const dv = new DataView(eocd.buffer);
+            dv.setUint32(0, 0x06054b50, true);
+            dv.setUint16(4, 0, true);
+            dv.setUint16(6, 0, true);
+            dv.setUint16(8, central.length, true);
+            dv.setUint16(10, central.length, true);
+            dv.setUint32(12, cdSize, true);
+            dv.setUint32(16, offset, true);
+            dv.setUint16(20, 0, true);
+            return xlsxConcat([...chunks, ...cdChunks, eocd]);
+        }
+        function xlsxPatchStyles(xml) {
+            xml = xml.replace(/<fonts count="(\d+)"/, (m, n) => '<fonts count="' + (Number(n) + 1) + '"');
+            xml = xml.replace('</fonts>', HL_FONT + '</fonts>');
+            xml = xml.replace(/<cellXfs count="(\d+)"/, (m, n) => '<cellXfs count="' + (Number(n) + 1) + '"');
+            xml = xml.replace('</cellXfs>', HL_XF + '</cellXfs>');
+            return xml;
+        }
+        function xlsxPatchSheet(xml) {
+            const refs = [];
+            const re = /<hyperlink\b[^>]*\bref="([^"]+)"/g;
+            let m;
+            while ((m = re.exec(xml))) refs.push(m[1]);
+            refs.forEach((ref) => {
+                if (ref.indexOf(':') !== -1) return;
+                const esc = ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const cellRe = new RegExp('<c\\b[^>]*\\br="' + esc + '"[^>]*?\\/?>');
+                xml = xml.replace(cellRe, (tag) => (tag.indexOf(' s="') !== -1 ? tag : tag.replace('<c', '<c s="1"')));
+            });
+            return xml;
+        }
+        function writeXlsxStyled(wb, filename) {
+            const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx', compression: false });
+            const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+            const enc = new TextEncoder();
+            const dec = new TextDecoder();
+            const entries = xlsxParseZip(u8).map((e) => {
+                if (e.name === 'xl/styles.xml') return { name: e.name, data: enc.encode(xlsxPatchStyles(dec.decode(e.data))) };
+                if (/^xl\/worksheets\/sheet\d+\.xml$/.test(e.name)) return { name: e.name, data: enc.encode(xlsxPatchSheet(dec.decode(e.data))) };
+                return e;
+            });
+            const out = xlsxBuildZip(entries);
+            const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
         function statusBadgeCls(status) {
             const cls = {
                 'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
@@ -2450,7 +2590,7 @@
                             setUrlHyperlinks(wsBayarDetail, 'Link ACC INHAL', 'Buka link ACC INHAL');
                             XLSX.utils.book_append_sheet(wb, wsBayarDetail, 'Pembayaran Detail');
 
-                            XLSX.writeFile(wb, 'Laporan-INHAL-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            writeXlsxStyled(wb, 'Laporan-INHAL-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export .xlsx berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
@@ -2531,7 +2671,7 @@
                             setUrlHyperlinks(wsDetailBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsDetailBa, 'Detail BA');
 
-                            XLSX.writeFile(wb, 'Rekap-Berita-Acara-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            writeXlsxStyled(wb, 'Rekap-Berita-Acara-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export berita acara berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));

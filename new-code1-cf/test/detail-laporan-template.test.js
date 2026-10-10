@@ -200,3 +200,22 @@ describe('detail laporan kolom Sumber', () => {
     expect(html).toContain("Sumber: p.Sumber || 'Portal'");
   });
 });
+
+describe('detail laporan export xlsx hyperlink bergaya', () => {
+  it('menulis hyperlink dengan gaya biru + underline tanpa dependensi baru', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("writeXlsxStyled(wb, 'Laporan-INHAL-'");
+    expect(html).toContain("writeXlsxStyled(wb, 'Rekap-Berita-Acara-'");
+    expect(html).toContain('function writeXlsxStyled');
+    expect(html).toContain('function xlsxPatchSheet');
+    expect(html).toContain('function xlsxBuildZip');
+    expect(html).toContain('compression: false');
+    expect(html).toContain('<color rgb="FF0563C1"/>');
+    expect(html).toContain('applyFont="1"');
+  });
+  it('tetap tidak memakai XLSX.writeFile pada export yang memiliki hyperlink', async () => {
+    const html = await loadHtml();
+    expect(html).not.toContain("XLSX.writeFile(wb, 'Laporan-INHAL-'");
+    expect(html).not.toContain("XLSX.writeFile(wb, 'Rekap-Berita-Acara-'");
+  });
+});
