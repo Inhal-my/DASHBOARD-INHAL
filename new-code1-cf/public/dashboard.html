@@ -1632,11 +1632,12 @@
                                     <label class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 px-4 py-3">
                                         <i class="bi bi-file-earmark-arrow-up text-xl text-brand-400"></i>
                                         <span class="text-xs text-slate-500">
-                                            <span v-if="!detail.buktiFile">Pilih berkas bukti bayar</span>
+                                            <span v-if="!detail.buktiFile">Pilih berkas bukti bayar atau scan kamera...</span>
                                             <span v-else class="font-semibold text-slate-700">{{ detail.buktiFile.name }}</span>
                                         </span>
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onBuktiFile($event)">
                                     </label>
+                                    <button type="button" class="btn-soft" :disabled="detail.scanBusy" @click="$refs.buktiCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
                                     <button class="btn-primary" :disabled="detail.buktiUploading" @click="uploadBuktiBayar()">
                                         <svg v-if="detail.buktiUploading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1647,6 +1648,24 @@
                                     </button>
                                     <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti"><i class="bi bi-box-arrow-up-right"></i>Lihat saat ini</a>
                                 </div>
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <span v-if="detail.scanItems.length" class="text-[11px] text-slate-500">{{ detail.scanItems.length }} halaman</span>
+                                    <button v-if="detail.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="detail.scanBusy" @click="scanBuildPdf('bukti')"><i class="bi bi-file-earmark-pdf"></i> Buat PDF</button>
+                                    <button v-if="detail.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('bukti')">Bersihkan</button>
+                                </div>
+                                <input ref="buktiCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'bukti')">
+                                <div v-if="detail.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                    <div v-for="(it, idx) in detail.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
+                                        <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
+                                        <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
+                                        <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'bukti')">x</button>
+                                        <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'bukti')"><i class="bi bi-arrow-left"></i></button>
+                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === detail.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'bukti')"><i class="bi bi-arrow-right"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-if="detail.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
                                 <p v-if="detail.buktiError" class="mt-2 text-xs text-rose-500">{{ detail.buktiError }}</p>
                             </div>
 
@@ -2047,7 +2066,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
@@ -3097,6 +3116,8 @@
                     this.detail.buktiFile = null;
                     this.detail.buktiUploading = false;
                     this.detail.buktiError = '';
+                    this.scanClear('bukti');
+                    this.detail.scanSeq = 0;
                     this.detail.open = true;
                     this.detail.loading = false;
                 },
@@ -3807,7 +3828,9 @@
                     this.ba.form.file = f;
                 },
                 scanTarget(which) {
-                    return which === 'pelaksanaan' ? this.bab.ba : this.ba.form;
+                    if (which === 'pelaksanaan') return this.bab.ba;
+                    if (which === 'bukti') return this.detail;
+                    return this.ba.form;
                 },
                 scanEnsure(t) {
                     if (!Array.isArray(t.scanItems)) t.scanItems = [];
@@ -3897,10 +3920,15 @@
                         const now = new Date();
                         const stamp = this.dateOnly(now).replace(/-/g, '') + '-' +
                             String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-                        const prefix = which === 'pelaksanaan' ? 'BA-Pelaksanaan-Scan-' : 'BA-Pendukung-Scan-';
+                        const prefix = which === 'pelaksanaan' ? 'BA-Pelaksanaan-Scan-' : (which === 'bukti' ? 'Bukti-Bayar-Scan-' : 'BA-Pendukung-Scan-');
                         const name = prefix + stamp + '.pdf';
-                        t.file = new File([blob], name, { type: 'application/pdf' });
-                        if ('fileName' in t) t.fileName = name;
+                        const file = new File([blob], name, { type: 'application/pdf' });
+                        if (which === 'bukti') {
+                            t.buktiFile = file;
+                        } else {
+                            t.file = file;
+                            if ('fileName' in t) t.fileName = name;
+                        }
                         this.notify('PDF berhasil dibuat (' + pages.length + ' halaman).');
                     } catch (err) {
                         this.notify('Gagal membuat PDF: ' + ((err && err.message) ? err.message : err), false);

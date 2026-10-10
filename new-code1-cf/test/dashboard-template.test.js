@@ -342,4 +342,14 @@ describe('dashboard unggah bukti bayar oleh admin', () => {
     expect(html).toContain('uploadBuktiAdmin');
     expect(html).toContain('detail.buktiFile');
   });
+  it('menyediakan scan kamera seperti berita acara', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('ref="buktiCamera"');
+    expect(html).toContain('accept="image/*" capture="environment"');
+    expect(html).toContain("scanOnPhotos($event, 'bukti')");
+    expect(html).toContain("scanBuildPdf('bukti')");
+    expect(html).toContain("scanClear('bukti')");
+    expect(html).toContain("if (which === 'bukti') return this.detail;");
+    expect(html).toContain("Bukti-Bayar-Scan-");
+  });
 });
