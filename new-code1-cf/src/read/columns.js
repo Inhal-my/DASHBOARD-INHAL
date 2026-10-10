@@ -16,7 +16,8 @@ export const TABLE_COLUMNS = {
     link_final: 'Link Final', status_info_bagian: 'Status Info Bagian', waktu_info_bagian: 'Waktu Info Bagian',
     email_bagian: 'Email Bagian', catatan_info_bagian: 'Catatan Info Bagian', updated_at: 'UpdatedAt',
     dosen: 'Dosen', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', lampiran_email: 'Lampiran Email',
-    upload_reset_at: 'Upload Reset At', upload_reset_by: 'Upload Reset By', upload_reset_note: 'Upload Reset Note'
+    upload_reset_at: 'Upload Reset At', upload_reset_by: 'Upload Reset By', upload_reset_note: 'Upload Reset Note',
+    sumber: 'Sumber'
   },
   detail_kegiatan: {
     timestamp: 'Timestamp', id_pengajuan: 'ID Pengajuan', jenis_kegiatan: 'Jenis Kegiatan',

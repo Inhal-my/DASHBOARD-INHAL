@@ -11,10 +11,19 @@ const PENGAJUAN_COLUMNS = [
   'status', 'catatan_admin', 'notifikasi_terkirim_pada', 'status_notifikasi_email',
   'error_notifikasi_email', 'lampiran_email', 'nomor_surat', 'link_acc_inhal',
   'link_bukti_bayar', 'link_final', 'status_info_bagian', 'waktu_info_bagian',
-  'email_bagian', 'catatan_info_bagian', 'updated_at'
+  'email_bagian', 'catatan_info_bagian', 'updated_at', 'sumber'
 ];
 
-export async function registerPengajuan(db, formData, env) {
+const MANUAL_STATUSES = ['Menunggu', 'Diterima'];
+
+export async function createPengajuan(db, formData, env, opts) {
+  const options = opts || {};
+  const manual = !!options.manual;
+  const status = manual && MANUAL_STATUSES.indexOf(normalizeFormText(options.status)) !== -1
+    ? normalizeFormText(options.status)
+    : 'Menunggu';
+  const sumber = manual ? 'Manual' : 'Portal';
+
   const npm = normalizeFormText(formData.npm);
   const nama = normalizeFormText(formData.namaLengkap);
   const email = normalizeFormText(formData.email);
@@ -22,11 +31,13 @@ export async function registerPengajuan(db, formData, env) {
   if (!npm || !nama) {
     return { success: false, message: 'NPM dan Nama Lengkap wajib diisi.' };
   }
-  if (!email || !isValidEmail(email)) {
-    return { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
-  }
-  if (!noHp || !isValidPhone(noHp)) {
-    return { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
+  if (!manual) {
+    if (!email || !isValidEmail(email)) {
+      return { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
+    }
+    if (!noHp || !isValidPhone(noHp)) {
+      return { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
+    }
   }
 
   const formKey = buildPengajuanKey(formData);
@@ -56,11 +67,11 @@ export async function registerPengajuan(db, formData, env) {
     no_hp_wa: noHp, blok: normalizeFormText(formData.blok),
     jenis_kegiatan: normalizeFormText(formData.jenisKegiatan), dosen: '',
     tanggal_pelaksanaan: '', keterangan: normalizeFormText(formData.keterangan),
-    link_surat_keterangan: suratUrl, status: 'Menunggu', catatan_admin: '',
+    link_surat_keterangan: suratUrl, status, catatan_admin: '',
     notifikasi_terkirim_pada: '', status_notifikasi_email: '', error_notifikasi_email: '',
     lampiran_email: '', nomor_surat: '', link_acc_inhal: '', link_bukti_bayar: '',
     link_final: '', status_info_bagian: '', waktu_info_bagian: '', email_bagian: '',
-    catatan_info_bagian: '', updated_at: nowIso
+    catatan_info_bagian: '', updated_at: nowIso, sumber
   };
   const placeholders = PENGAJUAN_COLUMNS.map((_, i) => '?' + (i + 1)).join(', ');
   const stmts = [
@@ -75,7 +86,7 @@ export async function registerPengajuan(db, formData, env) {
   }
   stmts.push(
     db.prepare('INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1,?2,?3,?4,?5)')
-      .bind(nowIso, idPengajuan, 'Menunggu', 'Pengajuan dibuat.', '')
+      .bind(nowIso, idPengajuan, status, manual ? 'Pengajuan dibuat manual oleh admin.' : 'Pengajuan dibuat.', '')
   );
 
   try {
@@ -87,5 +98,13 @@ export async function registerPengajuan(db, formData, env) {
     }
     return { success: false, message: 'Gagal menyimpan pengajuan: ' + msg };
   }
-  return { success: true, idPengajuan, message: 'Pengajuan berhasil didaftarkan.' };
+  return { success: true, idPengajuan, status, sumber, message: 'Pengajuan berhasil didaftarkan.' };
+}
+
+export async function registerPengajuan(db, formData, env) {
+  return createPengajuan(db, formData, env, { manual: false });
+}
+
+export async function registerManualPengajuan(db, formData, env) {
+  return createPengajuan(db, formData, env, { manual: true, status: formData && formData.status });
 }

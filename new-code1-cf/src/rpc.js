@@ -1,7 +1,8 @@
 import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass, requireAdmin, AUTH_ERROR } from './session.js';
 import { getBaginaConfig, getBagianBootstrap, getBeritaAcaraList } from './read/bagian.js';
 import { getLaporanBootstrap } from './read/laporan.js';
-import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList } from './repo.js';
+import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList, getMasterOptions } from './repo.js';
+import { registerManualPengajuan } from './pengajuan.js';
 import {
   getDashboardBootstrap, getDashboardStats, getPengajuanList, getBagianAggregation,
   getBeritaAcaraAdminList, getLabOptions, getMasterDataMonitor, getPengajuanWithDetails,
@@ -76,6 +77,24 @@ const HANDLERS = {
   getMahasiswaByNpm: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getMahasiswaByNpm(db, args[0]); },
   getDosenOptions: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getDosenOptions(db); },
   getBagianStaffList: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getBagianStaffList(db); },
+  getRegistrationOptions: async (db, args, ctx) => {
+    await requireAdmin(db, ctx.token, ctx.session);
+    const [blok, ujian, sgd, detailSgd, kkd, detailKkd, lab, kegiatanLab] = await Promise.all([
+      getMasterOptions(db, 'Blok'),
+      getMasterOptions(db, 'Ujian'),
+      getMasterOptions(db, 'SGD'),
+      getMasterOptions(db, 'Detail SGD'),
+      getMasterOptions(db, 'KKD'),
+      getMasterOptions(db, 'Detail KKD'),
+      getMasterOptions(db, 'Lab'),
+      getMasterOptions(db, 'Kegiatan Lab')
+    ]);
+    return { blok, ujian, sgd, detailSgd, kkd, detailKkd, lab, kegiatanLab };
+  },
+  registerManualPengajuan: async (db, args, ctx) => {
+    await requireAdmin(db, ctx.token, ctx.session);
+    return registerManualPengajuan(db, args[0], ctx.env);
+  },
   updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx),
   resetUploadBukti: (db, args, ctx) => resetUploadBukti(db, args[0], args[1], ctx)
 };

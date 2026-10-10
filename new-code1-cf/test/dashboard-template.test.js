@@ -231,7 +231,7 @@ describe('dashboard master chip picker', () => {
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain("const TAB_KEYS = ['pengajuan', 'stats', 'ba', 'master']");
+    expect(html).toContain("const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'master']");
     expect(html).toContain('hashTab()');
     expect(html).toContain("history.replaceState(null, '', h)");
     expect(html).toContain('this.tab = this.hashTab()');
@@ -287,5 +287,34 @@ describe('dashboard responsive shell', () => {
     for (const sel of ['.app-shell', '.sidebar-aside', '.main-wrap', '.content-wrap', '.sidebar-toggle', '.bottom-nav', '.bnav-btn', '.fab-btn', '.sheet-panel', '.sheet-item', '.topbar-search', '.topbar-bell', '.stat-trend']) {
       expect(selectors.has(sel)).toBe(true);
     }
+  });
+});
+
+describe('dashboard manual entry tab', () => {
+  it('menambahkan tab Manual dengan ikon pensil', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("key: 'manual', icon: 'bi-pencil-square', label: 'Manual'");
+    expect(html).toContain("tab==='manual'");
+    expect(html).toContain('Input Pengajuan Manual');
+  });
+
+  it('menyediakan form manual dengan status awal dan registrasi RPC admin', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('submitManual()');
+    expect(html).toContain('registerManualPengajuan');
+    expect(html).toContain('getRegistrationOptions');
+    expect(html).toContain('onManualNpmBlur()');
+    expect(html).toContain('Status Awal');
+    expect(html).toContain("v-model=\"manual.form.status\"");
+    expect(html).toContain('<option value="Menunggu">Menunggu</option>');
+    expect(html).toContain('<option value="Diterima">Diterima</option>');
+  });
+
+  it('menandai sumber Manual dan menonaktifkan email notifikasi', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('isManual(r)');
+    expect(html).toContain('manualHighlightId');
+    expect(html).toContain('!isManual(detail.p)');
+    expect(html).toContain("'Sumber'");
   });
 });

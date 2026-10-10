@@ -187,3 +187,16 @@ describe('modal Kelola BA', () => {
     expect(html).toContain('v-model="kelola.jam" type="time" class="input pl-10 cursor-pointer"');
   });
 });
+
+describe('detail laporan kolom Sumber', () => {
+  it('menampilkan kolom Sumber pada tabel Rekap', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('<th class="px-3 py-3 font-semibold">Sumber</th>');
+    expect(html).toContain("(r.pengajuan.Sumber || '').trim() === 'Manual'");
+    expect(html).toContain('>Portal</span>');
+  });
+  it('menyertakan Sumber pada export xlsx Rekap', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("Sumber: p.Sumber || 'Portal'");
+  });
+});
