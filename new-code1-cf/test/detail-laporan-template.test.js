@@ -256,3 +256,13 @@ describe('detail laporan app shell (ala dashboard)', () => {
     }
   });
 });
+
+describe('detail laporan shell interaktif', () => {
+  it('menyediakan state dan aksi shell', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('sidebarCollapsed: false');
+    expect(html).toContain('sidebarOpen: false');
+    expect(html).toContain('mobileMenuOpen: false');
+    expect(html).toContain('sidebarCollapsed = !sidebarCollapsed');
+  });
+});
