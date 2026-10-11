@@ -296,9 +296,7 @@
                         <i class="bi bi-search"></i>
                         <input v-model="filters.search" placeholder="Cari NPM / nama..." @keyup.enter="loadData()">
                     </label>
-                    <button type="button" class="topbar-bell" @click="loadData()" title="Muat ulang data" aria-label="Muat ulang data">
-                        <i class="bi bi-arrow-clockwise text-lg"></i>
-                    </button>
+                    <button type="button" class="btn-soft" @click="loadData()" title="Muat ulang data" aria-label="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
                     <a :href="'/dashboard'" class="btn-soft" title="Dashboard"><i class="bi bi-speedometer2"></i><span class="hidden md:inline">Dashboard</span></a>
                     <a :href="appUrl" class="btn-soft" title="Beranda"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
                     <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50" title="Keluar"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
@@ -1218,22 +1216,13 @@
 
         <!-- ============ MOBILE BOTTOM NAV ============ -->
         <nav v-if="loggedIn" class="bottom-nav lg:hidden">
-            <div class="bottom-nav-track" style="grid-template-columns: repeat(6, minmax(0,1fr));">
-                <button v-for="t in tabs" :key="'bn-' + t.key" type="button" class="bnav-btn" :class="activeTab===t.key ? 'active' : ''" @click="switchTab(t.key)">
-                    <i :class="t.icon"></i>
-                    {{ t.label }}
-                </button>
-                <button type="button" class="bnav-btn" :class="mobileMenuOpen ? 'active' : ''" @click="toggleMobileMenu()">
-                    <i class="bi bi-grid"></i>
-                    Menu
-                </button>
+            <div class="bottom-nav-track">
+                <a :href="'/dashboard'" class="bnav-btn"><i class="bi bi-inbox"></i>Pengajuan</a>
+                <button type="button" class="bnav-btn" :class="activeTab==='ba' ? 'active' : ''" @click="switchTab('ba')"><i class="bi bi-file-earmark-pdf"></i>BA</button>
+                <button type="button" class="bnav-btn" :class="activeTab!=='ba' ? 'active' : ''" @click="switchTab('rekap')"><i class="bi bi-file-earmark-bar-graph"></i>Laporan</button>
+                <button type="button" class="bnav-btn" :class="mobileMenuOpen ? 'active' : ''" @click="toggleMobileMenu()"><i class="bi bi-grid"></i>Menu</button>
             </div>
         </nav>
-
-        <!-- ============ FAB ============ -->
-        <button v-if="loggedIn" type="button" class="fab-btn lg:hidden" @click="exportExcel()" aria-label="Export laporan" title="Export laporan">
-            <i class="bi bi-download"></i>
-        </button>
 
         <!-- ============ MOBILE MENU SHEET ============ -->
         <transition name="fade">

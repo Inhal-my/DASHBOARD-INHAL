@@ -282,4 +282,10 @@ describe('detail laporan memakai app shell', () => {
     expect(html).toContain('topbar-search');
     expect(html).toContain('topbar-bell');
   });
+
+  it('bottom nav 4 item sesuai mockup tanpa FAB', async () => {
+    const html = await loadHtml();
+    expect(html).not.toContain('repeat(6, minmax');
+    expect(html).not.toContain('fab-btn lg:hidden');
+  });
 });
