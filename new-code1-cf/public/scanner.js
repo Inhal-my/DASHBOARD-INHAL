@@ -82,12 +82,377 @@
         return enginePromise;
     }
 
-    function noop() {}
+    /* ---------- util kecil ---------- */
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function injectStyle() {
+        if (document.getElementById('scn-style')) return;
+        var st = document.createElement('style');
+        st.id = 'scn-style';
+        st.textContent = [
+            '.scn-overlay{position:fixed;inset:0;z-index:2000;background:#0b1120;display:flex;flex-direction:column;font-family:system-ui,sans-serif}',
+            '.scn-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#0f172a;border-bottom:1px solid #1e293b;color:#fff}',
+            '.scn-head h3{margin:0;font-size:15px;font-weight:800}',
+            '.scn-head .sub{font-size:11px;color:#94a3b8;margin-top:2px}',
+            '.scn-badge{margin-left:auto;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:#3f2d0a;color:#fbbf24;white-space:nowrap}',
+            '.scn-badge.ok{background:#052e22;color:#34d399}',
+            '.scn-stage{flex:1;position:relative;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}',
+            '.scn-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
+            '.scn-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}',
+            '.scn-fallback{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;color:#e2e8f0;text-align:center}',
+            '.scn-bottom{background:#0f172a;border-top:1px solid #1e293b;padding:10px 14px calc(12px + env(safe-area-inset-bottom));color:#cbd5e1}',
+            '.scn-pages{display:flex;gap:8px;overflow-x:auto;min-height:64px;margin-bottom:10px;padding:2px 0}',
+            '.scn-page{position:relative;width:48px;height:64px;flex:0 0 auto;border-radius:6px;border:2px solid #334155;overflow:hidden;background:#1e293b}',
+            '.scn-page img{width:100%;height:100%;object-fit:cover;display:block}',
+            '.scn-page .no{position:absolute;left:2px;top:2px;background:rgba(15,23,42,.8);color:#fff;font-size:9px;font-weight:800;padding:0 4px;border-radius:4px}',
+            '.scn-page .del{position:absolute;right:1px;top:1px;width:16px;height:16px;border-radius:999px;background:#e11d48;color:#fff;font-size:10px;border:0;cursor:pointer}',
+            '.scn-empty{display:flex;align-items:center;justify-content:center;width:100%;color:#64748b;font-size:11px;text-align:center}',
+            '.scn-actions{display:flex;align-items:center;justify-content:center;gap:14px}',
+            '.scn-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;font-size:12px;font-weight:700;padding:9px 12px;border-radius:10px;cursor:pointer}',
+            '.scn-btn.primary{background:#4f46e5;border-color:#4f46e5;color:#fff}',
+            '.scn-btn:disabled{opacity:.45;cursor:default}',
+            '.scn-shutter{width:60px;height:60px;border-radius:999px;background:#fff;border:4px solid #94a3b8;cursor:pointer}',
+            '.scn-shutter:disabled{opacity:.4}',
+            '.scn-note{padding:8px 14px;text-align:center;font-size:11px;color:#94a3b8}'
+        ].join('');
+        document.head.appendChild(st);
+    }
+
+    function dataUrlToBytes(dataUrl) {
+        var base64 = String(dataUrl).split(',')[1] || '';
+        var bin = atob(base64);
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+    }
+
+    function grabCanvas(video, maxW) {
+        var vw = video.videoWidth, vh = video.videoHeight;
+        if (!vw || !vh) return null;
+        var scale = Math.min(1, maxW / vw);
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(vw * scale));
+        c.height = Math.max(1, Math.round(vh * scale));
+        c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+        return c;
+    }
+
+    /* ---------- pipeline CV ---------- */
+
+    function detectQuad(cv, canvas) {
+        var src = cv.imread(canvas);
+        var gray = new cv.Mat();
+        var blur = new cv.Mat();
+        var edges = new cv.Mat();
+        var kernel = cv.Mat.ones(5, 5, cv.CV_8U);
+        var contours = new cv.MatVector();
+        var hierarchy = new cv.Mat();
+        var quad = null;
+        try {
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+            cv.Canny(blur, edges, 60, 180, 3, false);
+            cv.dilate(edges, edges, kernel);
+            cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+            var frameArea = canvas.width * canvas.height;
+            var bestArea = 0;
+            for (var i = 0; i < contours.size(); i += 1) {
+                var c = contours.get(i);
+                var area = cv.contourArea(c);
+                if (area > frameArea * 0.15 && area > bestArea) {
+                    var peri = cv.arcLength(c, true);
+                    var approx = new cv.Mat();
+                    cv.approxPolyDP(c, approx, 0.02 * peri, true);
+                    if (approx.rows === 4 && cv.isContourConvex(approx)) {
+                        var pts = [];
+                        for (var j = 0; j < 4; j += 1) {
+                            pts.push({ x: approx.data32S[j * 2], y: approx.data32S[j * 2 + 1] });
+                        }
+                        quad = orderCorners(pts).map(function (p) {
+                            return { x: p.x / canvas.width, y: p.y / canvas.height };
+                        });
+                        bestArea = area;
+                    }
+                    approx.delete();
+                }
+                c.delete();
+            }
+        } finally {
+            src.delete(); gray.delete(); blur.delete(); edges.delete();
+            kernel.delete(); contours.delete(); hierarchy.delete();
+        }
+        return quad;
+    }
+
+    function processFrame(cv, canvas, quad) {
+        var src = cv.imread(canvas);
+        var flat = new cv.Mat();
+        var gray = new cv.Mat();
+        var thr = new cv.Mat();
+        try {
+            if (quad) {
+                var pts = quad.map(function (p) {
+                    return { x: Math.round(p.x * (canvas.width - 1)), y: Math.round(p.y * (canvas.height - 1)) };
+                });
+                var size = outputSize(pts, MAX_OUTPUT_DIM);
+                var srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                    pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y
+                ]);
+                var dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                    0, 0, size.width - 1, 0, size.width - 1, size.height - 1, 0, size.height - 1
+                ]);
+                var m = cv.getPerspectiveTransform(srcTri, dstTri);
+                cv.warpPerspective(src, flat, m, new cv.Size(size.width, size.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+                srcTri.delete(); dstTri.delete(); m.delete();
+            } else {
+                cv.resize(src, flat, new cv.Size(src.cols, src.rows));
+            }
+            cv.cvtColor(flat, gray, cv.COLOR_RGBA2GRAY);
+            cv.adaptiveThreshold(gray, thr, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
+            var out = document.createElement('canvas');
+            out.width = thr.cols;
+            out.height = thr.rows;
+            cv.imshow(out, thr);
+            var dataUrl = out.toDataURL('image/jpeg', 0.8);
+            return { bytes: dataUrlToBytes(dataUrl), width: out.width, height: out.height };
+        } finally {
+            src.delete(); flat.delete(); gray.delete(); thr.delete();
+        }
+    }
+
+    function processPlain(video, quad) {
+        var canvas = grabCanvas(video, MAX_OUTPUT_DIM);
+        if (!canvas) return null;
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        return { bytes: dataUrlToBytes(dataUrl), width: canvas.width, height: canvas.height };
+    }
+
+    /* ---------- overlay ---------- */
+
+    function open(opts) {
+        opts = opts || {};
+        var state = { stream: null, facing: 'environment', pages: [], quad: null, engine: null, busy: false, timer: null, closed: false };
+
+        var ov = document.createElement('div');
+        ov.className = 'scn-overlay';
+        ov.innerHTML =
+            '<div class="scn-head">' +
+                '<div><h3>' + escapeHtml(opts.title || 'Scan Dokumen') + '</h3>' +
+                '<div class="sub">Arahkan kamera ke dokumen, tepi terdeteksi otomatis</div></div>' +
+                '<span class="scn-badge" data-role="status">Menyiapkan…</span>' +
+                '<button class="scn-btn" data-act="flip">Ganti</button>' +
+            '</div>' +
+            '<div class="scn-stage">' +
+                '<video class="scn-video" autoplay playsinline muted></video>' +
+                '<canvas class="scn-canvas"></canvas>' +
+                '<div class="scn-fallback" data-role="fallback"></div>' +
+            '</div>' +
+            '<div class="scn-note" data-role="note"></div>' +
+            '<div class="scn-bottom">' +
+                '<div class="scn-pages" data-role="pages"></div>' +
+                '<div class="scn-actions">' +
+                    '<button class="scn-btn" data-act="reset">Reset</button>' +
+                    '<button class="scn-shutter" data-act="shoot" title="Tangkap halaman"></button>' +
+                    '<button class="scn-btn primary" data-act="use">Gunakan</button>' +
+                    '<button class="scn-btn" data-act="close">Tutup</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(ov);
+        injectStyle();
+
+        var video = ov.querySelector('.scn-video');
+        var overlay = ov.querySelector('.scn-canvas');
+        var statusEl = ov.querySelector('[data-role="status"]');
+        var pagesEl = ov.querySelector('[data-role="pages"]');
+        var noteEl = ov.querySelector('[data-role="note"]');
+        var fallbackEl = ov.querySelector('[data-role="fallback"]');
+        var shootBtn = ov.querySelector('[data-act="shoot"]');
+
+        function setStatus(text, ok) {
+            statusEl.textContent = text;
+            statusEl.className = 'scn-badge' + (ok ? ' ok' : '');
+        }
+
+        function renderPages() {
+            if (!state.pages.length) {
+                pagesEl.innerHTML = '<div class="scn-empty">Belum ada halaman. Tekan tombol putih untuk menangkap.</div>';
+                return;
+            }
+            pagesEl.innerHTML = state.pages.map(function (p, i) {
+                return '<div class="scn-page">' +
+                    '<img src="' + p.preview + '" alt="Halaman ' + (i + 1) + '">' +
+                    '<span class="no">' + (i + 1) + '</span>' +
+                    '<button class="del" data-del="' + i + '" title="Hapus">x</button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function stopCamera() {
+            if (state.stream) {
+                try { state.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* abaikan */ }
+                state.stream = null;
+            }
+        }
+
+        function close() {
+            if (state.closed) return;
+            state.closed = true;
+            if (state.timer) clearInterval(state.timer);
+            stopCamera();
+            ov.remove();
+        }
+
+        function showFallback(message, withOs) {
+            fallbackEl.style.display = 'flex';
+            fallbackEl.innerHTML =
+                '<div>' + escapeHtml(message) + '</div>' +
+                (withOs ? '<button class="scn-btn primary" data-act="os">Pakai kamera OS</button>' : '') +
+                '<button class="scn-btn" data-act="close">Tutup</button>';
+        }
+
+        async function startCamera() {
+            setStatus('Menyalakan kamera…', false);
+            fallbackEl.style.display = 'none';
+            if (!isSupported()) {
+                state.engine = null;
+                showFallback('Perangkat ini tidak menyediakan kamera in-app.', true);
+                setStatus('Kamera tidak tersedia', false);
+                return;
+            }
+            try {
+                stopCamera();
+                state.stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: state.facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                video.srcObject = state.stream;
+                var p = video.play();
+                if (p && p.catch) p.catch(function () {});
+                setStatus('Kamera aktif', true);
+                startDetector();
+            } catch (e) {
+                showFallback('Kamera tidak dapat diakses (izin ditolak atau tidak ada kamera).', true);
+                setStatus('Kamera tidak tersedia', false);
+            }
+        }
+
+        function drawOverlay(quad) {
+            var vw = video.videoWidth, vh = video.videoHeight;
+            if (!vw || !vh) return;
+            overlay.width = vw;
+            overlay.height = vh;
+            var ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, vw, vh);
+            if (!quad) return;
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = Math.max(2, Math.round(vw / 320));
+            ctx.beginPath();
+            quad.forEach(function (p, i) {
+                var x = p.x * vw, y = p.y * vh;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        function startDetector() {
+            if (state.timer) clearInterval(state.timer);
+            state.timer = setInterval(async function () {
+                if (state.closed || state.busy || !video.videoWidth) return;
+                if (!state.engine) {
+                    state.engine = await loadEngine().catch(function () { return null; });
+                    if (!state.engine) {
+                        noteEl.textContent = 'Deteksi tepi tidak tersedia; foto diambil tanpa koreksi.';
+                        setStatus('Kamera aktif (tanpa deteksi)', true);
+                        return;
+                    }
+                }
+                var small = grabCanvas(video, 640);
+                if (!small) return;
+                try {
+                    state.quad = detectQuad(state.engine, small);
+                    drawOverlay(state.quad);
+                    setStatus(state.quad ? 'Dokumen terdeteksi' : 'Mencari tepi…', !!state.quad);
+                } catch (e) {
+                    state.quad = null;
+                }
+            }, 500);
+        }
+
+        async function shoot() {
+            if (state.busy) return;
+            state.busy = true;
+            shootBtn.disabled = true;
+            try {
+                var full = grabCanvas(video, MAX_OUTPUT_DIM);
+                if (!full) return;
+                var result;
+                if (state.engine) {
+                    result = processFrame(state.engine, full, state.quad);
+                } else {
+                    result = processPlain(video, state.quad);
+                }
+                var blob = new Blob([result.bytes], { type: 'image/jpeg' });
+                state.pages.push({
+                    bytes: result.bytes,
+                    width: result.width,
+                    height: result.height,
+                    preview: URL.createObjectURL(blob)
+                });
+                renderPages();
+            } catch (e) {
+                noteEl.textContent = 'Gagal memproses gambar: ' + (e && e.message ? e.message : e);
+            } finally {
+                state.busy = false;
+                shootBtn.disabled = false;
+            }
+        }
+
+        function usePages() {
+            if (!state.pages.length) { noteEl.textContent = 'Belum ada halaman untuk dipakai.'; return; }
+            var out = state.pages.map(function (p) {
+                return { bytes: p.bytes, width: p.width, height: p.height };
+            });
+            if (typeof opts.onApply === 'function') opts.onApply(out);
+            close();
+        }
+
+        pagesEl.addEventListener('click', function (e) {
+            var idx = e.target && e.target.getAttribute && e.target.getAttribute('data-del');
+            if (idx == null) return;
+            var i = parseInt(idx, 10);
+            if (isNaN(i) || !state.pages[i]) return;
+            try { URL.revokeObjectURL(state.pages[i].preview); } catch (err) { /* abaikan */ }
+            state.pages.splice(i, 1);
+            renderPages();
+        });
+
+        ov.addEventListener('click', function (e) {
+            var act = e.target && e.target.getAttribute && e.target.getAttribute('data-act');
+            if (act === 'close') close();
+            else if (act === 'flip') { state.facing = state.facing === 'environment' ? 'user' : 'environment'; startCamera(); }
+            else if (act === 'reset') {
+                state.pages.forEach(function (p) { try { URL.revokeObjectURL(p.preview); } catch (err) { /* abaikan */ } });
+                state.pages = [];
+                renderPages();
+            } else if (act === 'use') usePages();
+            else if (act === 'os') { if (typeof opts.onOsFallback === 'function') opts.onOsFallback(); close(); }
+        });
+        shootBtn.addEventListener('click', shoot);
+
+        renderPages();
+        startCamera();
+    }
 
     window.Scanner = {
         loadEngine: loadEngine,
         isSupported: isSupported,
-        open: noop,
+        open: open,
         __test: { orderCorners: orderCorners, outputSize: outputSize }
     };
 })();

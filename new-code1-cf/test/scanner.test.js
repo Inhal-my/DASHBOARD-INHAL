@@ -61,3 +61,12 @@ describe('Scanner.isSupported', () => {
     expect(S.isSupported(null)).toBe(false);
   });
 });
+
+describe('scanner.js kontrak modul', () => {
+  it('mengekspos API yang dipakai host', () => {
+    const S = loadScanner();
+    expect(typeof S.open).toBe('function');
+    expect(typeof S.loadEngine).toBe('function');
+    expect(typeof S.isSupported).toBe('function');
+  });
+});
