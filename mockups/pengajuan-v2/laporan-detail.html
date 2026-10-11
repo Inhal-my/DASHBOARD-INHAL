@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mockup Redesign Laporan INHAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{
+    --brand:#4f46e5; --brand-700:#4338ca; --brand-soft:#eef2ff;
+    --emerald:#059669; --emerald-soft:#ecfdf5;
+    --rose:#e11d48; --rose-soft:#fff1f2;
+    --amber:#d97706; --amber-soft:#fffbeb;
+    --sky:#0284c7; --sky-soft:#f0f9ff;
+    --teal:#0d9488; --teal-soft:#f0fdfa;
+    --violet:#7c3aed; --violet-soft:#f5f3ff;
+    --ink-900:#0f172a; --ink-700:#334155; --ink-500:#64748b; --ink-400:#94a3b8;
+    --line:#e7ebf3; --bg:#f5f6fa; --card:#fff;
+    --radius:16px;
+    --shadow-soft:0 1px 2px rgba(15,23,42,.04),0 8px 24px -18px rgba(15,23,42,.28);
+    --shadow-lift:0 24px 60px -24px rgba(15,23,42,.45);
+    --sidebar-w:264px; --sidebar-wc:82px; --note-h:34px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink-900);-webkit-font-smoothing:antialiased}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select,textarea{font-family:inherit}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .muted{color:var(--ink-400)}
+  .hidden{display:none !important}
+
+  .mock-note{background:#0f172a;color:#cbd5e1;font-size:12px;padding:8px 16px;text-align:center;position:sticky;top:0;z-index:300;letter-spacing:.02em}
+  .mock-note b{color:#a5b4fc}
+
+  .shell{display:flex;min-height:calc(100vh - var(--note-h))}
+
+  .sidebar{width:var(--sidebar-w);flex:0 0 var(--sidebar-w);background:linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%);color:#e2e8f0;display:flex;flex-direction:column;position:sticky;top:var(--note-h);height:calc(100vh - var(--note-h));transition:width .2s ease,flex-basis .2s ease}
+  .collapse-btn{position:absolute;right:-14px;top:30px;width:28px;height:28px;border-radius:999px;background:#fff;color:var(--brand);display:grid;place-items:center;box-shadow:0 2px 8px rgba(15,23,42,.28);border:1px solid var(--line);z-index:6}
+  .brand{display:flex;align-items:center;gap:12px;padding:22px 20px 18px}
+  .brand-logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;font-size:20px;box-shadow:0 8px 20px -8px rgba(99,102,241,.9)}
+  .brand-txt strong{display:block;font-size:15px;font-weight:800;color:#fff;white-space:nowrap}
+  .brand-txt span{font-size:11px;color:#94a3b8;white-space:nowrap}
+  .nav-group{padding:10px 12px 0}
+  .nav-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#64748b;padding:10px 12px 6px;white-space:nowrap}
+  .nav-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border-radius:12px;color:#cbd5e1;font-size:14px;font-weight:600;transition:.15s;position:relative}
+  .nav-item i{font-size:17px;width:20px;text-align:center;flex:0 0 auto}
+  .nav-item .nav-txt{white-space:nowrap}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-item.active{background:linear-gradient(135deg,rgba(99,102,241,.28),rgba(79,70,229,.16));color:#fff;box-shadow:inset 0 0 0 1px rgba(129,140,248,.35)}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:4px;height:22px;border-radius:0 4px 4px 0;background:#818cf8}
+  .nav-badge{margin-left:auto;min-width:22px;height:20px;padding:0 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+  .sidebar-foot{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.08)}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.05)}
+  .avatar{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(135deg,#34d399,#059669);color:#fff;font-weight:800;font-size:13px}
+  .user-chip .meta{min-width:0;flex:1}
+  .user-chip .meta strong{display:block;font-size:13px;color:#fff}
+  .user-chip .meta span{font-size:11px;color:#94a3b8}
+  .logout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.05);color:#cbd5e1;font-size:12px;font-weight:700;white-space:nowrap}
+  .logout:hover{background:rgba(244,63,94,.16);color:#fda4af}
+
+  .shell.collapsed .sidebar{width:var(--sidebar-wc);flex-basis:var(--sidebar-wc)}
+  .shell.collapsed .brand-txt,.shell.collapsed .nav-label,.shell.collapsed .nav-txt,.shell.collapsed .nav-badge,.shell.collapsed .meta,.shell.collapsed .logout span{display:none}
+  .shell.collapsed .brand{justify-content:center;padding:22px 0 18px}
+  .shell.collapsed .nav-item{justify-content:center;padding:12px 0;gap:0}
+  .shell.collapsed .user-chip{justify-content:center;padding:8px 0}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{position:sticky;top:var(--note-h);z-index:50;height:66px;display:flex;align-items:center;gap:14px;padding:0 28px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .hamburger{display:none}
+  .page-head .crumb{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-400)}
+  .page-head h1{margin:0;font-size:17px;font-weight:800}
+  .topbar-spacer{flex:1}
+  .searchbox{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 14px;width:280px;color:var(--ink-400);font-size:13px}
+  .searchbox input{border:0;outline:0;background:none;font-size:13px;width:100%;color:var(--ink-900)}
+  .bell{position:relative;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--ink-500);background:#fff;border:1px solid var(--line)}
+  .bell .count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px}
+  .topbar .avatar{width:40px;height:40px}
+
+  .content{padding:24px 28px 60px;width:100%;max-width:1400px;margin:0 auto}
+  .page-intro{margin-bottom:18px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .page-intro h2{margin:0;font-size:21px;font-weight:800}
+  .page-intro p{margin:4px 0 0;color:var(--ink-500);font-size:13.5px}
+  .head-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:9px 15px;font-size:13px;font-weight:700;transition:.15s}
+  .btn-primary{background:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(15,23,42,.12)}
+  .btn-primary:hover{background:var(--brand-700)}
+  .btn-emerald{background:var(--emerald);color:#fff}
+  .btn-emerald:hover{background:#047857}
+  .btn-soft{background:#fff;color:var(--ink-700);border:1px solid var(--line)}
+  .btn-soft:hover{background:#f8fafc}
+  .btn-danger-soft{background:var(--rose-soft);color:var(--rose);border:1px solid #fecdd3}
+  .btn-danger-soft:hover{background:#ffe4e6}
+  .btn-ghost{color:var(--ink-500);padding:9px 11px}
+  .btn-ghost:hover{background:#f1f5f9;border-radius:12px}
+  .btn-sm{padding:7px 12px;font-size:12px}
+  .btn-xs{padding:5px 9px;font-size:11px;border-radius:9px}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+
+  .stats{display:grid;grid-template-columns:repeat(var(--cols,5),minmax(0,1fr));gap:14px;margin-bottom:18px}
+  .stats.cols-7{--cols:7}
+  .stat{background:var(--card);border-radius:var(--radius);padding:15px;border:1px solid var(--line);box-shadow:var(--shadow-soft);display:flex;align-items:center;gap:12px;text-align:left;transition:.15s}
+  .stat:hover{border-color:#cbd5e1}
+  .stat.active{box-shadow:inset 0 0 0 2px var(--brand)}
+  .stat .ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:18px;flex:0 0 auto}
+  .stat .ic.indigo{background:var(--brand-soft);color:var(--brand)}
+  .stat .ic.amber{background:var(--amber-soft);color:var(--amber)}
+  .stat .ic.emerald{background:var(--emerald-soft);color:var(--emerald)}
+  .stat .ic.sky{background:var(--sky-soft);color:var(--sky)}
+  .stat .ic.rose{background:var(--rose-soft);color:var(--rose)}
+  .stat .ic.violet{background:var(--violet-soft);color:var(--violet)}
+  .stat .ic.teal{background:var(--teal-soft);color:var(--teal)}
+  .stat .ic.slate{background:#f1f5f9;color:#64748b}
+  .stat .num{font-size:21px;font-weight:800}
+  .stat .lbl{font-size:11.5px;color:var(--ink-500);font-weight:600}
+  .stat .pct{margin-left:auto;font-size:11px;font-weight:800;color:var(--ink-400)}
+
+  .panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow-soft);overflow:hidden}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .panel-head h3{margin:0;font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .panel-head .sub{font-size:11.5px;color:var(--ink-400);font-weight:500;margin-top:2px}
+  .panel-body{padding:16px}
+  .toolbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:7px 13px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-500);background:#fff;border:1px solid var(--line);transition:.15s}
+  .chip:hover{border-color:#cbd5e1;color:var(--ink-700)}
+  .chip.active{background:#0f172a;color:#fff;border-color:#0f172a}
+  .chip .dot{display:inline-block;width:7px;height:7px;border-radius:999px;margin-right:6px;vertical-align:1px}
+  .filter-sel{border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:600;color:var(--ink-700);background:#fff;outline:none}
+  .filter-sel:focus{border-color:var(--brand)}
+
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  thead th{text-align:left;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-400);padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody td{padding:12px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;color:var(--ink-700);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr.clickable{cursor:pointer;transition:.12s}
+  tbody tr.clickable:hover{background:#f8fafc}
+  .nm{font-weight:700;color:var(--ink-900)}
+  .sub{font-size:11.5px;color:var(--ink-400);margin-top:1px}
+  .celluser{display:flex;align-items:center;gap:11px}
+  .celluser .avatar{width:34px;height:34px;font-size:12px}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+  .badge.wait{background:var(--amber-soft);color:var(--amber)}
+  .badge.recv{background:var(--sky-soft);color:var(--sky)}
+  .badge.acc{background:var(--emerald-soft);color:var(--emerald)}
+  .badge.rej{background:var(--rose-soft);color:var(--rose)}
+  .badge.cancel{background:#f1f5f9;color:#64748b}
+  .tag-manual{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 7px;border-radius:999px;background:var(--violet-soft);color:var(--violet);font-size:10px;font-weight:800}
+  .docdot{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:12px;border:1px solid var(--line);color:var(--ink-400);background:#fff}
+  .docdot.on{color:#fff;border-color:transparent}
+  .docdot.on.surat{background:#0284c7}
+  .docdot.on.acc{background:#059669}
+  .docdot.on.bukti{background:#ea580c}
+  .check{height:16px;width:16px;accent-color:var(--brand);cursor:pointer}
+  .row-actions{display:flex;gap:4px;justify-content:flex-end}
+  .iconbtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--ink-400);transition:.12s}
+  .iconbtn:hover{background:var(--brand-soft);color:var(--brand)}
+  .iconbtn.danger:hover{background:var(--rose-soft);color:var(--rose)}
+
+  .bulkbar{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--brand-soft);border-bottom:1px solid #c7d2fe;font-size:13px;font-weight:600;color:#3730a3}
+
+  .cards{display:none;padding:12px;gap:12px;flex-direction:column}
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .mcard .row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .mcard .kv{display:grid;grid-template-columns:92px 1fr;gap:4px 10px;font-size:12.5px;color:var(--ink-500)}
+  .mcard .kv b{color:var(--ink-700);font-weight:600}
+  .mcard .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .mcard .actions .btn{flex:1;justify-content:center;padding:8px 10px}
+
+  .bottomnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:80;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px -18px rgba(15,23,42,.35)}
+  .bottomnav .track{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .bnav{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border-radius:14px;color:var(--ink-400);font-size:10.5px;font-weight:700;position:relative}
+  .bnav i{font-size:20px}
+  .bnav.active{color:var(--brand);background:var(--brand-soft)}
+  .bnav .nav-badge{position:absolute;top:2px;right:calc(50% - 24px);margin:0;min-width:18px;height:16px;font-size:10px;padding:0 4px}
+  .fab{display:none;position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:90;width:56px;height:56px;border-radius:18px;background:var(--brand);color:#fff;font-size:24px;place-items:center;box-shadow:0 14px 30px -8px rgba(79,70,229,.7)}
+  .mobile-menu{position:fixed;left:0;top:0;bottom:0;z-index:220;width:272px;max-width:84%;background:linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%);color:#e2e8f0;display:flex;flex-direction:column;transform:translateX(-105%);transition:transform .26s cubic-bezier(.22,1,.36,1);box-shadow:var(--shadow-lift);overflow-y:auto}
+  .mobile-menu.open{transform:translateX(0)}
+
+  /* Drawer */
+  .drawer-overlay{position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s ease}
+  .drawer-overlay.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;bottom:0;z-index:210;width:600px;max-width:100%;background:#f7f8fc;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .26s cubic-bezier(.22,1,.36,1);box-shadow:var(--shadow-lift)}
+  .drawer.open{transform:translateX(0)}
+  .dr-head{flex:0 0 auto;background:#fff;border-bottom:1px solid var(--line);padding:16px 20px 0}
+  .dr-head-top{display:flex;align-items:flex-start;gap:12px}
+  .dr-head .avatar{width:46px;height:46px;font-size:15px}
+  .dr-id{min-width:0;flex:1}
+  .dr-id h3{margin:0;font-size:16px;font-weight:800;color:var(--ink-900);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .dr-id .meta{font-size:12px;color:var(--ink-400);margin-top:2px}
+  .dr-close{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--ink-400);flex:0 0 auto}
+  .dr-close:hover{background:#f1f5f9;color:var(--ink-700)}
+  .steps{display:flex;gap:6px;margin:16px 0 0}
+  .step{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 8px 13px;border-bottom:2.5px solid transparent;color:var(--ink-400);font-size:12.5px;font-weight:700;transition:.15s}
+  .step .n{width:22px;height:22px;border-radius:999px;display:grid;place-items:center;font-size:11px;font-weight:800;background:#e2e8f0;color:var(--ink-500)}
+  .step.done .n{background:var(--emerald-soft);color:var(--emerald)}
+  .step.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .step.active .n{background:var(--brand);color:#fff}
+  .dr-body{flex:1;overflow-y:auto;padding:20px}
+  .dr-foot{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);padding:13px 20px;display:flex;align-items:center;gap:10px}
+  .dr-foot .spacer{flex:1}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);margin-bottom:16px}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .card-head h4{margin:0;font-size:13.5px;font-weight:800;color:var(--ink-900);display:flex;align-items:center;gap:8px}
+  .card-body{padding:16px}
+  .label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-400);margin-bottom:5px}
+  .value{font-size:13.5px;color:var(--ink-700);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 18px}
+  .input{width:100%;border-radius:11px;border:0;background:#fff;padding:10px 12px;font-size:13.5px;color:var(--ink-900);outline:none;box-shadow:inset 0 0 0 1px #e2e8f0;transition:box-shadow .15s}
+  .input:focus{box-shadow:inset 0 0 0 2px var(--brand)}
+  .input-sm{padding:8px 10px;font-size:13px}
+  .req{color:var(--rose)}
+
+  .section-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--ink-700);margin-bottom:12px}
+  .section-title i{color:var(--brand)}
+
+  .keg-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fcfcfe;margin-bottom:9px}
+  .keg-item:last-child{margin-bottom:0}
+  .keg-item .t{font-size:13.5px;font-weight:700;color:var(--ink-900)}
+  .keg-item .d{font-size:12px;color:var(--ink-500);margin-top:2px}
+  .keg-item .m{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:11px;color:var(--ink-400)}
+  .mini-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--ink-400);flex:0 0 auto}
+  .mini-ic:hover{background:#f1f5f9;color:var(--ink-700)}
+  .mini-ic.danger:hover{background:var(--rose-soft);color:var(--rose)}
+
+  .doc-row{display:flex;align-items:center;gap:13px;padding:14px;border:1px solid var(--line);border-radius:13px;margin-bottom:11px;background:#fff}
+  .doc-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:18px;flex:0 0 auto}
+  .doc-ic.surat{background:var(--sky-soft);color:var(--sky)}
+  .doc-ic.acc{background:var(--emerald-soft);color:var(--emerald)}
+  .doc-ic.bukti{background:#fff7ed;color:#ea580c}
+  .doc-info{min-width:0;flex:1}
+  .doc-info .t{font-size:13.5px;font-weight:700;color:var(--ink-900)}
+  .doc-info .s{font-size:11.5px;color:var(--ink-400);margin-top:2px}
+  .pill-ok{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:var(--emerald-soft);color:var(--emerald);font-size:11px;font-weight:800}
+  .pill-no{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:#f1f5f9;color:var(--ink-500);font-size:11px;font-weight:800}
+
+  .upzone{border:2px dashed #cbd5e1;border-radius:14px;padding:16px;text-align:center;color:var(--ink-500);font-size:12.5px;background:#fcfcfe}
+  .upzone i.lead{font-size:24px;color:var(--brand);display:block;margin-bottom:5px}
+  .upzone .hint{font-size:11px;color:var(--ink-400);margin-top:5px}
+  .upzone .row{display:flex;gap:8px;justify-content:center;margin-top:11px;flex-wrap:wrap}
+  .statuspick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .statuspick button{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;text-align:left;transition:.15s}
+  .statuspick button .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px}
+  .statuspick button .t{font-size:13px;font-weight:800;color:var(--ink-900)}
+  .statuspick button .s{font-size:11px;color:var(--ink-400)}
+  .statuspick button.on{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  .statuspick button[data-s="Diterima"] .ic{background:var(--sky-soft);color:var(--sky)}
+  .statuspick button[data-s="ACC"] .ic{background:var(--emerald-soft);color:var(--emerald)}
+  .statuspick button[data-s="Ditolak"] .ic{background:var(--rose-soft);color:var(--rose)}
+  .statuspick button[data-s="Dibatalkan"] .ic{background:#f1f5f9;color:var(--ink-500)}
+  .statuspick button.on[data-s="Diterima"]{border-color:var(--sky)}
+  .statuspick button.on[data-s="ACC"]{border-color:var(--emerald)}
+  .statuspick button.on[data-s="Ditolak"]{border-color:var(--rose)}
+
+  .email-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:13px;font-size:12px}
+  .email-box .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 10px}
+  .email-box .kv span:first-child{color:var(--ink-400);font-weight:600}
+  .manual-note{display:flex;align-items:center;gap:8px;background:var(--violet-soft);color:var(--violet);border-radius:12px;padding:12px;font-size:12.5px;font-weight:600;margin-bottom:16px}
+
+  /* Procedure stepper */
+  .proc{display:flex;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-soft);margin-bottom:18px}
+  .proc .p{display:flex;align-items:center;gap:10px;flex:1;min-width:220px}
+  .proc .p .n{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;flex:0 0 auto;background:var(--brand-soft);color:var(--brand)}
+  .proc .p.p2 .n{background:var(--emerald-soft);color:var(--emerald)}
+  .proc .p .t{font-size:12.5px;font-weight:800;color:var(--ink-900)}
+  .proc .p .s{font-size:11px;color:var(--ink-400)}
+  .proc .arrow{color:#cbd5e1;display:grid;place-items:center;font-size:16px}
+
+  /* BA summary cards */
+  .basum{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}
+  .basum .b{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft);text-align:left;transition:.15s}
+  .basum .b:hover{border-color:#cbd5e1}
+  .basum .b.active{box-shadow:inset 0 0 0 2px var(--brand)}
+  .basum .k{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-400)}
+  .basum .n{margin-top:5px;font-size:20px;font-weight:800}
+  .basum .p{font-size:11px;font-weight:600;color:var(--ink-400)}
+  .basum .n.rose{color:var(--rose)}
+  .basum .n.emerald{color:var(--emerald)}
+
+  .ba-pair{display:grid;grid-template-columns:minmax(240px,1fr) minmax(0,1.4fr);gap:16px;margin-bottom:16px}
+  .bar-row{width:100%;text-align:left;margin-bottom:10px}
+  .bar-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  .bar-top .name{font-weight:700;color:var(--ink-700)}
+  .bar-top .meta{color:var(--ink-400)}
+  .track{height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden}
+  .fill{height:100%;border-radius:999px}
+  .fill.g{background:#10b981}.fill.y{background:#fbbf24}.fill.r{background:#fb7185}
+
+  .heat-scroll{overflow-x:auto}
+  .heat-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+  .heat-table th{padding:8px 10px;color:var(--ink-500);font-weight:700;white-space:nowrap;min-width:70px;text-align:center}
+  .heat-table td{padding:4px;text-align:center}
+  .heat-table th.lab,.heat-table td.lab{text-align:left;font-weight:700;position:sticky;left:0;background:#fff;z-index:1;min-width:110px;padding-left:0}
+  .heat-cell{min-width:60px;border-radius:8px;padding:6px 8px;font-weight:800;border:1px solid transparent}
+  .heat-cell.g{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+  .heat-cell.y{background:#fffbeb;color:#b45309;border-color:#fde68a}
+  .heat-cell.r{background:#fff1f2;color:#be123c;border-color:#fecdd3}
+  .heat-legend{display:flex;gap:12px;font-size:11px;color:var(--ink-500);margin-top:10px}
+  .heat-legend .dot{width:9px;height:9px;border-radius:99px;display:inline-block;margin-right:4px}
+
+  .progdots{display:inline-flex;gap:4px;align-items:center}
+  .progdots i{width:10px;height:10px;border-radius:999px;display:inline-block}
+  .progdots i.all{background:#10b981}
+  .progdots i.partial{background:#fbbf24}
+  .progdots i.none{background:#e2e8f0}
+
+  .expand-row td{background:#f8fafc}
+  .expand-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .p-item,.ba-item{display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:9px;background:#fff;padding:7px 10px;font-size:12px;margin-bottom:5px}
+  .mini-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-400);margin-bottom:8px}
+
+  .modal-overlay{position:fixed;inset:0;z-index:260;background:rgba(15,23,42,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .18s}
+  .modal-overlay.open{opacity:1;pointer-events:auto}
+  .modal{width:100%;max-width:560px;max-height:92vh;background:#fff;border-radius:18px;box-shadow:var(--shadow-lift);display:flex;flex-direction:column;transform:translateY(10px) scale(.98);transition:transform .2s}
+  .modal-overlay.open .modal{transform:none}
+  .modal.lg{max-width:900px}
+  .modal-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .modal-head h3{margin:0;font-size:15px;font-weight:800}
+  .modal-head .sub{font-size:11.5px;color:var(--ink-400);margin-top:2px}
+  .modal-body{flex:1;overflow-y:auto;padding:18px 20px}
+  .modal-foot{flex:0 0 auto;display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--line)}
+
+  /* Scan kamera (simulasi auto-detect) */
+  .scan-overlay{position:fixed;inset:0;z-index:300;background:#0b1120;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s}
+  .scan-overlay.open{opacity:1;pointer-events:auto}
+  .scan-top{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#0f172a;border-bottom:1px solid #1e293b}
+  .scan-top h3{margin:0;font-size:15px;font-weight:800;color:#fff}
+  .scan-top .sub{font-size:11px;color:#94a3b8;margin-top:2px}
+  .scan-top .dr-close{color:#cbd5e1}
+  .scan-top .dr-close:hover{background:#1e293b;color:#fff}
+  .scan-top .badge.wait{background:#3f2d0a;color:#fbbf24}
+  .scan-top .badge.acc{background:#052e22;color:#34d399}
+  .scan-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 38%,#1e293b 0%,#0b1120 72%)}
+  .scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none}
+  .scan-stage.live .scan-video{display:block}
+  .scan-stage.live .scan-doc{background:transparent;box-shadow:none}
+  .scan-stage.live .scan-doc::before{display:none}
+  .scan-doc{position:relative;width:min(80%,380px);aspect-ratio:1/1.414;background:linear-gradient(135deg,#f8fafc,#dfe6ef);border-radius:6px;box-shadow:0 30px 90px -24px rgba(0,0,0,.85);transform:scale(1.06);transition:transform .5s cubic-bezier(.22,1,.36,1)}
+  .scan-doc.locked{transform:scale(1)}
+  .scan-doc::before{content:"";position:absolute;inset:14px;border-radius:4px;background:repeating-linear-gradient(0deg,#fff,#fff 21px,#eef2f7 21px,#eef2f7 22px);opacity:.75}
+  .scan-corner{position:absolute;width:30px;height:30px;border:3px solid #fbbf24;transition:border-color .4s}
+  .scan-doc.locked .scan-corner{border-color:#34d399}
+  .scan-corner.tl{top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:9px 0 0 0}
+  .scan-corner.tr{top:-2px;right:-2px;border-left:0;border-bottom:0;border-radius:0 9px 0 0}
+  .scan-corner.bl{bottom:-2px;left:-2px;border-right:0;border-top:0;border-radius:0 0 0 9px}
+  .scan-corner.br{bottom:-2px;right:-2px;border-left:0;border-top:0;border-radius:0 0 9px 0}
+  .scan-line{position:absolute;left:8%;right:8%;height:3px;border-radius:99px;background:linear-gradient(90deg,transparent,#34d399,transparent);opacity:0}
+  .scan-doc.locked .scan-line{opacity:.95;animation:scanline 2.2s ease-in-out infinite}
+  @keyframes scanline{0%{top:8%}50%{top:88%}100%{top:8%}}
+  .scan-pill{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.78);border:1px solid #334155;color:#cbd5e1;font-size:11.5px;font-weight:600;padding:7px 13px;border-radius:999px;white-space:nowrap}
+  .scan-bottom{flex:0 0 auto;background:#0f172a;border-top:1px solid #1e293b;padding:12px 16px calc(14px + env(safe-area-inset-bottom))}
+  .scan-pages{display:flex;gap:10px;overflow-x:auto;margin-bottom:12px;min-height:76px;padding:2px 0}
+  .scan-page{position:relative;width:56px;height:74px;flex:0 0 auto;border-radius:8px;border:2px solid #334155;background:linear-gradient(135deg,#fff,#e2e8f0);box-shadow:0 6px 16px -8px rgba(0,0,0,.7)}
+  .scan-page .no{position:absolute;left:3px;top:3px;background:rgba(15,23,42,.78);color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:5px}
+  .scan-page .x{position:absolute;right:-7px;top:-7px;width:18px;height:18px;border-radius:999px;background:#e11d48;color:#fff;font-size:10px;display:grid;place-items:center}
+  .scan-page .mv{position:absolute;left:0;right:0;bottom:3px;display:flex;justify-content:center;gap:4px}
+  .scan-page .mv button{background:rgba(15,23,42,.74);color:#fff;font-size:10px;width:18px;height:18px;border-radius:6px;display:grid;place-items:center}
+  .scan-pages-empty{width:100%;display:flex;align-items:center;justify-content:center;color:#475569;font-size:11.5px;font-weight:600;text-align:center}
+  .scan-actions{display:flex;align-items:center;justify-content:center;gap:16px}
+  .shutter{width:62px;height:62px;border-radius:999px;background:#fff;color:#0f172a;font-size:23px;display:grid;place-items:center;box-shadow:0 0 0 4px #334155,0 8px 24px -8px rgba(0,0,0,.7);transition:.15s}
+  .shutter:hover{box-shadow:0 0 0 4px #475569,0 8px 24px -8px rgba(0,0,0,.7)}
+  .scan-mini{color:#cbd5e1;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:7px;background:#1e293b;border:1px solid #334155;padding:9px 13px;border-radius:12px}
+  .scan-mini:hover{background:#334155}
+  .scan-mini.green{background:var(--emerald);border-color:var(--emerald);color:#fff}
+  .scan-building{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,17,32,.78);color:#e2e8f0;font-size:13px;font-weight:700}
+  .scan-spin{width:36px;height:36px;border-radius:999px;border:3px solid #334155;border-top-color:#818cf8;animation:spin .8s linear infinite;margin-bottom:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pdf-preview{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .pdf-doc{width:min(72%,300px);aspect-ratio:1/1.414;background:#fff;border-radius:8px;box-shadow:0 30px 90px -24px rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#e11d48}
+  .pdf-doc i{font-size:54px}
+  .pdf-doc .pdf-name{font-size:12.5px;font-weight:800;color:#0f172a;word-break:break-all;padding:0 16px;text-align:center}
+  .pdf-doc .pdf-meta{font-size:11.5px;color:#64748b;font-weight:600}
+
+  .group-pick{width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;transition:.15s;background:#fff}
+  .group-pick:hover{border-color:#a5b4fc;background:#f8fafc}
+  .group-pick .t{font-size:13.5px;font-weight:800;color:var(--ink-900)}
+  .group-pick .s{font-size:11px;color:var(--brand);font-weight:700;margin-top:2px}
+  .pickrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:6px;cursor:pointer;transition:.12s}
+  .pickrow:hover{border-color:#a5b4fc}
+  .pickrow.on{border-color:var(--brand);background:var(--brand-soft)}
+  .pickrow .t{font-size:12.5px;font-weight:700;color:var(--ink-800)}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:400;background:#0f172a;color:#fff;padding:12px 18px;border-radius:13px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lift);display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:.22s;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast i{color:#6ee7b7}
+
+  .empty{padding:44px 20px;text-align:center;color:var(--ink-400);font-size:13px}
+  .empty i{font-size:28px;display:block;margin-bottom:8px;color:#cbd5e1}
+
+  .kv-mini{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-400);margin-top:4px}
+
+  @media (max-width:1100px){ .stats{--cols:3} .stats.cols-7{--cols:4} .basum{grid-template-columns:repeat(3,1fr)} .ba-pair{grid-template-columns:1fr} }
+  @media (max-width:1023px){
+    .sidebar{display:none}
+    .topbar{height:60px;padding:0 14px;gap:10px}
+    .hamburger{display:grid}
+    .topbar .searchbox{display:none}
+    .content{padding:16px 14px 100px}
+    .stats{--cols:2;gap:11px}
+    .stats.cols-7{--cols:3}
+    .basum{grid-template-columns:repeat(2,1fr)}
+    .stat{padding:12px;gap:10px}
+    .table-wrap.only-desktop{display:none}
+    .cards{display:flex}
+    .bottomnav{display:block}
+    .fab{display:grid}
+    .dr-head{padding:14px 15px 0}
+    .dr-body{padding:15px}
+    .dr-foot{padding:12px 15px}
+    .grid3{grid-template-columns:1fr 1fr}
+    .drawer{width:100%}
+    .expand-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:640px){
+    .drawer{top:auto;height:94vh;width:100%;border-radius:20px 20px 0 0;transform:translateY(105%)}
+    .drawer.open{transform:translateY(0)}
+    .dr-head{padding-top:10px}
+    .dr-head::before{content:"";display:block;width:42px;height:4px;border-radius:999px;background:#cbd5e1;margin:0 auto 12px}
+    .stats{--cols:2}
+    .stats.cols-7{--cols:2}
+    .grid2,.grid3{grid-template-columns:1fr}
+    .statuspick{grid-template-columns:1fr}
+    .step .lbl{display:none}
+    .step{gap:0}
+    .proc .arrow{display:none}
+    .proc .p{min-width:100%}
+    .page-head .crumb{display:none}
+    .page-head h1{font-size:15px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .topbar .avatar{width:34px;height:34px;font-size:12px}
+  }
+
+/* ===== Laporan-specific additions ===== */
+.ltabs{display:flex;gap:6px;overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:var(--shadow-soft);margin-bottom:18px;scrollbar-width:none}
+.ltabs::-webkit-scrollbar{display:none}
+.ltab{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;padding:10px 15px;border-radius:11px;font-size:13px;font-weight:700;color:var(--ink-500);transition:.15s;flex:1}
+.ltab:hover{background:#f8fafc;color:var(--ink-700)}
+.ltab.active{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;box-shadow:0 10px 22px -14px rgba(79,70,229,.9)}
+
+.filterbar{position:sticky;top:66px;z-index:30;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft);margin-bottom:18px}
+.filterbar .fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:12px;align-items:end}
+
+.lapstats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.lapstats.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lapstats .stat{flex-direction:column;align-items:flex-start;gap:6px}
+.lapstats .stat .top{display:flex;width:100%;align-items:center}
+.lapstats .stat .num{margin-top:2px}
+.lapstats .stat .money{font-size:14px;line-height:1.3}
+
+.lapgrid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.chartcard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-soft);padding:16px}
+.chartcard .ch-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.chartcard .ch-head h3{margin:0;font-size:13.5px;font-weight:800;color:var(--ink-900)}
+.donutwrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.donutwrap svg{width:170px;height:170px;flex:0 0 auto}
+.donut-legend{flex:1;min-width:180px}
+.legrow{display:flex;align-items:center;gap:9px;font-size:13px;margin-bottom:9px}
+.legrow .dot{width:11px;height:11px;border-radius:999px;flex:0 0 auto}
+.legrow .nm{flex:1;color:var(--ink-600)}
+.legrow .v{font-weight:800;color:var(--ink-900)}
+.legrow .pc{width:44px;text-align:right;font-size:11.5px;color:var(--ink-400)}
+.barsbox .bar-row{margin-bottom:13px}
+.barsbox .subhead{font-size:12px;font-weight:800;color:var(--ink-700);margin:18px 0 10px;display:flex;align-items:center;gap:7px}
+.barsbox .subhead:first-child{margin-top:0}
+
+.minitag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800;white-space:nowrap}
+.minitag.src-pengajuan{background:var(--sky-soft);color:var(--sky)}
+.minitag.src-ba{background:var(--violet-soft);color:var(--violet)}
+.minitag.ba-pendukung{background:var(--violet-soft);color:var(--violet)}
+.minitag.ba-pelaksanaan{background:var(--brand-soft);color:var(--brand-700)}
+.bukti-cell{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.bukti-cell .bar{width:54px;height:7px;border-radius:999px;background:#f1f5f9;overflow:hidden}
+.bukti-cell .bar i{display:block;height:100%;border-radius:999px;background:var(--emerald)}
+.bukti-cell.no{color:var(--ink-400)}
+.bukti-cell.no .bar i{background:#cbd5e1}
+
+.grandrow td{background:#f1f5f9 !important;font-weight:800;color:var(--ink-700)}
+
+/* Aksi pills (BA & Pembayaran) */
+.btn-acc,.btn-bukti{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;color:#fff;white-space:nowrap;transition:.15s}
+.btn-acc{background:linear-gradient(135deg,#34d399,#059669 60%,#047857);box-shadow:0 4px 12px -6px rgba(5,150,105,.7)}
+.btn-bukti{background:linear-gradient(135deg,#fbbf24,#ea580c 60%,#c2410c);box-shadow:0 4px 12px -6px rgba(234,88,12,.7)}
+.btn-acc:hover,.btn-bukti:hover{filter:brightness(1.08)}
+.btn-acc i,.btn-bukti i{font-size:12px}
+.aksiwrap{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px}
+.achip{display:inline-flex;align-items:center;gap:1px;border-radius:999px;padding:2px 2px 2px 9px;font-size:10.5px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.achip.pend{background:#f1f5f9;color:#64748b}
+.achip.pel{background:var(--brand-soft);color:var(--brand-700)}
+.achip .mini-ic{width:19px;height:19px;border-radius:999px;display:grid;place-items:center;font-size:10px;color:inherit;transition:.12s}
+.achip .mini-ic.x:hover{background:var(--rose-soft);color:var(--rose)}
+.achip .mini-ic.p:hover{background:rgba(79,70,229,.16);color:var(--brand-700)}
+.rowlab{font-weight:800;color:var(--ink-900)}
+.matrix-hint{font-size:11.5px;color:var(--ink-400);font-weight:500;margin-top:2px}
+.celldetail{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.celldetail .cd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;background:var(--brand-soft);flex-wrap:wrap}
+.celldetail .cd-head .t{font-weight:800;color:var(--brand-800);font-size:13.5px}
+.celldetail .cd-head .s{font-size:11.5px;color:var(--ink-500);margin-top:2px}
+
+@media (max-width:1100px){ .lapgrid2{grid-template-columns:1fr} }
+@media (max-width:1023px){
+  .lapstats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lapstats.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .filterbar{top:60px}
+  .filterbar .fgrid{grid-template-columns:1fr 1fr}
+  .filterbar .fgrid .fexport{grid-column:1/-1}
+}
+@media (max-width:640px){
+  .lapstats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lapstats.three{grid-template-columns:repeat(1,minmax(0,1fr))}
+  .filterbar{position:static}
+  .filterbar .fgrid{grid-template-columns:1fr}
+  .donutwrap{justify-content:center}
+  .ltab{padding:10px 11px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="mock-note">MOCKUP USULAN REDESAIN - <b>Laporan INHAL</b> (detail-laporan) &middot; gaya disamakan dengan dashboard &middot; data dummy</div>
+
+<div class="shell" id="shell">
+  <aside class="sidebar">
+    <button class="collapse-btn" onclick="toggleCollapse()" title="Lipat/bentangkan sidebar"><i class="bi bi-chevron-double-left"></i></button>
+    <div class="brand">
+      <div class="brand-logo"><i class="bi bi-shield-check"></i></div>
+      <div class="brand-txt"><strong>INHAL Admin</strong><span>Manajemen Pendaftaran</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Menu</div>
+      <button class="nav-item" onclick="soon('Pengajuan')"><i class="bi bi-inbox"></i><span class="nav-txt">Pengajuan</span><span class="nav-badge">3</span></button>
+      <button class="nav-item" onclick="soon('Manual')"><i class="bi bi-pencil-square"></i><span class="nav-txt">Manual</span></button>
+      <button class="nav-item" onclick="soon('Statistik')"><i class="bi bi-bar-chart-line"></i><span class="nav-txt">Statistik</span></button>
+      <button class="nav-item" onclick="soon('Berita Acara')"><i class="bi bi-file-earmark-pdf"></i><span class="nav-txt">Berita Acara</span></button>
+      <button class="nav-item" onclick="soon('Master Data')"><i class="bi bi-sliders"></i><span class="nav-txt">Master Data</span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Laporan</div>
+      <button class="nav-item active"><i class="bi bi-file-earmark-bar-graph"></i><span class="nav-txt">Laporan INHAL</span></button>
+    </div>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="avatar">AD</div>
+        <div class="meta"><strong>Administrator</strong><span>admin@prodi.ac.id</span></div>
+      </div>
+      <button class="logout" onclick="soon('Keluar')"><i class="bi bi-box-arrow-right"></i> <span>Keluar</span></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="iconbtn hamburger" onclick="openMenu()" title="Menu"><i class="bi bi-list" style="font-size:22px;color:#334155"></i></button>
+      <div class="page-head">
+        <div class="crumb" id="crumb">Dashboard / Laporan</div>
+        <h1 id="topTitle">Laporan INHAL</h1>
+      </div>
+      <div class="topbar-spacer"></div>
+      <label class="searchbox"><i class="bi bi-search"></i><input id="globalSearch" placeholder="Cari NPM / nama..." oninput="lf.q=this.value;renderLaporan();"></label>
+      <button class="bell" onclick="soon('Notifikasi')" title="Notifikasi"><i class="bi bi-bell" style="font-size:18px"></i><span class="count">3</span></button>
+      <div class="avatar">AD</div>
+    </header>
+
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<nav class="bottomnav">
+  <div class="track">
+    <button class="bnav" onclick="soon('Pengajuan')"><i class="bi bi-inbox"></i> Pengajuan</button>
+    <button class="bnav" onclick="soon('Berita Acara')"><i class="bi bi-file-earmark-pdf"></i> BA</button>
+    <button class="bnav active"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</button>
+    <button class="bnav" onclick="openMenu()"><i class="bi bi-grid"></i> Menu</button>
+  </div>
+</nav>
+
+<div class="drawer-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+<aside class="mobile-menu" id="mobileMenu">
+  <div class="brand">
+    <div class="brand-logo"><i class="bi bi-shield-check"></i></div>
+    <div class="brand-txt"><strong>INHAL Admin</strong><span>Panel Administrator</span></div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Menu</div>
+    <button class="nav-item" onclick="menuGo('Pengajuan')"><i class="bi bi-inbox"></i><span class="nav-txt">Pengajuan</span><span class="nav-badge">3</span></button>
+    <button class="nav-item" onclick="menuGo('Manual')"><i class="bi bi-pencil-square"></i><span class="nav-txt">Manual</span></button>
+    <button class="nav-item" onclick="menuGo('Statistik')"><i class="bi bi-bar-chart-line"></i><span class="nav-txt">Statistik</span></button>
+    <button class="nav-item" onclick="menuGo('Berita Acara')"><i class="bi bi-file-earmark-pdf"></i><span class="nav-txt">Berita Acara</span></button>
+    <button class="nav-item" onclick="menuGo('Master Data')"><i class="bi bi-sliders"></i><span class="nav-txt">Master Data</span></button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Laporan</div>
+    <button class="nav-item active" onclick="closeMenu()"><i class="bi bi-file-earmark-bar-graph"></i><span class="nav-txt">Laporan INHAL</span></button>
+  </div>
+  <div class="sidebar-foot">
+    <div class="user-chip"><div class="avatar">AD</div><div class="meta"><strong>Admin</strong><span>Administrator</span></div></div>
+    <button class="logout" onclick="soon('Keluar')"><i class="bi bi-box-arrow-right"></i> <span>Keluar</span></button>
+  </div>
+</aside>
+
+<div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toastMsg"></span></div>
+
+<script>
+/* =========================================================
+   DATA DUMMY (Laporan INHAL)
+   ========================================================= */
+const AV_COLORS = ['#6366f1','#0ea5e9','#14b8a6','#f59e0b','#ec4899','#8b5cf6','#10b981','#ef4444'];
+const STATUS_META = {
+  'Menunggu':  { cls:'wait',   icon:'bi-hourglass-split' },
+  'Diterima':  { cls:'recv',   icon:'bi-check2' },
+  'ACC':       { cls:'acc',    icon:'bi-patch-check' },
+  'Ditolak':   { cls:'rej',    icon:'bi-x-lg' },
+  'Dibatalkan':{ cls:'cancel', icon:'bi-slash-circle' }
+};
+const STATUS_ORDER = ['Menunggu','Diterima','ACC','Ditolak','Dibatalkan'];
+const STATUS_COLOR = { 'Menunggu':'#d97706','Diterima':'#0284c7','ACC':'#059669','Ditolak':'#e11d48','Dibatalkan':'#64748b' };
+
+const RECS = [
+  { id:'INHAL-2026-0087', npm:'2201010001', nama:'Aisyah Rahmawati', tgl:'2026-10-04', tglPel:'2026-10-05', jenis:'SGD', blok:'Blok 1', dosen:'dr. Sari', bagian:'SGD', kegiatan:'SGD 1 - Remediasi', nomorSurat:'', status:'Menunggu', sumber:'Pengajuan', biaya:100000, bukti:false, manual:false,
+    details:[{ pilihan:'SGD 1 - Remediasi', detail:'Kelompok A', jenis:'SGD', tanggal:'2026-10-05', bagian:'SGD' }], ba:{ pendukung:[], pelaksanaan:[] } },
+  { id:'INHAL-2026-0086', npm:'2201010002', nama:'Bagas Prasetyo', tgl:'2026-10-03', tglPel:'2026-10-03', jenis:'Ujian', blok:'Blok 2', dosen:'dr. Budi', bagian:'Ujian', kegiatan:'UAS Blok 2', nomorSurat:'021/UJI/X/2026', status:'Diterima', sumber:'Pengajuan', biaya:75000, bukti:true, manual:false,
+    details:[{ pilihan:'UAS Blok 2', detail:'Ruang B', jenis:'Ujian', tanggal:'2026-10-03', bagian:'Ujian' }], ba:{ pendukung:[{ id:'BAP-0002', tanggal:'2026-10-03' }], pelaksanaan:[] } },
+  { id:'INHAL-2026-0085', npm:'2201010003', nama:'Citra Lestari', tgl:'2026-10-02', tglPel:'2026-10-02', jenis:'KKD', blok:'Blok 1', dosen:'', bagian:'KKD', kegiatan:'KKD Desa Sukamaju', nomorSurat:'', status:'Ditolak', sumber:'Pengajuan', biaya:50000, bukti:false, manual:false,
+    details:[{ pilihan:'KKD Desa Sukamaju', detail:'', jenis:'KKD', tanggal:'2026-10-02', bagian:'KKD' }], ba:{ pendukung:[], pelaksanaan:[] } },
+  { id:'INHAL-2026-0084', npm:'2201010004', nama:'Dimas Nugroho', tgl:'2026-10-01', tglPel:'2026-10-01', jenis:'Praktikum', blok:'Blok 3', dosen:'dr. Sari', bagian:'Lab Anatomi', kegiatan:'Praktikum Anatomi', nomorSurat:'', status:'ACC', sumber:'BA', biaya:150000, bukti:true, manual:false,
+    details:[{ pilihan:'Praktikum Anatomi', detail:'Lab 3', jenis:'Praktikum', tanggal:'2026-10-01', bagian:'Lab Anatomi' },{ pilihan:'Praktikum Anatomi - Sesi 2', detail:'Lab 3', jenis:'Praktikum', tanggal:'2026-10-02', bagian:'Lab Anatomi' }], ba:{ pendukung:[{ id:'BAP-0007', tanggal:'2026-10-01' }], pelaksanaan:[{ id:'BA-0012', tanggal:'2026-10-01' }] } },
+  { id:'INHAL-2026-0083', npm:'2201010005', nama:'Eka Wulandari', tgl:'2026-09-30', tglPel:'2026-09-30', jenis:'SGD', blok:'Blok 1', dosen:'dr. Sari', bagian:'SGD', kegiatan:'SGD 2 - Reguler', nomorSurat:'', status:'Menunggu', sumber:'Pengajuan', biaya:100000, bukti:false, manual:true,
+    details:[{ pilihan:'SGD 2 - Reguler', detail:'Kelompok C', jenis:'SGD', tanggal:'2026-09-30', bagian:'SGD' }], ba:{ pendukung:[], pelaksanaan:[] } },
+  { id:'INHAL-2026-0082', npm:'2201010006', nama:'Fajar Ramadhan', tgl:'2026-09-29', tglPel:'2026-09-29', jenis:'Ujian', blok:'Blok 2', dosen:'dr. Budi', bagian:'Ujian', kegiatan:'UAS Blok 2', nomorSurat:'019/UJI/IX/2026', status:'Diterima', sumber:'Pengajuan', biaya:75000, bukti:false, manual:false,
+    details:[{ pilihan:'UAS Blok 2', detail:'Ruang A', jenis:'Ujian', tanggal:'2026-09-29', bagian:'Ujian' }], ba:{ pendukung:[{ id:'BAP-0006', tanggal:'2026-09-29' }], pelaksanaan:[] } },
+  { id:'INHAL-2026-0081', npm:'2201010007', nama:'Gita Safitri', tgl:'2026-09-28', tglPel:'2026-09-28', jenis:'Praktikum', blok:'Blok 3', dosen:'dr. Andi', bagian:'Lab Histologi', kegiatan:'Praktikum Histologi', nomorSurat:'', status:'ACC', sumber:'BA', biaya:150000, bukti:true, manual:false,
+    details:[{ pilihan:'Praktikum Histologi', detail:'Lab 1', jenis:'Praktikum', tanggal:'2026-09-28', bagian:'Lab Histologi' },{ pilihan:'Praktikum Histologi - Sesi 2', detail:'Lab 1', jenis:'Praktikum', tanggal:'2026-09-29', bagian:'Lab Histologi' }], ba:{ pendukung:[{ id:'BAP-0009', tanggal:'2026-09-28' }], pelaksanaan:[{ id:'BA-0014', tanggal:'2026-09-28' }] } },
+  { id:'INHAL-2026-0080', npm:'2201010008', nama:'Hana Permata', tgl:'2026-09-27', tglPel:'2026-09-27', jenis:'KKD', blok:'Blok 1', dosen:'', bagian:'KKD', kegiatan:'KKD Desa Mekar', nomorSurat:'', status:'Dibatalkan', sumber:'Pengajuan', biaya:50000, bukti:false, manual:false,
+    details:[{ pilihan:'KKD Desa Mekar', detail:'', jenis:'KKD', tanggal:'2026-09-27', bagian:'KKD' }], ba:{ pendukung:[], pelaksanaan:[] } },
+  { id:'INHAL-2026-0079', npm:'2201010009', nama:'Intan Maharani', tgl:'2026-09-26', tglPel:'2026-09-26', jenis:'Praktikum', blok:'Blok 3', dosen:'dr. Sari', bagian:'Lab Anatomi', kegiatan:'Praktikum Anatomi', nomorSurat:'', status:'ACC', sumber:'BA', biaya:150000, bukti:true, manual:false,
+    details:[{ pilihan:'Praktikum Anatomi', detail:'Lab 3', jenis:'Praktikum', tanggal:'2026-09-26', bagian:'Lab Anatomi' }], ba:{ pendukung:[{ id:'BAP-0008', tanggal:'2026-09-26' }], pelaksanaan:[{ id:'BA-0013', tanggal:'2026-09-26' }] } },
+  { id:'INHAL-2026-0078', npm:'2201010010', nama:'Joko Susilo', tgl:'2026-09-25', tglPel:'2026-09-25', jenis:'Ujian', blok:'Blok 2', dosen:'dr. Andi', bagian:'Ujian', kegiatan:'UAS Blok 2', nomorSurat:'016/UJI/IX/2026', status:'Diterima', sumber:'Pengajuan', biaya:75000, bukti:true, manual:false,
+    details:[{ pilihan:'UAS Blok 2', detail:'Ruang C', jenis:'Ujian', tanggal:'2026-09-25', bagian:'Ujian' }], ba:{ pendukung:[{ id:'BAP-0005', tanggal:'2026-09-25' }], pelaksanaan:[] } }
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let lapTab='rekap';
+let lf={ from:'', to:'', blok:'', status:'', jenis:'', q:'' };
+let lapExpand={}, bagExpand={}, baRowExpand={};
+let dosenCell=null, bayarChip='';
+const CHIPS=['','Menunggu','Diterima','ACC','Ditolak','Dibatalkan'];
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function initials(n){ return (n||'').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function avColor(n){ let h=0; for(const c of (n||'')) h=(h*31+c.charCodeAt(0))>>>0; return AV_COLORS[h%AV_COLORS.length]; }
+function rupiah(v){ return 'Rp ' + (Number(v)||0).toLocaleString('id-ID'); }
+function fmtDate(s){ if(!s) return '-'; const d=new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+function statusBadge(s){ const m=STATUS_META[s]||STATUS_META['Menunggu']; return '<span class="badge '+m.cls+'"><i class="bi '+m.icon+'"></i>'+s+'</span>'; }
+function toast(msg){ const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2500); }
+function soon(name){ toast(name+' - belum ada di mockup ini'); }
+function toggleCollapse(){ document.getElementById('shell').classList.toggle('collapsed'); }
+function openMenu(){ document.getElementById('mobileMenu').classList.add('open'); document.getElementById('menuOverlay').classList.add('open'); }
+function closeMenu(){ document.getElementById('mobileMenu').classList.remove('open'); document.getElementById('menuOverlay').classList.remove('open'); }
+function menuGo(name){ closeMenu(); soon(name); }
+function buktiCell(on){ return on
+  ? '<span class="bukti-cell"><span class="bar"><i style="width:100%"></i></span>Lunas</span>'
+  : '<span class="bukti-cell no"><span class="bar"><i style="width:0%"></i></span>Belum</span>'; }
+
+/* =========================================================
+   FILTER + AGGREGATES
+   ========================================================= */
+function filtered(){
+  return RECS.filter(r=>{
+    if(lf.from && r.tgl < lf.from) return false;
+    if(lf.to && r.tgl > lf.to) return false;
+    if(lf.blok && r.blok !== lf.blok) return false;
+    if(lf.status && r.status !== lf.status) return false;
+    if(lf.jenis && r.jenis !== lf.jenis) return false;
+    if(lf.q && !(r.npm+r.nama).toLowerCase().includes(lf.q.toLowerCase())) return false;
+    return true;
+  });
+}
+function counts(){ const c={}; STATUS_ORDER.forEach(s=>c[s]=RECS.filter(r=>r.status===s).length); return c; }
+function share(v,total){ return total ? Math.round(v/total*100) : 0; }
+function barsFrom(map){ const arr=Object.entries(map).map(([label,value])=>({label,value})); const max=Math.max(1,...arr.map(a=>a.value)); return arr.map(a=>({...a,pct:Math.round(a.value/max*100)})).sort((a,b)=>b.value-a.value); }
+
+/* =========================================================
+   SHELL: tabs
+   ========================================================= */
+function setTab(t){ lapTab=t; dosenCell=null; renderLaporan(); }
+function renderLaporan(){
+  const TABS=[
+    {k:'rekap', label:'Rekap Keseluruhan', icon:'bi-pie-chart-fill'},
+    {k:'dosen', label:'Laporan Dosen', icon:'bi-person-video3'},
+    {k:'bagian', label:'Laporan Bagian', icon:'bi-diagram-3'},
+    {k:'ba', label:'Berita Acara', icon:'bi-file-earmark-text'},
+    {k:'bayar', label:'Data Pembayaran', icon:'bi-cash-coin'}
+  ];
+  const tabs=TABS.map(t=>`<button class="ltab ${lapTab===t.k?'active':''}" onclick="setTab('${t.k}')"><i class="bi ${t.icon}"></i><span>${t.label}</span></button>`).join('');
+  const filterbar=`
+    <div class="filterbar">
+      <div class="fgrid">
+        <div><label class="label">Dari Tanggal</label><input type="date" class="input input-sm" value="${lf.from}" onchange="lf.from=this.value;renderLaporan()"></div>
+        <div><label class="label">Sampai Tanggal</label><input type="date" class="input input-sm" value="${lf.to}" onchange="lf.to=this.value;renderLaporan()"></div>
+        <div><label class="label">Blok</label><select class="input input-sm" onchange="lf.blok=this.value;renderLaporan()"><option value="">Semua Blok</option>${['Blok 1','Blok 2','Blok 3'].map(b=>`<option ${lf.blok===b?'selected':''}>${b}</option>`).join('')}</select></div>
+        <div><label class="label">Status</label><select class="input input-sm" onchange="lf.status=this.value;renderLaporan()"><option value="">Semua Status</option>${STATUS_ORDER.map(s=>`<option ${lf.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="fexport"><button class="btn btn-primary" style="width:100%" onclick="soon('Export .xlsx')"><i class="bi bi-file-earmark-excel"></i> Export .xlsx</button></div>
+      </div>
+    </div>`;
+  const body = lapTab==='rekap'?tabRekap()
+    : lapTab==='dosen'?tabDosen()
+    : lapTab==='bagian'?tabBagian()
+    : lapTab==='ba'?tabBA()
+    : tabBayar();
+  document.getElementById('content').innerHTML=`
+    <div class="page-intro">
+      <div><h2>Laporan INHAL</h2><p>Rekapitulasi pengajuan, dosen, bagian, dan berita acara.</p></div>
+      <div class="head-actions">
+        <button class="btn btn-soft" onclick="soon('Muat Ulang')"><i class="bi bi-arrow-clockwise"></i> Muat Ulang</button>
+        <button class="btn btn-primary" onclick="soon('Export .xlsx')"><i class="bi bi-file-earmark-excel"></i> Export .xlsx</button>
+      </div>
+    </div>
+    ${filterbar}
+    <div class="ltabs">${tabs}</div>
+    ${body}`;
+}
+
+/* =========================================================
+   TAB 1: REKAP KESELURUHAN
+   ========================================================= */
+function tabRekap(){
+  const c=counts(); const total=RECS.length; const totalBiaya=RECS.reduce((a,r)=>a+r.biaya,0);
+  const cards=[
+    {label:'Total Pengajuan',num:total,icon:'bi-people-fill',cls:'indigo',pct:'100%'},
+    {label:'Menunggu',num:c['Menunggu'],icon:'bi-hourglass-split',cls:'amber',pct:share(c['Menunggu'],total)+'%'},
+    {label:'Diterima',num:c['Diterima'],icon:'bi-check2-circle',cls:'sky',pct:share(c['Diterima'],total)+'%'},
+    {label:'ACC',num:c['ACC'],icon:'bi-patch-check-fill',cls:'emerald',pct:share(c['ACC'],total)+'%'},
+    {label:'Ditolak',num:c['Ditolak'],icon:'bi-x-circle',cls:'rose',pct:share(c['Ditolak'],total)+'%'},
+    {label:'Total Biaya',num:rupiah(totalBiaya),icon:'bi-cash-stack',cls:'teal',money:true}
+  ];
+  const stats=cards.map(d=>`<div class="stat"><div class="top"><div class="ic ${d.cls}"><i class="bi ${d.icon}"></i></div>${d.pct!==undefined?`<span class="pct">${d.pct}</span>`:''}</div><div class="num ${d.money?'money':''}">${d.num}</div><div class="lbl">${d.label}</div></div>`).join('');
+
+  let start=0, segs=[];
+  STATUS_ORDER.forEach(s=>{ const v=c[s]; if(!v) return; const pct=v/total*100; segs.push({label:s,value:v,pct,color:STATUS_COLOR[s],start}); start+=pct; });
+  const donut=`<div class="donutwrap">
+    <svg viewBox="0 0 42 42"><g transform="rotate(-90 21 21)"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f1f5f9" stroke-width="4.5"></circle>
+      ${segs.map(s=>`<circle cx="21" cy="21" r="15.9155" fill="none" stroke="${s.color}" stroke-width="4.5" pathLength="100" stroke-dasharray="${s.pct} ${100-s.pct}" stroke-dashoffset="${-s.start}"></circle>`).join('')}
+    </g><text x="21" y="20" text-anchor="middle" dominant-baseline="middle" fill="#0f172a" font-size="7.5" font-weight="800">${total}</text><text x="21" y="26" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="3.4">Total</text></svg>
+    <div class="donut-legend">${segs.map(s=>`<div class="legrow"><span class="dot" style="background:${s.color}"></span><span class="nm">${s.label}</span><span class="v">${s.value}</span><span class="pc">${Math.round(s.pct)}%</span></div>`).join('')}</div>
+  </div>`;
+
+  const jenisBars=barsFrom(RECS.reduce((a,r)=>{a[r.jenis]=(a[r.jenis]||0)+1;return a;},{}));
+  const blokBars=barsFrom(RECS.reduce((a,r)=>{a[r.blok]=(a[r.blok]||0)+1;return a;},{}));
+  const barGroup=(title,icon,bars,grad)=>`<div class="subhead"><i class="bi ${icon}" style="color:var(--brand)"></i> ${title}</div>${bars.map(b=>`<div class="bar-row"><div class="bar-top"><span class="name">${b.label}</span><span class="meta">${b.value}</span></div><div class="track"><div class="fill" style="width:${b.pct}%;background:${grad}"></div></div></div>`).join('')||'<div class="muted" style="font-size:12px">Belum ada data.</div>'}`;
+  const charts=`<div class="chartcard"><div class="ch-head"><i class="bi bi-pie-chart-fill" style="color:var(--brand)"></i><h3>Distribusi Status</h3></div>${donut}</div>
+    <div class="chartcard barsbox"><div class="ch-head"><i class="bi bi-bar-chart-fill" style="color:var(--brand)"></i><h3>Sebaran Kegiatan &amp; Blok</h3></div>
+      ${barGroup('Jumlah per Jenis Kegiatan','bi-tags',jenisBars,'linear-gradient(90deg,#6366f1,#a78bfa)')}
+      ${barGroup('Jumlah per Blok','bi-layers',blokBars,'linear-gradient(90deg,#14b8a6,#34d399)')}
+    </div>`;
+
+  const rows=filtered();
+  const tbody=rows.map(r=>{
+    const baAll=[...r.ba.pendukung.map(b=>({...b,sumber:'Pendukung'})),...r.ba.pelaksanaan.map(b=>({...b,sumber:'Pelaksanaan'}))];
+    return `<tr class="clickable" onclick="toggleLapExpand('${r.id}')">
+      <td style="white-space:nowrap;font-size:12px;color:var(--ink-500)">${fmtDate(r.tgl)}</td>
+      <td><div class="celluser"><div class="avatar" style="background:${avColor(r.nama)}">${initials(r.nama)}</div><div><div class="nm">${r.nama}${r.manual?'<span class="tag-manual"><i class="bi bi-pencil-square"></i>Manual</span>':''}</div><div class="sub mono">${r.npm}</div></div></div></td>
+      <td style="font-weight:600">${r.jenis}</td>
+      <td style="font-size:12px">${r.blok}</td>
+      <td style="font-size:12px;color:var(--ink-600)">${r.dosen||'&mdash;'}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--ink-500)">${fmtDate(r.tglPel)}</td>
+      <td class="mono" style="font-size:11.5px;color:var(--ink-500)">${r.nomorSurat||'&mdash;'}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.sumber==='BA'?'<span class="minitag src-ba"><i class="bi bi-file-earmark-check"></i>BA</span>':'<span class="minitag src-pengajuan"><i class="bi bi-person-check"></i>Pengajuan</span>'}</td>
+      <td style="white-space:nowrap;font-weight:700;color:var(--brand-700)">${rupiah(r.biaya)}</td>
+      <td>${buktiCell(r.bukti)}</td>
+      <td style="text-align:right"><i class="bi ${lapExpand[r.id]?'bi-chevron-down':'bi-chevron-right'}" style="color:var(--ink-400)"></i></td>
+    </tr>
+    ${lapExpand[r.id]?`<tr class="expand-row"><td colspan="12"><div class="expand-grid">
+      <div><div class="mini-label">Detail Kegiatan</div>${r.details.map(d=>`<div class="p-item"><span><b>${d.pilihan}</b>${d.detail?' &middot; '+d.detail:''}</span><span class="mono" style="font-size:10px;color:var(--ink-400)">${fmtDate(d.tanggal)}</span></div>`).join('')}</div>
+      <div><div class="mini-label">Berita Acara</div>${baAll.length?baAll.map(b=>`<div class="ba-item"><span><b class="mono">${b.id}</b> <span class="minitag ${b.sumber==='Pelaksanaan'?'ba-pelaksanaan':'ba-pendukung'}">${b.sumber}</span></span><span style="font-size:11px;color:var(--ink-400)">${fmtDate(b.tanggal)}</span></div>`).join(''):'<div class="muted" style="font-size:12px">Belum ada BA.</div>'}</div>
+    </div></td></tr>`:''}`;
+  }).join('')||`<tr><td colspan="12"><div class="empty"><i class="bi bi-inbox"></i>Belum ada data.</div></td></tr>`;
+
+  const mcards=rows.map(r=>`<article class="mcard" onclick="toggleLapExpand('${r.id}')"><div class="row1"><span class="nm">${r.nama}${r.manual?'<span class="tag-manual">Manual</span>':''}</span>${statusBadge(r.status)}</div><div class="kv"><span>NPM</span><b class="mono">${r.npm}</b><span>Kegiatan</span><b>${r.jenis} &middot; ${r.blok}</b><span>Pelaksanaan</span><b>${fmtDate(r.tglPel)}</b><span>Dosen</span><b>${r.dosen||'-'}</b><span>Biaya</span><b style="color:var(--brand-700)">${rupiah(r.biaya)}</b></div></article>`).join('')||'<div class="empty">Belum ada data.</div>';
+
+  return `
+    <div class="lapstats">${stats}</div>
+    <div class="lapgrid2">${charts}</div>
+    <div class="toolbar" style="background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow-soft)">
+      <div class="chips">${CHIPS.map(cd=>{ const lbl=cd||'Semua'; const cnt=cd?RECS.filter(r=>r.status===cd).length:RECS.length; return `<button class="chip ${lf.status===cd?'active':''}" onclick="lf.status='${cd}';renderLaporan()">${lbl} <span style="opacity:.6">${cnt}</span></button>`; }).join('')}</div>
+      <div class="topbar-spacer"></div>
+      <select class="filter-sel" onchange="lf.jenis=this.value;renderLaporan()"><option value="">Semua Jenis</option>${['Ujian','SGD','KKD','Praktikum'].map(j=>`<option ${lf.jenis===j?'selected':''}>${j}</option>`).join('')}</select>
+    </div>
+    <section class="panel">
+      <div class="table-wrap only-desktop"><table><thead><tr><th>Tanggal</th><th>Mahasiswa</th><th>Jenis</th><th>Blok</th><th>Dosen</th><th>Pelaksanaan</th><th>Nomor Surat</th><th>Status</th><th>Sumber</th><th>Biaya</th><th>Bukti</th><th style="text-align:right">Detail</th></tr></thead><tbody>${tbody}</tbody></table></div>
+      <div class="cards">${mcards}</div>
+    </section>`;
+}
+function toggleLapExpand(id){ lapExpand[id]=!lapExpand[id]; renderLaporan(); }
+
+/* =========================================================
+   TAB 2: LAPORAN DOSEN (matrix)
+   ========================================================= */
+function tabDosen(){
+  const cols=[...new Set(RECS.map(r=>r.bagian))];
+  const dosenList=[...new Set(RECS.map(r=>r.dosen).filter(Boolean))];
+  const cell=(dosen,bg)=>RECS.filter(r=>r.dosen===dosen && r.bagian===bg).length;
+  const rowTotal=d=>RECS.filter(r=>r.dosen===d).length;
+  const colTotal=bg=>RECS.filter(r=>r.bagian===bg).length;
+  const grand=RECS.filter(r=>r.dosen).length;
+
+  const head=`<tr><th class="lab">Dosen \\ Bagian</th>${cols.map(b=>`<th>${b}</th>`).join('')}<th>Total</th></tr>`;
+  const body=dosenList.map(d=>`<tr><td class="lab rowlab">${d}</td>${cols.map(bg=>{ const n=cell(d,bg); return `<td>${n?`<button class="heat-cell ${n>=2?'g':n===1?'y':'r'}" onclick="openDosenCell('${d}','${bg}')">${n}</button>`:'<span style="color:#cbd5e1">–</span>'}</td>`; }).join('')}<td style="font-weight:800">${rowTotal(d)}</td></tr>`).join('');
+  const foot=`<tr class="grandrow"><td class="lab">Total</td>${cols.map(bg=>`<td style="text-align:center">${colTotal(bg)}</td>`).join('')}<td style="text-align:center">${grand}</td></tr>`;
+
+  let detail='';
+  if(dosenCell){
+    const list=RECS.filter(r=>r.dosen===dosenCell.dosen && r.bagian===dosenCell.bagian);
+    const biaya=list.reduce((a,r)=>a+r.biaya,0);
+    detail=`<div class="celldetail"><div class="cd-head">
+      <div><div class="t">${dosenCell.dosen} &middot; ${dosenCell.bagian}</div><div class="s">${list.length} kegiatan &middot; Total ${rupiah(biaya)}</div></div>
+      <button class="btn btn-soft btn-xs" onclick="dosenCell=null;renderLaporan()"><i class="bi bi-x-lg"></i> Tutup</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Mahasiswa</th><th>Kegiatan</th><th>Blok</th><th>Status</th><th>BA</th></tr></thead><tbody>
+        ${list.map(r=>{ const ba=[...r.ba.pendukung,...r.ba.pelaksanaan].length; return `<tr><td style="white-space:nowrap;font-size:12px;color:var(--ink-500)">${fmtDate(r.tgl)}</td><td><div class="nm">${r.nama}</div><div class="sub mono">${r.npm}</div></td><td style="font-size:12px">${r.kegiatan}</td><td style="font-size:12px">${r.blok}</td><td>${statusBadge(r.status)}</td><td>${ba?`<span class="badge acc"><i class="bi bi-file-earmark-check"></i>${ba}</span>`:'<span class="badge cancel">-</span>'}</td></tr>`; }).join('')}
+      </tbody></table></div></div>`;
+  }
+  const dosenBars=barsFrom(RECS.filter(r=>r.dosen).reduce((a,r)=>{a[r.dosen]=(a[r.dosen]||0)+1;return a;},{}));
+
+  return `
+    <div class="chartcard" style="margin-bottom:18px;padding:16px 16px 6px">
+      <div class="ch-head" style="justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><i class="bi bi-bar-chart-steps" style="color:var(--brand)"></i><h3>Jumlah Berita Acara per Dosen</h3></div><span class="badge cancel">${grand} BA total</span></div>
+      ${dosenBars.map(b=>`<div class="bar-row"><div class="bar-top"><span class="name">${b.label}</span><span class="meta">${b.value} kegiatan</span></div><div class="track"><div class="fill" style="width:${b.pct}%;background:linear-gradient(90deg,#6366f1,#a78bfa)"></div></div></div>`).join('')}
+    </div>
+    <section class="panel">
+      <div class="panel-head"><div><h3><i class="bi bi-grid-3x3-gap" style="color:var(--brand)"></i> Rekap Berita Acara per Dosen &amp; Bagian</h3><div class="sub">Baris = Dosen, kolom = Bagian. Klik angka pada sel untuk melihat daftar BA-nya</div></div>
+        <button class="btn btn-soft btn-xs" onclick="soon('Export Rekap Dosen')"><i class="bi bi-file-earmark-excel"></i> Export</button></div>
+      <div class="panel-body"><div class="heat-scroll"><table class="heat-table"><thead>${head}</thead><tbody>${body}${foot}</tbody></table></div>
+        <div class="heat-legend"><span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ kegiatan</span><span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 kegiatan</span></div>
+      </div>
+    </section>
+    ${detail}`;
+}
+function openDosenCell(dosen,bg){ dosenCell={dosen,bagian:bg}; renderLaporan(); }
+
+/* =========================================================
+   TAB 3: LAPORAN BAGIAN
+   ========================================================= */
+function tabBagian(){
+  const groups=[...new Set(RECS.map(r=>r.bagian))];
+  const rows=filtered();
+  const data=groups.map(bg=>{
+    const list=rows.filter(r=>r.bagian===bg);
+    const biaya=list.reduce((a,r)=>a+r.biaya,0);
+    const bukti=list.filter(r=>r.bukti).length;
+    const ba=list.reduce((a,r)=>a+r.ba.pendukung.length+r.ba.pelaksanaan.length,0);
+    const bloks=[...new Set(list.map(r=>r.blok))].join(', ');
+    const kegs=[...new Set(list.map(r=>r.kegiatan))].length;
+    return {bg,list,biaya,bukti,ba,bloks,kegs};
+  }).filter(g=>g.list.length);
+  const gTotal=data.reduce((a,g)=>a+g.biaya,0);
+  const gPeserta=data.reduce((a,g)=>a+g.list.length,0);
+
+  const tbody=data.map(g=>`<tr class="clickable" onclick="bagExpand['${g.bg}']=!bagExpand['${g.bg}'];renderLaporan()">
+    <td style="text-align:center"><i class="bi ${bagExpand[g.bg]?'bi-chevron-up':'bi-chevron-down'}" style="color:var(--ink-400)"></i></td>
+    <td><span class="badge" style="background:var(--brand-soft);color:var(--brand-700)">${g.bg}</span></td>
+    <td style="font-size:12px">${g.bloks}</td>
+    <td style="font-size:12px">${g.kegs} kegiatan</td>
+    <td style="white-space:nowrap;font-size:12px;color:var(--ink-500)">${g.list.length?fmtDate(g.list[g.list.length-1].tgl):'-'}</td>
+    <td style="white-space:nowrap;font-weight:700;color:var(--brand-700);text-align:right">${rupiah(g.biaya)}</td>
+    <td style="text-align:center;font-weight:700">${g.list.length}</td>
+    <td style="text-align:center">${buktiCell(g.bukti===g.list.length && g.list.length>0)}</td>
+    <td style="text-align:center">${g.ba?`<span class="badge acc"><i class="bi bi-file-earmark-check"></i>${g.ba}</span>`:'<span class="badge cancel">-</span>'}</td>
+  </tr>
+  ${bagExpand[g.bg]?`<tr class="expand-row"><td colspan="9"><div class="mini-label">Peserta ${g.bg} (${g.list.length})</div>
+    ${g.list.map(r=>`<div class="p-item"><span><span class="nm">${r.nama}</span> <span class="mono" style="font-size:10px;color:var(--ink-400)">${r.npm}</span> &middot; <span style="color:var(--ink-500)">${r.kegiatan}</span></span><span>${statusBadge(r.status)}</span></div>`).join('')}
+  </td></tr>`:''}`).join('')||`<tr><td colspan="9"><div class="empty">Belum ada data.</div></td></tr>`;
+
+  return `
+    <section class="panel">
+      <div class="panel-head"><div><h3><i class="bi bi-diagram-3" style="color:var(--brand)"></i> Rekap Jumlah Kegiatan per Bagian</h3><div class="sub">Klik baris untuk melihat daftar peserta</div></div>
+        <span class="badge cancel">${gPeserta} mahasiswa</span></div>
+      <div class="table-wrap"><table><thead><tr><th style="width:34px"></th><th>Bagian</th><th>Blok</th><th>Kegiatan</th><th>Tanggal</th><th style="text-align:right">Biaya</th><th style="text-align:center">Peserta</th><th style="text-align:center">Bukti Bayar</th><th style="text-align:center">BA</th></tr></thead>
+        <tbody>${tbody}<tr class="grandrow"><td></td><td colspan="4">Grand Total</td><td style="text-align:right;color:var(--brand-700)">${rupiah(gTotal)}</td><td style="text-align:center">${gPeserta}</td><td></td><td></td></tr></tbody></table></div>
+    </section>`;
+}
+
+/* =========================================================
+   TAB 4: BERITA ACARA
+   ========================================================= */
+function baRows(){
+  const g={};
+  RECS.forEach(r=>{
+    const key=r.bagian+'|'+r.kegiatan;
+    if(!g[key]) g[key]={ key:key, bagian:r.bagian, blok:new Set(), label:r.kegiatan, peserta:[], baPendukung:[], baPelaksanaan:[], biaya:0, dosen:new Set() };
+    const x=g[key];
+    x.blok.add(r.blok);
+    if(r.dosen) x.dosen.add(r.dosen);
+    x.peserta.push(r);
+    x.biaya+=r.biaya;
+    r.ba.pendukung.forEach(b=>{ if(!x.baPendukung.some(y=>y.id===b.id)) x.baPendukung.push(b); });
+    r.ba.pelaksanaan.forEach(b=>{ if(!x.baPelaksanaan.some(y=>y.id===b.id)) x.baPelaksanaan.push(b); });
+  });
+  return Object.values(g).filter(x=>!lf.blok || x.blok.has(lf.blok));
+}
+function progresDots(g){
+  const p=g.baPendukung.length?'all':'none';
+  const pl=g.baPelaksanaan.length?'all':(g.peserta.some(r=>r.status==='Diterima'||r.status==='ACC')?'partial':'none');
+  const n=g.peserta.filter(r=>r.bukti).length;
+  const bk=n===g.peserta.length?'all':(n?'partial':'none');
+  return [p,pl,bk];
+}
+function tabBA(){
+  const groups=baRows();
+  const allBa=RECS.reduce((a,r)=>a+r.ba.pendukung.length+r.ba.pelaksanaan.length,0);
+  const allPeserta=RECS.length;
+  const sums=[
+    {label:'Kegiatan',n:groups.length,p:'baris kegiatan'},
+    {label:'Peserta',n:allPeserta,p:'mahasiswa'},
+    {label:'BA Pendukung',n:RECS.reduce((a,r)=>a+r.ba.pendukung.length,0),p:'sebelum keputusan'},
+    {label:'BA Pelaksanaan',n:RECS.reduce((a,r)=>a+r.ba.pelaksanaan.length,0),p:'setelah kegiatan',cls:'emerald'},
+    {label:'Total BA',n:allBa,p:'pendukung + pelaksanaan'}
+  ];
+  const basum=sums.map(s=>`<div class="b" style="cursor:default"><div class="k">${s.label}</div><div class="n ${s.cls||''}">${s.n}</div><div class="p">${s.p}</div></div>`).join('');
+  const gTotal=groups.reduce((a,g)=>a+g.biaya,0);
+  const gPeserta=groups.reduce((a,g)=>a+g.peserta.length,0);
+  const gPend=groups.reduce((a,g)=>a+g.baPendukung.length,0);
+  const gPel=groups.reduce((a,g)=>a+g.baPelaksanaan.length,0);
+
+  const tbody=groups.map(g=>{
+    const chips=[
+      ...g.baPendukung.map(b=>`<span class="achip pend">${b.id}<button class="mini-ic p" title="Kelola BA" onclick="event.stopPropagation();soon('Kelola BA ${b.id}')"><i class="bi bi-pencil"></i></button><button class="mini-ic x" title="Hapus BA" onclick="event.stopPropagation();soon('Hapus BA ${b.id}')"><i class="bi bi-x"></i></button></span>`),
+      ...g.baPelaksanaan.map(b=>`<span class="achip pel">${b.id}<button class="mini-ic p" title="Kelola BA" onclick="event.stopPropagation();soon('Kelola BA ${b.id}')"><i class="bi bi-pencil"></i></button><button class="mini-ic x" title="Hapus BA" onclick="event.stopPropagation();soon('Hapus BA ${b.id}')"><i class="bi bi-x"></i></button></span>`)
+    ];
+    const dots=progresDots(g).map(s=>`<i class="${s}"></i>`).join('');
+    return `<tr class="clickable" onclick="toggleLapExpand('ba:${g.key}')">
+      <td style="text-align:center"><i class="bi ${lapExpand['ba:'+g.key]?'bi-chevron-up':'bi-chevron-down'}" style="color:var(--ink-400)"></i></td>
+      <td><span class="badge" style="background:var(--brand-soft);color:var(--brand-700)">${g.bagian}</span></td>
+      <td style="font-size:12px">${[...g.blok].join(', ')}</td>
+      <td><div class="nm" style="font-weight:700">${g.label}</div></td>
+      <td><span class="progdots" title="Pendukung &middot; Pelaksanaan &middot; Bukti Bayar">${dots}</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--ink-500)">${fmtDate(g.peserta.map(r=>r.tglPel).sort().slice(-1)[0])}</td>
+      <td style="font-size:12px;color:var(--ink-600)">${[...g.dosen].join(', ')||'-'}</td>
+      <td style="text-align:center;font-weight:700">${g.peserta.length}</td>
+      <td style="text-align:center;font-weight:700">${g.baPendukung.length}</td>
+      <td style="text-align:center;font-weight:700">${g.baPelaksanaan.length}</td>
+      <td style="white-space:nowrap;text-align:right;font-weight:700;color:var(--brand-700)">${rupiah(g.biaya)}</td>
+      <td><div class="aksiwrap">${chips.length?chips.join(''):'<span style="color:#cbd5e1">-</span>'}<button class="btn btn-soft btn-xs" onclick="event.stopPropagation();soon('Riwayat ${g.label}')"><i class="bi bi-clock-history"></i> Riwayat</button></div></td>
+    </tr>
+    ${lapExpand['ba:'+g.key]?`<tr class="expand-row"><td colspan="12"><div class="expand-grid">
+      <div><div class="mini-label">Peserta (${g.peserta.length})</div>${g.peserta.map(r=>`<div class="p-item"><span><span class="mono" style="font-size:10px;color:var(--ink-400)">${r.npm}</span> <span style="font-weight:600;color:var(--ink-700)">${r.nama}</span></span><span>${statusBadge(r.status)}</span></div>`).join('')}</div>
+      <div><div class="mini-label">Berita Acara</div>${[...g.baPendukung.map(b=>({...b,tipe:'Pendukung'})),...g.baPelaksanaan.map(b=>({...b,tipe:'Pelaksanaan'}))].map(b=>`<div class="ba-item"><span><b class="mono">${b.id}</b> <span class="minitag ${b.tipe==='Pelaksanaan'?'ba-pelaksanaan':'ba-pendukung'}">${b.tipe}</span></span><span style="display:flex;gap:2px"><button class="btn btn-soft btn-xs" onclick="soon('Lihat file ${b.id}')"><i class="bi bi-file-earmark-pdf"></i></button><button class="mini-ic" onclick="soon('Kelola ${b.id}')"><i class="bi bi-pencil"></i></button><button class="mini-ic danger" onclick="soon('Hapus ${b.id}')"><i class="bi bi-trash"></i></button></span></div>`).join('')||'<div class="muted" style="font-size:12px">Belum ada BA.</div>'}</div>
+    </div></td></tr>`:''}`;
+  }).join('')||`<tr><td colspan="12"><div class="empty"><i class="bi bi-file-earmark-text"></i>Belum ada kegiatan.</div></td></tr>`;
+
+  const mcards=groups.map(g=>{ const chips=[...g.baPendukung,...g.baPelaksanaan].map(b=>`<span class="achip ${g.baPelaksanaan.some(p=>p.id===b.id)?'pel':'pend'}">${b.id}</span>`).join(''); return `<article class="mcard"><div class="row1"><span class="nm" style="font-size:14px">${g.label}</span><span class="badge" style="background:var(--brand-soft);color:var(--brand-700)">${g.bagian}</span></div><div class="kv"><span>Blok</span><b>${[...g.blok].join(', ')}</b><span>Peserta</span><b>${g.peserta.length} mahasiswa</b><span>Biaya</span><b style="color:var(--brand-700)">${rupiah(g.biaya)}</b></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px">${chips||'<span class="muted" style="font-size:12px">Belum ada BA</span>'}</div><div class="actions"><button class="btn btn-soft btn-sm" onclick="soon('Riwayat ${g.label}')"><i class="bi bi-clock-history"></i> Riwayat</button></div></article>`; }).join('');
+
+  return `
+    <div class="basum">${basum}</div>
+    <section class="panel">
+      <div class="panel-head"><div><h3><i class="bi bi-file-earmark-text" style="color:var(--brand)"></i> Rekap Kegiatan, Realisasi &amp; Berita Acara</h3><div class="sub">Klik baris untuk melihat peserta &amp; berkas BA. Kelola/hapus BA lewat kolom Aksi.</div></div>
+        <button class="btn btn-soft btn-xs" onclick="soon('Export Berita Acara')"><i class="bi bi-file-earmark-excel"></i> Export</button></div>
+      <div class="table-wrap only-desktop"><table><thead><tr><th style="width:34px"></th><th>Bagian</th><th>Blok</th><th>Kegiatan</th><th>Progres</th><th>Realisasi</th><th>Dosen</th><th style="text-align:center">Peserta</th><th style="text-align:center">Pendukung</th><th style="text-align:center">Pelaksanaan</th><th style="text-align:right">Biaya</th><th style="text-align:right">Aksi</th></tr></thead>
+        <tbody>${tbody}<tr class="grandrow"><td></td><td colspan="6" style="text-align:right">Grand Total</td><td style="text-align:center">${gPeserta}</td><td style="text-align:center">${gPend}</td><td style="text-align:center">${gPel}</td><td style="text-align:right;color:var(--brand-700)">${rupiah(gTotal)}</td><td></td></tr></tbody></table></div>
+      <div class="cards">${mcards||'<div class="empty">Belum ada kegiatan.</div>'}</div>
+    </section>`;
+}
+
+/* =========================================================
+   TAB 5: DATA PEMBAYARAN
+   ========================================================= */
+function tabBayar(){
+  const rows=filtered().filter(r=>{ if(bayarChip==='lunas' && !r.bukti) return false; if(bayarChip==='belum' && r.bukti) return false; return true; });
+  const lunas=RECS.filter(r=>r.bukti).length;
+  const totalBiaya=RECS.reduce((a,r)=>a+r.biaya,0);
+  const cards=[
+    {label:'Total Tagihan',num:rupiah(totalBiaya),icon:'bi-cash-stack',cls:'indigo',money:true},
+    {label:'Sudah Bayar',num:lunas,icon:'bi-check2-circle',cls:'emerald',pct:share(lunas,RECS.length)+'%'},
+    {label:'Belum Bayar',num:RECS.length-lunas,icon:'bi-x-circle',cls:'rose',pct:share(RECS.length-lunas,RECS.length)+'%'}
+  ];
+  const stats=cards.map(d=>`<div class="stat"><div class="top"><div class="ic ${d.cls}"><i class="bi ${d.icon}"></i></div>${d.pct!==undefined?`<span class="pct">${d.pct}</span>`:''}</div><div class="num ${d.money?'money':''}">${d.num}</div><div class="lbl">${d.label}</div></div>`).join('');
+
+  const itemsOf=r=>r.details.map(d=>({ jenis:d.jenis, blok:r.blok, tanggal:d.tanggal, status:r.status, biaya:Math.round(r.biaya/r.details.length), bukti:r.bukti, acc:r.status==='ACC' }));
+  const tbody=rows.map(r=>{
+    const n=r.bukti?r.details.length:0;
+    return `<tr class="clickable" onclick="toggleLapExpand('bayar:${r.npm}')">
+      <td style="text-align:center"><i class="bi ${lapExpand['bayar:'+r.npm]?'bi-chevron-up':'bi-chevron-down'}" style="color:var(--ink-400)"></i></td>
+      <td class="mono" style="font-size:12px;font-weight:700;color:var(--ink-600)">${r.npm}</td>
+      <td><div class="nm">${r.nama}</div></td>
+      <td style="text-align:center;font-weight:700">${r.details.length}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td style="white-space:nowrap;text-align:right;font-weight:700;color:var(--brand-700)">${rupiah(r.biaya)}</td>
+      <td style="text-align:center"><span class="badge ${r.bukti?'acc':(n?'wait':'cancel')}">${n}/${r.details.length}</span></td>
+      <td style="text-align:right">${r.bukti?`<button class="btn-bukti" onclick="event.stopPropagation();soon('Buka bukti ${r.nama}')"><i class="bi bi-cash-coin"></i> Bukti</button>`:'<span style="color:#cbd5e1">-</span>'}</td>
+    </tr>
+    ${lapExpand['bayar:'+r.npm]?`<tr class="expand-row"><td colspan="8"><div class="mini-label">Rincian Pengajuan (${r.details.length})</div>
+      ${itemsOf(r).map(it=>`<div class="ba-item" style="padding:10px 12px"><span style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><b style="color:var(--ink-800)">${it.jenis}</b><span style="color:var(--ink-400)">${it.blok}</span><span style="color:var(--ink-400)">${fmtDate(it.tanggal)}</span>${statusBadge(it.status)}<span style="font-weight:700;color:var(--teal)">${rupiah(it.biaya)}</span></span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">${it.bukti?`<button class="btn-bukti" onclick="soon('Bukti Bayar')"><i class="bi bi-cash-coin"></i> Bukti Bayar</button>`:'<span style="font-size:11px;color:var(--ink-400)">Belum ada bukti</span>'}${it.acc?`<button class="btn-acc" onclick="soon('ACC INHAL')"><i class="bi bi-patch-check"></i> ACC INHAL</button>`:''}</span></div>`).join('')}
+    </td></tr>`:''}`;
+  }).join('')||`<tr><td colspan="8"><div class="empty"><i class="bi bi-cash-coin"></i>Tidak ada data pembayaran untuk filter ini.</div></td></tr>`;
+
+  const mcards=rows.map(r=>`<article class="mcard" onclick="toggleLapExpand('bayar:${r.npm}')"><div class="row1"><span class="nm">${r.nama}</span>${statusBadge(r.status)}</div><div class="kv"><span>NPM</span><b class="mono">${r.npm}</b><span>Kegiatan</span><b>${r.details.length}</b><span>Total Biaya</span><b style="color:var(--brand-700)">${rupiah(r.biaya)}</b><span>Bukti</span><b>${r.bukti?'Lunas':'Belum'}</b></div>${r.bukti?'<div class="actions"><button class="btn-bukti" onclick="event.stopPropagation();soon(\'Buka bukti\')"><i class="bi bi-cash-coin"></i> Bukti</button></div>':''}</article>`).join('')||'<div class="empty">Tidak ada data.</div>';
+
+  return `
+    <div class="lapstats three">${stats}</div>
+    <div class="toolbar" style="background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow-soft)">
+      <div class="chips">${[['','Semua'],['lunas','Sudah Bayar'],['belum','Belum Bayar']].map(([k,l])=>`<button class="chip ${bayarChip===k?'active':''}" onclick="bayarChip='${k}';renderLaporan()">${l}</button>`).join('')}</div>
+      <div class="topbar-spacer"></div>
+      <span class="sub" style="font-weight:600;color:var(--ink-500)">${rows.length} mahasiswa</span>
+      <button class="btn btn-soft btn-xs" onclick="soon('Export Pembayaran')"><i class="bi bi-file-earmark-excel"></i> Export</button>
+    </div>
+    <section class="panel">
+      <div class="table-wrap only-desktop"><table><thead><tr><th style="width:34px"></th><th>NPM</th><th>Nama</th><th style="text-align:center">Jml Kegiatan</th><th>Status</th><th style="text-align:right">Total Biaya</th><th style="text-align:center">Bukti Bayar</th><th style="text-align:right">Aksi</th></tr></thead><tbody>${tbody}</tbody></table></div>
+      <div class="cards">${mcards}</div>
+    </section>`;
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderLaporan();
+</script>
+</body>
+</html>
