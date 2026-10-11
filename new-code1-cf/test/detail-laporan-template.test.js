@@ -263,6 +263,6 @@ describe('detail laporan shell interaktif', () => {
     expect(html).toContain('sidebarCollapsed: false');
     expect(html).toContain('sidebarOpen: false');
     expect(html).toContain('mobileMenuOpen: false');
-    expect(html).toContain('sidebarCollapsed = !sidebarCollapsed');
+    expect(html).toContain('this.sidebarCollapsed = !this.sidebarCollapsed');
   });
 });

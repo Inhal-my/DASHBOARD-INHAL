@@ -2162,10 +2162,7 @@
                 'dosenFilter.q': function () { this.activeDosenCell = null; },
             },
             methods: {
-                toggleSidebar() {
-                    const { sidebarCollapsed } = this;
-                    this.sidebarCollapsed = !sidebarCollapsed;
-                },
+                toggleSidebar() { this.sidebarCollapsed = !this.sidebarCollapsed; },
                 toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; },
                 switchTab(key) { this.activeTab = key; this.mobileMenuOpen = false; this.sidebarOpen = false; },
                 safeUrl(v) {
