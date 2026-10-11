@@ -276,6 +276,10 @@ describe('detail laporan struktur tab terjaga setelah restyle', () => {
     expect(html).toContain('>Aksi</th>');
     expect(html).toContain('btn-acc');
     expect(html).toContain('btn-bukti');
+    expect(html).toContain('lap-card');
+    expect(html).toContain('lap-stat');
+    expect(html).toContain('lap-chip');
+    expect(html).toContain('lap-th');
   });
 });
 
