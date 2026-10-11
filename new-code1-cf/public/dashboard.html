@@ -3847,9 +3847,9 @@
                 openScanner(which) {
                     const self = this;
                     const titles = { pelaksanaan: 'Scan BA Pelaksanaan', bukti: 'Scan Bukti Bayar', pendukung: 'Scan BA Pendukung' };
+                    const refs = { pelaksanaan: 'pelaksanaanCamera', bukti: 'buktiCamera', pendukung: 'pendukungCamera' };
                     if (!window.Scanner || typeof window.Scanner.open !== 'function') {
                         this.notify('Scanner in-app tidak tersedia. Memakai kamera OS.', false);
-                        const refs = { pelaksanaan: 'pelaksanaanCamera', bukti: 'buktiCamera', pendukung: 'pendukungCamera' };
                         const el = this.$refs[refs[which]];
                         if (el) el.click();
                         return;
@@ -3858,7 +3858,6 @@
                         title: titles[which] || 'Scan Dokumen',
                         onApply: function (pages) { self.scanAddPages(pages, which); },
                         onOsFallback: function () {
-                            const refs = { pelaksanaan: 'pelaksanaanCamera', bukti: 'buktiCamera', pendukung: 'pendukungCamera' };
                             const el = self.$refs[refs[which]];
                             if (el) el.click();
                         }

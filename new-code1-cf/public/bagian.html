@@ -865,7 +865,7 @@
                 openScanner() {
                     const self = this;
                     if (!window.Scanner || typeof window.Scanner.open !== 'function') {
-                        this.showToast('Scanner in-app tidak tersedia. Memakai kamera OS.', 'error');
+                        this.showToast('Scanner in-app tidak tersedia. Memakai kamera OS.', 'info');
                         if (this.$refs.scanCamera) this.$refs.scanCamera.click();
                         return;
                     }

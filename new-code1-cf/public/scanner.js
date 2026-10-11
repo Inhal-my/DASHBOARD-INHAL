@@ -5,6 +5,7 @@
     var MAX_OUTPUT_DIM = 1600;
 
     var enginePromise = null;
+    var activeClose = null;
 
     /* ---------- helper geometri (murni) ---------- */
 
@@ -52,7 +53,12 @@
         enginePromise = new Promise(function (resolve, reject) {
             var settled = false;
             function ok(cv) { if (settled) return; settled = true; resolve(cv); }
-            function bad(err) { if (settled) return; settled = true; reject(err instanceof Error ? err : new Error('OpenCV gagal dimuat')); }
+            function bad(err) {
+                if (settled) return;
+                settled = true;
+                enginePromise = null;
+                reject(err instanceof Error ? err : new Error('OpenCV gagal dimuat'));
+            }
 
             function waitReady() {
                 if (window.cv && window.cv.Mat) { ok(window.cv); return; }
@@ -163,24 +169,28 @@
             var bestArea = 0;
             for (var i = 0; i < contours.size(); i += 1) {
                 var c = contours.get(i);
-                var area = cv.contourArea(c);
-                if (area > frameArea * 0.15 && area > bestArea) {
-                    var peri = cv.arcLength(c, true);
-                    var approx = new cv.Mat();
-                    cv.approxPolyDP(c, approx, 0.02 * peri, true);
-                    if (approx.rows === 4 && cv.isContourConvex(approx)) {
-                        var pts = [];
-                        for (var j = 0; j < 4; j += 1) {
-                            pts.push({ x: approx.data32S[j * 2], y: approx.data32S[j * 2 + 1] });
+                var approx = null;
+                try {
+                    var area = cv.contourArea(c);
+                    if (area > frameArea * 0.15 && area > bestArea) {
+                        var peri = cv.arcLength(c, true);
+                        approx = new cv.Mat();
+                        cv.approxPolyDP(c, approx, 0.02 * peri, true);
+                        if (approx.rows === 4 && cv.isContourConvex(approx)) {
+                            var pts = [];
+                            for (var j = 0; j < 4; j += 1) {
+                                pts.push({ x: approx.data32S[j * 2], y: approx.data32S[j * 2 + 1] });
+                            }
+                            quad = orderCorners(pts).map(function (p) {
+                                return { x: p.x / canvas.width, y: p.y / canvas.height };
+                            });
+                            bestArea = area;
                         }
-                        quad = orderCorners(pts).map(function (p) {
-                            return { x: p.x / canvas.width, y: p.y / canvas.height };
-                        });
-                        bestArea = area;
                     }
-                    approx.delete();
+                } finally {
+                    if (approx) approx.delete();
+                    c.delete();
                 }
-                c.delete();
             }
         } finally {
             src.delete(); gray.delete(); blur.delete(); edges.delete();
@@ -191,7 +201,7 @@
 
     function processFrame(cv, canvas, quad) {
         var src = cv.imread(canvas);
-        var flat = new cv.Mat();
+        var flat = null;
         var gray = new cv.Mat();
         var thr = new cv.Mat();
         try {
@@ -200,19 +210,24 @@
                     return { x: Math.round(p.x * (canvas.width - 1)), y: Math.round(p.y * (canvas.height - 1)) };
                 });
                 var size = outputSize(pts, MAX_OUTPUT_DIM);
-                var srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                    pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y
-                ]);
-                var dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                    0, 0, size.width - 1, 0, size.width - 1, size.height - 1, 0, size.height - 1
-                ]);
-                var m = cv.getPerspectiveTransform(srcTri, dstTri);
-                cv.warpPerspective(src, flat, m, new cv.Size(size.width, size.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
-                srcTri.delete(); dstTri.delete(); m.delete();
-            } else {
-                cv.resize(src, flat, new cv.Size(src.cols, src.rows));
+                var srcTri = null, dstTri = null, m = null;
+                flat = new cv.Mat();
+                try {
+                    srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                        pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y
+                    ]);
+                    dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                        0, 0, size.width - 1, 0, size.width - 1, size.height - 1, 0, size.height - 1
+                    ]);
+                    m = cv.getPerspectiveTransform(srcTri, dstTri);
+                    cv.warpPerspective(src, flat, m, new cv.Size(size.width, size.height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+                } finally {
+                    if (srcTri) srcTri.delete();
+                    if (dstTri) dstTri.delete();
+                    if (m) m.delete();
+                }
             }
-            cv.cvtColor(flat, gray, cv.COLOR_RGBA2GRAY);
+            cv.cvtColor(quad ? flat : src, gray, cv.COLOR_RGBA2GRAY);
             cv.adaptiveThreshold(gray, thr, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
             var out = document.createElement('canvas');
             out.width = thr.cols;
@@ -221,12 +236,11 @@
             var dataUrl = out.toDataURL('image/jpeg', 0.8);
             return { bytes: dataUrlToBytes(dataUrl), width: out.width, height: out.height };
         } finally {
-            src.delete(); flat.delete(); gray.delete(); thr.delete();
+            src.delete(); if (flat) flat.delete(); gray.delete(); thr.delete();
         }
     }
 
-    function processPlain(video, quad) {
-        var canvas = grabCanvas(video, MAX_OUTPUT_DIM);
+    function processPlain(canvas) {
         if (!canvas) return null;
         var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         return { bytes: dataUrlToBytes(dataUrl), width: canvas.width, height: canvas.height };
@@ -236,7 +250,10 @@
 
     function open(opts) {
         opts = opts || {};
-        var state = { stream: null, facing: 'environment', pages: [], quad: null, engine: null, busy: false, timer: null, closed: false };
+        if (typeof activeClose === 'function') {
+            try { activeClose(); } catch (e) { /* abaikan */ }
+        }
+        var state = { stream: null, facing: 'environment', pages: [], quad: null, engine: null, busy: false, timer: null, closed: false, engineFailed: false };
 
         var ov = document.createElement('div');
         ov.className = 'scn-overlay';
@@ -299,13 +316,26 @@
             }
         }
 
+        function releasePages() {
+            if (!state || !state.pages) return;
+            state.pages.forEach(function (p) {
+                if (p && p.preview) {
+                    try { URL.revokeObjectURL(p.preview); } catch (e) { /* abaikan */ }
+                    p.preview = null;
+                }
+            });
+        }
+
         function close() {
             if (state.closed) return;
             state.closed = true;
             if (state.timer) clearInterval(state.timer);
             stopCamera();
+            releasePages();
             ov.remove();
+            if (activeClose === close) activeClose = null;
         }
+        activeClose = close;
 
         function showFallback(message, withOs) {
             fallbackEl.style.display = 'flex';
@@ -318,6 +348,8 @@
         async function startCamera() {
             setStatus('Menyalakan kamera…', false);
             fallbackEl.style.display = 'none';
+            shootBtn.disabled = true;
+            video.addEventListener('loadeddata', function () { shootBtn.disabled = false; }, { once: true });
             if (!isSupported()) {
                 state.engine = null;
                 showFallback('Perangkat ini tidak menyediakan kamera in-app.', true);
@@ -371,9 +403,11 @@
             if (state.timer) clearInterval(state.timer);
             state.timer = setInterval(async function () {
                 if (state.closed || state.busy || !video.videoWidth) return;
+                if (state.engineFailed) return;
                 if (!state.engine) {
                     state.engine = await loadEngine().catch(function () { return null; });
                     if (!state.engine) {
+                        state.engineFailed = true;
                         noteEl.textContent = 'Deteksi tepi tidak tersedia; foto diambil tanpa koreksi.';
                         setStatus('Kamera aktif (tanpa deteksi)', true);
                         return;
@@ -398,12 +432,7 @@
             try {
                 var full = grabCanvas(video, MAX_OUTPUT_DIM);
                 if (!full) return;
-                var result;
-                if (state.engine) {
-                    result = processFrame(state.engine, full, state.quad);
-                } else {
-                    result = processPlain(video, state.quad);
-                }
+                var result = state.engine ? processFrame(state.engine, full, state.quad) : processPlain(full);
                 var blob = new Blob([result.bytes], { type: 'image/jpeg' });
                 state.pages.push({
                     bytes: result.bytes,
@@ -416,7 +445,7 @@
                 noteEl.textContent = 'Gagal memproses gambar: ' + (e && e.message ? e.message : e);
             } finally {
                 state.busy = false;
-                shootBtn.disabled = false;
+                shootBtn.disabled = !(video && video.videoWidth);
             }
         }
 
