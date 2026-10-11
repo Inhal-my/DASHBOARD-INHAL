@@ -246,3 +246,13 @@ describe('detail laporan export xlsx hyperlink bergaya', () => {
     expect(html).not.toContain("XLSX.writeFile(wb, 'Rekap-Berita-Acara-'");
   });
 });
+
+describe('detail laporan app shell (ala dashboard)', () => {
+  it('mendefinisikan CSS shell responsif di blok style inline', async () => {
+    const html = await loadHtml();
+    const selectors = cssSelectors(html);
+    for (const sel of ['.app-shell', '.sidebar-aside', '.main-wrap', '.content-wrap', '.sidebar-toggle', '.bottom-nav', '.bnav-btn', '.fab-btn', '.sheet-panel', '.sheet-item', '.topbar-search', '.topbar-bell', '.bg-sidebar', '.stat-trend']) {
+      expect(selectors.has(sel)).toBe(true);
+    }
+  });
+});
