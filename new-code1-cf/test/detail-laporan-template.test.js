@@ -267,6 +267,18 @@ describe('detail laporan shell interaktif', () => {
   });
 });
 
+describe('detail laporan struktur tab terjaga setelah restyle', () => {
+  it('pertahankan donut, matriks, dan kolom Aksi', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('Distribusi Status');
+    expect(html).toContain('stroke-dasharray');
+    expect(html).toContain('Baris = Dosen, kolom = Bagian');
+    expect(html).toContain('>Aksi</th>');
+    expect(html).toContain('btn-acc');
+    expect(html).toContain('btn-bukti');
+  });
+});
+
 describe('detail laporan memakai app shell', () => {
   it('merender sidebar, topbar, bottom-nav, dan FAB', async () => {
     const html = await loadHtml();

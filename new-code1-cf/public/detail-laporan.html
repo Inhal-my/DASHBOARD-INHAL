@@ -123,6 +123,30 @@
         @media (min-width: 1024px) { .sheet-panel, .sheet-overlay { display: none; } }
         @media (max-width: 1023px) { .toast-float { bottom: calc(6rem + env(safe-area-inset-bottom)) !important; } }
     </style>
+    <style>
+        /* ===== Penyelarasan visual 5 tab dengan mockup ===== */
+        .lap-card { background: #fff; border: 1px solid #e7ebf3; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -18px rgba(15,23,42,.28); }
+        .lap-card-head { display: flex; align-items: center; justify-content: space-between; gap: .625rem; flex-wrap: wrap; padding: .875rem 1rem; border-bottom: 1px solid #e7ebf3; }
+        .lap-card-title { display: flex; align-items: center; gap: .5rem; font-size: .84rem; font-weight: 800; color: #0f172a; }
+        .lap-card-sub { margin-top: .125rem; font-size: .72rem; font-weight: 500; color: #94a3b8; }
+        .lap-stat { display: flex; flex-direction: column; align-items: flex-start; gap: .375rem; background: #fff; border: 1px solid #e7ebf3; border-radius: 1rem; padding: .9375rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -18px rgba(15,23,42,.28); transition: transform .15s ease, box-shadow .15s ease; }
+        .lap-stat:hover { transform: translateY(-2px); box-shadow: 0 24px 60px -24px rgba(15,23,42,.45); }
+        .lap-stat-num { margin-top: .125rem; font-size: 1.3125rem; font-weight: 800; letter-spacing: -.01em; color: #0f172a; }
+        .lap-stat-num.is-money { font-size: .8125rem; line-height: 1.3; }
+        .lap-stat-lbl { font-size: .72rem; font-weight: 600; color: #94a3b8; }
+        .lap-chip { display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .6875rem; border-radius: 9999px; font-size: .72rem; font-weight: 700; color: #64748b; background: #f1f5f9; }
+        .lap-chip.is-emerald { background: #ecfdf5; color: #059669; }
+        .lap-chip.is-amber { background: #fffbeb; color: #b45309; }
+        .lap-chip.is-teal { background: #f0fdfa; color: #0d9488; }
+        .lap-th { background: #f8fafc; }
+        .lap-th th { font-weight: 800; letter-spacing: .06em; }
+        .achip { display: inline-flex; align-items: center; gap: .0625rem; border-radius: 9999px; padding: .125rem .125rem .125rem .5625rem; font-size: .65rem; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .achip.pend { background: #f1f5f9; color: #64748b; }
+        .achip.pel { background: #eef2ff; color: #4338ca; }
+        .achip .mini-ic { display: flex; width: 1.1875rem; height: 1.1875rem; align-items: center; justify-content: center; border-radius: 9999px; transition: .12s ease; }
+        .achip .mini-ic.p:hover { background: rgba(79,70,229,.16); color: #4338ca; }
+        .achip .mini-ic.x:hover { background: #fff1f2; color: #e11d48; }
+    </style>
 </head>
 <body>
     <div id="app" v-cloak class="app-shell font-sans text-ink antialiased"
@@ -413,35 +437,37 @@
                     <section v-if="activeTab === 'rekap'" class="space-y-6">
                         <div v-if="loading" class="space-y-6">
                             <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-                                <div v-for="i in 6" :key="i" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div v-for="i in 6" :key="i" class="lap-card p-4">
                                     <div class="mb-3 h-9 w-9 animate-pulse rounded-xl bg-slate-200/70"></div>
                                     <div class="h-4 w-2/3 animate-pulse rounded bg-slate-200/70"></div>
                                     <div class="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-200/70"></div>
                                 </div>
                             </div>
                             <div class="grid gap-4 lg:grid-cols-2">
-                                <div class="h-64 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
-                                <div class="h-64 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                                <div class="h-64 animate-pulse lap-card"></div>
+                                <div class="h-64 animate-pulse lap-card"></div>
                             </div>
-                            <div class="h-64 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                            <div class="h-64 animate-pulse lap-card"></div>
                         </div>
                         <template v-else>
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-                            <div v-for="c in summaryCards" :key="c.label" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-lift">
-                                <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
-                                    <i :class="c.icon" :style="{ color: c.color }"></i>
+                            <div v-for="c in summaryCards" :key="c.label" class="lap-stat">
+                                <div class="flex w-full items-center">
+                                    <div class="flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
+                                        <i :class="c.icon" :style="{ color: c.color }"></i>
+                                    </div>
                                 </div>
-                                <div class="text-xl font-extrabold tracking-tight text-slate-900" :class="c.money ? 'text-[13px] leading-snug' : ''">{{ c.num }}</div>
-                                <div class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ c.label }}</div>
+                                <div class="lap-stat-num" :class="c.money ? 'is-money' : ''">{{ c.num }}</div>
+                                <div class="lap-stat-lbl uppercase tracking-wider">{{ c.label }}</div>
                             </div>
                         </div>
 
                         <div class="grid gap-4 lg:grid-cols-2">
                             <!-- donut -->
-                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-5">
                                 <div class="mb-4 flex items-center gap-2">
                                     <i class="bi bi-pie-chart-fill text-brand-500"></i>
-                                    <h2 class="text-sm font-bold text-slate-800">Distribusi Status</h2>
+                                    <h2 class="lap-card-title">Distribusi Status</h2>
                                 </div>
                                 <div class="flex flex-col items-center gap-5 sm:flex-row">
                                     <svg viewBox="0 0 42 42" class="h-44 w-44 shrink-0">
@@ -468,10 +494,10 @@
                             </div>
 
                             <!-- bars -->
-                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-5">
                                 <div class="mb-4 flex items-center gap-2">
                                     <i class="bi bi-bar-chart-fill text-brand-500"></i>
-                                    <h2 class="text-sm font-bold text-slate-800">Jumlah per Jenis Kegiatan</h2>
+                                    <h2 class="lap-card-title">Jumlah per Jenis Kegiatan</h2>
                                 </div>
                                 <div class="space-y-3">
                                     <div v-for="b in jenisChart" :key="b.label">
@@ -488,7 +514,7 @@
 
                                 <div class="mb-4 mt-6 flex items-center gap-2">
                                     <i class="bi bi-grid-3x3-gap-fill text-brand-500"></i>
-                                    <h2 class="text-sm font-bold text-slate-800">Jumlah per Blok</h2>
+                                    <h2 class="lap-card-title">Jumlah per Blok</h2>
                                 </div>
                                 <div class="space-y-3">
                                     <div v-for="b in blokChart" :key="b.label">
@@ -506,7 +532,7 @@
                         </div>
 
                         <!-- table filters -->
-                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-6">
                                     <label class="label">Jenis Kegiatan</label>
@@ -526,11 +552,11 @@
                         </div>
 
                         <!-- table -->
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="overflow-hidden lap-card">
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left text-sm">
                                     <thead>
-                                        <tr class="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-400">
+                                        <tr class="lap-th border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
                                             <th class="w-10 px-3 py-3"></th>
                                             <th class="px-3 py-3 font-semibold">Tanggal</th>
                                             <th class="px-3 py-3 font-semibold">NPM / Nama</th>
@@ -593,18 +619,18 @@
                     <!-- ===================== TAB 2: LAPORAN DOSEN ===================== -->
                     <section v-if="activeTab === 'dosen'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
-                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-4">
                                 <div class="grid gap-3 md:grid-cols-12">
                                     <div v-for="i in 4" :key="i" class="h-10 animate-pulse rounded-xl bg-slate-200/70 md:col-span-3"></div>
                                 </div>
                             </div>
-                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-4">
                                 <div class="mb-4 h-4 w-48 animate-pulse rounded bg-slate-200/70"></div>
                                 <div v-for="i in 5" :key="i" class="mb-2 h-8 animate-pulse rounded-xl bg-slate-200/70"></div>
                             </div>
                         </div>
                         <template v-else>
-                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-3">
                                     <label class="label">Blok</label>
@@ -646,17 +672,17 @@
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ dosenMatrix.rows.length }} dosen</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ dosenMatrix.cols.length }} bagian</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ dosenMatrix.grandTotal }} BA total</span>
+                                <span class="lap-chip">{{ dosenMatrix.rows.length }} dosen</span>
+                                <span class="lap-chip">{{ dosenMatrix.cols.length }} bagian</span>
+                                <span class="lap-chip">{{ dosenMatrix.grandTotal }} BA total</span>
                             </div>
                         </div>
 
-                        <div id="dosen-matrix" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                        <div id="dosen-matrix" class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
                                 <div>
-                                    <div class="font-bold text-slate-800">Rekap Berita Acara per Dosen &amp; Bagian</div>
-                                    <div class="text-xs text-slate-400">Baris = Dosen, kolom = Bagian. Klik angka pada sel untuk melihat daftar BA-nya</div>
+                                    <div class="lap-card-title">Rekap Berita Acara per Dosen &amp; Bagian</div>
+                                    <div class="lap-card-sub">Baris = Dosen, kolom = Bagian. Klik angka pada sel untuk melihat daftar BA-nya</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportDosenMatrix">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -665,7 +691,7 @@
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Dosen \ Bagian</th>
                                             <th v-for="b in dosenMatrix.cols" :key="b" class="whitespace-nowrap px-3 py-2.5 text-center">{{ b }}</th>
                                             <th class="px-3 py-2.5 text-center">Total</th>
@@ -708,11 +734,11 @@
                             </div>
                         </div>
 
-                        <div v-if="activeDosenCell" id="dosen-detail" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                        <div v-if="activeDosenCell" id="dosen-detail" class="overflow-hidden lap-card">
+                            <div class="lap-card-head bg-brand-50/60">
                                 <div>
-                                    <div class="font-bold text-slate-800">Detail BA: {{ activeDosenCell.dosen }}</div>
-                                    <div class="text-xs text-slate-400">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA · Total <span class="font-semibold text-teal-700">{{ fmtRupiah(dosenCellBiayaTotal) }}</span></div>
+                                    <div class="lap-card-title">Detail BA: {{ activeDosenCell.dosen }}</div>
+                                    <div class="lap-card-sub">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA · Total <span class="font-semibold text-teal-700">{{ fmtRupiah(dosenCellBiayaTotal) }}</span></div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" @click="closeDosenDetail"><i class="bi bi-x-lg"></i> Tutup</button>
                             </div>
@@ -735,15 +761,15 @@
                     <!-- ===================== TAB 3: LAPORAN BAGIAN ===================== -->
                     <section v-if="activeTab === 'bagian'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
-                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-4">
                                 <div class="grid gap-3 md:grid-cols-12">
                                     <div v-for="i in 3" :key="i" class="h-10 animate-pulse rounded-xl bg-slate-200/70 md:col-span-4"></div>
                                 </div>
                             </div>
-                            <div v-for="i in 4" :key="i" class="h-14 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                            <div v-for="i in 4" :key="i" class="h-14 animate-pulse lap-card"></div>
                         </div>
                         <template v-else>
-                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-3">
                                     <label class="label">Bagian</label>
@@ -770,24 +796,24 @@
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianAllLabels.length }} bagian</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianMatrixRows.length }} blok</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianDetailRows.length }} kegiatan</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ bagianDetailPesertaTotal }} mahasiswa</span>
+                                <span class="lap-chip">{{ bagianAllLabels.length }} bagian</span>
+                                <span class="lap-chip">{{ bagianMatrixRows.length }} blok</span>
+                                <span class="lap-chip">{{ bagianDetailRows.length }} kegiatan</span>
+                                <span class="lap-chip">{{ bagianDetailPesertaTotal }} mahasiswa</span>
                             </div>
                         </div>
 
-                        <div id="bagian-detail" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                        <div id="bagian-detail" class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
                                 <div>
-                                    <div class="font-bold text-slate-800">Detail Kegiatan per Bagian &amp; Blok</div>
-                                    <div class="text-xs text-slate-400">Klik baris untuk melihat daftar peserta &amp; bukti bayar. Kolom Bukti Bayar = jumlah peserta yang sudah unggah bukti / total peserta kegiatan.</div>
+                                    <div class="lap-card-title">Detail Kegiatan per Bagian &amp; Blok</div>
+                                    <div class="lap-card-sub">Klik baris untuk melihat daftar peserta &amp; bukti bayar. Kolom Bukti Bayar = jumlah peserta yang sudah unggah bukti / total peserta kegiatan.</div>
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
@@ -870,15 +896,15 @@
                             </div>
                         </div>
 
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="border-b border-slate-100 px-4 py-3">
-                                <div class="font-bold text-slate-800">Rekap Jumlah Kegiatan per Bagian &amp; Blok</div>
-                                <div class="text-xs text-slate-400">Baris = Blok, kolom = Bagian. Klik angka pada cell untuk melihat detail kegiatan &amp; pesertanya</div>
+                        <div class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
+                                <div class="lap-card-title">Rekap Jumlah Kegiatan per Bagian &amp; Blok</div>
+                                <div class="lap-card-sub">Baris = Blok, kolom = Bagian. Klik angka pada cell untuk melihat detail kegiatan &amp; pesertanya</div>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Blok \ Bagian</th>
                                             <th v-for="b in bagianAllLabels" :key="b" class="whitespace-nowrap px-3 py-2.5 text-center">{{ b }}</th>
                                             <th class="px-3 py-2.5 text-center">Total</th>
@@ -917,16 +943,16 @@
                     <!-- ===================== TAB 4: LAPORAN BERITA ACARA ===================== -->
                     <section v-if="activeTab === 'ba'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
-                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-4">
                                 <div class="h-10 animate-pulse rounded-xl bg-slate-200/70"></div>
                             </div>
-                            <div v-for="i in 4" :key="i" class="space-y-2 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div v-for="i in 4" :key="i" class="space-y-2 lap-card p-4">
                                 <div class="h-4 w-1/2 animate-pulse rounded bg-slate-200/70"></div>
                                 <div class="h-3 w-2/3 animate-pulse rounded bg-slate-200/70"></div>
                             </div>
                         </div>
                         <template v-else>
-                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-4">
                                     <label class="label">Bagian</label>
@@ -948,16 +974,16 @@
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanRows.length }} kegiatan</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanBaTotal }} BA total</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ baKegiatanPesertaTotal }} mahasiswa</span>
+                                <span class="lap-chip">{{ baKegiatanRows.length }} kegiatan</span>
+                                <span class="lap-chip">{{ baKegiatanBaTotal }} BA total</span>
+                                <span class="lap-chip">{{ baKegiatanPesertaTotal }} mahasiswa</span>
                             </div>
                         </div>
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                        <div class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
                                 <div>
-                                    <div class="font-bold text-slate-800">Rekap Kegiatan, Realisasi &amp; Berita Acara</div>
-                                    <div class="text-xs text-slate-400">Klik baris untuk melihat peserta &amp; file BA</div>
+                                    <div class="lap-card-title">Rekap Kegiatan, Realisasi &amp; Berita Acara</div>
+                                    <div class="lap-card-sub">Klik baris untuk melihat peserta &amp; file BA</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportBaTable">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -966,7 +992,7 @@
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
@@ -1007,17 +1033,17 @@
                                                 <td class="whitespace-nowrap px-3 py-2.5">
                                                     <div class="flex flex-wrap justify-end gap-1">
                                                         <template v-for="(b, bi) in (r.baPendukung || [])" :key="'kp' + bi">
-                                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pl-2 pr-0.5 font-mono text-[10px] text-slate-500">
+                                                            <span class="achip pend">
                                                                 {{ b['BA ID'] }}
-                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-[10px]"></i></button>
-                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-100 hover:text-rose-600" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
+                                                                <button class="mini-ic p" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-[10px]"></i></button>
+                                                                <button class="mini-ic x" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
                                                             </span>
                                                         </template>
                                                         <template v-for="(b, bi) in (r.baPelaksanaan || [])" :key="'kl' + bi">
-                                                            <span class="inline-flex items-center gap-1 rounded-full bg-brand-50 py-0.5 pl-2 pr-0.5 font-mono text-[10px] text-brand-700">
+                                                            <span class="achip pel">
                                                                 {{ b['BA ID'] }}
-                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-brand-400 transition hover:bg-brand-100 hover:text-brand-700" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-[10px]"></i></button>
-                                                                <button class="flex h-4 w-4 items-center justify-center rounded-full text-brand-400 transition hover:bg-rose-100 hover:text-rose-600" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
+                                                                <button class="mini-ic p" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-[10px]"></i></button>
+                                                                <button class="mini-ic x" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button>
                                                             </span>
                                                         </template>
                                                         <span v-if="!(r.baPendukung || []).length && !(r.baPelaksanaan || []).length" class="text-slate-300">-</span>
@@ -1093,15 +1119,15 @@
                     <!-- ===================== TAB 5: DATA PEMBAYARAN ===================== -->
                     <section v-if="activeTab === 'bayar'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
-                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="lap-card p-4">
                                 <div class="grid gap-3 md:grid-cols-12">
                                     <div v-for="i in 5" :key="i" class="h-10 animate-pulse rounded-xl bg-slate-200/70 md:col-span-3"></div>
                                 </div>
                             </div>
-                            <div v-for="i in 4" :key="i" class="h-14 animate-pulse rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"></div>
+                            <div v-for="i in 4" :key="i" class="h-14 animate-pulse lap-card"></div>
                         </div>
                         <template v-else>
-                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-4">
                                     <label class="label">Cari Mahasiswa</label>
@@ -1129,18 +1155,18 @@
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ pembayaranSummary.total }} mahasiswa</span>
-                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">{{ pembayaranSummary.sudah }} sudah ada bukti</span>
-                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700">{{ pembayaranSummary.belum }} belum ada bukti</span>
-                                <span class="rounded-full bg-teal-50 px-2.5 py-0.5 font-semibold text-teal-700">Total {{ fmtRupiah(pembayaranSummary.biaya) }}</span>
+                                <span class="lap-chip">{{ pembayaranSummary.total }} mahasiswa</span>
+                                <span class="lap-chip is-emerald">{{ pembayaranSummary.sudah }} sudah ada bukti</span>
+                                <span class="lap-chip is-amber">{{ pembayaranSummary.belum }} belum ada bukti</span>
+                                <span class="lap-chip is-teal">Total {{ fmtRupiah(pembayaranSummary.biaya) }}</span>
                             </div>
                         </div>
 
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                        <div class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
                                 <div>
-                                    <div class="font-bold text-slate-800">Data Pembayaran per Mahasiswa</div>
-                                    <div class="text-xs text-slate-400">Klik baris untuk melihat rincian pengajuan &amp; tautan bukti bayar</div>
+                                    <div class="lap-card-title">Data Pembayaran per Mahasiswa</div>
+                                    <div class="lap-card-sub">Klik baris untuk melihat rincian pengajuan &amp; tautan bukti bayar</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportExcel()">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -1149,7 +1175,7 @@
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">NPM</th>
                                             <th class="px-3 py-2.5 text-left">Nama</th>
