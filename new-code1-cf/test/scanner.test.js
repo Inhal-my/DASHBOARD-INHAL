@@ -70,3 +70,23 @@ describe('scanner.js kontrak modul', () => {
     expect(typeof S.isSupported).toBe('function');
   });
 });
+
+describe('dashboard.html integrasi scanner in-app', () => {
+  it('memuat scanner.js dan menyediakan hook', async () => {
+    const html = await loadHtml('dashboard.html');
+    expect(html).toContain('<script src="/scanner.js" defer></script>');
+    expect(html).toContain('openScanner(which) {');
+    expect(html).toContain('scanAddPages(pages, which) {');
+    expect(html).toContain("openScanner('pelaksanaan')");
+    expect(html).toContain("openScanner('bukti')");
+    expect(html).toContain("openScanner('pendukung')");
+  });
+
+  it('tetap mempertahankan fallback kamera OS', async () => {
+    const html = await loadHtml('dashboard.html');
+    expect(html).toContain('ref="pelaksanaanCamera"');
+    expect(html).toContain('ref="buktiCamera"');
+    expect(html).toContain('ref="pendukungCamera"');
+    expect(html).toContain('capture="environment"');
+  });
+});

@@ -268,6 +268,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
+    <script src="/scanner.js" defer></script>
 </head>
 <body>
     <div id="app" v-cloak class="app-shell font-sans text-ink antialiased" :class="sidebarCollapsed ? 'sidebar-collapsed' : ''">
@@ -1211,7 +1212,7 @@
                                                             <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="max-w-[120px] text-xs" @change="babOnBaFile">
                                                         </div>
                                                         <div class="mt-2 flex flex-wrap items-center gap-2">
-                                                            <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="$refs.pelaksanaanCamera.click()">
+                                                            <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="openScanner('pelaksanaan')">
                                                                 <i class="bi bi-camera"></i> Scan Kamera
                                                             </button>
                                                             <span v-if="bab.ba.scanItems.length" class="text-[11px] text-slate-500">{{ bab.ba.scanItems.length }} halaman</span>
@@ -1643,7 +1644,7 @@
                                         </span>
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onBuktiFile($event)">
                                     </label>
-                                    <button type="button" class="btn-soft" :disabled="detail.scanBusy" @click="$refs.buktiCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
+                                    <button type="button" class="btn-soft" :disabled="detail.scanBusy" @click="openScanner('bukti')"><i class="bi bi-camera"></i> Scan Kamera</button>
                                     <button class="btn-primary" :disabled="detail.buktiUploading" @click="uploadBuktiBayar()">
                                         <svg v-if="detail.buktiUploading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1880,7 +1881,7 @@
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onBaFile">
                                     </div>
                                     <div class="mt-2 flex flex-wrap items-center gap-2">
-                                        <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="ba.form.scanBusy" @click="$refs.pendukungCamera.click()">
+                                        <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="ba.form.scanBusy" @click="openScanner('pendukung')">
                                             <i class="bi bi-camera"></i> Scan Kamera
                                         </button>
                                         <span v-if="ba.form.scanItems.length" class="text-[11px] text-slate-500">{{ ba.form.scanItems.length }} halaman</span>
@@ -3842,6 +3843,43 @@
                         return;
                     }
                     this.ba.form.file = f;
+                },
+                openScanner(which) {
+                    const self = this;
+                    const titles = { pelaksanaan: 'Scan BA Pelaksanaan', bukti: 'Scan Bukti Bayar', pendukung: 'Scan BA Pendukung' };
+                    if (!window.Scanner || typeof window.Scanner.open !== 'function') {
+                        this.notify('Scanner in-app tidak tersedia. Memakai kamera OS.', false);
+                        const refs = { pelaksanaan: 'pelaksanaanCamera', bukti: 'buktiCamera', pendukung: 'pendukungCamera' };
+                        const el = this.$refs[refs[which]];
+                        if (el) el.click();
+                        return;
+                    }
+                    window.Scanner.open({
+                        title: titles[which] || 'Scan Dokumen',
+                        onApply: function (pages) { self.scanAddPages(pages, which); },
+                        onOsFallback: function () {
+                            const refs = { pelaksanaan: 'pelaksanaanCamera', bukti: 'buktiCamera', pendukung: 'pendukungCamera' };
+                            const el = self.$refs[refs[which]];
+                            if (el) el.click();
+                        }
+                    });
+                },
+                scanAddPages(pages, which) {
+                    const t = this.scanTarget(which);
+                    this.scanEnsure(t);
+                    (pages || []).forEach(function (p) {
+                        if (!p || !p.bytes) return;
+                        const blob = new Blob([p.bytes], { type: 'image/jpeg' });
+                        t.scanSeq += 1;
+                        t.scanItems.push({
+                            id: 'scan-' + which + '-' + t.scanSeq,
+                            url: URL.createObjectURL(blob),
+                            bytes: p.bytes,
+                            width: p.width,
+                            height: p.height
+                        });
+                    });
+                    if (!t.scanItems.length) this.notify('Tidak ada halaman yang dihasilkan.', false);
                 },
                 scanTarget(which) {
                     if (which === 'pelaksanaan') return this.bab.ba;
