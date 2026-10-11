@@ -50,6 +50,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
+    <script src="/scanner.js" defer></script>
 </head>
 <body>
     <div id="app" v-cloak class="font-sans text-ink antialiased">
@@ -319,7 +320,7 @@
                                                 <input type="file" accept=".pdf" class="ml-auto w-24 text-[11px] text-transparent" @change="onBaFile">
                                             </div>
                                             <div class="mt-2 flex flex-wrap items-center gap-2">
-                                                <button type="button" class="btn-soft text-xs" :disabled="ba.scanBusy" @click="$refs.scanCamera.click()">
+                                                <button type="button" class="btn-soft text-xs" :disabled="ba.scanBusy" @click="openScanner()">
                                                     <i class="bi bi-camera"></i> Scan Kamera
                                                 </button>
                                                 <span v-if="ba.scanItems.length" class="text-[11px] text-slate-500">{{ ba.scanItems.length }} halaman</span>
@@ -860,6 +861,37 @@
                     }
                     this.ba.file = f;
                     this.ba.fileName = f ? f.name : '';
+                },
+                openScanner() {
+                    const self = this;
+                    if (!window.Scanner || typeof window.Scanner.open !== 'function') {
+                        this.showToast('Scanner in-app tidak tersedia. Memakai kamera OS.', 'error');
+                        if (this.$refs.scanCamera) this.$refs.scanCamera.click();
+                        return;
+                    }
+                    window.Scanner.open({
+                        title: 'Scan Berita Acara',
+                        onApply: function (pages) { self.scanAddPages(pages); },
+                        onOsFallback: function () {
+                            if (self.$refs.scanCamera) self.$refs.scanCamera.click();
+                        }
+                    });
+                },
+                scanAddPages(pages) {
+                    const self = this;
+                    (pages || []).forEach(function (p) {
+                        if (!p || !p.bytes) return;
+                        const blob = new Blob([p.bytes], { type: 'image/jpeg' });
+                        self.ba.scanSeq += 1;
+                        self.ba.scanItems.push({
+                            id: 'scan-' + self.ba.scanSeq,
+                            url: URL.createObjectURL(blob),
+                            bytes: p.bytes,
+                            width: p.width,
+                            height: p.height
+                        });
+                    });
+                    if (!this.ba.scanItems.length) this.showToast('Tidak ada halaman yang dihasilkan.', 'error');
                 },
                 clearScanItems() {
                     this.ba.scanItems.forEach(function(it) {

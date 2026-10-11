@@ -90,3 +90,20 @@ describe('dashboard.html integrasi scanner in-app', () => {
     expect(html).toContain('capture="environment"');
   });
 });
+
+describe('bagian.html integrasi scanner in-app', () => {
+  it('memuat scanner.js dan menyediakan hook', async () => {
+    const html = await loadHtml('bagian.html');
+    expect(html).toContain('<script src="/scanner.js" defer></script>');
+    expect(html).toContain('openScanner() {');
+    expect(html).toContain('scanAddPages(pages) {');
+    expect(html).toContain('@click="openScanner()"');
+  });
+
+  it('tetap mempertahankan fallback kamera OS', async () => {
+    const html = await loadHtml('bagian.html');
+    expect(html).toContain('ref="scanCamera"');
+    expect(html).toContain('capture="environment"');
+    expect(html).toContain('@change="onScanPhotos"');
+  });
+});
