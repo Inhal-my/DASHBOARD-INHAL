@@ -305,3 +305,13 @@ describe('detail laporan memakai app shell', () => {
     expect(html).not.toContain('fab-btn lg:hidden');
   });
 });
+
+describe('detail laporan responsif', () => {
+  it('bottom-nav/FAB hanya layar kecil, sidebar layar besar', async () => {
+    const html = await loadHtml();
+    const selectors = cssSelectors(html);
+    expect(selectors.has('.bottom-nav')).toBe(true);
+    expect(selectors.has('.fab-btn')).toBe(true);
+    expect(html).toContain('lg:hidden');
+  });
+});
