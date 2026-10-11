@@ -266,3 +266,20 @@ describe('detail laporan shell interaktif', () => {
     expect(html).toContain('this.sidebarCollapsed = !this.sidebarCollapsed');
   });
 });
+
+describe('detail laporan memakai app shell', () => {
+  it('merender sidebar, topbar, bottom-nav, dan FAB', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('class="app-shell font-sans text-ink antialiased"');
+    expect(html).toContain(":class=\"sidebarCollapsed ? 'sidebar-collapsed' : ''\"");
+    expect(html).toContain('sidebar-aside');
+    expect(html).toContain('main-wrap');
+    expect(html).toContain('content-wrap');
+    expect(html).toContain('sidebar-toggle');
+    expect(html).toContain('bottom-nav');
+    expect(html).toContain('bnav-btn');
+    expect(html).toContain('fab-btn');
+    expect(html).toContain('topbar-search');
+    expect(html).toContain('topbar-bell');
+  });
+});

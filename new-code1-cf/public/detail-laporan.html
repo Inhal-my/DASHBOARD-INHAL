@@ -125,7 +125,8 @@
     </style>
 </head>
 <body>
-    <div id="app" v-cloak class="font-sans text-ink antialiased">
+    <div id="app" v-cloak class="app-shell font-sans text-ink antialiased"
+        :class="sidebarCollapsed ? 'sidebar-collapsed' : ''">
 
         <!-- login -->
         <transition name="fade">
@@ -221,45 +222,90 @@
             </div>
         </div>
 
-        <!-- navbar -->
-        <nav v-if="loggedIn" class="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur">
-            <div class="flex h-16 items-center justify-between px-4 sm:px-6">
-                <a :href="appUrl" class="flex items-center gap-3">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-lg shadow-indigo-200/50">
-                        <i class="bi bi-file-earmark-bar-graph text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-[15px] font-bold tracking-tight text-slate-900">Laporan INHAL</div>
-                        <div class="text-[11px] text-slate-400">Rekapitulasi &amp; Berita Acara</div>
-                    </div>
-                </a>
-                <div class="flex items-center gap-2">
-                    <span class="hidden items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 md:flex"><i class="bi bi-person-circle"></i>{{ session.nama || 'Admin' }}</span>
-                    <a :href="'/dashboard'" class="btn-soft !py-2 text-xs"><i class="bi bi-speedometer2"></i><span class="hidden sm:inline">Dashboard</span></a>
-                    <a :href="appUrl" class="btn-soft !py-2 text-xs"><i class="bi bi-house"></i><span class="hidden sm:inline">Beranda</span></a>
-                    <button @click="logout()" class="btn-soft !py-2 text-xs text-rose-500 hover:bg-rose-50"><i class="bi bi-box-arrow-right"></i><span class="hidden sm:inline">Keluar</span></button>
+        <!-- ============ MOBILE BACKDROP ============ -->
+        <transition name="fade">
+            <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden" @click="sidebarOpen=false"></div>
+        </transition>
+
+        <!-- ============ SIDEBAR ============ -->
+        <aside v-if="loggedIn" class="bg-sidebar sidebar-aside fixed inset-y-0 left-0 z-50 flex flex-col lg:translate-x-0"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            <button type="button" class="sidebar-toggle" @click="toggleSidebar()" aria-label="Lipat atau bentangkan sidebar" title="Lipat / bentangkan sidebar">
+                <i class="bi bi-chevron-double-left"></i>
+            </button>
+            <div class="sb-brand flex h-16 items-center gap-3 border-b border-white/10 px-6">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-lg shadow-indigo-950/50">
+                    <i class="bi bi-file-earmark-bar-graph text-lg"></i>
+                </div>
+                <div class="sb-hide">
+                    <div class="text-[15px] font-bold tracking-tight text-white">Laporan INHAL</div>
+                    <div class="text-[11px] text-slate-400">Laporan &amp; Berita Acara</div>
                 </div>
             </div>
-        </nav>
 
-        <main v-if="loggedIn" class="w-full px-4 py-6 sm:px-6">
+            <div class="sb-list px-3 pt-5">
+                <div class="sb-hide px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Menu</div>
+                <nav class="space-y-1">
+                    <a v-for="n in tabs" :key="n.key" href="#" @click.prevent="switchTab(n.key)"
+                       :class="activeTab===n.key ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+                       class="sb-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition">
+                        <i :class="n.icon" class="w-5 shrink-0 text-base"></i>
+                        <span class="sb-hide flex-1">{{ n.label }}</span>
+                    </a>
+                </nav>
+            </div>
 
-            <!-- hero -->
-            <div class="mb-6 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-brand-600 to-violet-500 p-6 text-white shadow-lift">
-                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                    <i class="bi bi-graph-up-arrow text-2xl"></i>
+            <div class="sb-foot mt-auto border-t border-white/10 p-4">
+                <div class="sb-user flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="sb-hide min-w-0">
+                        <div class="truncate text-xs font-semibold text-white">{{ session.nama || 'Admin' }}</div>
+                        <div class="text-[11px] text-slate-400">Administrator</div>
+                    </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                    <h1 class="text-2xl font-extrabold tracking-tight">Laporan INHAL</h1>
-                    <p class="text-sm text-brand-100">Rekapitulasi pengajuan, dosen, bagian, dan berita acara.</p>
+                <div class="sb-grid mt-2 grid grid-cols-2 gap-2">
+                    <a :href="'/dashboard'" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition" title="Dashboard">
+                        <i class="bi bi-speedometer2"></i> <span class="sb-hide">Dashboard</span>
+                    </a>
+                    <a :href="appUrl" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition" title="Beranda">
+                        <i class="bi bi-house"></i> <span class="sb-hide">Beranda</span>
+                    </a>
                 </div>
-                <span v-if="loadTimeMs" class="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-xs font-semibold text-white/90 ring-1 ring-white/20">
-                    <i class="bi bi-stopwatch"></i>Dimuat dalam {{ (loadTimeMs / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) }} dtk
-                </span>
-                <button class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold ring-1 ring-white/20 transition hover:bg-white/25" @click="loadData()">
-                    <i class="bi bi-arrow-clockwise"></i>Muat Ulang
+                <button @click="logout()" class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-rose-500/15 hover:text-rose-300 transition" title="Keluar">
+                    <i class="bi bi-box-arrow-right"></i> <span class="sb-hide">Keluar</span>
                 </button>
             </div>
+        </aside>
+
+        <!-- ============ MAIN ============ -->
+        <main v-if="loggedIn" class="main-wrap min-h-screen">
+            <header class="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-slate-100 bg-white/80 px-4 backdrop-blur md:px-8">
+                <div class="flex items-center gap-3">
+                    <button class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" @click="sidebarOpen = !sidebarOpen" aria-label="Buka menu">
+                        <i class="bi bi-list text-xl"></i>
+                    </button>
+                    <div>
+                        <div class="text-[15px] font-bold text-slate-900">{{ (tabs.find(t => t.key === activeTab) || {}).label }}</div>
+                        <div class="text-[11px] text-slate-400">Rekapitulasi &amp; Berita Acara</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="topbar-search">
+                        <i class="bi bi-search"></i>
+                        <input v-model="filters.search" placeholder="Cari NPM / nama..." @keyup.enter="loadData()">
+                    </label>
+                    <button type="button" class="topbar-bell" @click="loadData()" title="Muat ulang data" aria-label="Muat ulang data">
+                        <i class="bi bi-arrow-clockwise text-lg"></i>
+                    </button>
+                    <a :href="'/dashboard'" class="btn-soft" title="Dashboard"><i class="bi bi-speedometer2"></i><span class="hidden md:inline">Dashboard</span></a>
+                    <a :href="appUrl" class="btn-soft" title="Beranda"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
+                    <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50" title="Keluar"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
+                </div>
+            </header>
+
+            <div class="content-wrap p-4 md:p-6 lg:p-8">
 
             <!-- filter bar desktop (glassmorphism) -->
             <div class="filter-desktop sticky top-16 z-30 mb-5 rounded-2xl bg-white/70 p-4 shadow-lift ring-1 ring-white/60 backdrop-blur-xl">
@@ -354,7 +400,7 @@
 
             <!-- tab switcher -->
             <div class="mb-6 flex gap-2 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-soft ring-1 ring-slate-100">
-                <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key"
+                <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
                     :class="activeTab === t.key ? 'bg-gradient-to-r from-brand-600 to-violet-500 text-white shadow-lift' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
                     class="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition">
                     <i :class="t.icon"></i>{{ t.label }}
@@ -1166,7 +1212,47 @@
 
                 </div>
             </transition>
+
+            </div>
         </main>
+
+        <!-- ============ MOBILE BOTTOM NAV ============ -->
+        <nav v-if="loggedIn" class="bottom-nav lg:hidden">
+            <div class="bottom-nav-track" style="grid-template-columns: repeat(6, minmax(0,1fr));">
+                <button v-for="t in tabs" :key="'bn-' + t.key" type="button" class="bnav-btn" :class="activeTab===t.key ? 'active' : ''" @click="switchTab(t.key)">
+                    <i :class="t.icon"></i>
+                    {{ t.label }}
+                </button>
+                <button type="button" class="bnav-btn" :class="mobileMenuOpen ? 'active' : ''" @click="toggleMobileMenu()">
+                    <i class="bi bi-grid"></i>
+                    Menu
+                </button>
+            </div>
+        </nav>
+
+        <!-- ============ FAB ============ -->
+        <button v-if="loggedIn" type="button" class="fab-btn lg:hidden" @click="exportExcel()" aria-label="Export laporan" title="Export laporan">
+            <i class="bi bi-download"></i>
+        </button>
+
+        <!-- ============ MOBILE MENU SHEET ============ -->
+        <transition name="fade">
+            <div v-if="mobileMenuOpen" class="sheet-overlay lg:hidden" @click="mobileMenuOpen = false"></div>
+        </transition>
+        <transition name="pop">
+            <div v-if="mobileMenuOpen" class="sheet-panel lg:hidden">
+                <div class="sheet-handle"></div>
+                <div class="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Menu</div>
+                <button v-for="n in tabs" :key="'ms' + n.key" type="button" class="sheet-item" :class="activeTab===n.key ? 'active' : ''" @click="switchTab(n.key)">
+                    <i :class="n.icon"></i>
+                    <span class="flex-1 text-left">{{ n.label }}</span>
+                </button>
+                <div class="sheet-divider"></div>
+                <a :href="'/dashboard'" class="sheet-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a :href="appUrl" class="sheet-item"><i class="bi bi-house"></i> Beranda</a>
+                <button type="button" class="sheet-item danger" @click="logout()"><i class="bi bi-box-arrow-right"></i> Keluar</button>
+            </div>
+        </transition>
     </div>
 
     <script src="/gs-shim.js"></script>
