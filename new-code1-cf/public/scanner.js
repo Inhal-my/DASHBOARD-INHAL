@@ -110,13 +110,27 @@
             '.scn-stage{flex:1;position:relative;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}',
             '.scn-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
             '.scn-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}',
-            '.scn-fallback{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;color:#e2e8f0;text-align:center}',
+            '.scn-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(80%,380px);aspect-ratio:1/1.414;pointer-events:none}',
+            '.scn-corner{position:absolute;width:30px;height:30px;border:3px solid #fbbf24;transition:border-color .4s}',
+            '.scn-frame.locked .scn-corner{border-color:#34d399}',
+            '.scn-corner.tl{top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:9px 0 0 0}',
+            '.scn-corner.tr{top:-2px;right:-2px;border-left:0;border-bottom:0;border-radius:0 9px 0 0}',
+            '.scn-corner.bl{bottom:-2px;left:-2px;border-right:0;border-top:0;border-radius:0 0 0 9px}',
+            '.scn-corner.br{bottom:-2px;right:-2px;border-left:0;border-top:0;border-radius:0 0 9px 0}',
+            '.scn-scanline{position:absolute;left:8%;right:8%;height:3px;border-radius:99px;background:linear-gradient(90deg,transparent,#34d399,transparent);opacity:0}',
+            '.scn-frame.locked .scn-scanline{opacity:.95;animation:scn-scanline 2.2s ease-in-out infinite}',
+            '@keyframes scn-scanline{0%{top:8%}50%{top:88%}100%{top:8%}}',
+            '.scn-pill{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.78);border:1px solid #334155;color:#cbd5e1;font-size:11.5px;font-weight:600;padding:7px 13px;border-radius:999px;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}',
+            '.scn-fallback{position:absolute;inset:0;z-index:2;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;color:#e2e8f0;text-align:center;background:rgba(11,17,32,.92)}',
             '.scn-bottom{background:#0f172a;border-top:1px solid #1e293b;padding:10px 14px calc(12px + env(safe-area-inset-bottom));color:#cbd5e1}',
             '.scn-pages{display:flex;gap:8px;overflow-x:auto;min-height:64px;margin-bottom:10px;padding:2px 0}',
             '.scn-page{position:relative;width:48px;height:64px;flex:0 0 auto;border-radius:6px;border:2px solid #334155;overflow:hidden;background:#1e293b}',
             '.scn-page img{width:100%;height:100%;object-fit:cover;display:block}',
             '.scn-page .no{position:absolute;left:2px;top:2px;background:rgba(15,23,42,.8);color:#fff;font-size:9px;font-weight:800;padding:0 4px;border-radius:4px}',
             '.scn-page .del{position:absolute;right:1px;top:1px;width:16px;height:16px;border-radius:999px;background:#e11d48;color:#fff;font-size:10px;border:0;cursor:pointer}',
+            '.scn-page .mv{position:absolute;left:0;right:0;bottom:1px;display:flex;justify-content:center;gap:4px}',
+            '.scn-page .mv button{background:rgba(15,23,42,.74);color:#fff;font-size:11px;line-height:1;width:16px;height:16px;border:0;border-radius:5px;cursor:pointer}',
+            '.scn-page .mv button:disabled{opacity:.3;cursor:default}',
             '.scn-empty{display:flex;align-items:center;justify-content:center;width:100%;color:#64748b;font-size:11px;text-align:center}',
             '.scn-actions{display:flex;align-items:center;justify-content:center;gap:14px}',
             '.scn-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;font-size:12px;font-weight:700;padding:9px 12px;border-radius:10px;cursor:pointer}',
@@ -267,6 +281,12 @@
             '<div class="scn-stage">' +
                 '<video class="scn-video" autoplay playsinline muted></video>' +
                 '<canvas class="scn-canvas"></canvas>' +
+                '<div class="scn-frame" data-role="frame">' +
+                    '<div class="scn-corner tl"></div><div class="scn-corner tr"></div>' +
+                    '<div class="scn-corner bl"></div><div class="scn-corner br"></div>' +
+                    '<div class="scn-scanline"></div>' +
+                '</div>' +
+                '<div class="scn-pill" data-role="pill"></div>' +
                 '<div class="scn-fallback" data-role="fallback"></div>' +
             '</div>' +
             '<div class="scn-note" data-role="note"></div>' +
@@ -288,6 +308,8 @@
         var pagesEl = ov.querySelector('[data-role="pages"]');
         var noteEl = ov.querySelector('[data-role="note"]');
         var fallbackEl = ov.querySelector('[data-role="fallback"]');
+        var frameEl = ov.querySelector('[data-role="frame"]');
+        var pillEl = ov.querySelector('[data-role="pill"]');
         var shootBtn = ov.querySelector('[data-act="shoot"]');
 
         function setStatus(text, ok) {
@@ -296,15 +318,25 @@
         }
 
         function renderPages() {
+            if (pillEl) {
+                pillEl.textContent = state.pages.length
+                    ? state.pages.length + ' halaman siap digabung'
+                    : 'Tekan tombol putih untuk menangkap halaman';
+            }
             if (!state.pages.length) {
                 pagesEl.innerHTML = '<div class="scn-empty">Belum ada halaman. Tekan tombol putih untuk menangkap.</div>';
                 return;
             }
             pagesEl.innerHTML = state.pages.map(function (p, i) {
+                var last = state.pages.length - 1;
                 return '<div class="scn-page">' +
                     '<img src="' + p.preview + '" alt="Halaman ' + (i + 1) + '">' +
                     '<span class="no">' + (i + 1) + '</span>' +
                     '<button class="del" data-del="' + i + '" title="Hapus">x</button>' +
+                    '<div class="mv">' +
+                        '<button data-move="' + i + '" data-dir="-1" title="Geser ke kiri"' + (i === 0 ? ' disabled' : '') + '>&#8249;</button>' +
+                        '<button data-move="' + i + '" data-dir="1" title="Geser ke kanan"' + (i === last ? ' disabled' : '') + '>&#8250;</button>' +
+                    '</div>' +
                     '</div>';
             }).join('');
         }
@@ -349,6 +381,8 @@
             setStatus('Menyalakan kamera…', false);
             fallbackEl.style.display = 'none';
             shootBtn.disabled = true;
+            state.quad = null;
+            if (frameEl) frameEl.classList.remove('locked');
             video.addEventListener('loadeddata', function () { shootBtn.disabled = false; }, { once: true });
             if (!isSupported()) {
                 state.engine = null;
@@ -418,9 +452,11 @@
                 try {
                     state.quad = detectQuad(state.engine, small);
                     drawOverlay(state.quad);
+                    if (frameEl) frameEl.classList.toggle('locked', !!state.quad);
                     setStatus(state.quad ? 'Dokumen terdeteksi' : 'Mencari tepi…', !!state.quad);
                 } catch (e) {
                     state.quad = null;
+                    if (frameEl) frameEl.classList.remove('locked');
                 }
             }, 500);
         }
@@ -459,12 +495,26 @@
         }
 
         pagesEl.addEventListener('click', function (e) {
-            var idx = e.target && e.target.getAttribute && e.target.getAttribute('data-del');
+            var el = e.target;
+            if (!el || !el.getAttribute) return;
+            var moveIdx = el.getAttribute('data-move');
+            if (moveIdx != null) {
+                var i = parseInt(moveIdx, 10);
+                var dir = parseInt(el.getAttribute('data-dir'), 10);
+                var j = i + dir;
+                if (isNaN(i) || isNaN(dir) || j < 0 || j >= state.pages.length) return;
+                var tmp = state.pages[i];
+                state.pages[i] = state.pages[j];
+                state.pages[j] = tmp;
+                renderPages();
+                return;
+            }
+            var idx = el.getAttribute('data-del');
             if (idx == null) return;
-            var i = parseInt(idx, 10);
-            if (isNaN(i) || !state.pages[i]) return;
-            try { URL.revokeObjectURL(state.pages[i].preview); } catch (err) { /* abaikan */ }
-            state.pages.splice(i, 1);
+            var d = parseInt(idx, 10);
+            if (isNaN(d) || !state.pages[d]) return;
+            try { URL.revokeObjectURL(state.pages[d].preview); } catch (err) { /* abaikan */ }
+            state.pages.splice(d, 1);
             renderPages();
         });
 

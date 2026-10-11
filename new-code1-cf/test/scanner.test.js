@@ -71,6 +71,26 @@ describe('scanner.js kontrak modul', () => {
   });
 });
 
+describe('scanner.js overlay ala mockup', () => {
+  it('memuat bingkai sudut tetap, garis scan, dan pill', () => {
+    expect(scannerSrc).toContain('class="scn-frame"');
+    expect(scannerSrc).toContain('scn-corner tl');
+    expect(scannerSrc).toContain('scn-corner tr');
+    expect(scannerSrc).toContain('scn-corner bl');
+    expect(scannerSrc).toContain('scn-corner br');
+    expect(scannerSrc).toContain('scn-scanline');
+    expect(scannerSrc).toContain('@keyframes scn-scanline');
+    expect(scannerSrc).toContain('.scn-frame.locked .scn-corner');
+    expect(scannerSrc).toContain('class="scn-pill"');
+  });
+
+  it('menyediakan tombol geser halaman di dalam overlay', () => {
+    expect(scannerSrc).toContain('data-move="');
+    expect(scannerSrc).toContain('data-dir="-1"');
+    expect(scannerSrc).toContain('data-dir="1"');
+  });
+});
+
 describe('dashboard.html integrasi scanner in-app', () => {
   it('memuat scanner.js dan menyediakan hook', async () => {
     const html = await loadHtml('dashboard.html');
