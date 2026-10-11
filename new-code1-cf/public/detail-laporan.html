@@ -141,6 +141,7 @@
         .lap-th { background: #f8fafc; }
         .lap-th th { font-weight: 800; letter-spacing: .06em; }
         .bg-brand-50\/60 { background-color: rgb(238 242 255 / 0.6); }
+        .z-\[130\] { z-index: 130; }
         .achip { display: inline-flex; align-items: center; gap: .0625rem; border-radius: 9999px; padding: .125rem .125rem .125rem .5625rem; font-size: .65rem; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .achip.pend { background: #f1f5f9; color: #64748b; }
         .achip.pel { background: #eef2ff; color: #4338ca; }
@@ -191,7 +192,7 @@
         </transition>
 
         <!-- kelola ba -->
-        <div v-if="kelola.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4" @click.self="kelola.open = false">
+        <div v-if="kelola.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="kelola.open = false">
             <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
                 <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -224,7 +225,7 @@
                 </div>
             </div>
         </div>
-        <div v-if="riwayat.open" class="fixed inset-0 z-40 flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
+        <div v-if="riwayat.open" class="fixed inset-0 z-[130] flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
             <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift">
                 <div class="mb-4 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-slate-900">Riwayat Proses</h3>

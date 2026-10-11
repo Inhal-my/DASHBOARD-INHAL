@@ -284,7 +284,7 @@ describe('detail laporan struktur tab terjaga setelah restyle', () => {
 });
 
 describe('detail laporan memakai app shell', () => {
-  it('merender sidebar, topbar, bottom-nav, dan FAB', async () => {
+  it('merender sidebar, topbar, dan bottom-nav', async () => {
     const html = await loadHtml();
     expect(html).toContain('class="app-shell font-sans text-ink antialiased"');
     expect(html).toContain(":class=\"sidebarCollapsed ? 'sidebar-collapsed' : ''\"");
@@ -294,9 +294,9 @@ describe('detail laporan memakai app shell', () => {
     expect(html).toContain('sidebar-toggle');
     expect(html).toContain('bottom-nav');
     expect(html).toContain('bnav-btn');
-    expect(html).toContain('fab-btn');
+    expect(html).toContain('bottom-nav-track');
     expect(html).toContain('topbar-search');
-    expect(html).toContain('topbar-bell');
+    expect(html).toContain('sheet-item');
   });
 
   it('bottom nav 4 item sesuai mockup tanpa FAB', async () => {
@@ -312,6 +312,6 @@ describe('detail laporan responsif', () => {
     const selectors = cssSelectors(html);
     expect(selectors.has('.bottom-nav')).toBe(true);
     expect(selectors.has('.fab-btn')).toBe(true);
-    expect(html).toContain('lg:hidden');
+    expect(html).toContain('class="bottom-nav lg:hidden"');
   });
 });
