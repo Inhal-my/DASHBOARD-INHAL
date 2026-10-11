@@ -343,17 +343,24 @@
 
         function drawOverlay(quad) {
             var vw = video.videoWidth, vh = video.videoHeight;
-            if (!vw || !vh) return;
-            overlay.width = vw;
-            overlay.height = vh;
+            var stage = ov.querySelector('.scn-stage');
+            var sw = stage ? stage.clientWidth : 0;
+            var sh = stage ? stage.clientHeight : 0;
+            if (!vw || !vh || !sw || !sh) return;
+            overlay.width = sw;
+            overlay.height = sh;
             var ctx = overlay.getContext('2d');
-            ctx.clearRect(0, 0, vw, vh);
+            ctx.clearRect(0, 0, sw, sh);
             if (!quad) return;
+            // object-fit: cover -> scale to fill the stage, centered & cropped
+            var scale = Math.max(sw / vw, sh / vh);
+            var dw = vw * scale, dh = vh * scale;
+            var ox = (sw - dw) / 2, oy = (sh - dh) / 2;
             ctx.strokeStyle = '#34d399';
-            ctx.lineWidth = Math.max(2, Math.round(vw / 320));
+            ctx.lineWidth = Math.max(2, Math.round(sw / 320));
             ctx.beginPath();
             quad.forEach(function (p, i) {
-                var x = p.x * vw, y = p.y * vh;
+                var x = ox + p.x * dw, y = oy + p.y * dh;
                 if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             });
             ctx.closePath();
