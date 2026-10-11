@@ -260,6 +260,11 @@
         .sheet-divider { height: 1px; background: #f1f5f9; margin: .35rem .25rem; }
         @media (min-width: 1024px) { .sheet-panel, .sheet-overlay { display: none; } }
         @media (max-width: 1023px) { .toast-float { bottom: calc(6rem + env(safe-area-inset-bottom)) !important; } }
+        /* ===== Penyelarasan visual dengan mockup redesain ===== */
+        .dash-card { background: #fff; border: 1px solid #e7ebf3; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -18px rgba(15,23,42,.28); }
+        .dash-stat { background: #fff; border: 1px solid #e7ebf3; border-radius: .875rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -18px rgba(15,23,42,.28); transition: border-color .15s ease, box-shadow .15s ease; }
+        .dash-stat:hover { border-color: #cbd5e1; }
+        .dash-table thead th { background: #f8fafc; font-weight: 800; letter-spacing: .06em; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
@@ -471,7 +476,7 @@
                     </div>
 
                     <!-- filter bar -->
-                    <div class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                    <div class="mb-4 dash-card p-4">
                         <div class="grid gap-3 md:grid-cols-12">
                             <div class="md:col-span-4">
                                 <div class="relative">
@@ -499,7 +504,7 @@
                     </div>
 
                     <!-- tabel pengajuan -->
-                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                    <div class="overflow-hidden dash-card">
                         <div v-if="sectionLoading.pengajuan" class="flex items-center justify-center gap-3 py-12 text-slate-400">
                             <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -570,7 +575,7 @@
                         <p class="mt-0.5 text-sm text-slate-500">Daftarkan pengajuan atas nama mahasiswa tanpa melalui portal. Email &amp; No. HP tidak wajib.</p>
                     </div>
 
-                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                    <div class="overflow-hidden dash-card">
                         <div class="flex items-center gap-3 border-b border-slate-100 p-5">
                             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-pencil-square"></i></div>
                             <div>
@@ -746,7 +751,7 @@
 
                 <!-- ============ PANEL DIAGNOSTIK ============ -->
                 <section v-if="diagnostic" class="mb-6">
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+                    <div class="dash-card p-5">
                         <div class="mb-3 flex items-center justify-between">
                             <h2 class="text-sm font-bold text-slate-800"><i class="bi bi-bug mr-1.5"></i>Hasil Diagnostik</h2>
                             <button class="btn-soft !px-3 !py-1 text-xs" @click="diagnostic=''">Tutup</button>
@@ -762,7 +767,7 @@
                         <p class="mt-0.5 text-sm text-slate-500">Ringkasan keseluruhan data pengajuan INHAL.</p>
                     </div>
 
-                    <div v-if="sectionLoading.stats" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                    <div v-if="sectionLoading.stats" class="mb-4 flex items-center justify-center gap-3 dash-card py-12 text-slate-400">
                         <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -771,7 +776,7 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-7">
-                        <div v-for="c in statCards" :key="c.label" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                        <div v-for="c in statCards" :key="c.label" class="dash-stat p-4">
                             <div class="mb-3 flex items-center justify-between">
                                 <div class="flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
                                     <i :class="c.icon" class="text-base" :style="{color:c.color}"></i>
@@ -787,7 +792,7 @@
                     </div>
 
                     <div class="mt-6 grid gap-5 lg:grid-cols-2">
-                        <div v-for="ch in statCharts" :key="ch.title" class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                        <div v-for="ch in statCharts" :key="ch.title" class="dash-card p-5">
                             <div class="mb-4 flex items-center gap-2">
                                 <i :class="ch.icon" class="text-brand-500"></i>
                                 <h3 class="text-sm font-bold text-slate-800">{{ ch.title }}</h3>
@@ -819,7 +824,7 @@
                         </div>
                     </div>
 
-                    <div v-if="sectionLoading.bagian" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                    <div v-if="sectionLoading.bagian" class="mb-4 flex items-center justify-center gap-3 dash-card py-12 text-slate-400">
                         <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -829,27 +834,27 @@
 
                     <template v-else>
                         <div class="ba-cards mb-4">
-                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
+                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Kegiatan</div>
                                 <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.totalKegiatan }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">semua kegiatan</div>
                             </button>
-                            <div class="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                            <div class="dash-stat p-3">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Peserta</div>
                                 <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.totalPeserta }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">mahasiswa</div>
                             </div>
-                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
+                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Pendukung</div>
                                 <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pendukungPct }}% sudah ada</div>
                             </button>
-                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
+                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Pelaksanaan</div>
                                 <div class="mt-1 text-xl font-extrabold text-emerald-600">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pelaksanaanPct }}% dari yang Diterima</div>
                             </button>
-                            <button class="rounded-2xl bg-white p-3 text-left shadow-soft ring-1 ring-slate-100" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
+                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
                                 <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Belum lengkap</div>
                                 <div class="mt-1 text-xl font-extrabold text-rose-600">{{ bagianSummary.belumLengkap }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">perlu ditindak</div>
@@ -857,7 +862,7 @@
                         </div>
 
                         <div class="ba-pair mb-4">
-                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="dash-card p-4">
                                 <h2 class="mb-3 text-sm font-bold text-slate-900">Kelengkapan Pelaksanaan per Bagian</h2>
                                 <div v-if="!bagianBar.length" class="py-6 text-center text-sm text-slate-400">Belum ada data.</div>
                                 <div v-else class="space-y-2.5">
@@ -872,7 +877,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="min-w-0 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="min-w-0 overflow-hidden dash-card">
                                 <h2 class="border-b border-slate-100 p-4 text-sm font-bold text-slate-900">Peta Kelengkapan Bagian × Blok</h2>
                                 <div v-if="!bagianHeatmap.cols.length" class="px-4 py-8 text-center text-sm text-slate-400">Belum ada data.</div>
                                 <div v-else class="heat-scroll p-4">
@@ -903,7 +908,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
+                        <div class="mb-4 flex flex-wrap items-center gap-2 dash-stat p-3">
                             <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='semua' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('semua')">Semua</button>
                             <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pendukung' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pendukung')">Belum Pendukung</button>
                             <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pelaksanaan' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pelaksanaan')">Belum Pelaksanaan</button>
@@ -913,11 +918,11 @@
                         </div>
                         <p v-if="bagianOrphanFiltered.length" class="mb-3 text-xs text-slate-500">{{ bagianOrphanFiltered.length }} BA tanpa pengajuan — tidak masuk hitungan kartu.</p>
 
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="overflow-hidden dash-card">
                             <div v-if="!bagianTableRows.length" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data.</div>
                             <template v-else>
                             <div class="hidden overflow-x-auto md:block">
-                                <table class="w-full border-collapse text-sm">
+                                <table class="dash-table w-full border-collapse text-sm">
                                     <thead>
                                         <tr class="border-b border-slate-100 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
                                             <th class="cursor-pointer p-3" @click="sortBagian('tanggal')">Tanggal <i class="bi" :class="sortBagianIcon('tanggal')"></i></th>
@@ -1072,7 +1077,7 @@
                         <button class="btn-soft !py-2 text-xs" @click="closePelaksanaanPanel()"><i class="bi bi-x-lg"></i> Tutup</button>
                     </div>
 
-                    <div v-if="!bab.active" class="mb-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                    <div v-if="!bab.active" class="mb-4 dash-card p-4">
                         <div class="grid gap-3 md:grid-cols-12">
                             <div class="md:col-span-4">
                                 <label class="label">Kategori</label>
@@ -1114,7 +1119,7 @@
                             </div>
                         </div>
 
-                        <div v-if="bab.loading && !bab.rows.length" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                        <div v-if="bab.loading && !bab.rows.length" class="mb-4 flex items-center justify-center gap-3 dash-card py-12 text-slate-400">
                             <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -1123,7 +1128,7 @@
                         </div>
 
                         <div v-else class="grid items-start gap-5 lg:grid-cols-2">
-                            <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="overflow-hidden dash-card">
                                 <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
                                     <h2 class="text-sm font-bold text-slate-900">Kegiatan Bagian</h2>
                                     <div class="ml-auto flex flex-wrap gap-1.5">
@@ -1155,7 +1160,7 @@
                             </div>
 
                             <div class="space-y-5">
-                                <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                <div class="overflow-hidden dash-card">
                                     <div class="border-b border-slate-100 p-4">
                                         <h2 class="text-sm font-bold text-slate-900">Upload Berita Acara</h2>
                                         <p class="text-xs text-slate-400">Pilih kegiatan &amp; centang peserta yang hadir</p>
@@ -1240,7 +1245,7 @@
                                     </div>
                                 </div>
 
-                                <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                <div class="overflow-hidden dash-card">
                                     <div class="border-b border-slate-100 p-4">
                                         <h2 class="text-sm font-bold text-slate-900">Berita Acara Terunggah</h2>
                                         <p class="text-xs text-slate-400">{{ bab.baList.length }} berita acara</p>
@@ -1318,7 +1323,7 @@
                         <p class="mt-0.5 text-sm text-slate-500">Kelola referensi kegiatan, bagian, biaya, dan akses pengguna.</p>
                     </div>
 
-                    <div v-if="sectionLoading.master" class="flex items-center justify-center gap-3 rounded-2xl bg-white py-16 text-slate-400 shadow-soft ring-1 ring-slate-100">
+                    <div v-if="sectionLoading.master" class="flex items-center justify-center gap-3 dash-card py-16 text-slate-400">
                         <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -1340,7 +1345,7 @@
                             </button>
                         </div>
 
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="overflow-hidden dash-card">
                             <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex items-center gap-3">
                                     <span class="master-stat-icon"><i :class="activeMasterCard.icon"></i></span>
@@ -1626,7 +1631,7 @@
                             </div>
 
                             <!-- upload bukti bayar (admin) -->
-                            <div class="mt-5 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="mt-5 dash-card p-4">
                                 <div class="label mb-2"><i class="bi bi-cloud-arrow-up"></i> Unggah Bukti Bayar (oleh Admin)</div>
                                 <p class="mb-3 text-[11px] text-slate-400">Berkas PDF / JPG / PNG, maksimal 5 MB. Untuk data manual atau saat mahasiswa tidak dapat mengunggah sendiri.</p>
                                 <div class="flex flex-wrap items-center gap-3">
@@ -1709,7 +1714,7 @@
                                     </div>
                                 </div>
 
-                                <div v-if="detail.baList && detail.baList.length" class="ba-align-card rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div v-if="detail.baList && detail.baList.length" class="ba-align-card dash-card p-4">
                                     <div class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-pdf text-base text-rose-600"></i> Berita Acara</div>
                                     <div class="flex flex-wrap gap-2">
                                         <a v-for="b in detail.baList" :key="b['BA ID']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
@@ -1718,7 +1723,7 @@
                             </div>
 
                             <!-- status update -->
-                            <div class="mt-5 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="mt-5 dash-card p-4">
                                 <div class="label mb-3"><i class="bi bi-check2-circle"></i> Perbarui Status Pengajuan</div>
                                 <div class="grid gap-3 sm:grid-cols-3">
                                     <div class="sm:col-span-1">
