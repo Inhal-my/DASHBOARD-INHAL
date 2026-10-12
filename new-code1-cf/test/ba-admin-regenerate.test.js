@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
+import { PDFDocument } from 'pdf-lib';
 import { createSession } from '../src/session.js';
-import { getOrCreateBaAdmin, addBaAdminPesertaBulk, regenerateBaAdminPdf } from '../src/write/baAdmin.js';
+import { getOrCreateBaAdmin, addBaAdminPesertaBulk, regenerateBaAdminPdf, getBaAdminForPengajuan } from '../src/write/baAdmin.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC';
@@ -15,6 +16,15 @@ const keg = { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaa
 
 async function seedBerkas(baId) {
   await env.DB.prepare("INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,active) VALUES ('2026-10-12T00:00:00',?1,'INHAL-1','2201010001',1,0,'p1.jpg','https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view',1)").bind(baId).run();
+}
+
+async function pdfB64(pageCount) {
+  const d = await PDFDocument.create();
+  for (let i = 0; i < pageCount; i += 1) d.addPage([200, 300]);
+  const bytes = await d.save();
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
 }
 
 describe('regenerateBaAdminPdf', () => {
@@ -109,5 +119,37 @@ describe('regenerateBaAdminPdf', () => {
     expect(failed.length).toBe(1);
     expect(failed[0].message).toContain('sedang berjalan');
     expect(ok.length).toBe(1);
+  });
+
+  it('menyalin halaman PDF peserta + sampul/pembatas ke PDF gabungan', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    await env.DB.prepare("INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,active) VALUES ('2026-10-12T00:00:00',?1,'INHAL-1','2201010001',1,0,'scan.pdf','https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view',2,1)").bind(baId).run();
+    const scan = await pdfB64(2);
+    let saved = '';
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') return new Response(JSON.stringify({ success: true, base64: scan, mimeType: 'application/pdf' }), { status: 200 });
+      saved = body.base64;
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/NEWNEWNEWNEWNEWNEWNEWNEWNEW1/view', fileId: 'NEWNEWNEWNEWNEWNEWNEWNEW1' }), { status: 200 });
+    }));
+    const res = await regenerateBaAdminPdf(env.DB, baId, ctx);
+    expect(res.success).toBe(true);
+    const bytes = Uint8Array.from(atob(saved), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.getPageCount()).toBe(4);
+  });
+
+  it('melaporkan jumlah halaman = total page_count', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    await env.DB.prepare("INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,active) VALUES ('2026-10-12T00:00:00',?1,'INHAL-1','2201010001',1,0,'scan.pdf','https://drive/x',4,1)").bind(baId).run();
+    const got = await getBaAdminForPengajuan(env.DB, 'INHAL-1', ctx);
+    expect(got.data.peserta[0].pages).toBe(4);
+    expect(got.data.peserta[0].files[0].pageCount).toBe(4);
   });
 });

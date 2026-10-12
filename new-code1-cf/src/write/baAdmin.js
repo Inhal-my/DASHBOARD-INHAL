@@ -284,13 +284,14 @@ export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
     for (const b of berkas) {
       const k = str(b.npm);
       if (!filesByNpm[k]) filesByNpm[k] = [];
-      filesByNpm[k].push({ pageIndex: Number(b.page_index) || 0, fileUrl: str(b.file_url) });
+      filesByNpm[k].push({ pageIndex: Number(b.page_index) || 0, fileUrl: str(b.file_url), pageCount: Number(b.page_count) || 1 });
     }
     peserta = rows.map((r) => {
       const files = filesByNpm[str(r.npm)] || [];
+      const totalPages = files.reduce((s, f) => s + (f.pageCount || 1), 0);
       return {
         idPengajuan: str(r.id_pengajuan), npm: str(r.npm), namaLengkap: str(r.nama_lengkap),
-        blok: str(r.blok), urutan: Number(r.urutan) || 0, pages: files.length,
+        blok: str(r.blok), urutan: Number(r.urutan) || 0, pages: totalPages,
         fileUrl: files.length ? files[0].fileUrl : '', files,
         isCurrent: str(r.id_pengajuan) === id
       };
@@ -312,38 +313,63 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
     baExists = true;
 
     const rows = (await db.prepare(
-      'SELECT b.* FROM berita_acara_admin_berkas b ' +
+      'SELECT b.*, p.nama_lengkap AS p_nama, p.urutan AS p_urutan FROM berita_acara_admin_berkas b ' +
       'JOIN berita_acara_admin_peserta p ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan ' +
       'WHERE b.ba_id = ?1 AND b.active = 1 AND p.active = 1 ' +
       'ORDER BY p.urutan, b.page_index'
     ).bind(id).all()).results || [];
 
+    const allPeserta = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1 ORDER BY urutan').bind(id).all()).results || [];
+
     if (!rows.length) {
       await db.prepare("UPDATE berita_acara_admin SET file_url = '', file_name = '', needs_regen = 0 WHERE ba_id = ?1").bind(id).run();
       return { success: true, fileUrl: '', pages: 0 };
     }
-    if (rows.length > BA_ADMIN_MAX_PAGES) {
+
+    const totalSourcePages = rows.reduce((s, r) => s + (Number(r.page_count) || 1), 0);
+    if (totalSourcePages > BA_ADMIN_MAX_PAGES) {
       await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
       return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman terlampaui.' };
     }
 
-    const pages = [];
-    let totalBytes = 0;
+    const pagesByPid = {};
     for (const r of rows) {
-      const fileId = parseDriveFileId(r.file_url);
-      const got = await getDriveFileBase64(ctx.env, fileId);
-      if (!got.ok) throw new Error(got.message || 'Gagal mengambil berkas.');
-      totalBytes += decodeBase64Size(got.base64);
-      if (totalBytes > BA_ADMIN_MAX_BYTES) {
-        await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
-        return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+      const pid = str(r.id_pengajuan);
+      pagesByPid[pid] = (pagesByPid[pid] || 0) + (Number(r.page_count) || 1);
+    }
+    const pesertaList = allPeserta.map((r) => ({
+      urutan: Number(r.urutan) || 0, nama: str(r.nama_lengkap), npm: str(r.npm),
+      halaman: pagesByPid[str(r.id_pengajuan)] || 0
+    }));
+
+    const groupMap = new Map();
+    for (const r of rows) {
+      const pid = str(r.id_pengajuan);
+      if (!groupMap.has(pid)) groupMap.set(pid, { peserta: { urutan: Number(r.p_urutan) || 0, nama: str(r.p_nama), npm: str(r.npm), blok: '' }, rows: [] });
+      groupMap.get(pid).rows.push(r);
+    }
+
+    const groups = [];
+    let totalBytes = 0;
+    for (const g of groupMap.values()) {
+      const files = [];
+      for (const r of g.rows) {
+        const fileId = parseDriveFileId(r.file_url);
+        const got = await getDriveFileBase64(ctx.env, fileId);
+        if (!got.ok) throw new Error(got.message || 'Gagal mengambil berkas.');
+        totalBytes += decodeBase64Size(got.base64);
+        if (totalBytes > BA_ADMIN_MAX_BYTES) {
+          await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+          return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+        }
+        files.push({ bytes: base64ToBytes(got.base64), mime: got.mime });
       }
-      pages.push({ bytes: base64ToBytes(got.base64), mime: got.mime });
+      groups.push({ peserta: g.peserta, files: files });
     }
     const merged = await mergeBaFilesToPdf({
       ba: { bagian: str(ba.bagian), blok: str(ba.blok), namaKegiatan: str(ba.nama_kegiatan), tanggal: str(ba.tanggal_pelaksanaan) },
-      peserta: [],
-      groups: [{ peserta: {}, files: pages }]
+      peserta: pesertaList,
+      groups: groups
     });
     const up = await saveDriveFile(ctx.env, { data: bytesToBase64(merged.bytes), mimeType: 'application/pdf', name: 'ba-' + id + '.pdf' }, 'ba-admin-' + id + '-pdf', { allowedMime: ['application/pdf'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA' });
     if (!up.ok) throw new Error(up.message || 'Gagal mengunggah PDF BA.');
