@@ -3,7 +3,7 @@ import { kegiatanKey, getBagianBaStatuses, getMasterOptions, resolveBagian12 } f
 import { nextBaId } from './beritaAcara.js';
 import { saveDriveFile, getDriveFileBase64, parseDriveFileId } from '../drive.js';
 import { decodeBase64Size, resolveMime, base64ToBytes } from '../uploads.js';
-import { mergeImagesToPdf } from '../baMerge.js';
+import { mergeBaFilesToPdf } from '../baMerge.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -340,13 +340,17 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
       }
       pages.push({ bytes: base64ToBytes(got.base64), mime: got.mime });
     }
-    const merged = await mergeImagesToPdf(pages);
+    const merged = await mergeBaFilesToPdf({
+      ba: { bagian: str(ba.bagian), blok: str(ba.blok), namaKegiatan: str(ba.nama_kegiatan), tanggal: str(ba.tanggal_pelaksanaan) },
+      peserta: [],
+      groups: [{ peserta: {}, files: pages }]
+    });
     const up = await saveDriveFile(ctx.env, { data: bytesToBase64(merged.bytes), mimeType: 'application/pdf', name: 'ba-' + id + '.pdf' }, 'ba-admin-' + id + '-pdf', { allowedMime: ['application/pdf'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA' });
     if (!up.ok) throw new Error(up.message || 'Gagal mengunggah PDF BA.');
     const ts = nowIso();
     await db.prepare('UPDATE berita_acara_admin SET file_url = ?1, file_name = ?2, needs_regen = 0, updated_at = ?3 WHERE ba_id = ?4')
       .bind(up.url, String(up.name || ''), ts, id).run();
-    return { success: true, fileUrl: up.url, pages: merged.pages };
+    return { success: true, fileUrl: up.url, pages: merged.sourcePages };
   } catch (e) {
     if (baExists) {
       try {
