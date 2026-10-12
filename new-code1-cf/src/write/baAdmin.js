@@ -1,5 +1,5 @@
 import { requireAdmin } from '../session.js';
-import { kegiatanKey, getBagianBaStatuses } from '../read/common.js';
+import { kegiatanKey, getBagianBaStatuses, getMasterOptions, resolveBagian12 } from '../read/common.js';
 import { nextBaId } from './beritaAcara.js';
 import { saveDriveFile, getDriveFileBase64, parseDriveFileId } from '../drive.js';
 import { decodeBase64Size, resolveMime, base64ToBytes } from '../uploads.js';
@@ -45,6 +45,22 @@ async function nextUrutan(db, baId) {
   return (isNaN(m) ? 0 : m) + 1;
 }
 
+async function pengajuanMatchesBa(db, p, ba, labs) {
+  const key = str(ba.kegiatan_key);
+  if (!key) return false;
+  const blok = str(p.blok).replace(/\s+/g, ' ');
+  const details = (await db.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(str(p.id_pengajuan)).all()).results || [];
+  for (const d of details) {
+    const jenis = str(d.jenis_kegiatan);
+    const nama = str(d.pilihan) + (str(d.detail) ? ' - ' + str(d.detail) : '');
+    const bagian = lowsp(jenis) === 'praktikum'
+      ? (resolveBagian12('Praktikum', str(d.pilihan), nama, labs) || 'Praktikum')
+      : jenis;
+    if (kegiatanKey(bagian, blok, nama) === key) return true;
+  }
+  return false;
+}
+
 export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
@@ -54,10 +70,16 @@ export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
   const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
   if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
 
-  const existing = (await db.prepare('SELECT id_pengajuan FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const existing = (await db.prepare('SELECT id_pengajuan, urutan, active FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
   const have = {};
-  for (const r of existing) have[str(r.id_pengajuan)] = true;
+  const inactive = {};
+  for (const r of existing) {
+    const k = str(r.id_pengajuan);
+    if (Number(r.active) === 1) have[k] = true;
+    else if (!inactive[k]) inactive[k] = r;
+  }
 
+  const labs = await getMasterOptions(db, 'Lab');
   let urutan = await nextUrutan(db, id);
   let added = 0;
   let skipped = 0;
@@ -67,14 +89,20 @@ export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
     if (have[pid]) { skipped += 1; continue; }
     const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(pid).first();
     if (!p) { skipped += 1; continue; }
-    stmts.push(
-      db.prepare(
-        'INSERT INTO berita_acara_admin_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan, urutan, active) ' +
-        'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,1)'
-      ).bind(ts, id, pid, str(p.npm), str(p.nama_lengkap), str(p.blok), str(ba.bagian), str(p.status), urutan)
-    );
+    if (!(await pengajuanMatchesBa(db, p, ba, labs))) { skipped += 1; continue; }
+    const prev = inactive[pid];
+    if (prev) {
+      stmts.push(db.prepare('UPDATE berita_acara_admin_peserta SET active = 1 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid));
+    } else {
+      stmts.push(
+        db.prepare(
+          'INSERT INTO berita_acara_admin_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan, urutan, active) ' +
+          'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,1)'
+        ).bind(ts, id, pid, str(p.npm), str(p.nama_lengkap), str(p.blok), str(ba.bagian), str(p.status), urutan)
+      );
+      urutan += 1;
+    }
     have[pid] = true;
-    urutan += 1;
     added += 1;
   }
   if (stmts.length) await db.batch(stmts);
@@ -161,40 +189,48 @@ export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx
   const npm = str(p && p.npm);
   const ts = nowIso();
 
-  // Pastikan peserta ada & aktif.
   const existingPeserta = await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).first();
-  if (existingPeserta) {
-    if (Number(existingPeserta.active) !== 1) {
-      await db.prepare('UPDATE berita_acara_admin_peserta SET active = 1 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).run();
-    }
-  } else {
-    const urutan = await nextUrutan(db, id);
-    await db.prepare(
-      'INSERT INTO berita_acara_admin_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan, urutan, active) ' +
-      "VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,1)"
-    ).bind(ts, id, pid, npm, str(p && p.nama_lengkap), str(p && p.blok), str(ba.bagian), str(p && p.status), urutan).run();
-  }
+  const activatePeserta = !existingPeserta || Number(existingPeserta.active) !== 1;
+  const urutanPeserta = existingPeserta ? Number(existingPeserta.urutan) || 0 : await nextUrutan(db, id);
 
-  // Nona-aktifkan berkas lama milik peserta ini (riwayat).
-  await db.prepare('UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1').bind(ts, id, pid).run();
-
-  // Unggah halaman baru.
-  const urutanPeserta = (await db.prepare('SELECT urutan FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).first()).urutan;
+  // Unggah semua halaman dulu; D1 tidak disentuh sampai semua unggahan sukses.
+  const uploaded = [];
   let page = 0;
   for (const img of list) {
     const parsed = { data: String(img.data), mimeType: String(img.mimeType || ''), name: String(img.name || ('page-' + (page + 1))) };
     const up = await saveDriveFile(ctx.env, parsed, 'ba-admin-' + id + '-' + (npm || pid), { label: 'Halaman BA' });
     if (!up.ok) return { success: false, message: up.message };
-    await db.prepare(
-      'INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, active) ' +
-      'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,1)'
-    ).bind(ts, id, pid, npm, urutanPeserta, page, String(up.name || ''), up.url).run();
+    uploaded.push({ page: page, name: String(up.name || ''), url: up.url });
     page += 1;
   }
 
-  const count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
-  await db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id).run();
-  return { success: true, pages: page };
+  const stmts = [];
+  if (existingPeserta) {
+    if (activatePeserta) {
+      stmts.push(db.prepare('UPDATE berita_acara_admin_peserta SET active = 1 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid));
+    }
+  } else {
+    stmts.push(
+      db.prepare(
+        'INSERT INTO berita_acara_admin_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan, urutan, active) ' +
+        "VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,1)"
+      ).bind(ts, id, pid, npm, str(p && p.nama_lengkap), str(p && p.blok), str(ba.bagian), str(p && p.status), urutanPeserta)
+    );
+  }
+  stmts.push(db.prepare('UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1').bind(ts, id, pid));
+  for (const u of uploaded) {
+    stmts.push(
+      db.prepare(
+        'INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, active) ' +
+        'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,1)'
+      ).bind(ts, id, pid, npm, urutanPeserta, u.page, u.name, u.url)
+    );
+  }
+  let count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
+  if (activatePeserta) count += 1;
+  stmts.push(db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id));
+  await db.batch(stmts);
+  return { success: true, pages: uploaded.length };
 }
 
 export async function removeBaAdminPeserta(db, baId, idPengajuan, ctx) {
@@ -202,6 +238,10 @@ export async function removeBaAdminPeserta(db, baId, idPengajuan, ctx) {
   const id = str(baId);
   const pid = str(idPengajuan);
   if (!id || !pid) return { success: false, message: 'BA ID / pengajuan kosong.' };
+  const ba = await db.prepare('SELECT ba_id FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+  const peserta = await db.prepare('SELECT id FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).first();
+  if (!peserta) return { success: false, message: 'Peserta tidak ditemukan pada BA ini.' };
   const ts = nowIso();
   await db.batch([
     db.prepare('UPDATE berita_acara_admin_peserta SET active = 0 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid),
@@ -220,9 +260,15 @@ export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
 
   const details = (await db.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(id).all()).results || [];
   const d0 = details[0] || {};
-  const bagian = str(d0.jenis_kegiatan) || str(p.jenis_kegiatan) || 'Admin';
-  const blok = str(p.blok);
+  const jenis = str(d0.jenis_kegiatan);
   const nama = str(d0.pilihan) + (str(d0.detail) ? ' - ' + str(d0.detail) : '');
+  let bagian = jenis;
+  if (lowsp(jenis) === 'praktikum') {
+    const labs = await getMasterOptions(db, 'Lab');
+    bagian = resolveBagian12('Praktikum', str(d0.pilihan), nama, labs) || 'Praktikum';
+  }
+  bagian = bagian || 'Admin';
+  const blok = str(p.blok);
   const tanggal = str(d0.tanggal_pelaksanaan) || str(p.tanggal_pelaksanaan);
   const kegiatan = { bagian, blok, namaKegiatan: nama, jenis: str(d0.jenis_kegiatan), pilihan: str(d0.pilihan), detail: str(d0.detail), tanggalPelaksanaan: tanggal };
 
@@ -273,8 +319,8 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
     ).bind(id).all()).results || [];
 
     if (!rows.length) {
-      await db.prepare('UPDATE berita_acara_admin SET needs_regen = 0 WHERE ba_id = ?1').bind(id).run();
-      return { success: true, fileUrl: str(ba.file_url), pages: 0 };
+      await db.prepare("UPDATE berita_acara_admin SET file_url = '', file_name = '', needs_regen = 0 WHERE ba_id = ?1").bind(id).run();
+      return { success: true, fileUrl: '', pages: 0 };
     }
     if (rows.length > BA_ADMIN_MAX_PAGES) {
       await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
@@ -282,19 +328,25 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
     }
 
     const pages = [];
+    let totalBytes = 0;
     for (const r of rows) {
       const fileId = parseDriveFileId(r.file_url);
       const got = await getDriveFileBase64(ctx.env, fileId);
       if (!got.ok) throw new Error(got.message || 'Gagal mengambil berkas.');
+      totalBytes += decodeBase64Size(got.base64);
+      if (totalBytes > BA_ADMIN_MAX_BYTES) {
+        await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+        return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+      }
       pages.push({ bytes: base64ToBytes(got.base64), mime: got.mime });
     }
-    const pdfBytes = await mergeImagesToPdf(pages);
-    const up = await saveDriveFile(ctx.env, { data: bytesToBase64(pdfBytes), mimeType: 'application/pdf', name: 'ba-' + id + '.pdf' }, 'ba-admin-' + id + '-pdf', { allowedMime: ['application/pdf'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA' });
+    const merged = await mergeImagesToPdf(pages);
+    const up = await saveDriveFile(ctx.env, { data: bytesToBase64(merged.bytes), mimeType: 'application/pdf', name: 'ba-' + id + '.pdf' }, 'ba-admin-' + id + '-pdf', { allowedMime: ['application/pdf'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA' });
     if (!up.ok) throw new Error(up.message || 'Gagal mengunggah PDF BA.');
     const ts = nowIso();
     await db.prepare('UPDATE berita_acara_admin SET file_url = ?1, file_name = ?2, needs_regen = 0, updated_at = ?3 WHERE ba_id = ?4')
       .bind(up.url, String(up.name || ''), ts, id).run();
-    return { success: true, fileUrl: up.url, pages: pages.length };
+    return { success: true, fileUrl: up.url, pages: merged.pages };
   } catch (e) {
     if (baExists) {
       try {

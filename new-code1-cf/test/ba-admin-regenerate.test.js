@@ -43,11 +43,27 @@ describe('regenerateBaAdminPdf', () => {
     const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
     await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
     await seedBerkas(baId);
+    await env.DB.prepare("UPDATE berita_acara_admin SET file_url='https://drive.google.com/file/d/OLDFILE0000000000000000/view' WHERE ba_id=?1").bind(baId).run();
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ success: false, message: 'bridge down' }), { status: 200 })));
     const res = await regenerateBaAdminPdf(env.DB, baId, ctx);
     expect(res.success).toBe(false);
-    const ba = await env.DB.prepare('SELECT needs_regen FROM berita_acara_admin WHERE ba_id=?1').bind(baId).first();
+    const ba = await env.DB.prepare('SELECT file_url, needs_regen FROM berita_acara_admin WHERE ba_id=?1').bind(baId).first();
+    expect(ba.file_url).toContain('OLDFILE0000000000000000');
     expect(Number(ba.needs_regen)).toBe(1);
+  });
+
+  it('tanpa halaman aktif: kosongkan file_url & needs_regen=0', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await env.DB.prepare("UPDATE berita_acara_admin SET file_url='https://drive.google.com/file/d/STALEFILE00000000000000/view', file_name='old.pdf' WHERE ba_id=?1").bind(baId).run();
+    const res = await regenerateBaAdminPdf(env.DB, baId, ctx);
+    expect(res.success).toBe(true);
+    expect(res.pages).toBe(0);
+    const ba = await env.DB.prepare('SELECT file_url, file_name, needs_regen FROM berita_acara_admin WHERE ba_id=?1').bind(baId).first();
+    expect(ba.file_url).toBe('');
+    expect(ba.file_name).toBe('');
+    expect(Number(ba.needs_regen)).toBe(0);
   });
 
   it('error D1 awal: resolve {success:false}, bukan reject', async () => {
@@ -85,11 +101,13 @@ describe('regenerateBaAdminPdf', () => {
       return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/NEWNEWNEWNEWNEWNEWNEWNEWNEW1/view', fileId: 'NEWNEWNEWNEWNEWNEWNEWNEW1' }), { status: 200 });
     }));
     const p1 = regenerateBaAdminPdf(env.DB, baId, ctx);
-    const r2 = await regenerateBaAdminPdf(env.DB, baId, ctx);
-    expect(r2.success).toBe(false);
-    expect(r2.message).toContain('sedang berjalan');
+    const p2 = regenerateBaAdminPdf(env.DB, baId, ctx);
     release();
-    const r1 = await p1;
-    expect(r1.success).toBe(true);
+    const results = await Promise.all([p1, p2]);
+    const failed = results.filter((r) => !r.success);
+    const ok = results.filter((r) => r.success);
+    expect(failed.length).toBe(1);
+    expect(failed[0].message).toContain('sedang berjalan');
+    expect(ok.length).toBe(1);
   });
 });

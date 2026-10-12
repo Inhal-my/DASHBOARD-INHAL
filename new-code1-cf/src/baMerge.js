@@ -37,5 +37,6 @@ export async function mergeImagesToPdf(pages) {
     added += 1;
   }
   if (!added) throw new Error('Tidak ada halaman gambar yang valid.');
-  return await doc.save();
+  const bytes = await doc.save();
+  return { bytes, pages: added };
 }

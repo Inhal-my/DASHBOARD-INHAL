@@ -63,6 +63,22 @@ describe('baAdmin berkas', () => {
     expect(res.message).toContain('halaman');
   });
 
+  it('gagal unggah: tidak ada perubahan D1 (berkas lama tetap active)', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    stubSave();
+    await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [IMG], ctx);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ success: false, message: 'drive down' }), { status: 200 })));
+    const res = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [IMG, IMG], ctx);
+    expect(res.success).toBe(false);
+    const active = (await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id=?1 AND active=1').bind(baId).first()).n;
+    const all = (await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id=?1').bind(baId).first()).n;
+    expect(Number(active)).toBe(1);
+    expect(Number(all)).toBe(1);
+  });
+
   it('hapus peserta: peserta & berkas menjadi tidak aktif', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
     const ctx = await adminCtx();

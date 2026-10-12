@@ -12,14 +12,16 @@ describe('mergeImagesToPdf', () => {
       { bytes: png(), mime: 'image/png' },
       { bytes: png(), mime: 'image/png' }
     ]);
-    expect(out.length).toBeGreaterThan(0);
-    const doc = await PDFDocument.load(out);
+    expect(out.bytes.length).toBeGreaterThan(0);
+    expect(out.pages).toBe(2);
+    const doc = await PDFDocument.load(out.bytes);
     expect(doc.getPageCount()).toBe(2);
   });
 
   it('melewati halaman tanpa byte dan tetap jalan bila ada satu valid', async () => {
     const out = await mergeImagesToPdf([{ bytes: new Uint8Array(0) }, { bytes: png(), mime: 'image/png' }]);
-    const doc = await PDFDocument.load(out);
+    expect(out.pages).toBe(1);
+    const doc = await PDFDocument.load(out.bytes);
     expect(doc.getPageCount()).toBe(1);
   });
 
