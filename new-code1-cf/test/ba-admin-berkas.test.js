@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
+import { PDFDocument } from 'pdf-lib';
 import { createSession } from '../src/session.js';
 import { getOrCreateBaAdmin, addBaAdminPesertaBulk, setBaAdminPesertaBerkas, removeBaAdminPeserta, BA_ADMIN_MAX_PAGES } from '../src/write/baAdmin.js';
 
@@ -21,6 +22,15 @@ async function seed(id, npm, nama, status, pilihan) {
 }
 const keg = { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20' };
 const IMG = { data: btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xd9)), mimeType: 'image/jpeg' };
+
+async function pdfB64(pageCount) {
+  const d = await PDFDocument.create();
+  for (let i = 0; i < pageCount; i += 1) d.addPage([200, 300]);
+  const bytes = await d.save();
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
 
 describe('baAdmin berkas', () => {
   it('mengunggah halaman & menyimpan baris berkas', async () => {
@@ -92,5 +102,39 @@ describe('baAdmin berkas', () => {
     const b = await env.DB.prepare('SELECT active FROM berita_acara_admin_berkas WHERE ba_id=?1 AND id_pengajuan=?2').bind(baId, 'INHAL-1').first();
     expect(Number(p.active)).toBe(0);
     expect(Number(b.active)).toBe(0);
+  });
+
+  it('menerima PDF dan menyimpan page_count', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    stubSave();
+    const res = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [{ data: await pdfB64(3), mimeType: 'application/pdf', name: 'scan.pdf' }], ctx);
+    expect(res.success).toBe(true);
+    expect(res.pages).toBe(3);
+    const row = await env.DB.prepare('SELECT page_count, active FROM berita_acara_admin_berkas WHERE ba_id=?1').bind(baId).first();
+    expect(Number(row.page_count)).toBe(3);
+    expect(Number(row.active)).toBe(1);
+  });
+
+  it('menolak format berkas yang tidak didukung', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    const res = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [{ data: btoa('hello'), mimeType: 'text/plain', name: 'x.txt' }], ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('PDF');
+  });
+
+  it('menghitung batas dari jumlah halaman PDF', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    const res = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [{ data: await pdfB64(BA_ADMIN_MAX_PAGES + 1), mimeType: 'application/pdf', name: 'big.pdf' }], ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('halaman');
   });
 });

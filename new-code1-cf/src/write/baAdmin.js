@@ -4,6 +4,7 @@ import { nextBaId } from './beritaAcara.js';
 import { saveDriveFile, getDriveFileBase64, parseDriveFileId } from '../drive.js';
 import { decodeBase64Size, resolveMime, base64ToBytes } from '../uploads.js';
 import { mergeBaFilesToPdf } from '../baMerge.js';
+import { PDFDocument } from 'pdf-lib';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -147,11 +148,11 @@ export const BA_ADMIN_MAX_PAGES = 50;
 export const BA_ADMIN_MAX_BYTES = 20 * 1024 * 1024;
 
 async function countActivePages(db, baId, exceptIdPengajuan) {
-  const rows = (await db.prepare('SELECT id_pengajuan FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1').bind(baId).all()).results || [];
+  const rows = (await db.prepare('SELECT id_pengajuan, page_count FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1').bind(baId).all()).results || [];
   let n = 0;
   for (const r of rows) {
     if (exceptIdPengajuan && str(r.id_pengajuan) === str(exceptIdPengajuan)) continue;
-    n += 1;
+    n += Number(r.page_count) || 1;
   }
   return n;
 }
@@ -168,18 +169,32 @@ export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx
   const list = Array.isArray(images) ? images : [];
   if (!list.length) return { success: false, message: 'Tidak ada halaman yang diunggah.' };
 
-  const others = await countActivePages(db, id, pid);
-  if (others + list.length > BA_ADMIN_MAX_PAGES) {
-    return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman per BA terlampaui.' };
+  const prepared = [];
+  let newPages = 0;
+  let totalBytes = 0;
+  for (const f of list) {
+    const mime = resolveMime(f && f.mimeType, f && f.data);
+    if (mime !== 'image/jpeg' && mime !== 'image/jpg' && mime !== 'image/png' && mime !== 'application/pdf') {
+      return { success: false, message: 'Format halaman harus JPG, PNG, atau PDF.' };
+    }
+    let pageCount = 1;
+    if (mime === 'application/pdf') {
+      try {
+        const src = await PDFDocument.load(base64ToBytes(String(f.data)), { ignoreEncryption: true });
+        pageCount = src.getPageCount();
+      } catch (e) {
+        return { success: false, message: 'PDF tidak dapat dibaca.' };
+      }
+      if (!pageCount) return { success: false, message: 'PDF tidak memiliki halaman.' };
+    }
+    totalBytes += decodeBase64Size(f && f.data);
+    newPages += pageCount;
+    prepared.push({ mime: mime, data: String(f.data), name: String(f.name || ''), pageCount: pageCount });
   }
 
-  let totalBytes = 0;
-  for (const img of list) {
-    const mime = resolveMime(img && img.mimeType, img && img.data);
-    if (mime !== 'image/jpeg' && mime !== 'image/jpg' && mime !== 'image/png') {
-      return { success: false, message: 'Format halaman harus JPG atau PNG.' };
-    }
-    totalBytes += decodeBase64Size(img && img.data);
+  const others = await countActivePages(db, id, pid);
+  if (others + newPages > BA_ADMIN_MAX_PAGES) {
+    return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman per BA terlampaui.' };
   }
   if (totalBytes > BA_ADMIN_MAX_BYTES) {
     return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
@@ -196,11 +211,10 @@ export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx
   // Unggah semua halaman dulu; D1 tidak disentuh sampai semua unggahan sukses.
   const uploaded = [];
   let page = 0;
-  for (const img of list) {
-    const parsed = { data: String(img.data), mimeType: String(img.mimeType || ''), name: String(img.name || ('page-' + (page + 1))) };
-    const up = await saveDriveFile(ctx.env, parsed, 'ba-admin-' + id + '-' + (npm || pid), { label: 'Halaman BA' });
+  for (const it of prepared) {
+    const up = await saveDriveFile(ctx.env, { data: it.data, mimeType: it.mime, name: it.name || ('page-' + (page + 1)) }, 'ba-admin-' + id + '-' + (npm || pid), { label: 'Halaman BA' });
     if (!up.ok) return { success: false, message: up.message };
-    uploaded.push({ page: page, name: String(up.name || ''), url: up.url });
+    uploaded.push({ page: page, name: String(up.name || ''), url: up.url, pageCount: it.pageCount });
     page += 1;
   }
 
@@ -221,16 +235,16 @@ export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx
   for (const u of uploaded) {
     stmts.push(
       db.prepare(
-        'INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, active) ' +
-        'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,1)'
-      ).bind(ts, id, pid, npm, urutanPeserta, u.page, u.name, u.url)
+        'INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, page_count, active) ' +
+        'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,1)'
+      ).bind(ts, id, pid, npm, urutanPeserta, u.page, u.name, u.url, u.pageCount)
     );
   }
   let count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
   if (activatePeserta) count += 1;
   stmts.push(db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id));
   await db.batch(stmts);
-  return { success: true, pages: uploaded.length };
+  return { success: true, pages: newPages };
 }
 
 export async function removeBaAdminPeserta(db, baId, idPengajuan, ctx) {
