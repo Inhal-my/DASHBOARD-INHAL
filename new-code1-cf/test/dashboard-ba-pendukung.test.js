@@ -18,5 +18,8 @@ describe('dashboard BA Pendukung di modal detail', () => {
     expect(dashboardHtml).toContain('regenerateBa(');
     expect(dashboardHtml).toContain('Berita Acara Pendukung');
     expect(dashboardHtml).toContain('loadSeq');
+    expect(dashboardHtml).toContain('Unggah PDF');
+    expect(dashboardHtml).toContain('accept="application/pdf"');
+    expect(dashboardHtml).toContain('onBaPendukungPdf(');
   });
 });

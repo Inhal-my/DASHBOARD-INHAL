@@ -1737,7 +1737,8 @@
                                                     <span v-if="pe.pages" class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
                                                     <span v-else class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
                                                     <span class="ml-auto flex gap-1">
-                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="detail.baPendukung.uploadBusy" @click="unggahBerkasBa(pe)"><i class="bi bi-cloud-arrow-up"></i> {{ (detail.baPendukung.uploadBusy && detail.baPendukung.uploadFor === pe.idPengajuan) ? 'Mengunggah…' : (pe.pages ? 'Ganti berkas' : 'Unggah/Scan halaman') }}</button>
+                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="detail.baPendukung.uploadBusy" @click="unggahBerkasBa(pe, 'scan')"><i class="bi bi-camera"></i> {{ pe.pages ? 'Ganti berkas' : 'Unggah/Scan' }}</button>
+                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="detail.baPendukung.uploadBusy" @click="unggahBerkasBa(pe, 'pdf')"><i class="bi bi-file-earmark-pdf"></i> Unggah PDF</button>
                                                         <template v-if="pe.files && pe.files.length > 1">
                                                             <a v-for="p in pe.files" :key="p.pageIndex" :href="safeUrl(p.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]" :title="'Halaman ' + (p.pageIndex + 1)"><i class="bi bi-download"></i>{{ p.pageIndex + 1 }}</a>
                                                         </template>
@@ -1763,6 +1764,7 @@
                                     </template>
                                 </div>
                                 <input ref="baPendukungCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onBaPendukungPhotos($event)">
+                                <input ref="baPendukungPdf" type="file" accept="application/pdf" class="hidden" @change="onBaPendukungPdf($event)">
                             </div>
 
                             <!-- status update -->
@@ -3412,10 +3414,29 @@
                     if (sel[id]) delete sel[id];
                     else sel[id] = true;
                 },
-                unggahBerkasBa(pe) {
+                unggahBerkasBa(pe, kind) {
                     this.detail.baPendukung.uploadFor = pe.idPengajuan;
                     this.detail.baPendukung.uploadItems = [];
-                    const el = this.$refs.baPendukungCamera; if (el) el.click();
+                    const ref = kind === 'pdf' ? 'baPendukungPdf' : 'baPendukungCamera';
+                    const el = this.$refs[ref]; if (el) el.click();
+                },
+                onBaPendukungPdf(e) {
+                    const files = Array.from(e.target.files || []);
+                    if (e.target) e.target.value = '';
+                    if (!files.length) return;
+                    const d = this.detail.baPendukung;
+                    const f = files[0];
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const res = String(reader.result || '');
+                        const comma = res.indexOf(',');
+                        const b64 = comma >= 0 ? res.slice(comma + 1) : res;
+                        d.uploadSeq += 1;
+                        d.uploadItems = [{ id: 'bap-pdf-' + d.uploadSeq, base64: b64, mime: 'application/pdf', name: f.name }];
+                        this.simpanBerkasBa();
+                    };
+                    reader.onerror = () => this.notify('Gagal membaca PDF.', false);
+                    reader.readAsDataURL(f);
                 },
                 onBaPendukungPhotos(e) {
                     const files = Array.from(e.target.files || []);
@@ -3431,7 +3452,9 @@
                     if (!d.uploadItems.length || !d.uploadFor) return;
                     d.uploadBusy = true;
                     try {
-                        const images = Array.from(d.uploadItems).map((it) => ({ data: this.bytesToBase64(it.bytes), mimeType: 'image/jpeg', name: it.id + '.jpg' }));
+                        const images = Array.from(d.uploadItems).map((it) => (it.base64
+                            ? { data: it.base64, mimeType: it.mime || 'application/pdf', name: it.name || 'berkas.pdf' }
+                            : { data: this.bytesToBase64(it.bytes), mimeType: it.mime || 'image/jpeg', name: it.name || (it.id + '.jpg') }));
                         const res = await this.run('baAdminUploadBerkas', d.data.ba.baId, d.uploadFor, images);
                         this.notify((res && res.message) || 'Berkas disimpan.', !!(res && res.success));
                         d.uploadItems = []; d.uploadFor = '';
