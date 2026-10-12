@@ -24,6 +24,10 @@ import {
 import {
   sendStatusNotificationEmail, sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
 } from './write/email.js';
+import {
+  getOrCreateBaAdmin, addBaAdminPesertaBulk, getBaAdminForPengajuan,
+  setBaAdminPesertaBerkas, removeBaAdminPeserta, regenerateBaAdminPdf
+} from './write/baAdmin.js';
 
 const HANDLERS = {
   authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
@@ -97,7 +101,23 @@ const HANDLERS = {
   },
   updateCheckDataPartial: (db, args, ctx) => updateCheckDataPartial(db, args[0], ctx),
   resetUploadBukti: (db, args, ctx) => resetUploadBukti(db, args[0], args[1], ctx),
-  uploadBuktiAdmin: (db, args, ctx) => uploadBuktiAdmin(db, args[0], args[1], ctx)
+  uploadBuktiAdmin: (db, args, ctx) => uploadBuktiAdmin(db, args[0], args[1], ctx),
+  baAdminGet: (db, args, ctx) => getBaAdminForPengajuan(db, args[0], ctx),
+  baAdminCreate: (db, args, ctx) => getOrCreateBaAdmin(db, args[0], ctx),
+  baAdminAddPeserta: (db, args, ctx) => addBaAdminPesertaBulk(db, args[0], args[1], ctx),
+  baAdminUploadBerkas: async (db, args, ctx) => {
+    const set = await setBaAdminPesertaBerkas(db, args[0], args[1], args[2], ctx);
+    if (!set.success) return set;
+    const regen = await regenerateBaAdminPdf(db, args[0], ctx);
+    return { success: true, pages: set.pages, fileUrl: regen.fileUrl || '', needsRegen: !regen.success, message: regen.success ? 'Berkas disimpan.' : (regen.message || 'Berkas tersimpan, PDF gagal dirakit.') };
+  },
+  baAdminRemovePeserta: async (db, args, ctx) => {
+    const rm = await removeBaAdminPeserta(db, args[0], args[1], ctx);
+    if (!rm.success) return rm;
+    const regen = await regenerateBaAdminPdf(db, args[0], ctx);
+    return { success: true, needsRegen: !regen.success };
+  },
+  baAdminRegenerate: (db, args, ctx) => regenerateBaAdminPdf(db, args[0], ctx)
 };
 
 export async function extractToken(db, args) {
