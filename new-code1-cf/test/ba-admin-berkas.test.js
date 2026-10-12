@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { PDFDocument } from 'pdf-lib';
 import { createSession } from '../src/session.js';
-import { getOrCreateBaAdmin, addBaAdminPesertaBulk, setBaAdminPesertaBerkas, removeBaAdminPeserta, BA_ADMIN_MAX_PAGES } from '../src/write/baAdmin.js';
+import { getOrCreateBaAdmin, addBaAdminPesertaBulk, setBaAdminPesertaBerkas, removeBaAdminPeserta, BA_ADMIN_MAX_PAGES, BA_ADMIN_MAX_BYTES } from '../src/write/baAdmin.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -153,5 +153,18 @@ describe('baAdmin berkas', () => {
     expect(r2.message).toContain('halaman');
     const n = (await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id=?1 AND id_pengajuan='INHAL-2'").bind(baId).first()).n;
     expect(Number(n)).toBe(0);
+  });
+
+  it('batas 20 MB menghitung byte_size peserta lain', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1', 'INHAL-2'], ctx);
+    await env.DB.prepare("INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,byte_size,active) VALUES ('2026-10-12T00:00:00',?1,'INHAL-1','2201010001',1,0,'p1.jpg','https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view',1,?2,1)").bind(baId, BA_ADMIN_MAX_BYTES).run();
+    stubSave();
+    const res = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-2', [IMG], ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('20 MB');
   });
 });

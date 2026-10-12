@@ -125,6 +125,17 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 > **Penting — sekali jalan.** `ALTER TABLE ADD COLUMN` tidak bisa diulang
 > (gagal `duplicate column name`). Jangan mengulang file yang sudah diterapkan.
 
+Migrasi `2026-10-12-ba-pendukung-byte-size.sql` menambah kolom `byte_size` pada
+`berita_acara_admin_berkas` (ukuran sumber tiap berkas dalam byte, untuk batas total 20 MB
+per BA). Jalankan **sebelum** men-deploy Worker baru:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-12-ba-pendukung-byte-size.sql
+```
+
+> **Penting — sekali jalan.** `ALTER TABLE ADD COLUMN` tidak bisa diulang
+> (gagal `duplicate column name`). Jangan mengulang file yang sudah diterapkan.
+
 ## 4. Deploy Worker + aset
 
 ```bash
