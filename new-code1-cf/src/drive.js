@@ -106,3 +106,13 @@ export async function callDriveBridge(env, payload) {
   }
   return { ok: true, configured: true, data: data };
 }
+
+export async function getDriveFileBase64(env, fileId) {
+  const id = String(fileId || '').trim();
+  if (!id) return { ok: false, message: 'ID berkas kosong.' };
+  const res = await callDriveBridge(env, { action: 'getFile', fileId: id });
+  if (!res.ok) return { ok: false, message: res.message || 'Gagal mengambil berkas dari Drive.' };
+  const base64 = String((res.data && (res.data.base64 || res.data.data)) || '');
+  if (!base64) return { ok: false, message: 'Bridge tidak mengembalikan isi berkas.' };
+  return { ok: true, base64: base64, mime: String((res.data && res.data.mimeType) || '') };
+}
