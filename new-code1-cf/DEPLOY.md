@@ -112,6 +112,19 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 > bisa dijalankan ulang (gagal `duplicate column name`), jadi jalankan file ini **tepat satu
 > kali** dan jangan mengulang file yang sudah pernah diterapkan.
 
+### 3.2 Migrasi BA Pendukung — berkas PDF (sekali, sebelum deploy Worker baru)
+
+Migrasi `2026-10-12-ba-pendukung-pdf.sql` menambah kolom `page_count` pada
+`berita_acara_admin_berkas` (jumlah halaman tiap berkas: gambar = 1, PDF = N).
+Jalankan **sebelum** men-deploy Worker baru:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-12-ba-pendukung-pdf.sql
+```
+
+> **Penting — sekali jalan.** `ALTER TABLE ADD COLUMN` tidak bisa diulang
+> (gagal `duplicate column name`). Jangan mengulang file yang sudah diterapkan.
+
 ## 4. Deploy Worker + aset
 
 ```bash

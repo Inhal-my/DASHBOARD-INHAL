@@ -135,7 +135,7 @@ CREATE TABLE berita_acara_admin_peserta (
 CREATE TABLE berita_acara_admin_berkas (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
   urutan INTEGER, page_index INTEGER, file_name TEXT, file_url TEXT,
-  active INTEGER DEFAULT 1, superseded_at TEXT
+  page_count INTEGER DEFAULT 1, active INTEGER DEFAULT 1, superseded_at TEXT
 );
 CREATE TABLE master_biaya (
   id INTEGER PRIMARY KEY AUTOINCREMENT, kegiatan TEXT, biaya TEXT

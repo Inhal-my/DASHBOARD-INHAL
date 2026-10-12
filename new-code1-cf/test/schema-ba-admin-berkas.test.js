@@ -28,4 +28,12 @@ describe('skema ba pendukung berkas', () => {
     expect(Number(row.page_index)).toBe(0);
     expect(Number(row.active)).toBe(1);
   });
+
+  it('menyimpan jumlah halaman berkas (page_count)', async () => {
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,active) VALUES ('2026-10-12T00:00:00','BA-PEN-2026-0001','INHAL-1','2201010001',1,0,'scan.pdf','https://drive/y',4,1)"
+    ).run();
+    const row = await env.DB.prepare('SELECT page_count FROM berita_acara_admin_berkas WHERE ba_id = ?1').bind('BA-PEN-2026-0001').first();
+    expect(Number(row.page_count)).toBe(4);
+  });
 });
