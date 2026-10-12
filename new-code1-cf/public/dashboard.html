@@ -1732,13 +1732,16 @@
                                             <div class="mb-1 text-[11px] text-slate-500">{{ detail.baPendukung.data.ba.baId }} · {{ detail.baPendukung.data.ba.namaKegiatan }} · {{ detail.baPendukung.data.ba.tanggal || '-' }}</div>
                                             <a v-if="detail.baPendukung.data.ba.fileUrl" :href="safeUrl(detail.baPendukung.data.ba.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-primary !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat PDF BA</a>
                                             <div class="mt-3 space-y-2">
-                                                <div v-for="(pe, i) in detail.baPendukung.data.peserta" :key="pe.idPengajuan" :class="pe.isCurrent ? 'rounded-lg ring-1 ring-brand-300' : ''" class="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-100">
+                                                <div v-for="pe in detail.baPendukung.data.peserta" :key="pe.idPengajuan" :class="pe.isCurrent ? 'rounded-lg ring-1 ring-brand-300' : ''" class="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-100">
                                                     <span class="text-xs font-semibold text-slate-700">{{ pe.urutan }}. {{ pe.namaLengkap || pe.npm }}</span>
-                                                    <span class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
-                                                    <span v-if="!pe.pages" class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
+                                                    <span v-if="pe.pages" class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
+                                                    <span v-else class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
                                                     <span class="ml-auto flex gap-1">
-                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" @click="unggahBerkasBa(pe)"><i class="bi bi-cloud-arrow-up"></i> {{ pe.pages ? 'Ganti berkas' : 'Unggah/Scan halaman' }}</button>
-                                                        <a v-if="pe.pages" :href="safeUrl(berkasBaUrl(pe))" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]"><i class="bi bi-download"></i></a>
+                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="detail.baPendukung.uploadBusy" @click="unggahBerkasBa(pe)"><i class="bi bi-cloud-arrow-up"></i> {{ (detail.baPendukung.uploadBusy && detail.baPendukung.uploadFor === pe.idPengajuan) ? 'Mengunggah…' : (pe.pages ? 'Ganti berkas' : 'Unggah/Scan halaman') }}</button>
+                                                        <template v-if="pe.files && pe.files.length > 1">
+                                                            <a v-for="p in pe.files" :key="p.pageIndex" :href="safeUrl(p.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]" :title="'Halaman ' + (p.pageIndex + 1)"><i class="bi bi-download"></i>{{ p.pageIndex + 1 }}</a>
+                                                        </template>
+                                                        <a v-else-if="pe.pages" :href="safeUrl(berkasBaUrl(pe))" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]"><i class="bi bi-download"></i></a>
                                                         <button class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" @click="hapusPesertaBa(pe)"><i class="bi bi-x-lg"></i></button>
                                                     </span>
                                                 </div>
@@ -1760,7 +1763,6 @@
                                     </template>
                                 </div>
                                 <input ref="baPendukungCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onBaPendukungPhotos($event)">
-                                <input ref="baPendukungFile" type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" @change="onBaPendukungPhotos($event)">
                             </div>
 
                             <!-- status update -->
@@ -2113,7 +2115,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baList: [], baPendukung: { loading: false, data: null, showPicker: false, pickSelected: {}, uploadFor: '', uploadItems: [], uploadBusy: false, uploadSeq: 0 }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baPendukung: { loading: false, data: null, showPicker: false, pickSelected: {}, uploadFor: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0 }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
@@ -3150,12 +3152,9 @@
                     const p = Object.assign({}, base);
                     p.details = this.detailMap[String(p['ID Pengajuan'] || '').trim()] || [];
                     this.detail.p = p;
-                    this.detail.baList = this.matchBaForPengajuan(p);
                     this.loadBaPendukung(p['ID Pengajuan']);
                     if (!this.loaded.ba && !this.sectionLoading.ba) {
-                        this.loadBa().then(() => {
-                            if (this.detail.p) this.detail.baList = this.matchBaForPengajuan(this.detail.p);
-                        }).catch(() => {});
+                        this.loadBa().catch(() => {});
                     }
                     this.detail.iForm = {
                         email: p.Email || '',
@@ -3370,26 +3369,6 @@
                         this.detail.loading = false;
                     }
                 },
-                matchBaForPengajuan(p) {
-                    const normBlok = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
-                    const normName = s => String(s || '').toLowerCase().replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
-                    const blok = normBlok(p.Blok);
-                    if (!blok) return [];
-                    const details = p.details || [];
-                    const candidates = details.map(function(d) {
-                        const parts = [d.Pilihan, d.Detail].filter(function(x) { return x && String(x).trim(); });
-                        return parts.length ? normName(parts.join(' ')) : null;
-                    }).filter(Boolean);
-                    const jenis = normName(p['Jenis Kegiatan']);
-                    return (this.ba.all || []).filter(function(b) {
-                        if (normBlok(b.Blok) !== blok) return false;
-                        const nama = normName(b['Nama Kegiatan']);
-                        if (!nama) return false;
-                        if (candidates.indexOf(nama) !== -1) return true;
-                        if (!candidates.length && nama === jenis) return true;
-                        return false;
-                    });
-                },
                 async openBaPendukung() {
                     const p = this.detail.p;
                     if (!p) return;
@@ -3397,14 +3376,20 @@
                 },
                 async loadBaPendukung(idPengajuan) {
                     const d = this.detail.baPendukung;
+                    d.loadSeq += 1;
+                    const seq = d.loadSeq;
                     d.loading = true; d.data = null; d.pickSelected = {}; d.showPicker = false;
                     try {
                         const res = await this.run('baAdminGet', idPengajuan);
+                        if (seq !== d.loadSeq) return;
                         if (res && res.success) d.data = res.data;
                         else this.notify((res && res.message) || 'Gagal memuat BA Pendukung.', false);
                     } catch (e) {
+                        if (seq !== d.loadSeq) return;
                         this.notify('Gagal memuat BA Pendukung: ' + e, false);
-                    } finally { d.loading = false; }
+                    } finally {
+                        if (seq === d.loadSeq) d.loading = false;
+                    }
                 },
                 async createBaPendukung() {
                     const k = this.detail.baPendukung.data && this.detail.baPendukung.data.kegiatan;
@@ -3437,7 +3422,7 @@
                     if (e.target) e.target.value = '';
                     const d = this.detail.baPendukung;
                     Promise.all(files.map((f) => window.ScanPdf.compressToJpeg(f))).then((items) => {
-                        items.forEach((it, i) => { d.uploadSeq += 1; d.uploadItems.push({ id: 'bap-' + d.uploadSeq, bytes: it.bytes, width: it.width, height: it.height }); });
+                        items.forEach((it) => { d.uploadSeq += 1; d.uploadItems.push({ id: 'bap-' + d.uploadSeq, bytes: it.bytes, width: it.width, height: it.height }); });
                         if (d.uploadItems.length) this.simpanBerkasBa();
                     }).catch((err) => this.notify('Gagal memproses gambar: ' + err, false));
                 },

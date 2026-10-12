@@ -17,5 +17,6 @@ describe('dashboard BA Pendukung di modal detail', () => {
     expect(dashboardHtml).toContain('hapusPesertaBa(');
     expect(dashboardHtml).toContain('regenerateBa(');
     expect(dashboardHtml).toContain('Berita Acara Pendukung');
+    expect(dashboardHtml).toContain('loadSeq');
   });
 });

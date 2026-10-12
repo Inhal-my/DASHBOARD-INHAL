@@ -96,6 +96,22 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 > `schema.sql`. Jalankan migrasi berurutan sesuai tanggal dan jangan mengulang migrasi yang
 > sudah pernah diterapkan.
 
+### 3.1 Migrasi BA Pendukung (sekali, sebelum deploy Worker baru)
+
+Migrasi `2026-10-12-ba-pendukung-berkas.sql` menambah kolom `updated_at`/`needs_regen` pada
+`berita_acara_admin`, kolom `urutan`/`active` pada `berita_acara_admin_peserta`, serta tabel
+`berita_acara_admin_berkas`. Jalankan migrasi ini **sebelum** men-deploy Worker baru, karena
+kode baru membaca kolom dan tabel tersebut:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-12-ba-pendukung-berkas.sql
+```
+
+> **Penting — urutan dan idempotensi.** Repo ini menerapkan migrasi **per file** dengan
+> `wrangler d1 execute` (bukan `wrangler d1 migrations apply`). `ALTER TABLE ADD COLUMN` tidak
+> bisa dijalankan ulang (gagal `duplicate column name`), jadi jalankan file ini **tepat satu
+> kali** dan jangan mengulang file yang sudah pernah diterapkan.
+
 ## 4. Deploy Worker + aset
 
 ```bash
