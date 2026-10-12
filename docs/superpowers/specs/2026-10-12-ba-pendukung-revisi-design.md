@@ -33,6 +33,7 @@ Akibatnya admin tidak bisa menambah peserta atau merevisi dokumen BA Pendukung l
 - UI ubah urutan peserta secara manual.
 - Tanda tangan digital/e-sign, OCR.
 - Mengubah alur unggah bukti bayar/ACC dan biaya.
+- Audit siapa yang mengubah BA Pendukung (semua aksi dilakukan admin).
 
 ## 4. Keputusan Desain (Terkunci)
 
@@ -53,6 +54,10 @@ Akibatnya admin tidak bisa menambah peserta atau merevisi dokumen BA Pendukung l
 | P13 | Berkas halaman **dan** PDF gabungan disimpan di **Drive** (D1 hanya menyimpan URL/metadata). |
 | P14 | Kegagalan regenerate tidak menghilangkan berkas/metadata; BA ditandai `needs_regen` + tombol retry. |
 | P15 | Regenerate memakai **lock ringan per-BA** (anti tumpang-tindih admin). |
+| P16 | Batas regenerate: **maks 50 halaman** dan **20 MB** total input per regenerate. |
+| P17 | Tiap halaman dikompres ke **JPEG** (`compressToJpeg` yang ada, kualitas default) lalu disusun menjadi **PDF**. |
+| P18 | Admin dapat **mengunduh berkas per mahasiswa** (tautan per berkas/halaman), selain PDF gabungan. |
+| P19 | **Tanpa audit** perubahan BA Pendukung (semua aksi dilakukan admin). |
 
 ## 5. Model Konseptual
 
@@ -139,14 +144,14 @@ Kartu **"Berita Acara Pendukung"** (menggantikan kartu BA read-only `detail.baLi
 
 **Pemilih peserta:** tombol **"Tambah peserta"** → daftar mahasiswa sekegiatan (belum masuk BA) dengan checkbox + "pilih semua" + kotak cari; konfirmasi menambah peserta (tanpa berkas).
 
-**Per peserta:** badge jumlah halaman, aksi **"Unggah/Scan halaman"**, **"Ganti berkas"**, **"Hapus dari BA"**. Baris "Belum ada berkas" ditandai.
+**Per peserta:** badge jumlah halaman, aksi **"Unggah/Scan halaman"**, **"Ganti berkas"**, **"Hapus dari BA"**, dan **tautan unduh berkas per mahasiswa** (P18). Baris "Belum ada berkas" ditandai.
 
 **Indikator:** `needs_regen` + tombol **"Regenerate"** (retry); toast sukses/gagal; PDF lama tetap bisa diunduh sampai regenerate sukses.
 
 ## 10. Error Handling & Edge Cases
 
 - **Regenerate gagal** → metadata/berkas tetap; `needs_regen=1`; retry manual (P14).
-- **Batas jumlah/ukuran**: usulan maks **50 halaman** dan **20 MB** total input per regenerate; pesan jelas bila terlampaui. (menunggu konfirmasi §13)
+- **Batas jumlah/ukuran**: maks **50 halaman** dan **20 MB** total input per regenerate (P16); pesan jelas bila terlampaui.
 - **Peserta tanpa berkas** → diizinkan (P10); tidak menggagalkan regenerate (halaman peserta kosong dilewati) tetapi ditandai di UI.
 - **Hapus peserta terakhir** → BA tetap ada (file gabungan bisa kosong); admin dapat menghapus BA lewat jalur lama.
 - **Gambar tidak valid/rusak** → dilewati dengan catatan, regenerate tetap jalan bila ada ≥1 halaman valid.
@@ -169,18 +174,18 @@ Kartu **"Berita Acara Pendukung"** (menggantikan kartu BA read-only `detail.baLi
 - Guard template dashboard: kartu BA Pendukung, pemilih peserta, marker `scanItems`, tombol aksi ada.
 - Regresi: seluruh suite lama tetap hijau.
 
-## 13. Pertanyaan Terbuka / Rekomendasi
+## 13. Keputusan Tambahan (Terjawab)
 
-1. Batas regenerate: **50 halaman / 20 MB** cukup? (dapat disesuaikan)
-2. Format kompresi gambar halaman: pakai `compressToJpeg` yang ada (kualitas default)?
-3. Perlukah admin bisa **mengunduh berkas per mahasiswa** (selain PDF gabungan)?
-4. Notifikasi/history: perlu catat siapa mengubah (audit) pada BA Pendukung?
+1. Batas regenerate: **50 halaman / 20 MB** (P16).
+2. Gambar halaman dikompres **JPEG** (`compressToJpeg`, kualitas default) lalu disusun menjadi **PDF** (P17).
+3. Admin **dapat mengunduh berkas per mahasiswa** selain PDF gabungan (P18).
+4. **Tanpa audit** perubahan BA Pendukung (P19).
 
 ## 14. Kriteria Terima
 
 - Dari modal Detail Pengajuan, admin dapat membuat BA Pendukung (blok & nama terisi otomatis) untuk kegiatan pengajuan.
 - Admin dapat menambah peserta (pemilih) tanpa berkas, lalu mengunggah/men-scan halaman per mahasiswa.
-- Admin dapat mengganti berkas seorang mahasiswa (berkas lama tersimpan sebagai riwayat) dan menghapus peserta dari BA.
-- Server menggabungkan berkas aktif menjadi satu PDF per kegiatan; `file_url` BA diperbarui; urutan sesuai urutan ditambahkan.
+- Admin dapat mengganti berkas seorang mahasiswa (berkas lama tersimpan sebagai riwayat), menghapus peserta dari BA, dan **mengunduh berkas per mahasiswa**.
+- Server menggabungkan berkas aktif menjadi satu PDF per kegiatan; `file_url` BA diperbarui; urutan sesuai urutan ditambahkan; batas 50 halaman / 20 MB ditegakkan.
 - Kegagalan regenerate ditandai `needs_regen` dan dapat di-retry tanpa kehilangan data.
 - Bagian & mahasiswa tidak terpengaruh; seluruh suite tes lama tetap hijau.
