@@ -1676,7 +1676,7 @@
                             </div>
 
                             <!-- detail kegiatan + berita acara -->
-                            <div v-if="(detail.p.details && detail.p.details.length) || (detail.baList && detail.baList.length)" class="mt-5 grid items-start gap-5 lg:grid-cols-2">
+                            <div v-if="detail.p" class="mt-5 grid items-start gap-5 lg:grid-cols-2">
                                 <div v-if="detail.p.details && detail.p.details.length">
                                     <div class="label mb-2"><i class="bi bi-list-check"></i> Detail Kegiatan</div>
                                     <div class="grid gap-2">
@@ -1714,12 +1714,53 @@
                                     </div>
                                 </div>
 
-                                <div v-if="detail.baList && detail.baList.length" class="ba-align-card dash-card p-4">
-                                    <div class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-pdf text-base text-rose-600"></i> Berita Acara</div>
-                                    <div class="flex flex-wrap gap-2">
-                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
+                                <div v-if="detail.p" class="ba-align-card dash-card p-4">
+                                    <div class="mb-2 flex items-center justify-between gap-2">
+                                        <div class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-text text-base text-brand-600"></i> Berita Acara Pendukung</div>
+                                        <div class="flex items-center gap-1">
+                                            <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600" @click="openBaPendukung()" title="Muat ulang"><i class="bi bi-arrow-clockwise text-sm"></i></button>
+                                            <button v-if="detail.baPendukung.data && detail.baPendukung.data.ba && detail.baPendukung.data.ba.needsRegen" class="btn-soft !py-1 !px-2 text-[11px]" @click="regenerateBa()"><i class="bi bi-arrow-repeat"></i> Regenerate</button>
+                                        </div>
                                     </div>
+                                    <div v-if="detail.baPendukung.loading" class="text-xs text-slate-400">Memuat…</div>
+                                    <template v-else-if="detail.baPendukung.data">
+                                        <div v-if="!detail.baPendukung.data.ba" class="flex items-center gap-2">
+                                            <button class="btn-primary !py-1.5 text-xs" @click="createBaPendukung()"><i class="bi bi-plus-circle"></i> Buat BA Pendukung</button>
+                                            <span class="text-[11px] text-slate-400">Untuk kegiatan: {{ detail.baPendukung.data.kegiatan.namaKegiatan || '-' }}</span>
+                                        </div>
+                                        <template v-else>
+                                            <div class="mb-1 text-[11px] text-slate-500">{{ detail.baPendukung.data.ba.baId }} · {{ detail.baPendukung.data.ba.namaKegiatan }} · {{ detail.baPendukung.data.ba.tanggal || '-' }}</div>
+                                            <a v-if="detail.baPendukung.data.ba.fileUrl" :href="safeUrl(detail.baPendukung.data.ba.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-primary !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat PDF BA</a>
+                                            <div class="mt-3 space-y-2">
+                                                <div v-for="(pe, i) in detail.baPendukung.data.peserta" :key="pe.idPengajuan" :class="pe.isCurrent ? 'rounded-lg ring-1 ring-brand-300' : ''" class="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-100">
+                                                    <span class="text-xs font-semibold text-slate-700">{{ pe.urutan }}. {{ pe.namaLengkap || pe.npm }}</span>
+                                                    <span class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
+                                                    <span v-if="!pe.pages" class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
+                                                    <span class="ml-auto flex gap-1">
+                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" @click="unggahBerkasBa(pe)"><i class="bi bi-cloud-arrow-up"></i> {{ pe.pages ? 'Ganti berkas' : 'Unggah/Scan halaman' }}</button>
+                                                        <a v-if="pe.pages" :href="safeUrl(berkasBaUrl(pe))" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]"><i class="bi bi-download"></i></a>
+                                                        <button class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" @click="hapusPesertaBa(pe)"><i class="bi bi-x-lg"></i></button>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button class="btn-soft !py-1.5 text-xs" @click="detail.baPendukung.showPicker = !detail.baPendukung.showPicker"><i class="bi bi-person-plus"></i> Tambah peserta</button>
+                                                <div v-if="detail.baPendukung.showPicker" class="mt-2 rounded-xl ring-1 ring-slate-200">
+                                                    <div v-if="!detail.baPendukung.data.candidates.length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan berstatus ACC/Diterima yang belum masuk BA).</div>
+                                                    <div v-for="c in detail.baPendukung.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
+                                                        <input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="!!detail.baPendukung.pickSelected[c.idPengajuan]" @change="togglePesertaBaPick(c.idPengajuan)">
+                                                        <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
+                                                    </div>
+                                                    <div class="flex justify-end gap-2 p-2">
+                                                        <button class="btn-primary !py-1.5 text-xs" @click="tambahPesertaBa()"><i class="bi bi-check2"></i> Tambahkan</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
                                 </div>
+                                <input ref="baPendukungCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onBaPendukungPhotos($event)">
+                                <input ref="baPendukungFile" type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" @change="onBaPendukungPhotos($event)">
                             </div>
 
                             <!-- status update -->
@@ -2072,7 +2113,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baList: [], status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baList: [], baPendukung: { loading: false, data: null, showPicker: false, pickSelected: {}, uploadFor: '', uploadItems: [], uploadBusy: false, uploadSeq: 0 }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
@@ -3110,6 +3151,7 @@
                     p.details = this.detailMap[String(p['ID Pengajuan'] || '').trim()] || [];
                     this.detail.p = p;
                     this.detail.baList = this.matchBaForPengajuan(p);
+                    this.loadBaPendukung(p['ID Pengajuan']);
                     if (!this.loaded.ba && !this.sectionLoading.ba) {
                         this.loadBa().then(() => {
                             if (this.detail.p) this.detail.baList = this.matchBaForPengajuan(this.detail.p);
@@ -3347,6 +3389,91 @@
                         if (!candidates.length && nama === jenis) return true;
                         return false;
                     });
+                },
+                async openBaPendukung() {
+                    const p = this.detail.p;
+                    if (!p) return;
+                    await this.loadBaPendukung(p['ID Pengajuan']);
+                },
+                async loadBaPendukung(idPengajuan) {
+                    const d = this.detail.baPendukung;
+                    d.loading = true; d.data = null; d.pickSelected = {}; d.showPicker = false;
+                    try {
+                        const res = await this.run('baAdminGet', idPengajuan);
+                        if (res && res.success) d.data = res.data;
+                        else this.notify((res && res.message) || 'Gagal memuat BA Pendukung.', false);
+                    } catch (e) {
+                        this.notify('Gagal memuat BA Pendukung: ' + e, false);
+                    } finally { d.loading = false; }
+                },
+                async createBaPendukung() {
+                    const k = this.detail.baPendukung.data && this.detail.baPendukung.data.kegiatan;
+                    if (!k) return;
+                    const res = await this.run('baAdminCreate', { bagian: k.bagian, blok: k.blok, namaKegiatan: k.namaKegiatan, tanggalPelaksanaan: k.tanggalPelaksanaan || '', jam: '', catatan: '' });
+                    this.notify((res && res.message) || 'BA Pendukung dibuat.', !!(res && res.success));
+                    if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                },
+                async tambahPesertaBa() {
+                    const d = this.detail.baPendukung;
+                    const ids = Object.keys(d.pickSelected).filter((k) => d.pickSelected[k]);
+                    if (!ids.length) { this.notify('Pilih minimal satu peserta.', false); return; }
+                    const baId = d.data.ba.baId;
+                    const res = await this.run('baAdminAddPeserta', baId, ids);
+                    this.notify((res && res.success) ? (res.added + ' peserta ditambahkan.') : ((res && res.message) || 'Gagal.'), !!(res && res.success));
+                    if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                },
+                togglePesertaBaPick(id) {
+                    const sel = this.detail.baPendukung.pickSelected;
+                    if (sel[id]) delete sel[id];
+                    else sel[id] = true;
+                },
+                unggahBerkasBa(pe) {
+                    this.detail.baPendukung.uploadFor = pe.idPengajuan;
+                    this.detail.baPendukung.uploadItems = [];
+                    const el = this.$refs.baPendukungCamera; if (el) el.click();
+                },
+                onBaPendukungPhotos(e) {
+                    const files = Array.from(e.target.files || []);
+                    if (e.target) e.target.value = '';
+                    const d = this.detail.baPendukung;
+                    Promise.all(files.map((f) => window.ScanPdf.compressToJpeg(f))).then((items) => {
+                        items.forEach((it, i) => { d.uploadSeq += 1; d.uploadItems.push({ id: 'bap-' + d.uploadSeq, bytes: it.bytes, width: it.width, height: it.height }); });
+                        if (d.uploadItems.length) this.simpanBerkasBa();
+                    }).catch((err) => this.notify('Gagal memproses gambar: ' + err, false));
+                },
+                async simpanBerkasBa() {
+                    const d = this.detail.baPendukung;
+                    if (!d.uploadItems.length || !d.uploadFor) return;
+                    d.uploadBusy = true;
+                    try {
+                        const images = Array.from(d.uploadItems).map((it) => ({ data: this.bytesToBase64(it.bytes), mimeType: 'image/jpeg', name: it.id + '.jpg' }));
+                        const res = await this.run('baAdminUploadBerkas', d.data.ba.baId, d.uploadFor, images);
+                        this.notify((res && res.message) || 'Berkas disimpan.', !!(res && res.success));
+                        d.uploadItems = []; d.uploadFor = '';
+                        if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                    } catch (e) {
+                        this.notify('Gagal menyimpan berkas: ' + e, false);
+                    } finally { d.uploadBusy = false; }
+                },
+                async hapusPesertaBa(pe) {
+                    const ok = await this.askConfirm({ title: 'Hapus dari BA', message: 'Hapus ' + (pe.namaLengkap || pe.npm) + ' dari BA Pendukung? Berkas lama tetap tersimpan sebagai riwayat.', icon: 'bi-x-lg', tone: 'danger', confirmLabel: 'Hapus' });
+                    if (!ok) return;
+                    const res = await this.run('baAdminRemovePeserta', this.detail.baPendukung.data.ba.baId, pe.idPengajuan);
+                    this.notify((res && res.message) || 'Dihapus.', !!(res && res.success));
+                    if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                },
+                async regenerateBa() {
+                    const res = await this.run('baAdminRegenerate', this.detail.baPendukung.data.ba.baId);
+                    this.notify((res && res.message) || 'Regenerate selesai.', !!(res && res.success));
+                    await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                },
+                berkasBaUrl(pe) {
+                    return (pe && pe.fileUrl) ? pe.fileUrl : '#';
+                },
+                bytesToBase64(bytes) {
+                    let bin = ''; const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+                    for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+                    return btoa(bin);
                 },
                 async updateStatus() {
                     const status = this.detail.status;
