@@ -132,6 +132,15 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler secret list
 
 Tanpa secret ini, semua unggahan akan gagal dengan pesan "Penyimpanan Drive belum dikonfigurasi."
 
+### 4.2 Aksi bridge Apps Script
+
+Web App Apps Script harus menangani aksi berikut (POST JSON, field `token`):
+
+- `saveFile` — simpan base64, kembalikan `{ success, url, fileId }`.
+- `trashFile` — pindahkan berkas ke trash by `fileId`.
+- `sendFinalEmail` / `sendStatusEmail` — kirim email.
+- `getFile` — **baru**: terima `fileId`, kembalikan `{ success, base64, mimeType }` (isi berkas). Dipakai worker untuk merakit PDF BA Pendukung.
+
 ## 5. Verifikasi
 
 Buka URL Worker di browser, atau:
