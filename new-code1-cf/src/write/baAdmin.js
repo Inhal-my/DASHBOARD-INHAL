@@ -259,26 +259,28 @@ export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
 
 async function runRegenerateBaAdminPdf(db, baId, ctx) {
   const id = str(baId);
-  const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
-  if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
-
-  const rows = (await db.prepare(
-    'SELECT b.* FROM berita_acara_admin_berkas b ' +
-    'JOIN berita_acara_admin_peserta p ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan ' +
-    'WHERE b.ba_id = ?1 AND b.active = 1 AND p.active = 1 ' +
-    'ORDER BY p.urutan, b.page_index'
-  ).bind(id).all()).results || [];
-
-  if (!rows.length) {
-    await db.prepare('UPDATE berita_acara_admin SET needs_regen = 0 WHERE ba_id = ?1').bind(id).run();
-    return { success: true, fileUrl: str(ba.file_url), pages: 0 };
-  }
-  if (rows.length > BA_ADMIN_MAX_PAGES) {
-    await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
-    return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman terlampaui.' };
-  }
-
+  let baExists = false;
   try {
+    const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+    if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+    baExists = true;
+
+    const rows = (await db.prepare(
+      'SELECT b.* FROM berita_acara_admin_berkas b ' +
+      'JOIN berita_acara_admin_peserta p ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan ' +
+      'WHERE b.ba_id = ?1 AND b.active = 1 AND p.active = 1 ' +
+      'ORDER BY p.urutan, b.page_index'
+    ).bind(id).all()).results || [];
+
+    if (!rows.length) {
+      await db.prepare('UPDATE berita_acara_admin SET needs_regen = 0 WHERE ba_id = ?1').bind(id).run();
+      return { success: true, fileUrl: str(ba.file_url), pages: 0 };
+    }
+    if (rows.length > BA_ADMIN_MAX_PAGES) {
+      await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+      return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman terlampaui.' };
+    }
+
     const pages = [];
     for (const r of rows) {
       const fileId = parseDriveFileId(r.file_url);
@@ -294,7 +296,11 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
       .bind(up.url, String(up.name || ''), ts, id).run();
     return { success: true, fileUrl: up.url, pages: pages.length };
   } catch (e) {
-    await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+    if (baExists) {
+      try {
+        await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+      } catch (e2) {}
+    }
     return { success: false, message: (e && e.message) ? e.message : String(e) };
   }
 }

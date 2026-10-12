@@ -50,6 +50,27 @@ describe('regenerateBaAdminPdf', () => {
     expect(Number(ba.needs_regen)).toBe(1);
   });
 
+  it('error D1 awal: resolve {success:false}, bukan reject', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const real = env.DB;
+    const db = new Proxy(real, {
+      get(target, prop) {
+        if (prop === 'prepare') {
+          return (sql) => {
+            if (sql.indexOf('FROM berita_acara_admin WHERE ba_id') !== -1) throw new Error('D1 down');
+            return target.prepare(sql);
+          };
+        }
+        const v = target[prop];
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
+    const res = await regenerateBaAdminPdf(db, 'INHAL-1', ctx);
+    expect(res.success).toBe(false);
+    expect(typeof res.message).toBe('string');
+  });
+
   it('mengunci regenerate bersamaan untuk BA yang sama', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
     const ctx = await adminCtx();
