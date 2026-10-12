@@ -26,7 +26,7 @@ function nowIso() {
 
 const BA_ID_CODE = { berita_acara: 'PEL', berita_acara_admin: 'PEN' };
 
-async function nextBaId(db, table) {
+export async function nextBaId(db, table) {
   const year = new Date().getFullYear();
   const code = BA_ID_CODE[table];
   const prefix = code ? 'BA-' + code + '-' + year + '-' : 'BA-' + year + '-';
