@@ -70,6 +70,7 @@ DROP TABLE IF EXISTS nomor_surat;
 DROP TABLE IF EXISTS id_sequence;
 DROP TABLE IF EXISTS check_data;
 DROP TABLE IF EXISTS master_biaya;
+DROP TABLE IF EXISTS berita_acara_admin_berkas;
 DROP TABLE IF EXISTS berita_acara_admin_peserta;
 DROP TABLE IF EXISTS berita_acara_admin;
 DROP TABLE IF EXISTS berita_acara_peserta;
@@ -123,11 +124,18 @@ CREATE TABLE berita_acara_peserta (
 CREATE TABLE berita_acara_admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, jumlah_peserta TEXT, file_name TEXT,
-  file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT
+  file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT,
+  updated_at TEXT, needs_regen INTEGER DEFAULT 0
 );
 CREATE TABLE berita_acara_admin_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
-  nama_lengkap TEXT, blok TEXT, bagian TEXT, status_pengajuan TEXT
+  nama_lengkap TEXT, blok TEXT, bagian TEXT, status_pengajuan TEXT,
+  urutan INTEGER, active INTEGER DEFAULT 1
+);
+CREATE TABLE berita_acara_admin_berkas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
+  urutan INTEGER, page_index INTEGER, file_name TEXT, file_url TEXT,
+  active INTEGER DEFAULT 1, superseded_at TEXT
 );
 CREATE TABLE master_biaya (
   id INTEGER PRIMARY KEY AUTOINCREMENT, kegiatan TEXT, biaya TEXT
@@ -151,6 +159,7 @@ CREATE TABLE log_data (
 CREATE INDEX idx_ba_ba_id ON berita_acara(ba_id);
 CREATE INDEX idx_ba_kegiatan_key ON berita_acara(kegiatan_key);
 CREATE INDEX idx_ba_admin_kegiatan_key ON berita_acara_admin(kegiatan_key);
+CREATE INDEX idx_ba_admin_berkas_ba_id ON berita_acara_admin_berkas(ba_id);
 CREATE INDEX idx_ba_peserta_ba_id ON berita_acara_peserta(ba_id);
 CREATE INDEX idx_check_data_pengajuan ON check_data(id_pengajuan);
 CREATE INDEX idx_sessions_expires ON sessions(expires_at);
