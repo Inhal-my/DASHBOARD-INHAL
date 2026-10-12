@@ -1,8 +1,9 @@
 import { requireAdmin } from '../session.js';
 import { kegiatanKey, getBagianBaStatuses } from '../read/common.js';
 import { nextBaId } from './beritaAcara.js';
-import { saveDriveFile } from '../drive.js';
-import { decodeBase64Size, resolveMime } from '../uploads.js';
+import { saveDriveFile, getDriveFileBase64, parseDriveFileId } from '../drive.js';
+import { decodeBase64Size, resolveMime, base64ToBytes } from '../uploads.js';
+import { mergeImagesToPdf } from '../baMerge.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -254,4 +255,66 @@ export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
   for (const x of peserta) inBa[x.idPengajuan] = true;
   const filtered = candidates.filter((c) => !inBa[c.idPengajuan]);
   return { success: true, data: { kegiatan, ba, peserta, candidates: filtered } };
+}
+
+async function runRegenerateBaAdminPdf(db, baId, ctx) {
+  const id = str(baId);
+  const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+
+  const rows = (await db.prepare(
+    'SELECT b.* FROM berita_acara_admin_berkas b ' +
+    'JOIN berita_acara_admin_peserta p ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan ' +
+    'WHERE b.ba_id = ?1 AND b.active = 1 AND p.active = 1 ' +
+    'ORDER BY p.urutan, b.page_index'
+  ).bind(id).all()).results || [];
+
+  if (!rows.length) {
+    await db.prepare('UPDATE berita_acara_admin SET needs_regen = 0 WHERE ba_id = ?1').bind(id).run();
+    return { success: true, fileUrl: str(ba.file_url), pages: 0 };
+  }
+  if (rows.length > BA_ADMIN_MAX_PAGES) {
+    await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+    return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman terlampaui.' };
+  }
+
+  try {
+    const pages = [];
+    for (const r of rows) {
+      const fileId = parseDriveFileId(r.file_url);
+      const got = await getDriveFileBase64(ctx.env, fileId);
+      if (!got.ok) throw new Error(got.message || 'Gagal mengambil berkas.');
+      pages.push({ bytes: base64ToBytes(got.base64), mime: got.mime });
+    }
+    const pdfBytes = await mergeImagesToPdf(pages);
+    const up = await saveDriveFile(ctx.env, { data: bytesToBase64(pdfBytes), mimeType: 'application/pdf', name: 'ba-' + id + '.pdf' }, 'ba-admin-' + id + '-pdf', { allowedMime: ['application/pdf'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA' });
+    if (!up.ok) throw new Error(up.message || 'Gagal mengunggah PDF BA.');
+    const ts = nowIso();
+    await db.prepare('UPDATE berita_acara_admin SET file_url = ?1, file_name = ?2, needs_regen = 0, updated_at = ?3 WHERE ba_id = ?4')
+      .bind(up.url, String(up.name || ''), ts, id).run();
+    return { success: true, fileUrl: up.url, pages: pages.length };
+  } catch (e) {
+    await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+    return { success: false, message: (e && e.message) ? e.message : String(e) };
+  }
+}
+
+function bytesToBase64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+const regenLocks = new Set();
+
+export async function regenerateBaAdminPdf(db, baId, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  if (regenLocks.has(id)) return { success: false, message: 'Regenerate sedang berjalan untuk BA ini.' };
+  regenLocks.add(id);
+  try {
+    return await runRegenerateBaAdminPdf(db, id, ctx);
+  } finally {
+    regenLocks.delete(id);
+  }
 }
