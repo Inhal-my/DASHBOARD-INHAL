@@ -57,4 +57,19 @@ describe('mergeBaFilesToPdf', () => {
   it('melempar bila tidak ada halaman valid', async () => {
     await expect(mergeBaFilesToPdf({ ba: null, groups: [] })).rejects.toThrow();
   });
+
+  it('melanjutkan daftar peserta sampul ke halaman berikutnya, tidak terpotong', async () => {
+    const peserta = [];
+    for (let i = 0; i < 80; i += 1) peserta.push({ urutan: i + 1, nama: 'P' + i, npm: '200' + i, halaman: 0 });
+    const out = await mergeBaFilesToPdf({
+      ba: BA,
+      peserta,
+      groups: [{
+        peserta: { urutan: 1, nama: 'P0', npm: '2000', blok: 'A' },
+        files: [{ bytes: png(), mime: 'image/png' }]
+      }]
+    });
+    expect(out.sourcePages).toBe(1);
+    expect(out.outputPages).toBeGreaterThanOrEqual(4);
+  });
 });

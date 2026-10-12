@@ -57,12 +57,14 @@ function fitText(text, font, size, maxWidth) {
   return str.slice(0, lo) + '\u2026';
 }
 
-function addCoverPage(doc, ba, peserta, helv, helvBold) {
+function addCoverPages(doc, ba, peserta, helv, helvBold) {
   const pw = A4_SHORT;
   const ph = A4_LONG;
-  const page = doc.addPage([pw, ph]);
   const left = MARGIN + 16;
   const maxW = pw - left * 2;
+  const pages = [];
+  let page = doc.addPage([pw, ph]);
+  pages.push(page);
   let y = ph - 90;
   page.drawText('BERITA ACARA PENDUKUNG', { x: left, y: y, size: 16, font: helvBold, color: TEXT_DARK });
   y -= 40;
@@ -81,14 +83,20 @@ function addCoverPage(doc, ba, peserta, helv, helvBold) {
   y -= 22;
   let no = 0;
   for (const pe of (peserta || [])) {
+    if (y < MARGIN + 40) {
+      page = doc.addPage([pw, ph]);
+      pages.push(page);
+      y = ph - 80;
+      page.drawText('Daftar Peserta (lanjutan)', { x: left, y: y, size: 12, font: helvBold, color: TEXT_DARK });
+      y -= 22;
+    }
     no += 1;
     const halaman = pe.halaman ? (pe.halaman + ' hal.') : 'belum ada berkas';
     const row = no + '. ' + (pe.nama || pe.npm || '-') + ' (' + (pe.npm || '-') + ') - ' + halaman;
     page.drawText(fitText(row, helv, 10, maxW), { x: left, y: y, size: 10, font: helv, color: TEXT_DARK });
     y -= 16;
-    if (y < MARGIN + 40) break;
   }
-  return page;
+  return pages;
 }
 
 function addSeparatorPage(doc, pe, index, total, helv, helvBold) {
@@ -116,7 +124,9 @@ export async function mergeBaFilesToPdf(input) {
   const helvBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const generated = [];
 
-  if (cfg.ba) generated.push(addCoverPage(doc, cfg.ba, cfg.peserta || [], helv, helvBold));
+  if (cfg.ba) {
+    for (const p of addCoverPages(doc, cfg.ba, cfg.peserta || [], helv, helvBold)) generated.push(p);
+  }
 
   const withFiles = groups.filter((g) => g && Array.isArray(g.files) && g.files.length);
   let sourcePages = 0;
