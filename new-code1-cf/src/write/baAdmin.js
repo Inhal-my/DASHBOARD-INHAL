@@ -1,6 +1,8 @@
 import { requireAdmin } from '../session.js';
 import { kegiatanKey, getBagianBaStatuses } from '../read/common.js';
 import { nextBaId } from './beritaAcara.js';
+import { saveDriveFile } from '../drive.js';
+import { decodeBase64Size, resolveMime } from '../uploads.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -110,6 +112,103 @@ async function listCandidates(db, kegiatan) {
   }
   out.sort((a, b) => a.npm.toLowerCase().localeCompare(b.npm.toLowerCase()));
   return out;
+}
+
+export const BA_ADMIN_MAX_PAGES = 50;
+export const BA_ADMIN_MAX_BYTES = 20 * 1024 * 1024;
+
+async function countActivePages(db, baId, exceptIdPengajuan) {
+  const rows = (await db.prepare('SELECT id_pengajuan FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1').bind(baId).all()).results || [];
+  let n = 0;
+  for (const r of rows) {
+    if (exceptIdPengajuan && str(r.id_pengajuan) === str(exceptIdPengajuan)) continue;
+    n += 1;
+  }
+  return n;
+}
+
+export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  const pid = str(idPengajuan);
+  if (!id || !pid) return { success: false, message: 'BA ID / pengajuan kosong.' };
+
+  const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+
+  const list = Array.isArray(images) ? images : [];
+  if (!list.length) return { success: false, message: 'Tidak ada halaman yang diunggah.' };
+
+  const others = await countActivePages(db, id, pid);
+  if (others + list.length > BA_ADMIN_MAX_PAGES) {
+    return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman per BA terlampaui.' };
+  }
+
+  let totalBytes = 0;
+  for (const img of list) {
+    const mime = resolveMime(img && img.mimeType, img && img.data);
+    if (mime !== 'image/jpeg' && mime !== 'image/jpg' && mime !== 'image/png') {
+      return { success: false, message: 'Format halaman harus JPG atau PNG.' };
+    }
+    totalBytes += decodeBase64Size(img && img.data);
+  }
+  if (totalBytes > BA_ADMIN_MAX_BYTES) {
+    return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+  }
+
+  const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(pid).first();
+  const npm = str(p && p.npm);
+  const ts = nowIso();
+
+  // Pastikan peserta ada & aktif.
+  const existingPeserta = await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).first();
+  if (existingPeserta) {
+    if (Number(existingPeserta.active) !== 1) {
+      await db.prepare('UPDATE berita_acara_admin_peserta SET active = 1 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).run();
+    }
+  } else {
+    const urutan = await nextUrutan(db, id);
+    await db.prepare(
+      'INSERT INTO berita_acara_admin_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan, urutan, active) ' +
+      "VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,1)"
+    ).bind(ts, id, pid, npm, str(p && p.nama_lengkap), str(p && p.blok), str(ba.bagian), str(p && p.status), urutan).run();
+  }
+
+  // Nona-aktifkan berkas lama milik peserta ini (riwayat).
+  await db.prepare('UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1').bind(ts, id, pid).run();
+
+  // Unggah halaman baru.
+  const urutanPeserta = (await db.prepare('SELECT urutan FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid).first()).urutan;
+  let page = 0;
+  for (const img of list) {
+    const parsed = { data: String(img.data), mimeType: String(img.mimeType || ''), name: String(img.name || ('page-' + (page + 1))) };
+    const up = await saveDriveFile(ctx.env, parsed, 'ba-admin-' + id + '-' + (npm || pid), { label: 'Halaman BA' });
+    if (!up.ok) return { success: false, message: up.message };
+    await db.prepare(
+      'INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, active) ' +
+      'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,1)'
+    ).bind(ts, id, pid, npm, urutanPeserta, page, String(up.name || ''), up.url).run();
+    page += 1;
+  }
+
+  const count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
+  await db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id).run();
+  return { success: true, pages: page };
+}
+
+export async function removeBaAdminPeserta(db, baId, idPengajuan, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  const pid = str(idPengajuan);
+  if (!id || !pid) return { success: false, message: 'BA ID / pengajuan kosong.' };
+  const ts = nowIso();
+  await db.batch([
+    db.prepare('UPDATE berita_acara_admin_peserta SET active = 0 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid),
+    db.prepare('UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1').bind(ts, id, pid)
+  ]);
+  const count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
+  await db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id).run();
+  return { success: true };
 }
 
 export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
