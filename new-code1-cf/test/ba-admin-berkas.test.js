@@ -137,4 +137,21 @@ describe('baAdmin berkas', () => {
     expect(res.success).toBe(false);
     expect(res.message).toContain('halaman');
   });
+
+  it('batas 50 halaman menghitung page_count peserta lain', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1', 'INHAL-2'], ctx);
+    stubSave();
+    const r1 = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [{ data: await pdfB64(50), mimeType: 'application/pdf', name: 'a.pdf' }], ctx);
+    expect(r1.success).toBe(true);
+    expect(r1.pages).toBe(50);
+    const r2 = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-2', [{ data: btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xd9)), mimeType: 'image/jpeg' }], ctx);
+    expect(r2.success).toBe(false);
+    expect(r2.message).toContain('halaman');
+    const n = (await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id=?1 AND id_pengajuan='INHAL-2'").bind(baId).first()).n;
+    expect(Number(n)).toBe(0);
+  });
 });
