@@ -315,3 +315,26 @@ describe('detail laporan responsif', () => {
     expect(html).toContain('class="bottom-nav lg:hidden"');
   });
 });
+
+describe('detail laporan export Berita Acara (Admin + Bagian)', () => {
+  it('menggabungkan BA Pendukung (Admin) dan BA Pelaksanaan (Bagian)', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('baExportRows(');
+    expect(html).toContain('baReportRows(');
+    expect(html).toContain("(this.kegiatan || []).forEach(u => (u.baPendukung || []).forEach");
+    expect(html).toContain("(this.beritaAcara || []).forEach(b => add(b, 'Pelaksanaan'))");
+  });
+  it('menambahkan kolom Jenis BA dan header tetap ada saat data kosong', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("'Jenis BA'");
+    expect(html).toContain('BA_EXPORT_HEADERS');
+    expect(html).toContain('function baExportSheet');
+    expect(html).toContain('XLSX.utils.aoa_to_sheet([BA_EXPORT_HEADERS])');
+  });
+  it('mempertahankan penamaan sheet', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("'Berita Acara'");
+    expect(html).toContain("'Detail BA'");
+    expect(html).toContain("'Rekap BA'");
+  });
+});

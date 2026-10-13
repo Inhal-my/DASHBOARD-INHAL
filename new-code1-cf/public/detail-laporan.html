@@ -1326,6 +1326,11 @@
                 if (/^https?:\/\//i.test(url)) XLSX.utils.cell_set_hyperlink(cell, url, tooltip);
             }
         }
+        const BA_EXPORT_HEADERS = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Tanggal Pelaksanaan', 'Jumlah Peserta', 'Biaya', 'File URL'];
+        function baExportSheet(rows) {
+            if (!rows || !rows.length) return XLSX.utils.aoa_to_sheet([BA_EXPORT_HEADERS]);
+            return XLSX.utils.json_to_sheet(rows, { header: BA_EXPORT_HEADERS });
+        }
         const HL_FONT = '<font><u/><sz val="12"/><color rgb="FF0563C1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font>';
         const HL_XF = '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>';
         function xlsxCrc32(u8) {
@@ -2704,25 +2709,8 @@
                             setUrlHyperlinks(wsDetailPeserta, 'Link Bukti Bayar', 'Buka link bukti bayar');
                             XLSX.utils.book_append_sheet(wb, wsDetailPeserta, 'Detail Peserta');
 
-                            const baRows = [];
-                            this.filteredBa.forEach(b => {
-                                const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
-                                if (!bl) return;
-                                const seenNpm = {};
-                                const peserta = (b.peserta || []).filter(p => {
-                                    const k = String(p.npm || '').trim();
-                                    if (!k || seenNpm[k]) return false;
-                                    seenNpm[k] = 1;
-                                    return true;
-                                });
-                                const biaya = peserta.reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
-                                baRows.push({
-                                    'BA ID': b['BA ID'], Bagian: bl, Blok: b.Blok || '',
-                                    'Nama Kegiatan': b['Nama Kegiatan'] || '', 'Tanggal Pelaksanaan': fmtTanggalWaktu(b['Tanggal Pelaksanaan']),
-                                    'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'Biaya': biaya, 'File URL': b['File URL'] || ''
-                                });
-                            });
-                            const wsBa = XLSX.utils.json_to_sheet(baRows);
+                            const baRows = this.baReportRows({ blok: this.filters.blok, bagian: this.filters.bagian, from: this.filters.from, to: this.filters.to }, '');
+                            const wsBa = baExportSheet(baRows);
                             setUrlHyperlinks(wsBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsBa, 'Berita Acara');
 
@@ -2801,6 +2789,62 @@
                         this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                     });
                 },
+                baExportRows(filter, q) {
+                    const f = filter || {};
+                    const blok = String(f.blok || '').trim();
+                    const bagian = f.bagian || '';
+                    const fromD = f.from ? this.dateVal(f.from) : null;
+                    const toD = f.to ? this.dateVal(f.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    const ql = this.normSearch(q);
+                    const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[\u2014\u2013-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const matches = (b, bl) => {
+                        if (!bl) return false;
+                        if (blok && String(b.Blok || '').trim() !== blok) return false;
+                        if (bagian && bl !== bagian) return false;
+                        if (fromD || toD) {
+                            const d = this.dateVal(b['Tanggal Pelaksanaan']);
+                            if (!d || (fromD && d < fromD) || (toD && d > toD)) return false;
+                        }
+                        if (ql) {
+                            const parts = [normName(b['Nama Kegiatan']), normName(b['BA ID'])];
+                            (b.peserta || []).forEach(p => parts.push(this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || ''))));
+                            if (parts.join(' ').indexOf(ql) === -1) return false;
+                        }
+                        return true;
+                    };
+                    const out = [];
+                    const add = (b, jenis) => {
+                        const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
+                        if (matches(b, bl)) out.push({ b: b, bl: bl, jenis: jenis });
+                    };
+                    (this.kegiatan || []).forEach(u => (u.baPendukung || []).forEach(b => add(b, 'Pendukung')));
+                    (this.beritaAcara || []).forEach(b => add(b, 'Pelaksanaan'));
+                    return out;
+                },
+                baReportRows(filter, q) {
+                    return this.baExportRows(filter, q).map(({ b, bl, jenis }) => {
+                        const seenNpm = {};
+                        const peserta = (b.peserta || []).filter(p => {
+                            const k = String(p.npm || '').trim();
+                            if (!k || seenNpm[k]) return false;
+                            seenNpm[k] = 1;
+                            return true;
+                        });
+                        const biaya = peserta.reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
+                        return {
+                            'BA ID': b['BA ID'] || '',
+                            'Jenis BA': jenis,
+                            'Bagian': bl,
+                            'Blok': b.Blok || '',
+                            'Nama Kegiatan': b['Nama Kegiatan'] || '',
+                            'Tanggal Pelaksanaan': b['Tanggal Pelaksanaan'] ? fmtTanggalWaktu(b['Tanggal Pelaksanaan']) : '',
+                            'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0,
+                            'Biaya': biaya,
+                            'File URL': b['File URL'] || ''
+                        };
+                    });
+                },
                 exportBaTable() {
                     this.exporting = true;
                     this._loadXlsx().then(() => {
@@ -2819,25 +2863,8 @@
                             }));
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap BA');
 
-                            const detailRows = [];
-                            this.filteredBaTab.forEach(b => {
-                                const bl = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']);
-                                if (!bl) return;
-                                const seenNpm = {};
-                                const peserta = (b.peserta || []).filter(p => {
-                                    const k = String(p.npm || '').trim();
-                                    if (!k || seenNpm[k]) return false;
-                                    seenNpm[k] = 1;
-                                    return true;
-                                });
-                                const biaya = peserta.reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0);
-                                detailRows.push({
-                                    'BA ID': b['BA ID'], Bagian: bl, Blok: b.Blok || '',
-                                    'Nama Kegiatan': b['Nama Kegiatan'] || '', 'Tanggal Pelaksanaan': fmtTanggalWaktu(b['Tanggal Pelaksanaan']),
-                                    'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0, 'Biaya': biaya, 'File URL': b['File URL'] || ''
-                                });
-                            });
-                            const wsDetailBa = XLSX.utils.json_to_sheet(detailRows);
+                            const detailRows = this.baReportRows({ blok: this.baFilter.blok, bagian: this.baFilter.bagian }, this.baFilter.q);
+                            const wsDetailBa = baExportSheet(detailRows);
                             setUrlHyperlinks(wsDetailBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsDetailBa, 'Detail BA');
 
