@@ -11,6 +11,7 @@
  * Aksi yang didukung:
  *   - saveFile            : simpan berkas base64 ke Drive.
  *   - trashFile           : pindahkan berkas Drive ke trash.
+ *   - getFile             : baca isi berkas (base64 + mimeType) berdasarkan fileId.
  *   - sendStatusEmail     : render PDF ACC/Ditolak + kirim notifikasi status ke mahasiswa.
  *   - sendFinalEmail      : render PDF ACC final + kirim ke mahasiswa dan Bagian.
  *   - sendFinalToBagian   : render PDF ACC final + kirim ulang khusus ke Bagian.
@@ -251,6 +252,21 @@ function doPost(e) {
             const data = body.data || {};
             _driveBridgeSendReceipt(data);
             return _driveBridgeJson({ success: true });
+        }
+
+        if (action === 'getFile') {
+            const id = String(body.fileId || '').trim();
+            if (!id) return _driveBridgeJson({ success: false, message: 'fileId wajib diisi.' });
+            try {
+                const blob = DriveApp.getFileById(id).getBlob();
+                return _driveBridgeJson({
+                    success: true,
+                    base64: Utilities.base64Encode(blob.getBytes()),
+                    mimeType: blob.getContentType()
+                });
+            } catch (err) {
+                return _driveBridgeJson({ success: false, message: 'Gagal membaca berkas: ' + (err && err.message ? err.message : err) });
+            }
         }
 
         return _driveBridgeJson({ success: false, message: 'Aksi tidak dikenal: ' + action });
