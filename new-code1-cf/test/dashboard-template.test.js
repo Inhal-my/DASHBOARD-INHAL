@@ -238,6 +238,15 @@ describe('dashboard template', () => {
       expect(html).toContain(s);
     }
   });
+
+  it('pengajuan memakai kartu statistik, avatar, docdot, kartu mobile', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('in-statrow dash-stat flex-col');
+    expect(html).toContain('in-celluser');
+    expect(html).toContain('in-avatar');
+    expect(html).toContain('in-docdot');
+    expect(html).toContain('in-mcard');
+  });
 });
 
 describe('dashboard master chip picker', () => {
