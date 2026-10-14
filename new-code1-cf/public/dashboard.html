@@ -948,10 +948,10 @@
                             </div>
                             <div v-if="!ch.bars.length" class="py-6 text-center text-xs text-slate-400">Belum ada data.</div>
                             <div v-else class="space-y-3">
-                                <div v-for="b in ch.bars" :key="b.label" class="flex items-center gap-3">
+                                <div v-for="b in ch.bars" :key="b.label" class="flex items-center gap-2.5">
                                     <div class="w-36 shrink-0 truncate text-right text-xs font-medium text-slate-500">{{ b.label }}</div>
-                                    <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                                        <div class="h-full rounded-full transition-all duration-500" :style="{width: b.pct + '%', background: ch.grad}"></div>
+                                    <div class="in-bar-track flex-1">
+                                        <div class="in-bar-fill transition-all duration-500" :style="{width: b.pct + '%', background: ch.grad}"></div>
                                     </div>
                                     <div class="w-10 text-xs font-bold text-slate-700">{{ b.value }}</div>
                                 </div>

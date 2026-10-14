@@ -230,6 +230,13 @@ describe('dashboard template', () => {
     expect(html).toContain('class="heat-table in-heat"');
   });
 
+  it('statistik memakai primitif bar konsisten', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('in-bar-track');
+    expect(html).toContain('in-statrow dash-stat flex-col');
+    expect(html).toContain('in-bar-fill transition-all duration-500');
+  });
+
   it('primitif in-* lanjutan mockup tersedia', async () => {
     const html = await loadDashboardHtml();
     for (const s of ['.in-pageintro {', '.in-avatar {', '.in-celluser {', '.in-docdot {',
