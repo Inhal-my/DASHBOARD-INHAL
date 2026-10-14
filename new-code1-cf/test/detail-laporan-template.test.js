@@ -126,9 +126,10 @@ describe('detail-laporan template', () => {
 
   it('utilitas Tailwind markup baru terdefinisi di bundle', async () => {
     const html = await loadHtml();
-    for (const s of ['.gap-\\[5px\\] {', '.text-\\[10\\.5px\\] {', '.pb-3 {', '.pt-2 {', '.grid-cols-1 {']) {
+    for (const s of ['.gap-\\[5px\\] {', '.text-\\[10\\.5px\\] {', '.pb-3 {', '.pt-2 {']) {
       expect(html).toContain(s);
     }
+    expect(html).not.toContain('.grid-cols-1 {');
   });
 });
 
