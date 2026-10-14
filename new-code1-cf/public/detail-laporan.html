@@ -548,6 +548,12 @@
 
                     <!-- ===================== TAB 1: REKAP KESELURUHAN ===================== -->
                     <section v-if="activeTab === 'rekap'" class="space-y-6">
+                        <div class="in-pageintro">
+                            <div>
+                                <h2>Rekap Keseluruhan</h2>
+                                <p>Ringkasan seluruh pengajuan, status, biaya, dan sebaran kegiatan.</p>
+                            </div>
+                        </div>
                         <div v-if="loading" class="space-y-6">
                             <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                                 <div v-for="i in 6" :key="i" class="lap-card p-4">
@@ -565,7 +571,10 @@
                         <template v-else>
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                             <div v-for="c in summaryCards" :key="c.label" class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:6px">
-                                <div class="ic" :class="c.tint"><i :class="c.icon" :style="{color:c.color}"></i></div>
+                                <div class="top">
+                                    <div class="ic" :class="c.tint"><i :class="c.icon" :style="{color:c.color}"></i></div>
+                                    <span v-if="c.pct !== undefined" class="pct">{{ c.pct }}</span>
+                                </div>
                                 <div>
                                     <div class="num" :class="c.money ? 'text-sm' : ''">{{ c.num }}</div>
                                     <div class="lbl uppercase tracking-wider">{{ c.label }}</div>
@@ -644,6 +653,14 @@
 
                         <!-- table filters -->
                         <div class="lap-card p-4">
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                <button v-for="c in statusChips" :key="c.key" type="button"
+                                        :class="filters.status === c.key ? 'in-chip is-active' : 'in-chip'"
+                                        @click="filters.status = c.key">
+                                    <span class="dot" :style="{background:c.dot}"></span>{{ c.label }}
+                                    <span class="opacity-70">{{ c.count }}</span>
+                                </button>
+                            </div>
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-6">
                                     <label class="label">Jenis Kegiatan</label>
@@ -664,7 +681,7 @@
 
                         <!-- table -->
                         <div class="overflow-hidden lap-card">
-                            <div class="overflow-x-auto">
+                            <div class="overflow-x-auto in-desktop-only">
                                 <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
@@ -694,8 +711,13 @@
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-xs text-slate-500">{{ fmtTanggal(r.pengajuan.Timestamp) }}</td>
                                                 <td class="px-3 py-3">
-                                                    <div class="font-semibold text-slate-800">{{ r.pengajuan.NPM }}</div>
-                                                    <div class="text-xs text-slate-400">{{ r.pengajuan['Nama Lengkap'] }}</div>
+                                                    <div class="in-celluser">
+                                                        <div class="in-avatar" :style="{background: vwAvatarColor(r.pengajuan['Nama Lengkap'])}">{{ vwInitials(r.pengajuan['Nama Lengkap']) }}</div>
+                                                        <div>
+                                                            <div class="font-semibold text-slate-800">{{ r.pengajuan['Nama Lengkap'] }}</div>
+                                                            <div class="font-mono text-xs text-slate-400">{{ r.pengajuan.NPM }}</div>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td class="px-3 py-3 text-slate-600">{{ r.pengajuan['Jenis Kegiatan'] }}</td>
                                                 <td class="px-3 py-3 text-slate-600">{{ r.pengajuan.Blok }}</td>
@@ -709,8 +731,11 @@
                                                 </td>
                                                 <td class="px-3 py-3 text-slate-600">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</td>
                                                 <td class="px-4 py-3">
-                                                    <i v-if="r.pengajuan['Link Bukti Bayar'] || r.pengajuan['Link ACC INHAL']" class="bi bi-check-circle-fill text-emerald-500"></i>
-                                                    <span v-else class="text-slate-300">-</span>
+                                                    <div class="flex gap-[5px]">
+                                                        <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="in-docdot on bukti" title="Bukti Bayar" @click.stop><i class="bi bi-cash-coin"></i></a>
+                                                        <a v-if="r.pengajuan['Link ACC INHAL']" :href="safeUrl(r.pengajuan['Link ACC INHAL'])" target="_blank" rel="noopener noreferrer" class="in-docdot on acc" title="ACC INHAL" @click.stop><i class="bi bi-patch-check"></i></a>
+                                                        <span v-if="!r.pengajuan['Link Bukti Bayar'] && !r.pengajuan['Link ACC INHAL']" class="text-slate-300">-</span>
+                                                    </div>
                                                 </td>
                                                 <td class="px-4 py-3 text-right" @click.stop>
                                                     <button class="ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus pengajuan" @click="deletePengajuanRow(r)"><i class="bi bi-trash text-sm"></i></button>
@@ -722,6 +747,23 @@
                                         </template>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="in-cards">
+                                <article v-for="r in filteredRows" :key="'m-' + r.pengajuan['ID Pengajuan']" class="in-mcard cursor-pointer" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
+                                    <div class="row1">
+                                        <div class="in-celluser">
+                                            <div class="in-avatar" :style="{background: vwAvatarColor(r.pengajuan['Nama Lengkap'])}">{{ vwInitials(r.pengajuan['Nama Lengkap']) }}</div>
+                                            <span class="font-semibold text-slate-800">{{ r.pengajuan['Nama Lengkap'] }}</span>
+                                        </div>
+                                        <span :class="statusBadgeCls(r.pengajuan.Status)">{{ r.pengajuan.Status || '-' }}</span>
+                                    </div>
+                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ r.pengajuan.NPM }}</b><span>Kegiatan</span><b>{{ r.pengajuan['Jenis Kegiatan'] }} · {{ r.pengajuan.Blok }}</b><span>Pelaksanaan</span><b>{{ fmtTanggal(r.pengajuan['Tanggal Pelaksanaan']) }}</b><span>Dosen</span><b>{{ r.pengajuan.Dosen || '-' }}</b><span>Sumber</span><b>{{ (r.pengajuan.Sumber || '').trim() === 'Manual' ? 'Manual' : 'Portal' }}</b><span>Biaya</span><b class="text-brand-700">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</b></div>
+                                    <div v-if="expanded[r.pengajuan['ID Pengajuan']]" class="mt-2 border-t border-slate-100 pt-2"><expanded-detail :r="r"></expanded-detail></div>
+                                    <div class="actions">
+                                        <button class="btn-soft" @click.stop="toggleExpand(r.pengajuan['ID Pengajuan'])"><i class="bi bi-chevron-down"></i> Detail</button>
+                                        <button class="btn-soft" @click.stop="deletePengajuanRow(r)"><i class="bi bi-trash"></i> Hapus</button>
+                                    </div>
+                                </article>
                             </div>
                         </div>
                         </template>
@@ -1798,14 +1840,29 @@
                     });
                 },
                 summaryCards() {
+                    const t = this.animated.totalPendaftar || 0;
+                    const share = (n) => (t ? Math.round(((n || 0) / t) * 100) + '%' : '0%');
                     return [
-                        { label: 'Total Pendaftar', num: this.animated.totalPendaftar, icon: 'bi-people-fill', color: '#4f46e5', tint: 'bg-brand-50' },
-                        { label: 'Menunggu', num: this.animated.totalMenunggu, icon: 'bi-hourglass-split', color: '#d97706', tint: 'bg-amber-50' },
-                        { label: 'Diterima', num: this.animated.totalDiterima, icon: 'bi-check2-circle', color: '#059669', tint: 'bg-emerald-50' },
-                        { label: 'ACC', num: this.animated.totalAcc, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'bg-indigo-50' },
-                        { label: 'Ditolak', num: this.animated.totalDitolak, icon: 'bi-x-circle', color: '#e11d48', tint: 'bg-rose-50' },
-                        { label: 'Total Biaya', num: fmtRupiah(this.animated.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'bg-teal-50' }
+                        { label: 'Total Pendaftar', num: this.animated.totalPendaftar, icon: 'bi-people-fill', color: '#4f46e5', tint: 'indigo', pct: '100%' },
+                        { label: 'Menunggu', num: this.animated.totalMenunggu, icon: 'bi-hourglass-split', color: '#d97706', tint: 'amber', pct: share(this.animated.totalMenunggu) },
+                        { label: 'Diterima', num: this.animated.totalDiterima, icon: 'bi-check2-circle', color: '#059669', tint: 'sky', pct: share(this.animated.totalDiterima) },
+                        { label: 'ACC', num: this.animated.totalAcc, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'emerald', pct: share(this.animated.totalAcc) },
+                        { label: 'Ditolak', num: this.animated.totalDitolak, icon: 'bi-x-circle', color: '#e11d48', tint: 'rose', pct: share(this.animated.totalDitolak) },
+                        { label: 'Total Biaya', num: fmtRupiah(this.animated.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'teal' }
                     ];
+                },
+                statusChips() {
+                    const counts = {};
+                    let total = 0;
+                    this.rows.forEach(r => {
+                        const s = String(r.pengajuan.Status || '').trim() || 'Lainnya';
+                        counts[s] = (counts[s] || 0) + 1;
+                        total++;
+                    });
+                    const dot = { '': '#64748b', 'Menunggu': '#d97706', 'Diterima': '#0284c7', 'ACC': '#059669', 'Ditolak': '#e11d48', 'Dibatalkan': '#64748b' };
+                    const out = [{ key: '', label: 'Semua', count: total, dot: dot[''] }];
+                    ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(s => out.push({ key: s, label: s, count: counts[s] || 0, dot: dot[s] }));
+                    return out;
                 },
                 statusChart() {
                     const counts = {};
@@ -2386,6 +2443,16 @@
                 switchTab(key) { this.activeTab = key; this.mobileMenuOpen = false; this.sidebarOpen = false; },
                 safeUrl(v) {
                     return AppCommon.safeUrl(v);
+                },
+                vwInitials(n) {
+                    const p = String(n || '').trim().split(/\s+/);
+                    return ((p[0] || '')[0] || '').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+                },
+                vwAvatarColor(n) {
+                    const colors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#e11d48', '#8b5cf6', '#14b8a6', '#f97316'];
+                    let h = 0; const s = String(n || '');
+                    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+                    return colors[h % colors.length];
                 },
                 fmtRupiah,
                 fmtTanggal,

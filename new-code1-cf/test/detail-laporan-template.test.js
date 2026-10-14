@@ -125,6 +125,19 @@ describe('detail-laporan template', () => {
   });
 });
 
+describe('detail laporan tab rekap (mockup)', () => {
+  it('rekap memakai page-intro, pct, avatar, docdot, chip status, kartu mobile', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('in-pageintro');
+    expect(html).toContain('vwInitials');
+    expect(html).toContain('vwAvatarColor');
+    expect(html).toContain('statusChips');
+    expect(html).toContain('in-celluser');
+    expect(html).toContain('in-docdot');
+    expect(html).toContain('class="in-cards"');
+  });
+});
+
 describe('detail laporan tab pembayaran', () => {
   it('punya tab Data Pembayaran', async () => {
     const html = await loadHtml();
