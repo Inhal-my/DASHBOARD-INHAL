@@ -372,11 +372,11 @@ describe('dashboard responsive shell', () => {
     expect(html).toContain('sheet-item');
   });
 
-  it('FAB (+) memanggil openBaUpload untuk BA Pendukung', async () => {
+  it('FAB (+) membuka picker Kelola BA Pendukung', async () => {
     const html = await loadDashboardHtml();
     const m = html.match(/<button[^>]*class="fab-btn[^"]*"[^>]*>/);
     expect(m).not.toBeNull();
-    expect(m[0]).toContain('@click="openBaUpload()"');
+    expect(m[0]).toContain('@click="openKelolaBaPicker()"');
     expect(m[0]).toContain('Tambah Berita Acara Pendukung');
   });
 
@@ -480,5 +480,19 @@ describe('dashboard biaya override per pengajuan', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('biayaOptions() {');
     expect(html).toContain('Object.keys(seen).map(Number).sort((a, b) => a - b)');
+  });
+});
+
+describe('dashboard pensiun alur BA Pendukung lama', () => {
+  it('tidak lagi memakai alur satu-file-per-kegiatan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('openBaUpload(');
+    expect(html).not.toContain('submitBaAdmin(');
+    expect(html).not.toContain('uploadBeritaAcaraAdmin');
+  });
+  it('menyediakan picker kegiatan dan tombol Kelola BA Pendukung di baris unit', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('openKelolaBaPicker()');
+    expect(html).toContain('openKelolaBaForUnit(');
   });
 });

@@ -1015,7 +1015,7 @@
                             <p class="mt-0.5 text-sm text-slate-500">Dua tahap: unggah BA Pendukung sebelum keputusan, lalu BA Pelaksanaan setelah kegiatan di Bagian.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button class="btn-primary !py-2 text-xs" @click="openBaUpload()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
+                            <button class="btn-primary !py-2 text-xs" @click="openKelolaBaPicker()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
                             <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
                         </div>
                     </div>
@@ -1183,8 +1183,9 @@
                                                 <td class="p-3 text-xs text-slate-600">{{ (r.dosenList && r.dosenList.length) ? r.dosenList.join(', ') : '-' }}</td>
                                                 <td class="p-3">
                                                     <div class="flex flex-col gap-1 text-xs">
-                                                        <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
+                                                        <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openKelolaBaForUnit(r)">Unggah Pendukung</button>
                                                         <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
+                                                        <button v-if="!r.__orphan && unitHasPendukung(r)" class="btn-soft !px-2 !py-1 text-[11px]" @click="openKelolaBaForUnit(r)"><i class="bi bi-gear"></i> Kelola BA Pendukung</button>
                                                         <div v-for="(b, bi) in r.__pelaksanaanBa" :key="'a'+bi" class="flex items-center gap-1.5">
                                                             <button v-if="b.sumber === 'Bagian'" class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click="openKelolaBa(b.baId, b.sumber)"><i class="bi bi-pencil text-[11px]"></i></button>
                                                             <button v-if="b.sumber === 'Bagian'" class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-[11px]"></i></button>
@@ -1266,8 +1267,9 @@
                                     </div>
                                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
                                         <template v-for="(b, bi) in r.ba" :key="'d'+bi"><button class="flex h-6 w-6 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-xs"></i></button></template>
-                                        <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
+                                        <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openKelolaBaForUnit(r)">Unggah Pendukung</button>
                                         <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
+                                        <button v-if="!r.__orphan && unitHasPendukung(r)" class="btn-soft !px-2 !py-1 text-[11px]" @click="openKelolaBaForUnit(r)"><i class="bi bi-gear"></i> Kelola</button>
                                     </div>
                                 </div>
                             </div>
@@ -2037,90 +2039,6 @@
             </div>
         </transition>
 
-        <!-- ============ MODAL: UPLOAD BA ============ -->
-        <transition name="fade">
-            <div v-if="ba.modal" class="fixed inset-0 z-50 modal-overlay">
-                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeBaUpload()"></div>
-                <transition name="pop" appear>
-                    <div class="modal-panel max-w-xl shadow-lift">
-                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                            <h3 class="text-sm font-bold text-slate-900">Upload Berita Acara</h3>
-                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeBaUpload()"><i class="bi bi-x-lg"></i></button>
-                        </div>
-                        <div class="modal-body px-6 py-4">
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label class="label">Blok</label>
-                                    <select v-model="ba.form.blok" class="input" :disabled="ba.loadingOptions" @change="onBaBlokChange">
-                                        <option value="">(Pilih Blok)</option>
-                                        <option v-for="b in ba.opts.blok" :key="b" :value="b">{{ b }}</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="label">Detail Kegiatan</label>
-                                    <select v-model="ba.form.detailKey" class="input" :disabled="!ba.form.blok || ba.loadingOptions" @change="onBaDetailChange">
-                                        <option value="">(Pilih Kegiatan)</option>
-                                        <option v-for="(d, i) in baDetailOptions" :key="i" :value="i">{{ d.label }}<span v-if="d.count"> ({{ d.count }} mhs)</span></option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="label">Bagian</label>
-                                    <select v-model="ba.form.bagian" class="input">
-                                        <option value="">(Pilih Bagian)</option>
-                                        <option>Admin</option><option>SGD</option><option>KKD</option><option>Ujian</option><option>Praktikum</option>
-                                        <optgroup label="Lab Praktikum">
-                                            <option v-for="l in ba.opts.labs" :key="l" :value="l">{{ l }}</option>
-                                        </optgroup>
-                                    </select>
-                                </div>
-                                <div><label class="label">Nama Kegiatan</label><input v-model="ba.form.nama" class="input" placeholder="cth: Praktikum Anatomi"></div>
-                                <div><label class="label">Tanggal Pelaksanaan</label><input v-model="ba.form.tanggal" type="date" class="input"></div>
-                                <div><label class="label">Jam Pelaksanaan <span style="text-transform:none;font-weight:400;color:#94a3b8">(opsional)</span></label><input v-model="ba.form.jam" type="time" class="input"></div>
-                                <div class="sm:col-span-2">
-                                    <label class="label">File BA (PDF / JPG / PNG)</label>
-                                    <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
-                                        <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
-                                        <div class="min-w-0 flex-1 truncate text-xs text-slate-500">
-                                            <span v-if="!ba.form.file">Pilih file berita acara atau scan kamera...</span>
-                                            <span v-else class="font-semibold text-slate-700">{{ ba.form.file.name }}</span>
-                                        </div>
-                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onBaFile">
-                                    </div>
-                                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                                        <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="ba.form.scanBusy" @click="$refs.pendukungCamera.click()">
-                                            <i class="bi bi-camera"></i> Scan Kamera
-                                        </button>
-                                        <span v-if="ba.form.scanItems.length" class="text-[11px] text-slate-500">{{ ba.form.scanItems.length }} halaman</span>
-                                        <button v-if="ba.form.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="ba.form.scanBusy" @click="scanBuildPdf('pendukung')">
-                                            <i class="bi bi-file-earmark-pdf"></i> Buat PDF
-                                        </button>
-                                        <button v-if="ba.form.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('pendukung')">Bersihkan</button>
-                                    </div>
-                                    <input ref="pendukungCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'pendukung')">
-                                    <div v-if="ba.form.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                                        <div v-for="(it, idx) in ba.form.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
-                                            <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
-                                            <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
-                                            <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pendukung')">x</button>
-                                            <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
-                                                <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pendukung')"><i class="bi bi-arrow-left"></i></button>
-                                                <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === ba.form.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pendukung')"><i class="bi bi-arrow-right"></i></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p v-if="ba.form.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
-                                </div>
-                                <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="ba.form.catatan" rows="2" class="input"></textarea></div>
-                            </div>
-                        </div>
-                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
-                            <button class="btn-soft" @click="closeBaUpload()">Batal</button>
-                            <button class="btn-primary" @click="submitBaAdmin()"><i class="bi bi-upload"></i>Upload</button>
-                        </div>
-                    </div>
-                </transition>
-            </div>
-        </transition>
         <!-- ============ MODAL: KELOLA BA PENDUKUNG ============ -->
         <transition name="fade">
             <div v-if="kb.open" class="fixed inset-0 z-[120] modal-overlay">
@@ -2191,6 +2109,25 @@
                 </transition>
             </div>
         </transition>
+        <!-- ============ MODAL: PILIH KEGIATAN BA PENDUKUNG ============ -->
+        <transition name="fade">
+            <div v-if="kbPicker.open" class="fixed inset-0 z-[120] modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeKelolaBaPicker()"></div>
+                <div class="modal-panel max-w-lg shadow-lift">
+                    <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                        <h3 class="text-sm font-bold text-slate-900">Pilih Kegiatan — Kelola BA Pendukung</h3>
+                        <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeKelolaBaPicker()"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="modal-body max-h-[60vh] overflow-y-auto px-6 py-4">
+                        <div v-if="!(bagian.units || []).length" class="text-xs text-slate-400">Belum ada kegiatan dimuat. Buka tab Berita Acara lebih dulu.</div>
+                        <button v-for="u in (bagian.units || []).filter(x => !x.__orphan)" :key="u.key" class="mb-2 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left ring-1 ring-slate-100 hover:bg-brand-50" @click="kbPickerOpenUnit(u)">
+                            <span class="text-xs font-semibold text-slate-700">{{ u.label }}</span>
+                            <span class="text-[10px] text-slate-400">{{ u.bagian }} · {{ u.blok }} · {{ u.jumlahPeserta }} peserta</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
         <div v-if="kelola.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
             <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
                 <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
@@ -2259,7 +2196,7 @@
         </nav>
 
         <!-- ============ FAB: TAMBAH BA PENDUKUNG ============ -->
-        <button v-if="loggedIn" type="button" class="fab-btn lg:hidden" @click="openBaUpload()" aria-label="Tambah Berita Acara Pendukung" title="Tambah Berita Acara Pendukung">
+        <button v-if="loggedIn" type="button" class="fab-btn lg:hidden" @click="openKelolaBaPicker()" aria-label="Tambah Berita Acara Pendukung" title="Tambah Berita Acara Pendukung">
             <i class="bi bi-plus-lg"></i>
         </button>
 
@@ -2315,8 +2252,8 @@
         function initialData() {
             return {
                     loading: false,
-                    sectionLoading: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
-                    loaded: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
+                    sectionLoading: { pengajuan: false, stats: false, bagian: false, master: false },
+                    loaded: { pengajuan: false, stats: false, bagian: false, master: false },
                     tab: 'pengajuan',
                     sidebarOpen: false,
                     sidebarCollapsed: false,
@@ -2351,8 +2288,8 @@
                     masterBiaya: [],
                      detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
-                    ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     kb: { open: false, loading: false, data: null, pick: false, addPick: '', kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
+                    kbPicker: { open: false },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
                     dosenPick: { open: false },
@@ -2472,48 +2409,6 @@
                     const set = {};
                     this.pengajuanRows.forEach(r => { if (r.Blok) set[r.Blok] = 1; });
                     return Object.keys(set);
-                },
-                baBlokOptions() {
-                    const set = {};
-                    (this.ba.all || []).forEach(b => { if (b.Blok) set[String(b.Blok).trim()] = 1; });
-                    return Object.keys(set).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-                },
-                baView() {
-                    const q = String(this.ba.q || '').trim().toLowerCase();
-                    let rows = this.ba.rows || [];
-                    if (q) {
-                        rows = rows.filter(r => {
-                            const hay = [r['Nama Kegiatan'], r.Blok, r['BA ID'], this.resolveBaBagian(r)]
-                                .map(v => String(v || '').toLowerCase()).join(' ');
-                            return hay.indexOf(q) !== -1;
-                        });
-                    }
-                    const key = this.ba.sortKey;
-                    const dir = this.ba.sortDir === 'asc' ? 1 : -1;
-                    return rows.slice().sort((a, b) => {
-                        const va = this.baSortValue(a, key);
-                        const vb = this.baSortValue(b, key);
-                        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-                        return String(va).localeCompare(String(vb)) * dir;
-                    });
-                },
-                baStats() {
-                    const rows = this.baView || [];
-                    const blok = {};
-                    const bagian = {};
-                    const peserta = {};
-                    let count = 0;
-                    rows.forEach(r => {
-                        if (r.Blok) blok[String(r.Blok).trim()] = 1;
-                        const bag = this.resolveBaBagian(r);
-                        if (bag) bagian[bag] = 1;
-                        (r.peserta || []).forEach(p => {
-                            const k = String(p.npm || p.namaLengkap || '').trim();
-                            if (k && !peserta[k]) { peserta[k] = 1; count++; }
-                        });
-                    });
-                    if (!count) count = rows.reduce((s, r) => s + (Number(r['Jumlah Peserta']) || 0), 0);
-                    return { total: rows.length, peserta: count, blok: Object.keys(blok).length, bagian: Object.keys(bagian).length };
                 },
                 babLabOptions() {
                     return this.bagian.labs || [];
@@ -2649,16 +2544,6 @@
                     });
                     return { cols, rows };
                 },
-                baDetailOptions() {
-                    const blok = this.ba.form.blok;
-                    if (!blok) return [];
-                    return this.ba.opts.details.filter(d => d.blok === blok);
-                },
-                selectedBaDetail() {
-                    const i = Number(this.ba.form.detailKey);
-                    const list = this.baDetailOptions;
-                    return (Number.isFinite(i) && i >= 0 && i < list.length) ? list[i] : null;
-                },
                 allChecked() {
                     return this.pengajuanRows.length > 0 && this.pengajuanRows.every(r => r.checked);
                 },
@@ -2727,7 +2612,7 @@
                     });
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
+                    return !!(this.detail.open || this.kb.open || this.kbPicker.open || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
                 }
             },
             watch: {
@@ -3091,7 +2976,6 @@
                     if (tab === 'stats' && !this.loaded.stats) this.loadStats();
                     if (tab === 'ba') {
                         if (!this.loaded.bagian) this.loadBagian();
-                        if (!this.loaded.ba) this.loadBa();
                         if (this.bab.active) this.babLoad();
                     }
                     if (tab === 'master' && !this.loaded.master) this.loadMaster();
@@ -3261,22 +3145,6 @@
                         this.sectionLoading.bagian = false;
                     }
                 },
-                async loadBa() {
-                    this.sectionLoading.ba = true;
-                    try {
-                        this.ba.all = await this.run('getBeritaAcaraAdminList') || [];
-                        if (!this.bagian.labs.length) {
-                            this.bagian.labs = await this.run('getLabOptions') || [];
-                            this.bagian.options = ['Ujian', 'SGD', 'KKD'].concat(this.bagian.labs);
-                        }
-                        this.applyBaFilter();
-                        this.loaded.ba = true;
-                    } catch (e) {
-                        this.notify('Gagal memuat berita acara: ' + e, false);
-                    } finally {
-                        this.sectionLoading.ba = false;
-                    }
-                },
                 async loadMaster() {
                     this.sectionLoading.master = true;
                     try {
@@ -3406,9 +3274,6 @@
                     const p = Object.assign({}, base);
                     p.details = this.detailMap[String(p['ID Pengajuan'] || '').trim()] || [];
                     this.detail.p = p;
-                    if (!this.loaded.ba && !this.sectionLoading.ba) {
-                        this.loadBa().catch(() => {});
-                    }
                     this.detail.iForm = {
                         email: p.Email || '',
                         noHp: p['No. HP/WA'] || '',
@@ -3745,6 +3610,22 @@
                     const res = await this.run('baAdminRegenerate', this.kb.data.ba.baId);
                     this.notify((res && res.message) || 'Regenerate selesai.', !!(res && res.success));
                     await this.loadKelolaBa(this.kb.lastId);
+                },
+                openKelolaBaForUnit(u) {
+                    const p = (u && u.peserta) || [];
+                    if (!p.length) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
+                    this.openKelolaBaPendukung(p[0].idPengajuan);
+                },
+                openKelolaBaPicker() {
+                    this.kbPicker.open = true;
+                    if (this.tab !== 'ba') this.switchTab('ba');
+                },
+                closeKelolaBaPicker() { this.kbPicker.open = false; },
+                kbPickerOpenUnit(u) {
+                    const p = (u && u.peserta) || [];
+                    if (!p.length) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
+                    this.kbPicker.open = false;
+                    this.openKelolaBaPendukung(p[0].idPengajuan);
                 },
                 async updateStatus() {
                     const status = this.detail.status;
@@ -4136,115 +4017,13 @@
                 },
 
                 // ---------- berita acara ----------
-                resolveBaBagian(b) {
-                    return AppCommon.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan'], {
-                        categories: ['Ujian', 'SGD', 'KKD'],
-                        labs: this.bagian.labs
-                    });
-                },
-                applyBaFilter() {
-                    const rows = (this.ba.all || []).filter(b => {
-                        if (this.ba.fBlok && (b.Blok || '') !== this.ba.fBlok) return false;
-                        if (this.ba.fBagian && this.resolveBaBagian(b) !== this.ba.fBagian) return false;
-                        return true;
-                    });
-                    this.ba.rows = rows;
-                },
                 toggleBaExpand(baId) {
                     this.expandedBa[baId] = !this.expandedBa[baId];
-                },
-                baSort(key) {
-                    if (this.ba.sortKey === key) {
-                        this.ba.sortDir = this.ba.sortDir === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        this.ba.sortKey = key;
-                        this.ba.sortDir = (key === 'Tanggal Pelaksanaan' || key === 'Timestamp' || key === 'Peserta') ? 'desc' : 'asc';
-                    }
-                },
-                baSortIcon(key) {
-                    if (this.ba.sortKey !== key) return 'bi bi-arrow-down-up ml-1 text-slate-300';
-                    return this.ba.sortDir === 'asc' ? 'bi bi-arrow-up ml-1 text-brand-600' : 'bi bi-arrow-down ml-1 text-brand-600';
-                },
-                baSortValue(r, key) {
-                    if (key === 'Tanggal Pelaksanaan') return Date.parse(r['Tanggal Pelaksanaan']) || 0;
-                    if (key === 'Timestamp') return Date.parse(r.Timestamp) || 0;
-                    if (key === 'Peserta') return Number(r['Jumlah Peserta'] || 0);
-                    if (key === 'Blok') {
-                        const s = String(r.Blok || '').trim();
-                        return /^\d+$/.test(s) ? Number(s) : s.toLowerCase();
-                    }
-                    if (key === 'Bagian') return String(this.resolveBaBagian(r) || '').toLowerCase();
-                    return String(r['Nama Kegiatan'] || '').toLowerCase();
-                },
-                baResetFilters() {
-                    this.ba.fBlok = '';
-                    this.ba.fBagian = '';
-                    this.ba.q = '';
-                    this.applyBaFilter();
-                },
-                openBaUpload() {
-                    this.scanClear('pendukung');
-                    this.ba.form = { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 };
-                    this.ba.modal = true;
-                    this.loadBaUploadOptions();
-                },
-                closeBaUpload() {
-                    this.scanClear('pendukung');
-                    this.ba.modal = false;
-                },
-                async loadBaUploadOptions() {
-                    if (this.ba.opts.blok.length) return;
-                    this.ba.loadingOptions = true;
-                    try {
-                        const opts = await this.run('getBaUploadOptions');
-                        this.ba.opts = (opts && opts.blok) ? { blok: opts.blok || [], details: opts.details || [], labs: opts.labs || [] } : { blok: [], details: [], labs: [] };
-                    } catch (e) {
-                        this.ba.opts = { blok: [], details: [], labs: [] };
-                        this.notify('Gagal memuat opsi kegiatan: ' + e, false);
-                    } finally {
-                        this.ba.loadingOptions = false;
-                    }
-                },
-                onBaBlokChange() {
-                    this.ba.form.detailKey = '';
-                    this.ba.form.jenis = '';
-                    this.ba.form.pilihan = '';
-                    this.ba.form.detail = '';
-                    this.ba.form.bagian = '';
-                    this.ba.form.nama = '';
-                },
-                onBaDetailChange() {
-                    const d = this.selectedBaDetail;
-                    if (!d) return;
-                    this.ba.form.jenis = d.jenis;
-                    this.ba.form.pilihan = d.pilihan;
-                    this.ba.form.detail = d.detail;
-                    if (d.jenis === 'Praktikum') {
-                        const labs = this.ba.opts.labs || [];
-                        const pKey = String(d.pilihan || '').toLowerCase();
-                        const lab = labs.find(function(l) { return String(l || '').toLowerCase() === pKey; });
-                        this.ba.form.bagian = lab || 'Praktikum';
-                    } else {
-                        this.ba.form.bagian = d.jenis || this.ba.form.bagian;
-                    }
-                    const nama = [d.pilihan, d.detail].filter(Boolean).join(' — ');
-                    if (nama) this.ba.form.nama = nama;
-                },
-                onBaFile(e) {
-                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
-                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
-                    if (sizeError) {
-                        this.ba.form.file = null;
-                        e.target.value = '';
-                        this.notify(sizeError, false);
-                        return;
-                    }
-                    this.ba.form.file = f;
                 },
                 scanTarget(which) {
                     if (which === 'pelaksanaan') return this.bab.ba;
                     if (which === 'bukti') return this.detail;
-                    return this.ba.form;
+                    return null;
                 },
                 scanEnsure(t) {
                     if (!Array.isArray(t.scanItems)) t.scanItems = [];
@@ -4355,39 +4134,6 @@
                         reader.onerror = () => reject(new Error('Gagal membaca file'));
                         reader.readAsDataURL(file);
                     });
-                },
-                async submitBaAdmin() {
-                    const f = this.ba.form;
-                    if (!f.file) { this.notify('Pilih file berita acara terlebih dahulu.', false); return; }
-                    if (!f.tanggal) { this.notify('Tanggal pelaksanaan wajib diisi.', false); return; }
-                    let tanggalPelaksanaan = f.tanggal;
-                    if (f.jam) tanggalPelaksanaan += 'T' + f.jam;
-                    this.loading = true;
-                    try {
-                        const fileData = await this.readFileAsBase64(f.file);
-                        const res = await this.run('uploadBeritaAcaraAdmin', {
-                            bagian: f.bagian.trim(),
-                            blok: f.blok.trim(),
-                            namaKegiatan: f.nama.trim(),
-                            tanggalPelaksanaan: tanggalPelaksanaan,
-                            jenis: f.jenis,
-                            pilihan: f.pilihan,
-                            detail: f.detail,
-                            catatan: f.catatan.trim(),
-                            file: fileData
-                        });
-                        this.notify((res && res.message) || 'Selesai.');
-                        if (res && res.success) {
-                            this.closeBaUpload();
-                            await this.loadBa();
-                            this.loaded.bagian = false;
-                            await this.loadBagian();
-                        }
-                    } catch (e) {
-                        this.notify('Gagal: ' + e, false);
-                    } finally {
-                        this.loading = false;
-                    }
                 },
                 async deleteBaRecord(baId, sumber) {
                     const isAdminBa = String(sumber || '').trim().toLowerCase() !== 'bagian';

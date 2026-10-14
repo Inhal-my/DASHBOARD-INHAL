@@ -102,14 +102,12 @@ describe('dashboard.html integrasi scan kamera (Pendukung & Pelaksanaan)', () =>
     expect(html).toContain('<script src="/scan-pdf.js" defer></script>');
   });
 
-  it('menyediakan scan untuk BA Pendukung', async () => {
+  it('menyediakan scan untuk BA Pendukung (modal kelola)', async () => {
     const html = await loadHtml('dashboard.html');
-    expect(html).toContain('ref="pendukungCamera"');
-    expect(html).toContain("@change=\"scanOnPhotos($event, 'pendukung')\"");
-    expect(html).toContain("@click=\"scanBuildPdf('pendukung')\"");
-    expect(html).toContain("scanClear('pendukung')");
-    expect(html).toContain("scanRemove(idx, 'pendukung')");
-    expect(html).toContain("scanMove(idx, -1, 'pendukung')");
+    expect(html).toContain('ref="kbCamera"');
+    expect(html).toContain('@change="onKbPhotos($event)"');
+    expect(html).toContain('ref="kbPdf"');
+    expect(html).toContain('@change="onKbPdf($event)"');
   });
 
   it('menyediakan scan untuk BA Pelaksanaan', async () => {
