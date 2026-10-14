@@ -246,6 +246,7 @@ describe('dashboard template', () => {
     expect(html).toContain('in-avatar');
     expect(html).toContain('in-docdot');
     expect(html).toContain('in-mcard');
+    expect(html).toContain('in-desktop-only');
   });
 });
 
