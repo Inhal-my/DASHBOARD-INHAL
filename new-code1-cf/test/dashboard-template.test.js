@@ -209,6 +209,13 @@ describe('dashboard template', () => {
     expect(html).toContain('Menunggu unggah ulang');
     expect(html.indexOf("key: 'downloadDatabase'")).toBeLessThan(html.indexOf("key: 'kelolaUnggahan'"));
   });
+
+  it('token & definisi primitif mockup tersedia', async () => {
+    const html = await loadDashboardHtml();
+    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.wait {', '.in-tbl thead th {', '.in-toolbar {', '.in-input {', '.in-progdots i.all {', '.in-bar-fill.g {', '.in-heat .c.g {', '.in-tabsw {', '.in-statrow {']) {
+      expect(html).toContain(s);
+    }
+  });
 });
 
 describe('dashboard master chip picker', () => {

@@ -100,6 +100,13 @@ describe('detail-laporan template', () => {
       expect(selectors.has(sel)).toBe(true);
     }
   });
+
+  it('token & definisi primitif mockup tersedia', async () => {
+    const html = await loadHtml();
+    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.acc {', '.in-tbl thead th {', '.in-bar-fill.y {', '.in-heat .c.y {', '.lap-card {', '.lap-stat {']) {
+      expect(html).toContain(s);
+    }
+  });
 });
 
 describe('detail laporan tab pembayaran', () => {
