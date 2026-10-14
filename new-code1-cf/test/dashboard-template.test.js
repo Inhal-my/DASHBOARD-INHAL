@@ -254,6 +254,20 @@ describe('dashboard template', () => {
     expect(html).toContain('in-celluser');
   });
 
+  it('kartu mobile pengajuan mempertahankan hapus, pilih, dan berkas', async () => {
+    const html = await loadDashboardHtml();
+    const start = html.indexOf('class="in-cards"');
+    const end = html.indexOf('<!-- ============ TAB: MANUAL', start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const cards = html.slice(start, end);
+    expect(cards).toContain('deletePengajuanRow(r)');
+    expect(cards).toContain('v-model="r.checked"');
+    expect(cards).toContain('in-docdot on bukti');
+    expect(cards).toContain('in-docdot on surat');
+    expect(cards).toContain('isManual(r)');
+  });
+
   it('manual memakai panel terpisah dan catatan email', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('in-manual-note');

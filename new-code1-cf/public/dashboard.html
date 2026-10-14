@@ -722,11 +722,19 @@
                         <div class="in-cards">
                             <div v-for="r in pengajuanRows" :key="'m-'+r['ID Pengajuan']" class="in-mcard cursor-pointer" @click="openDetail(r['ID Pengajuan'])">
                                 <div class="row1">
-                                    <span class="font-semibold text-slate-800">{{ r['Nama Lengkap'] }}</span>
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <input type="checkbox" class="check shrink-0" v-model="r.checked" @click.stop>
+                                        <span class="font-semibold text-slate-800 truncate">{{ r['Nama Lengkap'] }}</span>
+                                        <span v-if="isManual(r)" class="in-badge" style="background:var(--violet-soft);color:var(--violet)"><i class="bi bi-pencil-square"></i>Manual</span>
+                                    </div>
                                     <span :class="statusBadge(r.Status)">{{ r.Status }}</span>
                                 </div>
                                 <div class="kv"><span>NPM</span><b class="font-mono">{{ r.NPM }}</b><span>Kegiatan</span><b>{{ r['Jenis Kegiatan'] }} - {{ r.Blok }}</b><span>Terdaftar</span><b>{{ formatTanggal(r.Timestamp) }}</b></div>
-                                <div class="actions"><button class="btn-soft" @click.stop="openDetail(r['ID Pengajuan'])"><i class="bi bi-eye"></i> Detail</button></div>
+                                <div class="flex gap-[5px] mb-2">
+                                    <a v-if="r['Link Bukti Bayar']" :href="safeUrl(r['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="in-docdot on bukti" title="Bukti Bayar" @click.stop><i class="bi bi-cash-coin"></i></a>
+                                    <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" rel="noopener noreferrer" class="in-docdot on surat" title="Berkas Final" @click.stop><i class="bi bi-file-earmark-text"></i></a>
+                                </div>
+                                <div class="actions"><button class="btn-soft" @click.stop="openDetail(r['ID Pengajuan'])"><i class="bi bi-eye"></i> Detail</button><button class="btn-soft text-rose-500 hover:bg-rose-50" @click.stop="deletePengajuanRow(r)" title="Hapus pengajuan"><i class="bi bi-trash"></i> Hapus</button></div>
                             </div>
                         </div>
                     </div>
