@@ -7,19 +7,18 @@ async function loadDashboardHtml() {
   return res.text();
 }
 
-describe('dashboard BA Pendukung di modal detail', () => {
-  it('memuat kartu, pemilih peserta, dan hook aksi', async () => {
-    const dashboardHtml = await loadDashboardHtml();
-    expect(dashboardHtml).toContain('baPendukung');
-    expect(dashboardHtml).toContain('openBaPendukung(');
-    expect(dashboardHtml).toContain('tambahPesertaBa(');
-    expect(dashboardHtml).toContain('unggahBerkasBa(');
-    expect(dashboardHtml).toContain('hapusPesertaBa(');
-    expect(dashboardHtml).toContain('regenerateBa(');
-    expect(dashboardHtml).toContain('Berita Acara Pendukung');
-    expect(dashboardHtml).toContain('loadSeq');
-    expect(dashboardHtml).toContain('Unggah PDF');
-    expect(dashboardHtml).toContain('accept="application/pdf"');
-    expect(dashboardHtml).toContain('onBaPendukungPdf(');
+describe('dashboard modal Kelola BA Pendukung', () => {
+  it('menyediakan modal, pemilih peserta+berkas, dan hook aksi', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('openKelolaBaPendukung(');
+    expect(html).toContain('kbStartBerkas(');
+    expect(html).toContain('baAdminAddPesertaBerkas');
+    expect(html).toContain('kbRemove(');
+    expect(html).toContain('kbRegenerate(');
+    expect(html).toContain('Kelola BA Pendukung');
+    expect(html).toContain('ref="kbCamera"');
+    expect(html).toContain('ref="kbPdf"');
+    expect(html).toContain('onKbPdf(');
+    expect(html).toContain('onKbPhotos(');
   });
 });

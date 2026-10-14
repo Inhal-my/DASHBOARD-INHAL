@@ -118,6 +118,7 @@
         .text-indigo-600 { color: #4f46e5; }
         .accent-brand-600 { accent-color: #4f46e5; }
         .z-\[130\] { z-index: 130; }
+        .z-\[120\] { z-index: 120; }
         .z-\[150\] { z-index: 150; }
         .bg-amber-400 { background-color: #fbbf24; }
         .bg-rose-400 { background-color: #fb7185; }
@@ -196,6 +197,7 @@
 .py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
 .space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.25rem; }
 .z-\[130\] { z-index: 130; }
+.z-\[120\] { z-index: 120; }
 .z-\[150\] { z-index: 150; }
 .from-brand-800 { --tw-gradient-from: #3730a3 var(--tw-gradient-from-position); --tw-gradient-to: rgb(55 48 163 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
 .via-brand-900 { --tw-gradient-to: rgb(49 46 129 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #312e81 var(--tw-gradient-via-position), var(--tw-gradient-to); }
@@ -1920,54 +1922,10 @@
                                 <div v-if="detail.p" class="ba-align-card dash-card p-4">
                                     <div class="mb-2 flex items-center justify-between gap-2">
                                         <div class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-text text-base text-brand-600"></i> Berita Acara Pendukung</div>
-                                        <div class="flex items-center gap-1">
-                                            <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600" @click="openBaPendukung()" title="Muat ulang"><i class="bi bi-arrow-clockwise text-sm"></i></button>
-                                            <button v-if="detail.baPendukung.data && detail.baPendukung.data.ba && detail.baPendukung.data.ba.needsRegen" class="btn-soft !py-1 !px-2 text-[11px]" @click="regenerateBa()"><i class="bi bi-arrow-repeat"></i> Regenerate</button>
-                                        </div>
+                                        <button class="btn-primary !py-1.5 !px-3 text-xs" @click="openKelolaBaPendukung(detail.p['ID Pengajuan'])"><i class="bi bi-gear"></i> Kelola BA Pendukung</button>
                                     </div>
-                                    <div v-if="detail.baPendukung.loading" class="text-xs text-slate-400">Memuat…</div>
-                                    <template v-else-if="detail.baPendukung.data">
-                                        <div v-if="!detail.baPendukung.data.ba" class="flex items-center gap-2">
-                                            <button class="btn-primary !py-1.5 text-xs" @click="createBaPendukung()"><i class="bi bi-plus-circle"></i> Buat BA Pendukung</button>
-                                            <span class="text-[11px] text-slate-400">Untuk kegiatan: {{ detail.baPendukung.data.kegiatan.namaKegiatan || '-' }}</span>
-                                        </div>
-                                        <template v-else>
-                                            <div class="mb-1 text-[11px] text-slate-500">{{ detail.baPendukung.data.ba.baId }} · {{ detail.baPendukung.data.ba.namaKegiatan }} · {{ detail.baPendukung.data.ba.tanggal || '-' }}</div>
-                                            <a v-if="detail.baPendukung.data.ba.fileUrl" :href="safeUrl(detail.baPendukung.data.ba.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-primary !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat PDF BA</a>
-                                            <div class="mt-3 space-y-2">
-                                                <div v-for="pe in detail.baPendukung.data.peserta" :key="pe.idPengajuan" :class="pe.isCurrent ? 'rounded-lg ring-1 ring-brand-300' : ''" class="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-100">
-                                                    <span class="text-xs font-semibold text-slate-700">{{ pe.urutan }}. {{ pe.namaLengkap || pe.npm }}</span>
-                                                    <span v-if="pe.pages" class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
-                                                    <span v-else class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
-                                                    <span class="ml-auto flex gap-1">
-                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="detail.baPendukung.uploadBusy" @click="unggahBerkasBa(pe, 'scan')"><i class="bi bi-camera"></i> {{ pe.pages ? 'Ganti berkas' : 'Unggah/Scan' }}</button>
-                                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="detail.baPendukung.uploadBusy" @click="unggahBerkasBa(pe, 'pdf')"><i class="bi bi-file-earmark-pdf"></i> Unggah PDF</button>
-                                                        <template v-if="pe.files && pe.files.length > 1">
-                                                            <a v-for="p in pe.files" :key="p.pageIndex" :href="safeUrl(p.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]" :title="'Halaman ' + (p.pageIndex + 1)"><i class="bi bi-download"></i>{{ p.pageIndex + 1 }}</a>
-                                                        </template>
-                                                        <a v-else-if="pe.pages" :href="safeUrl(berkasBaUrl(pe))" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]"><i class="bi bi-download"></i></a>
-                                                        <button class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" @click="hapusPesertaBa(pe)"><i class="bi bi-x-lg"></i></button>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="mt-3">
-                                                <button class="btn-soft !py-1.5 text-xs" @click="detail.baPendukung.showPicker = !detail.baPendukung.showPicker"><i class="bi bi-person-plus"></i> Tambah peserta</button>
-                                                <div v-if="detail.baPendukung.showPicker" class="mt-2 rounded-xl ring-1 ring-slate-200">
-                                                    <div v-if="!detail.baPendukung.data.candidates.length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan berstatus ACC/Diterima yang belum masuk BA).</div>
-                                                    <div v-for="c in detail.baPendukung.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
-                                                        <input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="!!detail.baPendukung.pickSelected[c.idPengajuan]" @change="togglePesertaBaPick(c.idPengajuan)">
-                                                        <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
-                                                    </div>
-                                                    <div class="flex justify-end gap-2 p-2">
-                                                        <button class="btn-primary !py-1.5 text-xs" @click="tambahPesertaBa()"><i class="bi bi-check2"></i> Tambahkan</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </template>
+                                    <p class="text-[11px] text-slate-400">Kelola peserta dan berkas BA Pendukung untuk kegiatan pengajuan ini. Tiap peserta wajib memiliki berkas.</p>
                                 </div>
-                                <input ref="baPendukungCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onBaPendukungPhotos($event)">
-                                <input ref="baPendukungPdf" type="file" accept="application/pdf" class="hidden" @change="onBaPendukungPdf($event)">
                             </div>
 
                             <!-- status update -->
@@ -2162,6 +2120,76 @@
                 </transition>
             </div>
         </transition>
+        <!-- ============ MODAL: KELOLA BA PENDUKUNG ============ -->
+        <transition name="fade">
+            <div v-if="kb.open" class="fixed inset-0 z-[120] modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeKelolaBaPendukung()"></div>
+                <transition name="pop" appear>
+                    <div class="modal-panel max-w-2xl shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h3 class="text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-text text-brand-600"></i> Kelola BA Pendukung</h3>
+                            <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeKelolaBaPendukung()"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body px-6 py-4">
+                            <div v-if="kb.loading" class="py-6 text-center text-xs text-slate-400">Memuat…</div>
+                            <template v-else-if="kb.data">
+                                <div class="text-xs text-slate-500">
+                                    <span class="font-semibold text-slate-700">{{ kb.data.kegiatan.namaKegiatan || '-' }}</span>
+                                    · {{ kb.data.kegiatan.bagian }} · {{ kb.data.kegiatan.blok }}
+                                    · {{ kb.data.kegiatan.tanggalPelaksanaan || '-' }}
+                                </div>
+                                <div v-if="kb.data.ba" class="mt-2 flex flex-wrap items-center gap-2">
+                                    <span class="font-mono text-xs font-bold text-slate-700">{{ kb.data.ba.baId }}</span>
+                                    <a v-if="kb.data.ba.fileUrl" :href="safeUrl(kb.data.ba.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-primary !py-1 !px-2 text-[11px]"><i class="bi bi-file-earmark-pdf"></i> Lihat PDF BA</a>
+                                    <button v-if="kb.data.ba.needsRegen" class="btn-soft !py-1 !px-2 text-[11px]" @click="kbRegenerate()"><i class="bi bi-arrow-repeat"></i> Regenerate</button>
+                                </div>
+                                <div v-else class="mt-2 text-[11px] text-slate-400">Belum ada BA. Pilih peserta dan unggah berkas untuk membuatnya.</div>
+
+                                <div class="mt-4">
+                                    <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (kb.data.peserta || []).length }})</div>
+                                    <div class="space-y-2">
+                                        <div v-for="pe in kb.data.peserta" :key="pe.idPengajuan" class="flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-100">
+                                            <span class="text-xs font-semibold text-slate-700">{{ pe.urutan }}. {{ pe.namaLengkap || pe.npm }}</span>
+                                            <span class="font-mono text-[10px] text-slate-400">{{ pe.npm }}</span>
+                                            <span v-if="pe.pages" class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
+                                            <span v-else class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
+                                            <span class="ml-auto flex gap-1">
+                                                <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="kb.uploadBusy" @click="kbStartBerkas('change-scan', pe)"><i class="bi bi-camera"></i> {{ pe.pages ? 'Ganti berkas' : 'Unggah/Scan' }}</button>
+                                                <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="kb.uploadBusy" @click="kbStartBerkas('change-pdf', pe)"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                                                <a v-if="pe.pages && pe.files && pe.files.length" :href="safeUrl(pe.files[0].fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]"><i class="bi bi-download"></i></a>
+                                                <button class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" @click="kbRemove(pe)"><i class="bi bi-x-lg"></i></button>
+                                            </span>
+                                        </div>
+                                        <div v-if="!(kb.data.peserta || []).length" class="text-[11px] text-slate-400">Belum ada peserta pada BA ini.</div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <button class="btn-soft !py-1.5 text-xs" @click="kb.pick = !kb.pick"><i class="bi bi-person-plus"></i> Tambah peserta + berkas</button>
+                                    <div v-if="kb.pick" class="mt-2 rounded-xl ring-1 ring-slate-200">
+                                        <div v-if="!(kb.data.candidates || []).length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan berstatus ACC/Diterima yang belum masuk BA).</div>
+                                        <label v-for="c in kb.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
+                                            <input type="radio" name="kbAdd" class="h-4 w-4 accent-brand-600" :checked="kb.addPick === c.idPengajuan" @change="kbTogglePick(c.idPengajuan)">
+                                            <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
+                                        </label>
+                                        <div class="flex flex-wrap justify-end gap-2 p-2">
+                                            <button class="btn-soft !py-1.5 text-xs" :disabled="kb.uploadBusy || !kb.addPick" @click="kbStartBerkas('add-scan', null)"><i class="bi bi-camera"></i> Scan kamera</button>
+                                            <button class="btn-primary !py-1.5 text-xs" :disabled="kb.uploadBusy || !kb.addPick" @click="kbStartBerkas('add-pdf', null)"><i class="bi bi-file-earmark-pdf"></i> Unggah PDF</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-if="kb.uploadBusy" class="mt-2 text-[11px] text-brand-600">Mengunggah & merakit PDF…</p>
+                            </template>
+                        </div>
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="closeKelolaBaPendukung()">Tutup</button>
+                        </div>
+                        <input ref="kbCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onKbPhotos($event)">
+                        <input ref="kbPdf" type="file" accept="application/pdf" class="hidden" @change="onKbPdf($event)">
+                    </div>
+                </transition>
+            </div>
+        </transition>
         <div v-if="kelola.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
             <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
                 <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
@@ -2320,9 +2348,10 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                    detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, baPendukung: { loading: false, data: null, showPicker: false, pickSelected: {}, uploadFor: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0 }, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                     detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', q: '', sortKey: 'Tanggal Pelaksanaan', sortDir: 'desc', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
+                    kb: { open: false, loading: false, data: null, pick: false, addPick: '', kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
                     dosenPick: { open: false },
@@ -2697,7 +2726,7 @@
                     });
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
+                    return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
                 }
             },
             watch: {
@@ -3376,7 +3405,6 @@
                     const p = Object.assign({}, base);
                     p.details = this.detailMap[String(p['ID Pengajuan'] || '').trim()] || [];
                     this.detail.p = p;
-                    this.loadBaPendukung(p['ID Pengajuan']);
                     if (!this.loaded.ba && !this.sectionLoading.ba) {
                         this.loadBa().catch(() => {});
                     }
@@ -3593,117 +3621,129 @@
                         this.detail.loading = false;
                     }
                 },
-                async openBaPendukung() {
-                    const p = this.detail.p;
-                    if (!p) return;
-                    await this.loadBaPendukung(p['ID Pengajuan']);
+                bytesToBase64(bytes) {
+                    let bin = ''; const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+                    for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+                    return btoa(bin);
                 },
-                async loadBaPendukung(idPengajuan) {
-                    const d = this.detail.baPendukung;
-                    d.loadSeq += 1;
-                    const seq = d.loadSeq;
-                    d.loading = true; d.data = null; d.pickSelected = {}; d.showPicker = false;
+                openKelolaBaPendukung(idPengajuan) {
+                    const id = String(idPengajuan || '').trim();
+                    if (!id) { this.notify('Peserta tidak ditemukan.', false); return; }
+                    this.kb.open = true;
+                    this.kb.pick = false;
+                    this.kb.addPick = '';
+                    this.kb.kind = '';
+                    this.kb.targetPid = '';
+                    this.kb.uploadItems = [];
+                    this.loadKelolaBa(id);
+                },
+                closeKelolaBaPendukung() {
+                    this.kb.open = false;
+                    this.kb.data = null;
+                    this.kb.uploadItems = [];
+                },
+                async loadKelolaBa(idPengajuan) {
+                    const kb = this.kb;
+                    kb.lastId = idPengajuan;
+                    kb.loadSeq += 1;
+                    const seq = kb.loadSeq;
+                    kb.loading = true;
                     try {
                         const res = await this.run('baAdminGet', idPengajuan);
-                        if (seq !== d.loadSeq) return;
-                        if (res && res.success) d.data = res.data;
+                        if (seq !== kb.loadSeq) return;
+                        if (res && res.success) kb.data = res.data;
                         else this.notify((res && res.message) || 'Gagal memuat BA Pendukung.', false);
                     } catch (e) {
-                        if (seq !== d.loadSeq) return;
+                        if (seq !== kb.loadSeq) return;
                         this.notify('Gagal memuat BA Pendukung: ' + e, false);
                     } finally {
-                        if (seq === d.loadSeq) d.loading = false;
+                        if (seq === kb.loadSeq) kb.loading = false;
                     }
                 },
-                async createBaPendukung() {
-                    const k = this.detail.baPendukung.data && this.detail.baPendukung.data.kegiatan;
-                    if (!k) return;
-                    const res = await this.run('baAdminCreate', { bagian: k.bagian, blok: k.blok, namaKegiatan: k.namaKegiatan, tanggalPelaksanaan: k.tanggalPelaksanaan || '', jam: '', catatan: '' });
-                    this.notify((res && res.message) || 'BA Pendukung dibuat.', !!(res && res.success));
-                    if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                kbReload() { if (this.kb.lastId) this.loadKelolaBa(this.kb.lastId); },
+                kbTogglePick(id) {
+                    const k = String(id || '');
+                    this.kb.addPick = this.kb.addPick === k ? '' : k;
                 },
-                async tambahPesertaBa() {
-                    const d = this.detail.baPendukung;
-                    const ids = Object.keys(d.pickSelected).filter((k) => d.pickSelected[k]);
-                    if (!ids.length) { this.notify('Pilih minimal satu peserta.', false); return; }
-                    const baId = d.data.ba.baId;
-                    const res = await this.run('baAdminAddPeserta', baId, ids);
-                    this.notify((res && res.success) ? (res.added + ' peserta ditambahkan.') : ((res && res.message) || 'Gagal.'), !!(res && res.success));
-                    if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                kbStartBerkas(kind, pe) {
+                    const isAdd = String(kind || '').indexOf('add') === 0;
+                    if (isAdd) {
+                        if (!this.kb.addPick) { this.notify('Pilih peserta yang akan ditambahkan terlebih dahulu.', false); return; }
+                        this.kb.kind = 'add';
+                        this.kb.targetPid = this.kb.addPick;
+                    } else {
+                        if (!pe) return;
+                        this.kb.kind = 'change';
+                        this.kb.targetPid = pe.idPengajuan;
+                    }
+                    this.kb.uploadItems = [];
+                    const isPdf = String(kind || '').indexOf('pdf') !== -1;
+                    const el = this.$refs[isPdf ? 'kbPdf' : 'kbCamera'];
+                    if (el) el.click();
                 },
-                togglePesertaBaPick(id) {
-                    const sel = this.detail.baPendukung.pickSelected;
-                    if (sel[id]) delete sel[id];
-                    else sel[id] = true;
-                },
-                unggahBerkasBa(pe, kind) {
-                    this.detail.baPendukung.uploadFor = pe.idPengajuan;
-                    this.detail.baPendukung.uploadItems = [];
-                    const ref = kind === 'pdf' ? 'baPendukungPdf' : 'baPendukungCamera';
-                    const el = this.$refs[ref]; if (el) el.click();
-                },
-                onBaPendukungPdf(e) {
+                onKbPdf(e) {
                     const files = Array.from(e.target.files || []);
                     if (e.target) e.target.value = '';
                     if (!files.length) return;
-                    const d = this.detail.baPendukung;
+                    const kb = this.kb;
                     const f = files[0];
                     const reader = new FileReader();
                     reader.onload = () => {
                         const res = String(reader.result || '');
                         const comma = res.indexOf(',');
                         const b64 = comma >= 0 ? res.slice(comma + 1) : res;
-                        d.uploadSeq += 1;
-                        d.uploadItems = [{ id: 'bap-pdf-' + d.uploadSeq, base64: b64, mime: 'application/pdf', name: f.name }];
-                        this.simpanBerkasBa();
+                        kb.uploadSeq += 1;
+                        kb.uploadItems = [{ id: 'kb-pdf-' + kb.uploadSeq, base64: b64, mime: 'application/pdf', name: f.name }];
+                        this.kbSubmit();
                     };
                     reader.onerror = () => this.notify('Gagal membaca PDF.', false);
                     reader.readAsDataURL(f);
                 },
-                onBaPendukungPhotos(e) {
+                onKbPhotos(e) {
                     const files = Array.from(e.target.files || []);
                     if (e.target) e.target.value = '';
-                    const d = this.detail.baPendukung;
+                    if (!files.length) return;
+                    const kb = this.kb;
                     Promise.all(files.map((f) => window.ScanPdf.compressToJpeg(f))).then((items) => {
-                        items.forEach((it) => { d.uploadSeq += 1; d.uploadItems.push({ id: 'bap-' + d.uploadSeq, bytes: it.bytes, width: it.width, height: it.height }); });
-                        if (d.uploadItems.length) this.simpanBerkasBa();
+                        items.forEach((it) => { kb.uploadSeq += 1; kb.uploadItems.push({ id: 'kb-' + kb.uploadSeq, bytes: it.bytes, width: it.width, height: it.height }); });
+                        if (kb.uploadItems.length) this.kbSubmit();
                     }).catch((err) => this.notify('Gagal memproses gambar: ' + err, false));
                 },
-                async simpanBerkasBa() {
-                    const d = this.detail.baPendukung;
-                    if (!d.uploadItems.length || !d.uploadFor) return;
-                    d.uploadBusy = true;
+                async kbSubmit() {
+                    const kb = this.kb;
+                    const data = kb.data;
+                    if (!kb.uploadItems.length || !kb.targetPid) return;
+                    if (!data) { this.notify('Data BA belum siap.', false); return; }
+                    kb.uploadBusy = true;
                     try {
-                        const images = Array.from(d.uploadItems).map((it) => (it.base64
+                        const images = Array.from(kb.uploadItems).map((it) => (it.base64
                             ? { data: it.base64, mimeType: it.mime || 'application/pdf', name: it.name || 'berkas.pdf' }
                             : { data: this.bytesToBase64(it.bytes), mimeType: it.mime || 'image/jpeg', name: it.name || (it.id + '.jpg') }));
-                        const res = await this.run('baAdminUploadBerkas', d.data.ba.baId, d.uploadFor, images);
+                        let res;
+                        if (kb.kind === 'add') {
+                            res = await this.run('baAdminAddPesertaBerkas', data.kegiatan, kb.targetPid, images);
+                        } else {
+                            if (!data.ba) { this.notify('BA Pendukung belum tersedia.', false); return; }
+                            res = await this.run('baAdminUploadBerkas', data.ba.baId, kb.targetPid, images);
+                        }
                         this.notify((res && res.message) || 'Berkas disimpan.', !!(res && res.success));
-                        d.uploadItems = []; d.uploadFor = '';
-                        if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                        kb.uploadItems = []; kb.targetPid = ''; kb.kind = ''; kb.addPick = '';
+                        if (res && res.success) await this.loadKelolaBa(kb.lastId);
                     } catch (e) {
                         this.notify('Gagal menyimpan berkas: ' + e, false);
-                    } finally { d.uploadBusy = false; }
+                    } finally { kb.uploadBusy = false; }
                 },
-                async hapusPesertaBa(pe) {
+                async kbRemove(pe) {
                     const ok = await this.askConfirm({ title: 'Hapus dari BA', message: 'Hapus ' + (pe.namaLengkap || pe.npm) + ' dari BA Pendukung? Berkas lama tetap tersimpan sebagai riwayat.', icon: 'bi-x-lg', tone: 'danger', confirmLabel: 'Hapus' });
                     if (!ok) return;
-                    const res = await this.run('baAdminRemovePeserta', this.detail.baPendukung.data.ba.baId, pe.idPengajuan);
+                    const res = await this.run('baAdminRemovePeserta', this.kb.data.ba.baId, pe.idPengajuan);
                     this.notify((res && res.message) || 'Dihapus.', !!(res && res.success));
-                    if (res && res.success) await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
+                    if (res && res.success) await this.loadKelolaBa(this.kb.lastId);
                 },
-                async regenerateBa() {
-                    const res = await this.run('baAdminRegenerate', this.detail.baPendukung.data.ba.baId);
+                async kbRegenerate() {
+                    const res = await this.run('baAdminRegenerate', this.kb.data.ba.baId);
                     this.notify((res && res.message) || 'Regenerate selesai.', !!(res && res.success));
-                    await this.loadBaPendukung(this.detail.p['ID Pengajuan']);
-                },
-                berkasBaUrl(pe) {
-                    return (pe && pe.fileUrl) ? pe.fileUrl : '#';
-                },
-                bytesToBase64(bytes) {
-                    let bin = ''; const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-                    for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
-                    return btoa(bin);
+                    await this.loadKelolaBa(this.kb.lastId);
                 },
                 async updateStatus() {
                     const status = this.detail.status;
