@@ -746,18 +746,18 @@
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
                                 </button>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
+                            <div class="heat-scroll overflow-x-auto">
+                                <table class="heat-table in-heat">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
-                                            <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Dosen \ Bagian</th>
-                                            <th v-for="b in dosenMatrix.cols" :key="b" class="whitespace-nowrap px-3 py-2.5 text-center">{{ b }}</th>
-                                            <th class="px-3 py-2.5 text-center">Total</th>
+                                            <th class="lab">Dosen \ Bagian</th>
+                                            <th v-for="b in dosenMatrix.cols" :key="b">{{ b }}</th>
+                                            <th>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-for="(row, ri) in dosenMatrix.rows" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
-                                            <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="sticky left-0 z-10 px-4 py-2">
+                                            <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="lab">
                                                 <div class="flex items-center gap-2">
                                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-violet-500 text-white"><i class="bi bi-person-video3 text-sm"></i></div>
                                                     <span class="font-semibold text-slate-700">{{ row.label }}</span>
@@ -767,10 +767,10 @@
                                                 <button
                                                     :disabled="!row.counts[bagianKey(b)]"
                                                     :class="[
-                                                        'inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold transition',
+                                                        'heat-cell c inline-flex h-8 w-8 items-center justify-center text-sm font-bold transition',
                                                         activeDosenCell && activeDosenCell.key === dosenCellKey(row.label, b)
                                                             ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/30'
-                                                            : (row.counts[bagianKey(b)] ? 'bg-brand-50 text-brand-700 hover:bg-brand-100' : 'text-slate-200')
+                                                            : (row.counts[bagianKey(b)] >= 2 ? 'g' : (row.counts[bagianKey(b)] === 1 ? 'y' : 'text-slate-200'))
                                                     ]"
                                                     @click="openDosenCell(row.label, b)">
                                                     {{ row.counts[bagianKey(b)] || '0' }}
@@ -779,7 +779,7 @@
                                             <td class="px-3 py-2 text-center font-bold text-slate-800">{{ row.total }}</td>
                                         </tr>
                                         <tr class="bg-slate-100">
-                                            <td class="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 font-bold text-slate-700">Total</td>
+                                            <td class="lab font-bold text-slate-700">Total</td>
                                             <td v-for="b in dosenMatrix.cols" :key="b" class="px-3 py-2.5 text-center font-bold text-slate-700">{{ dosenColTotal(b) }}</td>
                                             <td class="px-3 py-2.5 text-center font-extrabold text-slate-900">{{ dosenMatrix.grandTotal }}</td>
                                         </tr>
@@ -869,7 +869,7 @@
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
+                                <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
@@ -1048,7 +1048,7 @@
                                 </button>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
+                                <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
@@ -1075,8 +1075,8 @@
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
                                                 <td class="px-3 py-2.5 font-semibold text-slate-800">{{ r.label }}</td>
                                                 <td class="px-3 py-2.5">
-                                                    <div class="flex items-center gap-1" :title="stageTooltip(r)">
-                                                        <span v-for="(s, si) in progresDots(r)" :key="si" class="inline-block h-2 w-2 rounded-full" :class="s === 'all' ? 'bg-emerald-500' : (s === 'partial' ? 'bg-amber-400' : 'bg-slate-200')"></span>
+                                                    <div class="in-progdots" :title="stageTooltip(r)">
+                                                        <i v-for="(s, si) in progresDots(r)" :key="si" :class="s"></i>
                                                     </div>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">
@@ -1185,22 +1185,23 @@
                             <div v-for="i in 4" :key="i" class="h-14 animate-pulse lap-card"></div>
                         </div>
                         <template v-else>
-                        <div class="lap-card p-4">
-                            <div class="grid gap-3 md:grid-cols-12">
+                        <div class="lap-card">
+                            <div class="in-toolbar">
+                            <div class="grid w-full gap-3 md:grid-cols-12">
                                 <div class="md:col-span-4">
                                     <label class="label">Cari Mahasiswa</label>
-                                    <input v-model="bayarFilter.q" class="input" placeholder="NPM atau nama mahasiswa...">
+                                    <input v-model="bayarFilter.q" class="in-input" placeholder="NPM atau nama mahasiswa...">
                                 </div>
                                 <div class="md:col-span-3">
                                     <label class="label">Status Pengajuan</label>
-                                    <select v-model="bayarFilter.status" class="input">
+                                    <select v-model="bayarFilter.status" class="in-input">
                                         <option value="">Semua Status</option>
                                         <option v-for="o in statusOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
                                 </div>
                                 <div class="md:col-span-3">
                                     <label class="label">Kelengkapan Bukti</label>
-                                    <select v-model="bayarFilter.kelengkapan" class="input">
+                                    <select v-model="bayarFilter.kelengkapan" class="in-input">
                                         <option value="">Semua</option>
                                         <option value="ada">Sudah ada bukti</option>
                                         <option value="belum">Belum ada bukti</option>
@@ -1212,7 +1213,8 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5 px-4 pb-4 text-xs text-slate-400">
                                 <span class="lap-chip">{{ pembayaranSummary.total }} mahasiswa</span>
                                 <span class="lap-chip is-emerald">{{ pembayaranSummary.sudah }} sudah ada bukti</span>
                                 <span class="lap-chip is-amber">{{ pembayaranSummary.belum }} belum ada bukti</span>
@@ -1231,7 +1233,7 @@
                                 </button>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
+                                <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
@@ -1257,11 +1259,11 @@
                                                 <td class="px-3 py-2.5 font-semibold text-slate-800">{{ m.nama }}</td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ m.jumlahPengajuan }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-center">
-                                                    <span v-for="s in m.statuses" :key="s" :class="statusBadgeCls(s)" class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ s }}</span>
+                                                    <span v-for="s in m.statuses" :key="s" :class="statusBadgeCls(s)" class="ml-1">{{ s }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(m.totalBiaya) }}</td>
                                                 <td class="px-3 py-2.5 text-center">
-                                                    <span :class="m.lunas ? 'bg-emerald-50 text-emerald-700' : (m.jumlahBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
+                                                    <span :class="m.lunas ? 'in-badge acc' : (m.jumlahBukti ? 'in-badge wait' : 'in-badge cancel')" class="whitespace-nowrap" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
                                                     <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
@@ -1275,7 +1277,7 @@
                                                             <span class="font-semibold text-slate-800">{{ it.jenis }}</span>
                                                             <span class="text-slate-400">{{ it.blok }}</span>
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
-                                                            <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
+                                                            <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap">{{ it.status }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
                                                             <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
@@ -1529,13 +1531,13 @@
         }
         function statusBadgeCls(status) {
             const cls = {
-                'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
-                'Diterima': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-                'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
-                'ACC': 'bg-brand-50 text-brand-700 ring-brand-600/20',
-                'Dibatalkan': 'bg-slate-100 text-slate-500 ring-slate-500/20'
-            }[status] || 'bg-slate-100 text-slate-500 ring-slate-500/20';
-            return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ' + cls;
+                'Menunggu': 'wait',
+                'Diterima': 'recv',
+                'Ditolak': 'rej',
+                'ACC': 'acc',
+                'Dibatalkan': 'cancel'
+            }[status] || 'cancel';
+            return 'in-badge ' + cls;
         }
         function statusChipCls(status) {
             return {
