@@ -20,5 +20,6 @@ describe('dashboard modal Kelola BA Pendukung', () => {
     expect(html).toContain('ref="kbPdf"');
     expect(html).toContain('onKbPdf(');
     expect(html).toContain('onKbPhotos(');
+    expect(html).toContain('.max-w-2xl');
   });
 });
