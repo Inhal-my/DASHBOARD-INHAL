@@ -379,3 +379,12 @@ describe('detail laporan export Berita Acara (Admin + Bagian)', () => {
     expect(html).toContain("'Rekap BA'");
   });
 });
+
+describe('detail laporan tab dosen (mockup)', () => {
+  it('dosen memakai bar chart BA per dosen dan legenda heat', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('dosenBaBars');
+    expect(html).toContain('Jumlah Berita Acara per Dosen');
+    expect(html).toContain('in-heat-legend');
+  });
+});
