@@ -522,10 +522,10 @@
                     <!-- status chips -->
                     <div class="mb-4 flex flex-wrap items-center gap-2">
                         <button v-for="c in statusChips" :key="c.key" @click="setStatusChip(c.key)"
-                                :class="filters.status===c.key ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'"
-                                class="rounded-full px-3.5 py-1.5 text-xs font-semibold ring-1 transition">
+                                :class="filters.status===c.key ? 'in-chip is-active' : 'in-chip'"
+                                class="transition">
                             {{ c.label }}
-                            <span :class="filters.status===c.key ? 'text-slate-300' : 'text-slate-400'">{{ c.count }}</span>
+                            <span class="opacity-70">{{ c.count }}</span>
                         </button>
                         <button v-if="selectedIds.length" class="ml-auto inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-brand-700 transition" @click="bulkFinalEmail()">
                             <i class="bi bi-envelope-paper"></i> Kirim Email Final ({{ selectedIds.length }} terpilih)
@@ -533,8 +533,9 @@
                     </div>
 
                     <!-- filter bar -->
-                    <div class="mb-4 dash-card p-4">
-                        <div class="grid gap-3 md:grid-cols-12">
+                    <div class="mb-4 dash-card">
+                        <div class="in-toolbar">
+                        <div class="grid w-full gap-3 md:grid-cols-12">
                             <div class="md:col-span-4">
                                 <div class="relative">
                                     <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -558,6 +559,7 @@
                             </div>
 
                         </div>
+                        </div>
                     </div>
 
                     <!-- tabel pengajuan -->
@@ -573,9 +575,9 @@
                             <i class="bi bi-inbox mb-2 block text-3xl text-slate-300"></i> Belum ada data.
                         </div>
                         <div v-else class="master-table-scroll overflow-x-auto">
-                            <table class="master-table w-full text-left text-sm">
+                            <table class="in-tbl">
                                 <thead>
-                                    <tr class="text-[11px] uppercase tracking-wider text-slate-400">
+                                    <tr>
                                         <th class="w-10 px-4 py-3">
                                             <input type="checkbox" class="check" :checked="allChecked" @change="toggleAll">
                                         </th>
@@ -601,7 +603,7 @@
                                         <td class="px-4 py-2.5 font-mono text-xs text-slate-500">{{ r.NPM }}</td>
                                         <td class="px-4 py-2.5 font-semibold text-slate-800">
                                             {{ r['Nama Lengkap'] }}
-                                            <span v-if="isManual(r)" class="ml-1.5 inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-pencil-square"></i>Manual</span>
+                                            <span v-if="isManual(r)" class="ml-1.5 in-badge" style="background:var(--violet-soft);color:var(--violet)"><i class="bi bi-pencil-square"></i>Manual</span>
                                         </td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ r.Blok }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ r['Jenis Kegiatan'] }}</td>
@@ -2840,15 +2842,13 @@
                     if (dm) return dm[1] + '-' + dm[2] + '-' + dm[3] + 'T' + (dm[4] || '00') + ':' + (dm[5] || '00');
                     return s;
                 },
-                statusBadge(status) {
-                    const cls = {
-                        'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
-                        'Diterima': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-                        'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
-                        'ACC': 'bg-brand-50 text-brand-700 ring-brand-600/20',
-                        'Dibatalkan': 'bg-slate-100 text-slate-500 ring-slate-500/20'
-                    }[status] || 'bg-slate-100 text-slate-500 ring-slate-500/20';
-                    return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ' + cls;
+                statusBadge(s) {
+                    const v = String(s || '').toLowerCase();
+                    if (v.includes('acc')) return 'in-badge acc';
+                    if (v.includes('diterima') || v.includes('terima')) return 'in-badge recv';
+                    if (v.includes('tolak')) return 'in-badge rej';
+                    if (v.includes('batal')) return 'in-badge cancel';
+                    return 'in-badge wait';
                 },
                 notifBadge(status) {
                     const s = String(status || 'Belum dikirim');

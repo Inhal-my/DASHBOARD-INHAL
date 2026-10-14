@@ -216,6 +216,13 @@ describe('dashboard template', () => {
       expect(html).toContain(s);
     }
   });
+
+  it('permukaan pengajuan memakai primitif in-*', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('in-chip is-active');
+    expect(html).toContain('in-badge acc');
+    expect(html).toContain('class="in-tbl"');
+  });
 });
 
 describe('dashboard master chip picker', () => {
