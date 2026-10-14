@@ -915,6 +915,26 @@
                             </div>
                         </div>
 
+                        <div v-if="manualSameKegiatan.length" class="mb-4 overflow-hidden dash-card">
+                            <div class="panel-head">
+                                <h3><i class="bi bi-people"></i> Kegiatan ini sudah punya {{ manualSameKegiatan.length }} peserta</h3>
+                            </div>
+                            <div class="p-4">
+                                <div class="space-y-1">
+                                    <div v-for="m in manualSameKegiatan" :key="m.idPengajuan" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs ring-1 ring-slate-100">
+                                        <span class="font-semibold text-slate-700">{{ m.namaLengkap || '-' }}</span>
+                                        <span class="font-mono text-[10px] text-slate-400">{{ m.npm }}</span>
+                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(m.status)">{{ m.status || '-' }}</span>
+                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="m.hasBa ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">BA {{ m.hasBa ? 'Ada' : 'Belum' }}</span>
+                                        <button type="button" class="btn-soft !py-1 !px-2 text-[11px] ml-auto" @click="openKelolaBaPendukung(m.idPengajuan)"><i class="bi bi-gear"></i> Kelola BA</button>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn-soft !py-1.5 text-xs" @click="manualAddAnother()"><i class="bi bi-person-plus"></i> Tambah peserta lain ke kegiatan ini</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-4 overflow-hidden dash-card">
                             <div class="panel-head">
                                 <h3><i class="bi bi-check2-circle"></i> Aksi</h3>
@@ -2283,6 +2303,7 @@
                         options: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], lab: [], kegiatanLab: [] }
                     },
                     detailMap: {},
+                    baPendukungIds: [],
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
@@ -2543,6 +2564,45 @@
                         return { bagian: bag, cells };
                     });
                     return { cols, rows };
+                },
+                baPendukungSet() {
+                    const set = {};
+                    for (const id of (this.baPendukungIds || [])) set[String(id)] = true;
+                    return set;
+                },
+                manualKegiatanDetailRows() {
+                    const jenis = String(this.manual.form.jenisKegiatan || '').trim();
+                    const blok = String(this.manual.form.blok || '').trim();
+                    if (!jenis || !blok) return [];
+                    const rows = [];
+                    const push = (pilihan, detail) => rows.push({ jenis, blok, pilihan: String(pilihan || '').trim(), detail: String(detail || '').trim() });
+                    if (jenis === 'Ujian') push(this.manual.ujian.pilihan, '');
+                    else if (jenis === 'SGD') push(this.manual.sgd.pilihan, this.manual.sgd.detail);
+                    else if (jenis === 'KKD') push(this.manual.kkd.pilihan, this.manual.kkd.detail);
+                    else if (jenis === 'Praktikum') (this.manual.labs || []).forEach((l) => push(l.lab, l.kegiatanLab));
+                    return rows.filter((r) => r.pilihan || r.detail);
+                },
+                manualSameKegiatan() {
+                    const wanted = this.manualKegiatanDetailRows;
+                    if (!wanted.length) return [];
+                    const key = (r) => [this.normBagian(r.jenis), this.normBagian(r.blok), this.normBagian(r.pilihan), this.normBagian(r.detail)].join('|');
+                    const wantedKeys = {};
+                    for (const w of wanted) wantedKeys[key(w)] = true;
+                    const out = [];
+                    for (const row of this.pengajuanRows) {
+                        const id = String(row['ID Pengajuan'] || '').trim();
+                        if (!id) continue;
+                        const details = this.detailMap[id] || [];
+                        const match = details.some((d) => wantedKeys[
+                            [this.normBagian(d['Jenis Kegiatan']), this.normBagian(row.Blok), this.normBagian(d.Pilihan), this.normBagian(d.Detail)].join('|')
+                        ]);
+                        if (!match) continue;
+                        out.push({
+                            idPengajuan: id, npm: row.NPM, namaLengkap: row['Nama Lengkap'],
+                            status: row.Status, blok: row.Blok, hasBa: this.baPendukungSet[id] === true
+                        });
+                    }
+                    return out;
                 },
                 allChecked() {
                     return this.pengajuanRows.length > 0 && this.pengajuanRows.every(r => r.checked);
@@ -3023,6 +3083,11 @@
                     this.manual.labs = [{ lab: '', kegiatanLab: '', tanggal: '' }];
                     this.manual.fileSurat = null;
                 },
+                manualAddAnother() {
+                    this.manual.form.npm = '';
+                    this.manual.form.namaLengkap = '';
+                    this.notify('Isi NPM & Nama peserta baru. Blok, Jenis, dan Detail tetap sama.');
+                },
                 async submitManual() {
                     const f = this.manual.form;
                     const jenis = f.jenisKegiatan;
@@ -3094,6 +3159,7 @@
                         this.stats = b.stats || this.stats;
                         this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
                         this.detailMap = b.detailMap || {};
+                        this.baPendukungIds = b.baPendukungIds || [];
                         this.masterBiaya = b.masterBiaya || [];
                         this.dosenOptions = b.dosen || this.dosenOptions;
                         this.loaded.pengajuan = true;
