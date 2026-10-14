@@ -260,6 +260,15 @@ describe('dashboard template', () => {
     expect(html).toContain('Identitas Mahasiswa');
     expect(html).toContain('Notifikasi email tidak dikirim');
   });
+
+  it('BA memakai banner proses, ringkasan basum, legenda heat', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('class="in-proc"');
+    expect(html).toContain('ba-cards in-basum');
+    expect(html).toContain('class="in-heat-legend"');
+    expect(html).toContain('BA Pendukung');
+    expect(html).toContain('BA Pelaksanaan');
+  });
 });
 
 describe('dashboard master chip picker', () => {

@@ -368,6 +368,7 @@
         .in-basum .p { font-size:11px; font-weight:600; color:var(--ink-400); }
         .in-basum .n.rose { color:var(--rose); }
         .in-basum .n.emerald { color:var(--emerald); }
+        @media (max-width:1100px){ .in-basum { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         .in-heat-legend { display:flex; gap:12px; font-size:11px; color:var(--ink-500); margin-top:10px; }
         .in-heat-legend .dot { width:9px; height:9px; border-radius:99px; display:inline-block; margin-right:4px; }
         .in-manual-note { display:flex; align-items:center; gap:8px; background:var(--violet-soft); color:var(--violet); border-radius:12px; padding:12px; font-size:12.5px; font-weight:600; margin-bottom:16px; }
@@ -982,31 +983,37 @@
                     </div>
 
                     <template v-else>
-                        <div class="ba-cards mb-4">
-                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
-                                <div class="lbl uppercase tracking-wider">Kegiatan</div>
-                                <div class="num">{{ bagianSummary.totalKegiatan }}</div>
-                                <div class="text-[11px] font-semibold text-slate-400">semua kegiatan</div>
+                        <div class="in-proc">
+                            <div class="p"><div class="n">1</div><div><div class="t">BA Pendukung</div><div class="s">Diunggah admin tiap bagian</div></div></div>
+                            <div class="arrow"><i class="bi bi-arrow-right"></i></div>
+                            <div class="p p2"><div class="n">2</div><div><div class="t">BA Pelaksanaan</div><div class="s">Diunggah setelah kegiatan selesai</div></div></div>
+                        </div>
+
+                        <div class="ba-cards in-basum mb-4">
+                            <button class="b" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
+                                <div class="k">Kegiatan</div>
+                                <div class="n">{{ bagianSummary.totalKegiatan }}</div>
+                                <div class="p">semua kegiatan</div>
                             </button>
-                            <div class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px">
-                                <div class="lbl uppercase tracking-wider">Peserta</div>
-                                <div class="num">{{ bagianSummary.totalPeserta }}</div>
-                                <div class="text-[11px] font-semibold text-slate-400">mahasiswa</div>
+                            <div class="b">
+                                <div class="k">Peserta</div>
+                                <div class="n">{{ bagianSummary.totalPeserta }}</div>
+                                <div class="p">mahasiswa</div>
                             </div>
-                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
-                                <div class="lbl uppercase tracking-wider">BA Pendukung</div>
-                                <div class="num">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
-                                <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pendukungPct }}% sudah ada</div>
+                            <button class="b" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
+                                <div class="k">BA Pendukung</div>
+                                <div class="n">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
+                                <div class="p">{{ bagianSummary.pendukungPct }}% sudah ada</div>
                             </button>
-                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
-                                <div class="lbl uppercase tracking-wider">BA Pelaksanaan</div>
-                                <div class="num text-emerald-600">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
-                                <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pelaksanaanPct }}% dari yang Diterima</div>
+                            <button class="b" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
+                                <div class="k">BA Pelaksanaan</div>
+                                <div class="n emerald">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
+                                <div class="p">{{ bagianSummary.pelaksanaanPct }}% dari yang Diterima</div>
                             </button>
-                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
-                                <div class="lbl uppercase tracking-wider">Belum lengkap</div>
-                                <div class="num text-rose-600">{{ bagianSummary.belumLengkap }}</div>
-                                <div class="text-[11px] font-semibold text-slate-400">perlu ditindak</div>
+                            <button class="b" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
+                                <div class="k">Belum lengkap</div>
+                                <div class="n rose">{{ bagianSummary.belumLengkap }}</div>
+                                <div class="p">perlu ditindak</div>
                             </button>
                         </div>
 
@@ -1049,9 +1056,10 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                    <div class="mt-2 flex gap-3 text-[11px] text-slate-400">
-                                        <span>lengkap</span><span>sebagian</span><span>belum</span>
-                                        <span class="ml-auto">Geser ke kanan jika blok banyak.</span>
+                                    <div class="in-heat-legend">
+                                        <span><span class="dot" style="background:#10b981"></span>Lengkap</span>
+                                        <span><span class="dot" style="background:#fbbf24"></span>Sebagian</span>
+                                        <span><span class="dot" style="background:#e2e8f0"></span>Belum</span>
                                     </div>
                                 </div>
                             </div>
