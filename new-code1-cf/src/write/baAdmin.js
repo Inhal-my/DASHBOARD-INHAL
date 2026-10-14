@@ -432,3 +432,27 @@ export async function regenerateBaAdminPdf(db, baId, ctx) {
     regenLocks.delete(id);
   }
 }
+
+export async function addBaAdminPesertaWithBerkas(db, kegiatan, idPengajuan, images, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const pid = str(idPengajuan);
+  if (!pid) return { success: false, message: 'Pengajuan kosong.' };
+  const list = Array.isArray(images) ? images : [];
+  if (!list.length) return { success: false, message: 'Berkas wajib diunggah untuk menambah peserta BA.' };
+
+  const created = await getOrCreateBaAdmin(db, kegiatan, ctx);
+  if (!created.success) return created;
+
+  const set = await setBaAdminPesertaBerkas(db, created.baId, pid, list, ctx);
+  if (!set.success) return set;
+
+  const regen = await regenerateBaAdminPdf(db, created.baId, ctx);
+  return {
+    success: true,
+    baId: created.baId,
+    pages: set.pages,
+    fileUrl: (regen && regen.fileUrl) || '',
+    needsRegen: !(regen && regen.success),
+    message: (regen && regen.success) ? 'Peserta & berkas disimpan.' : ((regen && regen.message) || 'Berkas tersimpan, PDF gagal dirakit.')
+  };
+}
