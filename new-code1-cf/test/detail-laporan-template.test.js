@@ -114,6 +114,15 @@ describe('detail-laporan template', () => {
     expect(html).toContain('class="in-tbl"');
     expect(html).toContain('class="in-statrow');
   });
+
+  it('primitif in-* lanjutan mockup tersedia', async () => {
+    const html = await loadHtml();
+    for (const s of ['.in-pageintro {', '.in-avatar {', '.in-celluser {', '.in-docdot {',
+      '.in-docdot.on.bukti {', '.in-cards {', '.in-mcard {', '.in-proc {', '.in-basum {',
+      '.in-heat-legend {', '.panel-head {', '.in-statrow .ic.indigo {', '.in-bar-fill.brand {']) {
+      expect(html).toContain(s);
+    }
+  });
 });
 
 describe('detail laporan tab pembayaran', () => {
