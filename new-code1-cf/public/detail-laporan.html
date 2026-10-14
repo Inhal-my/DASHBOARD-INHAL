@@ -572,7 +572,7 @@
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                             <div v-for="c in summaryCards" :key="c.label" class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:6px">
                                 <div class="top">
-                                    <div class="ic" :class="c.tint"><i :class="c.icon" :style="{color:c.color}"></i></div>
+                                    <div class="ic" :class="c.tint"><i :class="c.icon"></i></div>
                                     <span v-if="c.pct !== undefined" class="pct">{{ c.pct }}</span>
                                 </div>
                                 <div>

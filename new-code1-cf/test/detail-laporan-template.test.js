@@ -136,6 +136,11 @@ describe('detail laporan tab rekap (mockup)', () => {
     expect(html).toContain('in-docdot');
     expect(html).toContain('class="in-cards"');
   });
+  it('ikon kartu statistik monokrom mengikuti tint (tanpa inline color)', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('<div class="ic" :class="c.tint"><i :class="c.icon"></i></div>');
+    expect(html).not.toContain(':style="{color:c.color}"');
+  });
 });
 
 describe('detail laporan tab pembayaran', () => {
