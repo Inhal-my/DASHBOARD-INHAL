@@ -266,6 +266,7 @@ describe('dashboard template', () => {
     expect(html).toContain('class="in-proc"');
     expect(html).toContain('ba-cards in-basum');
     expect(html).toContain('class="in-heat-legend"');
+    expect(html).toContain('Geser ke kanan jika blok banyak.');
     expect(html).toContain('BA Pendukung');
     expect(html).toContain('BA Pelaksanaan');
   });
