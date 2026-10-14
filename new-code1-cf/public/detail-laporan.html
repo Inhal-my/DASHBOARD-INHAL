@@ -1079,7 +1079,7 @@
                                 <div class="lap-card-sub">Baris = Blok, kolom = Bagian. Klik angka pada cell untuk melihat detail kegiatan &amp; pesertanya</div>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
+                                <table class="heat-table in-heat w-full">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left">Blok \ Bagian</th>
@@ -1094,10 +1094,10 @@
                                                 <button
                                                     :disabled="!row.counts[bagianKey(b)]"
                                                     :class="[
-                                                        'inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold transition',
+                                                        'heat-cell c inline-flex h-8 w-8 items-center justify-center text-sm font-bold transition',
                                                         activeMatrixCell && activeMatrixCell.key === matrixCellKey(row.label, b)
                                                             ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/30'
-                                                            : (row.counts[bagianKey(b)] ? 'bg-brand-50 text-brand-700 hover:bg-brand-100' : 'text-slate-200')
+                                                            : (row.counts[bagianKey(b)] >= 2 ? 'g' : (row.counts[bagianKey(b)] === 1 ? 'y' : 'text-slate-200'))
                                                     ]"
                                                     @click="filterByMatrixCell(b, row.label)">
                                                     {{ row.counts[bagianKey(b)] || '0' }}
@@ -1112,6 +1112,10 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="in-heat-legend px-3 pb-3">
+                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ kegiatan</span>
+                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 kegiatan</span>
                             </div>
                         </div>
                         </template>

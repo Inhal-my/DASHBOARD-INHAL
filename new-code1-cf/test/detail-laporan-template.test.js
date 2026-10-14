@@ -388,3 +388,11 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('in-heat-legend');
   });
 });
+
+describe('detail laporan tab bagian (mockup)', () => {
+  it('bagian memakai primitif heat yang konsisten', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('heat-table in-heat w-full');
+    expect(html).toContain('Baris = Blok, kolom = Bagian');
+  });
+});
