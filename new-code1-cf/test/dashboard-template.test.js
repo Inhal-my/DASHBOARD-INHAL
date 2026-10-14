@@ -81,9 +81,9 @@ describe('dashboard template', () => {
     expect(html).toContain('Unggah BA Pelaksanaan');
     expect(html).toContain('Belum Pendukung');
     expect(html).toContain('Belum Pelaksanaan');
-    expect(html).toContain('xlsx@0.18.5');
+    expect(html).toContain('/vendor/xlsx.full.min.js');
     expect(html).toContain('_loadXlsx()');
-    expect(html).not.toContain('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>');
+    expect(html).not.toContain('<script src="/vendor/xlsx.full.min.js"></script>');
   });
 
   it('removes the header Pelaksanaan button and uses emerald for the row action', async () => {
