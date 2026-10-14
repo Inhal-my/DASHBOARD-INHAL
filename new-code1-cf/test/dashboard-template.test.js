@@ -270,6 +270,22 @@ describe('dashboard template', () => {
     expect(html).toContain('BA Pendukung');
     expect(html).toContain('BA Pelaksanaan');
   });
+
+  it('utilitas Tailwind khusus yang dipakai markup terdefinisi', async () => {
+    const html = await loadDashboardHtml();
+    for (const s of [
+      '.lg\\:grid-cols-5', '.mb-\\[18px\\]', '.gap-\\[14px\\]', '.gap-\\[5px\\]', '.min-w-\\[220px\\]',
+      '.ring-2 {', '.ring-brand-600', '.ring-brand-400', '.bg-brand-50\\/70',
+      '.opacity-70', '.p-1\\.5', '.ml-1\\.5', '.px-1 ', '.\\!px-2',
+      '.hover\\:bg-brand-50:hover', '.hover\\:underline:hover', '.disabled\\:opacity-30:disabled',
+      '.left-1', '.right-1', '.top-1', '.object-cover', '.w-28',
+      '.grid-cols-3', '.md\\:grid-cols-2', '.sm\\:w-60',
+      '.ring-amber-100', '.bg-slate-900\\/60', '.bg-slate-900\\/70', '.bg-rose-600\\/90', '.text-amber-800',
+      '.section-title', '.master-grid'
+    ]) {
+      expect(html).toContain(s);
+    }
+  });
 });
 
 describe('dashboard master chip picker', () => {
