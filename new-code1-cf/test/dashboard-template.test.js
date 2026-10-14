@@ -246,6 +246,13 @@ describe('dashboard template', () => {
     expect(html).toContain("'m-'+r['ID Pengajuan']");
     expect(html).toContain('in-celluser');
   });
+
+  it('manual memakai panel terpisah dan catatan email', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('in-manual-note');
+    expect(html).toContain('Identitas Mahasiswa');
+    expect(html).toContain('Notifikasi email tidak dikirim');
+  });
 });
 
 describe('dashboard master chip picker', () => {

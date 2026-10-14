@@ -371,6 +371,9 @@
         .in-heat-legend { display:flex; gap:12px; font-size:11px; color:var(--ink-500); margin-top:10px; }
         .in-heat-legend .dot { width:9px; height:9px; border-radius:99px; display:inline-block; margin-right:4px; }
         .in-manual-note { display:flex; align-items:center; gap:8px; background:var(--violet-soft); color:var(--violet); border-radius:12px; padding:12px; font-size:12.5px; font-weight:600; margin-bottom:16px; }
+        .panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+        .panel-head h3 { margin:0; font-size:13.5px; font-weight:800; display:flex; align-items:center; gap:8px; color:var(--ink-900); }
+        .panel-head .sub { font-size:11.5px; color:var(--ink-400); font-weight:500; margin-top:2px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
@@ -700,178 +703,199 @@
                         <p class="mt-0.5 text-sm text-slate-500">Daftarkan pengajuan atas nama mahasiswa tanpa melalui portal. Email &amp; No. HP tidak wajib.</p>
                     </div>
 
-                    <div class="overflow-hidden dash-card">
-                        <div class="flex items-center gap-3 border-b border-slate-100 p-5">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-pencil-square"></i></div>
-                            <div>
-                                <h2 class="text-base font-bold text-slate-900">Form Pengajuan Manual</h2>
-                                <p class="text-xs text-slate-400">Sumber data akan ditandai <span class="font-semibold text-slate-500">Manual</span></p>
+                    <div class="in-manual-note"><i class="bi bi-envelope-slash"></i> Notifikasi email tidak dikirim untuk pengajuan manual.</div>
+
+                    <form @submit.prevent="submitManual()">
+                        <div class="mb-4 overflow-hidden dash-card">
+                            <div class="panel-head">
+                                <h3><i class="bi bi-person-vcard"></i> Identitas Mahasiswa</h3>
+                                <span class="sub">Nama terisi otomatis dari NPM.</span>
+                            </div>
+                            <div class="p-5">
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="label">NPM <span class="text-rose-500">*</span></label>
+                                        <input v-model="manual.form.npm" class="input" placeholder="Contoh: 2201010001" @blur="onManualNpmBlur()">
+                                        <p class="mt-1 text-[11px] text-slate-400">Nama akan terisi otomatis bila NPM terdaftar.</p>
+                                    </div>
+                                    <div>
+                                        <label class="label">Nama Lengkap <span class="text-rose-500">*</span></label>
+                                        <input v-model="manual.form.namaLengkap" class="input" placeholder="Nama sesuai KTP">
+                                    </div>
+                                    <div>
+                                        <label class="label">Blok <span class="text-rose-500">*</span></label>
+                                        <select v-model="manual.form.blok" class="input">
+                                            <option value="">-- Pilih Blok --</option>
+                                            <option v-for="b in manual.options.blok" :key="'mb'+b" :value="b">{{ b }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="label">Jenis Kegiatan <span class="text-rose-500">*</span></label>
+                                        <select v-model="manual.form.jenisKegiatan" class="input">
+                                            <option value="">-- Pilih Jenis --</option>
+                                            <option value="Ujian">Ujian</option>
+                                            <option value="SGD">SGD</option>
+                                            <option value="KKD">KKD</option>
+                                            <option value="Praktikum">Praktikum</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <form class="p-5" @submit.prevent="submitManual()">
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label class="label">NPM <span class="text-rose-500">*</span></label>
-                                    <input v-model="manual.form.npm" class="input" placeholder="Contoh: 2201010001" @blur="onManualNpmBlur()">
-                                    <p class="mt-1 text-[11px] text-slate-400">Nama akan terisi otomatis bila NPM terdaftar.</p>
-                                </div>
-                                <div>
-                                    <label class="label">Nama Lengkap <span class="text-rose-500">*</span></label>
-                                    <input v-model="manual.form.namaLengkap" class="input" placeholder="Nama sesuai KTP">
-                                </div>
-                                <div>
-                                    <label class="label">Blok <span class="text-rose-500">*</span></label>
-                                    <select v-model="manual.form.blok" class="input">
-                                        <option value="">-- Pilih Blok --</option>
-                                        <option v-for="b in manual.options.blok" :key="'mb'+b" :value="b">{{ b }}</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="label">Jenis Kegiatan <span class="text-rose-500">*</span></label>
-                                    <select v-model="manual.form.jenisKegiatan" class="input">
-                                        <option value="">-- Pilih Jenis --</option>
-                                        <option value="Ujian">Ujian</option>
-                                        <option value="SGD">SGD</option>
-                                        <option value="KKD">KKD</option>
-                                        <option value="Praktikum">Praktikum</option>
-                                    </select>
-                                </div>
+                        <div class="mb-4 overflow-hidden dash-card">
+                            <div class="panel-head">
+                                <h3><i class="bi bi-list-check"></i> Detail Kegiatan</h3>
                             </div>
-
-                            <div v-if="manual.form.jenisKegiatan==='Ujian'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
-                                <div class="section-title"><i class="bi bi-pencil-square"></i> Detail Ujian</div>
-                                <div class="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
-                                        <select v-model="manual.ujian.pilihan" class="input">
-                                            <option value="">-- Pilih Ujian --</option>
-                                            <option v-for="o in manual.options.ujian" :key="'mu'+o" :value="o">{{ o }}</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="label">Tanggal Ujian <span class="text-rose-500">*</span></label>
-                                        <input v-model="manual.ujian.tanggal" type="date" class="input">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div v-if="manual.form.jenisKegiatan==='SGD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
-                                <div class="section-title"><i class="bi bi-people"></i> Detail SGD</div>
-                                <div class="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
-                                        <select v-model="manual.sgd.pilihan" class="input">
-                                            <option value="">-- Pilih SGD --</option>
-                                            <option v-for="o in manual.options.sgd" :key="'ms'+o" :value="o">{{ o }}</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="label">Detail SGD</label>
-                                        <select v-model="manual.sgd.detail" class="input">
-                                            <option value="">-- Pilih Detail --</option>
-                                            <option v-for="o in manual.options.detailSgd" :key="'msd'+o" :value="o">{{ o }}</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="label">Tanggal SGD <span class="text-rose-500">*</span></label>
-                                        <input v-model="manual.sgd.tanggal" type="date" class="input">
+                            <div class="p-5">
+                                <div v-if="manual.form.jenisKegiatan==='Ujian'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                    <div class="section-title"><i class="bi bi-pencil-square"></i> Detail Ujian</div>
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
+                                            <select v-model="manual.ujian.pilihan" class="input">
+                                                <option value="">-- Pilih Ujian --</option>
+                                                <option v-for="o in manual.options.ujian" :key="'mu'+o" :value="o">{{ o }}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="label">Tanggal Ujian <span class="text-rose-500">*</span></label>
+                                            <input v-model="manual.ujian.tanggal" type="date" class="input">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div v-if="manual.form.jenisKegiatan==='KKD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
-                                <div class="section-title"><i class="bi bi-journal-text"></i> Detail KKD</div>
-                                <div class="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
-                                        <select v-model="manual.kkd.pilihan" class="input">
-                                            <option value="">-- Pilih KKD --</option>
-                                            <option v-for="o in manual.options.kkd" :key="'mk'+o" :value="o">{{ o }}</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="label">Detail KKD</label>
-                                        <select v-model="manual.kkd.detail" class="input">
-                                            <option value="">-- Pilih Detail --</option>
-                                            <option v-for="o in manual.options.detailKkd" :key="'mkd'+o" :value="o">{{ o }}</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="label">Tanggal KKD <span class="text-rose-500">*</span></label>
-                                        <input v-model="manual.kkd.tanggal" type="date" class="input">
+                                <div v-if="manual.form.jenisKegiatan==='SGD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                    <div class="section-title"><i class="bi bi-people"></i> Detail SGD</div>
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
+                                            <select v-model="manual.sgd.pilihan" class="input">
+                                                <option value="">-- Pilih SGD --</option>
+                                                <option v-for="o in manual.options.sgd" :key="'ms'+o" :value="o">{{ o }}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="label">Detail SGD</label>
+                                            <select v-model="manual.sgd.detail" class="input">
+                                                <option value="">-- Pilih Detail --</option>
+                                                <option v-for="o in manual.options.detailSgd" :key="'msd'+o" :value="o">{{ o }}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="label">Tanggal SGD <span class="text-rose-500">*</span></label>
+                                            <input v-model="manual.sgd.tanggal" type="date" class="input">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div v-if="manual.form.jenisKegiatan==='Praktikum'" class="mt-4">
-                                <div class="section-title"><i class="bi bi-ui-checks"></i> Detail Praktikum</div>
-                                <div class="space-y-3">
-                                    <div v-for="(lab, i) in manual.labs" :key="'ml'+i" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
-                                        <div class="grid gap-3 md:grid-cols-3">
-                                            <div>
-                                                <label class="label">Pilihan Lab</label>
-                                                <select v-model="lab.lab" class="input !py-2 text-sm">
-                                                    <option value="">-- Lab --</option>
-                                                    <option v-for="o in manual.options.lab" :key="'mlab'+o" :value="o">{{ o }}</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="label">Kegiatan Lab</label>
-                                                <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
-                                                    <option value="">-- Kegiatan --</option>
-                                                    <option v-for="o in manual.options.kegiatanLab" :key="'mkl'+o" :value="o">{{ o }}</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="label">Tanggal Praktikum</label>
-                                                <input v-model="lab.tanggal" type="date" class="input !py-2 text-sm">
+                                <div v-if="manual.form.jenisKegiatan==='KKD'" class="mt-4 rounded-2xl bg-slate-50/70 p-4">
+                                    <div class="section-title"><i class="bi bi-journal-text"></i> Detail KKD</div>
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
+                                            <select v-model="manual.kkd.pilihan" class="input">
+                                                <option value="">-- Pilih KKD --</option>
+                                                <option v-for="o in manual.options.kkd" :key="'mk'+o" :value="o">{{ o }}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="label">Detail KKD</label>
+                                            <select v-model="manual.kkd.detail" class="input">
+                                                <option value="">-- Pilih Detail --</option>
+                                                <option v-for="o in manual.options.detailKkd" :key="'mkd'+o" :value="o">{{ o }}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="label">Tanggal KKD <span class="text-rose-500">*</span></label>
+                                            <input v-model="manual.kkd.tanggal" type="date" class="input">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="manual.form.jenisKegiatan==='Praktikum'" class="mt-4">
+                                    <div class="section-title"><i class="bi bi-ui-checks"></i> Detail Praktikum</div>
+                                    <div class="space-y-3">
+                                        <div v-for="(lab, i) in manual.labs" :key="'ml'+i" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
+                                            <div class="grid gap-3 md:grid-cols-3">
+                                                <div>
+                                                    <label class="label">Pilihan Lab</label>
+                                                    <select v-model="lab.lab" class="input !py-2 text-sm">
+                                                        <option value="">-- Lab --</option>
+                                                        <option v-for="o in manual.options.lab" :key="'mlab'+o" :value="o">{{ o }}</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="label">Kegiatan Lab</label>
+                                                    <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
+                                                        <option value="">-- Kegiatan --</option>
+                                                        <option v-for="o in manual.options.kegiatanLab" :key="'mkl'+o" :value="o">{{ o }}</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="label">Tanggal Praktikum</label>
+                                                    <input v-model="lab.tanggal" type="date" class="input !py-2 text-sm">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="my-5 h-px bg-slate-100"></div>
-
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div class="md:col-span-2">
-                                    <label class="label">Keterangan (Opsional)</label>
-                                    <textarea v-model="manual.form.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="label">Upload Surat Keterangan (PDF / JPG / PNG, Opsional)</label>
-                                    <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
-                                        <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
-                                        <div class="text-xs text-slate-500">
-                                            <span v-if="!manual.fileSurat">Opsional. Maksimal 5 MB.</span>
-                                            <span v-else class="font-semibold text-slate-700">{{ manual.fileSurat.name }}</span>
+                        <div class="mb-4 overflow-hidden dash-card">
+                            <div class="panel-head">
+                                <h3><i class="bi bi-card-text"></i> Keterangan</h3>
+                            </div>
+                            <div class="p-5">
+                                <div class="grid gap-4">
+                                    <div>
+                                        <label class="label">Keterangan (Opsional)</label>
+                                        <textarea v-model="manual.form.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="label">Upload Surat Keterangan (PDF / JPG / PNG, Opsional)</label>
+                                        <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
+                                            <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
+                                            <div class="text-xs text-slate-500">
+                                                <span v-if="!manual.fileSurat">Opsional. Maksimal 5 MB.</span>
+                                                <span v-else class="font-semibold text-slate-700">{{ manual.fileSurat.name }}</span>
+                                            </div>
+                                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onManualFileSurat($event)">
                                         </div>
-                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onManualFileSurat($event)">
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="label">Status Awal</label>
-                                    <select v-model="manual.form.status" class="input">
-                                        <option value="Menunggu">Menunggu</option>
-                                        <option value="Diterima">Diterima</option>
-                                    </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 overflow-hidden dash-card">
+                            <div class="panel-head">
+                                <h3><i class="bi bi-check2-circle"></i> Aksi</h3>
+                            </div>
+                            <div class="p-5">
+                                <div class="flex flex-wrap items-end justify-between gap-4">
+                                    <div class="min-w-[220px]">
+                                        <label class="label">Status Awal</label>
+                                        <select v-model="manual.form.status" class="input">
+                                            <option value="Menunggu">Menunggu</option>
+                                            <option value="Diterima">Diterima</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button type="submit" class="btn-primary !py-3" :disabled="manual.saving">
+                                            <svg v-if="manual.saving" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                            </svg>
+                                            <i v-else class="bi bi-save"></i>
+                                            {{ manual.saving ? 'Menyimpan...' : 'Simpan Pengajuan Manual' }}
+                                        </button>
+                                        <button type="button" class="btn-soft !py-3" :disabled="manual.saving" @click="resetManualForm()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="mt-6 flex flex-wrap gap-2">
-                                <button type="submit" class="btn-primary !py-3" :disabled="manual.saving">
-                                    <svg v-if="manual.saving" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                    </svg>
-                                    <i v-else class="bi bi-save"></i>
-                                    {{ manual.saving ? 'Menyimpan...' : 'Simpan Pengajuan Manual' }}
-                                </button>
-                                <button type="button" class="btn-soft !py-3" :disabled="manual.saving" @click="resetManualForm()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </section>
 
                 <!-- ============ PANEL DIAGNOSTIK ============ -->
