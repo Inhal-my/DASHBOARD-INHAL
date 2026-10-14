@@ -18,7 +18,7 @@ async function seed(id, npm, nama) {
 const keg = { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20' };
 
 describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
-  it.skip('keduanya tetap tampil saat BA Pelaksanaan diunggah (BUG: ter-dedup di getBagianAggregation seenBa saat file_url sama/kosong)', async () => {
+  it('keduanya tetap tampil saat BA Pelaksanaan diunggah (file_url sama/kosong)', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah');
     await seed('INHAL-2', '2201010002', 'Budi');
     const a = await adminCtx();
@@ -34,6 +34,8 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     const unit = (agg.units || []).find((u) => u.blok === 'A');
     expect(unit.baPendukung.length).toBe(1);
     expect(unit.baPelaksanaan.length).toBe(1);
+    expect(unit.pesertaDenganBa).toBe(1);
+    expect(unit.jumlahPeserta).toBe(2);
   });
 
   it('keduanya tampil jika file_url berbeda', async () => {

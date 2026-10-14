@@ -245,7 +245,7 @@ export async function getBagianAggregation(db, ctx) {
     await collectBa('berita_acara', 'berita_acara_peserta', 'Bagian'),
     await collectBa('berita_acara_admin', 'berita_acara_admin_peserta', 'Admin')
   )) {
-    const dk = [norm(b.bagian), b.blok.toLowerCase(), normKegiatanText(b.namaKegiatan), b.tanggal, b.fileUrl].join('|');
+    const dk = [b.sumber, norm(b.bagian), b.blok.toLowerCase(), normKegiatanText(b.namaKegiatan), b.tanggal, b.fileUrl].join('|');
     if (seenBa.has(dk)) continue;
     seenBa.add(dk);
     baList.push(b);
