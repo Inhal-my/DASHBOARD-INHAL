@@ -2438,16 +2438,6 @@
                         { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-lg', tint: 'rose', color: '#e11d48' }
                     ];
                 },
-                pengajuanInitials(n) {
-                    const p = String(n || '').trim().split(/\s+/);
-                    return ((p[0] || '')[0] || '').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
-                },
-                pengajuanAvatarColor(n) {
-                    const colors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#e11d48', '#8b5cf6', '#14b8a6', '#f97316'];
-                    let h = 0; const s = String(n || '');
-                    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-                    return colors[h % colors.length];
-                },
                 blokOptions() {
                     const set = {};
                     this.pengajuanRows.forEach(r => { if (r.Blok) set[r.Blok] = 1; });
@@ -2718,6 +2708,16 @@
             methods: {
                 safeUrl(v) {
                     return AppCommon.safeUrl(v);
+                },
+                pengajuanInitials(n) {
+                    const p = String(n || '').trim().split(/\s+/);
+                    return ((p[0] || '')[0] || '').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+                },
+                pengajuanAvatarColor(n) {
+                    const colors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#e11d48', '#8b5cf6', '#14b8a6', '#f97316'];
+                    let h = 0; const s = String(n || '');
+                    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+                    return colors[h % colors.length];
                 },
                 // ---------- helpers ----------
                 run(fn, ...args) {

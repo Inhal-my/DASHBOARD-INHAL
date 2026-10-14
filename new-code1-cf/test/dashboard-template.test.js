@@ -300,6 +300,21 @@ describe('dashboard template', () => {
       expect(html).toContain(s);
     }
   });
+
+  it('helper berargumen didefinisikan sebagai methods, bukan computed', async () => {
+    const html = await loadDashboardHtml();
+    const computedStart = html.indexOf('computed: {');
+    const watchStart = html.indexOf('watch: {', computedStart);
+    expect(computedStart).toBeGreaterThan(-1);
+    expect(watchStart).toBeGreaterThan(computedStart);
+    const computedBlock = html.slice(computedStart, watchStart);
+    const parameterized = computedBlock.match(/\n {16}[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]/g) || [];
+    expect(parameterized).toEqual([]);
+    const methodsStart = html.indexOf('methods: {', watchStart);
+    const methodsBlock = html.slice(methodsStart);
+    expect(methodsBlock).toMatch(/\n\s+pengajuanInitials\s*\([^)]/);
+    expect(methodsBlock).toMatch(/\n\s+pengajuanAvatarColor\s*\([^)]/);
+  });
 });
 
 describe('dashboard master chip picker', () => {
