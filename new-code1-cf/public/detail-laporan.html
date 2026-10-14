@@ -1343,6 +1343,20 @@
                             <div v-for="i in 4" :key="i" class="h-14 animate-pulse lap-card"></div>
                         </div>
                         <template v-else>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:6px">
+                                <div class="top"><div class="ic indigo"><i class="bi bi-cash-stack"></i></div></div>
+                                <div><div class="num text-sm">{{ fmtRupiah(pembayaranSummary.biaya) }}</div><div class="lbl uppercase tracking-wider">Total Tagihan</div></div>
+                            </div>
+                            <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:6px">
+                                <div class="top"><div class="ic emerald"><i class="bi bi-check2-circle"></i></div><span class="pct">{{ sharePct(pembayaranSummary.sudah, pembayaranSummary.total) }}</span></div>
+                                <div><div class="num">{{ pembayaranSummary.sudah }}</div><div class="lbl uppercase tracking-wider">Sudah Bayar</div></div>
+                            </div>
+                            <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:6px">
+                                <div class="top"><div class="ic rose"><i class="bi bi-x-circle"></i></div><span class="pct">{{ sharePct(pembayaranSummary.belum, pembayaranSummary.total) }}</span></div>
+                                <div><div class="num">{{ pembayaranSummary.belum }}</div><div class="lbl uppercase tracking-wider">Belum Bayar</div></div>
+                            </div>
+                        </div>
                         <div class="lap-card">
                             <div class="in-toolbar">
                             <div class="grid w-full gap-3 md:grid-cols-12">
@@ -1390,7 +1404,7 @@
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
                                 </button>
                             </div>
-                            <div class="overflow-x-auto">
+                            <div class="overflow-x-auto in-desktop-only">
                                 <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
@@ -1447,6 +1461,32 @@
                                         </template>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="in-cards">
+                                <article v-for="m in pembayaranFiltered" :key="'m-' + m.npm" class="in-mcard cursor-pointer" @click="toggleExpand('bayar:' + m.npm)">
+                                    <div class="row1">
+                                        <span class="font-semibold text-slate-800">{{ m.nama }}</span>
+                                        <span :class="m.lunas ? 'in-badge acc' : (m.jumlahBukti ? 'in-badge wait' : 'in-badge cancel')">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
+                                    </div>
+                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ m.npm }}</b><span>Kegiatan</span><b>{{ m.jumlahPengajuan }}</b><span>Total Biaya</span><b class="text-brand-700">{{ fmtRupiah(m.totalBiaya) }}</b></div>
+                                    <div v-if="expanded['bayar:' + m.npm]" class="mt-2 space-y-2 border-t border-slate-100 pt-2">
+                                        <div v-for="(it, i) in m.items" :key="i" class="rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="font-semibold text-slate-800">{{ it.jenis }}</span>
+                                                <span :class="statusBadgeCls(it.status)">{{ it.status }}</span>
+                                                <span class="font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
+                                            </div>
+                                            <div class="mt-1 flex flex-wrap gap-2">
+                                                <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" rel="noopener noreferrer" class="btn-acc" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="actions">
+                                        <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                        <button class="btn-soft" @click.stop="toggleExpand('bayar:' + m.npm)"><i class="bi bi-chevron-down"></i> Rincian</button>
+                                    </div>
+                                </article>
                             </div>
                         </div>
                         </template>
@@ -2515,6 +2555,9 @@
                 vwInitials(n) {
                     const p = String(n || '').trim().split(/\s+/);
                     return ((p[0] || '')[0] || '').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+                },
+                sharePct(n, d) {
+                    return d ? Math.round(((n || 0) / d) * 100) + '%' : '0%';
                 },
                 vwAvatarColor(n) {
                     const colors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#e11d48', '#8b5cf6', '#14b8a6', '#f97316'];

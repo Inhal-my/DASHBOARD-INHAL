@@ -170,6 +170,12 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain("'Pembayaran Detail'");
     expect(html).toContain("'Link ACC INHAL': it.linkAcc");
   });
+  it('pembayaran memakai band kartu statistik dan kartu mobile', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('sharePct');
+    expect(html).toContain('>Total Tagihan</div>');
+    expect(html).toContain('in-mcard');
+  });
 });
 
 describe('detail laporan kejelasan tampilan', () => {
