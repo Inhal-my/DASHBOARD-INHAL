@@ -65,7 +65,7 @@ Masalah yang dilaporkan dan **telah diverifikasi**:
 | D10 | Pencocokan "kegiatan yang sama" memakai kunci yang sama dengan `kegiatanKey` (`jenis + blok + pilihan + detail`). |
 | D11 | Batas berkas: **50 halaman** dan **20 MB** per BA (mengikuti `BA_ADMIN_MAX_PAGES`/`BA_ADMIN_MAX_BYTES`, `src/write/baAdmin.js:147-148`). |
 | D12 | Regenerate gagal → tandai `needs_regen=1`, `file_url` lama dipertahankan, tombol retry (sudah ada). |
-| D13 | Tampilkan `pesertaDenganBa` (`src/read/dashboard.js:287`, sudah dihitung, belum dipakai) sebagai indikator "BA Pendukung x/y peserta". |
+| D13 | Tampilkan `pesertaDenganBa`/`jumlahPeserta` pada unit (kolom BA Pendukung) sebagai indikator "BA Pendukung x/y peserta". **Perbaikan pasca-review**: `pesertaDenganBa` hanya menghitung peserta dengan BA **Pendukung** (`sumber='Admin'`), bukan BA Pelaksanaan, agar tidak menyesatkan (mis. BA Pelaksanaan lengkap tanpa BA Pendukung tetap "0/2"). |
 
 ## 5. Model Konseptual
 
@@ -95,6 +95,8 @@ dk = sumber|bagian|blok|normKegiatan(nama)|tanggal|fileUrl  // SESUDAH (+ sumber
 5. `regenerateBaAdminPdf`.
 
 Bila berkas kosong → **tolak** dengan pesan jelas (D6).
+
+**Perbaikan pasca-review** (memenuhi D7): `getOrCreateBaAdmin` membuat baris lebih dulu, lalu validasi/unggah dapat gagal. Bila penyimpanan gagal **dan** baris BA baru saja dibuat (`created === true`), baris `berita_acara_admin` (beserta peserta/berkas nol) dihapus kembali sehingga tidak ada BA kosong. BA yang sudah ada tidak dihapus saat gagal.
 
 ### 6.3 RPC
 `src/rpc.js` — tambah `baAdminAddPesertaBerkas: (db,args,ctx) => addBaAdminPesertaWithBerkas(db, args[0], args[1], args[2], ctx)`.

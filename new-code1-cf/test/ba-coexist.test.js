@@ -56,4 +56,24 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     expect(unit.baPendukung.length).toBe(1);
     expect(unit.baPelaksanaan.length).toBe(1);
   });
+
+  it('pesertaDenganBa hanya menghitung BA Pendukung, bukan BA Pelaksanaan', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah');
+    await seed('INHAL-2', '2201010002', 'Budi');
+    const a = await adminCtx();
+    await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
+      peserta: [
+        { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' },
+        { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'Diterima' }
+      ]
+    }, 'SGD', await bagianCtx());
+
+    const agg = await getBagianAggregation(env.DB, a);
+    const unit = (agg.units || []).find((u) => u.blok === 'A');
+    expect(unit.baPelaksanaan.length).toBe(1);
+    expect(unit.baPendukung.length).toBe(0);
+    expect(unit.pesertaDenganBa).toBe(0);
+    expect(unit.jumlahPeserta).toBe(2);
+  });
 });

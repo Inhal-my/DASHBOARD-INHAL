@@ -34,6 +34,32 @@ describe('addBaAdminPesertaWithBerkas', () => {
     expect(Number(n)).toBe(0);
   });
 
+  it('tidak meninggalkan BA kosong bila berkas tidak valid (BA baru)', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const bad = { data: PNG, mimeType: 'text/plain', name: 'x.txt' };
+    const res = await addBaAdminPesertaWithBerkas(env.DB, keg, 'INHAL-1', [bad], ctx);
+    expect(res.success).toBe(false);
+    const n = (await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin').first()).n;
+    expect(Number(n)).toBe(0);
+  });
+
+  it('tidak menghapus BA yang sudah ada bila penambahan berkas gagal', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    stubBridge();
+    const ok = await addBaAdminPesertaWithBerkas(env.DB, keg, 'INHAL-1', [IMG], ctx);
+    expect(ok.success).toBe(true);
+    const bad = { data: PNG, mimeType: 'text/plain', name: 'x.txt' };
+    const res = await addBaAdminPesertaWithBerkas(env.DB, keg, 'INHAL-2', [bad], ctx);
+    expect(res.success).toBe(false);
+    const n = (await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin').first()).n;
+    expect(Number(n)).toBe(1);
+    const p = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id=?1 AND active=1').bind(ok.baId).first();
+    expect(Number(p.n)).toBe(1);
+  });
+
   it('membuat BA, peserta aktif, berkas aktif, dan PDF tergenerate', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
     const ctx = await adminCtx();

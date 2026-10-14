@@ -286,14 +286,14 @@ export async function getBagianAggregation(db, ctx) {
 
   const npmSet = new Set();
   for (const u of units) {
+    u.baPendukung = u.ba.filter((b) => b.sumber === 'Admin');
+    u.baPelaksanaan = u.ba.filter((b) => b.sumber === 'Bagian');
     const covered = new Set();
-    for (const b of u.ba) for (const p of b.peserta) if (p.npm) covered.add(p.npm);
+    for (const b of u.baPendukung) for (const p of b.peserta) if (p.npm) covered.add(p.npm);
     u.pesertaDenganBa = u.peserta.filter((p) => p.npm && covered.has(p.npm)).length;
     u.jumlahPeserta = u.peserta.length;
     u.statusBa = u.ba.length ? 'ada' : 'belum';
     u.statusFinal = u.linkFinal ? 'ada' : 'belum';
-    u.baPendukung = u.ba.filter((b) => b.sumber === 'Admin');
-    u.baPelaksanaan = u.ba.filter((b) => b.sumber === 'Bagian');
     u.pelaksanaan = u.baPelaksanaan.map((b) => ({ baId: b.baId, tanggal: b.tanggal, jam: b.jam || '', dosen: b.dosen || '' }));
     const dosenSet = [];
     for (const b of u.baPelaksanaan) if (b.dosen && dosenSet.indexOf(b.dosen) === -1) dosenSet.push(b.dosen);

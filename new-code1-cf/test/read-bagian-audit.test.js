@@ -30,7 +30,8 @@ describe('getBagianAggregation audit', () => {
     const data = await getBagianAggregation(env.DB, await adminCtx());
     expect(data.units).toHaveLength(1);
     expect(data.units[0].statusBa).toBe('ada');
-    expect(data.units[0].pesertaDenganBa).toBe(1);
+    // BA Pelaksanaan (sumber Bagian) tidak dihitung sebagai BA Pendukung.
+    expect(data.units[0].pesertaDenganBa).toBe(0);
     expect(data.summary).toMatchObject({ totalKegiatan: 1, denganBa: 1, denganBaBagian: 1, denganBaAdmin: 0, belumBa: 0 });
     expect(data.summary.persenLengkap).toBe(100);
   });

@@ -444,7 +444,19 @@ export async function addBaAdminPesertaWithBerkas(db, kegiatan, idPengajuan, ima
   if (!created.success) return created;
 
   const set = await setBaAdminPesertaBerkas(db, created.baId, pid, list, ctx);
-  if (!set.success) return set;
+  if (!set.success) {
+    if (created.created) {
+      // Jangan tinggalkan BA kosong bila validasi/unggah gagal setelah baris dibuat (D7).
+      try {
+        await db.batch([
+          db.prepare('DELETE FROM berita_acara_admin_berkas WHERE ba_id = ?1').bind(created.baId),
+          db.prepare('DELETE FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(created.baId),
+          db.prepare('DELETE FROM berita_acara_admin WHERE ba_id = ?1').bind(created.baId)
+        ]);
+      } catch (e) {}
+    }
+    return set;
+  }
 
   const regen = await regenerateBaAdminPdf(db, created.baId, ctx);
   return {

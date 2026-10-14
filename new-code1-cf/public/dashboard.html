@@ -191,6 +191,7 @@
 .max-w-lg { max-width: 32rem; }
 .max-w-2xl { max-width: 42rem; }
 .max-w-\[120px\] { max-width: 120px; }
+.max-h-\[60vh\] { max-height: 60vh; }
 .rounded-md { border-radius: .375rem; }
 .pb-4 { padding-bottom: 1rem; }
 .pt-3 { padding-top: .75rem; }
@@ -3087,6 +3088,7 @@
                 manualAddAnother() {
                     this.manual.form.npm = '';
                     this.manual.form.namaLengkap = '';
+                    this.manual.form.keterangan = '';
                     this.notify('Isi NPM & Nama peserta baru. Blok, Jenis, dan Detail tetap sama.');
                 },
                 async submitManual() {
@@ -3563,6 +3565,7 @@
                     const id = String(idPengajuan || '').trim();
                     if (!id) { this.notify('Peserta tidak ditemukan.', false); return; }
                     this.kb.open = true;
+                    this.kb.data = null;
                     this.kb.pick = false;
                     this.kb.addPick = '';
                     this.kb.kind = '';
@@ -3585,15 +3588,24 @@
                         const res = await this.run('baAdminGet', idPengajuan);
                         if (seq !== kb.loadSeq) return;
                         if (res && res.success) kb.data = res.data;
-                        else this.notify((res && res.message) || 'Gagal memuat BA Pendukung.', false);
+                        else { kb.data = null; this.notify((res && res.message) || 'Gagal memuat BA Pendukung.', false); }
                     } catch (e) {
                         if (seq !== kb.loadSeq) return;
+                        kb.data = null;
                         this.notify('Gagal memuat BA Pendukung: ' + e, false);
                     } finally {
                         if (seq === kb.loadSeq) kb.loading = false;
                     }
                 },
                 kbReload() { if (this.kb.lastId) this.loadKelolaBa(this.kb.lastId); },
+                async refreshBaPendukungIndicators() {
+                    this.loaded.bagian = false;
+                    this.loadBagian();
+                    try {
+                        const b = await this.run('getDashboardBootstrap');
+                        if (b) this.baPendukungIds = b.baPendukungIds || [];
+                    } catch (e) {}
+                },
                 kbTogglePick(id) {
                     const k = String(id || '');
                     this.kb.addPick = this.kb.addPick === k ? '' : k;
@@ -3636,6 +3648,7 @@
                     const files = Array.from(e.target.files || []);
                     if (e.target) e.target.value = '';
                     if (!files.length) return;
+                    if (!window.ScanPdf || typeof window.ScanPdf.compressToJpeg !== 'function') { this.notify('Pemindai gambar tidak tersedia.', false); return; }
                     const kb = this.kb;
                     Promise.all(files.map((f) => window.ScanPdf.compressToJpeg(f))).then((items) => {
                         items.forEach((it) => { kb.uploadSeq += 1; kb.uploadItems.push({ id: 'kb-' + kb.uploadSeq, bytes: it.bytes, width: it.width, height: it.height }); });
@@ -3662,19 +3675,25 @@
                         this.notify((res && res.message) || 'Berkas disimpan.', !!(res && res.success));
                         kb.uploadItems = []; kb.targetPid = ''; kb.kind = ''; kb.addPick = '';
                         if (res && res.success) await this.loadKelolaBa(kb.lastId);
+                        if (res && res.success) await this.refreshBaPendukungIndicators();
                     } catch (e) {
                         this.notify('Gagal menyimpan berkas: ' + e, false);
                     } finally { kb.uploadBusy = false; }
                 },
                 async kbRemove(pe) {
+                    const ba = this.kb.data && this.kb.data.ba;
+                    if (!ba) { this.notify('BA Pendukung belum tersedia.', false); return; }
                     const ok = await this.askConfirm({ title: 'Hapus dari BA', message: 'Hapus ' + (pe.namaLengkap || pe.npm) + ' dari BA Pendukung? Berkas lama tetap tersimpan sebagai riwayat.', icon: 'bi-x-lg', tone: 'danger', confirmLabel: 'Hapus' });
                     if (!ok) return;
-                    const res = await this.run('baAdminRemovePeserta', this.kb.data.ba.baId, pe.idPengajuan);
+                    const res = await this.run('baAdminRemovePeserta', ba.baId, pe.idPengajuan);
                     this.notify((res && res.message) || 'Dihapus.', !!(res && res.success));
                     if (res && res.success) await this.loadKelolaBa(this.kb.lastId);
+                    if (res && res.success) await this.refreshBaPendukungIndicators();
                 },
                 async kbRegenerate() {
-                    const res = await this.run('baAdminRegenerate', this.kb.data.ba.baId);
+                    const ba = this.kb.data && this.kb.data.ba;
+                    if (!ba) { this.notify('BA Pendukung belum tersedia.', false); return; }
+                    const res = await this.run('baAdminRegenerate', ba.baId);
                     this.notify((res && res.message) || 'Regenerate selesai.', !!(res && res.success));
                     await this.loadKelolaBa(this.kb.lastId);
                 },
