@@ -323,6 +323,14 @@
         .in-statrow .num { font-size:21px; font-weight:800; }
         .in-statrow .lbl { font-size:11.5px; color:var(--ink-500); font-weight:600; }
         .in-statrow .pct { margin-left:auto; font-size:11px; font-weight:800; color:var(--ink-400); }
+        .in-statrow .ic.indigo { background:var(--brand-soft); color:var(--brand); }
+        .in-statrow .ic.amber { background:var(--amber-soft); color:var(--amber); }
+        .in-statrow .ic.emerald { background:var(--emerald-soft); color:var(--emerald); }
+        .in-statrow .ic.sky { background:var(--sky-soft); color:var(--sky); }
+        .in-statrow .ic.rose { background:var(--rose-soft); color:var(--rose); }
+        .in-statrow .ic.violet { background:var(--violet-soft); color:var(--violet); }
+        .in-statrow .ic.teal { background:var(--teal-soft); color:var(--teal); }
+        .in-statrow .ic.slate { background:#f1f5f9; color:#64748b; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
@@ -836,18 +844,18 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-7">
-                        <div v-for="c in statCards" :key="c.label" class="dash-stat p-4">
-                            <div class="mb-3 flex items-center justify-between">
-                                <div class="flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
-                                    <i :class="c.icon" class="text-base" :style="{color:c.color}"></i>
+                        <div v-for="c in statCards" :key="c.label" class="in-statrow dash-stat flex-col" style="align-items:flex-start;gap:6px">
+                            <div class="flex w-full items-center justify-between">
+                                <div class="ic" :class="c.tint">
+                                    <i :class="c.icon" :style="{color:c.color}"></i>
                                 </div>
                                 <span v-if="c.trend" class="stat-trend" :class="c.trend.up ? 'up' : 'down'">
                                     <i :class="c.trend.up ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>{{ c.trend.pct }}%
                                 </span>
                                 <span v-else-if="c.pct !== undefined" class="stat-share">{{ c.pct }}%</span>
                             </div>
-                            <div class="text-xl font-extrabold tracking-tight text-slate-900" :class="c.money ? 'text-[15px] leading-tight' : ''">{{ c.num }}</div>
-                            <div class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ c.label }}</div>
+                            <div class="num" :class="c.money ? 'text-[15px] leading-tight' : ''">{{ c.num }}</div>
+                            <div class="lbl">{{ c.label }}</div>
                         </div>
                     </div>
 
@@ -894,29 +902,29 @@
 
                     <template v-else>
                         <div class="ba-cards mb-4">
-                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Kegiatan</div>
-                                <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.totalKegiatan }}</div>
+                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
+                                <div class="lbl uppercase tracking-wider">Kegiatan</div>
+                                <div class="num">{{ bagianSummary.totalKegiatan }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">semua kegiatan</div>
                             </button>
-                            <div class="dash-stat p-3">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Peserta</div>
-                                <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.totalPeserta }}</div>
+                            <div class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px">
+                                <div class="lbl uppercase tracking-wider">Peserta</div>
+                                <div class="num">{{ bagianSummary.totalPeserta }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">mahasiswa</div>
                             </div>
-                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Pendukung</div>
-                                <div class="mt-1 text-xl font-extrabold text-slate-900">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
+                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
+                                <div class="lbl uppercase tracking-wider">BA Pendukung</div>
+                                <div class="num">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pendukungPct }}% sudah ada</div>
                             </button>
-                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">BA Pelaksanaan</div>
-                                <div class="mt-1 text-xl font-extrabold text-emerald-600">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
+                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
+                                <div class="lbl uppercase tracking-wider">BA Pelaksanaan</div>
+                                <div class="num text-emerald-600">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">{{ bagianSummary.pelaksanaanPct }}% dari yang Diterima</div>
                             </button>
-                            <button class="dash-stat p-3 text-left" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
-                                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Belum lengkap</div>
-                                <div class="mt-1 text-xl font-extrabold text-rose-600">{{ bagianSummary.belumLengkap }}</div>
+                            <button class="in-statrow dash-stat text-left" style="flex-direction:column;align-items:flex-start;gap:2px" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
+                                <div class="lbl uppercase tracking-wider">Belum lengkap</div>
+                                <div class="num text-rose-600">{{ bagianSummary.belumLengkap }}</div>
                                 <div class="text-[11px] font-semibold text-slate-400">perlu ditindak</div>
                             </button>
                         </div>
@@ -931,8 +939,8 @@
                                             <span class="font-semibold text-slate-700">{{ g.bagian }}</span>
                                             <span class="text-slate-400">{{ g.done }}/{{ g.total }} · {{ g.pct }}%</span>
                                         </div>
-                                        <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                                            <div class="h-full rounded-full" :class="heatFillClass(g.done, g.total)" :style="{ width: g.pct + '%' }"></div>
+                                        <div class="in-bar-track mt-1">
+                                            <div class="in-bar-fill" :class="heatFillClass(g.done, g.total)" :style="{ width: g.pct + '%' }"></div>
                                         </div>
                                     </button>
                                 </div>
@@ -941,18 +949,18 @@
                                 <h2 class="border-b border-slate-100 p-4 text-sm font-bold text-slate-900">Peta Kelengkapan Bagian × Blok</h2>
                                 <div v-if="!bagianHeatmap.cols.length" class="px-4 py-8 text-center text-sm text-slate-400">Belum ada data.</div>
                                 <div v-else class="heat-scroll p-4">
-                                    <table class="heat-table text-xs">
+                                    <table class="heat-table in-heat">
                                         <thead>
                                             <tr>
-                                                <th class="heat-sticky p-2 text-left font-bold text-slate-400">Bagian</th>
+                                                <th class="lab heat-sticky p-2 text-left font-bold text-slate-400">Bagian</th>
                                                 <th v-for="b in bagianHeatmap.cols" :key="'hc' + b" class="whitespace-nowrap p-2 text-center font-bold text-slate-500">{{ b }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr v-for="r in bagianHeatmap.rows" :key="'hr' + r.bagian">
-                                                <td class="heat-sticky p-2 font-semibold text-slate-700">{{ r.bagian }}</td>
+                                                <td class="lab heat-sticky p-2 font-semibold text-slate-700">{{ r.bagian }}</td>
                                                 <td v-for="b in bagianHeatmap.cols" :key="'h' + r.bagian + b" class="p-1 text-center">
-                                                    <button v-if="r.cells[b].total" class="heat-cell w-full rounded-lg px-2 py-1.5 font-bold ring-1 ring-inset" :class="heatCellClass(r.cells[b].done, r.cells[b].total)" @click="openBagianFromCell(r.bagian, b)">
+                                                    <button v-if="r.cells[b].total" class="heat-cell c" :class="heatCellClass(r.cells[b].done, r.cells[b].total)" @click="openBagianFromCell(r.bagian, b)">
                                                         {{ r.cells[b].done }}/{{ r.cells[b].total }}
                                                     </button>
                                                     <span v-else class="text-slate-300">–</span>
@@ -1024,8 +1032,10 @@
                                                     </template>
                                                 </td>
                                                 <td class="p-3">
-                                                    <button type="button" class="flex cursor-pointer items-center gap-1" :title="stageTooltip(r) + ' - klik untuk riwayat'" @click="openRiwayat(r)">
-                                                        <span v-for="(s, si) in r.__progres" :key="si" class="inline-block h-2.5 w-2.5 rounded-full" :class="s === 'all' ? 'bg-emerald-500' : (s === 'partial' ? 'bg-amber-400' : 'bg-slate-200')"></span>
+                                                    <button type="button" class="flex cursor-pointer items-center" :title="stageTooltip(r) + ' - klik untuk riwayat'" @click="openRiwayat(r)">
+                                                        <span class="in-progdots">
+                                                            <i v-for="(s, si) in r.__progres" :key="si" :class="s"></i>
+                                                        </span>
                                                     </button>
                                                 </td>
                                                 <td class="p-3 text-xs text-slate-600">
@@ -1427,7 +1437,7 @@
                                 </div>
                             </div>
                             <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
-                                <table class="master-table master-table-dense w-full text-left text-sm">
+                                <table class="master-table master-table-dense in-tbl w-full text-left text-sm">
                                     <thead>
                                         <tr class="text-[11px] uppercase tracking-wider text-slate-400">
                                             <th v-for="c in activeMasterCard.cols" :key="c" class="px-5 py-3 font-semibold">{{ c }}</th>
@@ -1495,7 +1505,7 @@
                                     </select>
                                 </div>
                                 <div class="master-table-scroll overflow-x-auto">
-                                    <table class="master-table master-table-dense w-full text-left text-sm">
+                                    <table class="master-table master-table-dense in-tbl w-full text-left text-sm">
                                         <thead>
                                             <tr class="text-[11px] uppercase tracking-wider text-slate-400">
                                                 <th class="px-4 py-3 font-semibold">ID</th>
@@ -2486,13 +2496,13 @@
                     const total = this.stats.total || 0;
                     const share = (v) => total ? Math.round(((v || 0) / total) * 100) : 0;
                     return [
-                        { label: 'Total Pendaftar', num: total, icon: 'bi-people-fill', color: '#4f46e5', tint: 'bg-brand-50', trend: this.totalTrend },
-                        { label: 'Menunggu', num: s.Menunggu || 0, icon: 'bi-hourglass-split', color: '#d97706', tint: 'bg-amber-50', pct: share(s.Menunggu) },
-                        { label: 'Diterima', num: s.Diterima || 0, icon: 'bi-check2-circle', color: '#059669', tint: 'bg-emerald-50', pct: share(s.Diterima) },
-                        { label: 'ACC', num: s.ACC || 0, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'bg-indigo-50', pct: share(s.ACC) },
-                        { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-circle', color: '#e11d48', tint: 'bg-rose-50', pct: share(s.Ditolak) },
-                        { label: 'Dibatalkan', num: s.Dibatalkan || 0, icon: 'bi-x-octagon', color: '#64748b', tint: 'bg-slate-100', pct: share(s.Dibatalkan) },
-                        { label: 'Total Biaya', num: this.formatRupiah(this.stats.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'bg-teal-50' }
+                        { label: 'Total Pendaftar', num: total, icon: 'bi-people-fill', color: '#4f46e5', tint: 'indigo', trend: this.totalTrend },
+                        { label: 'Menunggu', num: s.Menunggu || 0, icon: 'bi-hourglass-split', color: '#d97706', tint: 'amber', pct: share(s.Menunggu) },
+                        { label: 'Diterima', num: s.Diterima || 0, icon: 'bi-check2-circle', color: '#059669', tint: 'emerald', pct: share(s.Diterima) },
+                        { label: 'ACC', num: s.ACC || 0, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'violet', pct: share(s.ACC) },
+                        { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-circle', color: '#e11d48', tint: 'rose', pct: share(s.Ditolak) },
+                        { label: 'Dibatalkan', num: s.Dibatalkan || 0, icon: 'bi-x-octagon', color: '#64748b', tint: 'slate', pct: share(s.Dibatalkan) },
+                        { label: 'Total Biaya', num: this.formatRupiah(this.stats.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'teal' }
                     ];
                 },
                 statCharts() {
@@ -3821,15 +3831,15 @@
                     return (u.ba || []).filter(b => b.sumber === 'Bagian');
                 },
                 heatFillClass(done, total) {
-                    if (!total) return 'bg-rose-400';
-                    if (done === total) return 'bg-emerald-500';
-                    if (done > 0) return 'bg-amber-400';
-                    return 'bg-rose-400';
+                    if (!total) return 'r';
+                    if (done === total) return 'g';
+                    if (done > 0) return 'y';
+                    return 'r';
                 },
                 heatCellClass(done, total) {
-                    if (done === total) return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-                    if (done > 0) return 'bg-amber-50 text-amber-700 ring-amber-200';
-                    return 'bg-rose-50 text-rose-700 ring-rose-200';
+                    if (done === total) return 'g';
+                    if (done > 0) return 'y';
+                    return 'r';
                 },
                 setBagianChip(chip) {
                     this.bagian.chip = chip;

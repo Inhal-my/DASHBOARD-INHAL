@@ -223,6 +223,12 @@ describe('dashboard template', () => {
     expect(html).toContain('in-badge acc');
     expect(html).toContain('class="in-tbl"');
   });
+
+  it('permukaan statistik, heat, dan master memakai primitif in-*', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('in-statrow');
+    expect(html).toContain('class="heat-table in-heat"');
+  });
 });
 
 describe('dashboard master chip picker', () => {
