@@ -1175,6 +1175,7 @@
                                                     <template v-if="r.__orphan"><span class="text-xs text-slate-400">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
+                                                        <span class="ml-1 text-[10px] text-slate-400">{{ r.pesertaDenganBa }}/{{ r.jumlahPeserta }}</span>
                                                         <template v-for="(b, bi) in r.__pendukungBa" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>

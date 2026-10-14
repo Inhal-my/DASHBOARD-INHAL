@@ -123,6 +123,11 @@ describe('dashboard template', () => {
     expect(html).toContain('dosenSuggestions');
   });
 
+  it('menampilkan indikator BA Pendukung x/y peserta', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('pesertaDenganBa');
+  });
+
   it('mendefinisikan seluruh kelas CSS untuk titik progres', async () => {
     const html = await loadDashboardHtml();
     const selectors = cssSelectors(html);
