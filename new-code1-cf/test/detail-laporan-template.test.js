@@ -107,6 +107,13 @@ describe('detail-laporan template', () => {
       expect(html).toContain(s);
     }
   });
+
+  it('tab switcher & primitif in-* dipakai di markup', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('in-tab is-active');
+    expect(html).toContain('class="in-tbl"');
+    expect(html).toContain('in-statrow');
+  });
 });
 
 describe('detail laporan tab pembayaran', () => {

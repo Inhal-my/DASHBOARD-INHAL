@@ -389,26 +389,27 @@
             <div class="content-wrap p-4 md:p-6 lg:p-8">
 
             <!-- filter bar desktop (glassmorphism) -->
-            <div class="filter-desktop sticky top-16 z-30 mb-5 rounded-2xl bg-white/70 p-4 shadow-lift ring-1 ring-white/60 backdrop-blur-xl">
-                <div class="grid gap-3 md:grid-cols-12">
+            <div class="filter-desktop sticky top-16 z-30 mb-5 lap-card">
+                <div class="in-toolbar">
+                <div class="grid w-full gap-3 md:grid-cols-12">
                     <div class="md:col-span-3">
                         <label class="label">Dari Tanggal</label>
-                        <input type="date" v-model="filters.from" class="input">
+                        <input type="date" v-model="filters.from" class="in-input">
                     </div>
                     <div class="md:col-span-3">
                         <label class="label">Sampai Tanggal</label>
-                        <input type="date" v-model="filters.to" class="input">
+                        <input type="date" v-model="filters.to" class="in-input">
                     </div>
                     <div class="md:col-span-2">
                         <label class="label">Blok</label>
-                        <select v-model="filters.blok" class="input">
+                        <select v-model="filters.blok" class="in-input">
                             <option value="">Semua Blok</option>
                             <option v-for="b in blok" :key="b" :value="b">{{ b }}</option>
                         </select>
                     </div>
                     <div class="md:col-span-2">
                         <label class="label">Status</label>
-                        <select v-model="filters.status" class="input">
+                        <select v-model="filters.status" class="in-input">
                             <option value="">Semua Status</option>
                             <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
                         </select>
@@ -419,6 +420,7 @@
                             {{ exporting ? 'Menyiapkan...' : 'Export .xlsx' }}
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
 
@@ -480,10 +482,9 @@
             </transition>
 
             <!-- tab switcher -->
-            <div class="mb-6 flex gap-2 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-soft ring-1 ring-slate-100">
+            <div class="in-tabsw mb-6">
                 <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
-                    :class="activeTab === t.key ? 'bg-gradient-to-r from-brand-600 to-violet-500 text-white shadow-lift' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
-                    class="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition">
+                    :class="activeTab === t.key ? 'in-tab is-active' : 'in-tab'">
                     <i :class="t.icon"></i>{{ t.label }}
                 </button>
             </div>
@@ -510,14 +511,12 @@
                         </div>
                         <template v-else>
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-                            <div v-for="c in summaryCards" :key="c.label" class="lap-stat">
-                                <div class="flex w-full items-center">
-                                    <div class="flex h-9 w-9 items-center justify-center rounded-xl" :class="c.tint">
-                                        <i :class="c.icon" :style="{ color: c.color }"></i>
-                                    </div>
+                            <div v-for="c in summaryCards" :key="c.label" class="in-statrow lap-stat">
+                                <div class="ic" :class="c.tint"><i :class="c.icon" :style="{color:c.color}"></i></div>
+                                <div>
+                                    <div class="num" :class="c.money ? 'text-sm' : ''">{{ c.num }}</div>
+                                    <div class="lbl uppercase tracking-wider">{{ c.label }}</div>
                                 </div>
-                                <div class="lap-stat-num" :class="c.money ? 'is-money' : ''">{{ c.num }}</div>
-                                <div class="lap-stat-lbl uppercase tracking-wider">{{ c.label }}</div>
                             </div>
                         </div>
 
@@ -564,8 +563,8 @@
                                             <span class="text-slate-600">{{ b.label }}</span>
                                             <span class="font-bold text-slate-800">{{ b.value }}</span>
                                         </div>
-                                        <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                                            <div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
+                                        <div class="in-bar-track">
+                                            <div class="in-bar-fill g transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
                                         </div>
                                     </div>
                                     <div v-if="!jenisChart.length" class="text-sm text-slate-400">Belum ada data.</div>
@@ -581,8 +580,8 @@
                                             <span class="text-slate-600">{{ b.label }}</span>
                                             <span class="font-bold text-slate-800">{{ b.value }}</span>
                                         </div>
-                                        <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                                            <div class="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
+                                        <div class="in-bar-track">
+                                            <div class="in-bar-fill y transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
                                         </div>
                                     </div>
                                     <div v-if="!blokChart.length" class="text-sm text-slate-400">Belum ada data.</div>
@@ -613,7 +612,7 @@
                         <!-- table -->
                         <div class="overflow-hidden lap-card">
                             <div class="overflow-x-auto">
-                                <table class="w-full text-left text-sm">
+                                <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
                                             <th class="w-10 px-3 py-3"></th>
