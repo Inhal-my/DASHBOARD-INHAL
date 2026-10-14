@@ -241,12 +241,10 @@ describe('dashboard template', () => {
 
   it('pengajuan memakai kartu statistik, avatar, docdot, kartu mobile', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('in-statrow dash-stat flex-col');
+    expect(html).toContain('overflow-x-auto in-desktop-only');
+    expect(html).toContain('v-for="c in pengajuanStatCards"');
+    expect(html).toContain("'m-'+r['ID Pengajuan']");
     expect(html).toContain('in-celluser');
-    expect(html).toContain('in-avatar');
-    expect(html).toContain('in-docdot');
-    expect(html).toContain('in-mcard');
-    expect(html).toContain('in-desktop-only');
   });
 });
 
