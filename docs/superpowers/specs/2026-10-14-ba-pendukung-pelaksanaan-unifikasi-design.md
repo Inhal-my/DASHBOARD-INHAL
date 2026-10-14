@@ -1,7 +1,7 @@
 # Desain: Unifikasi BA Pendukung per-Peserta & Koeksistensi dengan BA Pelaksanaan
 
 Tanggal: 2026-10-14
-Status: **Disetujui untuk desain — BELUM diimplementasi. Jangan diterapkan sebelum ada plan & arahan.**
+Status: **Diimplementasi** (lihat `docs/superpowers/plans/2026-10-14-ba-pendukung-pelaksanaan-unifikasi.md`).
 Terkait:
 - `docs/superpowers/specs/2026-10-12-ba-pendukung-revisi-design.md` (model per-peserta, di sini direvisi P10)
 - `docs/superpowers/specs/2026-10-12-ba-pendukung-pdf-dan-pembatas-design.md`
