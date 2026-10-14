@@ -212,7 +212,7 @@ describe('dashboard template', () => {
 
   it('token & definisi primitif mockup tersedia', async () => {
     const html = await loadDashboardHtml();
-    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.wait {', '.in-tbl thead th {', '.in-toolbar {', '.in-input {', '.in-progdots i.all {', '.in-bar-fill.g {', '.in-heat .c.g {', '.in-tabsw {', '.in-statrow {']) {
+    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.wait {', '.in-tbl thead th {', '.in-tbl thead th.text-right {', '.in-toolbar {', '.in-input {', '.in-progdots i.all {', '.in-bar-fill.g {', '.in-heat .c.g {', '.in-tabsw {', '.in-statrow {']) {
       expect(html).toContain(s);
     }
   });

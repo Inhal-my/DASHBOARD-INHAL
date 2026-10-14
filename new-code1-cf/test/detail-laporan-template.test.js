@@ -103,7 +103,7 @@ describe('detail-laporan template', () => {
 
   it('token & definisi primitif mockup tersedia', async () => {
     const html = await loadHtml();
-    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.acc {', '.in-tbl thead th {', '.in-bar-fill.y {', '.in-heat .c.y {', '.lap-card {', '.lap-stat {']) {
+    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.acc {', '.in-tbl thead th {', '.in-tbl thead th.text-right {', '.in-bar-fill.y {', '.in-heat .c.y {', '.lap-card {', '.lap-stat {']) {
       expect(html).toContain(s);
     }
   });
