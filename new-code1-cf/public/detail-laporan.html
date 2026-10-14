@@ -1133,6 +1133,13 @@
                             </div>
                         </div>
                         <template v-else>
+                        <div class="in-basum">
+                            <div class="b"><div class="k">Kegiatan</div><div class="n">{{ baKegiatanRows.length }}</div><div class="p">baris kegiatan</div></div>
+                            <div class="b"><div class="k">Peserta</div><div class="n">{{ baKegiatanPesertaTotal }}</div><div class="p">mahasiswa</div></div>
+                            <div class="b"><div class="k">BA Pendukung</div><div class="n">{{ baKegiatanPendukungTotal }}</div><div class="p">sebelum keputusan</div></div>
+                            <div class="b"><div class="k">BA Pelaksanaan</div><div class="n emerald">{{ baKegiatanPelaksanaanTotal }}</div><div class="p">setelah kegiatan</div></div>
+                            <div class="b"><div class="k">Total BA</div><div class="n">{{ baKegiatanBaTotal }}</div><div class="p">pendukung + pelaksanaan</div></div>
+                        </div>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-4">
@@ -1170,7 +1177,7 @@
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
                                 </button>
                             </div>
-                            <div class="overflow-x-auto">
+                            <div class="overflow-x-auto in-desktop-only">
                                 <table class="in-tbl">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
@@ -1288,6 +1295,34 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="in-cards">
+                                <article v-for="r in baKegiatanRows" :key="'m-' + r.key" class="in-mcard cursor-pointer" @click="toggleExpand(r.key)">
+                                    <div class="row1">
+                                        <span class="font-semibold text-slate-800">{{ r.label }}</span>
+                                        <span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.bagian }}</span>
+                                    </div>
+                                    <div class="kv"><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Peserta</span><b>{{ (r.peserta || []).length }} mahasiswa</b><span>Biaya</span><b class="text-brand-700">{{ fmtRupiah(baKegiatanBiaya(r)) }}</b></div>
+                                    <div v-if="expanded[r.key]" class="mt-2 border-t border-slate-100 pt-2 text-xs">
+                                        <div class="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (r.peserta || []).length }})</div>
+                                        <div v-for="(p, pi) in r.peserta" :key="pi" class="flex flex-wrap items-center gap-2 py-0.5">
+                                            <span class="font-mono text-[10px] text-slate-400">{{ p.npm }}</span>
+                                            <span class="font-semibold text-slate-700">{{ p.namaLengkap || '-' }}</span>
+                                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ p.statusPengajuan || '-' }}</span>
+                                        </div>
+                                        <div v-if="!(r.peserta || []).length" class="text-slate-400">Belum ada peserta.</div>
+                                    </div>
+                                    <div class="actions">
+                                        <template v-for="(b, bi) in (r.baPendukung || [])" :key="'mp' + bi">
+                                            <span class="achip pend">{{ b['BA ID'] }}<button class="mini-ic p" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-[10px]"></i></button><button class="mini-ic x" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button></span>
+                                        </template>
+                                        <template v-for="(b, bi) in (r.baPelaksanaan || [])" :key="'ml' + bi">
+                                            <span class="achip pel">{{ b['BA ID'] }}<button class="mini-ic p" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-[10px]"></i></button><button class="mini-ic x" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button></span>
+                                        </template>
+                                        <button class="btn-soft" @click.stop="openRiwayat(r)"><i class="bi bi-clock-history"></i> Riwayat</button>
+                                        <button class="btn-soft" @click.stop="toggleExpand(r.key)"><i class="bi bi-chevron-down"></i> Detail</button>
+                                    </div>
+                                </article>
                             </div>
                             <div v-if="!baKegiatanRows.length" class="px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>

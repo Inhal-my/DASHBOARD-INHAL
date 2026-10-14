@@ -396,3 +396,12 @@ describe('detail laporan tab bagian (mockup)', () => {
     expect(html).toContain('Baris = Blok, kolom = Bagian');
   });
 });
+
+describe('detail laporan tab berita acara (mockup)', () => {
+  it('BA memakai band ringkasan basum dan kartu mobile', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('class="in-basum"');
+    expect(html).toContain('>BA Pelaksanaan</div>');
+    expect(html).toContain('in-mcard');
+  });
+});
