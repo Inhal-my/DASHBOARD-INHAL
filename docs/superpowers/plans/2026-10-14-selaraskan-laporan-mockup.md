@@ -282,7 +282,8 @@ Expected: FAIL.
                                         </div>
                                         <span :class="statusBadgeCls(r.pengajuan.Status)">{{ r.pengajuan.Status || '-' }}</span>
                                     </div>
-                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ r.pengajuan.NPM }}</b><span>Kegiatan</span><b>{{ r.pengajuan['Jenis Kegiatan'] }} · {{ r.pengajuan.Blok }}</b><span>Pelaksanaan</span><b>{{ fmtTanggal(r.pengajuan['Tanggal Pelaksanaan']) }}</b><span>Biaya</span><b class="text-brand-700">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</b></div>
+                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ r.pengajuan.NPM }}</b><span>Kegiatan</span><b>{{ r.pengajuan['Jenis Kegiatan'] }} · {{ r.pengajuan.Blok }}</b><span>Pelaksanaan</span><b>{{ fmtTanggal(r.pengajuan['Tanggal Pelaksanaan']) }}</b><span>Dosen</span><b>{{ r.pengajuan.Dosen || '-' }}</b><span>Sumber</span><b>{{ (r.pengajuan.Sumber || '').trim() === 'Manual' ? 'Manual' : 'Portal' }}</b><span>Biaya</span><b class="text-brand-700">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</b></div>
+                                    <div v-if="expanded[r.pengajuan['ID Pengajuan']]" class="mt-2 border-t border-slate-100 pt-2"><expanded-detail :r="r"></expanded-detail></div>
                                     <div class="actions">
                                         <button class="btn-soft" @click.stop="toggleExpand(r.pengajuan['ID Pengajuan'])"><i class="bi bi-chevron-down"></i> Detail</button>
                                         <button class="btn-soft" @click.stop="deletePengajuanRow(r)"><i class="bi bi-trash"></i> Hapus</button>
@@ -520,6 +521,13 @@ Expected: FAIL.
                                         <div v-if="!(r.peserta || []).length" class="text-slate-400">Belum ada peserta.</div>
                                     </div>
                                     <div class="actions">
+                                        <template v-for="(b, bi) in (r.baPendukung || [])" :key="'mp' + bi">
+                                            <span class="achip pend">{{ b['BA ID'] }}<button class="mini-ic p" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-[10px]"></i></button><button class="mini-ic x" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button></span>
+                                        </template>
+                                        <template v-for="(b, bi) in (r.baPelaksanaan || [])" :key="'ml' + bi">
+                                            <span class="achip pel">{{ b['BA ID'] }}<button class="mini-ic p" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-[10px]"></i></button><button class="mini-ic x" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-x text-[10px]"></i></button></span>
+                                        </template>
+                                        <button class="btn-soft" @click.stop="openRiwayat(r)"><i class="bi bi-clock-history"></i> Riwayat</button>
                                         <button class="btn-soft" @click.stop="toggleExpand(r.key)"><i class="bi bi-chevron-down"></i> Detail</button>
                                     </div>
                                 </article>
@@ -623,6 +631,7 @@ Expected: FAIL.
                                         </div>
                                     </div>
                                     <div class="actions">
+                                        <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
                                         <button class="btn-soft" @click.stop="toggleExpand('bayar:' + m.npm)"><i class="bi bi-chevron-down"></i> Rincian</button>
                                     </div>
                                 </article>
