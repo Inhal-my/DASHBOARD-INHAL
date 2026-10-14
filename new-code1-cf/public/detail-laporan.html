@@ -511,7 +511,7 @@
                         </div>
                         <template v-else>
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-                            <div v-for="c in summaryCards" :key="c.label" class="in-statrow lap-stat">
+                            <div v-for="c in summaryCards" :key="c.label" class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:6px">
                                 <div class="ic" :class="c.tint"><i :class="c.icon" :style="{color:c.color}"></i></div>
                                 <div>
                                     <div class="num" :class="c.money ? 'text-sm' : ''">{{ c.num }}</div>
