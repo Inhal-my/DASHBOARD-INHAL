@@ -123,6 +123,13 @@ describe('detail-laporan template', () => {
       expect(html).toContain(s);
     }
   });
+
+  it('utilitas Tailwind markup baru terdefinisi di bundle', async () => {
+    const html = await loadHtml();
+    for (const s of ['.gap-\\[5px\\] {', '.text-\\[10\\.5px\\] {', '.pb-3 {', '.pt-2 {', '.grid-cols-1 {']) {
+      expect(html).toContain(s);
+    }
+  });
 });
 
 describe('detail laporan tab rekap (mockup)', () => {
