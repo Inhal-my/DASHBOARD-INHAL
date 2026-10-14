@@ -97,12 +97,16 @@ export async function getDashboardBootstrap(db, ctx) {
   const masterBiaya = Object.keys(biayaMap).map((k) => ({ Kegiatan: k, Biaya: biayaMap[k] }));
   masterBiaya.sort((a, b) => a.Biaya - b.Biaya);
 
+  const baPendukungRows = (await db.prepare('SELECT id_pengajuan FROM berita_acara_admin_peserta WHERE active = 1').all()).results || [];
+  const baPendukungIds = Array.from(new Set(baPendukungRows.map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean)));
+
   return {
     stats,
     pengajuan: buildPengajuanClientRows(sorted, biayaMap, overrideMap),
     detailMap,
     masterBiaya,
-    dosen: await getMasterOptions(db, 'Dosen')
+    dosen: await getMasterOptions(db, 'Dosen'),
+    baPendukungIds
   };
 }
 
