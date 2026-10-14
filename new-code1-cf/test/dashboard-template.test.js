@@ -229,6 +229,15 @@ describe('dashboard template', () => {
     expect(html).toContain('in-statrow');
     expect(html).toContain('class="heat-table in-heat"');
   });
+
+  it('primitif in-* lanjutan mockup tersedia', async () => {
+    const html = await loadDashboardHtml();
+    for (const s of ['.in-pageintro {', '.in-avatar {', '.in-celluser {', '.in-docdot {',
+      '.in-docdot.on.bukti {', '.in-cards {', '.in-mcard {', '.in-proc {', '.in-basum {',
+      '.in-heat-legend {', '.in-manual-note {']) {
+      expect(html).toContain(s);
+    }
+  });
 });
 
 describe('dashboard master chip picker', () => {
