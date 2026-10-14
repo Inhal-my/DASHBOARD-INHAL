@@ -277,9 +277,13 @@ describe('dashboard master chip picker', () => {
     const html = await loadDashboardHtml();
     expect(html).not.toContain('lg:grid-cols-[280px_1fr]');
     expect(html).toContain('selectMasterCard(m.key)');
-    expect(html).toContain('grid grid-cols-2 gap-2 sm:grid-cols-4');
+    expect(html).toContain('grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 master-grid');
     expect(html).toContain('master-stat-label');
     expect(html).not.toContain('master-stat !w-auto');
+  });
+  it('master memakai grid kartu gaya mockup', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('master-grid');
   });
   it('overlay dialog konfirmasi di atas modal', async () => {
     const html = await loadDashboardHtml();
