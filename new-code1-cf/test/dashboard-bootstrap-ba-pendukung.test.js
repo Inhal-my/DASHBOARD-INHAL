@@ -42,3 +42,13 @@ describe('getDashboardBootstrap baPendukungIds', () => {
     expect(b.baPendukungIds).not.toContain('INHAL-4');
   });
 });
+
+describe('guard dokumen dasar BA Pendukung', () => {
+  it('modal menyediakan aksi dokumen dasar', async () => {
+    const res = await env.ASSETS.fetch(new Request('https://example.com/dashboard.html'));
+    const html = await res.text();
+    expect(html).toContain('baAdminSetBaseFile');
+    expect(html).toContain('Dokumen dasar');
+    expect(html).not.toContain('berstatus ACC/Diterima');
+  });
+});

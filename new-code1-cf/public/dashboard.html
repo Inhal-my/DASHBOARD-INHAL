@@ -2076,6 +2076,17 @@
                                 </div>
                                 <div v-else class="mt-2 text-[11px] text-slate-400">Belum ada BA. Pilih peserta dan unggah berkas untuk membuatnya.</div>
 
+                                <div v-if="kb.data.ba" class="mt-3 rounded-xl bg-slate-50 p-3">
+                                    <div class="text-xs font-bold uppercase tracking-wide text-slate-400">Dokumen dasar</div>
+                                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                                        <a v-if="kb.data.ba.baseFileUrl" :href="safeUrl(kb.data.ba.baseFileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]"><i class="bi bi-file-earmark"></i> Lihat dokumen dasar</a>
+                                        <span v-else class="text-[11px] text-slate-400">Belum ada dokumen dasar (opsional).</span>
+                                        <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="kb.uploadBusy" @click="kbPickBase()"><i class="bi bi-upload"></i> {{ kb.data.ba.baseFileUrl ? 'Ganti' : 'Unggah' }}</button>
+                                        <button v-if="kb.data.ba.baseFileUrl" class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" :disabled="kb.uploadBusy" @click="kbRemoveBase()"><i class="bi bi-x-lg"></i> Hapus</button>
+                                    </div>
+                                    <p class="mt-1 text-[10px] text-slate-400">Dokumen dasar tampil paling awal pada PDF BA Pendukung.</p>
+                                </div>
+
                                 <div class="mt-4">
                                     <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (kb.data.peserta || []).length }})</div>
                                     <div class="space-y-2">
@@ -2098,7 +2109,7 @@
                                 <div class="mt-4">
                                     <button class="btn-soft !py-1.5 text-xs" @click="kb.pick = !kb.pick"><i class="bi bi-person-plus"></i> Tambah peserta + berkas</button>
                                     <div v-if="kb.pick" class="mt-2 rounded-xl ring-1 ring-slate-200">
-                                        <div v-if="!(kb.data.candidates || []).length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan berstatus ACC yang belum masuk BA).</div>
+                                        <div v-if="!(kb.data.candidates || []).length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan yang belum masuk BA).</div>
                                         <label v-for="c in kb.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
                                             <input type="radio" name="kbAdd" class="h-4 w-4 accent-brand-600" :checked="kb.addPick === c.idPengajuan" @change="kbTogglePick(c.idPengajuan)">
                                             <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
@@ -2117,6 +2128,7 @@
                         </div>
                         <input ref="kbCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onKbPhotos($event)">
                         <input ref="kbPdf" type="file" accept="application/pdf" class="hidden" @change="onKbPdf($event)">
+                        <input ref="kbBaseFile" type="file" accept="application/pdf,image/*" class="hidden" @change="onKbBaseFile($event)">
                     </div>
                 </transition>
             </div>
@@ -3675,6 +3687,46 @@
                     const res = await this.run('baAdminRegenerate', ba.baId);
                     this.notify((res && res.message) || 'Regenerate selesai.', !!(res && res.success));
                     await this.loadKelolaBa(this.kb.lastId);
+                },
+                kbPickBase() {
+                    if (!this.kb.data || !this.kb.data.ba) { this.notify('Buat BA dengan menambah peserta terlebih dahulu.', false); return; }
+                    const el = this.$refs.kbBaseFile;
+                    if (el) el.click();
+                },
+                onKbBaseFile(e) {
+                    const files = Array.from(e.target.files || []);
+                    if (e.target) e.target.value = '';
+                    if (!files.length) return;
+                    const f = files[0];
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                        const res = String(reader.result || '');
+                        const comma = res.indexOf(',');
+                        const b64 = comma >= 0 ? res.slice(comma + 1) : res;
+                        const ba = this.kb.data && this.kb.data.ba;
+                        if (!ba) return;
+                        this.kb.uploadBusy = true;
+                        try {
+                            const r = await this.run('baAdminSetBaseFile', ba.baId, { data: b64, mimeType: f.type || 'application/pdf', name: f.name });
+                            this.notify((r && r.message) || 'Dokumen dasar disimpan.', !!(r && r.success));
+                            if (r && r.success) await this.loadKelolaBa(this.kb.lastId);
+                        } catch (err) {
+                            this.notify('Gagal menyimpan dokumen dasar: ' + err, false);
+                        } finally {
+                            this.kb.uploadBusy = false;
+                        }
+                    };
+                    reader.onerror = () => this.notify('Gagal membaca berkas.', false);
+                    reader.readAsDataURL(f);
+                },
+                async kbRemoveBase() {
+                    const ba = this.kb.data && this.kb.data.ba;
+                    if (!ba) return;
+                    const ok = await this.askConfirm({ title: 'Hapus dokumen dasar', message: 'Hapus dokumen dasar dari BA Pendukung ini?', icon: 'bi-x-lg', tone: 'danger', confirmLabel: 'Hapus' });
+                    if (!ok) return;
+                    const res = await this.run('baAdminRemoveBaseFile', ba.baId);
+                    this.notify((res && res.message) || 'Dokumen dasar dihapus.', !!(res && res.success));
+                    if (res && res.success) await this.loadKelolaBa(this.kb.lastId);
                 },
                 openKelolaBaForUnit(u) {
                     const p = (u && u.peserta) || [];
