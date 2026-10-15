@@ -3,8 +3,7 @@ import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
   buildEnhanced, formatIndonesianDate, resolveBagianEmail,
-  processStatusNotification, sendStatusNotificationEmail,
-  sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
+  sendFinalPdfEmails, sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
 } from '../src/write/email.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -84,63 +83,27 @@ describe('email helpers', () => {
   });
 });
 
-describe('processStatusNotification', () => {
-  it('renders, stores the attachment link and marks success', async () => {
+describe('sendFinalPdfEmails tanpa link_acc_inhal', () => {
+  it('tidak menolak hanya karena ACC INHAL kosong', async () => {
     await seedPengajuan();
-    const calls = stubBridge(() => ({ success: true, attachmentUrl: 'https://drive.google.com/file/d/NOTIF1234567890/view' }));
-    const res = await processStatusNotification(env.DB, 'INHAL-1', 'Diterima', driveEnv);
+    await seedDetail();
+    stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
+    const res = await sendFinalPdfEmails(env.DB, 'INHAL-1', driveEnv, 'Admin');
+    const joined = (res.notes || []).join(' ');
+    expect(joined).not.toContain('ACC INHAL');
     expect(res.ok).toBe(true);
-    expect(calls[0].action).toBe('sendStatusEmail');
-    expect(calls[0].recipient).toBe('aisyah@contoh.com');
-    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(row.status_notifikasi_email).toBe('Berhasil');
-    expect(row.lampiran_email).toContain('NOTIF1234567890');
-    expect(row.notifikasi_terkirim_pada).toBeTruthy();
-  });
-
-  it('marks failure when the recipient email is missing', async () => {
-    await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010009','Tanpa Email','Ditolak')").run();
-    const res = await processStatusNotification(env.DB, 'INHAL-2', 'Ditolak', driveEnv);
-    expect(res.ok).toBe(false);
-    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-2').first();
-    expect(row.status_notifikasi_email).toBe('Gagal');
-    expect(row.error_notifikasi_email).toContain('tidak ditemukan');
-  });
-
-  it('marks failure when the bridge errors', async () => {
-    await seedPengajuan();
-    stubBridge(() => ({ success: false, message: 'boom' }));
-    const res = await processStatusNotification(env.DB, 'INHAL-1', 'Diterima', driveEnv);
-    expect(res.ok).toBe(false);
-    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(row.status_notifikasi_email).toBe('Gagal');
-    expect(row.error_notifikasi_email).toBe('boom');
-  });
-});
-
-describe('sendStatusNotificationEmail', () => {
-  it('requires admin', async () => {
-    await expect(sendStatusNotificationEmail(env.DB, 'INHAL-1', {})).rejects.toThrow();
-  });
-
-  it('rejects statuses other than Diterima/Ditolak', async () => {
-    await seedPengajuan();
-    await env.DB.prepare("UPDATE pengajuan SET status = 'ACC' WHERE id_pengajuan = 'INHAL-1'").run();
-    const ctx = await adminCtx();
-    const res = await sendStatusNotificationEmail(env.DB, 'INHAL-1', ctx);
-    expect(res.success).toBe(false);
-    expect(res.message).toContain('Diterima/Ditolak');
   });
 });
 
 describe('sendFinalEmail', () => {
-  it('refuses when ACC INHAL has not been uploaded', async () => {
+  it('sends the final pdf even without ACC INHAL', async () => {
     await seedPengajuan();
     await seedDetail();
+    stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
     const ctx = await adminCtx();
     const res = await sendFinalEmail(env.DB, 'INHAL-1', ctx);
-    expect(res.success).toBe(false);
-    expect(res.message).toContain('ACC INHAL belum diunggah');
+    expect(res.success).toBe(true);
+    expect(res.linkFinal).toContain('FINAL1234567890');
   });
 
   it('sets ACC, stores the final link and informs bagian', async () => {
@@ -205,12 +168,10 @@ describe('sendBulkFinalEmail', () => {
     const res = await sendBulkFinalEmail(env.DB, ['INHAL-1', 'INHAL-3'], ctx);
     expect(res.success).toBe(true);
     expect(res.total).toBe(2);
-    expect(res.sent).toBe(1);
-    expect(res.failed).toBe(1);
+    expect(res.sent).toBe(2);
+    expect(res.failed).toBe(0);
     expect(res.message).toContain('2 pengajuan');
-    expect(calls.filter((c) => c.action === 'sendFinalEmail')).toHaveLength(1);
-    const failed = res.details.find((d) => d.ok === false);
-    expect(failed.idPengajuan).toBe('INHAL-3');
+    expect(calls.filter((c) => c.action === 'sendFinalEmail')).toHaveLength(2);
   });
 
   it('defaults to every ACC pengajuan when no ids are given', async () => {

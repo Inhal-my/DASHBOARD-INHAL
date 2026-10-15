@@ -111,58 +111,10 @@ export async function resolveBagianEmail(db, pengajuan, details) {
   return { name: candidates.length ? candidates[0] : '', email: '' };
 }
 
-async function updateNotifikasiColumns(db, idPengajuan, status, sentAt, error) {
-  await db.prepare(
-    'UPDATE pengajuan SET status_notifikasi_email = ?1, notifikasi_terkirim_pada = ?2, error_notifikasi_email = ?3, updated_at = ?4 WHERE id_pengajuan = ?5'
-  ).bind(str(status), str(sentAt), str(error), nowIso(), str(idPengajuan)).run();
-}
-
 async function updateStatusInfoBagian(db, idPengajuan, status, email, message) {
   await db.prepare(
     'UPDATE pengajuan SET status_info_bagian = ?1, waktu_info_bagian = ?2, email_bagian = ?3, catatan_info_bagian = ?4, updated_at = ?5 WHERE id_pengajuan = ?6'
   ).bind(str(status), nowIso(), str(email), str(message), nowIso(), str(idPengajuan)).run();
-}
-
-export async function processStatusNotification(db, idPengajuan, status, env) {
-  const pengajuan = await getPengajuan(db, idPengajuan);
-  if (!pengajuan) return { ok: false, error: 'Pengajuan tidak ditemukan.' };
-  const recipient = str(pengajuan.email);
-  if (!recipient) {
-    await updateNotifikasiColumns(db, idPengajuan, 'Gagal', '', 'Email mahasiswa tidak ditemukan.');
-    return { ok: false, error: 'Email mahasiswa tidak ditemukan.' };
-  }
-
-  const details = await getDetailRows(db, idPengajuan);
-  const enhanced = buildEnhanced(pengajuan, details, status);
-  const res = await callDriveBridge(env, {
-    action: 'sendStatusEmail', data: enhanced, status: status, recipient: recipient
-  });
-  if (!res.ok) {
-    await updateNotifikasiColumns(db, idPengajuan, 'Gagal', '', res.message);
-    return { ok: false, error: res.message };
-  }
-
-  const attachmentUrl = str(res.data && res.data.attachmentUrl);
-  if (attachmentUrl) {
-    await db.prepare('UPDATE pengajuan SET lampiran_email = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
-      .bind(attachmentUrl, nowIso(), str(idPengajuan)).run();
-  }
-  await updateNotifikasiColumns(db, idPengajuan, 'Berhasil', nowIso(), '');
-  return { ok: true, lampiranEmail: attachmentUrl };
-}
-
-export async function sendStatusNotificationEmail(db, idPengajuan, ctx) {
-  await requireAdmin(db, ctx.token, ctx.session);
-  const pengajuan = await getPengajuan(db, idPengajuan);
-  if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
-  const status = str(pengajuan.status);
-  if (status !== 'Diterima' && status !== 'Ditolak') {
-    return { success: false, message: 'Email notifikasi hanya untuk status Diterima/Ditolak. Status saat ini: ' + (status || '-') };
-  }
-  const result = await processStatusNotification(db, idPengajuan, status, ctx.env);
-  return result.ok
-    ? { success: true, message: 'Email notifikasi berhasil dikirim.' }
-    : { success: false, message: 'Email notifikasi gagal: ' + result.error };
 }
 
 export async function sendFinalPdfEmails(db, idPengajuan, env, actor) {
@@ -170,19 +122,10 @@ export async function sendFinalPdfEmails(db, idPengajuan, env, actor) {
   if (!pengajuan) return { ok: false, pdfUrl: '', studentEmailSent: false, bagianEmailSent: false, bagianEmail: '', bagianName: '', notes: ['Pengajuan tidak ditemukan.'] };
 
   const details = await getDetailRows(db, idPengajuan);
-  const accInhal = str(pengajuan.link_acc_inhal);
   const bagian = await resolveBagianEmail(db, pengajuan, details);
   const nama = str(pengajuan.nama_lengkap);
   const npm = str(pengajuan.npm);
   const studentEmail = str(pengajuan.email);
-
-  if (!accInhal) {
-    return {
-      ok: false, pdfUrl: '', studentEmailSent: false, bagianEmailSent: false,
-      bagianEmail: bagian.email, bagianName: bagian.name,
-      notes: ['Berkas ACC INHAL belum diunggah. Upload ACC INHAL terlebih dahulu sebelum mengirim PDF final.']
-    };
-  }
 
   if (str(pengajuan.status) !== 'ACC') {
     await db.prepare('UPDATE pengajuan SET status = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
