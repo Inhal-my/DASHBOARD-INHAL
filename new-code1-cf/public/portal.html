@@ -225,7 +225,7 @@
                                 <i class="bi bi-arrow-counterclockwise mt-0.5 text-amber-600"></i>
                                 <div class="text-sm">
                                     <div class="font-bold text-amber-800">Admin meminta Anda mengunggah ulang berkas</div>
-                                    <p class="mt-0.5 text-amber-700">{{ detailItem.uploadResetNote || 'Silakan unggah kembali ACC INHAL dan Bukti Bayar yang benar.' }}</p>
+                                    <p class="mt-0.5 text-amber-700">{{ detailItem.uploadResetNote || 'Silakan unggah kembali berkas bukti bayar yang benar.' }}</p>
                                 </div>
                             </div>
 
@@ -255,7 +255,7 @@
 
                                         <!-- upload box -->
                                         <div v-if="detailItem.statusCode === 'approved' && !detailItem.hasUpload" class="mt-3 rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-100">
-                                            <p class="text-xs text-brand-800">Silakan lakukan pembayaran sesuai tagihan, lalu unggah ACC INHAL dan bukti bayar.</p>
+                                            <p class="text-xs text-brand-800">Silakan lakukan pembayaran sesuai tagihan, lalu unggah bukti bayar.</p>
                                             <button class="btn-primary mt-3 w-full !py-2.5 text-sm" @click="openUpload">
                                                 <i class="bi bi-cloud-arrow-up"></i> Upload Bukti
                                             </button>
@@ -502,18 +502,6 @@
                                 </div>
 
                                 <div>
-                                    <label class="label">Upload ACC INHAL (PDF / Gambar)</label>
-                                    <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
-                                        <i class="bi bi-file-earmark-pdf text-2xl text-rose-400"></i>
-                                        <div class="min-w-0 flex-1 text-xs text-slate-500">
-                                            <span v-if="upload.accName" class="font-semibold text-slate-700">{{ upload.accName }}</span>
-                                            <span v-else>Pilih file ACC INHAL</span>
-                                        </div>
-                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-24 text-[11px] text-transparent" @change="onAccFile">
-                                    </div>
-                                </div>
-
-                                <div>
                                     <label class="label">Upload Bukti Bayar</label>
                                     <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
                                         <i class="bi bi-receipt text-2xl text-brand-400"></i>
@@ -578,7 +566,7 @@
                     npmInput: '',
                     user: { nama: '', npm: '', email: '', noHp: '', buktiMode: 'strict', history: [] },
                     detailItem: null,
-                    upload: { open: false, accFile: null, accName: '', buktiFile: null, buktiName: '', buktiMode: 'strict', validOk: false, validMsg: '', submitting: false },
+                    upload: { open: false, buktiFile: null, buktiName: '', buktiMode: 'strict', validOk: false, validMsg: '', submitting: false },
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
                     regForm: { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', keterangan: '' },
@@ -646,7 +634,7 @@
                 },
                 mapStatusCode(status) {
                     const s = String(status || '').toLowerCase();
-                    if (s.indexOf('diterima') !== -1 || s.indexOf('acc') !== -1 || s.indexOf('disetujui') !== -1) return 'approved';
+                    if (s.indexOf('acc') !== -1 || s.indexOf('disetujui') !== -1) return 'approved';
                     if (s.indexOf('ditolak') !== -1) return 'rejected';
                     if (s.indexOf('dibatalkan') !== -1) return 'cancelled';
                     return 'pending';
@@ -845,23 +833,10 @@
                     this.regFileSurat = null;
                 },
                 openUpload() {
-                    this.upload = { open: true, accFile: null, accName: '', buktiFile: null, buktiName: '', buktiMode: this.user.buktiMode, validOk: false, validMsg: '', submitting: false };
+                    this.upload = { open: true, buktiFile: null, buktiName: '', buktiMode: this.user.buktiMode, validOk: false, validMsg: '', submitting: false };
                 },
                 closeUpload() {
                     if (!this.upload.submitting) this.upload.open = false;
-                },
-                onAccFile(e) {
-                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
-                    const sizeError = uploadFileSizeError(f);
-                    if (sizeError) {
-                        this.upload.accFile = null;
-                        this.upload.accName = '';
-                        e.target.value = '';
-                        this.showToast(sizeError, 'error');
-                        return;
-                    }
-                    this.upload.accFile = f;
-                    this.upload.accName = f ? f.name : '';
                 },
                 onBuktiFile(e) {
                     const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
@@ -996,8 +971,8 @@
                     });
                 },
                 async submitUpload() {
-                    if (!this.upload.accFile || !this.upload.buktiFile) {
-                        this.showToast('Unggah kedua file (ACC INHAL dan Bukti Bayar).', 'error');
+                    if (!this.upload.buktiFile) {
+                        this.showToast('Unggah berkas bukti bayar.', 'error');
                         return;
                     }
                     await this.validateBukti();
@@ -1011,7 +986,6 @@
                         const payload = {
                             idPengajuan: this.detailItem.idPengajuan,
                             npm: (this.user && this.user.npm) || '',
-                            accFile: await this.readFileAsBase64(this.upload.accFile),
                             buktiFile: await this.readFileAsBase64(this.upload.buktiFile)
                         };
                         const res = await this.run('uploadBuktiFiles', payload);
