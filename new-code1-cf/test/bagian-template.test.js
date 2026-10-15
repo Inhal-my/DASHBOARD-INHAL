@@ -85,3 +85,12 @@ describe('bagian template', () => {
     expect(css).toContain('@media (min-width: 1024px)');
   });
 });
+
+describe('guard BA Pelaksanaan multi', () => {
+  it('menyediakan input label dan menyaring baMember', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('ba.label');
+    expect(html).toContain('baMember');
+    expect(html).not.toContain('Diterima / ACC');
+  });
+});

@@ -245,9 +245,9 @@
                             <div v-else class="space-y-4">
                                 <!-- picker: pilih kegiatan -->
                                 <div v-if="!selectedGroup">
-                                    <div class="section-title"><i class="bi bi-calendar-check"></i> Pilih Kegiatan (Diterima / ACC)</div>
+                                    <div class="section-title"><i class="bi bi-calendar-check"></i> Pilih Kegiatan (ACC)</div>
                                     <div v-if="!kegiatanGroups.length" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
-                                        Belum ada kegiatan yang seluruh pesertanya berstatus Diterima / ACC.
+                                        Belum ada kegiatan dengan peserta berstatus ACC yang belum masuk berita acara.
                                     </div>
                                     <div v-else class="space-y-2">
                                         <button v-for="g in kegiatanGroups" :key="g.key"
@@ -302,8 +302,12 @@
                                         <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ selectedCount }} peserta</p>
                                     </div>
 
-                                    <!-- tanggal & file & catatan -->
+                                    <!-- label & tanggal & file & catatan -->
                                     <div class="mt-4 space-y-4">
+                                        <div>
+                                            <label class="label">Label <span class="font-normal text-slate-400">(opsional)</span></label>
+                                            <input v-model="ba.label" class="input" placeholder="mis. Sesi 1 / Hari ke-2">
+                                        </div>
                                         <div>
                                             <label class="label">Tanggal Pelaksanaan</label>
                                             <input v-model="ba.tanggal" type="date" class="input">
@@ -391,6 +395,7 @@
                                     <div class="min-w-0">
                                         <div class="font-mono text-[11px] text-slate-400">{{ r['BA ID'] }}</div>
                                         <div class="mt-0.5 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
+                                        <div v-if="r.Label" class="mt-0.5 inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{{ r.Label }}</div>
                                     </div>
                                     <span class="chip shrink-0 bg-brand-50 text-brand-700">{{ r['Jumlah Peserta'] }} peserta</span>
                                 </div>
@@ -422,7 +427,7 @@
                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-shield-check"></i></div>
                         <div class="min-w-0 flex-1">
                             <h3 class="text-sm font-bold text-slate-900">Konfirmasi Berita Acara</h3>
-                            <p class="text-xs text-slate-400">Pastikan seluruh peserta berstatus Diterima / ACC</p>
+                            <p class="text-xs text-slate-400">Pastikan seluruh peserta berstatus ACC</p>
                         </div>
                     </div>
                     <div class="mt-3 rounded-2xl bg-slate-50 p-3">
@@ -430,8 +435,8 @@
                         <div class="mt-0.5 text-[11px] text-slate-400">{{ selectedList.length }} peserta · {{ formatTanggal(ba.tanggal) }}</div>
                     </div>
                     <div v-if="baDuplicate" class="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-800 ring-1 ring-amber-200">
-                        <i class="bi bi-exclamation-triangle mt-0.5 shrink-0"></i>
-                        <span>Sudah ada berita acara untuk kegiatan ini (Blok {{ selectedGroup.blok }}, {{ formatTanggal(baDuplicate['Tanggal Pelaksanaan']) }}). Upload ini akan ditolak sistem.</span>
+                        <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
+                        <span>Sudah ada BA untuk kegiatan ini (Blok {{ selectedGroup.blok }}, {{ formatTanggal(baDuplicate['Tanggal Pelaksanaan']) }}). Upload ini akan menambah BA baru.</span>
                     </div>
                     <div class="mt-3 max-h-56 space-y-1.5 overflow-y-auto pr-1">
                         <div v-for="p in selectedList" :key="p.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 ring-1 ring-slate-100">
@@ -503,7 +508,7 @@
                     appUrl: APP_URL,
                     userEmail: USER_EMAIL,
                     config: { labOptions: [] },
-                    baConfig: { statuses: ['Diterima', 'ACC'], finalOnly: true },
+                    baConfig: { statuses: ['ACC'], finalOnly: true },
                     kategori: '',
                     subBagian: '',
                     namaBagian: '',
@@ -515,7 +520,7 @@
                     fBlok: '',
                     listOpen: false,
                     filterOpen: false,
-                    ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 },
+                    ba: { open: false, kegiatanKey: null, tanggal: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 },
                     baList: [],
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
@@ -525,9 +530,10 @@
             computed: {
                 kegiatanGroups() {
                     const map = {};
-                    const statuses = this.baConfig.statuses || ['Diterima', 'ACC'];
+                    const statuses = this.baConfig.statuses || ['ACC'];
                     const finalOnly = this.baConfig.finalOnly !== false;
                     this.rows.forEach(function(r) {
+                        if (r.baMember) return;
                         const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
                         if (!map[key]) {
                             map[key] = {
@@ -650,7 +656,6 @@
                 statusBadge(status) {
                     const cls = {
                         'Menunggu': 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
-                        'Diterima': 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
                         'Ditolak': 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20',
                         'ACC': 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20',
                         'Dibatalkan': 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-500/20'
@@ -736,7 +741,7 @@
                 loadBaConfig() {
                     this.run('getBaginaConfig')
                         .then(c => {
-                            this.baConfig = (c && c.ba) || { statuses: ['Diterima', 'ACC'], finalOnly: true };
+                            this.baConfig = (c && c.ba) || { statuses: ['ACC'], finalOnly: true };
                         })
                         .catch(() => {});
                 },
@@ -811,6 +816,7 @@
                     this.ba.kegiatanKey = null;
                     this.ba.selected = {};
                     this.ba.tanggal = '';
+                    this.ba.label = '';
                     this.ba.catatan = '';
                     this.ba.file = null;
                     this.ba.fileName = '';
@@ -823,6 +829,7 @@
                     this.ba.open = false;
                     this.ba.kegiatanKey = null;
                     this.ba.selected = {};
+                    this.ba.label = '';
                     this.ba.confirm = false;
                     this.ba.scanBusy = false;
                 },
@@ -978,6 +985,7 @@
                         const payload = {
                             namaKegiatan: this.selectedGroup.pilihan + (this.selectedGroup.detail ? ' - ' + this.selectedGroup.detail : ''),
                             tanggalPelaksanaan: this.ba.tanggal,
+                            label: this.ba.label.trim(),
                             blok: this.selectedGroup.blok,
                             catatan: this.ba.catatan.trim(),
                             bagian: this.subBagian || this.kategori,
