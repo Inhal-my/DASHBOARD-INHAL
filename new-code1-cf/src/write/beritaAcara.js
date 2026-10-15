@@ -12,12 +12,6 @@ function lowsp(v) {
   return str(v).toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function dateOnly(v) {
-  const s = str(v);
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? m[1] + '-' + m[2] + '-' + m[3] : s;
-}
-
 function nowIso() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, '0');
@@ -112,21 +106,6 @@ async function validateBaPesertaStatus(db, peserta) {
   return blocked;
 }
 
-async function findDuplicateBa(db, bagian, blok, nama, tanggal) {
-  const { results } = await db.prepare('SELECT ba_id, bagian, blok, nama_kegiatan, tanggal_pelaksanaan FROM berita_acara').all();
-  for (const r of results || []) {
-    if (str(r.bagian) !== bagian) continue;
-    if (str(r.blok) !== blok) continue;
-    if (str(r.nama_kegiatan) !== nama) continue;
-    if (dateOnly(r.tanggal_pelaksanaan) !== dateOnly(tanggal)) continue;
-    return {
-      ba_id: str(r.ba_id), bagian: str(r.bagian), blok: str(r.blok),
-      nama_kegiatan: str(r.nama_kegiatan), tanggal_pelaksanaan: str(r.tanggal_pelaksanaan)
-    };
-  }
-  return null;
-}
-
 function buildPersistBaStmts(db, table, pesertaTable, payload, meta) {
   const ts = nowIso();
   const cols = {
@@ -145,9 +124,10 @@ function buildPersistBaStmts(db, table, pesertaTable, payload, meta) {
     kegiatan_key: meta.kegiatanKey
   };
   if (meta.withDosen) cols.dosen = str(payload.dosen);
+  if (meta.withLabel) cols.label = str(payload.label);
   const keys = Object.keys(cols);
   const placeholders = keys.map((_, i) => '?' + (i + 1)).join(', ');
-  const key = str(meta.kegiatanKey);
+  const key = meta.allowMultiple ? '' : str(meta.kegiatanKey);
   const insertBa = key
     ? db.prepare(
       `INSERT INTO ${table} (${keys.join(', ')}) SELECT ${placeholders} ` +
@@ -315,14 +295,6 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     };
   }
 
-  const dup = await findDuplicateBa(db, bagian, str(p.blok), str(p.namaKegiatan), str(p.tanggalPelaksanaan));
-  if (dup) {
-    return {
-      success: false,
-      message: 'Upload dibatalkan: sudah ada berita acara untuk "' + dup.nama_kegiatan + '" (Bagian ' + dup.bagian + ', Blok ' + dup.blok + ') pada ' + dup.tanggal_pelaksanaan + '. Jika ini revisi, hubungi admin untuk menghapus BA lama.'
-    };
-  }
-
   const baId = await nextBaId(db, 'berita_acara');
   let fileUrl = '';
   let fileName = '';
@@ -339,7 +311,7 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   await db.batch([
     ...buildPersistBaStmts(db, 'berita_acara', 'berita_acara_peserta', p, {
       baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
-      kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true
+      kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true, withLabel: true, allowMultiple: true
     }),
     ...buildSyncStmts(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam))
   ]);
@@ -358,12 +330,13 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
 
-  const sets = ['tanggal_pelaksanaan = ?1', 'jam = ?2', 'dosen = ?3', 'catatan = ?4'];
+  const sets = ['tanggal_pelaksanaan = ?1', 'jam = ?2', 'dosen = ?3', 'catatan = ?4', 'label = ?5'];
   const vals = [
     tanggal,
     p.jam !== undefined ? str(p.jam) : str(existing.jam),
     p.dosen !== undefined ? str(p.dosen) : str(existing.dosen),
-    p.catatan !== undefined ? str(p.catatan) : str(existing.catatan)
+    p.catatan !== undefined ? str(p.catatan) : str(existing.catatan),
+    p.label !== undefined ? str(p.label) : str(existing.label)
   ];
   const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
   await db.batch([

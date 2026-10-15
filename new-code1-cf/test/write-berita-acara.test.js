@@ -112,7 +112,7 @@ describe('berita acara bagian', () => {
     peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
   };
 
-  it('stores a BA with Sumber Bagian and blocks duplicates', async () => {
+  it('stores a BA with Sumber Bagian (duplikat kegiatan kini diizinkan)', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx(['SGD']);
     const res = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
@@ -121,9 +121,44 @@ describe('berita acara bagian', () => {
     expect(res.baId).toMatch(/^BA-PEL-\d{4}-0001$/);
     expect(ba.sumber).toBe('Bagian');
 
-    const dup = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
-    expect(dup.success).toBe(false);
-    expect(dup.message).toContain('sudah ada berita acara');
+    const second = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
+    expect(second.success).toBe(true);
+    expect(second.baId).not.toBe(res.baId);
+  });
+
+  it('menyimpan BA Pelaksanaan kedua untuk kegiatan sama dengan tanggal berbeda', async () => {
+    await seedPengajuan({ status: 'ACC' });
+    const ctx = await bagianCtx(['SGD']);
+    const first = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '',
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+    }, 'SGD', ctx);
+    const second = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-21', label: 'Sesi 2', catatan: '',
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+    }, 'SGD', ctx);
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    const rows = await env.DB.prepare("SELECT ba_id, tanggal_pelaksanaan, label FROM berita_acara ORDER BY ba_id").all();
+    expect(rows.results).toHaveLength(2);
+    expect(rows.results[1].tanggal_pelaksanaan).toBe('2026-09-21');
+    expect(rows.results[1].label).toBe('Sesi 2');
+    const pes = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara_peserta').first();
+    expect(Number(pes.n)).toBe(2);
+  });
+
+  it('menyimpan BA Pelaksanaan kedua walau tanggal sama (dibedakan label)', async () => {
+    await seedPengajuan({ status: 'ACC' });
+    const ctx = await bagianCtx(['SGD']);
+    const base = {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', catatan: '',
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+    };
+    await saveBeritaAcaraBagian(env.DB, { ...base, tanggalPelaksanaan: '2026-09-20', label: 'Sesi 1' }, 'SGD', ctx);
+    const second = await saveBeritaAcaraBagian(env.DB, { ...base, tanggalPelaksanaan: '2026-09-20', label: 'Sesi 2' }, 'SGD', ctx);
+    expect(second.success).toBe(true);
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara').first();
+    expect(Number(n.n)).toBe(2);
   });
 
   it('mengunggah dan menyimpan file BA ke Drive', async () => {
