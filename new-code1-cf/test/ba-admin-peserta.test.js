@@ -59,6 +59,17 @@ describe('baAdmin create & peserta', () => {
     expect(res.data.candidates.map(c => c.idPengajuan)).toContain('INHAL-2');
   });
 
+  it('kandidat mencakup semua status termasuk Menunggu', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'Menunggu', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    const res = await getBaAdminForPengajuan(env.DB, 'INHAL-1', ctx);
+    expect(res.data.candidates.map((c) => c.idPengajuan)).toContain('INHAL-2');
+    expect(res.data.candidates.find((c) => c.idPengajuan === 'INHAL-2').statusPengajuan).toBe('Menunggu');
+  });
+
   it('menambah ulang peserta yang pernah dihapus: reactivate, bukan skip', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
     const ctx = await adminCtx();

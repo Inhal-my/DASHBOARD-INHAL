@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { PDFDocument } from 'pdf-lib';
 import { createSession } from '../src/session.js';
-import { getOrCreateBaAdmin, addBaAdminPesertaBulk, regenerateBaAdminPdf, getBaAdminForPengajuan } from '../src/write/baAdmin.js';
+import { getOrCreateBaAdmin, addBaAdminPesertaBulk, regenerateBaAdminPdf, getBaAdminForPengajuan, setBaAdminBaseFile } from '../src/write/baAdmin.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC';
@@ -151,5 +151,48 @@ describe('regenerateBaAdminPdf', () => {
     const got = await getBaAdminForPengajuan(env.DB, 'INHAL-1', ctx);
     expect(got.data.peserta[0].pages).toBe(4);
     expect(got.data.peserta[0].files[0].pageCount).toBe(4);
+  });
+
+  it('menggabungkan dokumen dasar + berkas peserta', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    await seedBerkas(baId);
+    await env.DB.prepare("UPDATE berita_acara_admin SET base_file_url='https://drive.google.com/file/d/BASEFILE0000000000000BASE/view' WHERE ba_id=?1").bind(baId).run();
+    const base = await pdfB64(2);
+    const member = await pdfB64(1);
+    let saved = '';
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') {
+        const isBase = String(body.fileId || '').indexOf('BASE') === 0;
+        return new Response(JSON.stringify({ success: true, base64: isBase ? base : member, mimeType: 'application/pdf' }), { status: 200 });
+      }
+      saved = body.base64;
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/NEWNEWNEWNEWNEWNEWNEWNEWNEW1/view', fileId: 'NEWNEWNEWNEWNEWNEWNEWNEW1' }), { status: 200 });
+    }));
+    const res = await regenerateBaAdminPdf(env.DB, baId, ctx);
+    expect(res.success).toBe(true);
+    const bytes = Uint8Array.from(atob(saved), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bytes);
+    // sampul(1) + dasar(2) + pembatas(1) + peserta(1) = 5
+    expect(doc.getPageCount()).toBe(5);
+  });
+
+  it('setBaAdminBaseFile menyimpan dokumen dasar & regenerate', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    const base = await pdfB64(1);
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') return new Response(JSON.stringify({ success: true, base64: base, mimeType: 'application/pdf' }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BASEFILE0000000000000BASE/view', fileId: 'BASEFILE0000000000000BASE' }), { status: 200 });
+    }));
+    const res = await setBaAdminBaseFile(env.DB, baId, { data: base, mimeType: 'application/pdf', name: 'dasar.pdf' }, ctx);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT base_file_url FROM berita_acara_admin WHERE ba_id=?1').bind(baId).first();
+    expect(row.base_file_url).toContain('BASEFILE');
   });
 });
