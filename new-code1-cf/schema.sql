@@ -125,7 +125,8 @@ CREATE TABLE berita_acara_admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, jumlah_peserta TEXT, file_name TEXT,
   file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT,
-  updated_at TEXT, needs_regen INTEGER DEFAULT 0
+  updated_at TEXT, needs_regen INTEGER DEFAULT 0,
+  base_file_url TEXT DEFAULT '', base_file_name TEXT DEFAULT ''
 );
 CREATE TABLE berita_acara_admin_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
