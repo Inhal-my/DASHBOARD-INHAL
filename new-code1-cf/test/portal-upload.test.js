@@ -6,14 +6,15 @@ afterEach(() => { vi.unstubAllGlobals(); });
 
 const driveEnv = { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' };
 const pdfData = btoa('%PDF-1.4 fake portal receipt');
+const buktiFile = { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' };
 
-async function seedPengajuan() {
+async function seedPengajuan(status = 'ACC', withBukti = '') {
   await env.DB.prepare(
-    "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','Diterima')"
-  ).run();
+    "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_bukti_bayar) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah',?1,?2)"
+  ).bind(status, withBukti).run();
 }
 
-describe('portal uploadBuktiFiles', () => {
+describe('portal upload bukti-only', () => {
   it('validates the pengajuan id', async () => {
     const a = await uploadBuktiFiles(env.DB, {}, driveEnv);
     expect(a.success).toBe(false);
@@ -23,103 +24,66 @@ describe('portal uploadBuktiFiles', () => {
   });
 
   it('rejects an upload when the npm does not own the pengajuan', async () => {
-    await seedPengajuan();
-    const res = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-1',
-      npm: '2201099999',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
-      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
-    }, driveEnv);
+    await seedPengajuan('ACC');
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201099999', buktiFile }, driveEnv);
     expect(res.success).toBe(false);
     expect(res.message).toContain('NPM tidak cocok');
-    const row = await env.DB.prepare('SELECT link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(row.link_acc_inhal).toBeNull();
-    expect(row.link_bukti_bayar).toBeNull();
+    const row = await env.DB.prepare('SELECT link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.link_bukti_bayar).toBe('');
+  });
+
+  it('menolak unggah saat status bukan ACC', async () => {
+    await seedPengajuan('Menunggu');
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/ACC/);
   });
 
   it('rejects a non-PDF bukti in strict mode', async () => {
-    await seedPengajuan();
+    await seedPengajuan('ACC');
     const res = await uploadBuktiFiles(env.DB, {
       idPengajuan: 'INHAL-1',
       npm: '2201010001',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
       buktiFile: { data: btoa('not a pdf'), mimeType: 'application/pdf', name: 'bukti.pdf' }
     }, driveEnv);
     expect(res.success).toBe(false);
     expect(res.message).toContain('bukan PDF');
   });
 
-  it('rejects a partial upload when only one file is provided', async () => {
-    await seedPengajuan();
-    const onlyAcc = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-1',
-      npm: '2201010001',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' }
-    }, driveEnv);
-    expect(onlyAcc.success).toBe(false);
-    expect(onlyAcc.message).toContain('kedua file');
-
-    const onlyBukti = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-1',
-      npm: '2201010001',
-      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
-    }, driveEnv);
-    expect(onlyBukti.success).toBe(false);
-    expect(onlyBukti.message).toContain('kedua file');
-  });
-
-  it('reports an error when the drive bridge is not configured', async () => {
-    await seedPengajuan();
-    const res = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-1',
-      npm: '2201010001',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
-      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
-    }, {});
-    expect(res.success).toBe(false);
-    expect(res.message).toContain('belum dikonfigurasi');
-  });
-
-  it('stores both files and links them on the pengajuan', async () => {
-    await seedPengajuan();
-    const f = vi.fn(async (_url, init) => {
-      const body = JSON.parse(init.body);
-      const url = 'https://drive.google.com/file/d/' + (body.prefix === 'acc-INHAL-1' ? 'AAAABBBBCCCCDDDDEEEEFFFFGGGG12345' : 'BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890') + '/view';
-      return new Response(JSON.stringify({ success: true, url: url, fileId: 'x' }), { status: 200 });
-    });
-    vi.stubGlobal('fetch', f);
-
-    const res = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-1',
-      npm: '2201010001',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
-      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
-    }, driveEnv);
-    expect(res.success).toBe(true);
-    expect(f).toHaveBeenCalledTimes(2);
-
-    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(row.link_acc_inhal).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
-    expect(row.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
-    expect(row.updated_at).toBeTruthy();
-
-    const log = await env.DB.prepare('SELECT * FROM log_upload WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(log).toBeTruthy();
-    expect(log.npm).toBe('2201010001');
-    expect(log.link_acc_inhal).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
-    expect(log.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
-  });
-
   it('rejects when no file is provided', async () => {
-    await seedPengajuan();
+    await seedPengajuan('ACC');
     const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001' }, driveEnv);
     expect(res.success).toBe(false);
     expect(res.message).toContain('Tidak ada file');
   });
 
+  it('reports an error when the drive bridge is not configured', async () => {
+    await seedPengajuan('ACC');
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, {});
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('belum dikonfigurasi');
+  });
+
+  it('menerima unggah bukti tanpa file ACC', async () => {
+    await seedPengajuan('ACC');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890/view' }),
+      { status: 200 }
+    )));
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
+
+    const log = await env.DB.prepare('SELECT * FROM log_upload WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(log).toBeTruthy();
+    expect(log.npm).toBe('2201010001');
+    expect(log.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
+  });
+
   it('sends an upload receipt email to the student', async () => {
     await env.DB.prepare(
-      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,status) VALUES ('2026-09-10T08:00:00','INHAL-9','2201010009','Budi','budi@contoh.com','Diterima')"
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,status) VALUES ('2026-09-10T08:00:00','INHAL-9','2201010009','Budi','budi@contoh.com','ACC')"
     ).run();
     const bodies = [];
     const f = vi.fn(async (_url, init) => {
@@ -132,12 +96,7 @@ describe('portal uploadBuktiFiles', () => {
     });
     vi.stubGlobal('fetch', f);
 
-    const res = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-9',
-      npm: '2201010009',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
-      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
-    }, driveEnv);
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-9', npm: '2201010009', buktiFile }, driveEnv);
     expect(res.success).toBe(true);
     const receipt = bodies.find((b) => b.action === 'sendReceiptEmail');
     expect(receipt).toBeTruthy();
@@ -149,15 +108,12 @@ describe('portal uploadBuktiFiles', () => {
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,status,upload_reset_at,upload_reset_by,upload_reset_note) VALUES ('2026-09-10T08:00:00','INHAL-7','2201010007','Citra','citra@contoh.com','ACC','2026-09-30T00:00:00','Admin','perbaiki')"
     ).run();
-    const f = vi.fn(async () => new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view' }), { status: 200 }));
-    vi.stubGlobal('fetch', f);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view' }),
+      { status: 200 }
+    )));
 
-    const res = await uploadBuktiFiles(env.DB, {
-      idPengajuan: 'INHAL-7',
-      npm: '2201010007',
-      accFile: { data: pdfData, mimeType: 'application/pdf', name: 'acc.pdf' },
-      buktiFile: { data: pdfData, mimeType: 'application/pdf', name: 'bukti.pdf' }
-    }, driveEnv);
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-7', npm: '2201010007', buktiFile }, driveEnv);
     expect(res.success).toBe(true);
     const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-7').first();
     expect(row.upload_reset_at).toBe('');

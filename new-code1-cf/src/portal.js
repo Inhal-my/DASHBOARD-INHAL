@@ -35,7 +35,7 @@ function startsWithPdf(base64) {
 export async function uploadBuktiFiles(db, payload, env) {
   const idPengajuan = str(payload && payload.idPengajuan);
   if (!idPengajuan) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
-  const existing = await db.prepare('SELECT id, npm, nama_lengkap, blok, jenis_kegiatan, link_acc_inhal, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
+  const existing = await db.prepare('SELECT id, npm, nama_lengkap, blok, jenis_kegiatan, status, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
   const ownerNpm = normalizeNpm(existing.npm);
@@ -44,13 +44,13 @@ export async function uploadBuktiFiles(db, payload, env) {
     return { success: false, message: 'NPM tidak cocok dengan pengajuan ini.' };
   }
 
-  const hasAcc = !!(payload && payload.accFile && payload.accFile.data);
-  const hasBukti = !!(payload && payload.buktiFile && payload.buktiFile.data);
-  if (!hasAcc && !hasBukti) {
-    return { success: false, message: 'Tidak ada file yang diunggah.' };
+  if (str(existing.status) !== 'ACC') {
+    return { success: false, message: 'Unggah bukti bayar hanya tersedia setelah pengajuan ACC.' };
   }
-  if (!hasAcc || !hasBukti) {
-    return { success: false, message: 'Unggah kedua file (ACC INHAL dan Bukti Bayar).' };
+
+  const hasBukti = !!(payload && payload.buktiFile && payload.buktiFile.data);
+  if (!hasBukti) {
+    return { success: false, message: 'Tidak ada file bukti bayar yang diunggah.' };
   }
 
   const bukti = parseFileInput(payload && payload.buktiFile);
@@ -59,16 +59,13 @@ export async function uploadBuktiFiles(db, payload, env) {
     return { success: false, message: 'Maaf, bukti bayar bukan PDF portal. Gunakan PDF asli.' };
   }
 
-  const upAcc = await saveDriveFile(env, payload.accFile, 'acc-' + idPengajuan, { allowedMime: PORTAL_MIME, maxBytes: PORTAL_MAX_BYTES, label: 'ACC INHAL' });
-  if (!upAcc.ok) return { success: false, message: upAcc.message };
   const upBukti = await saveDriveFile(env, payload.buktiFile, 'bukti-' + idPengajuan, { allowedMime: PORTAL_MIME, maxBytes: PORTAL_MAX_BYTES, label: 'bukti bayar' });
   if (!upBukti.ok) return { success: false, message: upBukti.message };
 
-  const accUrl = upAcc.url || str(existing.link_acc_inhal);
   const buktiUrl = upBukti.url || str(existing.link_bukti_bayar);
 
-  await db.prepare("UPDATE pengajuan SET link_acc_inhal = ?1, link_bukti_bayar = ?2, upload_reset_at = '', upload_reset_by = '', upload_reset_note = '', updated_at = ?3 WHERE id_pengajuan = ?4")
-    .bind(accUrl, buktiUrl, nowIso(), idPengajuan).run();
+  await db.prepare("UPDATE pengajuan SET link_bukti_bayar = ?1, upload_reset_at = '', upload_reset_by = '', upload_reset_note = '', updated_at = ?2 WHERE id_pengajuan = ?3")
+    .bind(buktiUrl, nowIso(), idPengajuan).run();
 
   const summary = await getUploadLogDetail(db, idPengajuan);
   await writeLogUpload(db, {
@@ -79,18 +76,13 @@ export async function uploadBuktiFiles(db, payload, env) {
     jenisKegiatan: str(existing.jenis_kegiatan),
     detail: summary.detail,
     tanggal: summary.tanggal,
-    linkAcc: accUrl,
+    linkAcc: '',
     linkBukti: buktiUrl
   });
 
-  await sendReceiptEmail(
-    db, idPengajuan,
-    accUrl || str(existing.link_acc_inhal),
-    buktiUrl || str(existing.link_bukti_bayar),
-    env
-  );
+  await sendReceiptEmail(db, idPengajuan, '', buktiUrl, env);
 
-  return { success: true, message: 'Bukti berhasil disimpan.', linkAcc: accUrl, linkBukti: buktiUrl };
+  return { success: true, message: 'Bukti bayar berhasil disimpan.', linkBukti: buktiUrl };
 }
 
 export async function getStudentPortalData(db, npm) {
@@ -123,7 +115,7 @@ export async function getStudentPortalData(db, npm) {
     const tanggalKegiatan = pDetails.length
       ? (pDetails[0].tanggal_pelaksanaan || '')
       : (p.tanggal_pelaksanaan || '');
-    const hasUpload = !!(p.link_acc_inhal || p.link_bukti_bayar);
+    const hasUpload = !!str(p.link_bukti_bayar);
     history.push({
       id: id,
       idPengajuan: id,
