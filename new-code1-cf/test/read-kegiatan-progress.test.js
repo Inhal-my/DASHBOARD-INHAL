@@ -5,8 +5,8 @@ describe('computeUnitProgress', () => {
   it('menandai tahap sebagian dan selesai', () => {
     const unit = {
       peserta: [
-        { statusPengajuan: 'ACC', linkFinal: 'x' },
-        { statusPengajuan: 'Menunggu', linkFinal: '' }
+        { statusPengajuan: 'ACC', masukBa: true },
+        { statusPengajuan: 'Menunggu', masukBa: false }
       ],
       baPendukung: [{ baId: 'BA-2026-0001' }],
       baPelaksanaan: [{ baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '09:00', dosen: 'dr. Andi' }]
@@ -24,9 +24,9 @@ describe('computeUnitProgress', () => {
   it('menghitung ACC dan Ditolak sama-sama sebagai keputusan', () => {
     const unit = {
       peserta: [
-        { statusPengajuan: 'ACC', linkFinal: 'x' },
-        { statusPengajuan: 'Ditolak', linkFinal: 'y' },
-        { statusPengajuan: 'Menunggu', linkFinal: '' }
+        { statusPengajuan: 'ACC' },
+        { statusPengajuan: 'Ditolak' },
+        { statusPengajuan: 'Menunggu' }
       ],
       baPendukung: [],
       baPelaksanaan: []
@@ -38,7 +38,7 @@ describe('computeUnitProgress', () => {
 
   it('membaca field BA bergaya klien (Dosen/Tanggal Pelaksanaan/Jam)', () => {
     const unit = {
-      peserta: [{ statusPengajuan: 'ACC', linkFinal: 'x' }],
+      peserta: [{ statusPengajuan: 'ACC' }],
       baPendukung: [],
       baPelaksanaan: [{ 'BA ID': 'BA-2026-0001', 'Tanggal Pelaksanaan': '2026-09-02', Jam: '08:00', Dosen: 'dr. Ilham' }]
     };
@@ -48,7 +48,7 @@ describe('computeUnitProgress', () => {
 
   it('selesai hanya bila dosen, tanggal, dan jam lengkap', () => {
     const unit = {
-      peserta: [{ statusPengajuan: 'ACC', linkFinal: 'x' }],
+      peserta: [{ statusPengajuan: 'ACC' }],
       baPendukung: [],
       baPelaksanaan: [{ baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '', dosen: 'dr. Andi' }]
     };
