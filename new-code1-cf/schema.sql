@@ -115,7 +115,7 @@ CREATE TABLE audit_log (
 CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, dosen TEXT, jumlah_peserta TEXT,
-  file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT
+  file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT, label TEXT DEFAULT ''
 );
 CREATE TABLE berita_acara_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
