@@ -97,7 +97,11 @@ export async function getDashboardBootstrap(db, ctx) {
   const masterBiaya = Object.keys(biayaMap).map((k) => ({ Kegiatan: k, Biaya: biayaMap[k] }));
   masterBiaya.sort((a, b) => a.Biaya - b.Biaya);
 
-  const baPendukungRows = (await db.prepare('SELECT id_pengajuan FROM berita_acara_admin_peserta WHERE active = 1').all()).results || [];
+  const baPendukungRows = (await db.prepare(
+    'SELECT DISTINCT p.id_pengajuan FROM berita_acara_admin_peserta p ' +
+    'JOIN berita_acara_admin_berkas b ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan AND b.active = 1 ' +
+    'WHERE p.active = 1'
+  ).all()).results || [];
   const baPendukungIds = Array.from(new Set(baPendukungRows.map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean)));
 
   return {

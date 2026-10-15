@@ -136,6 +136,24 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 > **Penting — sekali jalan.** `ALTER TABLE ADD COLUMN` tidak bisa diulang
 > (gagal `duplicate column name`). Jangan mengulang file yang sudah diterapkan.
 
+### 3.3 Migrasi pemulihan berkas BA Pendukung (sekali, opsional)
+
+Migrasi `2026-10-15-ba-pendukung-berkas-reactivate.sql` memulihkan peserta BA Pendukung
+yang aktif tetapi tidak punya berkas aktif sama sekali (mis. berkas lama tergusur tanpa
+pengganti, atau peserta dihapus lalu ditambah ulang tanpa unggah berkas baru). Migrasi
+mengaktifkan kembali seluruh halaman pada batch unggahan terakhir per peserta dan menandai
+BA terkait agar PDF-nya dibuat ulang. File ini hanya berisi `UPDATE` (tanpa `ALTER TABLE`),
+sehingga **aman dijalankan berulang**:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-15-ba-pendukung-berkas-reactivate.sql
+```
+
+> Peserta hasil impor sheet `BeritaAcaraAdminPeserta` yang belum pernah punya berkas tetap
+> tanpa berkas (memang belum ada) dan perlu diunggah lewat modal "Kelola BA Pendukung".
+> Setelah perubahan kode ini, badge "BA Ada" hanya muncul bila peserta benar-benar punya
+> minimal satu berkas aktif.
+
 ## 4. Deploy Worker + aset
 
 ```bash
