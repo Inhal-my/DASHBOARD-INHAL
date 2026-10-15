@@ -131,48 +131,62 @@ describe('pengajuan admin writes', () => {
 });
 
 describe('pengajuan admin status and delete', () => {
-  it('rejects an invalid status and applies a valid one with history', async () => {
+  it('rejects an unknown status', async () => {
     await seedPengajuan();
     const ctx = await adminCtx();
-    const bad = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ngawur', '', '', ctx);
+    const bad = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
     expect(bad.success).toBe(false);
+  });
 
-    const ok = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', 'Berkas lengkap', '', ctx);
+  it('ACC issues a nomor surat and records history', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const ok = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', 'Berkas lengkap', '', ctx);
     expect(ok.success).toBe(true);
     expect(ok.nomorSurat).toMatch(/^\d{3}\/INHAL\/FKIK-UMSU\/[IVX]+\/\d{4}$/);
     const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(row.status).toBe('Diterima');
+    expect(row.status).toBe('ACC');
     expect(row.catatan_admin).toBe('Berkas lengkap');
     expect(row.nomor_surat).toBe(ok.nomorSurat);
     const hist = await env.DB.prepare('SELECT * FROM status_history WHERE id_pengajuan = ?1').bind('INHAL-1').all();
-    expect(hist.results).toHaveLength(1);
-    expect(hist.results[0].status).toBe('Diterima');
+    expect(hist.results.map((r) => r.status)).toEqual(['ACC']);
   });
 
-  it('keeps the existing nomor surat on a repeated approval', async () => {
+  it('keeps the existing nomor surat on a repeated ACC', async () => {
     await seedPengajuan();
     const ctx = await adminCtx();
-    const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
-    const second = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
+    const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx);
+    const second = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx);
     expect(second.success).toBe(true);
     expect(second.nomorSurat).toBe(first.nomorSurat);
-    const row = await env.DB.prepare('SELECT nomor_surat FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
-    expect(row.nomor_surat).toBe(first.nomorSurat);
   });
 
-  it('issues consecutive nomor surat for concurrent approvals', async () => {
+  it('issues consecutive nomor surat for two ACC transitions', async () => {
     await seedPengajuan();
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,no_hp_wa,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010002','Budi','budi@contoh.com','0813','A','SGD','Menunggu')"
     ).run();
     const ctx = await adminCtx();
-    const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
-    const second = await updatePengajuanStatus(env.DB, 'INHAL-2', 'Diterima', '', '', ctx);
+    const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx);
+    const second = await updatePengajuanStatus(env.DB, 'INHAL-2', 'ACC', '', '', ctx);
     expect(first.success).toBe(true);
     expect(second.success).toBe(true);
     expect(first.nomorSurat).not.toBe(second.nomorSurat);
     const numbers = [first.nomorSurat, second.nomorSurat].map((s) => parseInt(s.slice(0, 3), 10)).sort((a, b) => a - b);
     expect(numbers).toEqual([1, 2]);
+  });
+
+  it('rejects Ditolak/Dibatalkan without catatan', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const noNote = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', '', '', ctx);
+    expect(noNote.success).toBe(false);
+    expect(noNote.message).toMatch(/[Cc]atatan/);
+    const ok = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Berkas tidak lengkap', '', ctx);
+    expect(ok.success).toBe(true);
+    const row = await env.DB.prepare('SELECT status, catatan_admin FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Ditolak');
+    expect(row.catatan_admin).toBe('Berkas tidak lengkap');
   });
 
   it('deletes a pengajuan with its related rows', async () => {

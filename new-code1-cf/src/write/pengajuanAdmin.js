@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { resolveBagianFor } from '../read/common.js';
-import { processStatusNotification } from './email.js';
+import { sendFinalPdfEmails } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
 
@@ -224,13 +224,18 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   const existing = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
-  const ts = nowIso();
   const catatanVal = str(catatan);
+  if ((status === 'Ditolak' || status === 'Dibatalkan') && !catatanVal) {
+    return { success: false, message: 'Catatan wajib diisi untuk status ' + status + '.' };
+  }
+
+  const prevStatus = str(existing.status);
+  const ts = nowIso();
   let nomorSurat = str(existing.nomor_surat);
   const sets = ['status = ?1', 'updated_at = ?2'];
   const vals = [status, ts];
   if (catatanVal !== '') { sets.push('catatan_admin = ?' + (vals.length + 1)); vals.push(catatanVal); }
-  const claimNumber = status === 'Diterima' && !nomorSurat;
+  const claimNumber = status === 'ACC' && !nomorSurat;
   if (claimNumber) {
     nomorSurat = await nextSuratNumberYearly(db, 'INHAL');
     sets.push('nomor_surat = ?' + (vals.length + 1));
@@ -262,9 +267,13 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   }
 
   let notification = null;
-  if (status === 'Diterima' || status === 'Ditolak') {
+  const transitionToAcc = status === 'ACC' && prevStatus !== 'ACC';
+  if (transitionToAcc) {
     try {
-      notification = await processStatusNotification(db, id, status, ctx.env);
+      const final = await sendFinalPdfEmails(db, id, ctx.env, actor);
+      notification = final.ok
+        ? { ok: true, pdfUrl: final.pdfUrl }
+        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.' };
     } catch (e) {
       notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
     }
@@ -277,7 +286,7 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
       idPengajuan: id,
       nomorSurat: nomorSurat,
       notification: notification,
-      message: baseMessage + (notification.ok ? ' Email notifikasi terkirim.' : ' Email notifikasi gagal: ' + notification.error)
+      message: baseMessage + (notification.ok ? ' Surat ACC final terkirim.' : ' Pengiriman surat ACC final gagal: ' + notification.error)
     };
   }
   return { success: true, idPengajuan: id, nomorSurat: nomorSurat, message: baseMessage };
