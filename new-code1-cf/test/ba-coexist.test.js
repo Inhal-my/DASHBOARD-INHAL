@@ -12,7 +12,7 @@ async function bagianCtx() {
   return { token: await createSession(env.DB, { role: 'bagian', nama: 'Bagian', kategori: '', subBagian: '', kategoris: ['*'] }), env: {} };
 }
 async function seed(id, npm, nama) {
-  await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-10-01T08:00:00',?1,?2,?3,'A','SGD','Diterima')").bind(id, npm, nama).run();
+  await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-10-01T08:00:00',?1,?2,?3,'A','SGD','ACC')").bind(id, npm, nama).run();
   await env.DB.prepare("INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-10-01T08:00:00',?1,'SGD','SGD 1','','2026-10-20','')").bind(id).run();
 }
 const keg = { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20' };
@@ -27,7 +27,7 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
 
     await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
-      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', await bagianCtx());
 
     const agg = await getBagianAggregation(env.DB, a);
@@ -47,7 +47,7 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
 
     await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
-      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', await bagianCtx());
     await env.DB.prepare("UPDATE berita_acara SET file_url='https://x/pel.pdf' WHERE kegiatan_key='sgd|a|sgd 1'").run();
 
@@ -64,8 +64,8 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
       peserta: [
-        { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' },
-        { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'Diterima' }
+        { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' },
+        { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'ACC' }
       ]
     }, 'SGD', await bagianCtx());
 

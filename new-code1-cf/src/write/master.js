@@ -1,7 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { hashPassword, isHashed } from '../password.js';
 
-const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
+const STATUS_VALID = ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'];
 const MAX_ROWS = 5000;
 
 function str(v) {

@@ -38,6 +38,6 @@ describe('common helpers', () => {
     expect(baginaHasAccess({ kategoris: ['*'] }, 'SGD', '')).toBe(true);
   });
   it('getBagianBaStatuses falls back to defaults', async () => {
-    expect(await getBagianBaStatuses(env.DB)).toEqual(['Diterima', 'ACC']);
+    expect(await getBagianBaStatuses(env.DB)).toEqual(['ACC']);
   });
 });

@@ -144,14 +144,17 @@ describe('master write handlers', () => {
 
   it('validates and persists bagian BA settings', async () => {
     const ctx = await adminCtx();
+    const legacy = await saveBagianBaSettings(env.DB, { statuses: ['ACC', 'Diterima'], finalOnly: true }, ctx);
+    expect(legacy.success).toBe(false);
+    expect(legacy.message).toContain('Diterima');
     const bad = await saveBagianBaSettings(env.DB, { statuses: ['ACC', 'Ngawur'], finalOnly: true }, ctx);
     expect(bad.success).toBe(false);
     const empty = await saveBagianBaSettings(env.DB, { statuses: [], finalOnly: true }, ctx);
     expect(empty.success).toBe(false);
-    const ok = await saveBagianBaSettings(env.DB, { statuses: ['Diterima', 'ACC', 'ACC'], finalOnly: false }, ctx);
+    const ok = await saveBagianBaSettings(env.DB, { statuses: ['ACC', 'Menunggu', 'ACC'], finalOnly: false }, ctx);
     expect(ok.success).toBe(true);
     const row = await env.DB.prepare("SELECT value FROM config WHERE key = 'BAGIAN_BA_STATUSES'").first();
-    expect(row.value).toBe('Diterima,ACC');
+    expect(row.value).toBe('ACC,Menunggu');
     const finalRow = await env.DB.prepare("SELECT value FROM config WHERE key = 'BAGIAN_BA_FINAL_ONLY'").first();
     expect(finalRow.value).toBe('false');
   });

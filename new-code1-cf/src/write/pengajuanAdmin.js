@@ -4,7 +4,7 @@ import { processStatusNotification } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
 
-const STATUS_VALID = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'];
+const STATUS_VALID = ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'];
 
 function str(v) {
   if (v === undefined || v === null) return '';

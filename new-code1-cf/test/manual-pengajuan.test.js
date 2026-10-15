@@ -35,12 +35,12 @@ describe('registerManualPengajuan', () => {
     expect(h.catatan).toBe('Pengajuan dibuat manual oleh admin.');
   });
 
-  it('allows initial status Diterima', async () => {
+  it('mengabaikan status Diterima pada pengajuan manual', async () => {
     const res = await registerManualPengajuan(env.DB, { ...manualBody, status: 'Diterima' }, {});
     expect(res.success).toBe(true);
-    expect(res.status).toBe('Diterima');
+    expect(res.status).toBe('Menunggu');
     const p = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind(res.idPengajuan).first();
-    expect(p.status).toBe('Diterima');
+    expect(p.status).toBe('Menunggu');
   });
 
   it('falls back to Menunggu for an unsupported status', async () => {
@@ -88,7 +88,7 @@ describe('manual RPCs', () => {
     const res = await dispatchRpc(env.DB, 'registerManualPengajuan', [{ ...manualBody, status: 'Diterima' }, token]);
     expect(res.success).toBe(true);
     expect(res.sumber).toBe('Manual');
-    expect(res.status).toBe('Diterima');
+    expect(res.status).toBe('Menunggu');
   });
 
   it('returns registration options', async () => {

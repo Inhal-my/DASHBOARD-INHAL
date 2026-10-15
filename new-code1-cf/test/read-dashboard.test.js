@@ -9,7 +9,7 @@ async function adminCtx() {
   return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } };
 }
 async function seed() {
-  await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','Ujian','Diterima','')").run();
+  await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','Ujian','ACC','')").run();
   await env.DB.prepare("INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-1','Ujian','UAS','','2026-09-20','')").run();
   await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('Ujian','Rp. 300.000')").run();
 }
@@ -29,9 +29,9 @@ describe('dashboard read', () => {
   it('filters pengajuan list by status', async () => {
     await seed();
     const ctx = await adminCtx();
-    const rows = await getPengajuanList(env.DB, { status: 'Diterima' }, ctx);
+    const rows = await getPengajuanList(env.DB, { status: 'ACC' }, ctx);
     expect(rows).toHaveLength(1);
-    const none = await getPengajuanList(env.DB, { status: 'ACC' }, ctx);
+    const none = await getPengajuanList(env.DB, { status: 'Ditolak' }, ctx);
     expect(none).toHaveLength(0);
   });
   it('requires admin for lab options', async () => {
@@ -46,7 +46,7 @@ describe('dashboard read', () => {
     expect(opts.blok).toContain('A');
     expect(opts.details[0].jenis).toBe('Ujian');
   });
-  it('lists only Diterima/ACC pengajuan for the upload monitor', async () => {
+  it('lists only ACC pengajuan for the upload monitor', async () => {
     await seed();
     await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_acc_inhal,upload_reset_at,upload_reset_by,upload_reset_note) VALUES ('2026-09-11T08:00:00','INHAL-2','2201010002','Budi','Menunggu','','','','')").run();
     await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_acc_inhal,link_bukti_bayar) VALUES ('2026-09-12T08:00:00','INHAL-3','2201010003','Citra','ACC','https://drive/acc','https://drive/bukti')").run();

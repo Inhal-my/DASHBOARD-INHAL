@@ -15,7 +15,7 @@ async function bagianCtx(kategoris) {
   return { token: await createSession(env.DB, { role: 'bagian', nama: 'Bagian', kategoris: kategoris || ['SGD'] }), env: {} };
 }
 
-async function seedPengajuan({ status = 'Diterima' } = {}) {
+async function seedPengajuan({ status = 'ACC' } = {}) {
   await env.DB.prepare(
     "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','SGD',?1)"
   ).bind(status).run();
@@ -109,7 +109,7 @@ describe('berita acara admin', () => {
 describe('berita acara bagian', () => {
   const payload = {
     bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '',
-    peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+    peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
   };
 
   it('stores a BA with Sumber Bagian and blocks duplicates', async () => {
@@ -185,7 +185,7 @@ describe('berita acara bagian', () => {
     const res = await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
       jam: '09:00', dosen: 'dr. Andi', catatan: '',
-      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', ctx);
     expect(res.success).toBe(true);
     const ba = await env.DB.prepare('SELECT jam, dosen, kegiatan_key FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
@@ -230,7 +230,7 @@ describe('berita acara bagian', () => {
     const res = await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
       jam: '09:00', dosen: 'dr. Andi', catatan: '',
-      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', bagian);
     const admin = await adminCtx();
     await deleteBeritaAcaraBagian(env.DB, res.baId, admin);
@@ -244,7 +244,7 @@ describe('berita acara bagian', () => {
     const ctx = await adminCtx();
     const res = await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
-      catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'Diterima' }]
+      catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', await bagianCtx(['SGD']));
     const up = await updateBeritaAcaraBagian(env.DB, res.baId, { tanggal: '2026-09-20', jam: '13:30', dosen: 'dr. Budi', catatan: 'revisi' }, ctx);
     expect(up.success).toBe(true);

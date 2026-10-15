@@ -211,7 +211,7 @@ async function configValue(db, key, fallback) {
 
 export async function getBagianBaStatuses(db) {
   const raw = await configValue(db, 'BAGIAN_BA_STATUSES', '');
-  const def = ['Diterima', 'ACC'];
+  const def = ['ACC'];
   if (!raw) return def;
   const list = raw.split(',').map((s) => s.trim()).filter(Boolean);
   return list.length ? list : def;

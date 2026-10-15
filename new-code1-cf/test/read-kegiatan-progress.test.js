@@ -5,7 +5,7 @@ describe('computeUnitProgress', () => {
   it('menandai tahap sebagian dan selesai', () => {
     const unit = {
       peserta: [
-        { statusPengajuan: 'Diterima', linkFinal: 'x' },
+        { statusPengajuan: 'ACC', linkFinal: 'x' },
         { statusPengajuan: 'Menunggu', linkFinal: '' }
       ],
       baPendukung: [{ baId: 'BA-2026-0001' }],
@@ -21,11 +21,11 @@ describe('computeUnitProgress', () => {
     expect(p.counts).toEqual({ peserta: 2, keputusan: 1, final: 1 });
   });
 
-  it('menghitung ACC dan Diterima sama-sama sebagai keputusan', () => {
+  it('menghitung ACC dan Ditolak sama-sama sebagai keputusan', () => {
     const unit = {
       peserta: [
-        { statusPengajuan: 'Diterima', linkFinal: 'x' },
-        { statusPengajuan: 'ACC', linkFinal: 'y' },
+        { statusPengajuan: 'ACC', linkFinal: 'x' },
+        { statusPengajuan: 'Ditolak', linkFinal: 'y' },
         { statusPengajuan: 'Menunggu', linkFinal: '' }
       ],
       baPendukung: [],

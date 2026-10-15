@@ -14,7 +14,7 @@ const PENGAJUAN_COLUMNS = [
   'email_bagian', 'catatan_info_bagian', 'updated_at', 'sumber'
 ];
 
-const MANUAL_STATUSES = ['Menunggu', 'Diterima'];
+const MANUAL_STATUSES = ['Menunggu'];
 
 export async function createPengajuan(db, formData, env, opts) {
   const options = opts || {};
