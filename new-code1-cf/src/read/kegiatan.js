@@ -18,7 +18,7 @@ export function computeUnitProgress(unit) {
     const s = String(p.statusPengajuan || '').trim();
     return s === 'ACC' || s === 'Ditolak';
   }).length;
-  const finalCount = peserta.filter((p) => p.linkFinal).length;
+  const finalCount = peserta.filter((p) => p.masukBa).length;
   const selesai = baPelaksanaan.some((b) =>
     field(b, 'dosen', 'Dosen') && field(b, 'tanggal', 'Tanggal Pelaksanaan') && field(b, 'jam', 'Jam')
   );

@@ -25,6 +25,23 @@ export async function getLaporanBootstrap(db, ctx) {
     pesertaMap[id].push({ npm: String(r.npm || '').trim(), namaLengkap: String(r.nama_lengkap || '').trim(), blok: String(r.blok || '').trim() });
   }
 
+  const baMemberByKey = {};
+  const baKeyByBaId = {};
+  for (const b of ba) {
+    const c = toClientRow('berita_acara', b);
+    if (baSumber(c) !== 'Bagian') continue;
+    const id = String(b.ba_id || '').trim();
+    if (!id) continue;
+    baKeyByBaId[id] = String(b.kegiatan_key || '').trim() || kegiatanKey(c.Bagian, c.Blok, c['Nama Kegiatan']);
+  }
+  for (const r of baPeserta) {
+    const key = baKeyByBaId[String(r.ba_id || '').trim()];
+    const idp = String(r.id_pengajuan || '').trim();
+    if (!key || !idp) continue;
+    if (!baMemberByKey[key]) baMemberByKey[key] = new Set();
+    baMemberByKey[key].add(idp);
+  }
+
   const detailById = {};
   for (const d of details) {
     const k = String(d.id_pengajuan || '').trim();
@@ -108,12 +125,14 @@ export async function getLaporanBootstrap(db, ctx) {
       }
       const u = units[unitIndex[key]];
       if (!u.peserta.some((x) => x.idPengajuan === idp)) {
+        const memberSet = baMemberByKey[key];
         u.peserta.push({
           idPengajuan: idp,
           npm: String(p.NPM || '').trim(),
           namaLengkap: String(p['Nama Lengkap'] || '').trim(),
           statusPengajuan: String(p.Status || '').trim(),
-          linkFinal: String(p['Link Final'] || '').trim()
+          linkFinal: String(p['Link Final'] || '').trim(),
+          masukBa: !!(memberSet && memberSet.has(idp))
         });
       }
     }
