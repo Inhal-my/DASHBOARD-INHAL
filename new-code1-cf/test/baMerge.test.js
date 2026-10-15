@@ -73,3 +73,31 @@ describe('mergeBaFilesToPdf', () => {
     expect(out.outputPages).toBeGreaterThanOrEqual(4);
   });
 });
+
+describe('mergeBaFilesToPdf dengan dokumen dasar', () => {
+  it('menempatkan halaman dokumen dasar sebelum berkas peserta', async () => {
+    const base = await pdf(2);
+    const member = await pdf(1);
+    const res = await mergeBaFilesToPdf({
+      ba: { bagian: 'KKD', blok: 'A', namaKegiatan: 'KKD 1', tanggal: '2026-10-01' },
+      peserta: [{ urutan: 1, nama: 'Aisyah', npm: '1001', halaman: 1 }],
+      baseFile: { bytes: base, mime: 'application/pdf' },
+      groups: [{ peserta: { urutan: 1, nama: 'Aisyah', npm: '1001', blok: 'A' }, files: [{ bytes: member, mime: 'application/pdf' }] }]
+    });
+    // sampul(1) + dokumen dasar(2) + pembatas(1) + peserta(1) = 5
+    expect(res.outputPages).toBe(5);
+    expect(res.sourcePages).toBe(3);
+  });
+
+  it('menghasilkan PDF hanya dari dokumen dasar bila tanpa berkas peserta', async () => {
+    const base = await pdf(3);
+    const res = await mergeBaFilesToPdf({
+      ba: { bagian: 'KKD', blok: 'A', namaKegiatan: 'KKD 1', tanggal: '2026-10-01' },
+      peserta: [],
+      baseFile: { bytes: base, mime: 'application/pdf' },
+      groups: []
+    });
+    expect(res.outputPages).toBe(4); // sampul(1) + dasar(3)
+    expect(res.sourcePages).toBe(3);
+  });
+});

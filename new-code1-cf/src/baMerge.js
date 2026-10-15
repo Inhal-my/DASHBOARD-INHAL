@@ -128,8 +128,19 @@ export async function mergeBaFilesToPdf(input) {
     for (const p of addCoverPages(doc, cfg.ba, cfg.peserta || [], helv, helvBold)) generated.push(p);
   }
 
-  const withFiles = groups.filter((g) => g && Array.isArray(g.files) && g.files.length);
   let sourcePages = 0;
+  const base = cfg.baseFile;
+  if (base && base.bytes && base.bytes.length) {
+    try {
+      const baseBytes = toBytes(base.bytes);
+      if (isPdfFile(base)) sourcePages += await copyPdfPages(doc, baseBytes);
+      else { await addImagePage(doc, baseBytes, String(base.mime || '')); sourcePages += 1; }
+    } catch (e) {
+      // dokumen dasar rusak diabaikan; berkas peserta tetap diproses
+    }
+  }
+
+  const withFiles = groups.filter((g) => g && Array.isArray(g.files) && g.files.length);
   let sepIndex = 0;
   for (const g of withFiles) {
     const pe = g.peserta || {};
