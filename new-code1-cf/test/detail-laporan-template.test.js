@@ -419,3 +419,12 @@ describe('detail laporan tab berita acara (mockup)', () => {
     expect(html).toContain('in-mcard');
   });
 });
+
+describe('sisa status Diterima', () => {
+  it('detail-laporan tidak memuat Diterima / totalDiterima', async () => {
+    const html = await loadHtml();
+    expect(html).not.toContain("'Diterima'");
+    expect(html).not.toContain('totalDiterima');
+    expect(html).not.toContain('>Diterima<');
+  });
+});

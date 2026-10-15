@@ -55,14 +55,13 @@ export async function getLaporanBootstrap(db, ctx) {
     historyById[k].push(toClientRow('status_history', h));
   }
 
-  let totalPendaftar = 0, totalDiterima = 0, totalDitolak = 0, totalMenunggu = 0, totalAcc = 0, totalBiaya = 0;
+  let totalPendaftar = 0, totalDitolak = 0, totalMenunggu = 0, totalAcc = 0, totalBiaya = 0;
   const perJenis = {}, perBlok = {}, perStatus = {};
   const rows = pengajuan.map((p) => {
     const id = String(p.id_pengajuan || '').trim();
     const row = toClientRow('pengajuan', p);
     const status = String(row.Status || '').trim();
     totalPendaftar++;
-    if (status === 'Diterima') totalDiterima++;
     if (status === 'Ditolak') totalDitolak++;
     if (status === 'Menunggu') totalMenunggu++;
     if (status === 'ACC') totalAcc++;
@@ -157,7 +156,7 @@ export async function getLaporanBootstrap(db, ctx) {
   }
 
   return {
-    summary: { totalPendaftar, totalDiterima, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
+    summary: { totalPendaftar, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
     rows,
     beritaAcara,
     dosen,
