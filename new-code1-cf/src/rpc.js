@@ -27,7 +27,7 @@ import {
 import {
   getOrCreateBaAdmin, addBaAdminPesertaBulk, getBaAdminForPengajuan,
   setBaAdminPesertaBerkas, removeBaAdminPeserta, regenerateBaAdminPdf,
-  addBaAdminPesertaWithBerkas
+  addBaAdminPesertaWithBerkas, setBaAdminBaseFile, removeBaAdminBaseFile
 } from './write/baAdmin.js';
 
 const HANDLERS = {
@@ -118,7 +118,9 @@ const HANDLERS = {
     const regen = await regenerateBaAdminPdf(db, args[0], ctx);
     return { success: true, needsRegen: !regen.success };
   },
-  baAdminRegenerate: (db, args, ctx) => regenerateBaAdminPdf(db, args[0], ctx)
+  baAdminRegenerate: (db, args, ctx) => regenerateBaAdminPdf(db, args[0], ctx),
+  baAdminSetBaseFile: (db, args, ctx) => setBaAdminBaseFile(db, args[0], args[1], ctx),
+  baAdminRemoveBaseFile: (db, args, ctx) => removeBaAdminBaseFile(db, args[0], ctx)
 };
 
 export async function extractToken(db, args) {

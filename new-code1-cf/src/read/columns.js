@@ -37,7 +37,8 @@ export const TABLE_COLUMNS = {
     timestamp: 'Timestamp', ba_id: 'BA ID', bagian: 'Bagian', blok: 'Blok',
     nama_kegiatan: 'Nama Kegiatan', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', jam: 'Jam',
     jumlah_peserta: 'Jumlah Peserta', file_name: 'File Name', file_url: 'File URL',
-    catatan: 'Catatan', sumber: 'Sumber', kegiatan_key: 'Kegiatan Key'
+    catatan: 'Catatan', sumber: 'Sumber', kegiatan_key: 'Kegiatan Key',
+    base_file_url: 'Base File URL', base_file_name: 'Base File Name'
   },
   berita_acara_admin_peserta: {
     timestamp: 'Timestamp', ba_id: 'BA ID', id_pengajuan: 'ID Pengajuan', npm: 'NPM', nama_lengkap: 'Nama Lengkap',
