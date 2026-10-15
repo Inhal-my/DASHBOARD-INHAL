@@ -25,3 +25,12 @@ describe('dashboard modal Kelola BA Pendukung', () => {
     expect(html).toContain('refreshBaPendukungIndicators()');
   });
 });
+
+describe('guard panel BA Pelaksanaan multi', () => {
+  it('menyediakan label & menyaring baMember', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('bab.ba.label');
+    expect(html).toContain('r.baMember');
+    expect(html).toContain('menambah BA baru');
+  });
+});
