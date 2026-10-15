@@ -946,7 +946,6 @@
                                         <label class="label">Status Awal</label>
                                         <select v-model="manual.form.status" class="input">
                                             <option value="Menunggu">Menunggu</option>
-                                            <option value="Diterima">Diterima</option>
                                         </select>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
@@ -1075,7 +1074,7 @@
                             <button class="b" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
                                 <div class="k">BA Pelaksanaan</div>
                                 <div class="n emerald">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
-                                <div class="p">{{ bagianSummary.pelaksanaanPct }}% dari yang Diterima</div>
+                                <div class="p">{{ bagianSummary.pelaksanaanPct }}% dari yang ACC</div>
                             </button>
                             <button class="b" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
                                 <div class="k">Belum lengkap</div>
@@ -1399,7 +1398,7 @@
                                         <button v-if="!bab.ba.open" class="btn-primary w-full" @click="babOpenBaPicker"><i class="bi bi-plus-circle"></i> Buat Berita Acara</button>
                                         <div v-else class="space-y-3">
                                             <div v-if="!babSelectedGroup">
-                                                <label class="label">Pilih Kegiatan ({{ (bab.baSettings.statuses || ['Diterima','ACC']).join(' / ') }})</label>
+                                                <label class="label">Pilih Kegiatan ({{ (bab.baSettings.statuses || ['ACC']).join(' / ') }})</label>
                                                 <div v-if="!babKegiatanGroups.length" class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">Tidak ada kegiatan yang bisa dibuatkan berita acara.</div>
                                                 <div v-else class="space-y-2">
                                                     <button v-for="g in babKegiatanGroups" :key="g.key" class="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40" @click="babSelectKegiatan(g.key)">
@@ -1684,7 +1683,7 @@
                                                 <td colspan="9" class="px-4 py-12 text-center text-xs text-slate-400">Memuat data unggahan...</td>
                                             </tr>
                                             <tr v-else-if="!uploadMonitorRows.length">
-                                                <td colspan="9" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data pengajuan berstatus Diterima/ACC.</td>
+                                                <td colspan="9" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data pengajuan berstatus ACC.</td>
                                             </tr>
                                             <tr v-for="r in uploadMonitorRows" :key="r['ID Pengajuan']" class="border-t border-slate-50">
                                                 <td class="px-4 py-2.5 font-mono text-[11px] text-slate-500">{{ r['ID Pengajuan'] }}</td>
@@ -1960,20 +1959,19 @@
                                     <div class="sm:col-span-1">
                                         <label class="label">Status</label>
                                         <select v-model="detail.status" class="input">
-                                            <option>Diterima</option>
+                                            <option>Menunggu</option>
                                             <option>ACC</option>
                                             <option>Ditolak</option>
                                             <option>Dibatalkan</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-2">
-                                        <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak'">(wajib)</span></label>
+                                        <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak' || detail.status==='Dibatalkan'">(wajib)</span></label>
                                         <input v-model="detail.catatan" class="input" placeholder="Catatan keputusan...">
                                     </div>
                                 </div>
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
-                                    <button class="btn-soft" @click="quickStatus('Diterima')"><i class="bi bi-hand-thumbs-up"></i>Terima</button>
                                     <button class="btn-soft" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
                                     <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
                                     <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
@@ -1982,16 +1980,8 @@
 
                             <!-- email actions -->
                             <div class="mt-5">
-                                <div class="label mb-2"><i class="bi bi-envelope-check"></i> Email Notifikasi</div>
-                                <div class="mb-3 grid gap-3 rounded-xl bg-slate-50/70 p-3 text-xs sm:grid-cols-3">
-                                    <div><span class="label">Status Email:</span> <span :class="notifBadge(detail.p['Status Notifikasi Email'])">{{ detail.p['Status Notifikasi Email'] || 'Belum dikirim' }}</span></div>
-                                    <div><span class="label">Terkirim Pada:</span> <span class="text-slate-600">{{ formatTanggal(detail.p['Notifikasi Terkirim Pada']) }}</span></div>
-                                    <div><span class="label">Email Bagian:</span> <span class="text-slate-600">{{ detail.p['Email Bagian'] || '—' }}</span></div>
-                                    <div class="sm:col-span-3"><span class="label">Error:</span> <span class="text-slate-600">{{ detail.p['Error Notifikasi Email'] || '—' }}</span></div>
-                                </div>
+                                <div class="label mb-2"><i class="bi bi-envelope-check"></i> Email ACC Final</div>
                                 <div class="flex flex-wrap gap-2">
-                                    <button v-if="!isManual(detail.p) && (detail.p.Status==='Diterima' || detail.p.Status==='Ditolak')" class="btn-soft" @click="sendStatusEmail()"><i class="bi bi-send"></i>Kirim Ulang Email Notifikasi</button>
-                                    <button v-if="!isManual(detail.p) && detail.p.Status!=='ACC' && detail.p['Link ACC INHAL']" class="btn-primary" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Email ACC Final</button>
                                     <button v-if="!isManual(detail.p) && detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
                                     <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
                                     <span v-if="isManual(detail.p)" class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-info-circle"></i>Pengajuan manual tanpa email — notifikasi email dinonaktifkan.</span>
@@ -2108,7 +2098,7 @@
                                 <div class="mt-4">
                                     <button class="btn-soft !py-1.5 text-xs" @click="kb.pick = !kb.pick"><i class="bi bi-person-plus"></i> Tambah peserta + berkas</button>
                                     <div v-if="kb.pick" class="mt-2 rounded-xl ring-1 ring-slate-200">
-                                        <div v-if="!(kb.data.candidates || []).length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan berstatus ACC/Diterima yang belum masuk BA).</div>
+                                        <div v-if="!(kb.data.candidates || []).length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan berstatus ACC yang belum masuk BA).</div>
                                         <label v-for="c in kb.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
                                             <input type="radio" name="kbAdd" class="h-4 w-4 accent-brand-600" :checked="kb.addPick === c.idPengajuan" @change="kbTogglePick(c.idPengajuan)">
                                             <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
@@ -2309,7 +2299,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                     detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Diterima', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                     detail: { open: false, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
                     kb: { open: false, loading: false, data: null, pick: false, addPick: '', kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     kbPicker: { open: false },
@@ -2328,12 +2318,12 @@
                         rows: [],
                         baList: [],
                         fBlok: '',
-                        baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
+                        baSettings: { statuses: ['ACC'], finalOnly: true },
                         ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
                     },
                     master: {
                         data: {},
-                        baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true },
+                        baSettings: { statuses: ['ACC'], finalOnly: true },
                         saving: false,
                         downloading: false,
                         downloadScope: 'master',
@@ -2408,11 +2398,10 @@
                 },
                 statusChips() {
                     const s = this.stats.perStatus || {};
-                    const map = { '': '#64748b', 'Menunggu': '#d97706', 'Diterima': '#0284c7', 'ACC': '#059669', 'Ditolak': '#e11d48', 'Dibatalkan': '#64748b' };
+                    const map = { '': '#64748b', 'Menunggu': '#d97706', 'ACC': '#059669', 'Ditolak': '#e11d48', 'Dibatalkan': '#64748b' };
                     return [
                         { key: '', label: 'Semua', count: this.stats.total || 0, dot: map[''] },
                         { key: 'Menunggu', label: 'Menunggu', count: s.Menunggu || 0, dot: map['Menunggu'] },
-                        { key: 'Diterima', label: 'Diterima', count: s.Diterima || 0, dot: map['Diterima'] },
                         { key: 'ACC', label: 'ACC', count: s.ACC || 0, dot: map['ACC'] },
                         { key: 'Ditolak', label: 'Ditolak', count: s.Ditolak || 0, dot: map['Ditolak'] },
                         { key: 'Dibatalkan', label: 'Dibatalkan', count: s.Dibatalkan || 0, dot: map['Dibatalkan'] }
@@ -2423,7 +2412,6 @@
                     return [
                         { label: 'Total', num: this.stats.total || 0, icon: 'bi-inbox', tint: 'indigo', color: '#4f46e5' },
                         { label: 'Menunggu', num: s.Menunggu || 0, icon: 'bi-hourglass-split', tint: 'amber', color: '#d97706' },
-                        { label: 'Diterima', num: s.Diterima || 0, icon: 'bi-check2', tint: 'sky', color: '#0284c7' },
                         { label: 'ACC', num: s.ACC || 0, icon: 'bi-patch-check', tint: 'emerald', color: '#059669' },
                         { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-lg', tint: 'rose', color: '#e11d48' }
                     ];
@@ -2438,7 +2426,7 @@
                 },
                 babKegiatanGroups() {
                     const map = {};
-                    const statuses = (this.bab.baSettings && this.bab.baSettings.statuses) || ['Diterima', 'ACC'];
+                    const statuses = (this.bab.baSettings && this.bab.baSettings.statuses) || ['ACC'];
                     const finalOnly = !(this.bab.baSettings && this.bab.baSettings.finalOnly === false);
                     (this.bab.rows || []).forEach(r => {
                         const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
@@ -2619,7 +2607,6 @@
                     return [
                         { label: 'Total Pendaftar', num: total, icon: 'bi-people-fill', color: '#4f46e5', tint: 'indigo', trend: this.totalTrend },
                         { label: 'Menunggu', num: s.Menunggu || 0, icon: 'bi-hourglass-split', color: '#d97706', tint: 'amber', pct: share(s.Menunggu) },
-                        { label: 'Diterima', num: s.Diterima || 0, icon: 'bi-check2-circle', color: '#059669', tint: 'emerald', pct: share(s.Diterima) },
                         { label: 'ACC', num: s.ACC || 0, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'violet', pct: share(s.ACC) },
                         { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-circle', color: '#e11d48', tint: 'rose', pct: share(s.Ditolak) },
                         { label: 'Dibatalkan', num: s.Dibatalkan || 0, icon: 'bi-x-octagon', color: '#64748b', tint: 'slate', pct: share(s.Dibatalkan) },
@@ -2640,7 +2627,6 @@
                 baStatusOptions() {
                     return [
                         { value: 'Menunggu', label: 'Menunggu' },
-                        { value: 'Diterima', label: 'Diterima' },
                         { value: 'ACC', label: 'ACC' },
                         { value: 'Ditolak', label: 'Ditolak' },
                         { value: 'Dibatalkan', label: 'Dibatalkan' }
@@ -2753,7 +2739,7 @@
                 },
                 babEnd() {
                     if (this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
-                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], fBlok: '', baSettings: { statuses: ['Diterima', 'ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], fBlok: '', baSettings: { statuses: ['ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
                     this.notify('Sesi bagian diakhiri.');
                 },
                 async babLoad() {
@@ -2764,7 +2750,7 @@
                             this.run('getBagianBaSettings'),
                             this.runAsBab('getBagianBootstrap', this.bab.kategori, this.bab.subBagian)
                         ]);
-                        if (bs) this.bab.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, bs);
+                        if (bs) this.bab.baSettings = Object.assign({ statuses: ['ACC'], finalOnly: true }, bs);
                         if (!boot || !boot.ok) { this.notify((boot && boot.message) || 'Gagal memuat data bagian.', false); return; }
                         this.bab.rows = boot.rows || [];
                         this.bab.baList = boot.baList || [];
@@ -2992,13 +2978,6 @@
                     if (v.includes('batal')) return 'in-badge cancel';
                     return 'in-badge wait';
                 },
-                notifBadge(status) {
-                    const s = String(status || 'Belum dikirim');
-                    const cls = s === 'Berhasil' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
-                        : (s === 'Gagal' ? 'bg-rose-50 text-rose-700 ring-rose-600/20'
-                            : 'bg-amber-50 text-amber-700 ring-amber-600/20');
-                    return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ' + cls;
-                },
                 barsOf(obj) {
                     const o = obj || {};
                     const keys = Object.keys(o);
@@ -3219,7 +3198,7 @@
                     try {
                         const d = await this.run('getMasterDataMonitor') || {};
                         this.master.data = d;
-                        this.master.baSettings = Object.assign({ statuses: ['Diterima', 'ACC'], finalOnly: true }, d.bagianSettings || {});
+                        this.master.baSettings = Object.assign({ statuses: ['ACC'], finalOnly: true }, d.bagianSettings || {});
                         const mb = (d.masterBiaya || []).map(r => ({ Kegiatan: String((r && (r.Kegiatan || r.kegiatan)) || '').trim(), Biaya: parseInt(String((r && (r.Biaya || r.biaya)) || '').replace(/[^0-9]/g, ''), 10) || 0 })).filter(o => o.Kegiatan && o.Biaya > 0);
                         mb.sort((a, b) => a.Biaya - b.Biaya);
                         this.masterBiaya = mb;
@@ -3353,7 +3332,7 @@
                     this.detail.editInduk = false;
                     this.detail.editDetailIndex = -1;
                     this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
-                    this.detail.status = 'Diterima';
+                    this.detail.status = p.Status || 'Menunggu';
                     this.detail.catatan = p['Catatan Admin'] || '';
                     this.detail.buktiFile = null;
                     this.detail.buktiUploading = false;
@@ -3716,8 +3695,8 @@
                 async updateStatus() {
                     const status = this.detail.status;
                     const catatan = this.detail.catatan.trim();
-                    if (status === 'Ditolak' && !catatan) {
-                        this.notify('Catatan wajib diisi saat menolak pengajuan.', false);
+                    if ((status === 'Ditolak' || status === 'Dibatalkan') && !catatan) {
+                        this.notify('Catatan wajib diisi untuk status ' + status + '.', false);
                         return;
                     }
                     this.loading = true;
@@ -3757,7 +3736,8 @@
                             message: 'Ubah status pengajuan ini menjadi ACC?',
                             details: [
                                 'Status berubah menjadi ACC.',
-                                'Tidak ada email yang dikirim. Untuk mengirim surat final, gunakan "Kirim Email ACC Final".'
+                                'Nomor surat terbit otomatis bila belum ada.',
+                                'Surat keterangan final (PDF) dikirim ke mahasiswa dan Bagian.'
                             ],
                             icon: 'bi-patch-check',
                             confirmLabel: 'Jadikan ACC'
@@ -3768,25 +3748,6 @@
                         this.detail.catatan = '';
                     }
                     await this.updateStatus();
-                },
-                async sendStatusEmail() {
-                    const ok = await this.askConfirm({
-                        title: 'Kirim Ulang Notifikasi Status',
-                        message: 'Kirim ulang email notifikasi status ke mahasiswa?',
-                        icon: 'bi-send',
-                        confirmLabel: 'Kirim Email'
-                    });
-                    if (!ok) return;
-                    this.loading = true;
-                    try {
-                        const res = await this.run('sendStatusNotificationEmail', this.detail.p['ID Pengajuan']);
-                        this.notify((res && res.message) || 'Selesai.');
-                        await this.reloadDetail(this.detail.p['ID Pengajuan']);
-                    } catch (e) {
-                        this.notify('Gagal: ' + e, false);
-                    } finally {
-                        this.loading = false;
-                    }
                 },
                 async sendFinalEmail() {
                     const alreadyAcc = this.detail.p.Status === 'ACC';
@@ -3893,7 +3854,7 @@
                     return AppCommon.normBagian(v);
                 },
                 unitKeputusan(u) {
-                    const order = ['Ditolak', 'Dibatalkan', 'Menunggu', 'Diterima', 'ACC'];
+                    const order = ['Ditolak', 'Dibatalkan', 'Menunggu', 'ACC'];
                     let best = '';
                     let bestIdx = -1;
                     (u.peserta || []).forEach(p => {
@@ -3981,7 +3942,7 @@
                 },
                 unitPelaksanaanEligible(u) {
                     const k = this.unitKeputusan(u);
-                    return k === 'Diterima' || k === 'ACC';
+                    return k === 'ACC';
                 },
                 unitIncomplete(u) {
                     return !this.unitHasPendukung(u) || (this.unitPelaksanaanEligible(u) && !this.unitHasPelaksanaan(u));
@@ -4278,7 +4239,7 @@
                 },
                 canResetUpload(r) {
                     const hasFile = !!(r['Link ACC INHAL'] || r['Link Bukti Bayar'] || r['Link Final']);
-                    return hasFile && (r.Status === 'Diterima' || r.Status === 'ACC');
+                    return hasFile && r.Status === 'ACC';
                 },
                 openResetUpload(r) {
                     if (!this.canResetUpload(r)) {

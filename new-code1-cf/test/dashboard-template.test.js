@@ -422,7 +422,7 @@ describe('dashboard manual entry tab', () => {
     expect(html).toContain('Status Awal');
     expect(html).toContain("v-model=\"manual.form.status\"");
     expect(html).toContain('<option value="Menunggu">Menunggu</option>');
-    expect(html).toContain('<option value="Diterima">Diterima</option>');
+    expect(html).not.toContain('Diterima');
   });
 
   it('menandai sumber Manual dan menonaktifkan email notifikasi', async () => {
@@ -439,12 +439,12 @@ describe('dashboard ubah status ke ACC', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('<option>ACC</option>');
   });
-  it('menyediakan tombol Jadikan ACC tanpa kirim email', async () => {
+  it('menyediakan tombol Jadikan ACC yang menerbitkan surat dan mengirim PDF', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain("@click=\"quickStatus('ACC')\"");
     expect(html).toContain('Jadikan ACC');
     expect(html).toContain("status === 'ACC'");
-    expect(html).toContain('Tidak ada email yang dikirim');
+    expect(html).toContain('Surat keterangan final (PDF) dikirim');
   });
 });
 
@@ -499,5 +499,15 @@ describe('dashboard pensiun alur BA Pendukung lama', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('openKelolaBaPicker()');
     expect(html).toContain('openKelolaBaForUnit(');
+  });
+});
+
+describe('guard alur status dashboard', () => {
+  it('tidak lagi menyediakan status atau aksi Diterima/notifikasi lama', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('<option>Diterima</option>');
+    expect(html).not.toContain('>Diterima<');
+    expect(html).not.toContain('Kirim Ulang Email Notifikasi');
+    expect(html).toContain('<option>Menunggu</option>');
   });
 });
