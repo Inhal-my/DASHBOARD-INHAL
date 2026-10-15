@@ -154,6 +154,19 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 > Setelah perubahan kode ini, badge "BA Ada" hanya muncul bila peserta benar-benar punya
 > minimal satu berkas aktif.
 
+### 3.4 Migrasi backfill `id_pengajuan` peserta BA Pendukung (sekali)
+
+Sheet sumber `BeritaAcaraAdminPeserta` tidak punya kolom `ID Pengajuan`, sehingga peserta
+hasil impor menyimpan `id_pengajuan` kosong dan berkasnya tidak bisa diunggah lewat modal
+"Kelola BA Pendukung" (`setBaAdminPesertaBerkas` menolak pengajuan kosong). Migrasi
+`2026-10-15-ba-pendukung-peserta-id-pengajuan-backfill.sql` memetakan tiap peserta tanpa
+`id_pengajuan` ke tepat satu pengajuan ber-NPM sama; baris dengan kandidat ambigu dibiarkan
+kosong agar tidak salah pasang. File ini hanya `UPDATE`, **aman dijalankan berulang**:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-15-ba-pendukung-peserta-id-pengajuan-backfill.sql
+```
+
 ## 4. Deploy Worker + aset
 
 ```bash
