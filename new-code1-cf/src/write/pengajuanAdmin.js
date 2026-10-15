@@ -381,8 +381,8 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
   if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
   const status = str(p.status);
-  if (status !== 'Diterima' && status !== 'ACC') {
-    return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus Diterima atau ACC.' };
+  if (status !== 'ACC') {
+    return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus ACC.' };
   }
 
   const acc = str(p.link_acc_inhal);

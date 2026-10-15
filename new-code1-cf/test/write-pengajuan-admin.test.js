@@ -218,16 +218,17 @@ describe('reset upload bukti', () => {
     await seedDetail();
   }
 
-  it('rejects when status is not Diterima or ACC', async () => {
+  it('menolak saat status bukan ACC', async () => {
     await seedWithLinks('Menunggu');
     const ctx = await adminCtx();
     const res = await resetUploadBukti(env.DB, 'INHAL-1', {}, ctx);
     expect(res.success).toBe(false);
-    expect(res.message).toContain('Diterima atau ACC');
+    expect(res.message).toContain('ACC');
+    expect(res.message).not.toContain('Diterima');
   });
 
   it('rejects when there is nothing to reset', async () => {
-    await seedPengajuan({ status: 'Diterima' });
+    await seedPengajuan({ status: 'ACC' });
     const ctx = await adminCtx();
     const res = await resetUploadBukti(env.DB, 'INHAL-1', {}, ctx);
     expect(res.success).toBe(false);
