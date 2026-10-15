@@ -2,7 +2,7 @@ import { getSession, requireBagianSession, AUTH_ERROR } from '../session.js';
 import { toClientRow } from './columns.js';
 import {
   baginaKey, getMasterOptions, getBagianBaSettings, baginaHasAccess,
-  getBagianAliasMap, resolveBagian12
+  getBagianAliasMap, resolveBagian12, kegiatanKey
 } from './common.js';
 
 function baSumber(r) {
@@ -33,6 +33,20 @@ async function computeBagianRows(db, kategori, subBagian) {
     byId[id].push(toClientRow('detail_kegiatan', d));
   }
   const rows = [];
+  const baKeyByBaId = {};
+  for (const b of (await db.prepare('SELECT ba_id, kegiatan_key FROM berita_acara').all()).results || []) {
+    const id = String(b.ba_id || '').trim();
+    if (id) baKeyByBaId[id] = String(b.kegiatan_key || '').trim();
+  }
+  const baMemberByKey = {};
+  for (const p of (await db.prepare('SELECT ba_id, id_pengajuan FROM berita_acara_peserta').all()).results || []) {
+    const key = baKeyByBaId[String(p.ba_id || '').trim()];
+    const idp = String(p.id_pengajuan || '').trim();
+    if (!key || !idp) continue;
+    if (!baMemberByKey[key]) baMemberByKey[key] = new Set();
+    baMemberByKey[key].add(idp);
+  }
+  const bagianForKey = String(subBagian || kategori || '').trim();
   for (const p of all) {
     const prow = toClientRow('pengajuan', p);
     const id = String(prow['ID Pengajuan'] || '').trim();
@@ -46,6 +60,9 @@ async function computeBagianRows(db, kategori, subBagian) {
         const dPilihan = baginaKey(d.Pilihan);
         if (dBagian !== sub && dPilihan !== sub) continue;
       }
+      const namaKegiatan = String(d.Pilihan || '').trim() + (String(d.Detail || '').trim() ? ' - ' + String(d.Detail || '').trim() : '');
+      const kk = kegiatanKey(bagianForKey, String(prow.Blok || '').trim(), namaKegiatan);
+      const memberSet = baMemberByKey[kk];
       rows.push({
         idPengajuan: id,
         npm: String(prow.NPM || '').trim(),
@@ -58,7 +75,8 @@ async function computeBagianRows(db, kategori, subBagian) {
         bagian: String(d.Bagian || '').trim(),
         status: String(prow.Status || '').trim(),
         linkSurat: String(prow['Link Surat Keterangan'] || '').trim(),
-        linkFinal: String(prow['Link Final'] || '').trim()
+        linkFinal: String(prow['Link Final'] || '').trim(),
+        baMember: !!(memberSet && memberSet.has(id))
       });
     }
   }

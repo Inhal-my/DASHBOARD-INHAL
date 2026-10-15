@@ -48,4 +48,16 @@ describe('bagian read', () => {
     const own = await getBeritaAcaraList(env.DB, 'SGD', 'SGD', scoped);
     expect(own).toHaveLength(0);
   });
+
+  it('menandai peserta yang sudah masuk BA Pelaksanaan sebagai baMember', async () => {
+    await seed();
+    await env.DB.prepare("UPDATE berita_acara SET kegiatan_key='ujian|a|uas' WHERE ba_id='BA-2026-0001'").run();
+    await env.DB.prepare("UPDATE berita_acara_peserta SET id_pengajuan='INHAL-1' WHERE ba_id='BA-2026-0001'").run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot.rows[0].baMember).toBe(true);
+
+    await env.DB.prepare("DELETE FROM berita_acara_peserta").run();
+    const boot2 = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot2.rows[0].baMember).toBe(false);
+  });
 });
