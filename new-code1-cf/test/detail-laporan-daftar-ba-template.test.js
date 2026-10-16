@@ -105,3 +105,16 @@ describe('daftar BA: tab & UI', () => {
     }
   });
 });
+
+describe('daftar BA: indikator kelengkapan', () => {
+  it('menampilkan rasio masuk BA', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('masuk BA');
+    expect(html).toContain('r.counts.final');
+  });
+  it('menampilkan badge Lengkap/Draft per BA', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("baLengkap(b, 'Pendukung')");
+    expect(html).toContain("baLengkap(b, 'Pelaksanaan')");
+  });
+});

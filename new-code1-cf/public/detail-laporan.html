@@ -1212,6 +1212,7 @@
                                                     <div class="in-progdots" :title="stageTooltip(r)">
                                                         <i v-for="(s, si) in progresDots(r)" :key="si" :class="s"></i>
                                                     </div>
+                                                    <div class="mt-0.5 text-[10px] font-semibold text-slate-400">{{ (r.counts && r.counts.final) || 0 }}/{{ (r.peserta || []).length }} masuk BA</div>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">
                                                     <span v-if="r.pelaksanaan && r.pelaksanaan.length">{{ fmtTanggalWaktu(r.pelaksanaan[0].tanggal + (r.pelaksanaan[0].jam ? 'T' + r.pelaksanaan[0].jam : '')) }}</span>
@@ -1266,6 +1267,7 @@
                                                                 <div class="flex flex-wrap items-center gap-2">
                                                                     <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700">Pendukung</span>
+                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="baLengkap(b, 'Pendukung') ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ baLengkap(b, 'Pendukung') ? 'Lengkap' : 'Draft' }}</span>
                                                                     <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
                                                                     <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="link">Lihat</a>
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-xs"></i></button>
@@ -1276,6 +1278,7 @@
                                                                 <div class="flex flex-wrap items-center gap-2">
                                                                     <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-brand-50 text-brand-700">Pelaksanaan</span>
+                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="baLengkap(b, 'Pelaksanaan') ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ baLengkap(b, 'Pelaksanaan') ? 'Lengkap' : 'Draft' }}</span>
                                                                     <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
                                                                     <span v-if="b.Dosen" class="text-slate-500">{{ b.Dosen }}</span>
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-xs"></i></button>
@@ -1306,7 +1309,7 @@
                                         <span class="font-semibold text-slate-800">{{ r.label }}</span>
                                         <span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.bagian }}</span>
                                     </div>
-                                    <div class="kv"><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Peserta</span><b>{{ (r.peserta || []).length }} mahasiswa</b><span>Biaya</span><b class="text-brand-700">{{ fmtRupiah(baKegiatanBiaya(r)) }}</b></div>
+                                    <div class="kv"><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Peserta</span><b>{{ (r.peserta || []).length }} mahasiswa</b><span>Masuk BA</span><b>{{ (r.counts && r.counts.final) || 0 }}/{{ (r.peserta || []).length }}</b><span>Biaya</span><b class="text-brand-700">{{ fmtRupiah(baKegiatanBiaya(r)) }}</b></div>
                                     <div v-if="expanded[r.key]" class="mt-2 border-t border-slate-100 pt-2 text-xs">
                                         <div class="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (r.peserta || []).length }})</div>
                                         <div v-for="(p, pi) in r.peserta" :key="pi" class="flex flex-wrap items-center gap-2 py-0.5">
