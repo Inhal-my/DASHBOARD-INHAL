@@ -70,19 +70,14 @@ describe('bagian template', () => {
     expect(html).toContain('<div class="mx-auto w-full max-w-7xl">');
   });
 
-  it('kartu tersusun grid 1 kolom di HP dan 2 kolom di PC', async () => {
+  it('kartu panel ditata vertikal dalam pembungkus space-y-5', async () => {
     const html = await loadBagianHtml();
-    expect(html).toContain('class="grid grid-cols-1 items-start gap-5 lg:grid-cols-2"');
+    expect(html).toContain('class="space-y-5"');
   });
 
-  it('kartu Upload BA sticky hanya pada layar besar', async () => {
+  it('kartu Upload BA hanya tampil pada tab Berita Acara', async () => {
     const html = await loadBagianHtml();
-    expect(html).toContain('class="ba-sticky overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"');
-    const css = (html.match(/<style[^>]*>[\s\S]*?<\/style>/g) || [])
-      .map((block) => block.replace(/<\/?style[^>]*>/g, ''))
-      .join('\n');
-    expect(css).toContain('.ba-sticky');
-    expect(css).toContain('@media (min-width: 1024px)');
+    expect(html).toContain(`v-if="activeTab==='ba'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"`);
   });
 });
 
