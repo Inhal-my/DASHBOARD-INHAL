@@ -570,4 +570,12 @@ describe('dashboard detail drawer', () => {
     expect(html).not.toContain('data-s="Diterima"');
     expect(html).not.toContain('>Diterima<');
   });
+
+  it('mereset langkah drawer ke 0 dan menyediakan progres berkas', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('this.detail.step = 0;');
+    expect(html).toContain('berkasProgress() {');
+    expect(html).toContain("p['Link Surat Keterangan'], p['Link ACC INHAL'], p['Link Bukti Bayar']");
+    expect(html).toContain(':style="{ width: (berkasProgress / 3 * 100) + \'%\' }"');
+  });
 });
