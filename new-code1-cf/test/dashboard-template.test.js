@@ -435,9 +435,10 @@ describe('dashboard manual entry tab', () => {
 });
 
 describe('dashboard ubah status ke ACC', () => {
-  it('menyediakan opsi ACC pada dropdown status', async () => {
+  it('menyediakan pemilih status ACC pada panel keputusan', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('<option>ACC</option>');
+    expect(html).toContain('class="pd-statuspick"');
+    expect(html).toContain('data-s="ACC"');
   });
   it('menyediakan tombol Jadikan ACC yang menerbitkan surat dan mengirim PDF', async () => {
     const html = await loadDashboardHtml();
@@ -508,7 +509,7 @@ describe('guard alur status dashboard', () => {
     expect(html).not.toContain('<option>Diterima</option>');
     expect(html).not.toContain('>Diterima<');
     expect(html).not.toContain('Kirim Ulang Email Notifikasi');
-    expect(html).toContain('<option>Menunggu</option>');
+    expect(html).toContain('data-s="Menunggu"');
   });
 });
 
@@ -528,5 +529,45 @@ describe('dashboard detail drawer primitives', () => {
     expect(html).toContain('this.detail.step = Math.max(0, Math.min(2, n));');
     expect(html).toContain('step: 0,');
     expect(html).toContain('this.detail.step = 0;');
+  });
+});
+
+describe('dashboard detail drawer', () => {
+  it('memakai drawer pd-* dengan stepper 3 langkah', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('class="pd-drawer"');
+    expect(html).toContain('class="pd-overlay"');
+    expect(html).toContain('class="pd-steps"');
+    expect(html).toContain('data-step="0"');
+    expect(html).toContain('data-step="1"');
+    expect(html).toContain('data-step="2"');
+    expect(html).toContain('>Identitas<');
+    expect(html).toContain('>Berkas<');
+    expect(html).toContain('>Keputusan<');
+    expect(html).toContain('Lanjut ke Berkas');
+    expect(html).toContain('Lanjut ke Keputusan');
+    expect(html).not.toContain('modal-panel max-w-4xl');
+  });
+
+  it('mempertahankan kemampuan produksi di langkah-langkah', async () => {
+    const html = await loadDashboardHtml();
+    for (const s of [
+      "openKelolaBaPendukung(detail.p['ID Pengajuan'])",
+      'uploadBuktiBayar()', 'onBuktiFile($event)', 'ref="buktiCamera"',
+      "scanOnPhotos($event, 'bukti')", "scanBuildPdf('bukti')", "scanClear('bukti')",
+      'updateStatus()', "quickStatus('ACC')", "quickStatus('Ditolak')",
+      'sendFinalEmail()', 'sendAccFinalToBagian()', 'deletePengajuan()',
+      'Unggah Bukti Bayar (oleh Admin)', 'uploadSurat', 'onSuratFile',
+      'startEditDetail(i)', 'deleteDetailRow(i)', 'startEditInduk()', 'saveIndukFields()',
+      'cancelEditDetail()', 'Berita Acara Pendukung', 'berkasProgress'
+    ]) {
+      expect(html).toContain(s);
+    }
+  });
+
+  it('tidak memuat status Diterima di panel keputusan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).not.toContain('data-s="Diterima"');
+    expect(html).not.toContain('>Diterima<');
   });
 });

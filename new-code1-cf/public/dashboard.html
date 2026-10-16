@@ -1862,161 +1862,88 @@
             </div>
         </main>
 
-        <!-- ============ MODAL: DETAIL PENGAJUAN ============ -->
+        <!-- ============ DRAWER: DETAIL PENGAJUAN ============ -->
         <transition name="fade">
-            <div v-if="detail.open" class="fixed inset-0 z-50 modal-overlay">
-                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="detail.open=false"></div>
-                <transition name="pop" appear>
-                    <div class="modal-panel max-w-4xl shadow-lift">
-                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-person-badge"></i></div>
-                                <div>
-                                    <div class="text-sm font-bold text-slate-900">Detail Pengajuan</div>
-                                    <div class="font-mono text-[11px] text-slate-400">{{ detail.p && detail.p['ID Pengajuan'] }}</div>
-                                </div>
+            <div v-if="detail.open" class="pd-overlay" @click.self="detail.open=false">
+                <aside class="pd-drawer" :class="{ open: detail.open }">
+                    <div class="pd-head">
+                        <div class="pd-head-top">
+                            <div class="pd-avatar" :style="{ background: pengajuanAvatarColor(detail.p && detail.p['Nama Lengkap']) }">{{ pengajuanInitials(detail.p && detail.p['Nama Lengkap']) }}</div>
+                            <div class="pd-id">
+                                <h3>
+                                    <span>{{ detail.p ? detail.p['Nama Lengkap'] : 'Detail Pengajuan' }}</span>
+                                    <span v-if="detail.p" :class="statusBadge(detail.p.Status)">{{ detail.p.Status }}</span>
+                                </h3>
+                                <div class="meta" v-if="detail.p"><span class="font-mono">{{ detail.p.NPM }}</span> &middot; {{ detail.p['Jenis Kegiatan'] }} &middot; {{ detail.p.Blok }} &middot; <span class="font-mono">{{ detail.p['ID Pengajuan'] }}</span></div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span v-if="detail.p" :class="statusBadge(detail.p.Status)">{{ detail.p.Status }}</span>
-                                <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="detail.open=false"><i class="bi bi-x-lg"></i></button>
-                            </div>
+                            <button class="pd-close" @click="detail.open=false"><i class="bi bi-x-lg"></i></button>
                         </div>
+                        <div class="pd-steps">
+                            <button type="button" class="pd-step" :class="{ active: detail.step===0, done: detail.step>0 }" data-step="0" @click="setDetailStep(0)"><span class="n">1</span><span class="lbl">Identitas</span></button>
+                            <button type="button" class="pd-step" :class="{ active: detail.step===1, done: detail.step>1 }" data-step="1" @click="setDetailStep(1)"><span class="n">2</span><span class="lbl">Berkas</span></button>
+                            <button type="button" class="pd-step" :class="{ active: detail.step===2 }" data-step="2" @click="setDetailStep(2)"><span class="n">3</span><span class="lbl">Keputusan</span></button>
+                        </div>
+                    </div>
 
-                        <div v-if="detail.loading" class="flex flex-1 items-center justify-center py-16">
+                    <div class="pd-body">
+                        <div v-if="detail.loading" class="flex items-center justify-center py-16">
                             <svg class="h-6 w-6 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                             </svg>
                             <span class="ml-3 text-sm font-semibold text-slate-500">Memuat detail...</span>
                         </div>
-                        <div v-else-if="detail.p" class="modal-body px-6 py-5">
-                            <div class="rounded-2xl bg-slate-50/70 p-4">
-                                <div class="mb-3 flex items-center justify-between">
-                                    <span class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-person-badge text-base text-brand-600"></i> Data Mahasiswa</span>
-                                    <button v-if="!detail.editInduk" class="btn-soft !px-3 !py-1.5 text-xs" @click="startEditInduk()"><i class="bi bi-pencil-square"></i>Edit</button>
-                                </div>
-                                <div v-if="!detail.editInduk" class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                                    <div><div class="label">NPM</div><div class="value">{{ detail.p.NPM }}</div></div>
-                                    <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
-                                    <div><div class="label">Email</div><div class="value">{{ detail.p.Email || '—' }}</div></div>
-                                    <div><div class="label">No. HP/WA</div><div class="value">{{ detail.p['No. HP/WA'] || '—' }}</div></div>
-                                    <div><div class="label">Blok</div><div class="value">{{ detail.p.Blok }}</div></div>
-                                    <div><div class="label">Jenis Kegiatan</div><div class="value">{{ detail.p['Jenis Kegiatan'] }}</div></div>
-                                    <div><div class="label">Tanggal Pelaksanaan</div><div class="value">{{ detail.p['Tanggal Pelaksanaan'] ? formatTanggalWaktu(detail.p['Tanggal Pelaksanaan']) : '—' }}</div></div>
-                                    <div><div class="label">Tanggal Daftar</div><div class="value">{{ formatTanggal(detail.p.Timestamp) }}</div></div>
-                                    <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
-                                    <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
-                                    <div><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
-                                    <div class="sm:col-span-2 md:col-span-3">
-                                        <div class="label">Surat Keterangan</div>
-                                        <div v-if="detail.p['Link Surat Keterangan']" class="value">
-                                            <a :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1"><i class="bi bi-file-earmark-text"></i>Lihat Surat Keterangan</a>
+                        <template v-else-if="detail.p">
+
+                            <!-- STEP 0: IDENTITAS -->
+                            <template v-if="detail.step===0">
+                                <div class="pd-card">
+                                    <div class="pd-card-head">
+                                        <h4><i class="bi bi-person-badge text-brand-600"></i> Data Mahasiswa</h4>
+                                        <button v-if="!detail.editInduk" class="btn-soft !px-3 !py-1.5 text-xs" @click="startEditInduk()"><i class="bi bi-pencil-square"></i>Edit</button>
+                                    </div>
+                                    <div class="pd-card-body">
+                                        <div v-if="!detail.editInduk" class="pd-grid3">
+                                            <div><div class="label">NPM</div><div class="value">{{ detail.p.NPM }}</div></div>
+                                            <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
+                                            <div><div class="label">Email</div><div class="value">{{ detail.p.Email || '—' }}</div></div>
+                                            <div><div class="label">No. HP/WA</div><div class="value">{{ detail.p['No. HP/WA'] || '—' }}</div></div>
+                                            <div><div class="label">Blok</div><div class="value">{{ detail.p.Blok }}</div></div>
+                                            <div><div class="label">Jenis Kegiatan</div><div class="value">{{ detail.p['Jenis Kegiatan'] }}</div></div>
+                                            <div><div class="label">Tanggal Pelaksanaan</div><div class="value">{{ detail.p['Tanggal Pelaksanaan'] ? formatTanggalWaktu(detail.p['Tanggal Pelaksanaan']) : '—' }}</div></div>
+                                            <div><div class="label">Tanggal Daftar</div><div class="value">{{ formatTanggal(detail.p.Timestamp) }}</div></div>
+                                            <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
+                                            <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
+                                            <div style="grid-column:1/-1"><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
                                         </div>
-                                        <div v-else class="mt-1">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onSuratFile">
-                                                <button class="btn-primary !px-3 !py-1.5 text-xs" :disabled="!detail.suratFile || detail.suratUploading" @click="uploadSurat">
-                                                    {{ detail.suratUploading ? 'Mengunggah...' : 'Upload Surat Keterangan' }}
-                                                </button>
+                                        <div v-else class="pd-grid3">
+                                            <div><div class="label">NPM</div><div class="value font-semibold">{{ detail.p.NPM }}</div></div>
+                                            <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
+                                            <div><label class="label">Email</label><input v-model="detail.iForm.email" type="email" class="input"></div>
+                                            <div><label class="label">No. HP/WA</label><input v-model="detail.iForm.noHp" class="input"></div>
+                                            <div><label class="label">Blok</label><input v-model="detail.iForm.blok" class="input"></div>
+                                            <div><label class="label">Jenis Kegiatan</label><input v-model="detail.iForm.jenisKegiatan" class="input"></div>
+                                            <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.iForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
+                                            <div><label class="label">Biaya</label><select v-model="detail.iForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in biayaOptions" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
+                                            <div class="flex items-end gap-2" style="grid-column:1/-1">
+                                                <button class="btn-primary" @click="saveIndukFields()"><i class="bi bi-save"></i>Simpan</button>
+                                                <button class="btn-soft" @click="cancelEditInduk()">Batal</button>
                                             </div>
-                                            <p class="mt-1 text-[11px] text-slate-400">PDF/JPG/PNG, maksimal 5 MB.</p>
-                                            <p v-if="detail.suratError" class="mt-1 text-[11px] font-semibold text-rose-600">{{ detail.suratError }}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                                    <div><div class="label">NPM</div><div class="value font-semibold">{{ detail.p.NPM }}</div></div>
-                                    <div><div class="label">Nama Lengkap</div><div class="value font-semibold">{{ detail.p['Nama Lengkap'] }}</div></div>
-                                    <div><label class="label">Email</label><input v-model="detail.iForm.email" type="email" class="input"></div>
-                                    <div><label class="label">No. HP/WA</label><input v-model="detail.iForm.noHp" class="input"></div>
-                                    <div><label class="label">Blok</label><input v-model="detail.iForm.blok" class="input"></div>
-                                    <div><label class="label">Jenis Kegiatan</label><input v-model="detail.iForm.jenisKegiatan" class="input"></div>
-                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.iForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
-                                    <div><label class="label">Biaya</label><select v-model="detail.iForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in biayaOptions" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
-                                    <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-                                        <button class="btn-primary" @click="saveIndukFields()"><i class="bi bi-save"></i>Simpan</button>
-                                        <button class="btn-soft" @click="cancelEditInduk()">Batal</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- links -->
-                            <div v-if="detail.p['Link Surat Keterangan'] || detail.p['Link ACC INHAL'] || detail.p['Link Bukti Bayar']" class="mt-4 grid gap-3 sm:grid-cols-3">
-                                <a v-if="detail.p['Link Surat Keterangan']" :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" rel="noopener noreferrer" class="btn-soft justify-center"><i class="bi bi-file-earmark-text"></i>Surat Keterangan</a>
-                                <a v-if="detail.p['Link ACC INHAL']" :href="safeUrl(detail.p['Link ACC INHAL'])" target="_blank" rel="noopener noreferrer" class="btn-acc justify-center"><i class="bi bi-patch-check"></i>ACC INHAL</a>
-                                <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti justify-center"><i class="bi bi-cash-coin"></i>Bukti Bayar</a>
-                            </div>
-
-                            <!-- upload bukti bayar (admin) -->
-                            <div class="mt-5 dash-card p-4">
-                                <div class="label mb-2"><i class="bi bi-cloud-arrow-up"></i> Unggah Bukti Bayar (oleh Admin)</div>
-                                <p class="mb-3 text-[11px] text-slate-400">Berkas PDF / JPG / PNG, maksimal 5 MB. Untuk data manual atau saat mahasiswa tidak dapat mengunggah sendiri.</p>
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <label class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 px-4 py-3">
-                                        <i class="bi bi-file-earmark-arrow-up text-xl text-brand-400"></i>
-                                        <span class="text-xs text-slate-500">
-                                            <span v-if="!detail.buktiFile">Pilih berkas bukti bayar atau scan kamera...</span>
-                                            <span v-else class="font-semibold text-slate-700">{{ detail.buktiFile.name }}</span>
-                                        </span>
-                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs" @change="onBuktiFile($event)">
-                                    </label>
-                                    <button type="button" class="btn-soft" :disabled="detail.scanBusy" @click="$refs.buktiCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
-                                    <button class="btn-primary" :disabled="detail.buktiUploading" @click="uploadBuktiBayar()">
-                                        <svg v-if="detail.buktiUploading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                        </svg>
-                                        <i v-else class="bi bi-upload"></i>
-                                        {{ detail.buktiUploading ? 'Mengunggah...' : 'Unggah Bukti Bayar' }}
-                                    </button>
-                                    <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti"><i class="bi bi-box-arrow-up-right"></i>Lihat saat ini</a>
-                                </div>
-                                <div class="mt-2 flex flex-wrap items-center gap-2">
-                                    <span v-if="detail.scanItems.length" class="text-[11px] text-slate-500">{{ detail.scanItems.length }} halaman</span>
-                                    <button v-if="detail.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="detail.scanBusy" @click="scanBuildPdf('bukti')"><i class="bi bi-file-earmark-pdf"></i> Buat PDF</button>
-                                    <button v-if="detail.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('bukti')">Bersihkan</button>
-                                </div>
-                                <input ref="buktiCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'bukti')">
-                                <div v-if="detail.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                                    <div v-for="(it, idx) in detail.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
-                                        <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
-                                        <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
-                                        <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'bukti')">x</button>
-                                        <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
-                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'bukti')"><i class="bi bi-arrow-left"></i></button>
-                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === detail.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'bukti')"><i class="bi bi-arrow-right"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p v-if="detail.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
-                                <p v-if="detail.buktiError" class="mt-2 text-xs text-rose-500">{{ detail.buktiError }}</p>
-                            </div>
-
-                            <!-- detail kegiatan + berita acara -->
-                            <div v-if="detail.p" class="mt-5 grid items-start gap-5 lg:grid-cols-2">
-                                <div v-if="detail.p.details && detail.p.details.length">
-                                    <div class="label mb-2"><i class="bi bi-list-check"></i> Detail Kegiatan</div>
-                                    <div class="grid gap-2">
-                                        <div v-for="(d, i) in detail.p.details" :key="i" class="rounded-xl bg-white p-3 shadow-soft ring-1 ring-slate-100">
-                                            <div v-if="detail.editDetailIndex !== i">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <div class="min-w-0">
-                                                        <div class="text-sm font-bold text-slate-800">{{ d.Pilihan }}</div>
-                                                        <div class="mt-1 text-xs text-slate-500">{{ d.Detail }}</div>
-                                                    </div>
-                                                    <div class="flex shrink-0 items-center gap-1">
-                                                        <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600" @click="startEditDetail(i)" title="Edit"><i class="bi bi-pencil-square text-sm"></i></button>
-                                                        <button class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500" @click="deleteDetailRow(i)" title="Hapus"><i class="bi bi-trash text-sm"></i></button>
-                                                    </div>
-                                                </div>
-                                                <div class="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-400">
-                                                    <span><i class="bi bi-tag"></i> {{ d['Jenis Kegiatan'] }}</span>
-                                                    <span><i class="bi bi-calendar3"></i> {{ formatTanggal(d['Tanggal Pelaksanaan']) }}</span>
-                                                    <span><i class="bi bi-diagram-3"></i> {{ d.Bagian }}</span>
-                                                </div>
+                                <div v-if="detail.p.details && detail.p.details.length" class="pd-card">
+                                    <div class="pd-card-head"><h4><i class="bi bi-list-check text-brand-600"></i> Detail Kegiatan</h4></div>
+                                    <div class="pd-card-body">
+                                        <div v-for="(d, i) in detail.p.details" :key="i" class="pd-keg">
+                                            <div v-if="detail.editDetailIndex !== i" class="flex-1 min-w-0">
+                                                <div class="t">{{ d.Pilihan }}</div>
+                                                <div class="d">{{ d.Detail }}</div>
+                                                <div class="m"><span><i class="bi bi-tag"></i> {{ d['Jenis Kegiatan'] }}</span><span><i class="bi bi-calendar3"></i> {{ formatTanggal(d['Tanggal Pelaksanaan']) }}</span><span><i class="bi bi-diagram-3"></i> {{ d.Bagian }}</span></div>
                                             </div>
-                                            <div v-else>
-                                                <div class="grid gap-2">
+                                            <div v-else class="flex-1">
+                                                <div class="pd-grid2">
                                                     <div><label class="label">Jenis Kegiatan</label><input v-model="detail.dEdit.jenisKegiatan" class="input !py-2 text-xs"></div>
                                                     <div><label class="label">Pilihan</label><input v-model="detail.dEdit.pilihan" class="input !py-2 text-xs"></div>
                                                     <div><label class="label">Detail</label><input v-model="detail.dEdit.detail" class="input !py-2 text-xs"></div>
@@ -2027,57 +1954,179 @@
                                                     <button class="btn-soft !px-3 !py-1.5 text-xs" @click="cancelEditDetail()">Batal</button>
                                                 </div>
                                             </div>
+                                            <div v-if="detail.editDetailIndex !== i" class="flex shrink-0 items-center gap-1">
+                                                <button class="pd-mini-ic" @click="startEditDetail(i)" title="Edit"><i class="bi bi-pencil-square"></i></button>
+                                                <button class="pd-mini-ic danger" @click="deleteDetailRow(i)" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div v-if="detail.p" class="ba-align-card dash-card p-4">
-                                    <div class="mb-2 flex items-center justify-between gap-2">
-                                        <div class="flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-text text-base text-brand-600"></i> Berita Acara Pendukung</div>
+                                <div class="pd-card">
+                                    <div class="pd-card-head">
+                                        <h4><i class="bi bi-file-earmark-text text-brand-600"></i> Berita Acara Pendukung</h4>
                                         <button class="btn-primary !py-1.5 !px-3 text-xs" @click="openKelolaBaPendukung(detail.p['ID Pengajuan'])"><i class="bi bi-gear"></i> Kelola BA Pendukung</button>
                                     </div>
-                                    <p class="text-[11px] text-slate-400">Kelola peserta dan berkas BA Pendukung untuk kegiatan pengajuan ini. Tiap peserta wajib memiliki berkas.</p>
-                                </div>
-                            </div>
-
-                            <!-- status update -->
-                            <div class="mt-5 dash-card p-4">
-                                <div class="label mb-3"><i class="bi bi-check2-circle"></i> Perbarui Status Pengajuan</div>
-                                <div class="grid gap-3 sm:grid-cols-3">
-                                    <div class="sm:col-span-1">
-                                        <label class="label">Status</label>
-                                        <select v-model="detail.status" class="input">
-                                            <option>Menunggu</option>
-                                            <option>ACC</option>
-                                            <option>Ditolak</option>
-                                            <option>Dibatalkan</option>
-                                        </select>
-                                    </div>
-                                    <div class="sm:col-span-2">
-                                        <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak' || detail.status==='Dibatalkan'">(wajib)</span></label>
-                                        <input v-model="detail.catatan" class="input" placeholder="Catatan keputusan...">
+                                    <div class="pd-card-body">
+                                        <p class="text-xs text-slate-400">Kelola peserta dan berkas BA Pendukung untuk kegiatan pengajuan ini. Tiap peserta wajib memiliki berkas.</p>
                                     </div>
                                 </div>
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
-                                    <button class="btn-soft" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
-                                    <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
-                                    <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
-                                </div>
-                            </div>
+                            </template>
 
-                            <!-- email actions -->
-                            <div class="mt-5">
-                                <div class="label mb-2"><i class="bi bi-envelope-check"></i> Email ACC Final</div>
-                                <div class="flex flex-wrap gap-2">
-                                    <button v-if="!isManual(detail.p) && detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
-                                    <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
-                                    <span v-if="isManual(detail.p)" class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-info-circle"></i>Pengajuan manual tanpa email — notifikasi email dinonaktifkan.</span>
+                            <!-- STEP 1: BERKAS -->
+                            <template v-else-if="detail.step===1">
+                                <div class="pd-progress">
+                                    <span class="t">Kelengkapan berkas</span>
+                                    <div class="track"><div class="fill" :style="{ width: (berkasProgress / 3 * 100) + '%' }"></div></div>
+                                    <span class="num">{{ berkasProgress }}/3</span>
                                 </div>
-                            </div>
-                        </div>
+
+                                <div class="pd-doc-row">
+                                    <div class="pd-doc-ic surat"><i class="bi bi-file-earmark-text"></i></div>
+                                    <div class="pd-doc-info"><div class="t">Surat Keterangan</div><div class="s">Diunggah mahasiswa atau saat input manual</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="detail.p['Link Surat Keterangan']" class="pd-pill-ok"><i class="bi bi-check-circle-fill"></i>Ada</span>
+                                        <span v-else class="pd-pill-no"><i class="bi bi-dash-circle"></i>Belum</span>
+                                        <a v-if="detail.p['Link Surat Keterangan']" :href="safeUrl(detail.p['Link Surat Keterangan'])" target="_blank" rel="noopener noreferrer" class="btn-soft !px-2 !py-1 text-xs" title="Lihat Surat Keterangan"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+                                <div v-if="!detail.p['Link Surat Keterangan']" class="pd-card" style="margin-top:2px;background:#fcfcfe">
+                                    <div class="pd-card-body">
+                                        <div class="pd-upzone">
+                                            <i class="bi bi-cloud-arrow-up lead"></i>
+                                            <div><span v-if="!detail.suratFile">Pilih berkas surat keterangan (PDF/JPG/PNG)</span><span v-else class="font-semibold text-slate-700">{{ detail.suratName }}</span></div>
+                                            <div class="hint">PDF / JPG / PNG — maksimal 5 MB</div>
+                                            <div class="row">
+                                                <label class="btn-soft cursor-pointer"><i class="bi bi-folder2-open"></i> Pilih File<input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="onSuratFile"></label>
+                                                <button type="button" class="btn-primary" :disabled="!detail.suratFile || detail.suratUploading" @click="uploadSurat">{{ detail.suratUploading ? 'Mengunggah...' : 'Simpan Berkas' }}</button>
+                                            </div>
+                                        </div>
+                                        <p v-if="detail.suratError" class="mt-2 text-xs font-semibold text-rose-600">{{ detail.suratError }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="pd-doc-row">
+                                    <div class="pd-doc-ic acc"><i class="bi bi-patch-check"></i></div>
+                                    <div class="pd-doc-info"><div class="t">ACC INHAL</div><div class="s">Dihasilkan sistem — tidak dapat diganti manual</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="detail.p['Link ACC INHAL']" class="pd-pill-ok"><i class="bi bi-check-circle-fill"></i>Ada</span>
+                                        <span v-else class="pd-pill-no"><i class="bi bi-dash-circle"></i>Belum</span>
+                                        <a v-if="detail.p['Link ACC INHAL']" :href="safeUrl(detail.p['Link ACC INHAL'])" target="_blank" rel="noopener noreferrer" class="btn-soft !px-2 !py-1 text-xs" title="Lihat ACC INHAL"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <div class="pd-doc-row">
+                                    <div class="pd-doc-ic bukti"><i class="bi bi-cash-coin"></i></div>
+                                    <div class="pd-doc-info"><div class="t">Bukti Bayar</div><div class="s">Unggah oleh admin bila mahasiswa belum melampirkan</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="detail.p['Link Bukti Bayar']" class="pd-pill-ok"><i class="bi bi-check-circle-fill"></i>Ada</span>
+                                        <span v-else class="pd-pill-no"><i class="bi bi-dash-circle"></i>Belum</span>
+                                        <a v-if="detail.p['Link Bukti Bayar']" :href="safeUrl(detail.p['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-soft !px-2 !py-1 text-xs" title="Lihat Bukti Bayar"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+                                <div class="pd-card" style="margin-top:2px;background:#fcfcfe">
+                                    <div class="pd-card-head"><h4><i class="bi bi-cloud-arrow-up text-brand-600"></i> Unggah Bukti Bayar (oleh Admin)</h4></div>
+                                    <div class="pd-card-body">
+                                        <div class="pd-upzone">
+                                            <i class="bi bi-cloud-arrow-up lead"></i>
+                                            <div><span v-if="!detail.buktiFile">Pilih berkas bukti bayar atau scan kamera...</span><span v-else class="font-semibold text-slate-700">{{ detail.buktiFile.name }}</span></div>
+                                            <div class="hint">PDF / JPG / PNG — maksimal 5 MB</div>
+                                            <div class="row">
+                                                <label class="btn-soft cursor-pointer"><i class="bi bi-folder2-open"></i> Pilih File<input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="onBuktiFile($event)"></label>
+                                                <button type="button" class="btn-soft" :disabled="detail.scanBusy" @click="$refs.buktiCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
+                                                <button type="button" class="btn-primary" :disabled="detail.buktiUploading" @click="uploadBuktiBayar()">{{ detail.buktiUploading ? 'Mengunggah...' : 'Simpan Berkas' }}</button>
+                                            </div>
+                                        </div>
+                                        <div v-if="detail.scanItems.length" class="mt-2 flex flex-wrap items-center gap-2">
+                                            <span class="text-xs text-slate-500">{{ detail.scanItems.length }} halaman</span>
+                                            <button type="button" class="btn-primary !py-1.5 text-xs" :disabled="detail.scanBusy" @click="scanBuildPdf('bukti')"><i class="bi bi-file-earmark-pdf"></i> Buat PDF</button>
+                                            <button type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('bukti')">Bersihkan</button>
+                                        </div>
+                                        <div v-if="detail.scanItems.length" class="pd-scan-grid">
+                                            <div v-for="(it, idx) in detail.scanItems" :key="it.id" class="pd-scan-item">
+                                                <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
+                                                <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
+                                                <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'bukti')">x</button>
+                                                <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'bukti')"><i class="bi bi-arrow-left"></i></button>
+                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === detail.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'bukti')"><i class="bi bi-arrow-right"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p v-if="detail.scanBusy" class="mt-2 text-xs text-brand-600">Memproses gambar...</p>
+                                        <p v-if="detail.buktiError" class="mt-2 text-xs text-rose-500">{{ detail.buktiError }}</p>
+                                        <input ref="buktiCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'bukti')">
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- STEP 2: KEPUTUSAN -->
+                            <template v-else>
+                                <div v-if="isManual(detail.p)" class="pd-manual-note"><i class="bi bi-info-circle"></i> Pengajuan manual — notifikasi email dinonaktifkan.</div>
+
+                                <div class="pd-card">
+                                    <div class="pd-card-head"><h4><i class="bi bi-check2-circle text-brand-600"></i> Perbarui Status</h4></div>
+                                    <div class="pd-card-body">
+                                        <div class="pd-statuspick">
+                                            <button type="button" data-s="Menunggu" :class="{ on: detail.status==='Menunggu' }" @click="detail.status='Menunggu'"><div class="ic"><i class="bi bi-hourglass-split"></i></div><div><div class="t">Menunggu</div><div class="s">tahan untuk ditinjau ulang</div></div></button>
+                                            <button type="button" data-s="ACC" :class="{ on: detail.status==='ACC' }" @click="detail.status='ACC'"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="t">Jadikan ACC</div><div class="s">berkas dinyatakan lengkap</div></div></button>
+                                            <button type="button" data-s="Ditolak" :class="{ on: detail.status==='Ditolak' }" @click="detail.status='Ditolak'"><div class="ic"><i class="bi bi-x-lg"></i></div><div><div class="t">Tolak</div><div class="s">perlu catatan alasan</div></div></button>
+                                            <button type="button" data-s="Dibatalkan" :class="{ on: detail.status==='Dibatalkan' }" @click="detail.status='Dibatalkan'"><div class="ic"><i class="bi bi-slash-circle"></i></div><div><div class="t">Batalkan</div><div class="s">oleh admin/mahasiswa</div></div></button>
+                                        </div>
+                                        <div class="mt-4">
+                                            <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak' || detail.status==='Dibatalkan'">(wajib)</span></label>
+                                            <textarea v-model="detail.catatan" class="input" rows="3" placeholder="Catatan keputusan..."></textarea>
+                                        </div>
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
+                                            <button class="btn-soft" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
+                                            <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pd-card">
+                                    <div class="pd-card-head"><h4><i class="bi bi-envelope-check text-brand-600"></i> Email ACC Final</h4></div>
+                                    <div class="pd-card-body">
+                                        <div class="flex flex-wrap gap-2">
+                                            <button v-if="!isManual(detail.p) && detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
+                                            <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                            <span v-if="isManual(detail.p)" class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-info-circle"></i>Pengajuan manual tanpa email — notifikasi email dinonaktifkan.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pd-card" style="border-color:#fecdd3">
+                                    <div class="pd-card-body flex items-center justify-between gap-2.5">
+                                        <div>
+                                            <div class="text-[13px] font-bold text-slate-900">Hapus pengajuan</div>
+                                            <div class="text-[11px] text-slate-400">Tindakan ini tidak dapat dibatalkan.</div>
+                                        </div>
+                                        <button class="btn-danger-soft" @click="deletePengajuan()"><i class="bi bi-trash"></i> Hapus</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
                     </div>
-                </transition>
+
+                    <div class="pd-foot">
+                        <template v-if="detail.step===0">
+                            <button class="btn-soft" @click="detail.open=false">Tutup</button>
+                            <div class="spacer"></div>
+                            <button class="btn-primary" @click="setDetailStep(1)">Lanjut ke Berkas <i class="bi bi-arrow-right"></i></button>
+                        </template>
+                        <template v-else-if="detail.step===1">
+                            <button class="btn-soft" @click="setDetailStep(0)"><i class="bi bi-arrow-left"></i> Kembali</button>
+                            <div class="spacer"></div>
+                            <button class="btn-primary" @click="setDetailStep(2)">Lanjut ke Keputusan <i class="bi bi-arrow-right"></i></button>
+                        </template>
+                        <template v-else>
+                            <button class="btn-soft" @click="setDetailStep(1)"><i class="bi bi-arrow-left"></i> Kembali</button>
+                            <div class="spacer"></div>
+                            <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i> Perbarui Status</button>
+                        </template>
+                    </div>
+                </aside>
             </div>
         </transition>
 
@@ -2460,6 +2509,11 @@
                 },
                 menungguCount() {
                     return (this.stats.perStatus || {})['Menunggu'] || 0;
+                },
+                berkasProgress() {
+                    const p = this.detail.p;
+                    if (!p) return 0;
+                    return [p['Link Surat Keterangan'], p['Link ACC INHAL'], p['Link Bukti Bayar']].filter(Boolean).length;
                 },
                 biayaOptions() {
                     const seen = {};
