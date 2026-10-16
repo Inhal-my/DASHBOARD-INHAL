@@ -1438,6 +1438,82 @@
                         </div>
                     </section>
 
+                    <!-- ===================== TAB: JADWAL VS REALISASI ===================== -->
+                    <section v-if="activeTab === 'jadwal'" class="space-y-4">
+                        <div class="in-basum">
+                            <div class="b"><div class="k">Sesi Jadwal</div><div class="n">{{ jadwalTotalCount }}</div><div class="p">terfilter</div></div>
+                            <div class="b"><div class="k">Sesuai</div><div class="n emerald">{{ jadwalSesuaiCount }}</div><div class="p">punya BA</div></div>
+                            <div class="b"><div class="k">Belum</div><div class="n">{{ jadwalBelumCount }}</div><div class="p">tanpa BA</div></div>
+                            <div class="b"><div class="k">BA Extra</div><div class="n">{{ jadwalExtraCount }}</div><div class="p">tanpa jadwal</div></div>
+                        </div>
+                        <div class="lap-card p-4">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="jadwalFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in jadwalBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Blok</label><select v-model="jadwalFilter.blok" class="input"><option value="">Semua Blok</option><option v-for="o in jadwalBlokOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Dari Tanggal</label><input v-model="jadwalFilter.from" type="date" class="input"></div>
+                                <div class="md:col-span-3"><label class="label">Sampai Tanggal</label><input v-model="jadwalFilter.to" type="date" class="input"></div>
+                                <div class="md:col-span-3"><label class="label">Status</label><select v-model="jadwalFilter.status" class="input"><option value="">Semua Status</option><option v-for="o in jadwalStatusOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-6"><label class="label">Cari</label><input v-model="jadwalFilter.q" class="input" placeholder="Jadwal ID, BA ID, kegiatan, atau dosen..."></div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="lap-chip">{{ jadwalTotalCount }} sesi</span>
+                                <span class="lap-chip">{{ jadwalSesuaiCount }} sesuai</span>
+                                <span class="lap-chip">{{ jadwalBelumCount }} belum</span>
+                                <span class="lap-chip">{{ jadwalExtraCount }} extra</span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
+                                <div>
+                                    <div class="lap-card-title">Jadwal vs Realisasi</div>
+                                    <div class="lap-card-sub">Perbandingan sesi jadwal pelaksanaan dengan BA realisasi</div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto in-desktop-only">
+                                <table class="in-tbl">
+                                    <thead>
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Jadwal</th>
+                                            <th class="px-3 py-2.5 text-left">Dosen Jadwal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta Jadwal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Realisasi</th>
+                                            <th class="px-3 py-2.5 text-left">Dosen Realisasi</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta BA</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="r in jadwalRealisasiFiltered" :key="r.key" class="border-t border-slate-50">
+                                            <td class="px-3 py-2.5 text-slate-800">{{ r.kegiatan || '-' }}<span v-if="r.label" class="text-slate-400"> · {{ r.label }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-700">{{ r.bagian }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600"><span v-if="r.jadwalTanggal">{{ fmtTanggal(r.jadwalTanggal) }}</span><span v-else class="text-slate-300">-</span><span v-if="r.jadwalJam" class="text-slate-400"> {{ r.jadwalJam }}</span></td>
+                                            <td class="px-3 py-2.5 text-slate-600">{{ r.jadwalDosen || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.jenis === 'Extra' ? '-' : r.jadwalPesertaCount }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span v-if="r.baId" class="font-mono text-xs text-slate-700">{{ r.baId }}</span><span v-else class="text-slate-300">-</span><span v-if="r.baTanggal" class="text-slate-400"> · {{ fmtTanggal(r.baTanggal) }}</span><span v-if="r.baJam" class="text-slate-400"> {{ r.baJam }}</span></td>
+                                            <td class="px-3 py-2.5 text-slate-600">{{ r.baDosen || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.baId ? r.baPesertaCount : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.status === 'Sesuai' ? 'bg-emerald-50 text-emerald-700' : (r.status === 'Belum' ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-violet-700')">{{ r.status }}</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-if="!jadwalRealisasiFiltered.length" class="px-4 py-14 text-center">
+                                    <i class="bi bi-calendar2-x text-3xl text-slate-300"></i>
+                                    <p class="mt-3 text-sm text-slate-400">Tidak ada data jadwal/realisasi.</p>
+                                </div>
+                            </div>
+                            <div class="in-cards">
+                                <article v-for="r in jadwalRealisasiFiltered" :key="'m-' + r.key" class="in-mcard">
+                                    <div class="row1"><span class="font-semibold text-slate-800">{{ r.kegiatan || '-' }}</span><span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="r.status === 'Sesuai' ? 'bg-emerald-50 text-emerald-700' : (r.status === 'Belum' ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-violet-700')">{{ r.status }}</span></div>
+                                    <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Jadwal</span><b>{{ r.jadwalTanggal ? fmtTanggal(r.jadwalTanggal) : '-' }} {{ r.jadwalJam }}</b><span>Dosen Jadwal</span><b>{{ r.jadwalDosen || '-' }}</b><span>Peserta Jadwal</span><b>{{ r.jenis === 'Extra' ? '-' : r.jadwalPesertaCount }}</b><span>Realisasi</span><b>{{ r.baId || '-' }} {{ r.baJam }}</b><span>Dosen Realisasi</span><b>{{ r.baDosen || '-' }}</b><span>Peserta BA</span><b>{{ r.baId ? r.baPesertaCount : '-' }}</b></div>
+                                </article>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- ===================== TAB 5: DATA PEMBAYARAN ===================== -->
                     <section v-if="activeTab === 'bayar'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
@@ -1944,6 +2020,7 @@
                         { key: 'bagian', label: 'Laporan Bagian', icon: 'bi-diagram-3' },
                         { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
                         { key: 'daftarba', label: 'Daftar BA', icon: 'bi-list-check' },
+                        { key: 'jadwal', label: 'Jadwal vs Realisasi', icon: 'bi-calendar2-check' },
                         { key: 'bayar', label: 'Data Pembayaran', icon: 'bi-cash-coin' }
                     ],
                     summary: {},

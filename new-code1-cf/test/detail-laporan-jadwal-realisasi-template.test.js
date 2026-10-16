@@ -75,3 +75,25 @@ describe('jadwal realisasi: lapisan data', () => {
     }
   });
 });
+
+describe('jadwal realisasi: tab & UI', () => {
+  it('mendaftarkan tab dan section', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("key: 'jadwal', label: 'Jadwal vs Realisasi'");
+    expect(html).toContain("activeTab === 'jadwal'");
+  });
+  it('memuat kolom, filter, dan badge status', async () => {
+    const html = await loadHtml();
+    for (const s of ['>Jadwal</th>', '>Dosen Jadwal</th>', '>Peserta Jadwal</th>',
+      '>Realisasi</th>', '>Dosen Realisasi</th>', '>Peserta BA</th>', '>Status</th>']) {
+      expect(html).toContain(s);
+    }
+    for (const s of ['jadwalFilter.bagian', 'jadwalFilter.blok', 'jadwalFilter.from',
+      'jadwalFilter.to', 'jadwalFilter.status', 'jadwalFilter.q']) {
+      expect(html).toContain(s);
+    }
+    expect(html).toContain('Sesuai');
+    expect(html).toContain('Belum');
+    expect(html).toContain('Extra');
+  });
+});
