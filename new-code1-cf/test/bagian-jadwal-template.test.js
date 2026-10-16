@@ -72,4 +72,14 @@ describe('bagian template jadwal', () => {
     const html = await loadBagianHtml();
     expect(html).toContain('g.key === this.jadwal.kegiatanKey; }.bind(this)');
   });
+
+  it('menyediakan picker Dosen searchable di semua field Dosen', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('dosenOptions');
+    expect(html).toContain('dosenSuggest(');
+    expect(html).toContain('pickDosen(');
+    expect(html).toContain('dosenPick.jadwal');
+    expect(html).toContain('dosenPick.ba');
+    expect(html).toContain('dosenPick.lengkapi');
+  });
 });

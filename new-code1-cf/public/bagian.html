@@ -287,7 +287,13 @@
                                     <div class="mt-4 space-y-4">
                                         <div><label class="label">Tanggal Pelaksanaan</label><input v-model="jadwal.tanggal" type="date" class="input"></div>
                                         <div><label class="label">Jam</label><input v-model="jadwal.jam" type="time" class="input"></div>
-                                        <div><label class="label">Dosen</label><input v-model="jadwal.dosen" class="input" placeholder="Nama dosen pengampu"></div>
+                                        <div class="relative">
+                                            <label class="label">Dosen</label>
+                                            <input v-model="jadwal.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @input="dosenPick.jadwal = true" @blur="dosenPick.jadwal = false">
+                                            <div v-if="dosenPick.jadwal && dosenSuggest(jadwal.dosen).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                                                <button v-for="d in dosenSuggest(jadwal.dosen)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(jadwal, d)">{{ d }}</button>
+                                            </div>
+                                        </div>
                                         <div><label class="label">Catatan (Opsional)</label><input v-model="jadwal.catatan" class="input" placeholder="opsional"></div>
                                     </div>
                                     <div class="mt-4 flex gap-3">
@@ -418,9 +424,12 @@
                                         <div v-if="ba.mode==='jadwal'" class="rounded-2xl bg-brand-50 p-3 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
                                             <i class="bi bi-calendar-check mr-1"></i> Dari jadwal {{ ba.jadwalId }}
                                         </div>
-                                        <div>
+                                        <div class="relative">
                                             <label class="label">Dosen</label>
-                                            <input v-model="ba.dosen" class="input" placeholder="Nama dosen">
+                                            <input v-model="ba.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @input="dosenPick.ba = true" @blur="dosenPick.ba = false">
+                                            <div v-if="dosenPick.ba && dosenSuggest(ba.dosen).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                                                <button v-for="d in dosenSuggest(ba.dosen)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(ba, d)">{{ d }}</button>
+                                            </div>
                                         </div>
                                         <div>
                                             <label class="label">Jam</label>
@@ -619,7 +628,11 @@
                         </div>
                     </div>
                     <div class="mt-4 space-y-3">
-                        <div><label class="label">Dosen</label><input v-model="ba.lengkapi.dosen" class="input"></div>
+                        <div class="relative"><label class="label">Dosen</label><input v-model="ba.lengkapi.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @input="dosenPick.lengkapi = true" @blur="dosenPick.lengkapi = false">
+                            <div v-if="dosenPick.lengkapi && dosenSuggest(ba.lengkapi.dosen).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                                <button v-for="d in dosenSuggest(ba.lengkapi.dosen)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(ba.lengkapi, d)">{{ d }}</button>
+                            </div>
+                        </div>
                         <div><label class="label">Jam</label><input v-model="ba.lengkapi.jam" type="time" class="input"></div>
                         <div><label class="label">Tanggal</label><input v-model="ba.lengkapi.tanggal" type="date" class="input"></div>
                     </div>
@@ -673,7 +686,7 @@
                     loading: false,
                     appUrl: APP_URL,
                     userEmail: USER_EMAIL,
-                    config: { labOptions: [] },
+                    config: { labOptions: [], dosenOptions: [] },
                     baConfig: { statuses: ['ACC'], finalOnly: true },
                     kategori: '',
                     subBagian: '',
@@ -691,6 +704,7 @@
                     jadwalList: [],
                     activeTab: 'jadwal',
                     jadwal: { open: false, editingId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} },
+                    dosenPick: { jadwal: false, ba: false, lengkapi: false },
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
                     pollTimer: null
@@ -862,6 +876,21 @@
                     const s = String(v);
                     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
                     return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
+                },
+                dosenSuggest(query) {
+                    const q = String(query || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                    if (!q) return [];
+                    const arr = this.config.dosenOptions || [];
+                    const out = [];
+                    for (const d of arr) {
+                        if (String(d).toLowerCase().indexOf(q) !== -1) out.push(d);
+                        if (out.length >= 50) break;
+                    }
+                    return out;
+                },
+                pickDosen(target, name) {
+                    if (target) target.dosen = name;
+                    this.dosenPick = { jadwal: false, ba: false, lengkapi: false };
                 },
                 statusBadge(status) {
                     const cls = {
@@ -1397,10 +1426,11 @@
                         this.config = {
                             categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'],
                             labOptions: (o && o.lab) || [],
-                            kegiatanLabOptions: (o && o.kegiatanLab) || []
+                            kegiatanLabOptions: (o && o.kegiatanLab) || [],
+                            dosenOptions: (o && o.dosen) || []
                         };
                     })
-                    .catch(() => { this.config = { labOptions: [] }; });
+                    .catch(() => { this.config = { labOptions: [], dosenOptions: [] }; });
             }
         }).mount('#app');
         }
