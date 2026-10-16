@@ -1364,7 +1364,10 @@
                             <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Unggah BA Pelaksanaan</h2>
                             <p class="mt-0.5 text-sm text-slate-500">Sesi Bagian: unggah BA pelaksanaan atas nama staf Bagian.</p>
                         </div>
-                        <button class="btn-soft !py-2 text-xs" @click="closePelaksanaanPanel()"><i class="bi bi-x-lg"></i> Tutup</button>
+                        <div class="flex items-center gap-2">
+                            <button class="btn-primary !py-2 text-xs" @click="openBaSheet('pelaksanaan')"><i class="bi bi-plus-circle"></i> Buat Berita Acara</button>
+                            <button class="btn-soft !py-2 text-xs" @click="closePelaksanaanPanel()"><i class="bi bi-x-lg"></i> Tutup</button>
+                        </div>
                     </div>
 
                     <div v-if="!bab.active" class="mb-4 dash-card p-4">
@@ -1452,92 +1455,6 @@
                             <div class="space-y-5">
                                 <div class="overflow-hidden dash-card">
                                     <div class="border-b border-slate-100 p-4">
-                                        <h2 class="text-sm font-bold text-slate-900">Upload Berita Acara</h2>
-                                        <p class="text-xs text-slate-400">Pilih kegiatan &amp; centang peserta yang hadir</p>
-                                    </div>
-                                    <div class="p-4">
-                                        <button v-if="!bab.ba.open" class="btn-primary w-full" @click="babOpenBaPicker"><i class="bi bi-plus-circle"></i> Buat Berita Acara</button>
-                                        <div v-else class="space-y-3">
-                                            <div v-if="!babSelectedGroup">
-                                                <label class="label">Pilih Kegiatan ({{ (bab.baSettings.statuses || ['ACC']).join(' / ') }})</label>
-                                                <div v-if="!babKegiatanGroups.length" class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">Tidak ada kegiatan yang bisa dibuatkan berita acara.</div>
-                                                <div v-else class="space-y-2">
-                                                    <button v-for="g in babKegiatanGroups" :key="g.key" class="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-brand-300 hover:bg-brand-50/40" @click="babSelectKegiatan(g.key)">
-                                                        <div class="flex items-center justify-between gap-2">
-                                                            <span class="text-sm font-bold text-slate-800">{{ g.label }}</span>
-                                                            <span class="text-[11px] font-semibold text-brand-600">{{ g.peserta.length }} mhs</span>
-                                                        </div>
-                                                        <div class="mt-1.5 flex flex-wrap gap-1">
-                                                            <span v-for="s in g.statusOrder" :key="s" class="rounded-md px-1.5 py-0.5 text-[10px] font-bold" :class="statusBadge(s)">{{ g.statusCounts[s] }} {{ s }}</span>
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div v-else>
-                                                <div class="flex items-center justify-between gap-2">
-                                                    <label class="label">Peserta Kegiatan</label>
-                                                    <button class="text-[11px] font-semibold text-brand-600" @click="babToggleAllPeserta">{{ babAllSelected ? 'Batal Semua' : 'Pilih Semua' }}</button>
-                                                </div>
-                                                <div class="space-y-1.5">
-                                                    <label v-for="p in babSelectedGroup.peserta" :key="p.idPengajuan" class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5 transition hover:border-brand-300" :class="bab.ba.selected[p.idPengajuan] ? 'border-brand-400 bg-brand-50/40' : ''">
-                                                        <input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="!!bab.ba.selected[p.idPengajuan]" @change="babTogglePeserta(p.idPengajuan)">
-                                                        <div class="min-w-0 flex-1">
-                                                            <div class="truncate text-xs font-bold text-slate-800">{{ p.namaLengkap }}</div>
-                                                            <div class="font-mono text-[10px] text-slate-400">{{ p.npm }}</div>
-                                                        </div>
-                                                        <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
-                                                    </label>
-                                                </div>
-                                                <div class="grid gap-3 sm:grid-cols-2">
-                                                    <div><label class="label">Label <span class="font-normal text-slate-400">(opsional)</span></label><input v-model="bab.ba.label" class="input" placeholder="mis. Sesi 1"></div>
-                                                    <div><label class="label">Tanggal Pelaksanaan</label><input v-model="bab.ba.tanggal" type="date" class="input"></div>
-                                                    <div>
-                                                        <label class="label">File BA (PDF / JPG / PNG)</label>
-                                                        <div class="flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-3">
-                                                            <i class="bi bi-cloud-arrow-up text-xl text-brand-400"></i>
-                                                            <div class="min-w-0 flex-1 truncate text-xs text-slate-500">
-                                                                <span v-if="!bab.ba.file">Pilih file atau scan kamera...</span>
-                                                                <span v-else class="font-semibold text-slate-700">{{ bab.ba.fileName }}</span>
-                                                            </div>
-                                                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="max-w-[120px] text-xs" @change="babOnBaFile">
-                                                        </div>
-                                                        <div class="mt-2 flex flex-wrap items-center gap-2">
-                                                            <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="$refs.pelaksanaanCamera.click()">
-                                                                <i class="bi bi-camera"></i> Scan Kamera
-                                                            </button>
-                                                            <span v-if="bab.ba.scanItems.length" class="text-[11px] text-slate-500">{{ bab.ba.scanItems.length }} halaman</span>
-                                                            <button v-if="bab.ba.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="scanBuildPdf('pelaksanaan')">
-                                                                <i class="bi bi-file-earmark-pdf"></i> Buat PDF
-                                                            </button>
-                                                            <button v-if="bab.ba.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('pelaksanaan')">Bersihkan</button>
-                                                        </div>
-                                                        <input ref="pelaksanaanCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'pelaksanaan')">
-                                                        <div v-if="bab.ba.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                                                            <div v-for="(it, idx) in bab.ba.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
-                                                                <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
-                                                                <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
-                                                                <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pelaksanaan')">x</button>
-                                                                <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
-                                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pelaksanaan')"><i class="bi bi-arrow-left"></i></button>
-                                                                    <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === bab.ba.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pelaksanaan')"><i class="bi bi-arrow-right"></i></button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <p v-if="bab.ba.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
-                                                    </div>
-                                                    <div class="sm:col-span-2"><label class="label">Catatan <span class="font-normal text-slate-400">(opsional)</span></label><textarea v-model="bab.ba.catatan" rows="2" class="input"></textarea></div>
-                                                </div>
-                                                <div class="flex gap-2">
-                                                    <button class="btn-soft flex-1" @click="babBackToKegiatanPicker"><i class="bi bi-arrow-left"></i> Ganti Kegiatan</button>
-                                                    <button class="btn-primary flex-1" @click="babSubmitBa"><i class="bi bi-check2"></i> Lanjut</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="overflow-hidden dash-card">
-                                    <div class="border-b border-slate-100 p-4">
                                         <h2 class="text-sm font-bold text-slate-900">Berita Acara Terunggah</h2>
                                         <p class="text-xs text-slate-400">{{ bab.baList.length }} berita acara</p>
                                     </div>
@@ -1564,47 +1481,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div v-if="bab.ba.confirm" class="fixed inset-0 z-50 modal-overlay">
-                            <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="bab.ba.confirm=false"></div>
-                            <transition name="pop" appear>
-                                <div class="modal-panel max-w-lg shadow-lift">
-                                    <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                                        <h3 class="text-sm font-bold text-slate-900">Konfirmasi Upload</h3>
-                                        <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="bab.ba.confirm=false"><i class="bi bi-x-lg"></i></button>
-                                    </div>
-                                    <div class="modal-body px-6 py-4">
-                                        <div class="mb-3 text-sm font-bold text-slate-800">{{ babSelectedGroup.label }}</div>
-                                        <div class="mb-3 text-xs text-slate-500">{{ babSelectedList.length }} peserta dipilih · Tanggal {{ formatTanggal(bab.ba.tanggal) }}</div>
-                                        <div class="max-h-52 space-y-1.5 overflow-y-auto">
-                                            <div v-for="p in babSelectedList" :key="p.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-2.5">
-                                                <div class="min-w-0">
-                                                    <div class="truncate text-xs font-bold text-slate-800">{{ p.namaLengkap }}</div>
-                                                    <div class="font-mono text-[10px] text-slate-400">{{ p.npm }}</div>
-                                                </div>
-                                                <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
-                                            </div>
-                                        </div>
-                                        <div v-if="bab.ba.fileName" class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700"><i class="bi bi-file-earmark-pdf"></i>{{ bab.ba.fileName }}</div>
-                                        <div v-if="babDuplicate" class="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
-                                            <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
-                                            <span>Sudah ada BA untuk kegiatan ini. Upload ini akan menambah BA baru.</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
-                                        <button class="btn-soft" @click="bab.ba.confirm=false">Batal</button>
-                                        <button class="btn-primary" :disabled="loading" @click="babDoUploadBa">
-                                            <svg v-if="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                            </svg>
-                                            <i v-else class="bi bi-upload"></i>
-                                            Unggah Berita Acara
-                                        </button>
-                                    </div>
-                                </div>
-                            </transition>
                         </div>
                     </template>
                     </div>
@@ -2339,6 +2215,48 @@
             <i class="bi bi-plus-lg"></i>
         </button>
 
+        <!-- ============ MODAL: KONFIRMASI UPLOAD BA PELAKSANAAN ============ -->
+        <div v-if="loggedIn && bab.ba.confirm" class="fixed inset-0 z-[130] modal-overlay">
+            <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="bab.ba.confirm=false"></div>
+            <transition name="pop" appear>
+                <div class="modal-panel max-w-lg shadow-lift">
+                    <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                        <h3 class="text-sm font-bold text-slate-900">Konfirmasi Upload</h3>
+                        <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="bab.ba.confirm=false"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="modal-body px-6 py-4">
+                        <div class="mb-3 text-sm font-bold text-slate-800">{{ babSelectedGroup.label }}</div>
+                        <div class="mb-3 text-xs text-slate-500">{{ babSelectedList.length }} peserta dipilih · Tanggal {{ formatTanggal(bab.ba.tanggal) }}</div>
+                        <div class="max-h-52 space-y-1.5 overflow-y-auto">
+                            <div v-for="p in babSelectedList" :key="p.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-2.5">
+                                <div class="min-w-0">
+                                    <div class="truncate text-xs font-bold text-slate-800">{{ p.namaLengkap }}</div>
+                                    <div class="font-mono text-[10px] text-slate-400">{{ p.npm }}</div>
+                                </div>
+                                <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                            </div>
+                        </div>
+                        <div v-if="bab.ba.fileName" class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700"><i class="bi bi-file-earmark-pdf"></i>{{ bab.ba.fileName }}</div>
+                        <div v-if="babDuplicate" class="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
+                            <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
+                            <span>Sudah ada BA untuk kegiatan ini. Upload ini akan menambah BA baru.</span>
+                        </div>
+                    </div>
+                    <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                        <button class="btn-soft" @click="bab.ba.confirm=false">Batal</button>
+                        <button class="btn-primary" :disabled="loading" @click="babDoUploadBa">
+                            <svg v-if="loading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <i v-else class="bi bi-upload"></i>
+                            Unggah Berita Acara
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </div>
+
         <!-- ============ SHEET: BUAT BA ============ -->
         <div v-if="loggedIn && baSheet.open" class="ba-sheet-wrap">
             <div class="ba-sheet-scrim" @click="baSheetClose()"></div>
@@ -2349,18 +2267,87 @@
                         <h2 class="text-base font-extrabold text-slate-900">Buat Berita Acara</h2>
                         <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="baSheetClose()"><i class="bi bi-x-lg"></i></button>
                     </div>
-                    <div class="mt-3 inline-flex rounded-full bg-slate-100 p-0.5 text-xs font-semibold">
+                    <div v-if="!(baSheet.type==='pelaksanaan' && bab.ba.open && babSelectedGroup)" class="mt-3 inline-flex rounded-full bg-slate-100 p-0.5 text-xs font-semibold">
                         <button class="rounded-full px-4 py-1.5" :class="baSheet.type==='pendukung' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" @click="baSheetSetType('pendukung')">Pendukung</button>
                         <button class="rounded-full px-4 py-1.5" :class="baSheet.type==='pelaksanaan' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" @click="baSheetSetType('pelaksanaan')">Pelaksanaan</button>
                     </div>
                 </div>
-                <div class="ba-sheet-search">
+                <div v-if="!(baSheet.type==='pelaksanaan' && bab.ba.open && babSelectedGroup)" class="ba-sheet-search">
                     <div class="master-search">
                         <i class="bi bi-search"></i>
                         <input v-model="baSheet.q" class="input" placeholder="Cari kegiatan, mahasiswa, atau dosen...">
                     </div>
                 </div>
                 <div class="ba-sheet-body">
+                    <template v-if="baSheet.type==='pelaksanaan' && bab.ba.open && babSelectedGroup">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="truncate text-sm font-bold text-slate-900">{{ babSelectedGroup.label }}</div>
+                                <div class="text-[11px] text-slate-400">{{ babSelectedGroup.peserta.length }} mahasiswa</div>
+                            </div>
+                            <button class="shrink-0 text-[11px] font-semibold text-brand-600" @click="baSheetChangeKegiatan"><i class="bi bi-chevron-left"></i> Ganti</button>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="label">Peserta Kegiatan</label>
+                                <button class="text-[11px] font-semibold text-brand-600" @click="babToggleAllPeserta">{{ babAllSelected ? 'Batal Semua' : 'Pilih Semua' }}</button>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label v-for="p in babSelectedGroup.peserta" :key="p.idPengajuan" class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5 transition hover:border-brand-300" :class="bab.ba.selected[p.idPengajuan] ? 'border-brand-400 bg-brand-50/40' : ''">
+                                    <input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="!!bab.ba.selected[p.idPengajuan]" @change="babTogglePeserta(p.idPengajuan)">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-xs font-bold text-slate-800">{{ p.namaLengkap }}</div>
+                                        <div class="font-mono text-[10px] text-slate-400">{{ p.npm }}</div>
+                                    </div>
+                                    <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mt-3 grid gap-3">
+                            <div><label class="label">Label <span class="font-normal text-slate-400">(opsional)</span></label><input v-model="bab.ba.label" class="input" placeholder="mis. Sesi 1"></div>
+                            <div><label class="label">Tanggal Pelaksanaan</label><input v-model="bab.ba.tanggal" type="date" class="input"></div>
+                            <div>
+                                <label class="label">File BA (PDF / JPG / PNG)</label>
+                                <div class="flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-3">
+                                    <i class="bi bi-cloud-arrow-up text-xl text-brand-400"></i>
+                                    <div class="min-w-0 flex-1 truncate text-xs text-slate-500">
+                                        <span v-if="!bab.ba.file">Pilih file atau scan kamera...</span>
+                                        <span v-else class="font-semibold text-slate-700">{{ bab.ba.fileName }}</span>
+                                    </div>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="max-w-[120px] text-xs" @change="babOnBaFile">
+                                </div>
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <button type="button" class="btn-soft !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="$refs.pelaksanaanCamera.click()">
+                                        <i class="bi bi-camera"></i> Scan Kamera
+                                    </button>
+                                    <span v-if="bab.ba.scanItems.length" class="text-[11px] text-slate-500">{{ bab.ba.scanItems.length }} halaman</span>
+                                    <button v-if="bab.ba.scanItems.length" type="button" class="btn-primary !py-1.5 text-xs" :disabled="bab.ba.scanBusy" @click="scanBuildPdf('pelaksanaan')">
+                                        <i class="bi bi-file-earmark-pdf"></i> Buat PDF
+                                    </button>
+                                    <button v-if="bab.ba.scanItems.length" type="button" class="btn-soft !py-1.5 text-xs" @click="scanClear('pelaksanaan')">Bersihkan</button>
+                                </div>
+                                <input ref="pelaksanaanCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'pelaksanaan')">
+                                <div v-if="bab.ba.scanItems.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                    <div v-for="(it, idx) in bab.ba.scanItems" :key="it.id" class="relative overflow-hidden rounded-lg ring-1 ring-slate-200">
+                                        <img :src="it.url" :alt="'Halaman ' + (idx + 1)" class="h-20 w-full object-cover">
+                                        <span class="absolute left-1 top-1 rounded bg-slate-900/70 px-1.5 text-[10px] font-semibold text-white">{{ idx + 1 }}</span>
+                                        <button type="button" class="absolute right-1 top-1 rounded bg-rose-600/90 px-1.5 text-[10px] font-bold text-white" @click="scanRemove(idx, 'pelaksanaan')">x</button>
+                                        <div class="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-slate-900/60 py-0.5">
+                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === 0" title="Geser ke kiri" @click="scanMove(idx, -1, 'pelaksanaan')"><i class="bi bi-arrow-left"></i></button>
+                                            <button type="button" class="rounded px-1 text-[11px] text-white disabled:opacity-30" :disabled="idx === bab.ba.scanItems.length - 1" title="Geser ke kanan" @click="scanMove(idx, 1, 'pelaksanaan')"><i class="bi bi-arrow-right"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-if="bab.ba.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
+                            </div>
+                            <div><label class="label">Catatan <span class="font-normal text-slate-400">(opsional)</span></label><textarea v-model="bab.ba.catatan" rows="2" class="input"></textarea></div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <button class="btn-soft flex-1" @click="baSheetChangeKegiatan"><i class="bi bi-arrow-left"></i> Ganti Kegiatan</button>
+                            <button class="btn-primary flex-1" @click="babSubmitBa"><i class="bi bi-check2"></i> Lanjut</button>
+                        </div>
+                    </template>
+                    <template v-else>
                     <button v-if="baSheet.level==='kegiatan' && !baSheet.q" class="mb-3 flex items-center gap-1 text-xs font-semibold text-brand-600" @click="baSheetBack()"><i class="bi bi-chevron-left"></i> Blok {{ baSheet.blok }}</button>
 
                     <div v-if="sectionLoading.bagian" class="py-10 text-center text-sm text-slate-400">Memuat...</div>
@@ -2400,6 +2387,7 @@
                                 <span class="shrink-0 text-xs font-semibold text-brand-600">Buat</span>
                             </button>
                         </div>
+                    </template>
                     </template>
                 </div>
             </div>
@@ -2939,21 +2927,33 @@
                     return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
                 },
                 async babStart() {
-                    if (!this.bab.kategori) { this.notify('Pilih kategori kegiatan terlebih dahulu.', false); return; }
-                    if (this.bab.kategori === 'Praktikum' && !this.bab.subBagian) { this.notify('Untuk Praktikum, pilih sub bagian / lab terlebih dahulu.', false); return; }
+                    if (!this.bab.kategori) { this.notify('Pilih kategori kegiatan terlebih dahulu.', false); return false; }
+                    if (this.bab.kategori === 'Praktikum' && !this.bab.subBagian) { this.notify('Untuk Praktikum, pilih sub bagian / lab terlebih dahulu.', false); return false; }
+                    return await this._babStartCore();
+                },
+                async _babStartCore() {
                     this.bab.loading = true;
                     try {
                         const res = await this.run('adminBagianBypass', this.bab.kategori, this.bab.subBagian);
-                        if (!res || !res.ok) { this.notify((res && res.message) || 'Gagal memulai sesi bagian.', false); return; }
+                        if (!res || !res.ok) { this.notify((res && res.message) || 'Gagal memulai sesi bagian.', false); return false; }
                         this.bab.token = res.token;
                         this.bab.nama = res.nama || 'Admin';
                         this.bab.active = true;
                         await this.babLoad();
+                        return true;
                     } catch (e) {
                         this.notify('Gagal: ' + e, false);
+                        return false;
                     } finally {
                         this.bab.loading = false;
                     }
+                },
+                async babEnsureSession(kategori, subBagian) {
+                    if (this.bab.active && this.bab.kategori === kategori && (this.bab.subBagian || '') === (subBagian || '')) return true;
+                    if (this.bab.active) this.babEnd();
+                    this.bab.kategori = kategori;
+                    this.bab.subBagian = subBagian || '';
+                    return await this._babStartCore();
                 },
                 babEnd() {
                     if (this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
@@ -3066,6 +3066,7 @@
                         this.notify((res && res.message) || 'Selesai.', !!(res && res.success));
                         if (res && res.success) {
                             this.babCloseBaPicker();
+                            this.baSheet.open = false;
                             const fileEl = document.querySelector('input[type=file]');
                             if (fileEl) fileEl.value = '';
                             await this.babLoadBaList();
@@ -4004,8 +4005,37 @@
                         this.openKelolaBaPendukung(pid);
                         return;
                     }
-                    this.baSheetClose();
-                    this.openPelaksanaanPanel(u);
+                    this._baSheetPickPelaksanaan(u);
+                },
+                async _baSheetPickPelaksanaan(u) {
+                    const scope = this.deriveBagianScope(u.bagian);
+                    if (!scope.kategori) { this.notify('Bagian kegiatan ini tidak dikenali.', false); return; }
+                    this.baSheet.loading = true;
+                    try {
+                        const ok = await this.babEnsureSession(scope.kategori, scope.subBagian);
+                        if (!ok) return;
+                        const match = this.babKegiatanGroups.find(g =>
+                            String(g.blok || '').trim() === String(u.blok || '').trim()
+                            && this.normBagian(g.pilihan) === this.normBagian(u.pilihan)
+                            && this.normBagian(g.detail) === this.normBagian(u.detail)) || null;
+                        if (!match) {
+                            this.notify('Kegiatan tidak ditemukan pada sesi bagian ini.', false);
+                            this.baSheetClose();
+                            this.openPelaksanaanPanel(u);
+                            return;
+                        }
+                        this.babOpenBaPicker();
+                        this.babSelectKegiatan(match.key);
+                    } finally {
+                        this.baSheet.loading = false;
+                    }
+                },
+                baSheetChangeKegiatan() {
+                    this.bab.ba.open = false;
+                    this.bab.ba.kegiatanKey = null;
+                    this.bab.ba.selected = {};
+                    this.baSheet.level = 'kegiatan';
+                    this.baSheet.q = '';
                 },
                 async updateStatus() {
                     const status = this.detail.status;
@@ -4342,25 +4372,22 @@
                     const p = (n) => String(n).padStart(2, '0');
                     window.XLSX.writeFile(wb, 'berita-acara-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
                 },
+                deriveBagianScope(bagian) {
+                    const key = this.normBagian(bagian);
+                    if (!key) return { kategori: '', subBagian: '' };
+                    if (key === this.normBagian('SGD')) return { kategori: 'SGD', subBagian: '' };
+                    if (key === this.normBagian('KKD')) return { kategori: 'KKD', subBagian: '' };
+                    if (key === this.normBagian('Ujian')) return { kategori: 'Ujian', subBagian: '' };
+                    const lab = (this.bagian.labs || []).find((l) => this.normBagian(l) === key);
+                    if (lab) return { kategori: 'Praktikum', subBagian: lab };
+                    return { kategori: '', subBagian: '' };
+                },
                 openPelaksanaanPanel(row) {
                     this.bab.showPanel = true;
                     if (!this.loaded.bagian && !this.bagian.labs.length) this.loadBagian();
-                    const bagian = String((row && row.bagian) || '').trim();
-                    this.bab.subBagian = '';
-                    if (bagian) {
-                        const key = this.normBagian(bagian);
-                        if (key === this.normBagian('SGD')) this.bab.kategori = 'SGD';
-                        else if (key === this.normBagian('KKD')) this.bab.kategori = 'KKD';
-                        else if (key === this.normBagian('Ujian')) this.bab.kategori = 'Ujian';
-                        else {
-                            const labs = this.bagian.labs || [];
-                            const lab = labs.find((l) => this.normBagian(l) === key);
-                            if (lab) { this.bab.kategori = 'Praktikum'; this.bab.subBagian = lab; }
-                            else this.bab.kategori = '';
-                        }
-                    } else {
-                        this.bab.kategori = '';
-                    }
+                    const scope = this.deriveBagianScope((row && row.bagian) || '');
+                    this.bab.kategori = scope.kategori;
+                    this.bab.subBagian = scope.subBagian;
                     this.$nextTick(() => {
                         const el = document.getElementById('bab-panel');
                         if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });

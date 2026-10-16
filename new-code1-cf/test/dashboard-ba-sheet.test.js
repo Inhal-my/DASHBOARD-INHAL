@@ -90,4 +90,25 @@ describe('dashboard BA sheet template', () => {
     expect(html).not.toContain('@click="openKelolaBaPicker()"');
     expect(html).toContain('openBaSheet()');
   });
+
+  it('menempatkan form pelaksanaan di dalam sheet, bukan panel', async () => {
+    const html = await loadDashboardHtml();
+    const sheetStart = html.indexOf('ba-sheet-wrap');
+    const sheetEnd = html.indexOf('<!-- ============ MOBILE MENU SHEET', sheetStart);
+    const sheet = html.slice(sheetStart, sheetEnd);
+    expect(sheet).toContain('babOnBaFile');
+    expect(sheet).toContain('babSubmitBa');
+
+    const panelStart = html.indexOf('id="bab-panel"');
+    const panelEnd = html.indexOf('<!-- ============ TAB: MASTER', panelStart);
+    const panel = html.slice(panelStart, panelEnd);
+    expect(panel).not.toContain('babOnBaFile');
+  });
+
+  it('menyediakan sesi otomatis dan pemilihan pelaksanaan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('deriveBagianScope(bagian)');
+    expect(html).toContain('babEnsureSession(kategori, subBagian)');
+    expect(html).toContain('_baSheetPickPelaksanaan(u)');
+  });
 });
