@@ -90,7 +90,7 @@ async function resolveBaPesertaFromDetail(db, payload) {
   return out;
 }
 
-async function validateBaPesertaStatus(db, peserta) {
+export async function validateBaPesertaStatus(db, peserta) {
   const allowed = await getBagianBaStatuses(db);
   const { results } = await db.prepare('SELECT id_pengajuan, status FROM pengajuan').all();
   const map = {};
