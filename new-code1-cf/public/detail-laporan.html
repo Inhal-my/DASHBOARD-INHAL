@@ -1961,6 +1961,8 @@
                     bagianFilter: { bagian: '', blok: '', q: '' },
                     baFilter: { bagian: '', blok: '', q: '' },
                     baListFilter: { bagian: '', blok: '', jenis: '', from: '', to: '', dosen: '', sumber: '', kelengkapan: '', q: '' },
+                    jadwal: [],
+                    jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
@@ -2635,6 +2637,124 @@
                         if (blok && String(u.blok || '').trim() !== blok) return false;
                         return true;
                     });
+                },
+                baPelaksanaanIndex() {
+                    const map = {};
+                    (this.kegiatan || []).forEach((u) => {
+                        (u.baPelaksanaan || []).forEach((b) => {
+                            const id = String(b['BA ID'] || '').trim();
+                            if (id) map[id] = b;
+                        });
+                    });
+                    return map;
+                },
+                jadwalRealisasiRows() {
+                    const idx = this.baPelaksanaanIndex;
+                    return (this.jadwal || []).map((j) => {
+                        const b = j.baId ? idx[j.baId] : null;
+                        return {
+                            jenis: 'Jadwal',
+                            key: 'J-' + j.jadwalId,
+                            jadwalId: j.jadwalId || '',
+                            baId: j.baId || '',
+                            bagian: j.bagian || '',
+                            blok: j.blok || '',
+                            kegiatan: j.namaKegiatan || j.label || '',
+                            label: j.label || '',
+                            jadwalTanggal: j.tanggal || '',
+                            jadwalJam: j.jam || '',
+                            jadwalDosen: j.dosen || '',
+                            jadwalPesertaCount: (j.peserta || []).length,
+                            baTanggal: b ? (b['Tanggal Pelaksanaan'] || '') : '',
+                            baJam: b ? (b.Jam || '') : '',
+                            baDosen: b ? (b.Dosen || '') : '',
+                            baPesertaCount: b ? ((b.peserta || []).length || 0) : 0,
+                            status: j.baId ? 'Sesuai' : 'Belum'
+                        };
+                    });
+                },
+                jadwalExtraRows() {
+                    const out = [];
+                    (this.kegiatan || []).forEach((u) => {
+                        (u.baPelaksanaan || []).forEach((b) => {
+                            if (String(b['Jadwal ID'] || '').trim()) return;
+                            out.push({
+                                jenis: 'Extra',
+                                key: 'E-' + (b['BA ID'] || ''),
+                                jadwalId: '',
+                                baId: b['BA ID'] || '',
+                                bagian: u.bagian || '',
+                                blok: u.blok || '',
+                                kegiatan: u.label || '',
+                                label: b.Label || '',
+                                jadwalTanggal: '', jadwalJam: '', jadwalDosen: '', jadwalPesertaCount: 0,
+                                baTanggal: b['Tanggal Pelaksanaan'] || '',
+                                baJam: b.Jam || '',
+                                baDosen: b.Dosen || '',
+                                baPesertaCount: (b.peserta || []).length,
+                                status: 'Extra'
+                            });
+                        });
+                    });
+                    return out;
+                },
+                jadwalRealisasiAll() {
+                    return this.jadwalRealisasiRows.concat(this.jadwalExtraRows);
+                },
+                jadwalRealisasiFiltered() {
+                    const f = this.jadwalFilter;
+                    const bagian = f.bagian;
+                    const blok = String(f.blok || '').trim();
+                    const fromD = f.from ? this.dateVal(f.from) : null;
+                    const toD = f.to ? this.dateVal(f.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    const q = this.normSearch(f.q);
+                    return this.jadwalRealisasiAll.filter((r) => {
+                        if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return false;
+                        if (blok && String(r.blok || '').trim() !== blok) return false;
+                        if (f.status && r.status !== f.status) return false;
+                        const dRef = r.jenis === 'Extra' ? r.baTanggal : r.jadwalTanggal;
+                        if (fromD || toD) {
+                            const d = this.dateVal(dRef);
+                            if (!d || (fromD && d < fromD) || (toD && d > toD)) return false;
+                        }
+                        if (q) {
+                            const hay = [r.jadwalId, r.baId, r.kegiatan, r.bagian, r.blok, r.label, r.jadwalDosen, r.baDosen]
+                                .map((s) => this.normSearch(s)).join(' ');
+                            if (hay.indexOf(q) === -1) return false;
+                        }
+                        return true;
+                    });
+                },
+                jadwalBagianOptions() {
+                    const set = {};
+                    this.jadwalRealisasiAll.forEach((r) => { if (r.bagian) set[r.bagian] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                jadwalBlokOptions() {
+                    const bagian = this.jadwalFilter.bagian;
+                    const set = {};
+                    this.jadwalRealisasiAll.forEach((r) => {
+                        if (!r.blok) return;
+                        if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return;
+                        set[r.blok] = 1;
+                    });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                jadwalStatusOptions() {
+                    return ['Sesuai', 'Belum', 'Extra'];
+                },
+                jadwalTotalCount() {
+                    return this.jadwalRealisasiFiltered.length;
+                },
+                jadwalSesuaiCount() {
+                    return this.jadwalRealisasiFiltered.filter((r) => r.status === 'Sesuai').length;
+                },
+                jadwalBelumCount() {
+                    return this.jadwalRealisasiFiltered.filter((r) => r.status === 'Belum').length;
+                },
+                jadwalExtraCount() {
+                    return this.jadwalRealisasiFiltered.filter((r) => r.status === 'Extra').length;
                 }
             },
             watch: {
@@ -2997,6 +3117,7 @@
                         this.dosen = data.dosen || [];
                         this.dosenOptions = data.dosenOptions || this.dosen;
                         this.blok = data.blok || [];
+                        this.jadwal = data.jadwal || [];
                         this.bagian = data.bagian || { categories: [], labs: [] };
                         this.expanded = {};
                         this.activeDosenCell = null;
@@ -3011,6 +3132,7 @@
                         this.kegiatan = [];
                         this.dosen = [];
                         this.blok = [];
+                        this.jadwal = [];
                         this.bagian = { categories: [], labs: [] };
                         this.showToast('bi-x-circle', 'Gagal memuat data: ' + (e || 'Terjadi kesalahan.'));
                     } finally {
