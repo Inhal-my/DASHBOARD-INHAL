@@ -504,9 +504,9 @@ describe('dashboard pensiun alur BA Pendukung lama', () => {
     expect(html).not.toContain('submitBaAdmin(');
     expect(html).not.toContain('uploadBeritaAcaraAdmin');
   });
-  it('menyediakan picker kegiatan dan tombol Kelola BA Pendukung di baris unit', async () => {
+  it('menyediakan picker kegiatan via sheet dan tombol Kelola BA Pendukung di baris unit', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('openKelolaBaPicker()');
+    expect(html).toContain('baSheetOpenKegiatan(');
     expect(html).toContain('openKelolaBaForUnit(');
   });
 });

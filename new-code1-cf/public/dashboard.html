@@ -2124,25 +2124,7 @@
                 </transition>
             </div>
         </transition>
-        <!-- ============ MODAL: PILIH KEGIATAN BA PENDUKUNG ============ -->
-        <transition name="fade">
-            <div v-if="kbPicker.open" class="fixed inset-0 z-[120] modal-overlay">
-                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeKelolaBaPicker()"></div>
-                <div class="modal-panel max-w-lg shadow-lift">
-                    <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
-                        <h3 class="text-sm font-bold text-slate-900">Pilih Kegiatan — Kelola BA Pendukung</h3>
-                        <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeKelolaBaPicker()"><i class="bi bi-x-lg"></i></button>
-                    </div>
-                    <div class="modal-body max-h-[60vh] overflow-y-auto px-6 py-4">
-                        <div v-if="!(bagian.units || []).length" class="text-xs text-slate-400">Belum ada kegiatan dimuat. Buka tab Berita Acara lebih dulu.</div>
-                        <button v-for="u in (bagian.units || []).filter(x => !x.__orphan)" :key="u.key" class="mb-2 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left ring-1 ring-slate-100 hover:bg-brand-50" @click="kbPickerOpenUnit(u)">
-                            <span class="text-xs font-semibold text-slate-700">{{ u.label }}</span>
-                            <span class="text-[10px] text-slate-400">{{ u.bagian }} · {{ u.blok }} · {{ u.jumlahPeserta }} peserta</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
+        <!-- ============ MODAL: KELOLA BA ============ -->
         <div v-if="kelola.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
             <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
                 <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
@@ -2484,7 +2466,6 @@
                      detail: { open: false, step: 0, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
                     kb: { open: false, loading: false, data: null, pick: false, addPick: '', kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
-                    kbPicker: { open: false },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
                     dosenPick: { open: false },
@@ -2866,7 +2847,7 @@
                     });
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.kb.open || this.kbPicker.open || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
+                    return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
                 }
             },
             watch: {
@@ -3013,11 +2994,6 @@
                     this.bab.ba.kegiatanKey = key;
                     this.bab.ba.selected = {};
                     this.bab.ba.tanggal = this.dateOnly(g.tanggal);
-                },
-                babBackToKegiatanPicker() {
-                    this.bab.ba.kegiatanKey = null;
-                    this.bab.ba.selected = {};
-                    this.bab.ba.confirm = false;
                 },
                 babTogglePeserta(id) {
                     this.bab.ba.selected[id] = !this.bab.ba.selected[id];
@@ -3945,17 +3921,6 @@
                 openKelolaBaForUnit(u) {
                     const p = (u && u.peserta) || [];
                     if (!p.length) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
-                    this.openKelolaBaPendukung(p[0].idPengajuan);
-                },
-                openKelolaBaPicker() {
-                    this.kbPicker.open = true;
-                    if (this.tab !== 'ba') this.switchTab('ba');
-                },
-                closeKelolaBaPicker() { this.kbPicker.open = false; },
-                kbPickerOpenUnit(u) {
-                    const p = (u && u.peserta) || [];
-                    if (!p.length) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
-                    this.kbPicker.open = false;
                     this.openKelolaBaPendukung(p[0].idPengajuan);
                 },
                 openBaSheet(type) {
