@@ -25,6 +25,42 @@ export async function getLaporanBootstrap(db, ctx) {
     pesertaMap[id].push({ npm: String(r.npm || '').trim(), namaLengkap: String(r.nama_lengkap || '').trim(), blok: String(r.blok || '').trim() });
   }
 
+  const jadwalRows = (await db.prepare('SELECT * FROM jadwal_pelaksanaan').all()).results || [];
+  const jadwalPesertaRows = (await db.prepare('SELECT * FROM jadwal_peserta').all()).results || [];
+  const jadwalPesertaByJadwal = {};
+  for (const p of jadwalPesertaRows) {
+    const j = String(p.jadwal_id || '').trim();
+    if (!j) continue;
+    if (!jadwalPesertaByJadwal[j]) jadwalPesertaByJadwal[j] = [];
+    jadwalPesertaByJadwal[j].push({
+      npm: String(p.npm || '').trim(),
+      namaLengkap: String(p.nama_lengkap || '').trim(),
+      blok: String(p.blok || '').trim(),
+      statusPengajuan: String(p.status_pengajuan || '').trim()
+    });
+  }
+  const baIdByJadwal = {};
+  for (const b of ba) {
+    const j = String(b.jadwal_id || '').trim();
+    if (j && !baIdByJadwal[j]) baIdByJadwal[j] = String(b.ba_id || '').trim();
+  }
+  const jadwalList = [];
+  for (const r of jadwalRows) {
+    if (Number(r.active) !== 1) continue;
+    const jid = String(r.jadwal_id || '').trim();
+    const jBagian = String(r.bagian || '').trim();
+    const jBlok = String(r.blok || '').trim();
+    const jNama = String(r.nama_kegiatan || '').trim();
+    const jKey = String(r.kegiatan_key || '').trim() || kegiatanKey(jBagian, jBlok, jNama);
+    jadwalList.push({
+      jadwalId: jid, kegiatanKey: jKey, bagian: jBagian, blok: jBlok,
+      namaKegiatan: jNama, label: jNama,
+      tanggal: String(r.tanggal || '').trim(), jam: String(r.jam || '').trim(),
+      dosen: String(r.dosen || '').trim(), catatan: String(r.catatan || '').trim(),
+      peserta: jadwalPesertaByJadwal[jid] || [], baId: baIdByJadwal[jid] || ''
+    });
+  }
+
   const baMemberByKey = {};
   const baKeyByBaId = {};
   for (const b of ba) {
@@ -120,7 +156,7 @@ export async function getLaporanBootstrap(db, ctx) {
       const key = kegiatanKey(bagian, blokUnit, label);
       if (unitIndex[key] === undefined) {
         unitIndex[key] = units.length;
-        units.push({ key, bagian, blok: blokUnit, label, peserta: [], baPendukung: [], baPelaksanaan: [], pelaksanaan: [], dosenList: [] });
+        units.push({ key, bagian, blok: blokUnit, label, peserta: [], baPendukung: [], baPelaksanaan: [], pelaksanaan: [], dosenList: [], jadwal: [] });
       }
       const u = units[unitIndex[key]];
       if (!u.peserta.some((x) => x.idPengajuan === idp)) {
@@ -155,6 +191,16 @@ export async function getLaporanBootstrap(db, ctx) {
     u.counts = u.progress.counts;
   }
 
+  const jadwalByKey = {};
+  for (const j of jadwalList) {
+    if (!jadwalByKey[j.kegiatanKey]) jadwalByKey[j.kegiatanKey] = [];
+    jadwalByKey[j.kegiatanKey].push({
+      jadwalId: j.jadwalId, tanggal: j.tanggal, jam: j.jam, dosen: j.dosen,
+      catatan: j.catatan, peserta: j.peserta, baId: j.baId
+    });
+  }
+  for (const u of units) u.jadwal = jadwalByKey[u.key] || [];
+
   return {
     summary: { totalPendaftar, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
     rows,
@@ -163,6 +209,7 @@ export async function getLaporanBootstrap(db, ctx) {
     dosenOptions: await getMasterOptions(db, 'Dosen'),
     blok,
     kegiatan: units,
+    jadwal: jadwalList,
     bagian: { categories: ['Ujian', 'SGD', 'KKD'], labs }
   };
 }
