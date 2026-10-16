@@ -76,7 +76,8 @@ describe('dashboard template', () => {
   it('contains the unified Berita Acara process markers', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('Dua tahap: unggah BA Pendukung');
-    expect(html).toContain('Peta Kelengkapan Bagian × Blok');
+    expect(html).toContain('Kelengkapan per Blok');
+    expect(html).not.toContain('Peta Kelengkapan Bagian × Blok');
     expect(html).toContain('Unggah BA Pendukung');
     expect(html).toContain('Unggah BA Pelaksanaan');
     expect(html).toContain('Belum Pendukung');
@@ -217,7 +218,7 @@ describe('dashboard template', () => {
 
   it('token & definisi primitif mockup tersedia', async () => {
     const html = await loadDashboardHtml();
-    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.wait {', '.in-tbl thead th {', '.in-tbl thead th.text-right {', '.in-toolbar {', '.in-input {', '.in-progdots i.all {', '.in-bar-fill.g {', '.in-heat .c.g {', '.in-tabsw {', '.in-statrow {']) {
+    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.wait {', '.in-tbl thead th {', '.in-tbl thead th.text-right {', '.in-toolbar {', '.in-input {', '.in-progdots i.all {', '.in-bar-fill.g {', '.in-tabsw {', '.in-statrow {']) {
       expect(html).toContain(s);
     }
   });
@@ -232,7 +233,8 @@ describe('dashboard template', () => {
   it('permukaan statistik, heat, dan master memakai primitif in-*', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('in-statrow');
-    expect(html).toContain('class="heat-table in-heat"');
+    expect(html).toContain('bagianBlokCards');
+    expect(html).not.toContain('heat-table in-heat');
   });
 
   it('statistik memakai primitif bar konsisten', async () => {
@@ -246,7 +248,7 @@ describe('dashboard template', () => {
     const html = await loadDashboardHtml();
     for (const s of ['.in-pageintro {', '.in-avatar {', '.in-celluser {', '.in-docdot {',
       '.in-docdot.on.bukti {', '.in-cards {', '.in-mcard {', '.in-proc {', '.in-basum {',
-      '.in-heat-legend {', '.in-manual-note {']) {
+      '.in-manual-note {']) {
       expect(html).toContain(s);
     }
   });
@@ -280,12 +282,12 @@ describe('dashboard template', () => {
     expect(html).toContain('Notifikasi email tidak dikirim');
   });
 
-  it('BA memakai banner proses, ringkasan basum, legenda heat', async () => {
+  it('BA memakai banner proses, ringkasan basum, kartu blok', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('class="in-proc"');
     expect(html).toContain('ba-cards in-basum');
-    expect(html).toContain('class="in-heat-legend"');
-    expect(html).toContain('Geser ke kanan jika blok banyak.');
+    expect(html).toContain('bagianBlokCards');
+    expect(html).toContain('Kelengkapan per Blok');
     expect(html).toContain('BA Pendukung');
     expect(html).toContain('BA Pelaksanaan');
   });

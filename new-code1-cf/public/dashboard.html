@@ -237,15 +237,8 @@
 @media (min-width: 768px) { .md\:block { display: block; } .md\:hidden { display: none; } }
 @media (min-width: 1024px) { .lg\:grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
 .ba-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
-.ba-pair { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
-.heat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.heat-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; }
-.heat-table th, .heat-table td { padding: .25rem; text-align: center; }
-.heat-sticky { position: sticky; left: 0; background: #fff; z-index: 1; text-align: left; min-width: 7rem; font-weight: 600; }
-.heat-cell { min-width: 4rem; }
 @media (max-width: 1100px) {
   .ba-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ba-pair { grid-template-columns: 1fr; }
 }
     </style>
     <style>
@@ -395,14 +388,8 @@
         .in-bar-fill.g { background:#10b981; }
         .in-bar-fill.y { background:#fbbf24; }
         .in-bar-fill.r { background:#fb7185; }
-        .in-heat { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; font-size:12px; }
-        .in-heat th { padding:8px 10px; color:var(--ink-500); font-weight:700; white-space:nowrap; min-width:70px; text-align:center; }
-        .in-heat td { padding:4px; text-align:center; }
-        .in-heat th.lab, .in-heat td.lab { text-align:left; font-weight:700; position:sticky; left:0; background:#fff; z-index:1; min-width:110px; padding-left:0; }
-        .in-heat .c { min-width:60px; border-radius:8px; padding:6px 8px; font-weight:800; border:1px solid transparent; }
-        .in-heat .c.g { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
-        .in-heat .c.y { background:#fffbeb; color:#b45309; border-color:#fde68a; }
-        .in-heat .c.r { background:#fff1f2; color:#be123c; border-color:#fecdd3; }
+        .ba-ring { width:44px; height:44px; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
+        .ba-ring > span { width:34px; height:34px; border-radius:9999px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#334155; }
         .in-tabsw { display:flex; gap:.5rem; overflow-x:auto; border-bottom:1px solid var(--line); }
         .in-tab { display:flex; flex:1 1 0%; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; padding:.7rem 1rem; border-bottom:2.5px solid transparent; color:var(--ink-400); font-size:.8125rem; font-weight:700; transition:.15s ease; }
         .in-tab:hover { color:var(--ink-700); }
@@ -456,8 +443,6 @@
         .in-basum .n.rose { color:var(--rose); }
         .in-basum .n.emerald { color:var(--emerald); }
         @media (max-width:1100px){ .in-basum { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        .in-heat-legend { display:flex; gap:12px; font-size:11px; color:var(--ink-500); margin-top:10px; }
-        .in-heat-legend .dot { width:9px; height:9px; border-radius:99px; display:inline-block; margin-right:4px; }
         .in-manual-note { display:flex; align-items:center; gap:8px; background:var(--violet-soft); color:var(--violet); border-radius:12px; padding:12px; font-size:12.5px; font-weight:600; margin-bottom:16px; }
         .panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
         .panel-head h3 { margin:0; font-size:13.5px; font-weight:800; display:flex; align-items:center; gap:8px; color:var(--ink-900); }
@@ -1166,52 +1151,31 @@
                             </button>
                         </div>
 
-                        <div class="ba-pair mb-4">
-                            <div class="dash-card p-4">
-                                <h2 class="mb-3 text-sm font-bold text-slate-900">Kelengkapan Pelaksanaan per Bagian</h2>
-                                <div v-if="!bagianBar.length" class="py-6 text-center text-sm text-slate-400">Belum ada data.</div>
-                                <div v-else class="space-y-2.5">
-                                    <button v-for="g in bagianBar" :key="g.bagian" class="w-full text-left" @click="openBagianFromBar(g.bagian)">
-                                        <div class="flex items-center justify-between text-xs">
-                                            <span class="font-semibold text-slate-700">{{ g.bagian }}</span>
-                                            <span class="text-slate-400">{{ g.done }}/{{ g.total }} · {{ g.pct }}%</span>
-                                        </div>
-                                        <div class="in-bar-track mt-1">
-                                            <div class="in-bar-fill" :class="heatFillClass(g.done, g.total)" :style="{ width: g.pct + '%' }"></div>
-                                        </div>
-                                    </button>
+                        <div class="mb-4 overflow-hidden dash-card">
+                            <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
+                                <h2 class="text-sm font-bold text-slate-900">Kelengkapan per Blok</h2>
+                                <div class="ml-auto inline-flex rounded-full bg-slate-100 p-0.5 text-[11px] font-semibold">
+                                    <button class="rounded-full px-3 py-1" :class="bagian.heatMetric==='pelaksanaan' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" @click="setHeatMetric('pelaksanaan')">Pelaksanaan</button>
+                                    <button class="rounded-full px-3 py-1" :class="bagian.heatMetric==='gabungan' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" @click="setHeatMetric('gabungan')">Pendukung + Pelaksanaan</button>
                                 </div>
                             </div>
-                            <div class="min-w-0 overflow-hidden dash-card">
-                                <h2 class="border-b border-slate-100 p-4 text-sm font-bold text-slate-900">Peta Kelengkapan Bagian × Blok</h2>
-                                <div v-if="!bagianHeatmap.cols.length" class="px-4 py-8 text-center text-sm text-slate-400">Belum ada data.</div>
-                                <div v-else class="heat-scroll p-4">
-                                    <table class="heat-table in-heat">
-                                        <thead>
-                                            <tr>
-                                                <th class="lab heat-sticky p-2 text-left font-bold text-slate-400">Bagian</th>
-                                                <th v-for="b in bagianHeatmap.cols" :key="'hc' + b" class="whitespace-nowrap p-2 text-center font-bold text-slate-500">{{ b }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="r in bagianHeatmap.rows" :key="'hr' + r.bagian">
-                                                <td class="lab heat-sticky p-2 font-semibold text-slate-700">{{ r.bagian }}</td>
-                                                <td v-for="b in bagianHeatmap.cols" :key="'h' + r.bagian + b" class="p-1 text-center">
-                                                    <button v-if="r.cells[b].total" class="heat-cell c" :class="heatCellClass(r.cells[b].done, r.cells[b].total)" @click="openBagianFromCell(r.bagian, b)">
-                                                        {{ r.cells[b].done }}/{{ r.cells[b].total }}
-                                                    </button>
-                                                    <span v-else class="text-slate-300">–</span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="in-heat-legend">
-                                        <span><span class="dot" style="background:#10b981"></span>Lengkap</span>
-                                        <span><span class="dot" style="background:#fbbf24"></span>Sebagian</span>
-                                        <span><span class="dot" style="background:#e2e8f0"></span>Belum</span>
-                                        <span class="ml-auto">Geser ke kanan jika blok banyak.</span>
+                            <div v-if="!bagianBlokCards.length" class="px-4 py-8 text-center text-sm text-slate-400">Belum ada data.</div>
+                            <div v-else class="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
+                                <button v-for="c in bagianBlokCards" :key="c.blok" class="rounded-2xl border p-3 text-left transition hover:shadow-sm" :class="c.pct === 100 ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/30'" @click="openBlokCard(c.blok)">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm font-bold text-slate-900">Blok {{ c.blok }}</div>
+                                            <div class="text-[11px] text-slate-400">{{ c.total }} kegiatan</div>
+                                        </div>
+                                        <div class="ba-ring shrink-0" :style="{ background: 'conic-gradient(' + (c.pct === 100 ? '#10b981' : '#f59e0b') + ' ' + (c.pct * 3.6) + 'deg, #e2e8f0 0deg)' }">
+                                            <span>{{ c.pct }}%</span>
+                                        </div>
                                     </div>
-                                </div>
+                                    <div class="mt-2">
+                                        <span v-if="c.pct === 100" class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Lengkap</span>
+                                        <span v-else class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">{{ c.belum }} belum</span>
+                                    </div>
+                                </button>
                             </div>
                         </div>
 
@@ -1225,7 +1189,7 @@
                         </div>
                         <p v-if="bagianOrphanFiltered.length" class="mb-3 text-xs text-slate-500">{{ bagianOrphanFiltered.length }} BA tanpa pengajuan — tidak masuk hitungan kartu.</p>
 
-                        <div class="overflow-hidden dash-card">
+                        <div id="ba-unit-list" class="overflow-hidden dash-card">
                             <div v-if="!bagianTableRows.length" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data.</div>
                             <template v-else>
                             <div class="hidden overflow-x-auto md:block">
@@ -2449,7 +2413,7 @@
                     dosenOptions: [],
                     masterBiaya: [],
                      detail: { open: false, step: 0, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
-                    bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [] },
+                    bagian: { units: [], orphanBa: [], fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
                     kb: { open: false, loading: false, data: null, pick: false, addPick: '', kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     kbPicker: { open: false },
                     expandedBa: {},
@@ -2693,31 +2657,20 @@
                         __progres: this.progresDots(r)
                     }));
                 },
-                bagianBar() {
+                bagianBlokCards() {
                     const map = {};
+                    const metric = this.bagian.heatMetric || 'pelaksanaan';
                     (this.bagian.units || []).forEach(u => {
-                        if (!map[u.bagian]) map[u.bagian] = { bagian: u.bagian, total: 0, done: 0 };
-                        map[u.bagian].total += 1;
-                        if (this.unitHasPelaksanaan(u)) map[u.bagian].done += 1;
+                        const b = String(u.blok || '').trim();
+                        if (!b) return;
+                        if (!map[b]) map[b] = { blok: b, total: 0, done: 0 };
+                        map[b].total += 1;
+                        const ok = metric === 'gabungan' ? !this.unitIncomplete(u) : this.unitHasPelaksanaan(u);
+                        if (ok) map[b].done += 1;
                     });
-                    return Object.values(map).map(g => Object.assign(g, { pct: g.total ? Math.round((g.done / g.total) * 100) : 0 }))
-                        .sort((a, b) => a.bagian.localeCompare(b.bagian));
-                },
-                bagianHeatmap() {
-                    const cols = [];
-                    (this.bagian.units || []).forEach(u => { if (u.blok && cols.indexOf(u.blok) === -1) cols.push(u.blok); });
-                    cols.sort();
-                    const bagSet = [];
-                    (this.bagian.units || []).forEach(u => { if (bagSet.indexOf(u.bagian) === -1) bagSet.push(u.bagian); });
-                    const rows = bagSet.map(bag => {
-                        const cells = {};
-                        cols.forEach(b => {
-                            const inCell = (this.bagian.units || []).filter(u => u.bagian === bag && u.blok === b);
-                            cells[b] = { total: inCell.length, done: inCell.filter(u => this.unitHasPelaksanaan(u)).length };
-                        });
-                        return { bagian: bag, cells };
-                    });
-                    return { cols, rows };
+                    return Object.values(map)
+                        .map(c => Object.assign(c, { pct: c.total ? Math.round((c.done / c.total) * 100) : 0, belum: c.total - c.done }))
+                        .sort((a, b) => a.blok.localeCompare(b.blok));
                 },
                 baPendukungSet() {
                     const set = {};
@@ -4164,19 +4117,20 @@
                 unitPelaksanaanBa(u) {
                     return (u.ba || []).filter(b => b.sumber === 'Bagian');
                 },
-                heatFillClass(done, total) {
-                    if (!total) return 'r';
-                    if (done === total) return 'g';
-                    if (done > 0) return 'y';
-                    return 'r';
-                },
-                heatCellClass(done, total) {
-                    if (done === total) return 'g';
-                    if (done > 0) return 'y';
-                    return 'r';
-                },
                 setBagianChip(chip) {
                     this.bagian.chip = chip;
+                },
+                setHeatMetric(m) {
+                    this.bagian.heatMetric = m === 'gabungan' ? 'gabungan' : 'pelaksanaan';
+                },
+                openBlokCard(blok) {
+                    this.bagian.fBlok = blok;
+                    this.bagian.fBagian = '';
+                    this.bagian.chip = 'semua';
+                    this.$nextTick(() => {
+                        const el = document.getElementById('ba-unit-list');
+                        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
                 },
                 resetBagianFilter() {
                     Object.assign(this.bagian, { fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc' });
@@ -4191,14 +4145,6 @@
                 },
                 toggleBagianExpand(key) {
                     this.bagian.expanded = Object.assign({}, this.bagian.expanded, { [key]: !this.bagian.expanded[key] });
-                },
-                openBagianFromBar(bagian) {
-                    this.bagian.fBagian = this.bagian.fBagian === bagian ? '' : bagian;
-                    this.bagian.fBlok = '';
-                },
-                openBagianFromCell(bagian, blok) {
-                    this.bagian.fBagian = bagian;
-                    this.bagian.fBlok = blok;
                 },
                 bagianStatusBaClass(status) {
                     return status === 'ada' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700';
