@@ -67,4 +67,9 @@ describe('bagian template jadwal', () => {
     expect(html).toContain('ba.dosen');
     expect(html).toContain('ba.jam');
   });
+
+  it('mengikat this pada callback computed jadwal', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('g.key === this.jadwal.kegiatanKey; }.bind(this)');
+  });
 });

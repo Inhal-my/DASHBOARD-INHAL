@@ -811,7 +811,7 @@
                 },
                 jadwalSelectedGroup() {
                     if (!this.jadwal.kegiatanKey) return null;
-                    return this.jadwalKegiatanGroups.find(function(g) { return g.key === this.jadwal.kegiatanKey; }) || null;
+                    return this.jadwalKegiatanGroups.find(function(g) { return g.key === this.jadwal.kegiatanKey; }.bind(this)) || null;
                 },
                 jadwalAllSelected() {
                     if (!this.jadwalSelectedGroup) return false;
