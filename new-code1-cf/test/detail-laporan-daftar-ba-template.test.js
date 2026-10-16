@@ -85,3 +85,23 @@ describe('daftar BA: lapisan data', () => {
     }
   });
 });
+
+describe('daftar BA: tab & UI', () => {
+  it('mendaftarkan tab dan section', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("key: 'daftarba', label: 'Daftar BA'");
+    expect(html).toContain("activeTab === 'daftarba'");
+  });
+  it('memuat kolom dan filter wajib', async () => {
+    const html = await loadHtml();
+    for (const s of ['>BA ID</th>', '>Jenis</th>', '>Label</th>', '>Dibuat</th>',
+      '>Kelengkapan</th>', '>Berkas</th>', '>Sumber</th>', '>Peserta</th>']) {
+      expect(html).toContain(s);
+    }
+    for (const s of ['baListFilter.bagian', 'baListFilter.blok', 'baListFilter.jenis',
+      'baListFilter.from', 'baListFilter.to', 'baListFilter.dosen', 'baListFilter.sumber',
+      'baListFilter.kelengkapan', 'baListFilter.q']) {
+      expect(html).toContain(s);
+    }
+  });
+});

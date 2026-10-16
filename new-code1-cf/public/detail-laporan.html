@@ -1336,6 +1336,104 @@
                         </template>
                     </section>
 
+                    <!-- ===================== TAB: DAFTAR BA ===================== -->
+                    <section v-if="activeTab === 'daftarba'" class="space-y-4">
+                        <div class="in-basum">
+                            <div class="b"><div class="k">BA Terfilter</div><div class="n">{{ filteredDaftarBa.length }}</div><div class="p">pendukung + pelaksanaan</div></div>
+                            <div class="b"><div class="k">Lengkap</div><div class="n emerald">{{ daftarBaLengkapCount }}</div><div class="p">siap</div></div>
+                            <div class="b"><div class="k">Draft</div><div class="n">{{ daftarBaDraftCount }}</div><div class="p">belum lengkap</div></div>
+                            <div class="b"><div class="k">Unit Kegiatan</div><div class="n">{{ daftarBaUnitCount }}</div><div class="p">terkait</div></div>
+                        </div>
+                        <div class="lap-card p-4">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="baListFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in daftarBaBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Blok</label><select v-model="baListFilter.blok" class="input"><option value="">Semua Blok</option><option v-for="o in daftarBaBlokOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Jenis BA</label><select v-model="baListFilter.jenis" class="input"><option value="">Semua Jenis</option><option v-for="o in daftarBaJenisOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Sumber</label><select v-model="baListFilter.sumber" class="input"><option value="">Semua Sumber</option><option v-for="o in daftarBaSumberOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Dari Tanggal</label><input v-model="baListFilter.from" type="date" class="input"></div>
+                                <div class="md:col-span-3"><label class="label">Sampai Tanggal</label><input v-model="baListFilter.to" type="date" class="input"></div>
+                                <div class="md:col-span-3"><label class="label">Dosen</label><select v-model="baListFilter.dosen" class="input"><option value="">Semua Dosen</option><option v-for="o in dosenOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Kelengkapan</label><select v-model="baListFilter.kelengkapan" class="input"><option value="">Semua</option><option value="Lengkap">Lengkap</option><option value="Draft">Draft</option></select></div>
+                                <div class="md:col-span-6"><label class="label">Cari</label><input v-model="baListFilter.q" class="input" placeholder="BA ID, kegiatan, NPM, atau nama..."></div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="lap-chip">{{ filteredDaftarBa.length }} BA</span>
+                                <span class="lap-chip">{{ daftarBaLengkapCount }} lengkap</span>
+                                <span class="lap-chip">{{ daftarBaDraftCount }} draft</span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
+                                <div>
+                                    <div class="lap-card-title">Daftar Berita Acara</div>
+                                    <div class="lap-card-sub">Semua BA Pendukung &amp; Pelaksanaan lintas kegiatan</div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto in-desktop-only">
+                                <table class="in-tbl">
+                                    <thead>
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">BA ID</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Jenis</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Label</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Jam</th>
+                                            <th class="px-3 py-2.5 text-left">Dosen</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Sumber</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Dibuat</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Kelengkapan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Berkas</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="r in filteredDaftarBa" :key="r.jenis + '-' + r.id" class="border-t border-slate-50">
+                                            <td class="whitespace-nowrap px-3 py-2.5 font-mono text-xs font-semibold text-slate-700">{{ r.id }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.jenis === 'Pendukung' ? 'bg-indigo-50 text-indigo-700' : 'bg-brand-50 text-brand-700'">{{ r.jenis }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-700">{{ r.bagian }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
+                                            <td class="px-3 py-2.5 text-slate-800">{{ r.kegiatan || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.label || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.jam || '-' }}</td>
+                                            <td class="px-3 py-2.5 text-slate-600">{{ r.dosen || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.pesertaCount }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.sumber === 'Admin' ? 'bg-violet-50 text-violet-700' : 'bg-emerald-50 text-emerald-700'">{{ r.sumber }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.dibuat ? fmtTanggalWaktu(r.dibuat) : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.lengkap ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.lengkap ? 'Lengkap' : 'Draft' }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="link">Lihat</a><span v-else class="text-slate-300">-</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-right">
+                                                <div class="flex justify-end gap-1">
+                                                    <button class="mini-ic p" title="Kelola BA" @click.stop="openKelolaBa(r.id, r.sumber)"><i class="bi bi-pencil text-[10px]"></i></button>
+                                                    <button class="mini-ic x" title="Hapus BA" @click.stop="r.sumber === 'Admin' ? deleteBaAdmin(r.id) : deleteBaBagian(r.id)"><i class="bi bi-x text-[10px]"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-if="!filteredDaftarBa.length" class="px-4 py-14 text-center">
+                                    <i class="bi bi-table text-3xl text-slate-300"></i>
+                                    <p class="mt-3 text-sm text-slate-400">Tidak ada BA sesuai filter.</p>
+                                </div>
+                            </div>
+                            <div class="in-cards">
+                                <article v-for="r in filteredDaftarBa" :key="'m-' + r.jenis + '-' + r.id" class="in-mcard">
+                                    <div class="row1"><span class="font-semibold text-slate-800">{{ r.id }}</span><span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.jenis }}</span></div>
+                                    <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Kegiatan</span><b>{{ r.kegiatan || '-' }}</b><span>Label</span><b>{{ r.label || '-' }}</b><span>Jadwal</span><b>{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }} {{ r.jam }}</b><span>Dosen</span><b>{{ r.dosen || '-' }}</b><span>Peserta</span><b>{{ r.pesertaCount }}</b><span>Sumber</span><b>{{ r.sumber }}</b><span>Kelengkapan</span><b>{{ r.lengkap ? 'Lengkap' : 'Draft' }}</b></div>
+                                    <div class="actions">
+                                        <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-file-earmark-pdf"></i> Berkas</a>
+                                        <button class="btn-soft" @click.stop="openKelolaBa(r.id, r.sumber)"><i class="bi bi-pencil"></i> Kelola</button>
+                                        <button class="btn-soft" @click.stop="r.sumber === 'Admin' ? deleteBaAdmin(r.id) : deleteBaBagian(r.id)"><i class="bi bi-trash"></i> Hapus</button>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- ===================== TAB 5: DATA PEMBAYARAN ===================== -->
                     <section v-if="activeTab === 'bayar'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
@@ -1841,6 +1939,7 @@
                         { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
                         { key: 'bagian', label: 'Laporan Bagian', icon: 'bi-diagram-3' },
                         { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
+                        { key: 'daftarba', label: 'Daftar BA', icon: 'bi-list-check' },
                         { key: 'bayar', label: 'Data Pembayaran', icon: 'bi-cash-coin' }
                     ],
                     summary: {},
