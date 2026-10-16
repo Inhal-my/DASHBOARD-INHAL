@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 08 — Terburuk lebih dulu + filter</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .item{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:12px 13px;margin-bottom:9px;box-shadow:var(--shadow)}
+  .item.rank{border-left-color:var(--rose)}
+  .item.mid{border-left-color:#f59e0b}
+  .item.good{border-left-color:var(--emerald)}
+  .item .meta{flex:1;min-width:0}
+  .item .t{font-size:13.5px;font-weight:700}
+  .item .s{font-size:11.5px;color:var(--slate-500);margin-top:2px}
+  .item .num{flex:0 0 auto;text-align:right}
+  .item .num b{font-size:16px;font-weight:800}
+  .item .num span{display:block;font-size:10.5px;color:var(--slate-400);font-weight:600}
+  .filterrow{position:absolute;top:92px;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 16px 11px;z-index:30}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 08 &middot; pengganti tabel</span>
+  <h1>Terburuk lebih dulu + filter</h1>
+  <p>Pengganti "Peta Kelengkapan Bagian × Blok". Alih-alih menampilkan semua kotak, hanya tampilkan yang bermasalah, diurutkan dari paling parah. Tiap baris adalah kombinasi Bagian &times; Blok dengan aksi cepat "Buat BA". Cocok untuk admin yang tugasnya menutup kekurangan.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Berorientasi tindakan (bukan sekadar laporan); langsung menunjukkan prioritas; jalur terpendek dari "temuan" ke "perbaikan".</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Bukan alat "lihat semua sekaligus"; perlu mode "tampilkan semua" untuk audit lengkap.</div>
+  </div>
+</div>
+
+<div class="stage">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>9:41</span><span class="sig">5G <i></i></span></div>
+
+  <header class="appbar" style="padding-bottom:8px">
+    <div class="row between">
+      <h2>Perlu ditutup</h2>
+      <span class="badge b-rose">9 belum</span>
+    </div>
+  </header>
+  <div class="filterrow">
+    <div class="chips scroll">
+      <span class="chip active">Paling parah</span>
+      <span class="chip">Belum ada</span>
+      <span class="chip">Bagian</span>
+      <span class="chip">Blok</span>
+      <span class="chip">Semua</span>
+    </div>
+  </div>
+
+  <main class="screen pad" style="padding-top:150px;padding-bottom:96px">
+    <div class="item rank">
+      <div class="meta"><div class="t">SGD &middot; Blok D</div><div class="s">0 dari 2 kegiatan punya BA</div></div>
+      <div class="num"><b>0%</b><span>2 belum</span></div>
+      <span class="btn btn-primary btn-sm">Buat</span>
+    </div>
+
+    <div class="item rank">
+      <div class="meta"><div class="t">Tutorial &middot; Blok C</div><div class="s">1 dari 3 kegiatan punya BA</div></div>
+      <div class="num"><b>33%</b><span>2 belum</span></div>
+      <span class="btn btn-primary btn-sm">Buat</span>
+    </div>
+
+    <div class="item rank">
+      <div class="meta"><div class="t">SGD &middot; Blok A</div><div class="s">1 dari 3 kegiatan &middot; 1 draft</div></div>
+      <div class="num"><b>33%</b><span>2 belum</span></div>
+      <span class="btn btn-soft btn-sm">Lihat</span>
+    </div>
+
+    <div class="item mid">
+      <div class="meta"><div class="t">Praktikum &middot; Blok F</div><div class="s">2 dari 4 kegiatan punya BA</div></div>
+      <div class="num"><b>50%</b><span>2 belum</span></div>
+      <span class="btn btn-soft btn-sm">Lihat</span>
+    </div>
+
+    <div class="item mid">
+      <div class="meta"><div class="t">Kuliah &middot; Blok E</div><div class="s">3 dari 5 kegiatan &middot; 1 draft</div></div>
+      <div class="num"><b>60%</b><span>2 belum</span></div>
+      <span class="btn btn-soft btn-sm">Lihat</span>
+    </div>
+
+    <div class="item good">
+      <div class="meta"><div class="t">Praktikum &middot; Blok B</div><div class="s">Semua kegiatan lengkap</div></div>
+      <div class="num"><b>100%</b><span>lengkap</span></div>
+      <span class="badge b-green">Ok</span>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/></svg>Pengajuan</a>
+    <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Statistik</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l3 3v17H6z"/><path d="M9 12h6M9 16h6"/></svg>Berita Acara</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Master</a>
+  </nav>
+</div>
+</div>
+</body>
+</html>

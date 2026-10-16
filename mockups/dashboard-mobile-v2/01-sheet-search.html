@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 01 — Bottom-sheet cari cepat</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .fab{position:absolute;right:16px;bottom:88px;z-index:55;height:56px;padding:0 20px;border-radius:18px;background:var(--brand);color:#fff;display:flex;align-items:center;gap:9px;font-weight:800;font-size:13.5px;box-shadow:0 16px 30px -8px rgba(79,70,229,.75);border:0}
+  .blok-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .blok-mini a{font-size:11.5px;font-weight:700;color:var(--slate-500);text-decoration:none;padding:5px 10px;border-radius:8px;background:var(--slate-100)}
+  .rowcount{font-size:11px;color:var(--slate-400);margin:2px 2px 10px;display:flex;justify-content:space-between}
+  .attach{display:flex;gap:8px;margin-top:4px}
+  .attach .box{flex:1;border:1px dashed var(--slate-300);border-radius:11px;padding:10px;text-align:center;font-size:11.5px;font-weight:700;color:var(--brand);background:#fff}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 01</span>
+  <h1>Bottom-sheet "cari cepat" — Blok &rarr; Kegiatan &rarr; BA</h1>
+  <p>Tombol mengapung "Buat BA" membuka satu bottom-sheet penuh. Di dalamnya: kotak cari menempel di atas, chip Blok, lalu daftar kegiatan. Pilih kegiatan, form BA muncul di sheet yang sama. Tidak ada scroll halaman bolak-balik; seluruh tugas selesai dalam satu lembar.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Pencarian selalu di jangkauan jempol, daftar panjang &amp; form tidak lagi satu halaman. Fokus terjaga, alur 2 langkah.</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Bottom-sheet harus bisa digeser (draggable) agar form yang panjang tetap nyaman; perlu tombol tutup jelas.</div>
+  </div>
+</div>
+
+<div class="stage">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>9:41</span><span class="sig">5G <i></i></span></div>
+
+  <!-- layar di belakang -->
+  <header class="appbar">
+    <div class="row between">
+      <h2>Berita Acara</h2>
+      <span class="badge b-brand">Sesi Bagian</span>
+    </div>
+    <p class="sub">Pilih kegiatan lalu unggah BA</p>
+  </header>
+  <main class="screen pad has-appbar has-nav">
+    <div class="section-title">Butuh tindakan</div>
+    <div class="li"><span class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span>
+      <div class="grow"><div class="t">12 kegiatan belum ada BA</div><div class="s">Ketuk tombol Buat BA untuk mulai</div></div></div>
+  </main>
+
+  <!-- FAB -->
+  <button class="fab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Buat BA</button>
+
+  <!-- sheet -->
+  <div class="scrim"></div>
+  <div class="sheet" style="height:86%">
+    <div class="handle"></div>
+    <div class="sheet-head" style="padding-bottom:10px">
+      <div class="between">
+        <h3>Pilih Kegiatan</h3>
+        <span class="badge b-slate">Langkah 1 dari 2</span>
+      </div>
+      <div class="search mt12">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+        <input placeholder="Cari kegiatan, label, atau dosen..." value="sgd">
+      </div>
+      <div class="blok-mini">
+        <a style="background:var(--brand);color:#fff">Blok A</a>
+        <a>Blok B</a><a>Blok C</a><a>Blok D</a><a>Blok E</a><a>Blok F</a>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <div class="rowcount"><span>8 kegiatan · Blok A</span><span>urut: label</span></div>
+
+      <a class="li" href="#" style="border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-50)">
+        <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+        <div class="grow"><div class="t">SGD 1 — Reguler</div><div class="s">SGD &middot; Blok A &middot; 24 peserta &middot; belum ada BA</div></div>
+        <span class="btn btn-primary btn-sm">Buat</span>
+      </a>
+
+      <a class="li" href="#">
+        <span class="ic" style="background:var(--amber-50);color:var(--amber)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+        <div class="grow"><div class="t">SGD 1 — Remediasi</div><div class="s">SGD &middot; Blok A &middot; 6 peserta &middot; 1 sesi</div></div>
+        <span class="btn btn-soft btn-sm">Buat</span>
+      </a>
+
+      <a class="li" href="#">
+        <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+        <div class="grow"><div class="t">SGD 2 — Reguler</div><div class="s">SGD &middot; Blok A &middot; 22 peserta &middot; belum ada BA</div></div>
+        <span class="btn btn-soft btn-sm">Buat</span>
+      </a>
+
+      <a class="li" href="#">
+        <span class="ic" style="background:var(--emerald-50);color:var(--emerald)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg></span>
+        <div class="grow"><div class="t">SGD 3 — Reguler</div><div class="s">SGD &middot; Blok A &middot; 25 peserta &middot; BA sudah ada</div></div>
+        <span class="badge b-green">Ok</span>
+      </a>
+
+      <div class="section-title">Pratinjau form (langkah 2)</div>
+      <div class="card pad">
+        <div class="field"><label>Label sesi</label><input class="input" value="Sesi 1"></div>
+        <div class="field"><label>Tanggal pelaksanaan</label><input class="input" value="2026-10-20"></div>
+        <div class="field"><label>Peserta (24)</label><div class="help">Semua peserta terpilih otomatis. Ketuk untuk ubah.</div></div>
+        <div class="attach"><div class="box">Pilih file PDF</div><div class="box">Scan kamera</div></div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn btn-soft" style="flex:1">Batal</button>
+      <button class="btn btn-primary" style="flex:2">Simpan BA</button>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/></svg>Pengajuan</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Statistik</a>
+    <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l3 3v17H6z"/><path d="M9 12h6M9 16h6"/></svg>Berita Acara</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Master</a>
+  </nav>
+</div>
+</div>
+</body>
+</html>

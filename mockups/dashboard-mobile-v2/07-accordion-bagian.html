@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 07 — Accordion Bagian &rarr; Blok</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .acc{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:9px;overflow:hidden;box-shadow:var(--shadow)}
+  .acc-h{display:flex;align-items:center;gap:11px;padding:14px}
+  .acc-h .ic{width:36px;height:36px;border-radius:10px;background:var(--brand-50);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .acc-h .t{font-size:14px;font-weight:700}
+  .acc-h .s{font-size:11.5px;color:var(--slate-500)}
+  .acc-h .chev{margin-left:auto;color:var(--slate-400);transition:transform .2s}
+  .acc.open .acc-h .chev{transform:rotate(180deg)}
+  .acc-b{border-top:1px solid var(--line);padding:10px 14px 14px}
+  .blok-line{display:flex;align-items:center;gap:10px;padding:9px 0}
+  .blok-line .kk{flex:0 0 44px;font-size:11.5px;font-weight:800;color:var(--brand);background:var(--brand-50);border-radius:7px;text-align:center;padding:4px 0}
+  .blok-line .stack{height:8px}
+  .blok-line .tx{flex:0 0 42px;text-align:right;font-size:11px;font-weight:700;color:var(--slate-500)}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 07 &middot; pengganti tabel</span>
+  <h1>Accordion Bagian &rarr; Blok</h1>
+  <p>Pengganti "Peta Kelengkapan Bagian × Blok". Bagian (SGD, Praktikum, Tutorial, ...) jadi header yang bisa dibuka; di dalamnya batang kecil per Blok. Tabel lebar berubah menjadi lipatan vertikal yang rapi di ponsel.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Struktur Bagian &times; Blok tetap terjaga; layar tidak pernah melebar; ringan (hanya satu bagian terbuka pada satu waktu).</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Untuk melihat gambaran penuh perlu membuka beberapa lipatan; membandingkan antar-Bagian kurang sekilas.</div>
+  </div>
+</div>
+
+<div class="stage">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>9:41</span><span class="sig">5G <i></i></span></div>
+
+  <header class="appbar">
+    <div class="row between">
+      <h2>Kelengkapan</h2>
+      <span class="badge b-brand">68%</span>
+    </div>
+    <p class="sub">Kelompok per Bagian, rincian per Blok</p>
+  </header>
+
+  <main class="screen pad has-appbar has-nav">
+    <div class="acc open">
+      <div class="acc-h">
+        <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 10h18"/></svg></span>
+        <div><div class="t">SGD</div><div class="s">8 kegiatan &middot; 3 belum</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+      </div>
+      <div class="acc-b">
+        <div class="blok-line"><span class="kk">A</span><span class="stack bar r"><i style="width:33%"></i></span><span class="tx">1/3</span></div>
+        <div class="blok-line"><span class="kk">B</span><span class="stack bar g"><i style="width:100%"></i></span><span class="tx">2/2</span></div>
+        <div class="blok-line"><span class="kk">C</span><span class="stack bar a"><i style="width:50%"></i></span><span class="tx">1/2</span></div>
+        <div class="blok-line"><span class="kk">D</span><span class="stack bar r"><i style="width:0%"></i></span><span class="tx">0/2</span></div>
+      </div>
+    </div>
+
+    <div class="acc">
+      <div class="acc-h">
+        <span class="ic" style="background:var(--emerald-50);color:var(--emerald)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span>
+        <div><div class="t">Praktikum</div><div class="s">6 kegiatan &middot; 1 belum</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+      </div>
+    </div>
+
+    <div class="acc">
+      <div class="acc-h">
+        <span class="ic" style="background:var(--violet-50);color:var(--violet)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7"/></svg></span>
+        <div><div class="t">Tutorial</div><div class="s">4 kegiatan &middot; 2 belum</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+      </div>
+    </div>
+
+    <div class="acc">
+      <div class="acc-h">
+        <span class="ic" style="background:var(--amber-50);color:var(--amber)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <div><div class="t">Kuliah</div><div class="s">5 kegiatan &middot; 1 belum</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:var(--emerald)"></i>Lengkap</span>
+      <span><i style="background:#f59e0b"></i>Sebagian</span>
+      <span><i style="background:var(--rose)"></i>Belum</span>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/></svg>Pengajuan</a>
+    <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Statistik</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l3 3v17H6z"/><path d="M9 12h6M9 16h6"/></svg>Berita Acara</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Master</a>
+  </nav>
+</div>
+</div>
+</body>
+</html>

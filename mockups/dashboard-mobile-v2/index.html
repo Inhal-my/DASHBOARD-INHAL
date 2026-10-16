@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup Dashboard Mobile v2 — Galeri Konsep</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  body{padding:36px 20px 80px}
+  .wrap{max-width:1100px;margin:0 auto}
+  .hero h1{font-size:26px;margin:14px 0 8px;letter-spacing:-.02em}
+  .hero p{margin:0;color:var(--slate-500);font-size:14.5px;line-height:1.65;max-width:820px}
+  .group{margin-top:38px}
+  .group > h2{font-size:15px;margin:0 0 4px;letter-spacing:.01em}
+  .group > .gsub{margin:0 0 18px;color:var(--slate-500);font-size:13px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:18px}
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
+  .mcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
+  .thumb{position:relative;height:250px;background:linear-gradient(160deg,#eef2ff,#f7f8fc);overflow:hidden;border-bottom:1px solid var(--line)}
+  .thumb .frame{position:absolute;top:12px;left:50%;width:390px;height:812px;border:1px solid #0b1220;border-radius:24px;overflow:hidden;transform-origin:top center;transform:translateX(-50%) scale(.31);box-shadow:0 12px 30px -12px rgba(15,23,42,.4)}
+  .thumb iframe{width:390px;height:812px;border:0}
+  .mcard .body{padding:13px 15px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .mcard .body .no{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+  .mcard .body h3{margin:0;font-size:14.5px;letter-spacing:-.01em}
+  .mcard .body p{margin:0;font-size:12.5px;color:var(--slate-500);line-height:1.55;flex:1}
+  .tagrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .tag{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--slate-100);color:var(--slate-600)}
+  .tag.p{background:var(--brand-50);color:var(--brand)}
+  .tag.g{background:var(--emerald-50);color:var(--emerald)}
+  .lead{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:18px;padding:22px 24px;margin-top:22px}
+  .lead h2{margin:0 0 6px;font-size:17px}
+  .lead p{margin:0;font-size:13.5px;opacity:.9;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <span class="kicker" style="display:inline-block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);background:var(--brand-50);padding:5px 12px;border-radius:999px">Mockup &middot; data dummy</span>
+    <h1>Dashboard Mobile v2 — Galeri Konsep</h1>
+    <p>Delapan konsep untuk dua masalah: (1) mempercepat pencarian data saat membuat Berita Acara, dan (2) mengganti tabel "Peta Kelengkapan Bagian &times; Blok" yang melebar ke kanan. Semua data di sini dummy. Ketuk kartu untuk melihat versi layar penuh.</p>
+  </div>
+
+  <div class="lead">
+    <h2>Dua kelompok</h2>
+    <p>Konsep <b>01–04</b> menyelesaikan pencarian BA (alur Blok &rarr; Kegiatan &rarr; BA). Konsep <b>05–08</b> menggantikan tabel kelengkapan yang melebar. Keduanya bisa dipakai bersama.</p>
+  </div>
+
+  <div class="group">
+    <h2>A. Pencarian cepat untuk membuat BA</h2>
+    <p class="gsub">Masalah: daftar panjang tanpa pencarian, dan form BA berada di halaman yang sama sehingga harus menggulir bolak-balik.</p>
+    <div class="cards">
+      <a class="mcard" href="01-sheet-search.html">
+        <div class="thumb"><div class="frame"><iframe src="01-sheet-search.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 01</span><h3>Bottom-sheet cari cepat</h3><p>Satu lembar berisi kotak cari menempel, chip Blok, daftar kegiatan, dan form BA di dalamnya.</p><div class="tagrow"><span class="tag p">Alur 2 langkah</span><span class="tag">Fokus</span></div></div>
+      </a>
+      <a class="mcard" href="02-wizard.html">
+        <div class="thumb"><div class="frame"><iframe src="02-wizard.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 02</span><h3>Wizard 3 langkah</h3><p>Blok &rarr; Kegiatan &rarr; Berkas, satu layar per langkah dengan indikator progres.</p><div class="tagrow"><span class="tag p">Paling jelas</span><span class="tag">Untuk pemula</span></div></div>
+      </a>
+      <a class="mcard" href="03-command-palette.html">
+        <div class="thumb"><div class="frame"><iframe src="03-command-palette.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 03</span><h3>Command palette</h3><p>Satu kotak untuk semua: hasil kegiatan, mahasiswa, dan Blok dikelompokkan otomatis.</p><div class="tagrow"><span class="tag p">Tercepat</span><span class="tag">Admin mahir</span></div></div>
+      </a>
+      <a class="mcard" href="04-list-sticky-search.html">
+        <div class="thumb"><div class="frame"><iframe src="04-list-sticky-search.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 04</span><h3>Daftar + cari menempel</h3><p>Perubahan paling kecil: kotak cari menempel, dikelompokkan per Blok, tombol "Buat BA" per baris.</p><div class="tagrow"><span class="tag p">Paling murah</span><span class="tag">Familiar</span></div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>B. Pengganti tabel Peta Kelengkapan Bagian &times; Blok</h2>
+    <p class="gsub">Masalah: tabel bertambah lebar ke kanan saat Blok/Bagian bertambah, sulit dibaca di ponsel.</p>
+    <div class="cards">
+      <a class="mcard" href="05-heat-list.html">
+        <div class="thumb"><div class="frame"><iframe src="05-heat-list.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 05</span><h3>Heat-list per Blok</h3><p>Satu batang berlapis per Blok: hijau/kuning/merah. Urut dari yang paling perlu dibereskan.</p><div class="tagrow"><span class="tag g">Ringkas</span><span class="tag">Tanpa gulir samping</span></div></div>
+      </a>
+      <a class="mcard" href="06-blok-cards.html">
+        <div class="thumb"><div class="frame"><iframe src="06-blok-cards.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 06</span><h3>Kartu per Blok (drill-down)</h3><p>Tiap Blok jadi kartu dengan cincin persentase; ketuk untuk rincian Bagian di dalamnya.</p><div class="tagrow"><span class="tag g">Visual</span><span class="tag">Ketuk untuk rinci</span></div></div>
+      </a>
+      <a class="mcard" href="07-accordion-bagian.html">
+        <div class="thumb"><div class="frame"><iframe src="07-accordion-bagian.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 07</span><h3>Accordion Bagian &rarr; Blok</h3><p>Bagian jadi header yang bisa dibuka; di dalamnya batang kecil per Blok.</p><div class="tagrow"><span class="tag g">Struktur terjaga</span><span class="tag">Vertikal</span></div></div>
+      </a>
+      <a class="mcard" href="08-worst-first.html">
+        <div class="thumb"><div class="frame"><iframe src="08-worst-first.html" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body"><span class="no">Konsep 08</span><h3>Terburuk lebih dulu + filter</h3><p>Hanya tampilkan yang bermasalah, diurut dari paling parah, dengan aksi cepat "Buat BA".</p><div class="tagrow"><span class="tag g">Berorientasi tindakan</span><span class="tag">Prioritas</span></div></div>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 05 — Heat-list per Blok</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .heat-row{align-items:center}
+  .heat-row .lb{flex:0 0 62px}
+  .heat-row .nums{flex:0 0 44px;text-align:right;font-size:11.5px;font-weight:700;color:var(--slate-500)}
+  .heat-row .pct{flex:0 0 36px;text-align:right;font-size:11.5px;font-weight:800;color:var(--ink)}
+  .sumcard{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:16px;padding:16px}
+  .sumcard .big{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .sumcard .lb{font-size:12px;opacity:.85}
+  .sumcard .bar{background:rgba(255,255,255,.25);margin-top:10px;height:9px}
+  .sumcard .bar > i{background:#fff}
+  .seg{display:flex;gap:10px;margin-top:6px;font-size:11.5px}
+  .seg b{font-size:15px}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 05 &middot; pengganti tabel</span>
+  <h1>Heat-list per Blok — batang berlapis</h1>
+  <p>Pengganti "Peta Kelengkapan Bagian × Blok". Setiap Blok satu baris, dengan batang berlapis: hijau = lengkap, kuning = draft, merah = belum ada. Cukup pandang untuk tahu Blok mana yang perlu dibereskan, tanpa tabel yang melebar ke kanan.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Tidak melebar horizontal; mengurutkan Blok bermasalah di atas mudah; ringkas dan cepat dipindai.</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Menampilkan rincian per Bagian butuh langkah tambahan (ketuk Blok untuk buka rincian).</div>
+  </div>
+</div>
+
+<div class="stage">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>9:41</span><span class="sig">5G <i></i></span></div>
+
+  <header class="appbar">
+    <div class="row between">
+      <h2>Kelengkapan BA</h2>
+      <span class="badge b-slate">Blok A–H</span>
+    </div>
+    <p class="sub">Diperbarui hari ini</p>
+  </header>
+
+  <main class="screen pad has-appbar has-nav">
+    <div class="sumcard">
+      <div class="between">
+        <div><div class="lb">Total kelengkapan</div><div class="big">68%</div></div>
+        <div style="text-align:right"><div class="lb">Lengkap</div><div class="big" style="font-size:22px">34/50</div></div>
+      </div>
+      <div class="bar"><i style="width:68%"></i></div>
+      <div class="seg">
+        <div><b>34</b> <span style="opacity:.85">lengkap</span></div>
+        <div><b>9</b> <span style="opacity:.85">draft</span></div>
+        <div><b>7</b> <span style="opacity:.85">belum</span></div>
+      </div>
+    </div>
+
+    <div class="section-title">Per Blok</div>
+
+    <div class="heat-row"><span class="lb">Blok C</span><span class="stack"><span style="width:22%;background:#f59e0b"></span><span style="width:44%;background:var(--emerald)"></span><span style="width:34%;background:var(--rose)"></span></span><span class="nums">3/5</span><span class="pct">60%</span></div>
+    <div class="heat-row"><span class="lb">Blok F</span><span class="stack"><span style="width:30%;background:#f59e0b"></span><span style="width:40%;background:var(--emerald)"></span><span style="width:30%;background:var(--rose)"></span></span><span class="nums">2/4</span><span class="pct">50%</span></div>
+    <div class="heat-row"><span class="lb">Blok A</span><span class="stack"><span style="width:15%;background:#f59e0b"></span><span style="width:65%;background:var(--emerald)"></span><span style="width:20%;background:var(--rose)"></span></span><span class="nums">4/6</span><span class="pct">67%</span></div>
+    <div class="heat-row"><span class="lb">Blok B</span><span class="stack"><span style="width:10%;background:#f59e0b"></span><span style="width:78%;background:var(--emerald)"></span><span style="width:12%;background:var(--rose)"></span></span><span class="nums">4/5</span><span class="pct">80%</span></div>
+    <div class="heat-row"><span class="lb">Blok H</span><span class="stack"><span style="width:5%;background:#f59e0b"></span><span style="width:90%;background:var(--emerald)"></span><span style="width:5%;background:var(--rose)"></span></span><span class="nums">4/4</span><span class="pct">100%</span></div>
+
+    <div class="legend">
+      <span><i style="background:var(--emerald)"></i>Lengkap</span>
+      <span><i style="background:#f59e0b"></i>Draft</span>
+      <span><i style="background:var(--rose)"></i>Belum ada</span>
+    </div>
+
+    <div class="section-title">Rincian per Bagian (Blok C)</div>
+    <div class="card pad mb8">
+      <div class="between"><span style="font-size:13px;font-weight:700">SGD</span><span class="badge b-rose">1 belum</span></div>
+      <div class="bar r mt8"><i style="width:33%"></i></div>
+    </div>
+    <div class="card pad">
+      <div class="between"><span style="font-size:13px;font-weight:700">Praktikum</span><span class="badge b-green">lengkap</span></div>
+      <div class="bar g mt8"><i style="width:100%"></i></div>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/></svg>Pengajuan</a>
+    <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Statistik</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l3 3v17H6z"/><path d="M9 12h6M9 16h6"/></svg>Berita Acara</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Master</a>
+  </nav>
+</div>
+</div>
+</body>
+</html>

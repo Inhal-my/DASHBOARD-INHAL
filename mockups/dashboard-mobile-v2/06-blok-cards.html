@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 06 — Kartu per Blok (drill-down)</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .bcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .bcard .kk{font-size:17px;font-weight:800}
+  .bcard .ss{font-size:11.5px;color:var(--slate-500);margin-top:1px}
+  .ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;position:relative;margin-top:10px}
+  .ring span{position:relative;z-index:2}
+  .bcard .foot{display:flex;gap:6px;margin-top:10px;font-size:10.5px;font-weight:700}
+  .dot{display:inline-flex;align-items:center;gap:4px;color:var(--slate-500)}
+  .dot i{width:7px;height:7px;border-radius:999px;display:inline-block}
+  .bcard.warn{border-color:#fed7aa;background:#fffdf7}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 06 &middot; pengganti tabel</span>
+  <h1>Kartu per Blok — drill-down</h1>
+  <p>Pengganti "Peta Kelengkapan Bagian × Blok". Tiap Blok jadi kartu dengan cincin persentase. Blok bermasalah ditandai (kartu kuning). Ketuk kartu untuk masuk ke rincian Bagian di Blok itu. Mengubah tabel lebar menjadi grid yang ramah layar ponsel.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Ringkasan visual instan; navigasi alami (ketuk untuk rinci); tidak ada gulir horizontal; Blok bermasalah menonjol.</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Butuh layar drill-down tambahan; membandingkan banyak Blok sekaligus sedikit lebih sulit daripada satu tabel.</div>
+  </div>
+</div>
+
+<div class="stage">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar"><span>9:41</span><span class="sig">5G <i></i></span></div>
+
+  <header class="appbar">
+    <div class="row between">
+      <h2>Kelengkapan per Blok</h2>
+      <span class="badge b-brand">68% total</span>
+    </div>
+    <p class="sub">Ketuk kartu untuk rincian Bagian</p>
+  </header>
+
+  <main class="screen pad has-appbar has-nav">
+    <div class="bgrid">
+      <div class="bcard warn">
+        <div class="between"><div><div class="kk">Blok C</div><div class="ss">5 kegiatan</div></div>
+          <div class="ring" style="background:conic-gradient(#f59e0b 216deg,#f1f5f9 0)"><span style="background:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center">60%</span></div>
+        </div>
+        <div class="foot"><span class="dot"><i style="background:var(--rose)"></i>1 belum</span><span class="dot"><i style="background:#f59e0b"></i>1 draft</span></div>
+      </div>
+
+      <div class="bcard warn">
+        <div class="between"><div><div class="kk">Blok F</div><div class="ss">4 kegiatan</div></div>
+          <div class="ring" style="background:conic-gradient(#f59e0b 180deg,#f1f5f9 0)"><span style="background:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center">50%</span></div>
+        </div>
+        <div class="foot"><span class="dot"><i style="background:var(--rose)"></i>1 belum</span><span class="dot"><i style="background:#f59e0b"></i>1 draft</span></div>
+      </div>
+
+      <div class="bcard">
+        <div class="between"><div><div class="kk">Blok A</div><div class="ss">6 kegiatan</div></div>
+          <div class="ring" style="background:conic-gradient(var(--brand) 241deg,#f1f5f9 0)"><span style="background:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center">67%</span></div>
+        </div>
+        <div class="foot"><span class="dot"><i style="background:var(--rose)"></i>2 belum</span></div>
+      </div>
+
+      <div class="bcard">
+        <div class="between"><div><div class="kk">Blok B</div><div class="ss">5 kegiatan</div></div>
+          <div class="ring" style="background:conic-gradient(var(--emerald) 288deg,#f1f5f9 0)"><span style="background:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center">80%</span></div>
+        </div>
+        <div class="foot"><span class="dot"><i style="background:#f59e0b"></i>1 draft</span></div>
+      </div>
+
+      <div class="bcard">
+        <div class="between"><div><div class="kk">Blok H</div><div class="ss">4 kegiatan</div></div>
+          <div class="ring" style="background:conic-gradient(var(--emerald) 360deg,#f1f5f9 0)"><span style="background:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center">100%</span></div>
+        </div>
+        <div class="foot"><span class="dot" style="color:var(--emerald)"><i style="background:var(--emerald)"></i>lengkap</span></div>
+      </div>
+
+      <div class="bcard" style="border-style:dashed;background:#fafbff;display:flex;align-items:center;justify-content:center;color:var(--slate-400);font-size:12.5px;font-weight:700">+ 2 Blok lain</div>
+    </div>
+
+    <div class="section-title">Pratinjau rincian — Blok C</div>
+    <div class="card pad">
+      <div class="between"><span style="font-size:13.5px;font-weight:700">SGD</span><span class="badge b-rose">1 belum ada</span></div>
+      <div class="bar r mt8"><i style="width:33%"></i></div>
+      <div class="help">Blok C / SGD — 2 kegiatan, 1 lengkap</div>
+    </div>
+    <div class="card pad mt8">
+      <div class="between"><span style="font-size:13.5px;font-weight:700">Praktikum</span><span class="badge b-green">lengkap</span></div>
+      <div class="bar g mt8"><i style="width:100%"></i></div>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/></svg>Pengajuan</a>
+    <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Statistik</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l3 3v17H6z"/><path d="M9 12h6M9 16h6"/></svg>Berita Acara</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Master</a>
+  </nav>
+</div>
+</div>
+</body>
+</html>
