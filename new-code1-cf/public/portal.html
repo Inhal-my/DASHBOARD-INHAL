@@ -265,6 +265,17 @@
                                         </div>
                                         <p v-else class="mt-1 text-xs text-slate-400">{{ detailItem.statusCode === 'rejected' || detailItem.statusCode === 'cancelled' ? 'Proses dihentikan.' : 'Menunggu persetujuan admin.' }}</p>
                                     </div>
+                                    <!-- step: jadwal pelaksanaan -->
+                                    <div v-if="detailItem.statusCode === 'approved'" class="t-item">
+                                        <div class="t-dot" :class="stepJadwalDotClass"></div>
+                                        <div class="text-sm font-bold" :class="stepJadwalTitleClass">Jadwal Pelaksanaan</div>
+                                        <div v-if="detailItem.jadwal" class="mt-1.5 space-y-0.5 text-xs text-slate-600">
+                                            <div><i class="bi bi-calendar3 mr-1 text-slate-400"></i>{{ formatTanggal(detailItem.jadwal.Tanggal) }}</div>
+                                            <div v-if="detailItem.jadwal.Jam"><i class="bi bi-clock mr-1 text-slate-400"></i>{{ detailItem.jadwal.Jam }}</div>
+                                            <div v-if="detailItem.jadwal.Dosen"><i class="bi bi-person-badge mr-1 text-slate-400"></i>{{ detailItem.jadwal.Dosen }}</div>
+                                        </div>
+                                        <p v-else class="mt-1 text-xs text-slate-400">Belum dijadwalkan.</p>
+                                    </div>
                                     <!-- step 3 -->
                                     <div class="t-item">
                                         <div class="t-dot" :class="step3DotClass"></div>
@@ -600,6 +611,13 @@
                     if (this.detailItem.linkFinal) return 'text-emerald-700';
                     if (this.detailItem.hasUpload) return 'text-slate-700';
                     return 'text-slate-400';
+                },
+                stepJadwalDotClass() {
+                    if (this.detailItem.jadwal) return 'bg-blue-500';
+                    return 'bg-slate-300';
+                },
+                stepJadwalTitleClass() {
+                    return this.detailItem.jadwal ? 'text-slate-900' : 'text-slate-400';
                 }
             },
             methods: {
