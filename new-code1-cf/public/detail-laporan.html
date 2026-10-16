@@ -1269,6 +1269,8 @@
                                                                     <span class="font-mono font-bold text-slate-700">{{ b['BA ID'] }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700">Pendukung</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="baLengkap(b, 'Pendukung') ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ baLengkap(b, 'Pendukung') ? 'Lengkap' : 'Draft' }}</span>
+                                                                    <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b['File URL'] ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ b['File URL'] ? 'Berkas: Ada' : 'Berkas: Hilang' }}</span>
+                                                                    <a v-if="b['Base File URL']" :href="safeUrl(b['Base File URL'])" target="_blank" rel="noopener noreferrer" class="link">Base File</a>
                                                                     <span v-if="b['Tanggal Pelaksanaan'] || b.Jam" class="text-slate-400">{{ fmtTanggalWaktu((b['Tanggal Pelaksanaan'] || '') + (b.Jam ? 'T' + b.Jam : '')) }}</span>
                                                                     <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="link">Lihat</a>
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-xs"></i></button>
@@ -1425,7 +1427,7 @@
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.sumber === 'Admin' ? 'bg-violet-50 text-violet-700' : 'bg-emerald-50 text-emerald-700'">{{ r.sumber }}</span></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.dibuat ? fmtTanggalWaktu(r.dibuat) : '-' }}</td>
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.lengkap ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.lengkap ? 'Lengkap' : 'Draft' }}</span></td>
-                                            <td class="whitespace-nowrap px-3 py-2.5"><a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="link">Lihat</a><span v-else class="text-slate-300">-</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.berkasAda ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.berkasAda ? 'Ada' : 'Hilang' }}</span> <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="link">Lihat</a> <a v-if="r.jenis === 'Pendukung' && r.baseFileUrl" :href="safeUrl(r.baseFileUrl)" target="_blank" rel="noopener noreferrer" class="link">Base</a></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-right">
                                                 <div class="flex justify-end gap-1">
                                                     <button class="mini-ic p" title="Kelola BA" @click.stop="openKelolaBa(r.id, r.sumber)"><i class="bi bi-pencil text-[10px]"></i></button>
@@ -1445,7 +1447,9 @@
                                     <div class="row1"><span class="font-semibold text-slate-800">{{ r.id }}</span><span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.jenis }}</span></div>
                                     <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Kegiatan</span><b>{{ r.kegiatan || '-' }}</b><span>Label</span><b>{{ r.label || '-' }}</b><span>Jadwal</span><b>{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }} {{ r.jam }}</b><span>Dosen</span><b>{{ r.dosen || '-' }}</b><span>Peserta</span><b>{{ r.pesertaCount }}</b><span>Sumber</span><b>{{ r.sumber }}</b><span>Kelengkapan</span><b>{{ r.lengkap ? 'Lengkap' : 'Draft' }}</b></div>
                                     <div class="actions">
+                                        <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.berkasAda ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.berkasAda ? 'Ada' : 'Hilang' }}</span>
                                         <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-file-earmark-pdf"></i> Berkas</a>
+                                        <a v-if="r.jenis === 'Pendukung' && r.baseFileUrl" :href="safeUrl(r.baseFileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-file-earmark-pdf"></i> Base</a>
                                         <button class="btn-soft" @click.stop="openKelolaBa(r.id, r.sumber)"><i class="bi bi-pencil"></i> Kelola</button>
                                         <button class="btn-soft" @click.stop="r.sumber === 'Admin' ? deleteBaAdmin(r.id) : deleteBaBagian(r.id)"><i class="bi bi-trash"></i> Hapus</button>
                                     </div>
@@ -3491,6 +3495,8 @@
                         dibuat: (b && b.Timestamp) || '',
                         lengkap: this.baLengkap(b, jenis),
                         fileUrl: (b && b['File URL']) || '',
+                        baseFileUrl: (b && b['Base File URL']) || '',
+                        berkasAda: !!String((b && b['File URL']) || '').trim(),
                         catatan: (b && b.Catatan) || '',
                         tanggalEfektif: this.baTanggalEfektif(b)
                     };
@@ -3547,7 +3553,7 @@
                             const wb = XLSX.utils.book_new();
                             const headers = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Label',
                                 'Tanggal Pelaksanaan', 'Jam', 'Dosen', 'Jumlah Peserta', 'Sumber', 'Dibuat',
-                                'Kelengkapan', 'Catatan', 'File URL'];
+                                'Kelengkapan', 'Catatan', 'File URL', 'Base File URL'];
                             const rows = this.filteredDaftarBa.map((r) => ({
                                 'BA ID': r.id,
                                 'Jenis BA': r.jenis,
@@ -3563,12 +3569,14 @@
                                 'Dibuat': r.dibuat ? fmtTanggalWaktu(r.dibuat) : '',
                                 'Kelengkapan': r.lengkap ? 'Lengkap' : 'Draft',
                                 'Catatan': r.catatan,
-                                'File URL': r.fileUrl
+                                'File URL': r.fileUrl,
+                                'Base File URL': r.baseFileUrl
                             }));
                             const wsBa = rows.length
                                 ? XLSX.utils.json_to_sheet(rows, { header: headers })
                                 : XLSX.utils.aoa_to_sheet([headers]);
                             setUrlHyperlinks(wsBa, 'File URL', 'Buka file berita acara');
+                            setUrlHyperlinks(wsBa, 'Base File URL', 'Buka file dasar');
                             XLSX.utils.book_append_sheet(wb, wsBa, 'Daftar BA');
 
                             const rekapRows = this.daftarBaUnitRows.map((u) => ({

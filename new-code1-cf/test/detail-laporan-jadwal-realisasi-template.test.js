@@ -115,3 +115,17 @@ describe('sesi pelaksanaan per unit', () => {
     expect(html).toContain('baPelaksanaanFileUrl(');
   });
 });
+
+describe('penanda berkas BA pendukung', () => {
+  it('menyediakan baseFileUrl & berkasAda', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("baseFileUrl: (b && b['Base File URL']) || ''");
+    expect(html).toContain("berkasAda: !!String((b && b['File URL']) || '').trim()");
+  });
+  it('menampilkan badge Ada/Hilang dan Base File', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("r.berkasAda ? 'Ada' : 'Hilang'");
+    expect(html).toContain('Base File');
+    expect(html).toContain("'Base File URL'");
+  });
+});
