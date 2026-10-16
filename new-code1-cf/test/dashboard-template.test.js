@@ -511,3 +511,22 @@ describe('guard alur status dashboard', () => {
     expect(html).toContain('<option>Menunggu</option>');
   });
 });
+
+describe('dashboard detail drawer primitives', () => {
+  it('mendefinisikan primitif CSS pd-* dan helper stepper', async () => {
+    const html = await loadDashboardHtml();
+    const selectors = cssSelectors(html);
+    for (const sel of ['.pd-overlay', '.pd-drawer', '.pd-head', '.pd-head-top', '.pd-avatar',
+      '.pd-id', '.pd-close', '.pd-steps', '.pd-step', '.pd-step.active', '.pd-step.done',
+      '.pd-body', '.pd-foot', '.pd-card', '.pd-card-head', '.pd-card-body', '.pd-grid2',
+      '.pd-grid3', '.pd-keg', '.pd-mini-ic', '.pd-doc-row', '.pd-doc-ic', '.pd-doc-info',
+      '.pd-pill-ok', '.pd-pill-no', '.pd-upzone', '.pd-statuspick', '.pd-manual-note',
+      '.pd-progress', '.pd-email-box', '.pd-scan-grid', '.pd-scan-item']) {
+      expect(selectors.has(sel)).toBe(true);
+    }
+    expect(html).toContain('setDetailStep(n) {');
+    expect(html).toContain('this.detail.step = Math.max(0, Math.min(2, n));');
+    expect(html).toContain('step: 0,');
+    expect(html).toContain('this.detail.step = 0;');
+  });
+});
