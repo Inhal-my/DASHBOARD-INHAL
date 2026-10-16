@@ -74,6 +74,8 @@ DROP TABLE IF EXISTS berita_acara_admin_berkas;
 DROP TABLE IF EXISTS berita_acara_admin_peserta;
 DROP TABLE IF EXISTS berita_acara_admin;
 DROP TABLE IF EXISTS berita_acara_peserta;
+DROP TABLE IF EXISTS jadwal_peserta;
+DROP TABLE IF EXISTS jadwal_pelaksanaan;
 DROP TABLE IF EXISTS berita_acara;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS bagian_staff;
@@ -115,12 +117,25 @@ CREATE TABLE audit_log (
 CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, dosen TEXT, jumlah_peserta TEXT,
-  file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT, label TEXT DEFAULT ''
+  file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT, label TEXT DEFAULT '',
+  jadwal_id TEXT DEFAULT ''
 );
 CREATE TABLE berita_acara_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
   nama_lengkap TEXT, blok TEXT, bagian TEXT, status_pengajuan TEXT
 );
+CREATE TABLE jadwal_pelaksanaan (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, jadwal_id TEXT, bagian TEXT, blok TEXT,
+  nama_kegiatan TEXT, kegiatan_key TEXT, tanggal TEXT, jam TEXT, dosen TEXT, catatan TEXT,
+  active INTEGER DEFAULT 1, created_by TEXT, updated_at TEXT
+);
+CREATE TABLE jadwal_peserta (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, jadwal_id TEXT, id_pengajuan TEXT, npm TEXT,
+  nama_lengkap TEXT, blok TEXT, status_pengajuan TEXT
+);
+CREATE INDEX idx_jadwal_kegiatan_key ON jadwal_pelaksanaan(kegiatan_key);
+CREATE INDEX idx_jadwal_peserta_jadwal_id ON jadwal_peserta(jadwal_id);
+CREATE INDEX idx_jadwal_peserta_pengajuan ON jadwal_peserta(id_pengajuan);
 CREATE TABLE berita_acara_admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, jumlah_peserta TEXT, file_name TEXT,
