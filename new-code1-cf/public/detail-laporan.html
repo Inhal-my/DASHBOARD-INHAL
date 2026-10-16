@@ -1468,6 +1468,7 @@
                                     <div class="lap-card-title">Jadwal vs Realisasi</div>
                                     <div class="lap-card-sub">Perbandingan sesi jadwal pelaksanaan dengan BA realisasi</div>
                                 </div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportJadwalRealisasi"><i class="bi bi-file-earmark-excel"></i> Export XLSX</button>
                             </div>
                             <div class="overflow-x-auto in-desktop-only">
                                 <table class="in-tbl">
@@ -3558,6 +3559,45 @@
 
                             writeXlsxStyled(wb, 'Daftar-BA-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export daftar BA berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch((e) => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportJadwalRealisasi() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const rows = this.jadwalRealisasiFiltered.map((r) => ({
+                                'Bagian': r.bagian,
+                                'Blok': r.blok,
+                                'Nama Kegiatan': r.kegiatan,
+                                'Label': r.label,
+                                'Jenis': r.jenis,
+                                'Jadwal ID': r.jadwalId,
+                                'Tanggal Jadwal': r.jadwalTanggal ? fmtTanggalWaktu(r.jadwalTanggal) : '',
+                                'Jam Jadwal': r.jadwalJam,
+                                'Dosen Jadwal': r.jadwalDosen,
+                                'Peserta Jadwal': r.jenis === 'Extra' ? '' : r.jadwalPesertaCount,
+                                'BA ID': r.baId,
+                                'Tanggal Realisasi': r.baTanggal ? fmtTanggalWaktu(r.baTanggal) : '',
+                                'Jam Realisasi': r.baJam,
+                                'Dosen Realisasi': r.baDosen,
+                                'Peserta Realisasi': r.baId ? r.baPesertaCount : '',
+                                'Status': r.status
+                            }));
+                            const ws = rows.length
+                                ? XLSX.utils.json_to_sheet(rows)
+                                : XLSX.utils.aoa_to_sheet([['Bagian', 'Blok', 'Nama Kegiatan', 'Label', 'Jenis', 'Jadwal ID', 'Tanggal Jadwal', 'Jam Jadwal', 'Dosen Jadwal', 'Peserta Jadwal', 'BA ID', 'Tanggal Realisasi', 'Jam Realisasi', 'Dosen Realisasi', 'Peserta Realisasi', 'Status']]);
+                            XLSX.utils.book_append_sheet(wb, ws, 'Jadwal vs Realisasi');
+                            writeXlsxStyled(wb, 'Jadwal-Realisasi-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export jadwal vs realisasi berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {

@@ -97,3 +97,12 @@ describe('jadwal realisasi: tab & UI', () => {
     expect(html).toContain('Extra');
   });
 });
+
+describe('jadwal realisasi: export xlsx', () => {
+  it('menyediakan handler, sheet, dan tombol', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('exportJadwalRealisasi()');
+    expect(html).toContain("'Jadwal vs Realisasi'");
+    expect(html).toContain('Export XLSX');
+  });
+});
