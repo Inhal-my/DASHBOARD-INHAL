@@ -100,6 +100,21 @@ export async function getStudentPortalData(db, npm) {
     detailById.get(d.id_pengajuan).push(d);
   }
 
+  const { results: jadwalPeserta } = await db.prepare('SELECT id_pengajuan, jadwal_id FROM jadwal_peserta').all();
+  const { results: jadwalRows } = await db.prepare('SELECT jadwal_id, tanggal, jam, dosen, active FROM jadwal_pelaksanaan').all();
+  const jadwalById = {};
+  for (const j of jadwalRows || []) {
+    if (Number(j.active) !== 1) continue;
+    jadwalById[str(j.jadwal_id)] = {
+      JadwalID: str(j.jadwal_id), Tanggal: str(j.tanggal), Jam: str(j.jam), Dosen: str(j.dosen)
+    };
+  }
+  const jadwalByPengajuan = {};
+  for (const jp of jadwalPeserta || []) {
+    const j = jadwalById[str(jp.jadwal_id)];
+    if (j) jadwalByPengajuan[str(jp.id_pengajuan)] = j;
+  }
+
   const rows = (all || []).filter((p) => normalizeNpm(p.npm) === npmKey);
   let namaLengkap = '';
   const history = [];
@@ -131,7 +146,8 @@ export async function getStudentPortalData(db, npm) {
       uploadResetAt: str(p.upload_reset_at),
       uploadResetBy: str(p.upload_reset_by),
       uploadResetNote: str(p.upload_reset_note),
-      uploadTimestamp: hasUpload ? (p.updated_at || 'Uploaded') : ''
+      uploadTimestamp: hasUpload ? (p.updated_at || 'Uploaded') : '',
+      jadwal: jadwalByPengajuan[id] || null
     });
   });
 
