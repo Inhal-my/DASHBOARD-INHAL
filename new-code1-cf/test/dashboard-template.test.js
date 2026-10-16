@@ -78,7 +78,8 @@ describe('dashboard template', () => {
     expect(html).toContain('Dua tahap: unggah BA Pendukung');
     expect(html).toContain('Kelengkapan per Blok');
     expect(html).not.toContain('Peta Kelengkapan Bagian × Blok');
-    expect(html).toContain('Unggah BA Pendukung');
+    expect(html).toContain('Buat BA');
+    expect(html).not.toContain('Unggah BA Pendukung');
     expect(html).toContain('Unggah BA Pelaksanaan');
     expect(html).toContain('Belum Pendukung');
     expect(html).toContain('Belum Pelaksanaan');
@@ -379,12 +380,12 @@ describe('dashboard responsive shell', () => {
     expect(html).toContain('sheet-item');
   });
 
-  it('FAB (+) membuka picker Kelola BA Pendukung', async () => {
+  it('FAB (+) membuka sheet Buat BA', async () => {
     const html = await loadDashboardHtml();
     const m = html.match(/<button[^>]*class="fab-btn[^"]*"[^>]*>/);
     expect(m).not.toBeNull();
-    expect(m[0]).toContain('@click="openKelolaBaPicker()"');
-    expect(m[0]).toContain('Tambah Berita Acara Pendukung');
+    expect(m[0]).toContain('@click="openBaSheet()"');
+    expect(m[0]).toContain('Buat Berita Acara');
   });
 
   it('topbar menampilkan pencarian dan notifikasi menunggu', async () => {

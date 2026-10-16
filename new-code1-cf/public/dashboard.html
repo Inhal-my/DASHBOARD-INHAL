@@ -390,6 +390,19 @@
         .in-bar-fill.r { background:#fb7185; }
         .ba-ring { width:44px; height:44px; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
         .ba-ring > span { width:34px; height:34px; border-radius:9999px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#334155; }
+        .ba-sheet-wrap { position:fixed; inset:0; z-index:120; }
+        .ba-sheet-scrim { position:absolute; inset:0; background:rgba(15,23,42,.45); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); }
+        .ba-sheet { position:absolute; left:0; right:0; bottom:0; max-height:92vh; background:#fff; border-radius:22px 22px 0 0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 -20px 50px -20px rgba(15,23,42,.5); }
+        .ba-sheet-head { flex:0 0 auto; border-bottom:1px solid var(--line); padding:10px 16px 12px; }
+        .ba-handle { width:40px; height:4px; border-radius:9999px; background:#cbd5e1; margin:0 auto 10px; }
+        .ba-sheet-search { flex:0 0 auto; padding:10px 16px; border-bottom:1px solid var(--line); }
+        .ba-sheet-body { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:12px 16px calc(16px + env(safe-area-inset-bottom)); }
+        .ba-sheet-list { display:flex; flex-direction:column; gap:8px; }
+        .ba-sheet-row { display:flex; align-items:center; gap:10px; border:1px solid #e2e8f0; border-radius:14px; padding:10px 12px; text-align:left; transition:border-color .15s, background .15s; }
+        .ba-sheet-row:hover { border-color:#a5b4fc; background:rgba(79,70,229,.04); }
+        .ba-sheet-blok { border:1px solid #e2e8f0; border-radius:16px; padding:12px; text-align:left; transition:border-color .15s, box-shadow .15s; }
+        .ba-sheet-blok:hover { border-color:#a5b4fc; box-shadow:0 6px 18px -12px rgba(79,70,229,.6); }
+        @media (min-width:1024px) { .ba-sheet { left:50%; right:auto; transform:translateX(-50%); width:560px; } }
         .in-tabsw { display:flex; gap:.5rem; overflow-x:auto; border-bottom:1px solid var(--line); }
         .in-tab { display:flex; flex:1 1 0%; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; padding:.7rem 1rem; border-bottom:2.5px solid transparent; color:var(--ink-400); font-size:.8125rem; font-weight:700; transition:.15s ease; }
         .in-tab:hover { color:var(--ink-700); }
@@ -1103,7 +1116,8 @@
                             <p class="mt-0.5 text-sm text-slate-500">Dua tahap: unggah BA Pendukung sebelum keputusan, lalu BA Pelaksanaan setelah kegiatan di Bagian.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button class="btn-primary !py-2 text-xs" @click="openKelolaBaPicker()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
+                            <button class="btn-primary !py-2 text-xs" @click="openBaSheet()"><i class="bi bi-plus-lg"></i> Buat BA</button>
+                            <button class="btn-soft !py-2 text-xs" @click="bab.showPanel = true"><i class="bi bi-people"></i> Sesi Bagian</button>
                             <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
                         </div>
                     </div>
@@ -2321,9 +2335,75 @@
         </nav>
 
         <!-- ============ FAB: TAMBAH BA PENDUKUNG ============ -->
-        <button v-if="loggedIn" type="button" class="fab-btn lg:hidden" @click="openKelolaBaPicker()" aria-label="Tambah Berita Acara Pendukung" title="Tambah Berita Acara Pendukung">
+        <button v-if="loggedIn" type="button" class="fab-btn lg:hidden" @click="openBaSheet()" aria-label="Buat Berita Acara" title="Buat Berita Acara">
             <i class="bi bi-plus-lg"></i>
         </button>
+
+        <!-- ============ SHEET: BUAT BA ============ -->
+        <div v-if="loggedIn && baSheet.open" class="ba-sheet-wrap">
+            <div class="ba-sheet-scrim" @click="baSheetClose()"></div>
+            <div class="ba-sheet">
+                <div class="ba-sheet-head">
+                    <div class="ba-handle"></div>
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-base font-extrabold text-slate-900">Buat Berita Acara</h2>
+                        <button class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="baSheetClose()"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="mt-3 inline-flex rounded-full bg-slate-100 p-0.5 text-xs font-semibold">
+                        <button class="rounded-full px-4 py-1.5" :class="baSheet.type==='pendukung' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" @click="baSheetSetType('pendukung')">Pendukung</button>
+                        <button class="rounded-full px-4 py-1.5" :class="baSheet.type==='pelaksanaan' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" @click="baSheetSetType('pelaksanaan')">Pelaksanaan</button>
+                    </div>
+                </div>
+                <div class="ba-sheet-search">
+                    <div class="master-search">
+                        <i class="bi bi-search"></i>
+                        <input v-model="baSheet.q" class="input" placeholder="Cari kegiatan, mahasiswa, atau dosen...">
+                    </div>
+                </div>
+                <div class="ba-sheet-body">
+                    <button v-if="baSheet.level==='kegiatan' && !baSheet.q" class="mb-3 flex items-center gap-1 text-xs font-semibold text-brand-600" @click="baSheetBack()"><i class="bi bi-chevron-left"></i> Blok {{ baSheet.blok }}</button>
+
+                    <div v-if="sectionLoading.bagian" class="py-10 text-center text-sm text-slate-400">Memuat...</div>
+
+                    <template v-else-if="baSheet.q">
+                        <div v-if="!baSheetSearchResults.length" class="py-10 text-center text-sm text-slate-400">Tidak ada kegiatan cocok.</div>
+                        <div v-else class="ba-sheet-list">
+                            <button v-for="u in baSheetSearchResults" :key="u.key" class="ba-sheet-row" @click="baSheetPickKegiatan(u)">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate text-sm font-bold text-slate-800">{{ u.label }}</div>
+                                    <div class="mt-0.5 text-[11px] text-slate-400">Blok {{ u.blok }} · {{ u.bagian }} · {{ (u.peserta || []).length }} peserta</div>
+                                </div>
+                                <span class="shrink-0 text-xs font-semibold text-brand-600">Buat</span>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template v-else-if="baSheet.level==='blok'">
+                        <div v-if="!baSheetBlokGroups.length" class="py-10 text-center text-sm text-slate-400">Belum ada kegiatan dimuat. Coba muat ulang.</div>
+                        <div v-else class="grid grid-cols-2 gap-2.5">
+                            <button v-for="g in baSheetBlokGroups" :key="g.blok" class="ba-sheet-blok" @click="baSheetOpenKegiatan(g.blok)">
+                                <div class="text-sm font-bold text-slate-900">Blok {{ g.blok }}</div>
+                                <div class="text-[11px] text-slate-400">{{ g.total }} kegiatan</div>
+                                <div class="mt-1 text-[11px] font-semibold" :class="g.belum ? 'text-amber-600' : 'text-emerald-600'">{{ g.belum ? g.belum + ' belum' : 'Lengkap' }}</div>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <div v-if="!baSheetBlokUnits.length" class="py-10 text-center text-sm text-slate-400">Tidak ada kegiatan pada blok ini.</div>
+                        <div v-else class="ba-sheet-list">
+                            <button v-for="u in baSheetBlokUnits" :key="u.key" class="ba-sheet-row" @click="baSheetPickKegiatan(u)">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate text-sm font-bold text-slate-800">{{ u.label }}</div>
+                                    <div class="mt-0.5 text-[11px] text-slate-400">{{ u.bagian }} · {{ (u.peserta || []).length }} peserta</div>
+                                </div>
+                                <span class="shrink-0 text-xs font-semibold text-brand-600">Buat</span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
 
         <!-- ============ MOBILE MENU SHEET ============ -->
         <transition name="fade">
@@ -2408,6 +2488,7 @@
                         options: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], lab: [], kegiatanLab: [] }
                     },
                     detailMap: {},
+                    baSheet: { open: false, type: 'pelaksanaan', level: 'blok', blok: '', q: '', loading: false },
                     baPendukungIds: [],
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
@@ -2671,6 +2752,26 @@
                     return Object.values(map)
                         .map(c => Object.assign(c, { pct: c.total ? Math.round((c.done / c.total) * 100) : 0, belum: c.total - c.done }))
                         .sort((a, b) => a.blok.localeCompare(b.blok));
+                },
+                baSheetBlokGroups() {
+                    const map = {};
+                    (this.bagian.units || []).forEach(u => {
+                        const b = String(u.blok || '').trim();
+                        if (!b) return;
+                        if (!map[b]) map[b] = { blok: b, total: 0, belum: 0 };
+                        map[b].total += 1;
+                        if (!this.unitHasPelaksanaan(u)) map[b].belum += 1;
+                    });
+                    return Object.values(map).sort((a, b) => a.blok.localeCompare(b.blok));
+                },
+                baSheetBlokUnits() {
+                    const b = this.baSheet.blok;
+                    return (this.bagian.units || []).filter(u => String(u.blok || '').trim() === b);
+                },
+                baSheetSearchResults() {
+                    const q = this.normBagian(this.baSheet.q);
+                    if (!q) return [];
+                    return (this.bagian.units || []).filter(u => this.unitMatchesQuery(u, q));
                 },
                 baPendukungSet() {
                     const set = {};
@@ -3855,6 +3956,56 @@
                     if (!p.length) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
                     this.kbPicker.open = false;
                     this.openKelolaBaPendukung(p[0].idPengajuan);
+                },
+                openBaSheet(type) {
+                    if (type) this.baSheet.type = type === 'pendukung' ? 'pendukung' : 'pelaksanaan';
+                    this.baSheet.open = true;
+                    this.baSheet.level = 'blok';
+                    this.baSheet.blok = '';
+                    this.baSheet.q = '';
+                    this.baSheet.loading = false;
+                    if (this.tab !== 'ba') this.switchTab('ba');
+                    if (!(this.bagian.units || []).length && !this.loaded.bagian) this.loadBagian();
+                },
+                baSheetClose() {
+                    if (this.bab.ba.open) this.babCloseBaPicker();
+                    this.baSheet.open = false;
+                    this.baSheet.level = 'blok';
+                    this.baSheet.blok = '';
+                    this.baSheet.q = '';
+                },
+                baSheetSetType(t) {
+                    this.baSheet.type = t === 'pendukung' ? 'pendukung' : 'pelaksanaan';
+                },
+                baSheetOpenKegiatan(blok) {
+                    this.baSheet.level = 'kegiatan';
+                    this.baSheet.blok = blok;
+                    this.baSheet.q = '';
+                },
+                baSheetBack() {
+                    this.baSheet.level = 'blok';
+                    this.baSheet.blok = '';
+                    this.baSheet.q = '';
+                },
+                unitMatchesQuery(u, q) {
+                    const needle = q || this.normBagian(this.baSheet.q);
+                    if (!needle) return false;
+                    const hay = [u.label, u.pilihan, u.detail, u.blok, u.bagian];
+                    (u.dosenList || []).forEach(d => hay.push(d));
+                    (u.ba || []).forEach(b => hay.push(b.dosen));
+                    (u.peserta || []).forEach(p => { hay.push(p.namaLengkap); hay.push(p.npm); });
+                    return hay.some(v => this.normBagian(v).indexOf(needle) !== -1);
+                },
+                baSheetPickKegiatan(u) {
+                    if (this.baSheet.type === 'pendukung') {
+                        const pid = (u.peserta && u.peserta[0] && u.peserta[0].idPengajuan) || '';
+                        if (!pid) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
+                        this.baSheetClose();
+                        this.openKelolaBaPendukung(pid);
+                        return;
+                    }
+                    this.baSheetClose();
+                    this.openPelaksanaanPanel(u);
                 },
                 async updateStatus() {
                     const status = this.detail.status;
