@@ -1217,6 +1217,7 @@
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">
                                                     <span v-if="r.pelaksanaan && r.pelaksanaan.length">{{ fmtTanggalWaktu(r.pelaksanaan[0].tanggal + (r.pelaksanaan[0].jam ? 'T' + r.pelaksanaan[0].jam : '')) }}</span>
                                                     <span v-else class="text-slate-300">-</span>
+                                                    <span v-if="(r.pelaksanaan || []).length > 1" class="ml-1 rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">{{ r.pelaksanaan.length }} sesi</span>
                                                 </td>
                                                 <td class="px-3 py-2.5 text-slate-600">{{ (r.dosenList && r.dosenList.length) ? r.dosenList.join(', ') : '-' }}</td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.peserta || []).length }}</td>
@@ -1285,6 +1286,21 @@
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
                                                                 <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="lg:col-span-2">
+                                                            <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Sesi Pelaksanaan ({{ (r.pelaksanaan || []).length }})</div>
+                                                            <div v-if="!(r.pelaksanaan || []).length" class="text-xs text-slate-400">Belum ada sesi pelaksanaan.</div>
+                                                            <div class="space-y-1">
+                                                                <div v-for="(s, si) in (r.pelaksanaan || [])" :key="'sx' + si" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs">
+                                                                    <span class="font-mono text-[10px] text-slate-400">#{{ si + 1 }}</span>
+                                                                    <span v-if="s.tanggal" class="text-slate-600">{{ fmtTanggal(s.tanggal) }}</span>
+                                                                    <span v-else class="text-slate-400">-</span>
+                                                                    <span v-if="s.jam" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ s.jam }}</span>
+                                                                    <span class="text-slate-600">{{ s.dosen || '-' }}</span>
+                                                                    <a v-if="baPelaksanaanFileUrl(s.baId)" :href="safeUrl(baPelaksanaanFileUrl(s.baId))" target="_blank" rel="noopener noreferrer" class="link ml-auto">{{ s.baId }}</a>
+                                                                    <span v-else class="ml-auto font-mono text-[10px] text-slate-400">{{ s.baId }}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3478,6 +3494,16 @@
                         catatan: (b && b.Catatan) || '',
                         tanggalEfektif: this.baTanggalEfektif(b)
                     };
+                },
+                baPelaksanaanFileUrl(baId) {
+                    const id = String(baId || '').trim();
+                    if (!id) return '';
+                    for (const u of (this.kegiatan || [])) {
+                        for (const b of (u.baPelaksanaan || [])) {
+                            if (String(b['BA ID'] || '').trim() === id) return b['File URL'] || '';
+                        }
+                    }
+                    return '';
                 },
                 exportBaTable() {
                     this.exporting = true;

@@ -106,3 +106,12 @@ describe('jadwal realisasi: export xlsx', () => {
     expect(html).toContain('Export XLSX');
   });
 });
+
+describe('sesi pelaksanaan per unit', () => {
+  it('menampilkan daftar semua sesi dan badge jumlah', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('Sesi Pelaksanaan');
+    expect(html).toContain('sesi</span>');
+    expect(html).toContain('baPelaksanaanFileUrl(');
+  });
+});
