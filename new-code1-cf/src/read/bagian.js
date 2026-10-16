@@ -1,5 +1,6 @@
 import { getSession, requireBagianSession, AUTH_ERROR } from '../session.js';
 import { toClientRow } from './columns.js';
+import { computeJadwalList } from './jadwal.js';
 import {
   baginaKey, getMasterOptions, getBagianBaSettings, baginaHasAccess,
   getBagianAliasMap, resolveBagian12, kegiatanKey
@@ -106,6 +107,7 @@ async function computeBaList(db, bagianFilter, kategori) {
   const sanitized = rows.map((c) => {
     const copy = Object.assign({}, c);
     copy.peserta = pesertaMap[String(c['BA ID'] || '').trim()] || [];
+    copy.selesai = !!(String(c.Dosen || '').trim() && String(c['Tanggal Pelaksanaan'] || '').trim() && String(c.Jam || '').trim());
     return copy;
   });
   if (filter) {
@@ -125,7 +127,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
     ok: false, message: '', nama: '',
     kategori: String(kategori || '').trim(), subBagian: String(subBagian || '').trim(),
     config: { categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'], labOptions: [], kegiatanLabOptions: [] },
-    rows: [], baList: []
+    rows: [], baList: [], jadwalList: []
   };
   try {
     const s = ctx.session ? ctx.session : await getSession(db, ctx.token);
@@ -144,6 +146,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
     out.config.kegiatanLabOptions = await getMasterOptions(db, 'Kegiatan Lab');
     out.rows = await computeBagianRows(db, kat, subBagian);
     out.baList = await computeBaList(db, subBagian || out.kategori, out.kategori);
+    out.jadwalList = await computeJadwalList(db, subBagian || out.kategori, out.kategori);
     return out;
   } catch (e) {
     out.message = (e && e.message) ? e.message : String(e);
