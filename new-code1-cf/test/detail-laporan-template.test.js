@@ -310,6 +310,10 @@ describe('detail laporan app shell (ala dashboard)', () => {
       expect(selectors.has(sel)).toBe(true);
     }
   });
+  it('konten melebar penuh di desktop', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('.content-wrap { width: 100%; max-width: none;');
+  });
 });
 
 describe('detail laporan shell interaktif', () => {
