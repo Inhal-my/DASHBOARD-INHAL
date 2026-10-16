@@ -69,3 +69,19 @@ describe('daftar BA: pembersihan dead code', () => {
     expect(html).not.toContain('baGroupPesertaTotal');
   });
 });
+
+describe('daftar BA: lapisan data', () => {
+  it('menyediakan state filter', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("baListFilter: { bagian: '', blok: '', jenis: '', from: '', to: '', dosen: '', sumber: '', kelengkapan: '', q: '' }");
+  });
+  it('menyediakan computed dan helper', async () => {
+    const html = await loadHtml();
+    for (const name of ['daftarBaRows()', 'filteredDaftarBa()', 'daftarBaBagianOptions()',
+      'daftarBaBlokOptions()', 'daftarBaJenisOptions()', 'daftarBaSumberOptions()',
+      'daftarBaLengkapCount()', 'daftarBaDraftCount()', 'daftarBaUnitCount()', 'daftarBaUnitRows()',
+      'baLengkap(', 'baTanggalEfektif(', 'baDaftarItem(']) {
+      expect(html).toContain(name);
+    }
+  });
+});

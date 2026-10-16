@@ -1857,6 +1857,7 @@
                     activeDosenCell: null,
                     bagianFilter: { bagian: '', blok: '', q: '' },
                     baFilter: { bagian: '', blok: '', q: '' },
+                    baListFilter: { bagian: '', blok: '', jenis: '', from: '', to: '', dosen: '', sumber: '', kelengkapan: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
@@ -2449,6 +2450,88 @@
                 },
                 baKegiatanGrandTotal() {
                     return this.baKegiatanRows.reduce((t, r) => t + this.baKegiatanBiaya(r), 0);
+                },
+                daftarBaRows() {
+                    const out = [];
+                    (this.kegiatan || []).forEach((u) => {
+                        (u.baPendukung || []).forEach((b) => out.push(this.baDaftarItem(b, 'Pendukung', u)));
+                        (u.baPelaksanaan || []).forEach((b) => out.push(this.baDaftarItem(b, 'Pelaksanaan', u)));
+                    });
+                    return out;
+                },
+                filteredDaftarBa() {
+                    const f = this.baListFilter;
+                    const bagian = f.bagian;
+                    const blok = String(f.blok || '').trim();
+                    const fromD = f.from ? this.dateVal(f.from) : null;
+                    const toD = f.to ? this.dateVal(f.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    const dosen = f.dosen ? this.normSearch(f.dosen) : '';
+                    const q = this.normSearch(f.q);
+                    return this.daftarBaRows.filter((r) => {
+                        if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return false;
+                        if (blok && String(r.blok || '').trim() !== blok) return false;
+                        if (f.jenis && r.jenis !== f.jenis) return false;
+                        if (f.sumber && r.sumber !== f.sumber) return false;
+                        if (f.kelengkapan === 'Lengkap' && !r.lengkap) return false;
+                        if (f.kelengkapan === 'Draft' && r.lengkap) return false;
+                        if (dosen && this.normSearch(r.dosen).indexOf(dosen) === -1) return false;
+                        if (fromD || toD) {
+                            const d = this.dateVal(r.tanggalEfektif);
+                            if (!d || (fromD && d < fromD) || (toD && d > toD)) return false;
+                        }
+                        if (q) {
+                            const hay = [r.id, r.kegiatan, r.bagian, r.blok, r.label, r.dosen]
+                                .map((s) => this.normSearch(s)).join(' ');
+                            if (hay.indexOf(q) === -1) return false;
+                        }
+                        return true;
+                    });
+                },
+                daftarBaBagianOptions() {
+                    const set = {};
+                    this.daftarBaRows.forEach((r) => { if (r.bagian) set[r.bagian] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                daftarBaBlokOptions() {
+                    const bagian = this.baListFilter.bagian;
+                    const set = {};
+                    this.daftarBaRows.forEach((r) => {
+                        if (!r.blok) return;
+                        if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return;
+                        set[r.blok] = 1;
+                    });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                daftarBaJenisOptions() {
+                    return ['Pendukung', 'Pelaksanaan'];
+                },
+                daftarBaSumberOptions() {
+                    const set = {};
+                    this.daftarBaRows.forEach((r) => { if (r.sumber) set[r.sumber] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                daftarBaLengkapCount() {
+                    return this.filteredDaftarBa.filter((r) => r.lengkap).length;
+                },
+                daftarBaDraftCount() {
+                    return this.filteredDaftarBa.filter((r) => !r.lengkap).length;
+                },
+                daftarBaUnitCount() {
+                    const set = {};
+                    this.filteredDaftarBa.forEach((r) => {
+                        set[this.normBagian(r.bagian) + '::' + (r.blok || '') + '::' + r.kegiatan] = 1;
+                    });
+                    return Object.keys(set).length;
+                },
+                daftarBaUnitRows() {
+                    const bagian = this.baListFilter.bagian;
+                    const blok = String(this.baListFilter.blok || '').trim();
+                    return (this.kegiatan || []).filter((u) => {
+                        if (bagian && this.normBagian(u.bagian) !== this.normBagian(bagian)) return false;
+                        if (blok && String(u.blok || '').trim() !== blok) return false;
+                        return true;
+                    });
                 }
             },
             watch: {
@@ -3057,6 +3140,41 @@
                             'File URL': b['File URL'] || ''
                         };
                     });
+                },
+                baLengkap(b, jenis) {
+                    if (!b) return false;
+                    if (jenis === 'Pendukung') return !!String(b['File URL'] || '').trim();
+                    const dosen = String(b.Dosen || '').trim();
+                    const tanggal = String(b['Tanggal Pelaksanaan'] || '').trim();
+                    const jam = String(b.Jam || '').trim();
+                    return !!(dosen && tanggal && jam);
+                },
+                baTanggalEfektif(b) {
+                    if (!b) return '';
+                    return b['Tanggal Pelaksanaan'] || b.Timestamp || '';
+                },
+                baDaftarItem(b, jenis, unit) {
+                    const peserta = (b && b.peserta) || [];
+                    const tanggal = (b && b['Tanggal Pelaksanaan']) || '';
+                    const jumlahField = Number((b && b['Jumlah Peserta']) || 0) || 0;
+                    return {
+                        id: (b && b['BA ID']) || '',
+                        jenis: jenis,
+                        bagian: unit ? unit.bagian : this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']),
+                        blok: (unit ? unit.blok : b.Blok) || '',
+                        kegiatan: (unit ? unit.label : b['Nama Kegiatan']) || '',
+                        label: (b && b.Label) || '',
+                        tanggal: tanggal,
+                        jam: (b && b.Jam) || '',
+                        dosen: (b && b.Dosen) || '',
+                        pesertaCount: jenis === 'Pelaksanaan' ? peserta.length : (jumlahField || peserta.length),
+                        sumber: (b && b.Sumber) || (jenis === 'Pendukung' ? 'Admin' : 'Bagian'),
+                        dibuat: (b && b.Timestamp) || '',
+                        lengkap: this.baLengkap(b, jenis),
+                        fileUrl: (b && b['File URL']) || '',
+                        catatan: (b && b.Catatan) || '',
+                        tanggalEfektif: this.baTanggalEfektif(b)
+                    };
                 },
                 exportBaTable() {
                     this.exporting = true;
