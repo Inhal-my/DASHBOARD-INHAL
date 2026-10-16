@@ -118,3 +118,13 @@ describe('daftar BA: indikator kelengkapan', () => {
     expect(html).toContain("baLengkap(b, 'Pelaksanaan')");
   });
 });
+
+describe('daftar BA: export xlsx', () => {
+  it('menyediakan handler dan dua sheet', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('exportDaftarBa()');
+    expect(html).toContain("'Daftar BA'");
+    expect(html).toContain("'Rekap per Unit'");
+    expect(html).toContain('Export XLSX');
+  });
+});

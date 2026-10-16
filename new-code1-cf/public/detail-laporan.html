@@ -1371,6 +1371,7 @@
                                     <div class="lap-card-title">Daftar Berita Acara</div>
                                     <div class="lap-card-sub">Semua BA Pendukung &amp; Pelaksanaan lintas kegiatan</div>
                                 </div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportDaftarBa"><i class="bi bi-file-earmark-excel"></i> Export XLSX</button>
                             </div>
                             <div class="overflow-x-auto in-desktop-only">
                                 <table class="in-tbl">
@@ -3309,6 +3310,61 @@
                             this.exporting = false;
                         }
                     }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportDaftarBa() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const headers = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Label',
+                                'Tanggal Pelaksanaan', 'Jam', 'Dosen', 'Jumlah Peserta', 'Sumber', 'Dibuat',
+                                'Kelengkapan', 'Catatan', 'File URL'];
+                            const rows = this.filteredDaftarBa.map((r) => ({
+                                'BA ID': r.id,
+                                'Jenis BA': r.jenis,
+                                'Bagian': r.bagian,
+                                'Blok': r.blok,
+                                'Nama Kegiatan': r.kegiatan,
+                                'Label': r.label,
+                                'Tanggal Pelaksanaan': r.tanggal ? fmtTanggalWaktu(r.tanggal) : '',
+                                'Jam': r.jam,
+                                'Dosen': r.dosen,
+                                'Jumlah Peserta': r.pesertaCount,
+                                'Sumber': r.sumber,
+                                'Dibuat': r.dibuat ? fmtTanggalWaktu(r.dibuat) : '',
+                                'Kelengkapan': r.lengkap ? 'Lengkap' : 'Draft',
+                                'Catatan': r.catatan,
+                                'File URL': r.fileUrl
+                            }));
+                            const wsBa = rows.length
+                                ? XLSX.utils.json_to_sheet(rows, { header: headers })
+                                : XLSX.utils.aoa_to_sheet([headers]);
+                            setUrlHyperlinks(wsBa, 'File URL', 'Buka file berita acara');
+                            XLSX.utils.book_append_sheet(wb, wsBa, 'Daftar BA');
+
+                            const rekapRows = this.daftarBaUnitRows.map((u) => ({
+                                'Bagian': u.bagian,
+                                'Blok': u.blok || '',
+                                'Nama Kegiatan': u.label,
+                                'Masuk BA': ((u.counts && u.counts.final) || 0) + '/' + (u.peserta || []).length,
+                                'Jumlah Peserta': (u.peserta || []).length,
+                                'BA Pendukung': (u.baPendukung || []).length,
+                                'BA Pelaksanaan': (u.baPelaksanaan || []).length,
+                                'Biaya': this.baKegiatanBiaya(u)
+                            }));
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap per Unit');
+
+                            writeXlsxStyled(wb, 'Daftar-BA-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export daftar BA berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch((e) => {
                         this.exporting = false;
                         this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                     });
