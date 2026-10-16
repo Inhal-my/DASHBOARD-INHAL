@@ -57,4 +57,14 @@ describe('bagian template jadwal', () => {
     expect(html).toContain('filteredRows');
     expect(html).toContain('openBaPicker');
   });
+
+  it('memiliki mode BA dari jadwal, draft, dan riwayat', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('ba.jadwalId');
+    expect(html).toContain('lengkapiBeritaAcaraBagian');
+    expect(html).toContain('draftBaList');
+    expect(html).toContain('riwayatBaList');
+    expect(html).toContain('ba.dosen');
+    expect(html).toContain('ba.jam');
+  });
 });

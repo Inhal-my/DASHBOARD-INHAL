@@ -338,6 +338,17 @@
                                 <i class="bi bi-plus-circle"></i> Buat Berita Acara
                             </button>
 
+                            <div v-if="!ba.open && jadwalSiapBaList.length" class="mt-4 space-y-2">
+                                <div class="section-title !mb-2"><i class="bi bi-calendar-check"></i> Siap dibuat BA (dari jadwal)</div>
+                                <div v-for="j in jadwalSiapBaList" :key="j.JadwalID" class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 p-3">
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-semibold text-slate-900">{{ j.Blok }} · {{ j.NamaKegiatan }}</div>
+                                        <div class="text-[11px] text-slate-400">{{ formatTanggal(j.Tanggal) }}<template v-if="j.Jam"> · {{ j.Jam }}</template><template v-if="j.Dosen"> · {{ j.Dosen }}</template></div>
+                                    </div>
+                                    <button class="btn-primary !py-2 text-xs" @click="buatBaDariJadwal(j.JadwalID)"><i class="bi bi-file-earmark-plus"></i> Buat BA</button>
+                                </div>
+                            </div>
+
                             <div v-else class="space-y-4">
                                 <!-- picker: pilih kegiatan -->
                                 <div v-if="!selectedGroup">
@@ -375,7 +386,7 @@
                                             <div class="text-sm font-bold text-slate-900">{{ selectedGroup.label }}</div>
                                             <div class="text-[11px] text-slate-400">{{ selectedGroup.peserta.length }} peserta</div>
                                         </div>
-                                        <button class="text-xs font-semibold text-brand-600" @click="backToKegiatanPicker">Ubah</button>
+                                        <button v-if="ba.mode!=='jadwal'" class="text-xs font-semibold text-brand-600" @click="backToKegiatanPicker">Ubah</button>
                                     </div>
 
                                     <!-- peserta checklist -->
@@ -403,6 +414,17 @@
                                         <div>
                                             <label class="label">Label <span class="font-normal text-slate-400">(opsional)</span></label>
                                             <input v-model="ba.label" class="input" placeholder="mis. Sesi 1 / Hari ke-2">
+                                        </div>
+                                        <div v-if="ba.mode==='jadwal'" class="rounded-2xl bg-brand-50 p-3 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
+                                            <i class="bi bi-calendar-check mr-1"></i> Dari jadwal {{ ba.jadwalId }}
+                                        </div>
+                                        <div>
+                                            <label class="label">Dosen</label>
+                                            <input v-model="ba.dosen" class="input" placeholder="Nama dosen">
+                                        </div>
+                                        <div>
+                                            <label class="label">Jam</label>
+                                            <input v-model="ba.jam" type="time" class="input">
                                         </div>
                                         <div>
                                             <label class="label">Tanggal Pelaksanaan</label>
@@ -464,6 +486,29 @@
                         </div>
                     </div>
 
+                    <!-- ===== DRAFT BERITA ACARA ===== -->
+                    <div v-if="activeTab==='ba'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="flex items-center gap-3 border-b border-slate-100 p-5">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><i class="bi bi-hourglass-split"></i></div>
+                            <div class="flex-1">
+                                <h2 class="text-base font-bold text-slate-900">Draft Berita Acara</h2>
+                                <p class="text-xs text-slate-400">Belum lengkap (dosen/tanggal/jam)</p>
+                            </div>
+                        </div>
+                        <div v-if="!draftBaList.length" class="p-6 text-center text-sm text-slate-500">Tidak ada draft.</div>
+                        <div v-else class="divide-y divide-slate-50">
+                            <div v-for="r in draftBaList" :key="r['BA ID']" class="p-4">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <div class="font-mono text-[11px] text-slate-400">{{ r['BA ID'] }}</div>
+                                        <div class="mt-0.5 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
+                                    </div>
+                                    <button class="btn-soft !py-2 text-xs" @click="lengkapiDraft(r)"><i class="bi bi-pencil"></i> Lengkapi</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ===== DAFTAR BERITA ACARA ===== -->
                     <div v-if="activeTab==='riwayat'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                         <div class="flex items-center gap-3 border-b border-slate-100 p-5">
@@ -481,12 +526,12 @@
                                 <div class="skeleton h-2.5 w-1/3"></div>
                             </div>
                         </div>
-                        <div v-else-if="!filteredBaList.length" class="p-8 text-center">
+                        <div v-else-if="!riwayatBaList.length" class="p-8 text-center">
                             <i class="bi bi-folder2-open mb-2 block text-4xl text-slate-300"></i>
                             <p class="text-sm text-slate-500">Belum ada data.</p>
                         </div>
                         <div v-else class="divide-y divide-slate-50">
-                            <div v-for="(r, i) in filteredBaList" :key="i" class="p-4">
+                            <div v-for="(r, i) in riwayatBaList" :key="i" class="p-4">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0">
                                         <div class="font-mono text-[11px] text-slate-400">{{ r['BA ID'] }}</div>
@@ -561,6 +606,31 @@
             </div>
         </transition>
 
+        <!-- ===== LENGKAPI DRAFT BA ===== -->
+        <transition name="slide">
+            <div v-if="ba.lengkapi" class="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="ba.lengkapi=null"></div>
+                <div class="safe-b relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-lift sm:rounded-3xl">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><i class="bi bi-pencil-square"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-sm font-bold text-slate-900">Lengkapi Berita Acara</h3>
+                            <p class="text-xs text-slate-400">{{ ba.lengkapi.id }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        <div><label class="label">Dosen</label><input v-model="ba.lengkapi.dosen" class="input"></div>
+                        <div><label class="label">Jam</label><input v-model="ba.lengkapi.jam" type="time" class="input"></div>
+                        <div><label class="label">Tanggal</label><input v-model="ba.lengkapi.tanggal" type="date" class="input"></div>
+                    </div>
+                    <div class="mt-4 flex gap-3">
+                        <button class="btn-soft flex-1" @click="ba.lengkapi=null">Batal</button>
+                        <button class="btn-primary flex-1" :disabled="loading" @click="saveLengkapi"><i class="bi bi-check-lg"></i> Simpan</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
         <!-- ===== TOAST ===== -->
         <transition name="drop">
             <div v-if="toast.show" class="app-toast" :class="'app-toast-' + (toast.type || 'info')">
@@ -616,7 +686,7 @@
                     fBlok: '',
                     listOpen: false,
                     filterOpen: false,
-                    ba: { open: false, kegiatanKey: null, tanggal: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 },
+                    ba: { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null },
                     baList: [],
                     jadwalList: [],
                     activeTab: 'jadwal',
@@ -670,6 +740,11 @@
                     return out;
                 },
                 selectedGroup() {
+                    if (this.ba.mode === 'jadwal') {
+                        if (!this.ba.jadwalInfo) return null;
+                        const j = this.ba.jadwalInfo;
+                        return { key: 'jadwal:' + this.ba.jadwalId, blok: j.blok, pilihan: j.namaKegiatan, detail: '', tanggal: j.tanggal, label: j.label, peserta: this.ba.jadwalPeserta };
+                    }
                     if (!this.ba.kegiatanKey) return null;
                     return this.kegiatanGroups.find(function(g) { return g.key === this.ba.kegiatanKey; }.bind(this)) || null;
                 },
@@ -1048,6 +1123,12 @@
                 openBaPicker() {
                     this.clearScanItems();
                     this.ba.open = true;
+                    this.ba.mode = 'manual';
+                    this.ba.jadwalId = '';
+                    this.ba.jadwalInfo = null;
+                    this.ba.jadwalPeserta = [];
+                    this.ba.dosen = '';
+                    this.ba.jam = '';
                     this.ba.kegiatanKey = null;
                     this.ba.selected = {};
                     this.ba.tanggal = '';
@@ -1220,6 +1301,9 @@
                         const payload = {
                             namaKegiatan: this.selectedGroup.pilihan + (this.selectedGroup.detail ? ' - ' + this.selectedGroup.detail : ''),
                             tanggalPelaksanaan: this.ba.tanggal,
+                            jam: this.ba.jam || '',
+                            dosen: this.ba.dosen || '',
+                            jadwalId: this.ba.jadwalId || '',
                             label: this.ba.label.trim(),
                             blok: this.selectedGroup.blok,
                             catatan: this.ba.catatan.trim(),
@@ -1235,6 +1319,23 @@
                             if (fileEl) fileEl.value = '';
                             await this.loadBaList();
                         }
+                    } catch (e) {
+                        this.showToast('Gagal: ' + e, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                lengkapiDraft(r) {
+                    this.ba.lengkapi = { id: r['BA ID'], dosen: r.Dosen || '', jam: r.Jam || '', tanggal: this.dateOnly(r['Tanggal Pelaksanaan']) };
+                },
+                async saveLengkapi() {
+                    if (!this.ba.lengkapi) return;
+                    this.loading = true;
+                    try {
+                        const payload = { dosen: this.ba.lengkapi.dosen, jam: this.ba.lengkapi.jam, tanggal: this.ba.lengkapi.tanggal };
+                        const res = await this.run('lengkapiBeritaAcaraBagian', this.ba.lengkapi.id, payload, this.kategori);
+                        this.showToast(res.message, res.success ? 'success' : 'error');
+                        if (res.success) { this.ba.lengkapi = null; await this.loadData(); }
                     } catch (e) {
                         this.showToast('Gagal: ' + e, 'error');
                     } finally {
@@ -1258,7 +1359,7 @@
                     this.baList = [];
                     this.jadwalList = [];
                     this.activeTab = 'jadwal';
-                    this.ba = { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 };
+                    this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
                 }
             },
             mounted() {
