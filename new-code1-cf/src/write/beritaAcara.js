@@ -125,6 +125,7 @@ function buildPersistBaStmts(db, table, pesertaTable, payload, meta) {
   };
   if (meta.withDosen) cols.dosen = str(payload.dosen);
   if (meta.withLabel) cols.label = str(payload.label);
+  if (meta.withJadwal) cols.jadwal_id = str(payload.jadwalId);
   const keys = Object.keys(cols);
   const placeholders = keys.map((_, i) => '?' + (i + 1)).join(', ');
   const key = meta.allowMultiple ? '' : str(meta.kegiatanKey);
@@ -295,6 +296,16 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     };
   }
 
+  const jadwalId = str(p.jadwalId);
+  if (jadwalId) {
+    const jd = await db.prepare('SELECT jadwal_id, active FROM jadwal_pelaksanaan WHERE jadwal_id = ?1').bind(jadwalId).first();
+    if (!jd || Number(jd.active) !== 1) {
+      return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan atau sudah dibatalkan.' };
+    }
+    const dup = await db.prepare('SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1').bind(jadwalId).first();
+    if (dup) return { success: false, message: 'Berita acara untuk jadwal ini sudah ada.' };
+  }
+
   const baId = await nextBaId(db, 'berita_acara');
   let fileUrl = '';
   let fileName = '';
@@ -311,7 +322,7 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   await db.batch([
     ...buildPersistBaStmts(db, 'berita_acara', 'berita_acara_peserta', p, {
       baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
-      kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true, withLabel: true, allowMultiple: true
+      kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true, withLabel: true, allowMultiple: true, withJadwal: true
     }),
     ...buildSyncStmts(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam))
   ]);
@@ -345,4 +356,27 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   ]);
 
   return { success: true, message: 'Berita acara diperbarui.' };
+}
+
+export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx) {
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  await requireBagianSession(db, kategori, existing.bagian, ctx.token, ctx.session);
+
+  const p = payload || {};
+  const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
+  const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
+  const dosen = p.dosen !== undefined ? str(p.dosen) : str(existing.dosen);
+  const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
+  const label = p.label !== undefined ? str(p.label) : str(existing.label);
+
+  const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  await db.batch([
+    db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan=?1, jam=?2, dosen=?3, catatan=?4, label=?5 WHERE ba_id=?6')
+      .bind(tanggal, jam, dosen, catatan, label, id),
+    ...buildSyncStmts(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), dosen, tanggal, jam)
+  ]);
+  return { success: true, message: 'Berita acara dilengkapi.' };
 }

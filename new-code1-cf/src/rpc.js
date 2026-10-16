@@ -15,8 +15,9 @@ import {
 } from './write/master.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
-  updateBeritaAcaraBagian, updateBeritaAcaraAdmin
+  updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
 } from './write/beritaAcara.js';
+import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan } from './write/jadwal.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
   updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti, uploadBuktiAdmin
@@ -76,6 +77,10 @@ const HANDLERS = {
   deleteBeritaAcaraAdmin: (db, args, ctx) => deleteBeritaAcaraAdmin(db, args[0], ctx),
   deleteBeritaAcaraBagian: (db, args, ctx) => deleteBeritaAcaraBagian(db, args[0], ctx),
   uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx),
+  saveJadwalPelaksanaan: (db, args, ctx) => saveJadwalPelaksanaan(db, args[0], args[1], ctx),
+  updateJadwalPelaksanaan: (db, args, ctx) => updateJadwalPelaksanaan(db, args[0], args[1], args[2], ctx),
+  cancelJadwalPelaksanaan: (db, args, ctx) => cancelJadwalPelaksanaan(db, args[0], args[1], ctx),
+  lengkapiBeritaAcaraBagian: (db, args, ctx) => lengkapiBeritaAcaraBagian(db, args[0], args[1], args[2], ctx),
   updateBeritaAcaraBagian: (db, args, ctx) => updateBeritaAcaraBagian(db, args[0], args[1], ctx),
   updateBeritaAcaraAdmin: (db, args, ctx) => updateBeritaAcaraAdmin(db, args[0], args[1], ctx),
   getMahasiswaByNpm: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getMahasiswaByNpm(db, args[0]); },
