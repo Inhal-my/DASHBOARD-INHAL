@@ -403,6 +403,11 @@ describe('dashboard responsive shell', () => {
       expect(selectors.has(sel)).toBe(true);
     }
   });
+
+  it('konten dashboard melebar penuh di desktop', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('.content-wrap { width: 100%; max-width: none;');
+  });
 });
 
 describe('dashboard manual entry tab', () => {
