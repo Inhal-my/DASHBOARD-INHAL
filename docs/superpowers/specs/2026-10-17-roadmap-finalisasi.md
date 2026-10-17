@@ -11,7 +11,7 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 
 ## Checklist
 
-- [ ] **Poin 1 — Integritas data master**
+- [x] **Poin 1 — Integritas data master**
   - Rename/merge/hapus nilai master yang sudah dipakai harus aman dan konsisten di semua tabel.
   - Hilangkan duplikat master dan tambahkan constraint.
   - Audit referensi blok lama, nilai kosong, dan `kegiatan_key` yang tidak sinkron.
@@ -44,3 +44,23 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 3. Rename harus memperbarui referensi teks dan `kegiatan_key`, lalu menandai PDF BA terkait untuk dibuat ulang.
 4. Nilai master yang masih dipakai tidak boleh dihapus tanpa penggantian.
 5. Nama baru yang sudah ada harus ditolak atau diselesaikan lewat alur merge dengan aturan konflik yang jelas.
+
+## Hasil implementasi Poin 1 (2026-10-17)
+
+- Commit implementasi: `9b10cd8` (`feat(master): cascade rename blok, audit integritas, dan unique index`).
+- Deploy Worker: `c4df8860-854f-4053-9ced-dca557cc9e51`.
+- Backup pra-migrasi: `/tmp/opencode/backups/inhal-poc-20261017-pre-poin1.sql`.
+- Migrasi produksi diterapkan: `migrations/2026-10-17-master-kegiatan-integrity.sql` (27 perubahan, 230 baris ditulis).
+- Fitur:
+  - Tombol Ganti Nama Blok dengan pratinjau dampak per tabel dan peringatan regenerasi PDF BA.
+  - Rename atomik: master, semua tabel referensi blok, dan `kegiatan_key`; ditolak bila nama baru konflik.
+  - Hapus blok yang masih dipakai ditolak; edit biasa yang mengubah blok terpakai diarahkan ke alur rename.
+  - Modal Audit Integritas: duplikat, referensi blok asing, blok kosong, dan `kegiatan_key` tidak sinkron.
+  - Unique index `idx_master_kegiatan_unique` pada `lower(trim(kategori)), lower(trim(nilai))`.
+- Verifikasi produksi:
+  - Referensi nama lama di seluruh tabel transaksi: 0.
+  - `master_kegiatan` Blok/Gastro: 1 baris; duplikat master: 0.
+  - `kegiatan_key` drift pada 12 baris BA/jadwal: 0.
+  - Dashboard live memuat alur rename dan audit (HTTP 200).
+  - Suite test: 79 file, 578 test lulus.
+- Sisa untuk poin lain: `mahasiswa.blok` masih kosong pada 1.975 baris (perlu pengisian data, bukan bug rename); merge dua blok berbeda belum otomatis dan masih manual.
