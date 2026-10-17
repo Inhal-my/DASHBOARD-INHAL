@@ -111,4 +111,14 @@ describe('dashboard BA sheet template', () => {
     expect(html).toContain('babEnsureSession(kategori, subBagian)');
     expect(html).toContain('_baSheetPickPelaksanaan(u)');
   });
+
+  it('menampilkan nama blok tanpa awalan "Blok"', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('blokName(c.blok)');
+    expect(html).toContain('blokName(g.blok)');
+    expect(html).toContain('blokName(baSheet.blok)');
+    expect(html).toContain('blokName(v)');
+    expect(html).not.toContain('>Blok {{ c.blok }}<');
+    expect(html).not.toContain('>Blok {{ g.blok }}<');
+  });
 });
