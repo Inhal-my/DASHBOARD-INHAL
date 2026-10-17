@@ -33,6 +33,18 @@ describe('jadwal write', () => {
     expect(p.results).toHaveLength(1);
   });
 
+  it('menolak jadwal duplikat untuk kegiatan, waktu, dan peserta yang sama', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const first = await saveJadwalPelaksanaan(env.DB, payload, 'SGD', ctx);
+    expect(first.success).toBe(true);
+    const dup = await saveJadwalPelaksanaan(env.DB, payload, 'SGD', ctx);
+    expect(dup.success).toBe(false);
+    expect(dup.message).toContain('sudah ada');
+    const rows = await env.DB.prepare('SELECT jadwal_id FROM jadwal_pelaksanaan WHERE active=1').all();
+    expect(rows.results).toHaveLength(1);
+  });
+
   it('menolak peserta non-ACC', async () => {
     await seedPengajuan('Menunggu');
     const res = await saveJadwalPelaksanaan(env.DB, payload, 'SGD', await bagianCtx(['SGD']));

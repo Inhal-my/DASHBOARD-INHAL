@@ -1276,6 +1276,7 @@
                     if (item && !item.ba.selesai) this.editDraftBa(item.ba);
                 },
                 async saveDraftBa() {
+                    if (this.loading) return;
                     if (!this.ba.lengkapi) return;
                     const d = this.ba.lengkapi;
                     if (!d.dosen || !d.jam || !d.tanggal) {
@@ -1288,6 +1289,7 @@
                         const res = await this.run('lengkapiBeritaAcaraBagian', d.id, payload, this.kategori);
                         this.showToast(res.message, res.success ? 'success' : 'error');
                         if (res.success) {
+                            this.formDirty = false;
                             this.closeDetail();
                             await this.loadData();
                         }
@@ -1364,6 +1366,7 @@
                     return g.peserta.filter(function (p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
                 },
                 async saveJadwal() {
+                    if (this.loading) return;
                     const g = this.jadwalFormGroup;
                     if (!g) { this.showToast('Pilih kegiatan terlebih dahulu.', 'error'); return; }
                     const list = this.jadwalSelectedList();
@@ -1383,6 +1386,7 @@
                             : await this.run('saveJadwalPelaksanaan', payload, this.kategori);
                         this.showToast(res.message, res.success ? 'success' : 'error');
                         if (res.success) {
+                            this.formDirty = false;
                             this.closeDetail();
                             await this.loadData();
                         }

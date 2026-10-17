@@ -184,6 +184,12 @@ describe('bagian workspace v2 — guard dan kebersihan', () => {
     expect(html).not.toContain('loadBaList');
   });
 
+  it('menutup form tanpa prompt setelah simpan sukses', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toMatch(/if \(res\.success\) \{\s*this\.formDirty = false;\s*this\.closeDetail\(\);/);
+    expect(html).toContain('if (this.loading) return;');
+  });
+
   it('menutup detail yang datanya hilang setelah refresh', async () => {
     const html = await loadBagianHtml();
     expect(html).toContain('ensureSelection');

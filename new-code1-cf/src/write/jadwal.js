@@ -78,6 +78,26 @@ async function validatePayload(db, peserta, allowedMsg) {
   return { ok: true };
 }
 
+async function hasDuplicateJadwal(db, meta, peserta) {
+  const { results } = await db.prepare(
+    'SELECT j.jadwal_id, p.id_pengajuan, p.npm FROM jadwal_pelaksanaan j ' +
+    'JOIN jadwal_peserta p ON p.jadwal_id = j.jadwal_id ' +
+    'WHERE j.active = 1 AND j.kegiatan_key = ?1 AND j.tanggal = ?2 AND j.jam = ?3'
+  ).bind(str(meta.kegiatanKey), str(meta.tanggal), str(meta.jam)).all();
+  const ids = {};
+  for (const p of peserta) {
+    const id = str(p.idPengajuan);
+    const npm = str(p.npm);
+    if (id) ids['id:' + id] = true;
+    if (npm) ids['npm:' + npm] = true;
+  }
+  return (results || []).some(function (r) {
+    const id = str(r.id_pengajuan);
+    const npm = str(r.npm);
+    return (id && ids['id:' + id]) || (npm && ids['npm:' + npm]);
+  });
+}
+
 export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
   const p = payload || {};
   await requireBagianSession(db, kategori, p.bagian, ctx.token, ctx.session);
@@ -86,11 +106,15 @@ export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
   const check = await validatePayload(db, peserta);
   if (!check.ok) return { success: false, message: check.message };
 
+  const key = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
+  const dup = await hasDuplicateJadwal(db, { kegiatanKey: key, tanggal: p.tanggal, jam: p.jam }, peserta);
+  if (dup) return { success: false, message: 'Jadwal untuk kegiatan, tanggal, jam, dan peserta ini sudah ada.' };
+
   const jadwalId = await nextJadwalId(db);
   p.__peserta = peserta;
   await db.batch(buildInsertStmts(db, jadwalId, p, {
     bagian: bagian,
-    kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)),
+    kegiatanKey: key,
     createdBy: str(ctx.session && ctx.session.nama)
   }));
   return { success: true, jadwalId: jadwalId, message: 'Jadwal pelaksanaan berhasil disimpan.' };
