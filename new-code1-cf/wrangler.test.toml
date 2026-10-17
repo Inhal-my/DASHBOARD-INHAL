@@ -1,0 +1,13 @@
+name = "inhal-form-test"
+main = "src/index.js"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc"
+database_id = "8f412848-d213-4bb3-aeb7-0aff221f9ee3"

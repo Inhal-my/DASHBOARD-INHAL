@@ -1,0 +1,166 @@
+# SOP Backup dan Restore D1 INHAL
+
+Terakhir diperbarui: 2026-10-17
+
+## Ringkasan
+
+- Database: D1 `inhal-poc`, akun Cloudflare `e2efd255f61d2b81c7f54c92eb57b946`.
+- Time Travel D1: restore point 30 hari (Workers Paid) atau 7 hari (Workers Free), selalu aktif.
+- Arsip R2: ekspor harian pukul 01:00 UTC ke bucket privat `inhal-poc-backups`, retensi 180 hari.
+- Workflow: `d1-backup`, binding `BACKUP_WORKFLOW`.
+- Uji integritas: `scripts/verify-backup.mjs`.
+
+## Prasyarat
+
+- Wrangler terpasang dan login ke akun Cloudflare yang memiliki akses D1, R2, dan Workflows.
+- R2 sudah diaktifkan di akun.
+- Token API untuk ekspor D1 tersedia. Token disimpan sebagai secret Worker, bukan di repo.
+- Untuk restore Time Travel, operator harus memahami bahwa operasi ini menimpa database.
+
+## Penyiapan awal (sekali)
+
+### 1. Aktifkan R2 dan buat bucket
+
+Buka Cloudflare Dashboard > R2 Object Storage > Enable R2. Setelah aktif:
+
+```bash
+# Membuat bucket privat arsip
+npx wrangler r2 bucket create inhal-poc-backups
+```
+
+### 2. Buat token ekspor D1
+
+Buat API token dengan izin ekspor D1 untuk database target. Simpan nilainya sebagai secret Worker:
+
+```bash
+# Menyimpan token sebagai secret terenkripsi
+npx wrangler secret put D1_REST_API_TOKEN
+```
+
+Jangan menulis token ke `wrangler.toml`, `.env`, atau file yang di-commit.
+
+### 3. Deploy Worker
+
+```bash
+# Deploy Worker beserta Workflow dan binding R2
+npx wrangler deploy
+```
+
+### 4. Pasang lifecycle 180 hari
+
+```bash
+# Menghapus otomatis objek prefix d1/ setelah 180 hari
+npx wrangler r2 bucket lifecycle add inhal-poc-backups d1-retention-180 d1/ --expire-days 180 --force
+```
+
+Verifikasi:
+
+```bash
+# Melihat aturan lifecycle
+npx wrangler r2 bucket lifecycle list inhal-poc-backups
+```
+
+### 5. Trigger pertama dan verifikasi
+
+```bash
+# Menjalankan backup manual
+npx wrangler workflows trigger d1-backup
+```
+
+```bash
+# Melihat status instance terbaru
+npx wrangler workflows instances list d1-backup --reverse
+```
+
+Setelah instance selesai, buka dashboard R2 dan pastikan ada:
+
+- `d1/<timestamp>.sql`
+- `d1/<timestamp>.json`
+- `status/last-success.json`
+
+## Operasi harian
+
+Tidak ada tindakan manual. Workflow berjalan setiap hari pukul 01:00 UTC (08:00 WIB).
+
+Pemeriksaan mingguan:
+
+1. Buka Workflows > `d1-backup` dan pastikan instance terbaru berstatus `complete`.
+2. Buka R2 > `inhal-poc-backups` dan pastikan ada objek `d1/` baru.
+3. Baca `status/last-failure.json`. Jika objek ini lebih baru dari `status/last-success.json`, selidiki kegagalan.
+
+## Uji restore dari arsip R2
+
+```bash
+# Mengunduh dump terbaru dari R2 (ganti nama file)
+npx wrangler r2 object get inhal-poc-backups/d1/<timestamp>.sql --file=/tmp/inhal-backup.sql --remote
+```
+
+```bash
+# Memeriksa integritas dan referensi
+cd new-code1-cf
+node scripts/verify-backup.mjs /tmp/inhal-backup.sql
+```
+
+Hasil lulus bila keluar dengan kode 0 dan `"ok": true`. Script memeriksa:
+
+- `PRAGMA integrity_check`
+- keberadaan dan jumlah tabel inti
+- duplikat `master_kegiatan`
+- referensi blok yang tidak ada di master
+- `kegiatan_key` yang tidak sinkron
+
+Blok kosong dilaporkan tetapi tidak menggagalkan verifikasi karena dapat merupakan kondisi data yang sudah ada.
+
+Catat hasil di bagian catatan di bawah.
+
+## Restore Time Travel
+
+Gunakan untuk insiden yang masih dalam jendela retensi Time Travel.
+
+```bash
+# Melihat bookmark saat ini
+npx wrangler d1 time-travel info inhal-poc
+```
+
+```bash
+# Melihat bookmark pada waktu tertentu
+npx wrangler d1 time-travel info inhal-poc --timestamp="2026-10-17T12:00:00Z"
+```
+
+```bash
+# Restore ke bookmark yang dipilih
+npx wrangler d1 time-travel restore inhal-poc --bookmark=<bookmark>
+```
+
+Simpan bookmark undo yang dicetak setelah restore. Setelah restore:
+
+1. Buka `/api/health`.
+2. Login admin.
+3. Periksa jumlah pengajuan dan master kegiatan.
+4. Jalankan audit integritas master.
+5. Catat waktu, penyebab, bookmark, dan hasil.
+
+## Restore dari arsip R2
+
+Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang lebih baru. Langkah yang aman:
+
+1. Buat database D1 baru.
+2. Impor dump ke database baru.
+3. Jalankan `scripts/verify-backup.mjs` pada dump tersebut.
+4. Validasi aplikasi terhadap database baru.
+5. Arahkan binding `DB` ke database baru melalui perubahan konfigurasi dan deploy.
+6. Simpan database lama sampai validasi selesai.
+
+## Eskalasi
+
+- Backup gagal dua hari berturut-turut: jalankan trigger manual, periksa pesan di `status/last-failure.json`, dan periksa status Workflows.
+- Data rusak: hentikan penulisan, tentukan waktu kejadian, gunakan Time Travel bila masih dalam jendela retensi.
+- Token API bocor: cabut token, buat token baru, perbarui secret, dan deploy ulang bila diperlukan.
+
+## Catatan uji
+
+### 2026-10-17
+
+- Backup pra-Poin 1: `inhal-poc-20261017-pre-poin1.sql`, integritas `ok`, ditemukan 2 duplikat master.
+- Backup pasca-Poin 1: `inhal-poc-20261017-post-poin1.sql`, integritas `ok`, duplikat 0, referensi blok asing 0, `kegiatan_key` drift 0.
+- Uji restore R2 pertama menunggu aktivasi R2 dan backup harian pertama.

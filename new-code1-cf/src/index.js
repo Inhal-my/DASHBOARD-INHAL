@@ -6,6 +6,7 @@ import { dispatchRpc } from './rpc.js';
 import { getUpload, base64ToBytes, decodeBase64Size } from './uploads.js';
 import { getSession } from './session.js';
 import { exportDatabase } from './databaseExport.js';
+import { BackupWorkflow } from './backup/workflow.js';
 
 const app = new Hono();
 
@@ -103,4 +104,5 @@ app.post('/api/database-export', async (c) => {
   return new Response(result.body, { status: result.status, headers: result.headers });
 });
 
+export { BackupWorkflow };
 export default app;
