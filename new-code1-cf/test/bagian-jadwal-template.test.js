@@ -69,9 +69,10 @@ describe('bagian template jadwal', () => {
     expect(html).toContain('ba.jam');
   });
 
-  it('mengikat this pada callback computed jadwal', async () => {
+  it('memakai helper jadwalFormGroup untuk form jadwal', async () => {
     const html = await loadBagianHtml();
-    expect(html).toContain('g.key === this.jadwal.kegiatanKey; }.bind(this)');
+    expect(html).toContain('jadwalFormGroup');
+    expect(html).toContain('jadwalPendingGroups');
   });
 
   it('menyediakan picker Dosen searchable di semua field Dosen', async () => {

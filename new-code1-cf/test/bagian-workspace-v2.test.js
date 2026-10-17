@@ -99,3 +99,29 @@ describe('bagian workspace v2 — shell', () => {
     expect(commonAt).toBeGreaterThan(stateAt);
   });
 });
+
+describe('bagian workspace v2 — jadwal', () => {
+  it('memakai split workspace dan panel detail bersama', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('workspace--split');
+    expect(html).toContain('class="ws-detail"');
+    expect(html).toContain('detail-back');
+    expect(html).toContain('visibleJadwalItems');
+    expect(html).toContain('selectItem(item.kind, item.key)');
+  });
+
+  it('menyediakan aksi dan form jadwal di panel detail', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('startJadwalForGroup');
+    expect(html).toContain('jadwalFormGroup');
+    expect(html).toContain('startFirstPendingJadwal');
+    expect(html).toContain('Buat Jadwal');
+    expect(html).toContain('Simpan Jadwal');
+  });
+
+  it('menampilkan sisa peserta yang belum terjadwal', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('jadwalPendingGroups');
+    expect(html).toContain('unscheduledPeserta');
+  });
+});

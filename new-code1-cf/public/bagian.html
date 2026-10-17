@@ -281,100 +281,48 @@
                     <div v-else class="workspace" :class="{ 'workspace--split': activeTab==='jadwal' || activeTab==='ba', 'workspace--riwayat': activeTab==='riwayat', 'has-detail': !!selectedItem }">
                         <div class="ws-list">
                     <!-- ===== TAB: JADWAL ===== -->
-                    <div v-if="activeTab==='jadwal'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                        <div class="flex items-center gap-3 border-b border-slate-100 p-5">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-calendar-plus"></i></div>
-                            <div class="flex-1">
+                    <section v-if="activeTab==='jadwal'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="flex items-center gap-3 border-b border-slate-100 p-4">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-calendar-plus"></i></div>
+                            <div class="min-w-0 flex-1">
                                 <h2 class="text-base font-bold text-slate-900">Jadwal Pelaksanaan</h2>
-                                <p class="text-xs text-slate-400">{{ jadwalList.length }} jadwal aktif</p>
+                                <p class="text-xs text-slate-400">{{ jadwalList.length }} jadwal aktif · {{ jadwalPendingGroups.length }} perlu dijadwalkan</p>
+                            </div>
+                            <button type="button" class="btn-soft !py-2 text-xs" @click="startFirstPendingJadwal"><i class="bi bi-plus-circle"></i> Buat Jadwal</button>
+                        </div>
+                        <div class="border-b border-slate-100 p-3">
+                            <input v-model="q" type="search" class="input" placeholder="Cari kegiatan, dosen, peserta...">
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <button type="button" class="chip" :class="jadwalFilter==='semua' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="jadwalFilter='semua'">Semua</button>
+                                <button type="button" class="chip" :class="jadwalFilter==='belum' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="jadwalFilter='belum'">Belum dijadwalkan</button>
+                                <button type="button" class="chip" :class="jadwalFilter==='sudah' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="jadwalFilter='sudah'">Sudah dijadwalkan</button>
                             </div>
                         </div>
-                        <div class="p-4">
-                            <button v-if="!jadwal.open" class="btn-primary w-full" @click="openJadwalForm"><i class="bi bi-plus-circle"></i> Buat Jadwal</button>
-                            <div v-else class="space-y-4">
-                                <div v-if="!jadwal.kegiatanKey">
-                                    <div class="section-title"><i class="bi bi-calendar-check"></i> Pilih Kegiatan (ACC)</div>
-                                    <div v-if="!jadwalKegiatanGroups.length" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Belum ada kegiatan ACC untuk dijadwalkan.</div>
-                                    <div v-else class="space-y-2">
-                                        <button v-for="g in jadwalKegiatanGroups" :key="g.key" class="group flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition active:scale-[.99]" @click="selectJadwalKegiatan(g.key)">
-                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-journal-text"></i></div>
-                                            <div class="min-w-0 flex-1">
-                                                <div class="text-sm font-bold text-slate-900">{{ g.label }}</div>
-                                                <div class="mt-0.5 flex items-center gap-3 text-[11px] text-slate-400"><span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(g.tanggal) }}</span></div>
-                                            </div>
-                                            <span class="chip shrink-0 bg-brand-50 text-brand-700">{{ g.peserta.length }} peserta</span>
-                                        </button>
-                                    </div>
-                                    <button class="btn-soft mt-3 w-full" @click="closeJadwalForm"><i class="bi bi-x-lg"></i> Batal</button>
-                                </div>
-                                <div v-else>
-                                    <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
-                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm"><i class="bi bi-journal-check"></i></div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="text-sm font-bold text-slate-900">{{ jadwalSelectedGroup ? jadwalSelectedGroup.label : '' }}</div>
-                                            <div class="text-[11px] text-slate-400">{{ jadwalSelectedGroup ? jadwalSelectedGroup.peserta.length : 0 }} peserta</div>
-                                        </div>
-                                        <button class="text-xs font-semibold text-brand-600" @click="jadwal.kegiatanKey=null">Ubah</button>
-                                    </div>
-                                    <div class="mt-3">
-                                        <div class="mb-2 flex items-center justify-between">
-                                            <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
-                                            <button class="text-xs font-semibold text-brand-600" @click="toggleAllJadwalPeserta">{{ jadwalAllSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <label v-for="p in (jadwalSelectedGroup ? jadwalSelectedGroup.peserta : [])" :key="p.idPengajuan" class="flex items-center gap-3 rounded-xl border p-3 transition" :class="jadwal.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
-                                                <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!jadwal.selected[p.idPengajuan]" @change="toggleJadwalPeserta(p.idPengajuan)">
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="truncate text-sm font-semibold text-slate-800">{{ p.namaLengkap }}</div>
-                                                    <div class="font-mono text-[11px] text-slate-400">NPM {{ p.npm }}</div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4 space-y-4">
-                                        <div><label class="label">Tanggal Pelaksanaan</label><input v-model="jadwal.tanggal" type="date" class="input"></div>
-                                        <div><label class="label">Jam</label><input v-model="jadwal.jam" type="time" class="input"></div>
-                                        <div class="relative">
-                                            <label class="label">Dosen</label>
-                                            <input v-model="jadwal.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @input="dosenPick.jadwal = true" @blur="dosenPick.jadwal = false">
-                                            <div v-if="dosenPick.jadwal && dosenSuggest(jadwal.dosen).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                                                <button v-for="d in dosenSuggest(jadwal.dosen)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(jadwal, d)">{{ d }}</button>
-                                            </div>
-                                        </div>
-                                        <div><label class="label">Catatan (Opsional)</label><input v-model="jadwal.catatan" class="input" placeholder="opsional"></div>
-                                    </div>
-                                    <div class="mt-4 flex gap-3">
-                                        <button class="btn-soft flex-1" @click="closeJadwalForm">Batal</button>
-                                        <button class="btn-primary flex-1" :disabled="loading" @click="saveJadwal"><i class="bi bi-save"></i> {{ jadwal.editingId ? 'Simpan Perubahan' : 'Simpan Jadwal' }}</button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div v-if="!visibleJadwalItems.length" class="p-8 text-center">
+                            <i class="bi bi-calendar-x mb-2 block text-4xl text-slate-300"></i>
+                            <p class="text-sm text-slate-500">Belum ada kegiatan ACC untuk dijadwalkan.</p>
                         </div>
-                        <div v-if="jadwalList.length" class="divide-y divide-slate-50 border-t border-slate-100">
-                            <div v-for="j in jadwalList" :key="j.JadwalID" class="p-4">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="min-w-0">
-                                        <div class="font-mono text-[11px] text-slate-400">{{ j.JadwalID }}</div>
-                                        <div class="mt-0.5 text-sm font-bold text-slate-900">{{ j.Blok }} · {{ j.NamaKegiatan }}</div>
-                                        <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                                            <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(j.Tanggal) }}</span>
-                                            <span v-if="j.Jam" class="flex items-center gap-1"><i class="bi bi-clock"></i>{{ j.Jam }}</span>
-                                            <span v-if="j.Dosen" class="flex items-center gap-1"><i class="bi bi-person-badge"></i>{{ j.Dosen }}</span>
-                                        </div>
+                        <div v-else class="divide-y divide-slate-50">
+                            <button v-for="item in visibleJadwalItems" :key="item.id" type="button" class="flex w-full items-start gap-3 p-4 text-left transition hover:bg-slate-50" :class="sel.kind===item.kind && sel.key===item.key ? 'bg-brand-50/60' : ''" @click="selectItem(item.kind, item.key)">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" :class="item.kind==='jadwal' ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-500'">
+                                    <i class="bi" :class="item.kind==='jadwal' ? 'bi-calendar-check' : 'bi-calendar-plus'"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate text-sm font-bold text-slate-900">{{ item.nama }}</div>
+                                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                                        <span class="flex items-center gap-1"><i class="bi bi-grid"></i>Blok {{ item.blok }}</span>
+                                        <span v-if="item.tanggal" class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(item.tanggal) }}</span>
+                                        <span v-if="item.jadwal && item.jadwal.Jam" class="flex items-center gap-1"><i class="bi bi-clock"></i>{{ item.jadwal.Jam }}</span>
+                                        <span v-if="item.dosen" class="flex items-center gap-1"><i class="bi bi-person-badge"></i>{{ item.dosen }}</span>
                                     </div>
-                                    <span class="chip shrink-0 bg-brand-50 text-brand-700">{{ j.peserta.length }} peserta</span>
                                 </div>
-                                <div v-if="j.Catatan" class="mt-2 text-xs text-slate-500">{{ j.Catatan }}</div>
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    <button v-if="!j.punyaBa" class="btn-primary !py-2 text-xs" @click="buatBaDariJadwal(j.JadwalID)"><i class="bi bi-file-earmark-plus"></i> Buat BA</button>
-                                    <span v-else class="chip bg-emerald-50 text-emerald-700">BA {{ j.baId }}</span>
-                                    <button class="btn-soft !py-2 text-xs" @click="editJadwal(j.JadwalID)"><i class="bi bi-pencil"></i> Edit</button>
-                                    <button class="btn-soft !py-2 text-xs text-rose-600" @click="cancelJadwal(j.JadwalID)"><i class="bi bi-x-circle"></i> Batalkan</button>
+                                <div class="flex shrink-0 flex-col items-end gap-1">
+                                    <span class="chip" :class="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+                                    <span class="text-[11px] text-slate-400">{{ item.peserta.length }} peserta</span>
                                 </div>
-                            </div>
+                            </button>
                         </div>
-                    </div>
-
+                    </section>
                     <!-- ===== UPLOAD BERITA ACARA ===== -->
                     <div v-if="activeTab==='ba'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                         <div class="flex items-center gap-3 border-b border-slate-100 p-5">
@@ -610,9 +558,100 @@
                     </div>
                         </div>
                         <aside class="ws-detail" :class="{ 'is-open': mobileDetail }" role="dialog" aria-modal="true" aria-label="Detail kegiatan">
-                            <div class="rounded-2xl bg-white p-6 text-center shadow-soft ring-1 ring-slate-100">
+                            <div v-if="!selectedItem" class="rounded-2xl bg-white p-6 text-center shadow-soft ring-1 ring-slate-100">
                                 <i class="bi bi-layout-sidebar-inset mb-2 block text-3xl text-slate-300"></i>
                                 <p class="text-sm text-slate-500">Pilih kegiatan untuk melihat detail.</p>
+                            </div>
+                            <div v-else class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                <div class="detail-bar">
+                                    <button type="button" class="detail-back" aria-label="Kembali" @click="closeDetail"><i class="bi bi-arrow-left"></i></button>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-base font-bold text-slate-900">{{ selectedItem.nama }}</div>
+                                        <div class="text-[11px] text-slate-400">Blok {{ selectedItem.blok }}<template v-if="selectedItem.tanggal"> · {{ formatTanggal(selectedItem.tanggal) }}</template></div>
+                                    </div>
+                                    <span class="chip shrink-0" :class="statusBadgeClass(selectedItem.status)">{{ statusLabel(selectedItem.status) }}</span>
+                                </div>
+                                <div class="flex items-center gap-1 border-b border-slate-100 px-4 py-3 text-[10px] font-bold uppercase tracking-wide">
+                                    <span :class="selectedItem.status==='acc' ? 'text-brand-600' : 'text-emerald-600'">ACC</span>
+                                    <i class="bi bi-chevron-right text-slate-300"></i>
+                                    <span :class="selectedItem.status!=='acc' ? 'text-brand-600' : 'text-slate-300'">Jadwal</span>
+                                    <i class="bi bi-chevron-right text-slate-300"></i>
+                                    <span :class="(selectedItem.status==='draft' || selectedItem.status==='selesai') ? 'text-brand-600' : 'text-slate-300'">Berita Acara</span>
+                                </div>
+                                <div class="p-4" @input="markFormDirty" @change="markFormDirty">
+                                    <!-- detail: jadwal start -->
+                                    <div v-if="jadwal.open" class="space-y-4">
+                                        <div v-if="jadwalFormGroup" class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+                                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm"><i class="bi bi-journal-check"></i></div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-sm font-bold text-slate-900">{{ jadwalFormGroup.nama || jadwalFormGroup.label }}</div>
+                                                <div class="text-[11px] text-slate-400">{{ jadwalFormGroup.peserta.length }} peserta</div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Pilih kegiatan terlebih dahulu.</div>
+                                        <template v-if="jadwalFormGroup">
+                                            <div>
+                                                <div class="mb-2 flex items-center justify-between">
+                                                    <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
+                                                    <button type="button" class="text-xs font-semibold text-brand-600" @click="toggleAllJadwalPeserta">{{ jadwalAllSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                                </div>
+                                                <div class="space-y-2">
+                                                    <label v-for="p in jadwalFormGroup.peserta" :key="p.idPengajuan" class="flex items-center gap-3 rounded-xl border p-3 transition" :class="jadwal.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                        <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!jadwal.selected[p.idPengajuan]" @change="toggleJadwalPeserta(p.idPengajuan)">
+                                                        <div class="min-w-0 flex-1">
+                                                            <div class="truncate text-sm font-semibold text-slate-800">{{ p.namaLengkap }}</div>
+                                                            <div class="font-mono text-[11px] text-slate-400">NPM {{ p.npm }}</div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ jadwalSelectedList().length }} peserta</p>
+                                            </div>
+                                            <div class="space-y-4">
+                                                <div><label class="label">Tanggal Pelaksanaan</label><input v-model="jadwal.tanggal" type="date" class="input"></div>
+                                                <div><label class="label">Jam</label><input v-model="jadwal.jam" type="time" class="input"></div>
+                                                <div class="relative">
+                                                    <label class="label">Dosen</label>
+                                                    <input v-model="jadwal.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @input="dosenPick.jadwal = true" @blur="dosenPick.jadwal = false">
+                                                    <div v-if="dosenPick.jadwal && dosenSuggest(jadwal.dosen).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                                                        <button v-for="d in dosenSuggest(jadwal.dosen)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(jadwal, d)">{{ d }}</button>
+                                                    </div>
+                                                </div>
+                                                <div><label class="label">Catatan (Opsional)</label><input v-model="jadwal.catatan" class="input" placeholder="opsional"></div>
+                                            </div>
+                                            <div class="flex gap-3">
+                                                <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
+                                                <button type="button" class="btn-primary flex-1" :disabled="loading" @click="saveJadwal"><i class="bi bi-save"></i> {{ jadwal.editingId ? 'Simpan Perubahan' : 'Simpan Jadwal' }}</button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <div v-else-if="selectedItem.kind==='jadwal'" class="space-y-4">
+                                        <div class="rounded-2xl bg-slate-50 p-4">
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div><div class="label">Tanggal</div><div class="value">{{ formatTanggal(selectedItem.jadwal.Tanggal) }}</div></div>
+                                                <div><div class="label">Jam</div><div class="value">{{ selectedItem.jadwal.Jam || '-' }}</div></div>
+                                                <div class="col-span-2"><div class="label">Dosen</div><div class="value">{{ selectedItem.jadwal.Dosen || '-' }}</div></div>
+                                                <div v-if="selectedItem.jadwal.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value">{{ selectedItem.jadwal.Catatan }}</div></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="section-title !mb-2"><i class="bi bi-people"></i> Peserta ({{ selectedItem.peserta.length }})</div>
+                                            <div class="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+                                                <div v-for="p in selectedItem.peserta" :key="p.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 ring-1 ring-slate-100">
+                                                    <div class="min-w-0"><div class="truncate text-xs font-semibold text-slate-800">{{ p.namaLengkap }}</div><div class="font-mono text-[10px] text-slate-400">NPM {{ p.npm }}</div></div>
+                                                    <span class="chip shrink-0" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <button v-if="!selectedItem.ba" type="button" class="btn-primary !py-2 text-xs" @click="goCreateBa(selectedItem.blok, selectedItem.nama)"><i class="bi bi-file-earmark-plus"></i> Buat BA</button>
+                                            <button v-else-if="!selectedItem.ba.selesai" type="button" class="btn-primary !py-2 text-xs" @click="selectItem('ba', selectedItem.ba['BA ID'])"><i class="bi bi-pencil"></i> Lengkapi BA</button>
+                                            <button v-else type="button" class="btn-soft !py-2 text-xs" @click="selectItem('ba', selectedItem.ba['BA ID'])"><i class="bi bi-eye"></i> Lihat BA</button>
+                                            <button type="button" class="btn-soft !py-2 text-xs" @click="editJadwal(selectedItem.key)"><i class="bi bi-pencil"></i> Edit</button>
+                                            <button type="button" class="btn-soft !py-2 text-xs text-rose-600" @click="cancelJadwal(selectedItem.key)"><i class="bi bi-x-circle"></i> Batalkan</button>
+                                        </div>
+                                    </div>
+                                    <!-- detail: jadwal end -->
+                                </div>
                             </div>
                         </aside>
                     </div>
@@ -839,50 +878,42 @@
                         || (this.baWorkItems || []).find(function (i) { return i.kind === 'group' && i.key === key; })
                         || null;
                 },
+                jadwalPendingGroups() {
+                    const B = window.BagianState;
+                    return this.kegiatanGroups
+                        .filter(function (g) { return !B.groupFullyScheduled(g, this.jadwalList); }.bind(this))
+                        .map(function (g) {
+                            return Object.assign({}, g, {
+                                nama: B.kegiatanName(g),
+                                peserta: B.unscheduledPeserta(g, this.jadwalList)
+                            });
+                        })
+                        .filter(function (g) { return g.peserta.length > 0; });
+                },
+                visibleJadwalItems() {
+                    const B = window.BagianState;
+                    let list = this.jadwalItems;
+                    if (this.jadwalFilter === 'belum') list = list.filter(function (i) { return i.kind === 'group'; });
+                    else if (this.jadwalFilter === 'sudah') list = list.filter(function (i) { return i.kind === 'jadwal'; });
+                    list = list.filter(function (i) { return B.matchesQuery(i, this.q); }.bind(this));
+                    return B.sortByDate(list.filter(function (i) { return i.kind === 'group'; }), 'asc')
+                        .concat(B.sortByDate(list.filter(function (i) { return i.kind === 'jadwal'; }), 'desc'));
+                },
+                jadwalFormGroup() {
+                    const key = this.jadwal.kegiatanKey;
+                    if (!key) return null;
+                    const source = this.jadwal.editingId ? this.jadwalKegiatanGroups : this.jadwalPendingGroups;
+                    return source.find(function (g) { return g.key === key; }.bind(this))
+                        || this.jadwalSelectedGroup;
+                },
                 jadwalItems() { return window.BagianState.buildJadwalItems(this.kegiatanGroups, this.jadwalList, this.baList); },
                 baWorkItems() { return window.BagianState.buildBaWorkItems(this.kegiatanGroups, this.draftBaList, this.jadwalList); },
                 riwayatItems() { return window.BagianState.buildRiwayatItems(this.baList); },
                 kegiatanGroups() {
-                    const map = {};
-                    const statuses = this.baConfig.statuses || ['ACC'];
-                    const finalOnly = this.baConfig.finalOnly !== false;
-                    this.rows.forEach(function(r) {
-                        if (r.baMember) return;
-                        const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
-                        if (!map[key]) {
-                            map[key] = {
-                                key: key,
-                                jenis: r.jenis,
-                                pilihan: r.pilihan,
-                                detail: r.detail,
-                                tanggal: r.tanggal,
-                                blok: r.blok,
-                                label: 'Blok ' + r.blok + ' · ' + r.pilihan + (r.detail ? ' - ' + r.detail : ''),
-                                peserta: [],
-                                statusCounts: {},
-                                blocked: false
-                            };
-                        }
-                        const g = map[key];
-                        g.statusCounts[r.status] = (g.statusCounts[r.status] || 0) + 1;
-                        if (statuses.indexOf(r.status) !== -1) {
-                            g.peserta.push({
-                                idPengajuan: r.idPengajuan,
-                                npm: r.npm,
-                                namaLengkap: r.namaLengkap,
-                                blok: r.blok,
-                                statusPengajuan: r.status
-                            });
-                        }
-                        if (finalOnly && r.status === 'Menunggu') g.blocked = true;
+                    return window.BagianState.buildKegiatanGroups(this.rows, {
+                        statuses: this.baConfig.statuses || ['ACC'],
+                        finalOnly: this.baConfig.finalOnly !== false
                     });
-                    const out = Object.values(map).filter(function(g) {
-                        return !g.blocked && g.peserta.length > 0;
-                    });
-                    out.forEach(function(g) {
-                        g.statusOrder = Object.keys(g.statusCounts);
-                    });
-                    return out;
                 },
                 selectedGroup() {
                     if (this.ba.mode === 'jadwal') {
@@ -937,31 +968,16 @@
                     return this.baList.filter(function(r) { return String(r.Blok || '').trim() === this.fBlok; }.bind(this));
                 },
                 jadwalKegiatanGroups() {
-                    const map = {};
-                    const statuses = this.baConfig.statuses || ['ACC'];
-                    this.rows.forEach(function(r) {
-                        const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
-                        if (!map[key]) {
-                            map[key] = {
-                                key: key, jenis: r.jenis, pilihan: r.pilihan, detail: r.detail, tanggal: r.tanggal, blok: r.blok,
-                                label: 'Blok ' + r.blok + ' · ' + r.pilihan + (r.detail ? ' - ' + r.detail : ''),
-                                peserta: []
-                            };
-                        }
-                        if (statuses.indexOf(r.status) !== -1) {
-                            map[key].peserta.push({ idPengajuan: r.idPengajuan, npm: r.npm, namaLengkap: r.namaLengkap, blok: r.blok, statusPengajuan: r.status });
-                        }
-                    });
-                    return Object.values(map).filter(function(g) { return g.peserta.length > 0; });
+                    return this.allKegiatanGroups;
                 },
                 jadwalSelectedGroup() {
                     if (!this.jadwal.kegiatanKey) return null;
                     return this.jadwalKegiatanGroups.find(function(g) { return g.key === this.jadwal.kegiatanKey; }.bind(this)) || null;
                 },
                 jadwalAllSelected() {
-                    if (!this.jadwalSelectedGroup) return false;
-                    const list = this.jadwalSelectedGroup.peserta;
-                    return list.length > 0 && list.every(function(p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
+                    const g = this.jadwalFormGroup;
+                    if (!g) return false;
+                    return g.peserta.length > 0 && g.peserta.every(function (p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
                 },
                 riwayatBaList() {
                     return this.baList.filter(function(r) { return r.selesai; });
@@ -1202,6 +1218,36 @@
                 selectItem(kind, key) {
                     this.sel = { kind: kind, key: key };
                     this.mobileDetail = true;
+                    this.formDirty = false;
+                    if (kind === 'group') this.startJadwalForGroup(key);
+                    if (kind === 'jadwal' || kind === 'ba') {
+                        this.jadwal.open = false;
+                        this.ba.open = false;
+                    }
+                    if (kind === 'ba') this.editDraftBaById(key);
+                },
+                closeDetail() {
+                    this.sel = { kind: '', key: '' };
+                    this.mobileDetail = false;
+                    this.formDirty = false;
+                    this.jadwal.open = false;
+                    this.ba.open = false;
+                    this.ba.lengkapi = null;
+                },
+                startJadwalForGroup(key) {
+                    const g = this.jadwalPendingGroups.find(function (x) { return x.key === key; })
+                        || this.jadwalKegiatanGroups.find(function (x) { return x.key === key; });
+                    if (!g) return;
+                    const selected = {};
+                    g.peserta.forEach(function (p) { selected[p.idPengajuan] = true; });
+                    this.jadwal = {
+                        open: true, editingId: null, kegiatanKey: key,
+                        tanggal: this.dateOnly(g.tanggal), jam: '', dosen: '', catatan: '', selected: selected
+                    };
+                },
+                startFirstPendingJadwal() {
+                    const first = this.visibleJadwalItems.find(function (i) { return i.kind === 'group'; });
+                    if (first) this.selectItem('group', first.key);
                 },
                 setTab(t, opts) {
                     const o = opts || {};
@@ -1237,16 +1283,19 @@
                     this.jadwal.selected[idPengajuan] = !this.jadwal.selected[idPengajuan];
                 },
                 toggleAllJadwalPeserta() {
-                    if (!this.jadwalSelectedGroup) return;
+                    const g = this.jadwalFormGroup;
+                    if (!g) return;
                     const target = !this.jadwalAllSelected;
-                    this.jadwalSelectedGroup.peserta.forEach(function(p) { this.jadwal.selected[p.idPengajuan] = target; }.bind(this));
+                    g.peserta.forEach(function (p) { this.jadwal.selected[p.idPengajuan] = target; }.bind(this));
                 },
                 jadwalSelectedList() {
-                    if (!this.jadwalSelectedGroup) return [];
-                    return this.jadwalSelectedGroup.peserta.filter(function(p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
+                    const g = this.jadwalFormGroup;
+                    if (!g) return [];
+                    return g.peserta.filter(function (p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
                 },
                 async saveJadwal() {
-                    if (!this.jadwalSelectedGroup) { this.showToast('Pilih kegiatan terlebih dahulu.', 'error'); return; }
+                    const g = this.jadwalFormGroup;
+                    if (!g) { this.showToast('Pilih kegiatan terlebih dahulu.', 'error'); return; }
                     const list = this.jadwalSelectedList();
                     if (!list.length) { this.showToast('Pilih minimal satu peserta.', 'error'); return; }
                     if (!this.jadwal.tanggal) { this.showToast('Isi tanggal pelaksanaan terlebih dahulu.', 'error'); return; }
@@ -1254,8 +1303,8 @@
                     try {
                         const payload = {
                             bagian: this.subBagian || this.kategori,
-                            blok: this.jadwalSelectedGroup.blok,
-                            namaKegiatan: this.jadwalSelectedGroup.pilihan + (this.jadwalSelectedGroup.detail ? ' - ' + this.jadwalSelectedGroup.detail : ''),
+                            blok: g.blok,
+                            namaKegiatan: g.pilihan + (g.detail ? ' - ' + g.detail : ''),
                             tanggal: this.jadwal.tanggal, jam: this.jadwal.jam, dosen: this.jadwal.dosen, catatan: this.jadwal.catatan.trim(),
                             peserta: list
                         };
@@ -1263,7 +1312,10 @@
                             ? await this.run('updateJadwalPelaksanaan', this.jadwal.editingId, payload, this.kategori)
                             : await this.run('saveJadwalPelaksanaan', payload, this.kategori);
                         this.showToast(res.message, res.success ? 'success' : 'error');
-                        if (res.success) { this.closeJadwalForm(); await this.loadData(); }
+                        if (res.success) {
+                            this.closeDetail();
+                            await this.loadData();
+                        }
                     } catch (e) {
                         this.showToast('Gagal: ' + e, 'error');
                     } finally {
@@ -1271,20 +1323,20 @@
                     }
                 },
                 editJadwal(id) {
-                    const j = this.jadwalList.find(function(x) { return x.JadwalID === id; });
+                    const j = this.jadwalList.find(function (x) { return x.JadwalID === id; });
                     if (!j) return;
-                    const nama = j.NamaKegiatan;
-                    const g = this.jadwalKegiatanGroups.find(function(x) {
-                        return x.blok === j.Blok && (x.pilihan + (x.detail ? ' - ' + x.detail : '')) === nama;
+                    const g = this.jadwalKegiatanGroups.find(function (x) {
+                        return x.blok === j.Blok && (x.pilihan + (x.detail ? ' - ' + x.detail : '')) === j.NamaKegiatan;
                     }) || null;
                     const selected = {};
-                    (j.peserta || []).forEach(function(p) { selected[p.idPengajuan] = true; });
+                    (j.peserta || []).forEach(function (p) { selected[p.idPengajuan] = true; });
                     this.jadwal = {
                         open: true, editingId: j.JadwalID, kegiatanKey: g ? g.key : null,
                         tanggal: this.dateOnly(j.Tanggal), jam: j.Jam, dosen: j.Dosen, catatan: j.Catatan, selected: selected
                     };
-                    this.activeTab = 'jadwal';
-                    window.scrollTo(0, 0);
+                    this.sel = { kind: 'jadwal', key: j.JadwalID };
+                    this.mobileDetail = true;
+                    this.formDirty = false;
                 },
                 async cancelJadwal(id) {
                     if (!window.confirm('Batalkan jadwal ini?')) return;

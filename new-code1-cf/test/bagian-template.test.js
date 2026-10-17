@@ -87,7 +87,7 @@ describe('guard BA Pelaksanaan multi', () => {
   it('menyediakan input label dan menyaring baMember', async () => {
     const html = await loadBagianHtml();
     expect(html).toContain('ba.label');
-    expect(html).toContain('baMember');
+    expect(html).toContain('/bagian-state.js');
     expect(html).not.toContain('Diterima / ACC');
   });
 });

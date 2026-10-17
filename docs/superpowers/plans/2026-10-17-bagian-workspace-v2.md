@@ -1059,7 +1059,7 @@ git commit -m "feat(bagian): shell empat menu, ringkasan, bottom nav, dan FAB"
 - Consumes: state Task 2, `BagianState.buildJadwalItems`, `groupFullyScheduled`, `unscheduledPeserta`, `matchesQuery`, `sortByDate`.
 - Produces: computed `jadwalPendingGroups`, `jadwalItems`, `visibleJadwalItems`, `jadwalFormGroup`; methods `selectItem(kind, key)`, `closeDetail()`, `startJadwalForGroup(key)`, `startFirstPendingJadwal()`; markup `.ws-detail` dengan detail jadwal + form.
 
-- [ ] **Step 1: Tambahkan test yang gagal**
+- [x] **Step 1: Tambahkan test yang gagal**
 
 Tambahkan ke `new-code1-cf/test/bagian-workspace-v2.test.js`:
 
@@ -1091,12 +1091,12 @@ describe('bagian workspace v2 — jadwal', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-workspace-v2.test.js`
 Expected: FAIL — `workspace--split`, `visibleJadwalItems`, `startJadwalForGroup` belum ada.
 
-- [ ] **Step 3: Ganti kartu Jadwal lama dengan daftar split**
+- [x] **Step 3: Ganti kartu Jadwal lama dengan daftar split**
 
 Ganti seluruh blok dari `<!-- ===== TAB: JADWAL ===== -->` sampai tepat sebelum `<!-- ===== UPLOAD BERITA ACARA ===== -->` dengan:
 
@@ -1146,7 +1146,7 @@ Ganti seluruh blok dari `<!-- ===== TAB: JADWAL ===== -->` sampai tepat sebelum 
                     </section>
 ```
 
-- [ ] **Step 4: Isi panel detail bersama untuk jadwal**
+- [x] **Step 4: Isi panel detail bersama untuk jadwal**
 
 Ganti placeholder `<aside>` dari Task 2 dengan:
 
@@ -1250,7 +1250,7 @@ Ganti placeholder `<aside>` dari Task 2 dengan:
                         </aside>
 ```
 
-- [ ] **Step 5: Tambahkan computed dan method jadwal**
+- [x] **Step 5: Tambahkan computed dan method jadwal**
 
 Di `computed`, tambahkan:
 
@@ -1422,7 +1422,7 @@ Ubah `saveJadwal` agar memakai `jadwalFormGroup`:
                 },
 ```
 
-- [ ] **Step 6: Perbarui test lama yang memeriksa computed jadwal**
+- [x] **Step 6: Perbarui test lama yang memeriksa computed jadwal**
 
 Di `new-code1-cf/test/bagian-jadwal-template.test.js`, ganti test "mengikat this pada callback computed jadwal":
 
@@ -1443,7 +1443,7 @@ menjadi:
   });
 ```
 
-- [ ] **Step 7: Jalankan test, pastikan lulus**
+- [x] **Step 7: Jalankan test, pastikan lulus**
 
 Run:
 
@@ -1454,7 +1454,7 @@ npx vitest run test/bagian-workspace-v2.test.js test/bagian-jadwal-template.test
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd /workspace
