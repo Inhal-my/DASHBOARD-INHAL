@@ -70,9 +70,11 @@ describe('bagian template', () => {
     expect(html).toContain('<div class="mx-auto w-full max-w-7xl">');
   });
 
-  it('kartu panel ditata vertikal dalam pembungkus space-y-5', async () => {
+  it('memakai shell workspace dengan bottom nav', async () => {
     const html = await loadBagianHtml();
     expect(html).toContain('class="space-y-5"');
+    expect(html).toContain('class="workspace"');
+    expect(html).toContain('class="bottom-nav"');
   });
 
   it('kartu Upload BA hanya tampil pada tab Berita Acara', async () => {

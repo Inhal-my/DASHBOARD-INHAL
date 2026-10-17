@@ -531,7 +531,7 @@ git commit -m "feat(bagian): tambah helper murni status kegiatan dan antrean BA"
 - Consumes: `window.BagianState` dari Task 1.
 - Produces: state `navItems`, `sel`, `mobileDetail`, `q`, `jadwalFilter`, `baTabFilter`; `activeTab` default `'ringkasan'`; computed `allKegiatanGroups`, `ringkasanStats`, `blokProgress`, `upcomingJadwal`, `jadwalLewatTanpaBa`; method `setTab(t, opts)`, `openBaWorklist()`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Create `new-code1-cf/test/bagian-workspace-v2.test.js`:
 
@@ -639,12 +639,12 @@ describe('bagian workspace v2 — shell', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-workspace-v2.test.js`
 Expected: FAIL — `activeTab: 'ringkasan'`, `label: 'Ringkasan'`, `top-nav` belum ada.
 
-- [ ] **Step 3: Perbarui test lama yang menyentuh markup yang diganti**
+- [x] **Step 3: Perbarui test lama yang menyentuh markup yang diganti**
 
 Edit `new-code1-cf/test/bagian-template.test.js`, ganti dua test berikut:
 
@@ -699,7 +699,7 @@ menjadi:
   });
 ```
 
-- [ ] **Step 4: Tambahkan CSS breakpoint dan shell**
+- [x] **Step 4: Tambahkan CSS breakpoint dan shell**
 
 Di `new-code1-cf/public/bagian.html`, sisipkan CSS berikut **sebelum** `@media (min-width: 1024px) {` di `<style>` pertama (sekitar baris 44):
 
@@ -738,7 +738,7 @@ Di `new-code1-cf/public/bagian.html`, sisipkan CSS berikut **sebelum** `@media (
         }
 ```
 
-- [ ] **Step 5: Muat helper sebelum app**
+- [x] **Step 5: Muat helper sebelum app**
 
 Di dekat `<script src="/app-common.js"></script>` (baris 658), tambahkan sebelum baris itu:
 
@@ -746,7 +746,7 @@ Di dekat `<script src="/app-common.js"></script>` (baris 658), tambahkan sebelum
     <script src="/bagian-state.js"></script>
 ```
 
-- [ ] **Step 6: Tambahkan nav desktop, pencarian, dan Ringkasan**
+- [x] **Step 6: Tambahkan nav desktop, pencarian, dan Ringkasan**
 
 Di header, setelah blok `<a :href="appUrl" ...>...</a>` dan sebelum tombol Keluar, sisipkan:
 
@@ -870,7 +870,7 @@ Hapus blok tab bar lama:
                     </div>
 ```
 
-- [ ] **Step 7: Tutup workspace, tambahkan panel detail placeholder, bottom nav, FAB**
+- [x] **Step 7: Tutup workspace, tambahkan panel detail placeholder, bottom nav, FAB**
 
 Setelah kartu Riwayat lama (`v-if="activeTab==='riwayat'"`) dan sebelum penutup `</div></div>` milik `space-y-5`/`max-w-7xl`, sisipkan:
 
@@ -898,7 +898,7 @@ Di dalam panel view, sebelum penutup `</div>` terakhir (setelah `</main>`), sisi
                 </button>
 ```
 
-- [ ] **Step 8: Tambahkan state, computed, dan method**
+- [x] **Step 8: Tambahkan state, computed, dan method**
 
 Di `data()`, tambahkan setelah `activeTab`:
 
@@ -1027,7 +1027,7 @@ Ganti `setTab(t)` yang lama dengan:
                 riwayatItems() { return window.BagianState.buildRiwayatItems(this.baList); },
 ```
 
-- [ ] **Step 9: Jalankan test, pastikan lulus**
+- [x] **Step 9: Jalankan test, pastikan lulus**
 
 Run:
 
@@ -1038,7 +1038,7 @@ npx vitest run test/bagian-workspace-v2.test.js test/bagian-template.test.js tes
 
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 cd /workspace

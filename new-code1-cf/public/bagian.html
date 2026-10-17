@@ -41,6 +41,38 @@
         .app-toast-error { background: #e11d48; }
         .app-toast-success { background: #059669; }
         .app-toast-info { background: #0f172a; }
+        .app-main { padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)); }
+        .top-nav { display: none; align-items: center; gap: .2rem; border-radius: 1rem; background: rgba(255,255,255,.12); padding: .2rem; }
+        .top-nav button { display: inline-flex; align-items: center; gap: .35rem; border-radius: .75rem; padding: .45rem .7rem; font-size: .78rem; font-weight: 700; color: #e0e7ff; }
+        .top-nav button[aria-selected="true"] { background: #fff; color: #4338ca; }
+        .top-search { display: none; width: 13rem; border-radius: .85rem; border: 0; background: rgba(255,255,255,.14); padding: .45rem .8rem; font-size: .78rem; color: #fff; outline: none; }
+        .top-search::placeholder { color: #c7d2fe; }
+        .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; gap: .15rem; border-top: 1px solid #e2e8f0; background: #fff; padding: .35rem .4rem calc(env(safe-area-inset-bottom, 0px) + .35rem); }
+        .bottom-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .1rem; border-radius: .8rem; padding: .35rem .15rem; font-size: 10px; font-weight: 700; color: #94a3b8; }
+        .bottom-nav button[aria-current="page"] { background: #eef2ff; color: #4f46e5; }
+        .fab { position: fixed; right: 1rem; bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px)); z-index: 45; display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; background: #4f46e5; padding: .8rem 1.1rem; font-size: .85rem; font-weight: 700; color: #fff; box-shadow: 0 10px 24px rgba(79,70,229,.4); }
+        .workspace { display: block; }
+        .ws-list { min-width: 0; }
+        .ws-detail { display: none; }
+        .detail-bar { display: flex; align-items: center; gap: .75rem; border-bottom: 1px solid #f1f5f9; padding: 1rem; }
+        .detail-back { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .75rem; background: #f8fafc; color: #475569; }
+        .riwayat-cards { display: block; }
+        .riwayat-table { display: none; }
+        @media (min-width: 940px) {
+            .app-main { padding-bottom: 2rem; }
+            .top-nav { display: flex; }
+            .top-search { display: block; }
+            .bottom-nav, .fab { display: none; }
+            .ws-detail { display: block; position: sticky; top: 5.5rem; max-height: calc(100vh - 6.5rem); overflow-y: auto; }
+            .workspace--split { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+            .workspace--riwayat.has-detail { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 1.25rem; align-items: start; }
+            .detail-back { display: none; }
+            .riwayat-cards { display: none; }
+            .riwayat-table { display: table; width: 100%; border-collapse: collapse; }
+        }
+        @media (max-width: 939.98px) {
+            .ws-detail.is-open { display: block; position: fixed; inset: 0; z-index: 60; overflow-y: auto; background: #f8fafc; padding: .75rem .75rem calc(6rem + env(safe-area-inset-bottom, 0px)); }
+        }
         @media (min-width: 1024px) {
             .ba-sticky { position: sticky; top: 5rem; max-height: calc(100vh - 6rem); overflow-y: auto; }
         }
@@ -133,13 +165,21 @@
                                 <div class="text-[10px] text-brand-200">{{ kategori }}<template v-if="subBagian"> / {{ subBagian }}</template></div>
                             </div>
                         </a>
-                        <button class="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20" @click="logout">
-                            <i class="bi bi-box-arrow-right"></i> Keluar
-                        </button>
+                        <nav class="top-nav" role="tablist" aria-label="Navigasi panel bagian">
+                            <button v-for="t in navItems" :key="t.id" type="button" role="tab" :aria-selected="activeTab===t.id" :class="activeTab===t.id ? '' : ''" @click="setTab(t.id)">
+                                <i class="bi" :class="t.icon"></i><span>{{ t.label }}</span>
+                            </button>
+                        </nav>
+                        <div class="flex items-center gap-2">
+                            <input v-if="activeTab!=='ringkasan'" v-model="q" type="search" class="top-search" placeholder="Cari kegiatan, peserta...">
+                            <button class="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20" @click="logout">
+                                <i class="bi bi-box-arrow-right"></i> Keluar
+                            </button>
+                        </div>
                     </div>
                 </header>
 
-                <main class="safe-b flex-1 px-4 py-5 sm:px-6 md:px-8">
+                <main class="app-main safe-b flex-1 px-4 py-5 sm:px-6 md:px-8">
                     <div class="mx-auto w-full max-w-7xl">
 
                     <!-- info bar -->
@@ -158,81 +198,88 @@
                         </button>
                     </div>
 
-                    <!-- ===== DAFTAR PESERTA (semua status) ===== -->
                     <div class="space-y-5">
-                    <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
-                        <div class="flex items-center gap-3 border-b border-slate-100 p-5">
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-list-ul"></i></div>
-                            <div class="min-w-0 flex-1 cursor-pointer select-none" role="button" tabindex="0" :aria-expanded="listOpen" @keydown.enter.prevent="listOpen = !listOpen" @keydown.space.prevent="listOpen = !listOpen" @click="listOpen = !listOpen">
-                                <h2 class="text-base font-bold text-slate-900">Daftar Peserta</h2>
-                                <p class="text-xs text-slate-400">{{ filteredRows.length }} data pengajuan</p>
+                    <!-- ===== RINGKASAN ===== -->
+                    <section v-if="activeTab==='ringkasan'" class="space-y-5">
+                        <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Total Peserta</div>
+                                <div class="mt-1 text-2xl font-extrabold text-slate-900">{{ ringkasanStats.totalPeserta }}</div>
+                                <div class="text-[11px] text-slate-400">data pengajuan</div>
                             </div>
-                            <button v-if="blokOptions.length > 1" class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 active:scale-95" :class="filterOpen ? 'bg-brand-50 text-brand-600' : ''" @click="filterOpen = !filterOpen" title="Filter Blok">
-                                <i class="bi bi-funnel"></i>
-                            </button>
-                            <button class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 active:scale-95" @click="listOpen = !listOpen" :title="listOpen ? 'Sembunyikan' : 'Tampilkan'">
-                                <i class="bi" :class="listOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                            </button>
-                        </div>
-                        <transition name="drop">
-                            <div v-if="filterOpen && blokOptions.length > 1" class="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                                <div class="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Filter Blok</div>
-                                <div class="flex flex-wrap gap-2">
-                                    <button class="chip shrink-0" :class="fBlok==='' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fBlok=''">Semua Blok</button>
-                                    <button v-for="b in blokOptions" :key="b" class="chip shrink-0" :class="fBlok===b ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fBlok=b">{{ b }}</button>
-                                </div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Belum Dijadwalkan</div>
+                                <div class="mt-1 text-2xl font-extrabold text-slate-900">{{ ringkasanStats.belumDijadwalkan }}</div>
+                                <div class="text-[11px] text-slate-400">kegiatan</div>
                             </div>
-                        </transition>
-                        <transition name="drop">
-                            <div v-if="listOpen">
-                        <div v-if="loading && !rows.length" class="divide-y divide-slate-50">
-                            <div v-for="n in 4" :key="'skp'+n" class="flex items-start gap-3 p-4">
-                                <div class="skeleton h-10 w-10 shrink-0 rounded-xl"></div>
-                                <div class="flex-1 space-y-2">
-                                    <div class="skeleton h-3 w-2/3"></div>
-                                    <div class="skeleton h-2.5 w-1/3"></div>
-                                    <div class="skeleton h-2.5 w-1/2"></div>
-                                </div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Draft BA</div>
+                                <div class="mt-1 text-2xl font-extrabold text-amber-600">{{ ringkasanStats.draftBa }}</div>
+                                <div class="text-[11px] text-slate-400">perlu dilengkapi</div>
+                            </div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">BA Selesai</div>
+                                <div class="mt-1 text-2xl font-extrabold text-emerald-600">{{ ringkasanStats.baSelesai }}</div>
+                                <div class="text-[11px] text-slate-400">{{ ringkasanStats.persenSelesai }}% kegiatan</div>
                             </div>
                         </div>
-                        <div v-else-if="!filteredRows.length" class="p-8 text-center">
-                            <i class="bi bi-folder2-open mb-2 block text-4xl text-slate-300"></i>
-                            <p class="text-sm text-slate-500">Tidak ada data.</p>
-                        </div>
-                        <div v-else class="divide-y divide-slate-50">
-                            <div v-for="(r, i) in filteredRows" :key="i" class="flex items-start gap-3 p-4">
-                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                                    <i class="bi bi-person"></i>
+
+                        <div class="grid gap-4 xl:grid-cols-2">
+                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                                <div class="section-title"><i class="bi bi-list-check"></i> Perlu Tindakan</div>
+                                <div class="space-y-2">
+                                    <button type="button" class="flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left" @click="setTab('ba', { filter: 'draft' })">
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-amber-600"><i class="bi bi-hourglass-split"></i></div>
+                                        <div class="min-w-0 flex-1"><div class="text-sm font-bold text-slate-900">Draft BA</div><div class="text-[11px] text-slate-500">Dosen/tanggal/jam belum lengkap</div></div>
+                                        <span class="chip bg-white text-amber-700">{{ ringkasanStats.draftBa }}</span>
+                                    </button>
+                                    <button type="button" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left" @click="setTab('jadwal', { filter: 'belum' })">
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><i class="bi bi-calendar-plus"></i></div>
+                                        <div class="min-w-0 flex-1"><div class="text-sm font-bold text-slate-900">Belum dijadwalkan</div><div class="text-[11px] text-slate-500">Kegiatan ACC tanpa jadwal</div></div>
+                                        <span class="chip bg-slate-100 text-slate-600">{{ ringkasanStats.belumDijadwalkan }}</span>
+                                    </button>
+                                    <button type="button" class="flex w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-left" @click="setTab('ba', { filter: 'belum' })">
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-rose-600"><i class="bi bi-exclamation-triangle"></i></div>
+                                        <div class="min-w-0 flex-1"><div class="text-sm font-bold text-slate-900">Jadwal lewat tanpa BA</div><div class="text-[11px] text-slate-500">Sudah lewat tanggal pelaksanaan</div></div>
+                                        <span class="chip bg-white text-rose-700">{{ jadwalLewatTanpaBa.length }}</span>
+                                    </button>
                                 </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <div class="truncate text-sm font-bold text-slate-900">{{ r.namaLengkap }}</div>
-                                            <div class="font-mono text-[11px] text-slate-400">NPM {{ r.npm }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                                <div class="section-title"><i class="bi bi-grid-3x3-gap"></i> Kelengkapan per Blok</div>
+                                <div v-if="!blokProgress.length" class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">Belum ada data.</div>
+                                <div v-else class="space-y-3">
+                                    <button v-for="b in blokProgress" :key="b.blok" type="button" class="w-full text-left" @click="setTab('ba', { blok: b.blok })">
+                                        <div class="mb-1 flex items-center justify-between gap-2">
+                                            <span class="text-xs font-bold text-slate-700">Blok {{ b.blok }}</span>
+                                            <span class="text-[11px] text-slate-500">{{ b.done }}/{{ b.total }} · {{ b.persen }}%</span>
                                         </div>
-                                        <a v-if="r.status==='ACC' && r.linkFinal" :href="safeUrl(r.linkFinal)" target="_blank" rel="noopener" class="chip shrink-0 cursor-pointer" :class="statusBadge(r.status)">{{ r.status }} <i class="bi bi-box-arrow-up-right"></i></a>
-                                        <span v-else class="chip shrink-0" :class="statusBadge(r.status)">{{ r.status || '-' }}</span>
-                                    </div>
-                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                                        <span class="flex items-center gap-1"><i class="bi bi-grid"></i>{{ r.blok }}</span>
-                                        <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(r.tanggal) }}</span>
-                                    </div>
-                                    <div class="mt-1 text-xs text-slate-600">{{ r.pilihan }}<template v-if="r.detail"> - {{ r.detail }}</template></div>
-                                    <a v-if="r.linkSurat" :href="safeUrl(r.linkSurat)" target="_blank" rel="noopener noreferrer" class="link mt-1.5 inline-block text-xs"><i class="bi bi-file-earmark-text"></i> Lihat Surat</a>
+                                        <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full bg-brand-600" :style="{ width: b.persen + '%' }"></div>
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="section-title"><i class="bi bi-calendar-week"></i> Jadwal Terdekat</div>
+                            <div v-if="!upcomingJadwal.length" class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">Belum ada jadwal mendatang.</div>
+                            <div v-else class="space-y-2">
+                                <button v-for="j in upcomingJadwal" :key="j.JadwalID" type="button" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 p-3 text-left" @click="setTab('jadwal'); selectItem('jadwal', j.JadwalID)">
+                                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600"><i class="bi bi-calendar-check"></i></div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-sm font-semibold text-slate-900">Blok {{ j.Blok }} · {{ j.NamaKegiatan }}</div>
+                                        <div class="text-[11px] text-slate-400">{{ formatTanggal(j.Tanggal) }}<template v-if="j.Jam"> · {{ j.Jam }}</template><template v-if="j.Dosen"> · {{ j.Dosen }}</template></div>
+                                    </div>
+                                </button>
                             </div>
-                        </transition>
-                    </div>
+                        </div>
+                    </section>
 
-                    <!-- ===== TAB BAR ===== -->
-                    <div class="flex gap-1 rounded-2xl bg-white p-1 shadow-soft ring-1 ring-slate-100" role="tablist">
-                        <button role="tab" :aria-selected="activeTab==='jadwal'" class="flex-1 rounded-xl px-3 py-2 text-sm font-bold transition" :class="activeTab==='jadwal' ? 'bg-brand-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'" @click="setTab('jadwal')"><i class="bi bi-calendar-plus mr-1"></i>Jadwal</button>
-                        <button role="tab" :aria-selected="activeTab==='ba'" class="flex-1 rounded-xl px-3 py-2 text-sm font-bold transition" :class="activeTab==='ba' ? 'bg-brand-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'" @click="setTab('ba')"><i class="bi bi-file-earmark-text mr-1"></i>Berita Acara</button>
-                        <button role="tab" :aria-selected="activeTab==='riwayat'" class="flex-1 rounded-xl px-3 py-2 text-sm font-bold transition" :class="activeTab==='riwayat' ? 'bg-brand-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'" @click="setTab('riwayat')"><i class="bi bi-clock-history mr-1"></i>Riwayat</button>
-                    </div>
-
+                    <!-- ===== WORKSPACE ===== -->
+                    <div v-else class="workspace" :class="{ 'workspace--split': activeTab==='jadwal' || activeTab==='ba', 'workspace--riwayat': activeTab==='riwayat', 'has-detail': !!selectedItem }">
+                        <div class="ws-list">
                     <!-- ===== TAB: JADWAL ===== -->
                     <div v-if="activeTab==='jadwal'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                         <div class="flex items-center gap-3 border-b border-slate-100 p-5">
@@ -561,10 +608,26 @@
                             </div>
                         </div>
                     </div>
+                        </div>
+                        <aside class="ws-detail" :class="{ 'is-open': mobileDetail }" role="dialog" aria-modal="true" aria-label="Detail kegiatan">
+                            <div class="rounded-2xl bg-white p-6 text-center shadow-soft ring-1 ring-slate-100">
+                                <i class="bi bi-layout-sidebar-inset mb-2 block text-3xl text-slate-300"></i>
+                                <p class="text-sm text-slate-500">Pilih kegiatan untuk melihat detail.</p>
+                            </div>
+                        </aside>
+                    </div>
                     </div>
                     </div>
 
                 </main>
+                <nav class="bottom-nav" aria-label="Navigasi utama">
+                    <button v-for="t in navItems" :key="'b-' + t.id" type="button" :aria-current="activeTab===t.id ? 'page' : null" @click="setTab(t.id)">
+                        <i class="bi" :class="t.icon"></i><span>{{ t.label }}</span>
+                    </button>
+                </nav>
+                <button v-if="(activeTab==='ringkasan' || activeTab==='ba') && !mobileDetail" type="button" class="fab" aria-label="Buat BA" @click="openBaWorklist">
+                    <i class="bi bi-file-earmark-plus"></i><span>Buat BA</span>
+                </button>
             </div>
         </div>
 
@@ -655,6 +718,7 @@
     </div>
 
     <script src="/gs-shim.js"></script>
+    <script src="/bagian-state.js"></script>
     <script src="/app-common.js"></script>
     <script>
         function bootBagian() {
@@ -702,7 +766,19 @@
                     ba: { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null },
                     baList: [],
                     jadwalList: [],
-                    activeTab: 'jadwal',
+                    activeTab: 'ringkasan',
+                    sel: { kind: '', key: '' },
+                    mobileDetail: false,
+                    q: '',
+                    jadwalFilter: 'semua',
+                    baTabFilter: 'semua',
+                    formDirty: false,
+                    navItems: [
+                        { id: 'ringkasan', label: 'Ringkasan', icon: 'bi-house' },
+                        { id: 'jadwal', label: 'Jadwal', icon: 'bi-calendar-plus' },
+                        { id: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
+                        { id: 'riwayat', label: 'Riwayat', icon: 'bi-clock-history' }
+                    ],
                     jadwal: { open: false, editingId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} },
                     dosenPick: { jadwal: false, ba: false, lengkapi: false },
                     toast: { show: false, type: 'info', message: '' },
@@ -711,6 +787,61 @@
                 };
             },
             computed: {
+                allKegiatanGroups() {
+                    const B = window.BagianState;
+                    return B.buildAllGroups(this.rows, {
+                        statuses: this.baConfig.statuses || ['ACC'],
+                        finalOnly: this.baConfig.finalOnly !== false
+                    });
+                },
+                ringkasanStats() {
+                    const B = window.BagianState;
+                    return B.buildStats({
+                        rows: this.rows,
+                        kegiatanGroups: this.kegiatanGroups,
+                        allGroups: this.allKegiatanGroups,
+                        baList: this.baList,
+                        jadwalList: this.jadwalList
+                    });
+                },
+                blokProgress() {
+                    return window.BagianState.buildBlokProgress(this.allKegiatanGroups, this.baList);
+                },
+                jadwalLewatTanpaBa() {
+                    const B = window.BagianState;
+                    const today = B.dateOnly(new Date().toISOString());
+                    return this.jadwalList.filter(function (j) {
+                        const tgl = B.dateOnly(j.Tanggal);
+                        return !j.punyaBa && !!tgl && tgl < today;
+                    });
+                },
+                upcomingJadwal() {
+                    const B = window.BagianState;
+                    const today = B.dateOnly(new Date().toISOString());
+                    return this.jadwalList
+                        .filter(function (j) { return B.dateOnly(j.Tanggal) >= today; })
+                        .sort(function (a, b) { return String(a.Tanggal).localeCompare(String(b.Tanggal)); })
+                        .slice(0, 5);
+                },
+                selectedItem() {
+                    const kind = this.sel && this.sel.kind;
+                    const key = this.sel && this.sel.key;
+                    if (!kind || !key) return null;
+                    if (kind === 'jadwal') {
+                        return this.jadwalItems.find(function (i) { return i.kind === 'jadwal' && i.key === key; }) || null;
+                    }
+                    if (kind === 'ba') {
+                        return (this.baWorkItems || []).find(function (i) { return i.kind === 'ba' && i.key === key; })
+                            || (this.riwayatItems || []).find(function (i) { return i.kind === 'ba' && i.key === key; })
+                            || null;
+                    }
+                    return this.jadwalItems.find(function (i) { return i.kind === 'group' && i.key === key; })
+                        || (this.baWorkItems || []).find(function (i) { return i.kind === 'group' && i.key === key; })
+                        || null;
+                },
+                jadwalItems() { return window.BagianState.buildJadwalItems(this.kegiatanGroups, this.jadwalList, this.baList); },
+                baWorkItems() { return window.BagianState.buildBaWorkItems(this.kegiatanGroups, this.draftBaList, this.jadwalList); },
+                riwayatItems() { return window.BagianState.buildRiwayatItems(this.baList); },
                 kegiatanGroups() {
                     const map = {};
                     const statuses = this.baConfig.statuses || ['ACC'];
@@ -1052,7 +1183,42 @@
                         this.baList = [];
                     }
                 },
-                setTab(t) { this.activeTab = t; },
+                statusLabel(s) {
+                    return { acc: 'Belum dijadwalkan', terjadwal: 'Sudah dijadwalkan', draft: 'Draft BA', selesai: 'BA selesai' }[s] || s;
+                },
+                statusBadgeClass(s) {
+                    return {
+                        acc: 'bg-slate-100 text-slate-600',
+                        terjadwal: 'bg-brand-50 text-brand-700',
+                        draft: 'bg-amber-50 text-amber-700',
+                        selesai: 'bg-emerald-50 text-emerald-700'
+                    }[s] || 'bg-slate-100 text-slate-600';
+                },
+                markFormDirty() { this.formDirty = true; },
+                openBaWorklist() {
+                    this.setTab('ba');
+                    window.scrollTo(0, 0);
+                },
+                selectItem(kind, key) {
+                    this.sel = { kind: kind, key: key };
+                    this.mobileDetail = true;
+                },
+                setTab(t, opts) {
+                    const o = opts || {};
+                    this.activeTab = t;
+                    this.q = '';
+                    this.sel = { kind: '', key: '' };
+                    this.mobileDetail = false;
+                    this.formDirty = false;
+                    this.jadwal.open = false;
+                    this.ba.open = false;
+                    this.ba.lengkapi = null;
+                    if (t === 'jadwal') this.jadwalFilter = o.filter || 'semua';
+                    if (t === 'ba') this.baTabFilter = o.filter || 'semua';
+                    if (t === 'riwayat') this.fBlok = o.blok || '';
+                    if (o.blok && t === 'ba') this.fBlok = o.blok;
+                    window.scrollTo(0, 0);
+                },
                 openJadwalForm() {
                     this.jadwal = { open: true, editingId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} };
                     window.scrollTo(0, 0);

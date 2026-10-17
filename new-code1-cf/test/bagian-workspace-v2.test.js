@@ -1,0 +1,101 @@
+import { env } from 'cloudflare:test';
+import { compile } from '@vue/compiler-dom';
+import { describe, it, expect } from 'vitest';
+
+function extractAppTemplate(html) {
+  const start = html.indexOf('<div id="app"');
+  if (start === -1) throw new Error('#app root not found');
+  const scriptStart = html.indexOf('<script src="/gs-shim.js"', start);
+  const slice = html.slice(start, scriptStart === -1 ? html.length : scriptStart);
+  const re = /<div\b|<\/div>/g;
+  let depth = 0;
+  let end = -1;
+  let m;
+  while ((m = re.exec(slice))) {
+    if (m[0] === '</div>') {
+      depth -= 1;
+      if (depth === 0) { end = re.lastIndex; break; }
+    } else {
+      depth += 1;
+    }
+  }
+  if (end === -1) throw new Error('#app root close not found');
+  return slice.slice(0, end);
+}
+
+function installDocumentStub() {
+  if (globalThis.document) return;
+  globalThis.document = {
+    createElement: () => {
+      const el = {
+        _html: '',
+        set innerHTML(v) { this._html = String(v); },
+        get innerHTML() { return this._html; },
+        get textContent() { return this._html; },
+        get children() {
+          const match = this._html.match(/^<div foo="([\s\S]*)">$/);
+          const value = match ? match[1] : this._html;
+          return [{ getAttribute: () => value }];
+        }
+      };
+      return el;
+    }
+  };
+}
+
+async function loadBagianHtml() {
+  const res = await env.ASSETS.fetch(new Request('https://example.com/bagian.html'));
+  expect(res.status).toBe(200);
+  return res.text();
+}
+
+describe('bagian workspace v2 — shell', () => {
+  it('compiles without Vue template errors', async () => {
+    installDocumentStub();
+    const html = await loadBagianHtml();
+    compile(extractAppTemplate(html), {
+      onError: (e) => { throw new Error(e.message); },
+      onWarn: (w) => { throw new Error('warn: ' + w.message); }
+    });
+  });
+
+  it('memakai empat menu final tanpa menu Peserta', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain("activeTab: 'ringkasan'");
+    expect(html).toContain("label: 'Ringkasan'");
+    expect(html).toContain("label: 'Jadwal'");
+    expect(html).toContain("label: 'Berita Acara'");
+    expect(html).toContain("label: 'Riwayat'");
+    expect(html).not.toContain('<h2 class="text-base font-bold text-slate-900">Daftar Peserta</h2>');
+  });
+
+  it('menyediakan top nav desktop, bottom nav, dan FAB', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('class="top-nav"');
+    expect(html).toContain('class="bottom-nav"');
+    expect(html).toContain('class="fab"');
+    expect(html).toContain('aria-current');
+    expect(html).toContain('@media (min-width: 940px)');
+    expect(html).toContain('@media (max-width: 939.98px)');
+  });
+
+  it('menampilkan kartu Ringkasan', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Total Peserta');
+    expect(html).toContain('Belum Dijadwalkan');
+    expect(html).toContain('Draft BA');
+    expect(html).toContain('BA Selesai');
+    expect(html).toContain('Perlu Tindakan');
+    expect(html).toContain('Kelengkapan per Blok');
+    expect(html).toContain('Jadwal Terdekat');
+    expect(html).toContain("setTab('ba', { filter: 'draft' })");
+  });
+
+  it('memuat helper bagian-state sebelum app-common', async () => {
+    const html = await loadBagianHtml();
+    const stateAt = html.indexOf('<script src="/bagian-state.js"></script>');
+    const commonAt = html.indexOf('<script src="/app-common.js"></script>');
+    expect(stateAt).toBeGreaterThan(-1);
+    expect(commonAt).toBeGreaterThan(stateAt);
+  });
+});

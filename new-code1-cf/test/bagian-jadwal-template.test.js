@@ -34,12 +34,12 @@ describe('bagian template jadwal', () => {
     expect(errors).toEqual([]);
   });
 
-  it('memiliki tab Jadwal / Berita Acara / Riwayat', async () => {
+  it('memiliki menu Jadwal / Berita Acara / Riwayat', async () => {
     const html = await loadBagianHtml();
     expect(html).toContain('activeTab');
-    expect(html).toContain('setTab(\'jadwal\')');
-    expect(html).toContain('setTab(\'ba\')');
-    expect(html).toContain('setTab(\'riwayat\')');
+    expect(html).toContain("label: 'Jadwal'");
+    expect(html).toContain("label: 'Berita Acara'");
+    expect(html).toContain("label: 'Riwayat'");
   });
 
   it('memiliki alur jadwal', async () => {
@@ -51,11 +51,12 @@ describe('bagian template jadwal', () => {
     expect(html).toContain('jadwal.jam');
   });
 
-  it('tetap mempertahankan fitur produksi Daftar Peserta', async () => {
+  it('mengganti Daftar Peserta dengan workspace empat menu', async () => {
     const html = await loadBagianHtml();
-    expect(html).toContain('Daftar Peserta');
-    expect(html).toContain('filteredRows');
+    expect(html).not.toContain('Daftar Peserta');
     expect(html).toContain('openBaPicker');
+    expect(html).toContain("label: 'Ringkasan'");
+    expect(html).toContain('class="workspace"');
   });
 
   it('memiliki mode BA dari jadwal, draft, dan riwayat', async () => {
