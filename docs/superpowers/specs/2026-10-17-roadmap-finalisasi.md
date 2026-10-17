@@ -20,6 +20,8 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Detail: `docs/superpowers/specs/2026-10-17-backup-restore-design.md`, `docs/ops/backup-restore.md`.
 - [ ] **Poin 3 — Observability**
   - Error tracking, alert, dan pemantauan kesehatan aplikasi.
+  - Implementasi selesai dan teruji lokal; deploy produksi menunggu R2 aktif (digabung dengan Poin 2).
+  - Detail: `docs/superpowers/specs/2026-10-17-observability-design.md`, `docs/ops/observability.md`.
 - [ ] **Poin 4 — Keamanan**
   - MFA admin, security headers/CSP, dan audit akses berkas.
 - [ ] **Poin 5 — Proses rilis**
@@ -66,6 +68,24 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Suite test: 79 file, 578 test lulus.
 - Sisa untuk poin lain: `mahasiswa.blok` masih kosong pada 1.975 baris (perlu pengisian data, bukan bug rename); merge dua blok berbeda belum otomatis dan masih manual.
 
+## Hasil implementasi Poin 3 (2026-10-17)
+
+- Kode dan test selesai; deploy produksi belum dijalankan.
+- Fitur:
+  - `GET /api/health` memeriksa D1, mengembalikan 200 `{ ok, db: "ok", latencyMs, ts }` atau 503 `{ ok: false, db: "error" }`.
+  - Semua respons `/api/*` memiliki header `x-request-id`; error RPC menyertakan `requestId`.
+  - Log JSON terstruktur (`src/obs/log.js`) dengan redaksi token/password/secret dan pemotongan stack/string.
+  - Event baru: `http_request_failed`, `http_request_rejected`, `rpc_failed`, `rpc_rejected`, `unhandled_error`, `health_check_failed`, serta event kegagalan log/audit/unggah.
+  - `app.onError` mencatat exception tak tertangani dan mengembalikan JSON generik 500.
+  - Workers Logs dan Workers Issues diaktifkan di `wrangler.toml`; Wrangler dinaikkan ke `4.151.1`.
+  - SOP operasional: `docs/ops/observability.md` (log, Issues automation, monitor uptime, playbook alert).
+- Verifikasi lokal:
+  - Suite penuh: 83 file, 600 test lulus.
+  - `wrangler deploy --dry-run` berhasil dengan binding Workflow/R2/observability.
+- Deploy tertunda:
+  - Menunggu R2 aktif karena `wrangler.toml` memuat binding `BACKUP_BUCKET` dan Workflow Poin 2.
+  - Setelah deploy: aktifkan Issues automation dan monitor uptime, lalu verifikasi log/health di produksi.
+
 ## Deploy tertunda
 
 ### Poin 2 — Backup D1 ke R2
@@ -81,3 +101,13 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Uji restore dari arsip R2 dan mencatat hasilnya.
 - Selama tertunda: Time Travel D1 tetap aktif (30 hari untuk Workers Paid, 7 hari untuk Workers Free), tetapi arsip jangka panjang 180 hari belum tersedia.
 - Lanjutkan Poin 2 segera setelah R2 aktif; jangan deploy konfigurasi Workflow/R2 sebelum bucket tersedia.
+
+### Poin 3 — Observability
+
+- Status: kode selesai dan teruji lokal, belum di-deploy.
+- Blocker: sama dengan Poin 2 (R2 belum aktif); deploy digabung agar binding Workflow/R2 valid.
+- Yang belum dijalankan:
+  - Deploy Worker dengan `[observability]` dan `[observability.issues]`.
+  - Mengaktifkan Issues automation (email/webhook).
+  - Memasang monitor uptime eksternal ke `/api/health`.
+  - Verifikasi log `http_request_failed`/`health_check_failed` dan header `x-request-id` di produksi.

@@ -1,12 +1,40 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env, SELF } from 'cloudflare:test';
 import app from '../src/index.js';
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('scaffold', () => {
-  it('responds ok on health', async () => {
+  it('responds ok on health after checking the database', async () => {
     const res = await SELF.fetch('http://example.com/api/health');
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.db).toBe('ok');
+    expect(typeof body.latencyMs).toBe('number');
+    expect(Number.isNaN(Date.parse(body.ts))).toBe(false);
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('x-request-id')).toBeTruthy();
+  });
+
+  it('returns 503 when the database check fails', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const brokenEnv = { DB: { prepare() { throw new Error('db down'); } } };
+    const res = await app.request('http://example.com/api/health', {}, brokenEnv);
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ ok: false, db: 'error' });
+    const log = JSON.parse(spy.mock.calls[0][0]);
+    expect(log.event).toBe('health_check_failed');
+    expect(log.error.message).toBe('db down');
+  });
+
+  it('mempertahankan x-request-id dari klien', async () => {
+    const res = await SELF.fetch('http://example.com/api/health', {
+      headers: { 'x-request-id': 'req-123' }
+    });
+    expect(res.headers.get('x-request-id')).toBe('req-123');
   });
 
   it('applies schema and seed to D1', async () => {

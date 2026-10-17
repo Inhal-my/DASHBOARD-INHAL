@@ -15,6 +15,7 @@ import {
   previewMasterRename, renameMasterValue
 } from './write/master.js';
 import { auditMasterIntegrity } from './read/masterAudit.js';
+import { logEvent, logError } from './obs/log.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
   updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
@@ -146,7 +147,7 @@ export async function extractToken(db, args) {
   return { token: '', rest: list, session: null };
 }
 
-export async function dispatchRpc(db, fn, args, ip, env) {
+export async function dispatchRpc(db, fn, args, ip, env, meta = {}) {
   const handler = HANDLERS[String(fn)];
   if (!handler) {
     return { success: false, message: 'Fitur ' + String(fn) + ' belum tersedia pada tahap ini.' };
@@ -156,8 +157,11 @@ export async function dispatchRpc(db, fn, args, ip, env) {
     return await handler(db, rest, { token, session, ip, env });
   } catch (e) {
     const raw = (e && e.message) ? String(e.message) : String(e);
-    console.error('RPC ' + String(fn) + ' gagal: ' + (e && e.stack ? e.stack : raw));
     const safe = raw === AUTH_ERROR || raw.indexOf('Akses ditolak') === 0;
-    return { error: safe ? raw : 'Terjadi kesalahan pada server. Silakan coba lagi.' };
+    if (safe) logEvent('warn', 'rpc_rejected', { fn: String(fn), requestId: meta.requestId });
+    else logError('rpc_failed', e, { fn: String(fn), requestId: meta.requestId });
+    const result = { error: safe ? raw : 'Terjadi kesalahan pada server. Silakan coba lagi.' };
+    if (meta.requestId) result.requestId = meta.requestId;
+    return result;
   }
 }

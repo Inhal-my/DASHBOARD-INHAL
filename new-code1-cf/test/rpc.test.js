@@ -1,6 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { dispatchRpc } from '../src/rpc.js';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('dispatchRpc', () => {
   it('returns an auth error object for a protected call without token', async () => {
@@ -8,10 +12,17 @@ describe('dispatchRpc', () => {
     expect(res.error).toBe('Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.');
   });
   it('masks internal errors instead of leaking them', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const boom = { prepare() { throw new Error('SQLITE_ERROR: no such table: rahasia'); } };
-    const res = await dispatchRpc(boom, 'authenticateAdmin', [[]]);
+    const res = await dispatchRpc(boom, 'authenticateAdmin', [[]], '', {}, { requestId: 'req-9' });
     expect(res.error).toBe('Terjadi kesalahan pada server. Silakan coba lagi.');
     expect(res.error).not.toContain('SQLITE');
+    expect(res.requestId).toBe('req-9');
+    const log = JSON.parse(spy.mock.calls[0][0]);
+    expect(log.event).toBe('rpc_failed');
+    expect(log.fn).toBe('authenticateAdmin');
+    expect(log.requestId).toBe('req-9');
+    expect(log.error.message).toContain('SQLITE_ERROR');
   });
   it('stubs unknown write functions', async () => {
     const res = await dispatchRpc(env.DB, 'fiturTidakAda', [['x']]);

@@ -1,3 +1,5 @@
+import { logError } from './obs/log.js';
+
 function str(v) {
   if (v === undefined || v === null) return '';
   return String(v).replace(/\u00a0/g, ' ').trim();
@@ -18,7 +20,7 @@ export async function writeAuditLog(db, entry) {
       nowIso(), str(e.actor), str(e.action), str(e.target), str(e.detail), str(e.alasan)
     ).run();
   } catch (err) {
-    console.error('Gagal menulis AuditLog: ' + (err && err.message ? err.message : err));
+    logError('audit_log_write_failed', err);
     throw err;
   }
 }
@@ -34,7 +36,7 @@ export async function writeLogUpload(db, entry) {
       str(e.detail), str(e.tanggal), str(e.linkAcc), str(e.linkBukti)
     ).run();
   } catch (err) {
-    console.error('Gagal menulis LogUpload: ' + (err && err.message ? err.message : err));
+    logError('upload_log_write_failed', err);
     throw err;
   }
 }

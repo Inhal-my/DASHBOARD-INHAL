@@ -3,6 +3,7 @@ import { resolveBagianFor } from '../read/common.js';
 import { sendFinalPdfEmails } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
+import { logError } from '../obs/log.js';
 
 const STATUS_VALID = ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'];
 
@@ -467,7 +468,7 @@ export async function uploadBuktiAdmin(db, idPengajuan, file, ctx) {
       alasan: 'Unggah bukti bayar oleh admin'
     });
   } catch (e) {
-    console.error('Gagal menulis log unggah bukti admin: ' + (e && e.message ? e.message : e));
+    logError('admin_upload_log_write_failed', e);
   }
 
   return { success: true, url: res.url, message: 'Bukti bayar berhasil diunggah.' };

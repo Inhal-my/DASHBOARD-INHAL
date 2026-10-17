@@ -29,7 +29,7 @@ npm test
 
 | Method | Rute | Keterangan |
 |---|---|---|
-| GET | `/api/health` | Cek Worker |
+| GET | `/api/health` | Cek Worker + koneksi D1 (503 bila database gagal) |
 | GET | `/api/registration-options` | Opsi form pendaftaran |
 | GET | `/api/mahasiswa/:npm` | Nama mahasiswa (string) |
 | POST | `/api/pengajuan` | Simpan pendaftaran |

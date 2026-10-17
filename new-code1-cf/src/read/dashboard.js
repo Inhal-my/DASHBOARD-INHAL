@@ -7,6 +7,7 @@ import {
   getBagianBaSettings, pushUnique, kegiatanKey, normKegiatan
 } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
+import { logError } from '../obs/log.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
@@ -422,7 +423,7 @@ export async function getBaUploadOptions(db, ctx) {
     detailList.sort((a, b) => (a.blok.toLowerCase() + a.label.toLowerCase()).localeCompare(b.blok.toLowerCase() + b.label.toLowerCase()));
     return { blok: blokList, details: detailList, labs: await getMasterOptions(db, 'Lab') };
   } catch (e) {
-    console.error('Gagal menyiapkan opsi BA: ' + (e && e.message ? e.message : e));
+    logError('ba_options_read_failed', e);
     throw e;
   }
 }

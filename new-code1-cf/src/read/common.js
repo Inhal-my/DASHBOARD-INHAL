@@ -1,4 +1,5 @@
 import { getBuktiMode as repoBuktiMode } from '../repo.js';
+import { logError } from '../obs/log.js';
 
 export function norm(s) {
   return String(s || '')
@@ -80,7 +81,7 @@ export async function getBiayaMap(db) {
     }
     return map;
   } catch (e) {
-    console.error('Gagal membaca master_biaya: ' + (e && e.message ? e.message : e));
+    logError('master_biaya_read_failed', e);
     throw e;
   }
 }
@@ -100,7 +101,7 @@ export async function getBiayaOverrideMap(db) {
     }
     return map;
   } catch (e) {
-    console.error('Gagal membaca BIAYA-OVERRIDE: ' + (e && e.message ? e.message : e));
+    logError('biaya_override_read_failed', e);
     throw e;
   }
 }
