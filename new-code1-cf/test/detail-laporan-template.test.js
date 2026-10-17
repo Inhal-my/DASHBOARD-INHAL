@@ -432,3 +432,42 @@ describe('sisa status Diterima', () => {
     expect(html).not.toContain('>Diterima<');
   });
 });
+
+describe('detail laporan tiga halaman (ringkas / analitis / cetak)', () => {
+  it('menyediakan mode halaman dan navigasinya', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("laporanMode: 'ringkas'");
+    expect(html).toContain('switchLaporanMode');
+    expect(html).toContain('printLaporan');
+    expect(html).toContain('Ringkas');
+    expect(html).toContain('Analitis');
+    expect(html).toContain('Cetak');
+  });
+
+  it('ringkas memakai agregat kegiatan, peserta, honor, dan berkas', async () => {
+    const html = await loadHtml();
+    for (const s of ['ringkasKegiatanAll', 'ringkasRecent', 'ringkasStats', 'ringkasTindakan', 'ringkasByBlok']) {
+      expect(html).toContain(s);
+    }
+    expect(html).toContain('Berkas lengkap');
+    expect(html).toContain('Kegiatan terbaru');
+    expect(html).toContain('Distribusi Status');
+  });
+
+  it('tab analitis lama tetap tersedia', async () => {
+    const html = await loadHtml();
+    for (const s of ["key: 'rekap'", "key: 'dosen'", "key: 'bagian'", "key: 'ba'", "key: 'daftarba'", "key: 'jadwal'", "key: 'bayar'"]) {
+      expect(html).toContain(s);
+    }
+    expect(html).toContain("laporanMode === 'analitis'");
+  });
+
+  it('cetak memakai lembar cetak dan pengaturan dokumen', async () => {
+    const html = await loadHtml();
+    for (const s of ['print-sheet', 'cetak.jenis', 'cetakPreflight', 'cetakRekapBlok', 'cetakRincian', 'Pengaturan dokumen', '@page']) {
+      expect(html).toContain(s);
+    }
+    expect(html).toContain("cetak: { jenis: 'lengkap', kop: true, ttd: true }");
+    expect(html).toContain('window.print');
+  });
+});

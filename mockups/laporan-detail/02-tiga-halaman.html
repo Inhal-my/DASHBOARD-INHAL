@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Konsep 02 — Tiga halaman terpisah · Laporan Detail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css">
+<script src="_shell.js" defer></script>
+<style>
+  .headline{display:flex;align-items:center;gap:12px}
+  .headline .ib{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;display:grid;place-items:center;box-shadow:0 10px 24px -12px rgba(79,70,229,.9)}
+  .headline h2{font-size:19px;letter-spacing:-.02em}
+  .headline .sub{font-size:11.5px;color:var(--slate-400);margin-top:2px}
+  .opt{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--slate-200);border-radius:10px;background:#fff;font-size:12px;font-weight:600;color:var(--slate-600);margin-bottom:7px}
+  .opt.on{border-color:#c7d2fe;background:var(--brand-50);color:var(--brand);font-weight:800}
+  .opt .radio{width:15px;height:15px;border-radius:50%;border:2px solid var(--slate-300);flex:0 0 auto;background:#fff}
+  .opt.on .radio{border:4px solid var(--brand)}
+  .opt .n{margin-left:auto;font-size:10.5px;color:var(--slate-400);font-weight:700}
+  .page-split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+  @media (min-width:1101px){.split3{grid-template-columns:190px minmax(0,1fr) 300px}}
+  .split3 .heat th.lab{min-width:132px}
+  .split3 .heat th{padding:6px 4px}
+  .split3 .heat td{padding:2px}
+  .split3 .heat td.lab{padding:7px 6px}
+  .split3 .heat .cell{width:26px;height:26px}
+  @media (max-width:880px){
+    .filterbar .field,.filterbar .filter-actions{grid-column:span 1!important}
+    .filterbar .filter-actions{grid-column:1/-1!important}
+  }
+  @media (max-width:640px){
+    .split3 .heat th.lab{min-width:88px}
+    .split3 .heat th{padding:6px 1px;font-size:9px}
+    .split3 .heat td{padding:2px 1px}
+    .split3 .heat td.lab{padding:6px 4px}
+    .split3 .heat .cell{width:20px;height:22px;font-size:10.5px}
+    .split3 .heat .who{font-size:10.5px;gap:6px}
+  }
+  @media (max-width:980px){.page-split{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <a class="back" href="index.html">&#8592; Semua konsep</a>
+  <div class="kicker">Konsep 02</div>
+  <h1>Tiga halaman terpisah</h1>
+  <p>Tiga route mandiri: <span class="mono">/laporan/ringkas</span>, <span class="mono">/laporan/analitis</span>, dan <span class="mono">/laporan/cetak</span>. Masing-masing punya tujuan, header, dan aksi sendiri. Navigasi memakai tab tingkat halaman; filter tidak otomatis terbawa sehingga setiap halaman dapat dioptimalkan tanpa kompromi.</p>
+  <div class="notes">
+    <div class="note good"><b>Kekuatan</b>Tiap halaman fokus dan ringan; mudah diatur hak akses per halaman; tim dapat mengerjakan template secara paralel; URL bisa dibagikan sesuai konteks.</div>
+    <div class="note bad"><b>Risiko</b>Filter dan periode harus di-setel ulang atau disimpan di sesi. Pengguna yang ingin membandingkan ringkasan dan analisis harus berpindah halaman. Tiga template berarti tiga biaya perawatan.</div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar" data-sidebar data-active="laporan"></aside>
+  <div class="main">
+    <div class="topbar" data-topbar data-title="Laporan Detail" data-crumb="Laporan / <b>Detail</b>"></div>
+    <div class="content">
+
+      <div class="between wrap mb14">
+        <div class="headline">
+          <div class="ib"><svg class="i lg"><use href="icons.svg#chart"></use></svg></div>
+          <div>
+            <h2>Laporan</h2>
+            <div class="sub">Semester Ganjil 2026/2027 &middot; 48 kegiatan</div>
+          </div>
+        </div>
+        <div class="topnav">
+          <a href="#ringkas" class="on" data-mode="ringkas"><svg class="i"><use href="icons.svg#list"></use></svg>Ringkas</a>
+          <a href="#analitis" data-mode="analitis"><svg class="i"><use href="icons.svg#chart"></use></svg>Analitis</a>
+          <a href="#cetak" data-mode="cetak"><svg class="i"><use href="icons.svg#print"></use></svg>Cetak</a>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: RINGKAS ================= -->
+      <div data-mode-panel="ringkas">
+        <div class="between wrap mb12">
+          <div>
+            <h3 style="font-size:15px">Ringkasan Laporan</h3>
+            <div class="route-note" style="margin-top:3px"><code>/laporan/ringkas</code><span>Filter belum diterapkan &middot; memakai default periode berjalan</span></div>
+          </div>
+          <div class="row gap8 wrap">
+            <button class="btn btn-soft btn-sm"><svg class="i"><use href="icons.svg#sliders"></use></svg>Ubah filter</button>
+            <button class="btn btn-primary btn-sm"><svg class="i"><use href="icons.svg#download"></use></svg>Ekspor ringkasan</button>
+          </div>
+        </div>
+
+        <div class="callout mb14"><svg class="i"><use href="icons.svg#info"></use></svg><div>Halaman ini hanya memuat agregat pokok. Untuk irisan data gunakan <b>Analitis</b>; untuk dokumen resmi gunakan <b>Cetak</b>.</div></div>
+
+        <div class="kpis mb14">
+          <div class="kpi"><div class="lb">Kegiatan</div><div class="big">48</div><div class="sub">32 disetujui</div><div class="ic"><svg><use href="icons.svg#calendar"></use></svg></div></div>
+          <div class="kpi"><div class="lb">Peserta</div><div class="big">1.284</div><div class="sub">26,8 rata-rata</div><div class="ic g"><svg><use href="icons.svg#users"></use></svg></div></div>
+          <div class="kpi"><div class="lb">Honor</div><div class="big" style="font-size:22px">Rp 96,0 jt</div><div class="sub">77% terbayar</div><div class="ic v"><svg><use href="icons.svg#money"></use></svg></div></div>
+          <div class="kpi"><div class="lb">Berkas lengkap</div><div class="big">87%</div><div class="sub">42 / 48 kegiatan</div><div class="ic a"><svg><use href="icons.svg#doc-check"></use></svg></div></div>
+        </div>
+
+        <div class="page-split">
+          <div class="card">
+            <div class="head">
+              <div class="ic"><svg><use href="icons.svg#table"></use></svg></div>
+              <div class="grow"><h3>Kegiatan terbaru</h3><div class="sub">6 kegiatan terakhir pada periode berjalan</div></div>
+              <a class="btn btn-ghost btn-sm" href="#analitis" data-mode="analitis">Analitis <svg class="i xs"><use href="icons.svg#arrow-right"></use></svg></a>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Kegiatan</th><th>Tanggal</th><th class="center">Peserta</th><th>Status</th><th class="center">Berkas</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="who"><div><div class="nm">Praktikum Kimia Dasar</div><div class="np">PGJ-2026-0142 &middot; Blok 2</div></div></div></td><td class="nowrap">12 Sep 2026</td><td class="center num">32</td><td><span class="pill p-acc"><span class="b-dot"></span>Disetujui</span></td><td><div class="docs"><span class="doc on"><svg class="i"><use href="icons.svg#file"></use></svg></span><span class="doc on b"><svg class="i"><use href="icons.svg#doc-check"></use></svg></span><span class="doc on v"><svg class="i"><use href="icons.svg#money"></use></svg></span></div></td></tr>
+                  <tr><td><div class="who"><div><div class="nm">Praktikum Fisika Dasar</div><div class="np">PGJ-2026-0143 &middot; Blok 2</div></div></div></td><td class="nowrap">13 Sep 2026</td><td class="center num">30</td><td><span class="pill p-wait"><span class="b-dot"></span>Menunggu</span></td><td><div class="docs"><span class="doc on"><svg class="i"><use href="icons.svg#file"></use></svg></span><span class="doc on b"><svg class="i"><use href="icons.svg#doc-check"></use></svg></span><span class="doc"><svg class="i"><use href="icons.svg#money"></use></svg></span></div></td></tr>
+                  <tr><td><div class="who"><div><div class="nm">Praktikum Biologi Umum</div><div class="np">PGJ-2026-0144 &middot; Blok 2</div></div></div></td><td class="nowrap">15 Sep 2026</td><td class="center num">28</td><td><span class="pill p-acc"><span class="b-dot"></span>Disetujui</span></td><td><div class="docs"><span class="doc on"><svg class="i"><use href="icons.svg#file"></use></svg></span><span class="doc on b"><svg class="i"><use href="icons.svg#doc-check"></use></svg></span><span class="doc on v"><svg class="i"><use href="icons.svg#money"></use></svg></span></div></td></tr>
+                  <tr><td><div class="who"><div><div class="nm">Praktikum Kimia Analitik</div><div class="np">PGJ-2026-0145 &middot; Blok 3</div></div></div></td><td class="nowrap">20 Sep 2026</td><td class="center num">24</td><td><span class="pill p-manual"><span class="b-dot"></span>Manual</span></td><td><div class="docs"><span class="doc"><svg class="i"><use href="icons.svg#file"></use></svg></span><span class="doc on b"><svg class="i"><use href="icons.svg#doc-check"></use></svg></span><span class="doc"><svg class="i"><use href="icons.svg#money"></use></svg></span></div></td></tr>
+                  <tr><td><div class="who"><div><div class="nm">Praktikum Kimia Organik</div><div class="np">PGJ-2026-0146 &middot; Blok 3</div></div></div></td><td class="nowrap">21 Sep 2026</td><td class="center num">26</td><td><span class="pill p-rej"><span class="b-dot"></span>Ditolak</span></td><td><div class="docs"><span class="doc"><svg class="i"><use href="icons.svg#file"></use></svg></span><span class="doc"><svg class="i"><use href="icons.svg#doc-check"></use></svg></span><span class="doc"><svg class="i"><use href="icons.svg#money"></use></svg></span></div></td></tr>
+                  <tr><td><div class="who"><div><div class="nm">Praktikum Mikrobiologi</div><div class="np">PGJ-2026-0148 &middot; Blok 4</div></div></div></td><td class="nowrap">28 Sep 2026</td><td class="center num">31</td><td><span class="pill p-acc"><span class="b-dot"></span>Disetujui</span></td><td><div class="docs"><span class="doc on"><svg class="i"><use href="icons.svg#file"></use></svg></span><span class="doc on b"><svg class="i"><use href="icons.svg#doc-check"></use></svg></span><span class="doc on v"><svg class="i"><use href="icons.svg#money"></use></svg></span></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="card mb14">
+              <div class="head" style="padding:13px 15px">
+                <div class="ic" style="width:32px;height:32px"><svg><use href="icons.svg#pie"></use></svg></div>
+                <div class="grow"><h3 style="font-size:13px">Status</h3></div>
+              </div>
+              <div class="body" style="padding:12px 15px">
+                <div class="donut" style="width:120px;height:120px;margin:0 auto 12px;background:conic-gradient(#059669 0 66.7%,#f59e0b 0 85.4%,#7c3aed 0 93.7%,#e11d48 0)">
+                  <div class="dcenter"><div class="v" style="font-size:20px">48</div><div class="l">Kegiatan</div></div>
+                </div>
+                <div class="legend" style="gap:6px">
+                  <div class="lg"><span class="sw" style="background:#059669"></span><span class="nm">Disetujui</span><span class="vl">32</span></div>
+                  <div class="lg"><span class="sw" style="background:#f59e0b"></span><span class="nm">Menunggu</span><span class="vl">9</span></div>
+                  <div class="lg"><span class="sw" style="background:#7c3aed"></span><span class="nm">Manual</span><span class="vl">4</span></div>
+                  <div class="lg"><span class="sw" style="background:#e11d48"></span><span class="nm">Ditolak</span><span class="vl">3</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="head" style="padding:13px 15px">
+                <div class="ic" style="width:32px;height:32px;background:var(--amber-50);color:var(--amber)"><svg><use href="icons.svg#alert"></use></svg></div>
+                <div class="grow"><h3 style="font-size:13px">Tindakan</h3></div>
+                <span class="badge b-rose">11</span>
+              </div>
+              <div class="body" style="padding:6px 15px 12px">
+                <div class="todo"><div class="ic r" style="width:30px;height:30px"><svg style="width:15px"><use href="icons.svg#clock"></use></svg></div><div class="grow"><div class="t" style="font-size:12px">3 menunggu &gt; 3 hari</div><div class="s" style="font-size:11px">Blok 2 &amp; 3</div></div></div>
+                <div class="todo"><div class="ic" style="width:30px;height:30px"><svg style="width:15px"><use href="icons.svg#file"></use></svg></div><div class="grow"><div class="t" style="font-size:12px">6 BA belum diunggah</div><div class="s" style="font-size:11px">Honor tertahan</div></div></div>
+                <div class="todo" style="border-bottom:0"><div class="ic b" style="width:30px;height:30px"><svg style="width:15px"><use href="icons.svg#money"></use></svg></div><div class="grow"><div class="t" style="font-size:12px">2 honor tertahan</div><div class="s" style="font-size:11px">Rp 8,4 jt</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: ANALITIS ================= -->
+      <div data-mode-panel="analitis" hidden>
+        <div class="between wrap mb12">
+          <div>
+            <h3 style="font-size:15px">Analisis Laporan</h3>
+            <div class="route-note" style="margin-top:3px"><code>/laporan/analitis?periode=2026-09..2026-10&amp;blok=all</code><span>Filter disimpan pada URL</span></div>
+          </div>
+          <div class="row gap8 wrap">
+            <button class="btn btn-soft btn-sm"><svg class="i"><use href="icons.svg#map"></use></svg>Ubah dimensi</button>
+            <button class="btn btn-soft btn-sm"><svg class="i"><use href="icons.svg#download"></use></svg>Ekspor irisan</button>
+            <button class="btn btn-primary btn-sm" data-mode="cetak"><svg class="i"><use href="icons.svg#print"></use></svg>Cetak hasil</button>
+          </div>
+        </div>
+
+        <div class="filterbar mb12">
+          <div class="field" style="grid-column:span 3"><label>Periode</label><select class="select"><option>1 Sep – 31 Okt 2026</option></select></div>
+          <div class="field" style="grid-column:span 2"><label>Blok</label><select class="select"><option>Semua blok</option></select></div>
+          <div class="field" style="grid-column:span 2"><label>Status</label><select class="select"><option>Semua status</option></select></div>
+          <div class="field" style="grid-column:span 2"><label>Metrik</label><select class="select"><option>Jumlah kegiatan</option></select></div>
+          <div class="filter-actions" style="grid-column:span 3">
+            <button class="btn btn-primary btn-sm"><svg class="i"><use href="icons.svg#filter"></use></svg>Terapkan</button>
+            <button class="btn btn-soft btn-sm">Reset</button>
+          </div>
+        </div>
+
+        <div class="split3">
+          <div class="rail">
+            <div class="rt">Dimensi</div>
+            <div class="rlink on"><svg class="i sm"><use href="icons.svg#layers"></use></svg>Blok<span class="n">4</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#graduation"></use></svg>Dosen<span class="n">4</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#target"></use></svg>Status<span class="n">4</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#calendar"></use></svg>Bulan<span class="n">2</span></div>
+            <div class="rt">Irisan aktif</div>
+            <div class="rlink on"><svg class="i sm"><use href="icons.svg#filter"></use></svg>Semua blok<span class="n">48</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#check"></use></svg>Disetujui<span class="n">32</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#clock"></use></svg>Menunggu<span class="n">9</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#edit"></use></svg>Manual<span class="n">4</span></div>
+            <div class="rlink"><svg class="i sm"><use href="icons.svg#x"></use></svg>Ditolak<span class="n">3</span></div>
+            <div class="hr" style="margin:12px 0"></div>
+            <button class="btn btn-soft btn-sm btn-block"><svg class="i"><use href="icons.svg#plus"></use></svg>Tambah irisan</button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div class="card">
+              <div class="head">
+                <div class="ic"><svg><use href="icons.svg#grid"></use></svg></div>
+                <div class="grow"><h3>Sebaran dosen &times; blok</h3><div class="sub">Klik sel untuk memfilter rincian</div></div>
+                <span class="badge b-brand">48 kegiatan</span>
+              </div>
+              <div class="body" style="padding:8px 10px 12px">
+                <div class="heat-wrap">
+                  <table class="heat">
+                    <thead><tr><th class="lab">Dosen</th><th>Blok 1</th><th>Blok 2</th><th>Blok 3</th><th>Blok 4</th><th>Total</th></tr></thead>
+                    <tbody>
+                      <tr><td class="lab"><div class="who"><span class="av">RK</span>Dr. Rina Kartika</div></td><td><span class="cell h3">4</span></td><td><span class="cell h2">3</span></td><td><span class="cell h2">3</span></td><td><span class="cell h2">2</span></td><td><b>12</b></td></tr>
+                      <tr><td class="lab"><div class="who"><span class="av">AP</span>Dr. Andi Prasetyo</div></td><td><span class="cell h2">3</span></td><td><span class="cell h3">4</span></td><td><span class="cell h2 on">3</span></td><td><span class="cell h2">3</span></td><td><b>13</b></td></tr>
+                      <tr><td class="lab"><div class="who"><span class="av">SM</span>Dr. Sari Melati</div></td><td><span class="cell h2">2</span></td><td><span class="cell h2">3</span></td><td><span class="cell h2">3</span></td><td><span class="cell h2">3</span></td><td><b>11</b></td></tr>
+                      <tr><td class="lab"><div class="who"><span class="av">BS</span>Dr. Budi Santoso</div></td><td><span class="cell h2">3</span></td><td><span class="cell h2">3</span></td><td><span class="cell h2">3</span></td><td><span class="cell h2">3</span></td><td><b>12</b></td></tr>
+                    </tbody>
+                    <tfoot><tr><td class="lab">Total</td><td>12</td><td>13</td><td>12</td><td>11</td><td>48</td></tr></tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="head">
+                <div class="ic"><svg><use href="icons.svg#chart"></use></svg></div>
+                <div class="grow"><h3>Tren kegiatan</h3><div class="sub">Jumlah kegiatan per bulan</div></div>
+                <div class="chips"><span class="chip on">Kegiatan</span><span class="chip">Peserta</span></div>
+              </div>
+              <div class="body">
+                <div class="bars">
+                  <div class="brow"><div class="top"><span class="nm">September 2026</span><span class="vl">29 kegiatan &middot; 776 peserta</span></div><div class="bar"><i style="width:100%"></i></div></div>
+                  <div class="brow"><div class="top"><span class="nm">Oktober 2026</span><span class="vl">19 kegiatan &middot; 508 peserta</span></div><div class="bar"><i style="width:66%"></i></div></div>
+                </div>
+                <div class="insight mt14"><div class="ih"><svg class="i sm"><use href="icons.svg#spark"></use></svg>Insight</div><p>Beban kegiatan terkonsentrasi di September (<b>60%</b>). Oktober lebih longgar sehingga cocok untuk percepatan verifikasi dan pelunasan honor.</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detailpane">
+            <div class="dh">
+              <div class="k">Irisan terpilih</div>
+              <h3>Dr. Andi Prasetyo &middot; Blok 3</h3>
+              <p>3 kegiatan &middot; 81 peserta &middot; 1 menunggu</p>
+            </div>
+            <div class="dbody">
+              <div class="ditem"><div class="ic"><svg class="i sm"><use href="icons.svg#calendar"></use></svg></div><div class="grow"><div class="t">Praktikum Kimia Anorganik</div><div class="s">22 Sep 2026 &middot; 29 peserta</div></div><span class="badge b-amber" style="font-size:9.5px">Menunggu</span></div>
+              <div class="ditem"><div class="ic"><svg class="i sm"><use href="icons.svg#calendar"></use></svg></div><div class="grow"><div class="t">Praktikum Fisika Material</div><div class="s">25 Sep 2026 &middot; 27 peserta</div></div><span class="badge b-green" style="font-size:9.5px">Disetujui</span></div>
+              <div class="ditem"><div class="ic"><svg class="i sm"><use href="icons.svg#calendar"></use></svg></div><div class="grow"><div class="t">Praktikum Elektronika</div><div class="s">1 Okt 2026 &middot; 25 peserta</div></div><span class="badge b-green" style="font-size:9.5px">Disetujui</span></div>
+              <div class="hr" style="margin:10px 0"></div>
+              <div class="between text-sm"><span class="muted">Honor bruto</span><b>Rp 7.200.000</b></div>
+              <div class="between text-sm mt6"><span class="muted">Sudah dibayar</span><b style="color:var(--emerald)">Rp 4.800.000</b></div>
+              <div class="between text-sm mt6"><span class="muted">Kelengkapan berkas</span><b>2 / 3</b></div>
+              <div class="bar a mt10"><i style="width:66%"></i></div>
+              <button class="btn btn-soft btn-sm btn-block mt12"><svg class="i"><use href="icons.svg#external"></use></svg>Buka daftar kegiatan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: CETAK ================= -->
+      <div data-mode-panel="cetak" hidden>
+        <div class="between wrap mb12 no-print">
+          <div>
+            <h3 style="font-size:15px">Cetak Laporan</h3>
+            <div class="route-note" style="margin-top:3px"><code>/laporan/cetak</code><span>Pengaturan dokumen tidak memengaruhi halaman lain</span></div>
+          </div>
+          <div class="row gap8 wrap">
+            <button class="btn btn-soft btn-sm"><svg class="i"><use href="icons.svg#eye"></use></svg>Pratinjau</button>
+            <button class="btn btn-soft btn-sm"><svg class="i"><use href="icons.svg#download"></use></svg>Unduh PDF</button>
+            <button class="btn btn-primary btn-sm" data-print><svg class="i"><use href="icons.svg#print"></use></svg>Cetak</button>
+          </div>
+        </div>
+
+        <div class="grid g12 mb14 no-print">
+          <div class="card span8">
+            <div class="head" style="padding:12px 15px">
+              <div class="ic" style="width:32px;height:32px"><svg><use href="icons.svg#sliders"></use></svg></div>
+              <div class="grow"><h3 style="font-size:13px">Pengaturan dokumen</h3></div>
+              <span class="badge b-slate">A4 &middot; 3 halaman</span>
+            </div>
+            <div class="body" style="padding:12px 15px">
+              <div class="grid g3" style="gap:10px">
+                <div>
+                  <div class="section-title" style="margin-bottom:6px">Jenis laporan</div>
+                  <div class="opt on"><span class="radio"></span>Rekap &amp; rincian</div>
+                  <div class="opt"><span class="radio"></span>Rekap saja<span class="n">1 hlm</span></div>
+                  <div class="opt"><span class="radio"></span>Rincian saja<span class="n">2 hlm</span></div>
+                </div>
+                <div>
+                  <div class="section-title" style="margin-bottom:6px">Kertas</div>
+                  <div class="opt on"><span class="radio"></span>A4<span class="n">210 &times; 297</span></div>
+                  <div class="opt"><span class="radio"></span>F4 / Folio</div>
+                  <div class="opt"><span class="radio"></span>Letter</div>
+                </div>
+                <div>
+                  <div class="section-title" style="margin-bottom:6px">Lampiran</div>
+                  <div class="opt on"><span class="radio"></span>Kop laboratorium</div>
+                  <div class="opt on"><span class="radio"></span>Tanda tangan</div>
+                  <div class="opt"><span class="radio"></span>Lembar pengesahan</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card span4">
+            <div class="head" style="padding:12px 15px">
+              <div class="ic" style="width:32px;height:32px;background:var(--amber-50);color:var(--amber)"><svg><use href="icons.svg#alert"></use></svg></div>
+              <div class="grow"><h3 style="font-size:13px">Sebelum&nbsp;mencetak</h3></div>
+            </div>
+            <div class="body" style="padding:12px 15px">
+              <div class="row gap8 text-sm mb8"><svg class="i xs" style="color:var(--emerald)"><use href="icons.svg#check"></use></svg>Periode: 1 Sep – 31 Okt 2026</div>
+              <div class="row gap8 text-sm mb8"><svg class="i xs" style="color:var(--emerald)"><use href="icons.svg#check"></use></svg>48 kegiatan, 1.284 peserta</div>
+              <div class="row gap8 text-sm mb8"><svg class="i xs" style="color:var(--amber)"><use href="icons.svg#alert"></use></svg>9 kegiatan belum final</div>
+              <div class="row gap8 text-sm"><svg class="i xs" style="color:var(--amber)"><use href="icons.svg#alert"></use></svg>6 berkas belum lengkap</div>
+              <a class="btn btn-soft btn-sm btn-block mt12" href="#ringkas" data-mode="ringkas"><svg class="i"><use href="icons.svg#arrow-right"></use></svg>Kembali ke ringkasan</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="printcanvas">
+          <div class="sheet" style="min-height:0">
+            <div class="cop">
+              <div class="logo">IH</div>
+              <div class="inst">
+                <div class="a">Laboratorium Terpadu</div>
+                <div class="b">INHAL &middot; Unit Pengelola Praktikum</div>
+                <div class="c">Jl. Pendidikan No. 12, Makassar &middot; lab@inhal.ac.id &middot; (0411) 555-0123</div>
+              </div>
+              <div style="text-align:right;font-size:9px;color:#64748b">No. LAP/2026/10/014<br>Halaman 1 dari 3</div>
+            </div>
+            <div class="doc-title">
+              <h1>Laporan Pelaksanaan Praktikum</h1>
+              <div class="sub">Semester Ganjil Tahun Akademik 2026/2027</div>
+            </div>
+            <div class="doc-meta"><span>Periode: <b>1 Sep – 31 Okt 2026</b></span><span>Blok: <b>Semua blok</b></span><span>Status: <b>Semua status</b></span><span>Dicetak: <b>17 Okt 2026, 14:32</b></span></div>
+
+            <h2>A. Ringkasan</h2>
+            <div class="sum">
+              <div class="sumbox"><div class="l">Kegiatan</div><div class="v">48</div></div>
+              <div class="sumbox"><div class="l">Peserta</div><div class="v">1.284</div></div>
+              <div class="sumbox"><div class="l">Honor dosen</div><div class="v">Rp 96,0 jt</div></div>
+              <div class="sumbox"><div class="l">Berkas lengkap</div><div class="v">87%</div></div>
+            </div>
+            <p style="margin-top:8px">Laporan ini merangkum pelaksanaan praktikum pada periode 1 September sampai 31 Oktober 2026. Seluruh angka mengikuti filter yang tercantum pada bagian meta di atas.</p>
+
+            <h2>B. Rekapitulasi per Blok</h2>
+            <table>
+              <thead><tr><th style="width:34px">No</th><th>Blok</th><th class="c">Kegiatan</th><th class="c">Peserta</th><th class="r">Honor</th><th class="c">Berkas lengkap</th></tr></thead>
+              <tbody>
+                <tr><td class="c">1</td><td>Blok 1 &middot; Dasar</td><td class="c">12</td><td class="c">312</td><td class="r">Rp 24.000.000</td><td class="c">11 / 12</td></tr>
+                <tr><td class="c">2</td><td>Blok 2 &middot; Analitik</td><td class="c">13</td><td class="c">348</td><td class="r">Rp 26.000.000</td><td class="c">12 / 13</td></tr>
+                <tr><td class="c">3</td><td>Blok 3 &middot; Organik</td><td class="c">12</td><td class="c">336</td><td class="r">Rp 24.000.000</td><td class="c">10 / 12</td></tr>
+                <tr><td class="c">4</td><td>Blok 4 &middot; Terapan</td><td class="c">11</td><td class="c">288</td><td class="r">Rp 22.000.000</td><td class="c">9 / 11</td></tr>
+              </tbody>
+              <tfoot><tr><td colspan="2" style="font-weight:800;background:#f1f5f9">Total</td><td class="c" style="font-weight:800;background:#f1f5f9">48</td><td class="c" style="font-weight:800;background:#f1f5f9">1.284</td><td class="r" style="font-weight:800;background:#f1f5f9">Rp 96.000.000</td><td class="c" style="font-weight:800;background:#f1f5f9">42 / 48</td></tr></tfoot>
+            </table>
+
+            <h2>C. Rincian Kegiatan</h2>
+            <table>
+              <thead><tr><th style="width:30px">No</th><th>ID</th><th>Kegiatan</th><th>Tanggal</th><th>Dosen</th><th class="c">Peserta</th><th class="c">Status</th><th class="c">BA</th></tr></thead>
+              <tbody>
+                <tr><td class="c">1</td><td>PGJ-0142</td><td>Praktikum Kimia Dasar</td><td>12 Sep 2026</td><td>Dr. Rina Kartika</td><td class="c">32</td><td class="c">Disetujui</td><td class="c">Lengkap</td></tr>
+                <tr><td class="c">2</td><td>PGJ-0143</td><td>Praktikum Fisika Dasar</td><td>13 Sep 2026</td><td>Dr. Andi Prasetyo</td><td class="c">30</td><td class="c">Menunggu</td><td class="c">Lengkap</td></tr>
+                <tr><td class="c">3</td><td>PGJ-0144</td><td>Praktikum Biologi Umum</td><td>15 Sep 2026</td><td>Dr. Sari Melati</td><td class="c">28</td><td class="c">Disetujui</td><td class="c">Lengkap</td></tr>
+                <tr><td class="c">4</td><td>PGJ-0145</td><td>Praktikum Kimia Analitik</td><td>20 Sep 2026</td><td>Dr. Budi Santoso</td><td class="c">24</td><td class="c">Manual</td><td class="c">Sebagian</td></tr>
+                <tr><td class="c">5</td><td>PGJ-0146</td><td>Praktikum Kimia Organik</td><td>21 Sep 2026</td><td>Dr. Rina Kartika</td><td class="c">26</td><td class="c">Ditolak</td><td class="c">Tidak ada</td></tr>
+                <tr><td class="c">6</td><td>PGJ-0147</td><td>Praktikum Kimia Anorganik</td><td>22 Sep 2026</td><td>Dr. Andi Prasetyo</td><td class="c">29</td><td class="c">Menunggu</td><td class="c">Lengkap</td></tr>
+                <tr><td class="c">7</td><td>PGJ-0148</td><td>Praktikum Mikrobiologi</td><td>28 Sep 2026</td><td>Dr. Sari Melati</td><td class="c">31</td><td class="c">Disetujui</td><td class="c">Lengkap</td></tr>
+                <tr><td class="c">8</td><td>PGJ-0149</td><td>Praktikum Instrumentasi</td><td>29 Sep 2026</td><td>Dr. Budi Santoso</td><td class="c">22</td><td class="c">Disetujui</td><td class="c">Lengkap</td></tr>
+              </tbody>
+            </table>
+            <p style="font-size:8.5px;color:#94a3b8;margin-top:4px">Menampilkan 8 dari 48 kegiatan. Sisanya pada halaman 2–3.</p>
+
+            <div class="sign">
+              <div class="s">Mengetahui,<br>Kepala Laboratorium<div class="line">Dr. Rina Kartika, M.Si.<br>NIP 19850412 201012 2 003</div></div>
+              <div class="s">Makassar, 17 Oktober 2026<br>Admin INHAL<div class="line">Muh. Fajar, S.Kom.<br>NIP 19920107 202001 1 008</div></div>
+            </div>
+            <div class="foot"><span>Dokumen ini dihasilkan oleh Dashboard INHAL</span><span>LAP/2026/10/014</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

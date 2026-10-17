@@ -262,6 +262,101 @@
         .text-\[10\.5px\] { font-size:10.5px; }
         .pb-3 { padding-bottom:.75rem; }
         .pt-2 { padding-top:.5rem; }
+        /* ===== Mode halaman laporan (Ringkas / Analitis / Cetak) ===== */
+        .mode-head { align-items:center; margin-bottom:14px; }
+        .mode-tabs { display:flex; gap:4px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:4px; box-shadow:var(--shadow-soft); overflow-x:auto; }
+        .mode-tab { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:8px 14px; border-radius:9px; font-size:12px; font-weight:800; color:var(--ink-500); white-space:nowrap; transition:.15s ease; }
+        .mode-tab:hover { background:#f8fafc; color:var(--ink-700); }
+        .mode-tab.is-active { background:#0f172a; color:#fff; }
+        .ringkas-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+        .ringkas-kpi { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:15px; box-shadow:var(--shadow-soft); }
+        .ringkas-kpi .top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .ringkas-kpi .ic { width:36px; height:36px; border-radius:11px; display:grid; place-items:center; font-size:16px; background:var(--brand-soft); color:var(--brand); }
+        .ringkas-kpi .ic.g { background:var(--emerald-soft); color:var(--emerald); }
+        .ringkas-kpi .ic.v { background:var(--violet-soft); color:var(--violet); }
+        .ringkas-kpi .ic.a { background:var(--amber-soft); color:var(--amber); }
+        .ringkas-kpi .num { margin-top:10px; font-size:24px; font-weight:800; letter-spacing:-.02em; line-height:1.1; color:var(--ink-900); }
+        .ringkas-kpi .num.money { font-size:19px; }
+        .ringkas-kpi .lb { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-400); }
+        .ringkas-kpi .sub { margin-top:5px; font-size:11px; color:var(--ink-400); font-weight:600; }
+        .ringkas-grid { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; align-items:start; }
+        .recent-row { display:grid; grid-template-columns:minmax(0,1fr) 92px 100px 30px; gap:12px; align-items:center; padding:12px 16px; border-top:1px solid #f1f5f9; }
+        .recent-row:first-child { border-top:0; }
+        .recent-row .peserta { text-align:right; font-size:11.5px; color:var(--ink-400); }
+        .recent-row .peserta b { color:var(--ink-800); }
+        .recent-row .berkas { display:grid; place-items:center; font-size:15px; }
+        .ringkas-donut { display:flex; flex-direction:column; align-items:center; gap:12px; }
+        .ringkas-donut svg { width:132px; height:132px; }
+        .ringkas-legend { width:100%; display:flex; flex-direction:column; gap:6px; }
+        .ringkas-legend .lg { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--ink-500); }
+        .ringkas-legend .lg .sw { width:9px; height:9px; border-radius:9999px; flex:0 0 auto; }
+        .ringkas-legend .lg .nm { flex:1; }
+        .ringkas-legend .lg .vl { font-weight:800; color:var(--ink-800); }
+        .tindakan { display:flex; align-items:flex-start; gap:11px; padding:11px 0; border-bottom:1px solid #f1f5f9; }
+        .tindakan:last-child { border-bottom:0; padding-bottom:0; }
+        .tindakan:first-child { padding-top:0; }
+        .tindakan .ic { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; flex:0 0 auto; font-size:14px; background:var(--amber-soft); color:var(--amber); }
+        .tindakan .ic.r { background:var(--rose-soft); color:var(--rose); }
+        .tindakan .ic.b { background:var(--brand-soft); color:var(--brand); }
+        .tindakan .t { font-size:12.5px; font-weight:800; color:var(--ink-900); }
+        .tindakan .s { margin-top:2px; font-size:11px; color:var(--ink-400); }
+        /* ===== Lembar cetak ===== */
+        .print-sheet { background:#fff; border:1px solid var(--line); border-radius:18px; max-width:920px; margin:0 auto; padding:36px; box-shadow:var(--shadow-soft); color:#1e293b; }
+        .ps-cop { display:flex; gap:14px; align-items:center; border-bottom:2px solid #0f172a; padding-bottom:14px; }
+        .ps-logo { width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg,#6366f1,#4338ca); color:#fff; display:grid; place-items:center; font-size:16px; font-weight:800; flex:0 0 auto; }
+        .ps-inst { font-size:15px; font-weight:800; letter-spacing:-.01em; }
+        .ps-sub { font-size:11px; color:#475569; font-weight:600; margin-top:1px; }
+        .ps-addr { font-size:9.5px; color:#64748b; margin-top:2px; }
+        .ps-no { margin-left:auto; text-align:right; font-size:9.5px; line-height:1.5; color:#64748b; }
+        .ps-title { text-align:center; margin:18px 0 12px; }
+        .ps-title h1 { margin:0; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+        .ps-title .sub { margin-top:3px; font-size:11px; color:#475569; }
+        .ps-meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 20px; font-size:10.5px; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:16px; }
+        .ps-meta b { color:#0f172a; }
+        .ps-h { font-size:12px; font-weight:800; margin:18px 0 8px; color:#0f172a; }
+        .ps-sum { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+        .ps-sum .b { border:1px solid #e2e8f0; border-radius:9px; padding:9px 11px; }
+        .ps-sum .l { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#64748b; }
+        .ps-sum .v { font-size:16px; font-weight:800; margin-top:3px; }
+        .ps-table { width:100%; border-collapse:collapse; font-size:10px; table-layout:fixed; }
+        .ps-table th { text-align:left; background:#f1f5f9; font-weight:800; font-size:8.5px; text-transform:uppercase; letter-spacing:.04em; color:#475569; padding:6px 7px; border:1px solid #e2e8f0; }
+        .ps-table td { padding:5px 7px; border:1px solid #e2e8f0; color:#334155; vertical-align:top; }
+        .ps-table .r { text-align:right; }
+        .ps-table .c { text-align:center; }
+        .ps-sign { display:flex; justify-content:space-between; gap:28px; margin-top:40px; font-size:10.5px; }
+        .ps-sign .s { width:44%; text-align:center; }
+        .ps-sign .line { margin-top:52px; border-top:1px solid #94a3b8; padding-top:4px; }
+        .ps-foot { margin-top:20px; padding-top:6px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; gap:10px; font-size:8.5px; color:#94a3b8; }
+        @media (max-width:1100px){
+            .ringkas-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .ringkas-grid { grid-template-columns:1fr; }
+        }
+        @media (max-width:640px){
+            .mode-head { align-items:flex-start; }
+            .mode-tabs { width:100%; }
+            .mode-tab { flex:1 1 0; padding:8px 6px; font-size:11.5px; }
+            .ringkas-kpi .num { font-size:21px; }
+            .ringkas-kpi .num.money { font-size:16px; }
+            .recent-row { grid-template-columns:minmax(0,1fr) auto; gap:8px 10px; padding:11px 14px; }
+            .recent-row .peserta, .recent-row .berkas { display:none; }
+            .print-sheet { padding:18px; border-radius:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+            .ps-cop { flex-wrap:wrap; }
+            .ps-no { margin-left:0; text-align:left; }
+            .ps-meta { grid-template-columns:1fr; }
+            .ps-sum { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .ps-table { font-size:9px; min-width:620px; }
+            .ps-table th, .ps-table td { padding:4px 5px; }
+        }
+        @media print {
+            @page { size:A4; margin:14mm; }
+            body { background:#fff !important; }
+            .sidebar-aside, .main-wrap > header, .filter-desktop, .filter-mobile-bar, .mode-head,
+            .in-tabsw, .bottom-nav, .fab-btn, .no-print, .sheet-overlay, .sheet-panel { display:none !important; }
+            .main-wrap, .content-wrap { background:#fff !important; padding:0 !important; margin:0 !important; min-height:0 !important; }
+            .print-sheet { display:block !important; border:0; border-radius:0; box-shadow:none; max-width:none; margin:0; padding:0; overflow:visible; }
+            .print-sheet .ps-table { min-width:0; }
+            .print-sheet .ps-table tr, .print-sheet .ps-sign { break-inside:avoid; }
+        }
     </style>
 </head>
 <body>
@@ -427,7 +522,7 @@
                         <i class="bi bi-list text-xl"></i>
                     </button>
                     <div>
-                        <div class="text-[15px] font-bold text-slate-900">{{ (tabs.find(t => t.key === activeTab) || {}).label }}</div>
+                        <div class="text-[15px] font-bold text-slate-900">{{ modeTitle }}</div>
                         <div class="text-[11px] text-slate-400">Rekapitulasi &amp; Berita Acara</div>
                     </div>
                 </div>
@@ -445,8 +540,149 @@
 
             <div class="content-wrap p-4 md:p-6 lg:p-8">
 
+            <!-- mode halaman -->
+            <div class="in-pageintro mode-head">
+                <div>
+                    <h2>{{ modeTitle }}</h2>
+                    <p>{{ modeSubtitle }}</p>
+                </div>
+                <div class="mode-tabs" role="tablist" aria-label="Halaman laporan">
+                    <button type="button" role="tab" :aria-selected="laporanMode === 'ringkas' ? 'true' : 'false'"
+                        :class="laporanMode === 'ringkas' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('ringkas')">
+                        <i class="bi bi-list-ul"></i>Ringkas
+                    </button>
+                    <button type="button" role="tab" :aria-selected="laporanMode === 'analitis' ? 'true' : 'false'"
+                        :class="laporanMode === 'analitis' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('analitis')">
+                        <i class="bi bi-bar-chart-line"></i>Analitis
+                    </button>
+                    <button type="button" role="tab" :aria-selected="laporanMode === 'cetak' ? 'true' : 'false'"
+                        :class="laporanMode === 'cetak' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('cetak')">
+                        <i class="bi bi-printer"></i>Cetak
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===================== HALAMAN: RINGKAS ===================== -->
+            <section v-if="laporanMode === 'ringkas'" class="space-y-5">
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <button type="button" class="btn-soft" @click="switchLaporanMode('analitis')"><i class="bi bi-sliders"></i> Ubah filter</button>
+                    <button type="button" class="btn-primary" :disabled="exporting" @click="exportExcel()">
+                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
+                        {{ exporting ? 'Menyiapkan...' : 'Ekspor .xlsx' }}
+                    </button>
+                </div>
+
+                <div class="lap-card flex items-start gap-3 p-4 text-[12.5px] text-slate-600">
+                    <i class="bi bi-info-circle mt-0.5 text-base text-brand-500"></i>
+                    <div>Halaman ini hanya memuat agregat pokok. Untuk irisan data gunakan <b>Analitis</b>; untuk dokumen resmi gunakan <b>Cetak</b>.</div>
+                </div>
+
+                <div v-if="loading" class="ringkas-kpis">
+                    <div v-for="i in 4" :key="'rk'+i" class="ringkas-kpi">
+                        <div class="h-9 w-9 animate-pulse rounded-xl bg-slate-200/70"></div>
+                        <div class="mt-3 h-4 w-2/3 animate-pulse rounded bg-slate-200/70"></div>
+                        <div class="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-200/70"></div>
+                    </div>
+                </div>
+                <template v-else>
+                    <div class="ringkas-kpis">
+                        <div class="ringkas-kpi">
+                            <div class="top"><div class="lb">Kegiatan</div><div class="ic"><i class="bi bi-calendar2-check"></i></div></div>
+                            <div class="num">{{ ringkasStats.kegiatan }}</div>
+                            <div class="sub">{{ ringkasStats.approved }} pengajuan ACC</div>
+                        </div>
+                        <div class="ringkas-kpi">
+                            <div class="top"><div class="lb">Peserta</div><div class="ic g"><i class="bi bi-people-fill"></i></div></div>
+                            <div class="num">{{ ringkasStats.peserta }}</div>
+                            <div class="sub">Pendaftar pada filter aktif</div>
+                        </div>
+                        <div class="ringkas-kpi">
+                            <div class="top"><div class="lb">Honor</div><div class="ic v"><i class="bi bi-cash-stack"></i></div></div>
+                            <div class="num money">{{ ringkasStats.honorText }}</div>
+                            <div class="sub">Total biaya pengajuan</div>
+                        </div>
+                        <div class="ringkas-kpi">
+                            <div class="top"><div class="lb">Berkas lengkap</div><div class="ic a"><i class="bi bi-folder-check"></i></div></div>
+                            <div class="num">{{ ringkasStats.lengkapPct }}%</div>
+                            <div class="sub">{{ ringkasStats.lengkap }} / {{ ringkasStats.kegiatan }} kegiatan</div>
+                        </div>
+                    </div>
+
+                    <div class="ringkas-grid">
+                        <div class="lap-card overflow-hidden">
+                            <div class="lap-card-head">
+                                <div>
+                                    <div class="lap-card-title"><i class="bi bi-clock-history text-brand-500"></i> Kegiatan terbaru</div>
+                                    <div class="lap-card-sub">6 kegiatan terakhir pada filter aktif</div>
+                                </div>
+                                <button type="button" class="btn-soft" @click="switchLaporanMode('analitis')">Analitis <i class="bi bi-arrow-right"></i></button>
+                            </div>
+                            <div v-if="!ringkasRecent.length" class="p-6 text-center text-sm text-slate-400">Belum ada kegiatan pada filter ini.</div>
+                            <div v-else>
+                                <div v-for="(k, i) in ringkasRecent" :key="'recent'+i" class="recent-row">
+                                    <div class="min-w-0">
+                                        <div class="truncate text-[13px] font-bold text-slate-800">{{ k.nama }}</div>
+                                        <div class="mt-0.5 truncate text-[11px] text-slate-400">{{ k.bagian }} &middot; {{ k.blok || 'Tanpa blok' }} &middot; {{ fmtTanggal(k.tanggal) }}</div>
+                                    </div>
+                                    <div class="peserta"><b>{{ k.jumlahPeserta }}</b> peserta</div>
+                                    <span v-if="k.statusK !== '-'" :class="statusBadgeCls(k.statusK)">{{ k.statusK }}</span>
+                                    <span v-else class="text-center text-[11px] text-slate-400">-</span>
+                                    <div class="berkas" :title="k.berkasLengkap ? 'Berkas lengkap' : 'Berkas belum lengkap'">
+                                        <i :class="k.berkasLengkap ? 'bi bi-check-circle-fill text-emerald-500' : 'bi bi-dash-circle text-amber-400'"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="lap-card p-5">
+                                <div class="mb-3 flex items-center gap-2">
+                                    <i class="bi bi-pie-chart-fill text-brand-500"></i>
+                                    <h3 class="lap-card-title">Distribusi Status</h3>
+                                </div>
+                                <div class="ringkas-donut">
+                                    <svg viewBox="0 0 42 42">
+                                        <g transform="rotate(-90 21 21)">
+                                            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f1f5f9" stroke-width="5"></circle>
+                                            <circle v-for="(s, i) in statusChart.segments" :key="'rs'+i" cx="21" cy="21" r="15.9155" fill="none"
+                                                :stroke="s.color" stroke-width="5" pathLength="100"
+                                                :stroke-dasharray="(s.pct * donutProgress) + ' ' + (100 - s.pct * donutProgress)"
+                                                :stroke-dashoffset="(-s.start)"></circle>
+                                        </g>
+                                        <text x="21" y="20" text-anchor="middle" dominant-baseline="middle" fill="#0f172a" font-size="7.5" font-weight="800">{{ statusChart.total }}</text>
+                                        <text x="21" y="26" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="3.4">Total</text>
+                                    </svg>
+                                    <div class="ringkas-legend">
+                                        <div v-for="s in statusChart.segments" :key="'rl'+s.label" class="lg">
+                                            <span class="sw" :style="{ background: s.color }"></span>
+                                            <span class="nm">{{ s.label }}</span>
+                                            <span class="vl">{{ s.value }}</span>
+                                        </div>
+                                        <div v-if="!statusChart.total" class="lg text-slate-400"><span class="nm">Belum ada data.</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="lap-card p-5">
+                                <div class="mb-2 flex items-center gap-2">
+                                    <i class="bi bi-exclamation-triangle-fill text-amber-500"></i>
+                                    <h3 class="lap-card-title">Tindakan</h3>
+                                </div>
+                                <div v-for="(t, i) in ringkasTindakan" :key="'td'+i" class="tindakan">
+                                    <div class="ic" :class="t.tint"><i :class="'bi ' + t.icon"></i></div>
+                                    <div class="min-w-0">
+                                        <div class="t">{{ t.title }}</div>
+                                        <div class="s">{{ t.detail }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </section>
+
             <!-- filter bar desktop (glassmorphism) -->
-            <div class="filter-desktop sticky top-16 z-30 mb-5 lap-card">
+            <div class="filter-desktop sticky top-16 z-30 mb-5 lap-card" v-show="laporanMode !== 'ringkas'">
                 <div class="in-toolbar">
                 <div class="grid w-full gap-3 md:grid-cols-12">
                     <div class="md:col-span-3">
@@ -482,7 +718,7 @@
             </div>
 
             <!-- filter bar mobile: mini-bar + bottom sheet (ala dashboard) -->
-            <div class="filter-mobile-bar">
+            <div class="filter-mobile-bar" v-show="laporanMode !== 'ringkas'">
                 <button type="button" class="btn-soft flex-1 !py-3" :aria-expanded="filterSheetOpen ? 'true' : 'false'" @click="filterSheetOpen = true">
                     <i class="bi bi-funnel"></i>
                     Filter
@@ -539,6 +775,7 @@
             </transition>
 
             <!-- tab switcher -->
+            <div v-if="laporanMode === 'analitis'">
             <div class="in-tabsw mb-6">
                 <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
                     :class="activeTab === t.key ? 'in-tab is-active' : 'in-tab'">
@@ -1699,6 +1936,151 @@
             </transition>
 
             </div>
+
+            <!-- ===================== HALAMAN: CETAK ===================== -->
+            <section v-if="laporanMode === 'cetak'" class="space-y-5">
+                <div class="no-print flex flex-wrap items-center justify-end gap-2">
+                    <button type="button" class="btn-soft" :disabled="exporting" @click="exportExcel()">
+                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
+                        {{ exporting ? 'Menyiapkan...' : 'Unduh .xlsx' }}
+                    </button>
+                    <button type="button" class="btn-primary" @click="printLaporan"><i class="bi bi-printer"></i> Cetak</button>
+                </div>
+
+                <div class="no-print grid gap-4 lg:grid-cols-3">
+                    <div class="lap-card p-5 lg:col-span-2">
+                        <div class="mb-4 flex items-center gap-2">
+                            <i class="bi bi-sliders text-brand-500"></i>
+                            <h3 class="lap-card-title">Pengaturan dokumen</h3>
+                        </div>
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            <div>
+                                <div class="mb-2 text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Jenis laporan</div>
+                                <div class="space-y-2">
+                                    <button type="button" :class="cetak.jenis === 'lengkap' ? 'in-chip is-active w-full justify-start' : 'in-chip w-full justify-start'" @click="cetak.jenis = 'lengkap'"><i class="bi bi-list-check"></i> Rekap &amp; rincian</button>
+                                    <button type="button" :class="cetak.jenis === 'rekap' ? 'in-chip is-active w-full justify-start' : 'in-chip w-full justify-start'" @click="cetak.jenis = 'rekap'"><i class="bi bi-table"></i> Rekap saja</button>
+                                    <button type="button" :class="cetak.jenis === 'rincian' ? 'in-chip is-active w-full justify-start' : 'in-chip w-full justify-start'" @click="cetak.jenis = 'rincian'"><i class="bi bi-card-list"></i> Rincian saja</button>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="mb-2 text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Lampiran</div>
+                                <div class="space-y-3 text-[13px] text-slate-600">
+                                    <label class="flex items-center gap-2"><input type="checkbox" v-model="cetak.kop" class="h-4 w-4"> Kop laboratorium</label>
+                                    <label class="flex items-center gap-2"><input type="checkbox" v-model="cetak.ttd" class="h-4 w-4"> Kolom tanda tangan</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 rounded-xl bg-slate-50 px-3 py-2 text-[11.5px] text-slate-500">
+                            Kertas A4 &middot; margin 14 mm. Gunakan dialog cetak browser untuk menyimpan sebagai PDF.
+                        </div>
+                    </div>
+
+                    <div class="lap-card p-5">
+                        <div class="mb-3 flex items-center gap-2">
+                            <i class="bi bi-exclamation-triangle-fill text-amber-500"></i>
+                            <h3 class="lap-card-title">Sebelum mencetak</h3>
+                        </div>
+                        <div class="space-y-2.5 text-[12.5px] text-slate-600">
+                            <div v-for="(p, i) in cetakPreflight" :key="'pf'+i" class="flex items-start gap-2">
+                                <i class="bi mt-0.5 text-sm" :class="p.ok ? 'bi-check-circle-fill text-emerald-500' : 'bi-exclamation-circle-fill text-amber-500'"></i>
+                                <span>{{ p.text }}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-soft mt-4 w-full" @click="switchLaporanMode('ringkas')"><i class="bi bi-arrow-left"></i> Kembali ke ringkasan</button>
+                    </div>
+                </div>
+
+                <div class="print-sheet">
+                    <div v-if="cetak.kop" class="ps-cop">
+                        <div class="ps-logo">IH</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="ps-inst">Laboratorium Terpadu</div>
+                            <div class="ps-sub">INHAL &middot; Unit Pengelola Praktikum</div>
+                            <div class="ps-addr">Jl. Pendidikan No. 12, Makassar &middot; lab@inhal.ac.id &middot; (0411) 555-0123</div>
+                        </div>
+                        <div class="ps-no">No. {{ cetakNomor }}<br>Halaman 1</div>
+                    </div>
+
+                    <div class="ps-title">
+                        <h1>Laporan Pelaksanaan Praktikum</h1>
+                        <div class="sub">{{ cetakSemester }}</div>
+                    </div>
+
+                    <div class="ps-meta">
+                        <span v-for="(m, i) in cetakMeta" :key="'cm'+i">{{ m.l }}: <b>{{ m.v }}</b></span>
+                    </div>
+
+                    <template v-if="cetak.jenis !== 'rincian'">
+                        <h2 class="ps-h">A. Ringkasan</h2>
+                        <div class="ps-sum">
+                            <div class="b"><div class="l">Kegiatan</div><div class="v">{{ cetakRingkasan.kegiatan }}</div></div>
+                            <div class="b"><div class="l">Peserta</div><div class="v">{{ cetakRingkasan.peserta }}</div></div>
+                            <div class="b"><div class="l">Honor dosen</div><div class="v" style="font-size:13px">{{ cetakRingkasan.honorText }}</div></div>
+                            <div class="b"><div class="l">Berkas lengkap</div><div class="v">{{ cetakRingkasan.lengkapPct }}%</div></div>
+                        </div>
+                        <p style="margin-top:8px;font-size:10.5px;line-height:1.6;color:#334155">Laporan ini merangkum pelaksanaan praktikum sesuai periode dan filter pada bagian meta. Seluruh angka dihitung dari data yang sedang aktif.</p>
+
+                        <h2 class="ps-h">B. Rekapitulasi per Blok</h2>
+                        <table class="ps-table">
+                            <colgroup><col style="width:34px"><col style="width:28%"><col style="width:13%"><col style="width:15%"><col style="width:24%"><col style="width:20%"></colgroup>
+                            <thead><tr><th class="c">No</th><th>Blok</th><th class="c">Kegiatan</th><th class="c">Peserta</th><th class="r">Honor</th><th class="c">Berkas lengkap</th></tr></thead>
+                            <tbody>
+                                <tr v-for="(b, i) in cetakRekapBlok" :key="'cb'+i">
+                                    <td class="c">{{ i + 1 }}</td>
+                                    <td>{{ b.label }}</td>
+                                    <td class="c">{{ b.kegiatan }}</td>
+                                    <td class="c">{{ b.peserta }}</td>
+                                    <td class="r">{{ fmtRupiah(b.honor) }}</td>
+                                    <td class="c">{{ b.lengkap }} / {{ b.kegiatan }}</td>
+                                </tr>
+                                <tr v-if="!cetakRekapBlok.length"><td colspan="6" class="c" style="color:#94a3b8">Belum ada data pada filter ini.</td></tr>
+                            </tbody>
+                            <tfoot v-if="cetakRekapBlok.length">
+                                <tr>
+                                    <td colspan="2" style="font-weight:800;background:#f1f5f9">Total</td>
+                                    <td class="c" style="font-weight:800;background:#f1f5f9">{{ cetakRingkasan.kegiatan }}</td>
+                                    <td class="c" style="font-weight:800;background:#f1f5f9">{{ cetakRingkasan.peserta }}</td>
+                                    <td class="r" style="font-weight:800;background:#f1f5f9">{{ cetakRingkasan.honorText }}</td>
+                                    <td class="c" style="font-weight:800;background:#f1f5f9">{{ cetakRingkasan.lengkap }} / {{ cetakRingkasan.kegiatan }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </template>
+
+                    <template v-if="cetak.jenis !== 'rekap'">
+                        <h2 class="ps-h">C. Rincian Kegiatan</h2>
+                        <table class="ps-table">
+                            <colgroup><col style="width:30px"><col style="width:26%"><col style="width:14%"><col style="width:15%"><col style="width:10%"><col style="width:8%"><col style="width:12%"><col style="width:13%"></colgroup>
+                            <thead><tr><th class="c">No</th><th>Kegiatan</th><th>Tanggal</th><th>Bagian</th><th>Blok</th><th class="c">Peserta</th><th class="c">Status</th><th class="c">Berkas</th></tr></thead>
+                            <tbody>
+                                <tr v-for="(k, i) in cetakRincian" :key="'cr'+i">
+                                    <td class="c">{{ i + 1 }}</td>
+                                    <td>{{ k.nama }}</td>
+                                    <td>{{ fmtTanggal(k.tanggal) }}</td>
+                                    <td>{{ k.bagian }}</td>
+                                    <td>{{ k.blok || '-' }}</td>
+                                    <td class="c">{{ k.jumlahPeserta }}</td>
+                                    <td class="c">{{ k.statusK }}</td>
+                                    <td class="c">{{ k.berkasLengkap ? 'Lengkap' : 'Belum' }}</td>
+                                </tr>
+                                <tr v-if="!cetakRincian.length"><td colspan="8" class="c" style="color:#94a3b8">Belum ada kegiatan pada filter ini.</td></tr>
+                            </tbody>
+                        </table>
+                    </template>
+
+                    <div v-if="cetak.ttd" class="ps-sign">
+                        <div class="s">Mengetahui,<br>Kepala Laboratorium<div class="line">Nama &amp; NIP</div></div>
+                        <div class="s">Makassar, {{ fmtTanggal(new Date().toISOString()) }}<br>Admin INHAL<div class="line">Nama &amp; NIP</div></div>
+                    </div>
+
+                    <div class="ps-foot">
+                        <span>Dokumen ini dihasilkan oleh Dashboard INHAL</span>
+                        <span>{{ cetakNomor }}</span>
+                    </div>
+                </div>
+            </section>
+
+            </div>
         </main>
 
         <!-- ============ MOBILE BOTTOM NAV ============ -->
@@ -2031,6 +2413,8 @@
                     loginError: '',
                     loginLoading: false,
                     activeTab: 'rekap',
+                    laporanMode: 'ringkas',
+                    cetak: { jenis: 'lengkap', kop: true, ttd: true },
                     sidebarCollapsed: false,
                     sidebarOpen: false,
                     mobileMenuOpen: false,
@@ -2101,6 +2485,170 @@
                 },
                 activeFilterCount() {
                     return ['from', 'to', 'blok', 'status'].filter(k => this.filters[k]).length;
+                },
+                modeTitle() {
+                    return { ringkas: 'Ringkasan Laporan', analitis: 'Analisis Laporan', cetak: 'Cetak Laporan' }[this.laporanMode] || 'Laporan';
+                },
+                modeSubtitle() {
+                    return {
+                        ringkas: 'Gambaran umum laporan pada periode dan filter yang sedang aktif.',
+                        analitis: 'Irisan data, matriks dosen/bagian, berita acara, jadwal, dan pembayaran.',
+                        cetak: 'Susun dokumen laporan formal siap cetak dari data yang sama.'
+                    }[this.laporanMode] || '';
+                },
+                ringkasKegiatanAll() {
+                    const blok = this.filters.blok;
+                    const status = this.filters.status;
+                    const q = this.normSearch(this.filters.search);
+                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
+                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    return this.bagianKegiatanAll.filter(k => {
+                        if (blok && String(k.blok || '').trim() !== blok) return false;
+                        if (fromD || toD) {
+                            const d = this.dateVal(k.tanggal);
+                            if (!d) return false;
+                            if (fromD && d < fromD) return false;
+                            if (toD && d > toD) return false;
+                        }
+                        const peserta = k.peserta || [];
+                        if (status && !peserta.some(p => String(p.status || '').trim() === status)) return false;
+                        if (q) {
+                            if (this.normSearch(k.nama).indexOf(q) !== -1) return true;
+                            if (peserta.some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1)) return true;
+                            return false;
+                        }
+                        return true;
+                    }).map(k => {
+                        const peserta = k.peserta || [];
+                        const counts = {};
+                        peserta.forEach(p => {
+                            const s = String(p.status || '').trim() || '-';
+                            counts[s] = (counts[s] || 0) + 1;
+                        });
+                        let statusK = '-';
+                        let best = 0;
+                        ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(s => {
+                            const n = counts[s] || 0;
+                            if (n > best) { best = n; statusK = s; }
+                        });
+                        const bukti = peserta.filter(p => p.linkBukti).length;
+                        return {
+                            nama: k.nama,
+                            tanggal: k.tanggal,
+                            bagian: k.bagian,
+                            blok: k.blok,
+                            sumber: k.sumber,
+                            jumlahPeserta: Number(k.jumlahPeserta) || peserta.length,
+                            biaya: Number(k.biaya) || 0,
+                            bukti: bukti,
+                            statusK: statusK,
+                            berkasLengkap: peserta.length > 0 && bukti === peserta.length
+                        };
+                    });
+                },
+                ringkasRecent() {
+                    return this.ringkasKegiatanAll.slice().sort((a, b) => {
+                        const da = this.dateVal(a.tanggal);
+                        const db = this.dateVal(b.tanggal);
+                        return (db ? db.getTime() : 0) - (da ? da.getTime() : 0) || String(a.nama || '').localeCompare(String(b.nama || ''));
+                    }).slice(0, 6);
+                },
+                ringkasStats() {
+                    const list = this.ringkasKegiatanAll;
+                    const rows = this.filteredRows;
+                    const honor = rows.reduce((t, r) => t + (Number(r.pengajuan.Biaya) || 0), 0);
+                    const menungguRows = rows.filter(r => String(r.pengajuan.Status || '').trim() === 'Menunggu');
+                    const lengkap = list.filter(k => k.berkasLengkap).length;
+                    return {
+                        kegiatan: list.length,
+                        peserta: rows.length,
+                        honor: honor,
+                        honorText: fmtRupiah(honor),
+                        approved: rows.filter(r => String(r.pengajuan.Status || '').trim() === 'ACC').length,
+                        menunggu: menungguRows.length,
+                        honorTertahan: menungguRows.reduce((t, r) => t + (Number(r.pengajuan.Biaya) || 0), 0),
+                        lengkap: lengkap,
+                        belumLengkap: list.length - lengkap,
+                        lengkapPct: list.length ? Math.round((lengkap / list.length) * 100) : 0
+                    };
+                },
+                ringkasTindakan() {
+                    const s = this.ringkasStats;
+                    const belumBa = this.ringkasKegiatanAll.filter(k => k.sumber !== 'BA').length;
+                    return [
+                        { icon: 'bi-hourglass-split', tint: '', title: s.menunggu + ' pengajuan menunggu', detail: 'Perlu keputusan verifikasi' },
+                        { icon: 'bi-file-earmark-x', tint: 'r', title: belumBa + ' kegiatan belum punya BA', detail: 'Lengkapi berita acara pelaksanaan' },
+                        { icon: 'bi-cash-stack', tint: 'b', title: fmtRupiah(s.honorTertahan) + ' honor tertahan', detail: 'Menunggu pengajuan disetujui' }
+                    ];
+                },
+                ringkasByBlok() {
+                    const map = {};
+                    const rowMap = {};
+                    this.filteredRows.forEach(r => {
+                        const p = r.pengajuan;
+                        const key = String(p.Blok || '').trim() || 'Tanpa Blok';
+                        if (!rowMap[key]) rowMap[key] = { peserta: 0, honor: 0 };
+                        rowMap[key].peserta++;
+                        rowMap[key].honor += Number(p.Biaya) || 0;
+                    });
+                    this.ringkasKegiatanAll.forEach(k => {
+                        const key = String(k.blok || '').trim() || 'Tanpa Blok';
+                        if (!map[key]) map[key] = { label: key, kegiatan: 0, peserta: 0, honor: 0, lengkap: 0 };
+                        map[key].kegiatan++;
+                        if (k.berkasLengkap) map[key].lengkap++;
+                    });
+                    Object.keys(rowMap).forEach(key => {
+                        if (!map[key]) map[key] = { label: key, kegiatan: 0, peserta: 0, honor: 0, lengkap: 0 };
+                        map[key].peserta = rowMap[key].peserta;
+                        map[key].honor = rowMap[key].honor;
+                    });
+                    return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
+                },
+                cetakNomor() {
+                    const d = new Date();
+                    return 'LAP/' + d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0');
+                },
+                cetakSemester() {
+                    const m = new Date().getMonth() + 1;
+                    const y = new Date().getFullYear();
+                    return m >= 8 ? 'Semester Ganjil Tahun Akademik ' + y + '/' + (y + 1) : 'Semester Genap Tahun Akademik ' + (y - 1) + '/' + y;
+                },
+                cetakMeta() {
+                    const from = this.filters.from ? fmtTanggal(this.filters.from) : '';
+                    const to = this.filters.to ? fmtTanggal(this.filters.to) : '';
+                    const periode = (from || to) ? ((from || 'Awal') + ' – ' + (to || 'Sekarang')) : 'Semua periode';
+                    return [
+                        { l: 'Periode', v: periode },
+                        { l: 'Blok', v: this.filters.blok || 'Semua blok' },
+                        { l: 'Status', v: this.filters.status || 'Semua status' },
+                        { l: 'Dicetak', v: fmtTanggalWaktu(new Date().toISOString()) }
+                    ];
+                },
+                cetakPreflight() {
+                    const s = this.ringkasStats;
+                    const from = this.filters.from ? fmtTanggal(this.filters.from) : '';
+                    const to = this.filters.to ? fmtTanggal(this.filters.to) : '';
+                    const periode = (from || to) ? ((from || 'Awal') + ' – ' + (to || 'Sekarang')) : 'Semua periode';
+                    return [
+                        { ok: true, text: 'Periode: ' + periode },
+                        { ok: true, text: s.kegiatan + ' kegiatan · ' + s.peserta + ' peserta' },
+                        { ok: s.menunggu === 0, text: s.menunggu ? s.menunggu + ' pengajuan belum final' : 'Semua pengajuan final' },
+                        { ok: s.belumLengkap === 0, text: s.belumLengkap ? s.belumLengkap + ' kegiatan berkas belum lengkap' : 'Semua berkas lengkap' }
+                    ];
+                },
+                cetakRingkasan() {
+                    return this.ringkasStats;
+                },
+                cetakRekapBlok() {
+                    return this.ringkasByBlok;
+                },
+                cetakRincian() {
+                    return this.ringkasKegiatanAll.slice().sort((a, b) => {
+                        const da = this.dateVal(a.tanggal);
+                        const db = this.dateVal(b.tanggal);
+                        return (da ? da.getTime() : 0) - (db ? db.getTime() : 0) || String(a.nama || '').localeCompare(String(b.nama || ''));
+                    });
                 },
                 filteredRows() {
                     const blok = this.filters.blok;
@@ -2877,7 +3425,26 @@
             methods: {
                 toggleSidebar() { this.sidebarCollapsed = !this.sidebarCollapsed; },
                 toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; },
-                switchTab(key) { this.activeTab = key; this.mobileMenuOpen = false; this.sidebarOpen = false; },
+                switchTab(key) {
+                    this.activeTab = key;
+                    this.laporanMode = 'analitis';
+                    this.mobileMenuOpen = false;
+                    this.sidebarOpen = false;
+                },
+                switchLaporanMode(mode) {
+                    if (['ringkas', 'analitis', 'cetak'].indexOf(mode) === -1) return;
+                    this.laporanMode = mode;
+                    try {
+                        const url = new URL(window.location.href);
+                        if (mode === 'ringkas') url.searchParams.delete('mode');
+                        else url.searchParams.set('mode', mode);
+                        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+                    } catch (e) { /* URL API tidak tersedia */ }
+                    if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                printLaporan() {
+                    if (typeof window !== 'undefined' && window.print) window.print();
+                },
                 safeUrl(v) {
                     return AppCommon.safeUrl(v);
                 },
@@ -3645,6 +4212,10 @@
             },
             mounted() {
                 this.session = readSession();
+                try {
+                    const mode = new URLSearchParams(window.location.search).get('mode');
+                    if (['ringkas', 'analitis', 'cetak'].indexOf(mode) !== -1) this.laporanMode = mode;
+                } catch (e) { /* abaikan URL tidak valid */ }
                 if (this.loggedIn) this.loadData();
             },
             beforeUnmount() {
