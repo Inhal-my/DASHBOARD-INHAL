@@ -150,3 +150,21 @@ describe('bagian workspace v2 — berita acara', () => {
     expect(html).toContain('Simpan &amp; Lengkapi');
   });
 });
+
+describe('bagian workspace v2 — riwayat', () => {
+  it('menampilkan arsip BA lengkap dengan pencarian dan filter Blok', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('riwayatItems');
+    expect(html).toContain('visibleRiwayatItems');
+    expect(html).toContain('riwayat-table');
+    expect(html).toContain('riwayat-cards');
+    expect(html).toContain('blokOptions');
+  });
+
+  it('membuka detail read-only dari Riwayat', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain("selectItem('ba', item.key)");
+    expect(html).toContain('Buka File BA');
+    expect(html).toContain('Belum ada BA lengkap');
+  });
+});

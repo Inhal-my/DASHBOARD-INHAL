@@ -1837,7 +1837,7 @@ git commit -m "feat(bagian): antrean berita acara dan form draft inline"
 - Consumes: `BagianState.buildRiwayatItems`, `matchesQuery`; `blokOptions`; `selectItem('ba', id)`.
 - Produces: computed `riwayatItems`, `visibleRiwayatItems`; markup tabel desktop + kartu ponsel; detail read-only sudah memakai blok `selectedItem.kind==='ba' && selesai` dari Task 4.
 
-- [ ] **Step 1: Tambahkan test yang gagal**
+- [x] **Step 1: Tambahkan test yang gagal**
 
 Tambahkan ke `new-code1-cf/test/bagian-workspace-v2.test.js`:
 
@@ -1861,12 +1861,12 @@ describe('bagian workspace v2 — riwayat', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-workspace-v2.test.js`
 Expected: FAIL — `visibleRiwayatItems`, `riwayat-table` belum ada.
 
-- [ ] **Step 3: Ganti kartu Riwayat lama**
+- [x] **Step 3: Ganti kartu Riwayat lama**
 
 Ganti seluruh blok dari `<!-- ===== DAFTAR BERITA ACARA ===== -->` sampai penutup kartu (sebelum penutup `</div>` workspace), dengan:
 
@@ -1939,7 +1939,7 @@ Ganti seluruh blok dari `<!-- ===== DAFTAR BERITA ACARA ===== -->` sampai penutu
                     </section>
 ```
 
-- [ ] **Step 4: Tambahkan computed Riwayat**
+- [x] **Step 4: Tambahkan computed Riwayat**
 
 Di `computed`, ganti `riwayatItems` sementara dengan:
 
@@ -1957,7 +1957,7 @@ Di `computed`, ganti `riwayatItems` sementara dengan:
                 },
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run:
 
@@ -1968,7 +1968,7 @@ npx vitest run test/bagian-workspace-v2.test.js
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /workspace
