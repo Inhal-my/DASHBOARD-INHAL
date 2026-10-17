@@ -1474,7 +1474,7 @@ git commit -m "feat(bagian): jadwal split workspace dan panel detail"
 - Consumes: `BagianState.buildBaWorkItems`, `matchesQuery`, `sortByDate`; state `baTabFilter`, `ba.lengkapi`.
 - Produces: computed `baWorkItems`, `visibleBaItems`; methods `goCreateBa(blok, nama)`, `openBaForGroup(g)`, `openBaForGroupByKey(key)`, `editDraftBa(r)`, `editDraftBaById(id)`, `saveDraftBa()`; markup antrean BA + form baru + form draft inline.
 
-- [ ] **Step 1: Tambahkan test yang gagal**
+- [x] **Step 1: Tambahkan test yang gagal**
 
 Tambahkan ke `new-code1-cf/test/bagian-workspace-v2.test.js`:
 
@@ -1505,12 +1505,12 @@ describe('bagian workspace v2 — berita acara', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-workspace-v2.test.js`
 Expected: FAIL — `visibleBaItems`, `saveDraftBa`, modal lama masih ada.
 
-- [ ] **Step 3: Ganti kartu BA lama + draft lama dengan antrean kerja**
+- [x] **Step 3: Ganti kartu BA lama + draft lama dengan antrean kerja**
 
 Ganti seluruh blok dari `<!-- ===== UPLOAD BERITA ACARA ===== -->` sampai tepat sebelum `<!-- ===== DAFTAR BERITA ACARA ===== -->` dengan:
 
@@ -1562,7 +1562,7 @@ Ganti seluruh blok dari `<!-- ===== UPLOAD BERITA ACARA ===== -->` sampai tepat 
                     </section>
 ```
 
-- [ ] **Step 4: Tambahkan computed antrean BA**
+- [x] **Step 4: Tambahkan computed antrean BA**
 
 Di `computed`, ganti `baWorkItems` sementara dengan:
 
@@ -1584,7 +1584,7 @@ Di `computed`, ganti `baWorkItems` sementara dengan:
                 },
 ```
 
-- [ ] **Step 5: Tambahkan method aksi BA**
+- [x] **Step 5: Tambahkan method aksi BA**
 
 Di `methods`, tambahkan:
 
@@ -1659,7 +1659,7 @@ Di `methods`, tambahkan:
                 },
 ```
 
-- [ ] **Step 6: Sisipkan form BA dan draft di panel detail**
+- [x] **Step 6: Sisipkan form BA dan draft di panel detail**
 
 Di dalam `<div class="p-4" @input="markFormDirty" @change="markFormDirty">`, ganti `<!-- detail: jadwal end -->` dengan:
 
@@ -1792,11 +1792,11 @@ Di dalam `<div class="p-4" @input="markFormDirty" @change="markFormDirty">`, gan
                                     <!-- detail: ba end -->
 ```
 
-- [ ] **Step 7: Hapus modal Lengkapi Draft lama**
+- [x] **Step 7: Hapus modal Lengkapi Draft lama**
 
 Hapus seluruh blok dari `<!-- ===== LENGKAPI DRAFT BA ===== -->` sampai `</transition>` penutupnya (sekitar baris 618-645).
 
-- [ ] **Step 8: Perbarui `doUploadBa` agar memuat ulang seluruh data**
+- [x] **Step 8: Perbarui `doUploadBa` agar memuat ulang seluruh data**
 
 Ganti `await this.loadBaList();` di `doUploadBa` dengan:
 
@@ -1806,7 +1806,7 @@ Ganti `await this.loadBaList();` di `doUploadBa` dengan:
 
 Hapus method `loadBaList()` (sekitar baris 1048-1054) dan method `lengkapiDraft(r)` lama.
 
-- [ ] **Step 9: Jalankan test, pastikan lulus**
+- [x] **Step 9: Jalankan test, pastikan lulus**
 
 Run:
 
@@ -1817,7 +1817,7 @@ npx vitest run test/bagian-workspace-v2.test.js test/bagian-template.test.js
 
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 cd /workspace

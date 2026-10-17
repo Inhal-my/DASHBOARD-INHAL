@@ -125,3 +125,28 @@ describe('bagian workspace v2 — jadwal', () => {
     expect(html).toContain('unscheduledPeserta');
   });
 });
+
+describe('bagian workspace v2 — berita acara', () => {
+  it('menampilkan antrean BA tanpa BA selesai', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('baWorkItems');
+    expect(html).toContain('visibleBaItems');
+    expect(html).toContain("baTabFilter==='draft'");
+    expect(html).toContain('Belum dibuat');
+  });
+
+  it('menyediakan aksi Buat BA dan Lengkapi', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('goCreateBa');
+    expect(html).toContain('Lengkapi');
+    expect(html).toContain('saveDraftBa');
+    expect(html).toContain('editDraftBa');
+  });
+
+  it('menghapus modal lengkapi lama dan merender form draft inline', async () => {
+    const html = await loadBagianHtml();
+    expect(html).not.toContain('<!-- ===== LENGKAPI DRAFT BA ===== -->');
+    expect(html).not.toContain('lengkapiDraft(');
+    expect(html).toContain('Simpan &amp; Lengkapi');
+  });
+});
