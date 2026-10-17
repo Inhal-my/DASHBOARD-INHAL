@@ -14,7 +14,6 @@ async function adminCtx() {
 
 describe('master read mapping', () => {
   it('maps snake_case rows to client Title Case columns', async () => {
-    await env.DB.prepare("INSERT INTO master_kegiatan (kategori, nilai) VALUES ('Blok','A')").run();
     const data = await getMasterDataMonitor(env.DB, await adminCtx());
     expect(data.masterKegiatan[0].Kategori).toBe('Blok');
     expect(data.masterKegiatan[0].Nilai).toBe('A');
@@ -75,14 +74,15 @@ describe('master write handlers', () => {
     const res = await saveMasterKegiatan(env.DB, {
       rows: [
         { Kategori: 'Blok', Nilai: 'A' },
+        { Kategori: 'Blok', Nilai: 'B' },
         { kategori: 'Ujian', nilai: 'UAS' },
         { Kategori: '', Nilai: '' }
       ]
     }, ctx);
     expect(res.success).toBe(true);
     const { results } = await env.DB.prepare('SELECT kategori, nilai FROM master_kegiatan ORDER BY id').all();
-    expect(results).toHaveLength(2);
-    expect(results.map((r) => r.kategori + ':' + r.nilai)).toEqual(['Blok:A', 'Ujian:UAS']);
+    expect(results).toHaveLength(3);
+    expect(results.map((r) => r.kategori + ':' + r.nilai)).toEqual(['Blok:A', 'Blok:B', 'Ujian:UAS']);
   });
 
   it('replaces master bagian and master biaya', async () => {

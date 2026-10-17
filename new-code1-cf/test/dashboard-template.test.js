@@ -118,6 +118,25 @@ describe('dashboard template', () => {
     expect(html).toContain("master.rowModal");
   });
 
+  it('menyediakan alur ganti nama blok dengan pratinjau dampak', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('@click="openRenameMaster(r)"');
+    expect(html).toContain('previewMasterRename');
+    expect(html).toContain('renameMasterValue');
+    expect(html).toContain('Hitung dampak perubahan');
+    expect(html).toContain('master.rename.conflicts');
+    expect(html).toContain('renameImpactRows');
+  });
+
+  it('menyediakan modal audit integritas master', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('@click="openMasterAudit()"');
+    expect(html).toContain('auditMasterIntegrity');
+    expect(html).toContain('Audit Integritas Master');
+    expect(html).toContain('auditDriftTables');
+    expect(html).toContain('auditBlankRows');
+  });
+
   it('memuat progres kegiatan dan modal Kelola BA', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('progresDots');

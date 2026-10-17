@@ -19,6 +19,7 @@ CREATE TABLE mahasiswa (
 CREATE TABLE master_kegiatan (
   id INTEGER PRIMARY KEY AUTOINCREMENT, kategori TEXT NOT NULL, nilai TEXT NOT NULL
 );
+CREATE UNIQUE INDEX idx_master_kegiatan_unique ON master_kegiatan(lower(trim(kategori)), lower(trim(nilai)));
 CREATE TABLE master_bagian (
   id INTEGER PRIMARY KEY AUTOINCREMENT, lab TEXT, kegiatan_lab TEXT, bagian TEXT, email TEXT
 );

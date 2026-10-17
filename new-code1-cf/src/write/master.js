@@ -1,5 +1,8 @@
 import { requireAdmin } from '../session.js';
 import { hashPassword, isHashed } from '../password.js';
+import { kegiatanKey } from '../read/common.js';
+import { writeAuditLog } from '../audit.js';
+import { BLOK_REF_TABLES, KEGIATAN_KEY_TABLES } from '../masterRefs.js';
 
 const STATUS_VALID = ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'];
 const MAX_ROWS = 5000;
@@ -69,6 +72,19 @@ export async function saveMasterKegiatan(db, payload, ctx) {
   ]);
   const guard = guardRows(rows);
   if (guard) return guard;
+  const nextBlok = new Set(rows.filter((r) => String(r.kategori || '').trim().toLowerCase() === 'blok').map((r) => masterValue(r.nilai).toLowerCase()));
+  const { results: currentBlok } = await db.prepare("SELECT nilai FROM master_kegiatan WHERE lower(trim(kategori)) = 'blok'").all();
+  for (const row of currentBlok || []) {
+    const oldValue = masterValue(row.nilai);
+    if (nextBlok.has(oldValue.toLowerCase())) continue;
+    const usage = await blokUsage(db, oldValue);
+    if (usage.total > 0) {
+      return {
+        success: false, code: 'RENAME_REQUIRED',
+        message: 'Blok "' + oldValue + '" masih dipakai. Ganti nama lewat tombol Ganti nama agar semua data ikut diperbarui.'
+      };
+    }
+  }
   await replaceAll(db, 'master_kegiatan', ['kategori', 'nilai'], rows);
   return { success: true, message: 'Master kegiatan diperbarui.' };
 }
@@ -277,6 +293,135 @@ const MASTER_TABLES = {
   }
 };
 
+const MAX_RENAME_ROWS = 5000;
+
+function masterValue(v) {
+  return str(v).replace(/\s+/g, ' ');
+}
+
+async function blokUsage(db, value) {
+  const out = {};
+  const counts = await Promise.all(BLOK_REF_TABLES.map(async (table) => {
+    const row = await db.prepare(
+      'SELECT COUNT(*) AS n FROM ' + table + ' WHERE lower(trim(blok)) = lower(trim(?1))'
+    ).bind(value).first();
+    return Number(row && row.n) || 0;
+  }));
+  BLOK_REF_TABLES.forEach((table, i) => { out[table] = counts[i]; });
+  out.total = counts.reduce((sum, n) => sum + n, 0);
+  return out;
+}
+
+async function findMasterConflict(db, kategori, nilai, id) {
+  return db.prepare(
+    "SELECT id, nilai FROM master_kegiatan WHERE lower(trim(kategori)) = lower(trim(?1)) " +
+    "AND lower(trim(nilai)) = lower(trim(?2)) AND id <> ?3"
+  ).bind(kategori, nilai, Number(id) || 0).first();
+}
+
+async function findMasterBlok(db, id) {
+  return db.prepare(
+    "SELECT id, kategori, nilai FROM master_kegiatan WHERE id = ?1 AND lower(trim(kategori)) = 'blok'"
+  ).bind(Number(id) || 0).first();
+}
+
+async function blokRenamePlan(db, payload, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = Number(payload && payload.id) || 0;
+  const newValue = masterValue(payload && payload.newValue);
+  if (!id) return { success: false, code: 'INVALID_ID', message: 'Baris master tidak valid.' };
+  if (!newValue) return { success: false, code: 'INVALID_VALUE', message: 'Nama baru wajib diisi.' };
+  const row = await findMasterBlok(db, id);
+  if (!row) return { success: false, code: 'NOT_FOUND', message: 'Blok tidak ditemukan.' };
+  const oldValue = masterValue(row.nilai);
+  const sameValue = oldValue.toLowerCase() === newValue.toLowerCase();
+  const impact = await blokUsage(db, oldValue);
+  const targetUsage = sameValue ? { total: 0 } : await blokUsage(db, newValue);
+  const masterConflict = await findMasterConflict(db, 'Blok', newValue, id);
+  const dataConflict = targetUsage.total > 0;
+  const regenRow = await db.prepare(
+    "SELECT COUNT(*) AS n FROM berita_acara_admin WHERE lower(trim(blok)) = lower(trim(?1)) " +
+    "AND coalesce(file_url, '') <> ''"
+  ).bind(oldValue).first();
+  return {
+    success: true,
+    id: id,
+    oldValue: oldValue,
+    newValue: newValue,
+    impact: impact,
+    total: impact.total,
+    baRegen: Number(regenRow && regenRow.n) || 0,
+    conflicts: { master: !!masterConflict, data: dataConflict }
+  };
+}
+
+export async function previewMasterRename(db, payload, ctx) {
+  return blokRenamePlan(db, payload, ctx);
+}
+
+export async function renameMasterValue(db, payload, ctx) {
+  const plan = await blokRenamePlan(db, payload, ctx);
+  if (!plan.success) return plan;
+  if (plan.oldValue.toLowerCase() === plan.newValue.toLowerCase() && plan.oldValue === plan.newValue) {
+    return { success: true, message: 'Nama blok tidak berubah.', oldValue: plan.oldValue, newValue: plan.newValue, impact: plan.impact, total: plan.total };
+  }
+  if (plan.conflicts.master) {
+    return {
+      success: false, code: 'RENAME_CONFLICT',
+      message: 'Blok "' + plan.newValue + '" sudah ada di master. Gunakan nama lain atau selesaikan lewat merge.',
+      oldValue: plan.oldValue, newValue: plan.newValue, impact: plan.impact, total: plan.total
+    };
+  }
+  if (plan.conflicts.data) {
+    return {
+      success: false, code: 'RENAME_CONFLICT',
+      message: 'Blok "' + plan.newValue + '" sudah dipakai data lain. Rename akan menggabungkan dua blok; selesaikan manual terlebih dahulu.',
+      oldValue: plan.oldValue, newValue: plan.newValue, impact: plan.impact, total: plan.total
+    };
+  }
+  if (plan.total > MAX_RENAME_ROWS) {
+    return { success: false, code: 'TOO_MANY_ROWS', message: 'Terlalu banyak baris terdampak (maks ' + MAX_RENAME_ROWS + ').' };
+  }
+
+  const statements = [];
+  statements.push(db.prepare('UPDATE master_kegiatan SET nilai = ?1 WHERE id = ?2').bind(plan.newValue, plan.id));
+  statements.push(db.prepare(
+    "UPDATE berita_acara_admin SET needs_regen = 1 WHERE lower(trim(blok)) = lower(trim(?1)) " +
+    "AND coalesce(file_url, '') <> ''"
+  ).bind(plan.oldValue));
+  for (const table of BLOK_REF_TABLES) {
+    statements.push(db.prepare(
+      'UPDATE ' + table + ' SET blok = ?1 WHERE lower(trim(blok)) = lower(trim(?2))'
+    ).bind(plan.newValue, plan.oldValue));
+  }
+  for (const table of KEGIATAN_KEY_TABLES) {
+    const { results } = await db.prepare(
+      'SELECT id, bagian, nama_kegiatan FROM ' + table + ' WHERE lower(trim(blok)) = lower(trim(?1))'
+    ).bind(plan.oldValue).all();
+    for (const r of results || []) {
+      statements.push(db.prepare('UPDATE ' + table + ' SET kegiatan_key = ?1 WHERE id = ?2')
+        .bind(kegiatanKey(r.bagian, plan.newValue, r.nama_kegiatan), r.id));
+    }
+  }
+  await db.batch(statements);
+  await writeAuditLog(db, {
+    actor: (ctx.session && ctx.session.nama) || 'Admin',
+    action: 'RENAME_MASTER',
+    target: 'Blok: ' + plan.oldValue + ' -> ' + plan.newValue,
+    detail: JSON.stringify(plan.impact)
+  });
+  return {
+    success: true,
+    message: 'Blok diubah menjadi "' + plan.newValue + '". ' + plan.total + ' baris diperbarui' +
+      (plan.baRegen ? ', ' + plan.baRegen + ' BA perlu dibuat ulang.' : '.'),
+    oldValue: plan.oldValue,
+    newValue: plan.newValue,
+    impact: plan.impact,
+    total: plan.total,
+    baRegen: plan.baRegen
+  };
+}
+
 async function rejectDuplicate(db, table, spec, mapped, id) {
   if (!spec.uniqueCol) return null;
   const value = mapped[spec.uniqueCol];
@@ -303,6 +448,33 @@ export async function saveMasterRow(db, payload, ctx) {
   }
   if (!filled) return { success: false, message: 'Baris kosong.' };
   const id = Number(raw.id) || 0;
+  if (table === 'master_kegiatan') {
+    mapped.kategori = masterValue(mapped.kategori);
+    mapped.nilai = masterValue(mapped.nilai);
+    if (!mapped.kategori || !mapped.nilai) return { success: false, message: 'Kategori dan nilai wajib diisi.' };
+    const conflict = await findMasterConflict(db, mapped.kategori, mapped.nilai, id);
+    if (conflict) {
+      return { success: false, code: 'DUPLICATE_MASTER', message: 'Nilai ' + mapped.nilai + ' sudah ada pada kategori ' + mapped.kategori + '.' };
+    }
+    if (id) {
+      const existing = await db.prepare('SELECT id, kategori, nilai FROM master_kegiatan WHERE id = ?1').bind(id).first();
+      if (existing && String(existing.kategori || '').trim().toLowerCase() === 'blok') {
+        const oldValue = masterValue(existing.nilai);
+        const changed = String(existing.kategori || '').trim().toLowerCase() !== mapped.kategori.toLowerCase() ||
+          oldValue.toLowerCase() !== mapped.nilai.toLowerCase();
+        if (changed) {
+          const usage = await blokUsage(db, oldValue);
+          if (usage.total > 0) {
+            return {
+              success: false, code: 'RENAME_REQUIRED',
+              message: 'Blok "' + oldValue + '" sudah dipakai di ' + usage.total + ' baris. Gunakan tombol Ganti nama agar semua data ikut diperbarui.',
+              impact: usage
+            };
+          }
+        }
+      }
+    }
+  }
   if (spec.passwordCol) {
     const pw = mapped[spec.passwordCol];
     if (pw && !isHashed(pw)) mapped[spec.passwordCol] = await hashPassword(pw);
@@ -349,8 +521,18 @@ export async function deleteMasterRow(db, payload, ctx) {
   if (!spec) return { success: false, message: 'Tabel tidak dikenal.' };
   const id = Number(payload && payload.id) || 0;
   if (!id) return { success: false, message: 'ID tidak valid.' };
-  const exists = await db.prepare('SELECT id FROM ' + table + ' WHERE id = ?1').bind(id).first();
+  const exists = await db.prepare('SELECT id, kategori, nilai FROM ' + table + ' WHERE id = ?1').bind(id).first();
   if (!exists) return { success: false, message: 'Baris tidak ditemukan.' };
+  if (table === 'master_kegiatan' && String(exists.kategori || '').trim().toLowerCase() === 'blok') {
+    const usage = await blokUsage(db, masterValue(exists.nilai));
+    if (usage.total > 0) {
+      return {
+        success: false, code: 'MASTER_IN_USE',
+        message: 'Blok "' + masterValue(exists.nilai) + '" masih dipakai di ' + usage.total + ' baris. Ganti nama atau pindahkan datanya terlebih dahulu.',
+        impact: usage
+      };
+    }
+  }
   await db.prepare('DELETE FROM ' + table + ' WHERE id = ?1').bind(id).run();
   return { success: true, message: 'Baris dihapus.' };
 }

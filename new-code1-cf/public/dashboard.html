@@ -1486,6 +1486,7 @@
                                         <i class="bi bi-upload"></i> Unggah CSV
                                         <input type="file" accept=".csv,text/csv" class="hidden" @change="onMahasiswaCsv">
                                     </label>
+                                    <button v-if="activeMasterCard.key === 'masterKegiatan'" class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openMasterAudit()"><i class="bi bi-shield-check"></i> Audit</button>
                                     <button class="btn-primary !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openMasterRow(activeMasterCard.key)"><i class="bi bi-plus-lg"></i> Tambah</button>
                                 </div>
                             </div>
@@ -1507,6 +1508,7 @@
                                             <td v-for="c in activeMasterCard.cols" :key="c" class="px-5 py-2.5 text-slate-600">{{ masterCellValue(r, c) }}</td>
                                             <td class="px-5 py-2.5">
                                                 <div class="flex items-center gap-1">
+                                                    <button v-if="activeMasterCard.key === 'masterKegiatan' && String(r.Kategori || '').toLowerCase() === 'blok'" class="master-row-btn" title="Ganti nama blok" @click="openRenameMaster(r)"><i class="bi bi-arrow-left-right"></i></button>
                                                     <button class="master-row-btn" title="Ubah" @click="openMasterRow(activeMasterCard.key, r)"><i class="bi bi-pencil"></i></button>
                                                     <button v-if="activeMasterCard.key !== 'config'" class="master-row-btn danger" title="Hapus" @click="deleteMasterRow(r)"><i class="bi bi-trash"></i></button>
                                                 </div>
@@ -1954,6 +1956,145 @@
                         <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
                             <button class="btn-soft" @click="master.rowModal.open=false">Batal</button>
                             <button class="btn-primary" :disabled="master.saving" @click="saveMasterRow()"><i class="bi bi-save"></i> Simpan</button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
+        <!-- ============ MODAL: RENAME BLOK ============ -->
+        <transition name="fade">
+            <div v-if="master.rename.open" class="fixed inset-0 z-50 modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeRenameMaster()"></div>
+                <transition name="pop" appear>
+                    <div class="modal-panel max-w-lg shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h3 class="text-sm font-bold text-slate-900">Ganti Nama Blok</h3>
+                            <button type="button" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeRenameMaster()"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body space-y-4 px-6 py-4">
+                            <div>
+                                <label class="label">Nama lama</label>
+                                <div class="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-100">{{ master.rename.row && master.rename.row.Nilai }}</div>
+                            </div>
+                            <div>
+                                <label class="label">Nama baru</label>
+                                <input v-model="master.rename.newValue" class="input" placeholder="Nama blok baru" @input="master.rename.impact = null; master.rename.conflicts = null; master.rename.error = ''">
+                            </div>
+                            <div v-if="master.rename.error" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100">{{ master.rename.error }}</div>
+                            <button class="btn-soft w-full !py-2 text-xs" :disabled="master.rename.loading || !String(master.rename.newValue || '').trim()" @click="previewRenameMaster()">
+                                <i class="bi bi-search"></i> {{ master.rename.loading ? 'Menghitung...' : 'Hitung dampak perubahan' }}
+                            </button>
+                            <div v-if="master.rename.impact" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dampak perubahan</div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div v-for="row in renameImpactRows" :key="row.key" class="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
+                                        <div class="text-lg font-extrabold text-slate-900">{{ row.count }}</div>
+                                        <div class="text-[11px] text-slate-500">{{ row.label }}</div>
+                                    </div>
+                                </div>
+                                <div v-if="!renameImpactRows.length" class="text-xs text-slate-500">Belum ada data yang memakai blok ini.</div>
+                                <div v-if="master.rename.baRegen" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700 ring-1 ring-amber-100">
+                                    {{ master.rename.baRegen }} BA yang sudah punya PDF akan ditandai perlu dibuat ulang.
+                                </div>
+                            </div>
+                            <div v-if="master.rename.conflicts && (master.rename.conflicts.master || master.rename.conflicts.data)" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100">
+                                Nama baru sudah dipakai. Pilih nama lain atau selesaikan penggabungan secara manual.
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="closeRenameMaster()">Batal</button>
+                            <button class="btn-primary" :disabled="master.rename.saving || !master.rename.impact || (master.rename.conflicts && (master.rename.conflicts.master || master.rename.conflicts.data))" @click="confirmRenameMaster()">
+                                <i class="bi bi-arrow-left-right"></i> {{ master.rename.saving ? 'Menyimpan...' : 'Ganti nama' }}
+                            </button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
+        <!-- ============ MODAL: AUDIT INTEGRITAS ============ -->
+        <transition name="fade">
+            <div v-if="master.audit.open" class="fixed inset-0 z-50 modal-overlay">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeMasterAudit()"></div>
+                <transition name="pop" appear>
+                    <div class="modal-panel max-w-2xl shadow-lift">
+                        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">Audit Integritas Master</h3>
+                                <p class="mt-0.5 text-[11px] text-slate-500">Duplikat, referensi blok asing, blok kosong, dan kunci kegiatan yang tidak sinkron.</p>
+                            </div>
+                            <button type="button" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeMasterAudit()"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="modal-body space-y-4 px-6 py-4">
+                            <div v-if="master.audit.error" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100">{{ master.audit.error }}</div>
+                            <div v-if="master.audit.loading" class="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-6 text-sm text-slate-500">
+                                <i class="bi bi-arrow-repeat animate-spin"></i> Menjalankan audit...
+                            </div>
+                            <div v-if="master.audit.data" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                        <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.totals.duplicates }}</div>
+                                        <div class="text-[11px] text-slate-500">Duplikat master</div>
+                                    </div>
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                        <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.totals.orphans }}</div>
+                                        <div class="text-[11px] text-slate-500">Referensi blok asing</div>
+                                    </div>
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                        <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.totals.blanks }}</div>
+                                        <div class="text-[11px] text-slate-500">Blok kosong</div>
+                                    </div>
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                        <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.totals.keyDrift }}</div>
+                                        <div class="text-[11px] text-slate-500">Kunci tidak sinkron</div>
+                                    </div>
+                                </div>
+                                <div v-if="!master.audit.data.totals.duplicates && !master.audit.data.totals.orphans && !master.audit.data.totals.blanks && !master.audit.data.totals.keyDrift" class="rounded-xl bg-emerald-50 px-3 py-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                                    <i class="bi bi-check2-circle"></i> Semua referensi master konsisten.
+                                </div>
+                                <div v-if="master.audit.data.duplicates.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Duplikat master</div>
+                                    <div class="space-y-1">
+                                        <div v-for="d in master.audit.data.duplicates" :key="d.kategori + '|' + d.nilai" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                            <span class="font-semibold text-slate-700">{{ d.kategori }} / {{ d.nilai }}</span>
+                                            <span class="text-slate-500">{{ d.count }} baris</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="master.audit.data.orphans.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Referensi blok tidak ada di master</div>
+                                    <div class="space-y-1">
+                                        <div v-for="o in master.audit.data.orphans.slice(0, 20)" :key="o.table + '|' + o.blok" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                            <span class="font-semibold text-slate-700">{{ o.table }} · {{ o.blok }}</span>
+                                            <span class="text-slate-500">{{ o.count }} baris</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="master.audit.data.orphans.length > 20" class="mt-2 text-[11px] text-slate-500">+{{ master.audit.data.orphans.length - 20 }} referensi lain.</div>
+                                </div>
+                                <div v-if="auditBlankRows.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Blok kosong</div>
+                                    <div class="space-y-1">
+                                        <div v-for="b in auditBlankRows" :key="b.table" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                            <span class="font-semibold text-slate-700">{{ b.table }}</span>
+                                            <span class="text-slate-500">{{ b.count }} baris</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="auditDriftTables.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Kunci kegiatan tidak sinkron</div>
+                                    <div class="space-y-1">
+                                        <div v-for="k in auditDriftTables" :key="k.table" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                            <span class="font-semibold text-slate-700">{{ k.table }}</span>
+                                            <span class="text-slate-500">{{ k.count }} baris</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
+                            <button class="btn-soft" @click="closeMasterAudit()">Tutup</button>
+                            <button class="btn-primary" :disabled="master.audit.loading" @click="loadMasterAudit()"><i class="bi bi-arrow-repeat"></i> {{ master.audit.loading ? 'Menjalankan...' : 'Jalankan ulang' }}</button>
                         </div>
                     </div>
                 </transition>
@@ -2447,6 +2588,8 @@
                         tab: 'masterKegiatan',
                         search: '',
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, originalId: 0 },
+                        rename: { open: false, row: null, newValue: '', impact: null, baRegen: 0, conflicts: null, loading: false, saving: false, error: '' },
+                        audit: { open: false, loading: false, data: null, error: '' },
                         uploads: { rows: [], loading: false, loaded: false, q: '', filter: '', reset: { open: false, row: null, note: '', saving: false } },
                         cards: [
                             { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'mahasiswa', icon: 'bi-mortarboard' },
@@ -2755,6 +2898,26 @@
                 activeMasterCard() {
                     return this.master.cards.find(c => c.key === this.master.tab) || this.master.cards[0];
                 },
+                renameImpactRows() {
+                    const impact = (this.master.rename && this.master.rename.impact) || {};
+                    const labels = {
+                        pengajuan: 'Pengajuan', check_data: 'Check Data', mahasiswa: 'Mahasiswa',
+                        berita_acara: 'BA Bagian', berita_acara_peserta: 'Peserta BA Bagian',
+                        berita_acara_admin: 'BA Admin', berita_acara_admin_peserta: 'Peserta BA Admin',
+                        jadwal_pelaksanaan: 'Jadwal', jadwal_peserta: 'Peserta Jadwal', log_upload: 'Log Unggahan'
+                    };
+                    return Object.keys(labels)
+                        .filter((k) => Number(impact[k]) > 0)
+                        .map((k) => ({ key: k, label: labels[k], count: Number(impact[k]) }));
+                },
+                auditDriftTables() {
+                    const kd = (this.master.audit.data && this.master.audit.data.keyDrift) || {};
+                    return Object.keys(kd).map(table => Object.assign({ table: table }, kd[table])).filter(r => Number(r.count) > 0);
+                },
+                auditBlankRows() {
+                    const rows = (this.master.audit.data && this.master.audit.data.blanks) || [];
+                    return rows.filter(r => Number(r.count) > 0);
+                },
                 activeMasterRows() {
                     const card = this.activeMasterCard;
                     const rows = this.master.data[card.key] || [];
@@ -2780,7 +2943,7 @@
                     });
                 },
                 anyModalOpen() {
-                    return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
+                    return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.master.rename.open || this.master.audit.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open);
                 }
             },
             watch: {
@@ -4588,6 +4751,93 @@
                         fields: fields,
                         originalId: row && row.id ? row.id : 0
                     };
+                },
+                openRenameMaster(row) {
+                    this.master.rename = {
+                        open: true,
+                        row: row,
+                        newValue: String(row && row.Nilai ? row.Nilai : ''),
+                        impact: null,
+                        baRegen: 0,
+                        conflicts: null,
+                        loading: false,
+                        saving: false,
+                        error: ''
+                    };
+                },
+                closeRenameMaster() {
+                    if (this.master.rename.saving) return;
+                    this.master.rename.open = false;
+                },
+                async previewRenameMaster() {
+                    const st = this.master.rename;
+                    const value = String(st.newValue || '').trim();
+                    if (!value) { st.error = 'Nama baru wajib diisi.'; return; }
+                    st.loading = true;
+                    st.error = '';
+                    try {
+                        const res = await this.run('previewMasterRename', { id: st.row && st.row.id, newValue: value });
+                        if (!res || res.success === false) {
+                            st.impact = null;
+                            st.error = (res && res.message) || 'Gagal menghitung dampak.';
+                            return;
+                        }
+                        st.impact = res.impact || {};
+                        st.baRegen = Number(res.baRegen) || 0;
+                        st.conflicts = res.conflicts || { master: false, data: false };
+                    } catch (e) {
+                        st.impact = null;
+                        st.error = 'Gagal: ' + e;
+                    } finally {
+                        st.loading = false;
+                    }
+                },
+                async confirmRenameMaster() {
+                    const st = this.master.rename;
+                    if (!st.impact || st.saving) return;
+                    st.saving = true;
+                    st.error = '';
+                    try {
+                        const res = await this.run('renameMasterValue', { id: st.row && st.row.id, newValue: String(st.newValue || '').trim() });
+                        if (!res || res.success === false) {
+                            if (res && res.impact) st.impact = res.impact;
+                            st.error = (res && res.message) || 'Gagal mengganti nama blok.';
+                            return;
+                        }
+                        this.notify(res.message || 'Nama blok diperbarui.');
+                        st.open = false;
+                        await this.loadMaster();
+                    } catch (e) {
+                        st.error = 'Gagal: ' + e;
+                    } finally {
+                        st.saving = false;
+                    }
+                },
+                async openMasterAudit() {
+                    this.master.audit.open = true;
+                    await this.loadMasterAudit();
+                },
+                closeMasterAudit() {
+                    if (this.master.audit.loading) return;
+                    this.master.audit.open = false;
+                },
+                async loadMasterAudit() {
+                    const st = this.master.audit;
+                    if (st.loading) return;
+                    st.loading = true;
+                    st.error = '';
+                    try {
+                        const res = await this.run('auditMasterIntegrity');
+                        if (!res || res.success === false) {
+                            st.error = (res && res.message) || 'Gagal menjalankan audit.';
+                            return;
+                        }
+                        st.data = res;
+                    } catch (e) {
+                        st.error = 'Gagal: ' + e;
+                    } finally {
+                        st.loading = false;
+                    }
                 },
                 async saveMasterRow() {
                     const rm = this.master.rowModal;

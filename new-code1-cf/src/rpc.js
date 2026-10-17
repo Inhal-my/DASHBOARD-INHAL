@@ -11,8 +11,10 @@ import {
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
   saveBagianStaff, saveAdminList, saveBagianBaSettings,
-  saveMahasiswa, deleteMahasiswa, importMahasiswaCsv, saveMasterRow, deleteMasterRow
+  saveMahasiswa, deleteMahasiswa, importMahasiswaCsv, saveMasterRow, deleteMasterRow,
+  previewMasterRename, renameMasterValue
 } from './write/master.js';
+import { auditMasterIntegrity } from './read/masterAudit.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
   updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
@@ -65,6 +67,9 @@ const HANDLERS = {
   importMahasiswaCsv: (db, args, ctx) => importMahasiswaCsv(db, args[0], ctx),
   saveMasterRow: (db, args, ctx) => saveMasterRow(db, args[0], ctx),
   deleteMasterRow: (db, args, ctx) => deleteMasterRow(db, args[0], ctx),
+  previewMasterRename: (db, args, ctx) => previewMasterRename(db, args[0], ctx),
+  renameMasterValue: (db, args, ctx) => renameMasterValue(db, args[0], ctx),
+  auditMasterIntegrity: (db, args, ctx) => auditMasterIntegrity(db, ctx),
   updatePengajuanFields: (db, args, ctx) => updatePengajuanFields(db, args[0], args[1], ctx),
   updateDetailKegiatan: (db, args, ctx) => updateDetailKegiatan(db, args[0], args[1], args[2], ctx),
   deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),

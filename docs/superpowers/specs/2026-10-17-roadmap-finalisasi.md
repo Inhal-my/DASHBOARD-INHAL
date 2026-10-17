@@ -1,0 +1,46 @@
+# Roadmap Finalisasi Aplikasi INHAL
+
+Tanggal dibuat: 2026-10-17
+Status: daftar kerja aktif, dikerjakan satu per satu.
+
+## Cara pakai
+
+- Kerjakan berurutan. Jangan mulai poin berikutnya sebelum poin aktif selesai dan diverifikasi.
+- Setiap poin harus punya: audit, rencana, test, implementasi, verifikasi produksi, dan dokumentasi.
+- Sebelum perubahan data produksi: buat backup D1 dan catat jumlah baris terdampak.
+
+## Checklist
+
+- [ ] **Poin 1 — Integritas data master**
+  - Rename/merge/hapus nilai master yang sudah dipakai harus aman dan konsisten di semua tabel.
+  - Hilangkan duplikat master dan tambahkan constraint.
+  - Audit referensi blok lama, nilai kosong, dan `kegiatan_key` yang tidak sinkron.
+- [ ] **Poin 2 — Backup dan pemulihan**
+  - Backup terjadwal, retensi, dan prosedur restore yang sudah diuji.
+- [ ] **Poin 3 — Observability**
+  - Error tracking, alert, dan pemantauan kesehatan aplikasi.
+- [ ] **Poin 4 — Keamanan**
+  - MFA admin, security headers/CSP, dan audit akses berkas.
+- [ ] **Poin 5 — Proses rilis**
+  - CI/CD, staging, migrasi terkontrol, dan test end-to-end browser.
+- [ ] **Poin 6 — Skalabilitas dan kualitas data**
+  - Optimasi query, validasi input, dan pembersihan data lama.
+- [ ] **Poin 7 — UAT dan dokumentasi operasional**
+  - UAT pengguna, uji aksesibilitas, SOP backup/restore, dan SOP rilis.
+
+## Temuan awal Poin 1 (audit produksi 2026-10-17)
+
+- Rename blok di Master Kegiatan hanya mengubah `master_kegiatan`; tabel transaksi tetap menyimpan nama lama.
+- `Gastrointestinal, hepatobilier, and pancreas` masih ada di `pengajuan` (3), `check_data` (1), `berita_acara` (1), `berita_acara_peserta` (1), `berita_acara_admin` (3), `berita_acara_admin_peserta` (3), dan `log_upload` (3). Nilai baru `Gastro` belum ada di tabel transaksi.
+- Duplikat master: `Blok / Elective` (2 baris) dan `Blok / Psychiatry` (2 baris).
+- `mahasiswa.blok` kosong pada seluruh 1.975 baris.
+- Belum ada unique constraint pada `master_kegiatan`.
+- `kegiatan_key` BA dan jadwal bergantung pada `bagian + blok + nama kegiatan`; rename blok tanpa menghitung ulang key berpotensi merusak relasi.
+
+## Prinsip perbaikan Poin 1
+
+1. Nama master tidak boleh diubah diam-diam lewat edit biasa; rename harus operasi eksplisit dengan pratinjau dampak.
+2. Semua perubahan yang menyentuh banyak tabel harus atomik.
+3. Rename harus memperbarui referensi teks dan `kegiatan_key`, lalu menandai PDF BA terkait untuk dibuat ulang.
+4. Nilai master yang masih dipakai tidak boleh dihapus tanpa penggantian.
+5. Nama baru yang sudah ada harus ditolak atau diselesaikan lewat alur merge dengan aturan konflik yang jelas.
