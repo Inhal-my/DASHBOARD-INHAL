@@ -560,17 +560,17 @@ describe('dashboard detail drawer', () => {
   it('mempertahankan kemampuan produksi di langkah-langkah', async () => {
     const html = await loadDashboardHtml();
     for (const s of [
-      "openKelolaBaPendukung(detail.p['ID Pengajuan'])",
       'uploadBuktiBayar()', 'onBuktiFile($event)', 'ref="buktiCamera"',
       "scanOnPhotos($event, 'bukti')", "scanBuildPdf('bukti')", "scanClear('bukti')",
       'updateStatus()', "quickStatus('ACC')", "quickStatus('Ditolak')",
       'sendFinalEmail()', 'sendAccFinalToBagian()', 'deletePengajuan()',
       'Unggah Bukti Bayar (oleh Admin)', 'uploadSurat', 'onSuratFile',
       'startEditDetail(i)', 'deleteDetailRow(i)', 'startEditInduk()', 'saveIndukFields()',
-      'cancelEditDetail()', 'Berita Acara Pendukung', 'berkasProgress'
+      'cancelEditDetail()', 'berkasProgress'
     ]) {
       expect(html).toContain(s);
     }
+    expect(html).not.toContain('Kelola peserta dan berkas BA Pendukung untuk kegiatan pengajuan ini.');
   });
 
   it('tidak memuat status Diterima di panel keputusan', async () => {
