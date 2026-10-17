@@ -2179,12 +2179,12 @@ git commit -m "chore(bagian): guard form, polling, dan bersihkan kode lama"
 **Files:**
 - Tidak ada perubahan kode baru.
 
-- [ ] **Step 1: Jalankan suite penuh sekali lagi**
+- [x] **Step 1: Jalankan suite penuh sekali lagi**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run`
 Expected: PASS, 0 failure.
 
-- [ ] **Step 2: Deploy Worker**
+- [x] **Step 2: Deploy Worker**
 
 Run:
 
@@ -2195,7 +2195,7 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
 
 Expected: deploy sukses; catat versi Worker.
 
-- [ ] **Step 3: Verifikasi live**
+- [x] **Step 3: Verifikasi live**
 
 Buka `https://inhal-form.<subdomain>.workers.dev/bagian.html?cb=$(date +%s)` (atau URL produksi yang sudah dipakai), lalu cek manual:
 
@@ -2207,7 +2207,7 @@ Buka `https://inhal-form.<subdomain>.workers.dev/bagian.html?cb=$(date +%s)` (at
 - Bottom nav 4 item, FAB, guard saat menutup form berisi.
 - Tidak ada error konsol.
 
-- [ ] **Step 4: Catat hasil**
+- [x] **Step 4: Catat hasil**
 
 Tambahkan komentar singkat di PR/commit terakhir (bukan file baru) berisi versi Worker dan hasil cek manual. Tidak perlu commit tambahan bila tidak ada perubahan.
 
