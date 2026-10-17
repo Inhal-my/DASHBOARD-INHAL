@@ -168,3 +168,25 @@ describe('bagian workspace v2 — riwayat', () => {
     expect(html).toContain('Belum ada BA lengkap');
   });
 });
+
+describe('bagian workspace v2 — guard dan kebersihan', () => {
+  it('menyediakan guard buang perubahan', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('confirmDiscard');
+    expect(html).toContain('hasFormContent');
+    expect(html).toContain('Perubahan belum disimpan. Tinggalkan?');
+  });
+
+  it('polling berhenti saat form terbuka', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('this.jadwal.open');
+    expect(html).toContain('this.ba.lengkapi');
+    expect(html).not.toContain('loadBaList');
+  });
+
+  it('menutup detail yang datanya hilang setelah refresh', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('ensureSelection');
+    expect(html).toContain('Data sudah diperbarui.');
+  });
+});

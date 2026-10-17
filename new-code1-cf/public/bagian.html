@@ -774,8 +774,6 @@
                     loginError: '',
                     rows: [],
                     fBlok: '',
-                    listOpen: false,
-                    filterOpen: false,
                     ba: { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null },
                     baList: [],
                     jadwalList: [],
@@ -957,14 +955,6 @@
                     });
                     return out.sort();
                 },
-                filteredRows() {
-                    if (!this.fBlok) return this.rows;
-                    return this.rows.filter(function(r) { return String(r.blok || '').trim() === this.fBlok; }.bind(this));
-                },
-                filteredBaList() {
-                    if (!this.fBlok) return this.baList;
-                    return this.baList.filter(function(r) { return String(r.Blok || '').trim() === this.fBlok; }.bind(this));
-                },
                 jadwalKegiatanGroups() {
                     return this.allKegiatanGroups;
                 },
@@ -977,15 +967,9 @@
                     if (!g) return false;
                     return g.peserta.length > 0 && g.peserta.every(function (p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
                 },
-                riwayatBaList() {
-                    return this.baList.filter(function(r) { return r.selesai; });
-                },
                 draftBaList() {
                     return this.baList.filter(function(r) { return !r.selesai; });
                 },
-                jadwalSiapBaList() {
-                    return this.jadwalList.filter(function(j) { return !j.punyaBa; });
-                }
             },
             methods: {
                 safeUrl(v) {
@@ -1123,6 +1107,7 @@
                     this.jadwalList = res.jadwalList || [];
                     this.writeCache();
                     this.loadBaConfig();
+                    this.$nextTick(function () { this.ensureSelection(); }.bind(this));
                 },
                 loadBaConfig() {
                     this.run('getBaginaConfig')
@@ -1177,7 +1162,7 @@
                 },
                 async silentRefresh() {
                     if (!this.loggedIn) { this.stopPolling(); return; }
-                    if (this.loading || this.ba.open) return;
+                    if (this.loading || this.ba.open || this.jadwal.open || this.ba.lengkapi || this.formDirty) return;
                     try {
                         const res = await this._fetchBootstrap();
                         this.applyBootstrap(res);
@@ -1201,12 +1186,23 @@
                         selesai: 'bg-emerald-50 text-emerald-700'
                     }[s] || 'bg-slate-100 text-slate-600';
                 },
+                hasFormContent() {
+                    return !!(this.formDirty || this.ba.file || (this.ba.scanItems && this.ba.scanItems.length));
+                },
+                confirmDiscard() {
+                    if (!this.hasFormContent()) return true;
+                    if (!window.confirm('Perubahan belum disimpan. Tinggalkan?')) return false;
+                    this.formDirty = false;
+                    return true;
+                },
                 markFormDirty() { this.formDirty = true; },
                 openBaWorklist() {
                     this.setTab('ba');
                     window.scrollTo(0, 0);
                 },
                 selectItem(kind, key) {
+                    if (this.sel.kind === kind && this.sel.key === key) return;
+                    if (!this.confirmDiscard()) return;
                     this.sel = { kind: kind, key: key };
                     this.mobileDetail = true;
                     this.formDirty = false;
@@ -1225,6 +1221,7 @@
                     if (kind === 'ba') this.editDraftBaById(key);
                 },
                 closeDetail() {
+                    if (!this.confirmDiscard()) return;
                     this.sel = { kind: '', key: '' };
                     this.mobileDetail = false;
                     this.formDirty = false;
@@ -1300,6 +1297,26 @@
                         this.loading = false;
                     }
                 },
+                resetDetailSilently() {
+                    this.sel = { kind: '', key: '' };
+                    this.mobileDetail = false;
+                    this.jadwal.open = false;
+                    this.ba.open = false;
+                    this.ba.lengkapi = null;
+                    this.formDirty = false;
+                },
+                ensureSelection() {
+                    if (!this.sel.kind) return;
+                    if (!this.selectedItem) {
+                        this.resetDetailSilently();
+                        this.showToast('Data sudah diperbarui.');
+                        return;
+                    }
+                    if (this.sel.kind === 'ba' && this.selectedItem.ba && this.selectedItem.ba.selesai) {
+                        this.resetDetailSilently();
+                        this.showToast('BA lengkap. Lihat di Riwayat.');
+                    }
+                },
                 startJadwalForGroup(key) {
                     const g = this.jadwalPendingGroups.find(function (x) { return x.key === key; })
                         || this.jadwalKegiatanGroups.find(function (x) { return x.key === key; });
@@ -1316,6 +1333,7 @@
                     if (first) this.selectItem('group', first.key);
                 },
                 setTab(t, opts) {
+                    if (!this.confirmDiscard()) return;
                     const o = opts || {};
                     this.activeTab = t;
                     this.q = '';
@@ -1330,20 +1348,6 @@
                     if (t === 'riwayat') this.fBlok = o.blok || '';
                     if (o.blok && t === 'ba') this.fBlok = o.blok;
                     window.scrollTo(0, 0);
-                },
-                openJadwalForm() {
-                    this.jadwal = { open: true, editingId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} };
-                    window.scrollTo(0, 0);
-                },
-                closeJadwalForm() {
-                    this.jadwal = { open: false, editingId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} };
-                },
-                selectJadwalKegiatan(key) {
-                    const g = this.jadwalKegiatanGroups.find(function(x) { return x.key === key; });
-                    if (!g) return;
-                    this.jadwal.kegiatanKey = key;
-                    this.jadwal.selected = {};
-                    this.jadwal.tanggal = this.dateOnly(g.tanggal);
                 },
                 toggleJadwalPeserta(idPengajuan) {
                     this.jadwal.selected[idPengajuan] = !this.jadwal.selected[idPengajuan];
@@ -1417,11 +1421,6 @@
                         this.loading = false;
                     }
                 },
-                buatBaDariJadwal(id) {
-                    const j = this.jadwalList.find(function(x) { return x.JadwalID === id; });
-                    if (!j) return;
-                    this.openBaFromJadwal(j);
-                },
                 openBaFromJadwal(j) {
                     this.ba = Object.assign({}, this.ba, {
                         open: true, mode: 'jadwal', jadwalId: j.JadwalID,
@@ -1461,18 +1460,6 @@
                     this.ba.label = '';
                     this.ba.confirm = false;
                     this.ba.scanBusy = false;
-                },
-                selectKegiatan(key) {
-                    const g = this.kegiatanGroups.find(function(x) { return x.key === key; });
-                    if (!g) return;
-                    this.ba.kegiatanKey = key;
-                    this.ba.selected = {};
-                    this.ba.tanggal = this.dateOnly(g.tanggal);
-                },
-                backToKegiatanPicker() {
-                    this.ba.kegiatanKey = null;
-                    this.ba.selected = {};
-                    this.ba.confirm = false;
                 },
                 togglePeserta(idPengajuan) {
                     this.ba.selected[idPengajuan] = !this.ba.selected[idPengajuan];
@@ -1638,20 +1625,6 @@
                         this.loading = false;
                     }
                 },
-                async saveLengkapi() {
-                    if (!this.ba.lengkapi) return;
-                    this.loading = true;
-                    try {
-                        const payload = { dosen: this.ba.lengkapi.dosen, jam: this.ba.lengkapi.jam, tanggal: this.ba.lengkapi.tanggal };
-                        const res = await this.run('lengkapiBeritaAcaraBagian', this.ba.lengkapi.id, payload, this.kategori);
-                        this.showToast(res.message, res.success ? 'success' : 'error');
-                        if (res.success) { this.ba.lengkapi = null; await this.loadData(); }
-                    } catch (e) {
-                        this.showToast('Gagal: ' + e, 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
                 logout() {
                     this.stopPolling();
                     if (this.session && this.session.token) {
@@ -1668,7 +1641,11 @@
                     this.rows = [];
                     this.baList = [];
                     this.jadwalList = [];
-                    this.activeTab = 'jadwal';
+                    this.activeTab = 'ringkasan';
+                    this.sel = { kind: '', key: '' };
+                    this.mobileDetail = false;
+                    this.q = '';
+                    this.formDirty = false;
                     this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
                 }
             },

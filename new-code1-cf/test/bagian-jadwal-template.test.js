@@ -64,7 +64,8 @@ describe('bagian template jadwal', () => {
     expect(html).toContain('ba.jadwalId');
     expect(html).toContain('lengkapiBeritaAcaraBagian');
     expect(html).toContain('draftBaList');
-    expect(html).toContain('riwayatBaList');
+    expect(html).toContain('riwayatItems');
+    expect(html).toContain('visibleRiwayatItems');
     expect(html).toContain('ba.dosen');
     expect(html).toContain('ba.jam');
   });

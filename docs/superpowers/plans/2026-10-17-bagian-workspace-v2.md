@@ -1989,7 +1989,7 @@ git commit -m "feat(bagian): riwayat BA lengkap dengan detail read-only"
 - Consumes: `formDirty`, `hasFormContent`, `confirmDiscard`; `sel`.
 - Produces: guard pada `setTab`/`selectItem`/`closeDetail`; `ensureSelection` setelah bootstrap; `silentRefresh` melewati form; penghapusan kode lama.
 
-- [ ] **Step 1: Tambahkan test yang gagal**
+- [x] **Step 1: Tambahkan test yang gagal**
 
 Tambahkan ke `new-code1-cf/test/bagian-workspace-v2.test.js`:
 
@@ -2017,12 +2017,12 @@ describe('bagian workspace v2 — guard dan kebersihan', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-workspace-v2.test.js`
 Expected: FAIL — `confirmDiscard`, `ensureSelection` belum ada.
 
-- [ ] **Step 3: Tambahkan guard form**
+- [x] **Step 3: Tambahkan guard form**
 
 Di `methods`, tambahkan:
 
@@ -2064,7 +2064,7 @@ Ubah `closeDetail`:
                     ...
 ```
 
-- [ ] **Step 4: Perketat polling dan tambahkan `ensureSelection`**
+- [x] **Step 4: Perketat polling dan tambahkan `ensureSelection`**
 
 Ubah `silentRefresh`:
 
@@ -2117,7 +2117,7 @@ Di `methods`, tambahkan:
                 },
 ```
 
-- [ ] **Step 5: Hapus kode lama yang tidak terpakai**
+- [x] **Step 5: Hapus kode lama yang tidak terpakai**
 
 Hapus dari `computed`:
 
@@ -2154,17 +2154,17 @@ Pastikan `logout()` mengembalikan tab dan seleksi:
                     this.formDirty = false;
 ```
 
-- [ ] **Step 6: Perbarui test lama yang mungkin masih menyebut fitur dihapus**
+- [x] **Step 6: Perbarui test lama yang mungkin masih menyebut fitur dihapus**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-template.test.js test/bagian-jadwal-template.test.js test/bagian-workspace-v2.test.js`
 Jika ada assertion `filteredRows`/`Daftar Peserta`/`riwayatBaList` yang tersisa, ganti dengan penanda baru (`bagianGroups`/`visibleRiwayatItems`/`riwayatItems`). Jangan menghapus test fitur lain.
 
-- [ ] **Step 7: Jalankan seluruh suite**
+- [x] **Step 7: Jalankan seluruh suite**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run`
 Expected: seluruh test PASS (baseline sebelumnya 73 file / 528 test; jumlah baru bertambah).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd /workspace
