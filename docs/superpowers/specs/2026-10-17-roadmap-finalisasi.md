@@ -16,7 +16,7 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Hilangkan duplikat master dan tambahkan constraint.
   - Audit referensi blok lama, nilai kosong, dan `kegiatan_key` yang tidak sinkron.
 - [ ] **Poin 2 — Backup dan pemulihan**
-  - Implementasi selesai dan teruji lokal; menunggu aktivasi R2 untuk deploy dan uji produksi.
+  - Implementasi selesai dan teruji lokal; **deploy produksi ditunda** karena R2 belum aktif.
   - Detail: `docs/superpowers/specs/2026-10-17-backup-restore-design.md`, `docs/ops/backup-restore.md`.
 - [ ] **Poin 3 — Observability**
   - Error tracking, alert, dan pemantauan kesehatan aplikasi.
@@ -65,3 +65,19 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Dashboard live memuat alur rename dan audit (HTTP 200).
   - Suite test: 79 file, 578 test lulus.
 - Sisa untuk poin lain: `mahasiswa.blok` masih kosong pada 1.975 baris (perlu pengisian data, bukan bug rename); merge dua blok berbeda belum otomatis dan masih manual.
+
+## Deploy tertunda
+
+### Poin 2 — Backup D1 ke R2
+
+- Status: kode selesai dan sudah di-push (`7ef4ea5`), belum di-deploy ke produksi.
+- Blocker: R2 belum diaktifkan pada akun (`code 10042`).
+- Yang belum dijalankan:
+  - Membuat bucket `inhal-poc-backups`.
+  - Menyimpan secret `D1_REST_API_TOKEN`.
+  - Deploy Worker dengan Workflow dan binding R2.
+  - Trigger backup pertama dan verifikasi objek R2.
+  - Memasang lifecycle 180 hari.
+  - Uji restore dari arsip R2 dan mencatat hasilnya.
+- Selama tertunda: Time Travel D1 tetap aktif (30 hari untuk Workers Paid, 7 hari untuk Workers Free), tetapi arsip jangka panjang 180 hari belum tersedia.
+- Lanjutkan Poin 2 segera setelah R2 aktif; jangan deploy konfigurasi Workflow/R2 sebelum bucket tersedia.
