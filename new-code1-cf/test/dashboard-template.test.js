@@ -248,16 +248,16 @@ describe('dashboard template', () => {
   it('primitif in-* lanjutan mockup tersedia', async () => {
     const html = await loadDashboardHtml();
     for (const s of ['.in-pageintro {', '.in-avatar {', '.in-celluser {', '.in-docdot {',
-      '.in-docdot.on.bukti {', '.in-cards {', '.in-mcard {', '.in-proc {', '.in-basum {',
+      '.in-docdot.on.bukti {', '.in-cards {', '.in-mcard {', '.in-proc {',
       '.in-manual-note {']) {
       expect(html).toContain(s);
     }
   });
 
-  it('pengajuan memakai kartu statistik, avatar, docdot, kartu mobile', async () => {
+  it('pengajuan memakai avatar, docdot, kartu mobile tanpa kartu statistik', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('overflow-x-auto in-desktop-only');
-    expect(html).toContain('v-for="c in pengajuanStatCards"');
+    expect(html).not.toContain('pengajuanStatCards');
     expect(html).toContain("'m-'+r['ID Pengajuan']");
     expect(html).toContain('in-celluser');
   });
@@ -283,10 +283,10 @@ describe('dashboard template', () => {
     expect(html).toContain('Notifikasi email tidak dikirim');
   });
 
-  it('BA memakai banner proses, ringkasan basum, kartu blok', async () => {
+  it('BA memakai banner proses dan kartu blok tanpa ringkasan basum', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('class="in-proc"');
-    expect(html).toContain('ba-cards in-basum');
+    expect(html).not.toContain('ba-cards in-basum');
     expect(html).toContain('bagianBlokCards');
     expect(html).toContain('Kelengkapan per Blok');
     expect(html).toContain('BA Pendukung');

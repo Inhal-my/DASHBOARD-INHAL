@@ -237,10 +237,6 @@
 @media (min-width: 640px) { .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 768px) { .md\:block { display: block; } .md\:hidden { display: none; } }
 @media (min-width: 1024px) { .lg\:grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
-.ba-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
-@media (max-width: 1100px) {
-  .ba-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
     </style>
     <style>
 .text-brand-600 { color: #4f46e5; }
@@ -448,15 +444,6 @@
         .in-proc .p .t { font-size:12.5px; font-weight:800; color:var(--ink-900); }
         .in-proc .p .s { font-size:11px; color:var(--ink-400); }
         .in-proc .arrow { color:#cbd5e1; display:grid; place-items:center; font-size:16px; }
-        .in-basum { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
-        .in-basum .b { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow-soft); text-align:left; transition:.15s; }
-        .in-basum .b:hover { border-color:#cbd5e1; }
-        .in-basum .k { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-400); }
-        .in-basum .n { margin-top:5px; font-size:20px; font-weight:800; }
-        .in-basum .p { font-size:11px; font-weight:600; color:var(--ink-400); }
-        .in-basum .n.rose { color:var(--rose); }
-        .in-basum .n.emerald { color:var(--emerald); }
-        @media (max-width:1100px){ .in-basum { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         .in-manual-note { display:flex; align-items:center; gap:8px; background:var(--violet-soft); color:var(--violet); border-radius:12px; padding:12px; font-size:12.5px; font-weight:600; margin-bottom:16px; }
         .panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
         .panel-head h3 { margin:0; font-size:13.5px; font-weight:800; display:flex; align-items:center; gap:8px; color:var(--ink-900); }
@@ -690,14 +677,6 @@
                             <button class="btn-soft" @click="openDetailReport()"><i class="bi bi-file-earmark-text"></i>Laporan Detail</button>
                             <button class="btn-soft" @click="exportCsv()"><i class="bi bi-download"></i>Rekap (CSV)</button>
                             <button class="btn-soft" @click="runDiagnostic()"><i class="bi bi-bug"></i>Diagnostik</button>
-                        </div>
-                    </div>
-
-                    <div class="mb-[18px] grid grid-cols-2 gap-[14px] sm:grid-cols-3 lg:grid-cols-5">
-                        <div v-for="c in pengajuanStatCards" :key="c.label" class="in-statrow dash-stat flex-col" style="align-items:flex-start;gap:6px">
-                            <div class="ic" :class="c.tint"><i :class="c.icon" :style="{color:c.color}"></i></div>
-                            <div class="num">{{ c.num }}</div>
-                            <div class="lbl">{{ c.label }}</div>
                         </div>
                     </div>
 
@@ -1136,34 +1115,6 @@
                             <div class="p"><div class="n">1</div><div><div class="t">BA Pendukung</div><div class="s">Diunggah admin tiap bagian</div></div></div>
                             <div class="arrow"><i class="bi bi-arrow-right"></i></div>
                             <div class="p p2"><div class="n">2</div><div><div class="t">BA Pelaksanaan</div><div class="s">Diunggah setelah kegiatan selesai</div></div></div>
-                        </div>
-
-                        <div class="ba-cards in-basum mb-4">
-                            <button class="b" :class="bagian.chip==='semua' && !bagian.fBagian ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('semua')">
-                                <div class="k">Kegiatan</div>
-                                <div class="n">{{ bagianSummary.totalKegiatan }}</div>
-                                <div class="p">semua kegiatan</div>
-                            </button>
-                            <div class="b">
-                                <div class="k">Peserta</div>
-                                <div class="n">{{ bagianSummary.totalPeserta }}</div>
-                                <div class="p">mahasiswa</div>
-                            </div>
-                            <button class="b" :class="bagian.chip==='pendukung' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pendukung')">
-                                <div class="k">BA Pendukung</div>
-                                <div class="n">{{ bagianSummary.pendukungAda }}/{{ bagianSummary.totalKegiatan }}</div>
-                                <div class="p">{{ bagianSummary.pendukungPct }}% sudah ada</div>
-                            </button>
-                            <button class="b" :class="bagian.chip==='pelaksanaan' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('pelaksanaan')">
-                                <div class="k">BA Pelaksanaan</div>
-                                <div class="n emerald">{{ bagianSummary.pelaksanaanAda }}/{{ bagianSummary.pelaksanaanDen }}</div>
-                                <div class="p">{{ bagianSummary.pelaksanaanPct }}% dari yang ACC</div>
-                            </button>
-                            <button class="b" :class="bagian.chip==='belum' ? 'ring-2 ring-brand-600' : ''" @click="setBagianChip('belum')">
-                                <div class="k">Belum lengkap</div>
-                                <div class="n rose">{{ bagianSummary.belumLengkap }}</div>
-                                <div class="p">perlu ditindak</div>
-                            </button>
                         </div>
 
                         <div class="mb-4 overflow-hidden dash-card">
@@ -2586,15 +2537,6 @@
                         { key: 'Dibatalkan', label: 'Dibatalkan', count: s.Dibatalkan || 0, dot: map['Dibatalkan'] }
                     ];
                 },
-                pengajuanStatCards() {
-                    const s = this.stats.perStatus || {};
-                    return [
-                        { label: 'Total', num: this.stats.total || 0, icon: 'bi-inbox', tint: 'indigo', color: '#4f46e5' },
-                        { label: 'Menunggu', num: s.Menunggu || 0, icon: 'bi-hourglass-split', tint: 'amber', color: '#d97706' },
-                        { label: 'ACC', num: s.ACC || 0, icon: 'bi-patch-check', tint: 'emerald', color: '#059669' },
-                        { label: 'Ditolak', num: s.Ditolak || 0, icon: 'bi-x-lg', tint: 'rose', color: '#e11d48' }
-                    ];
-                },
                 blokOptions() {
                     const set = {};
                     this.pengajuanRows.forEach(r => { if (r.Blok) set[r.Blok] = 1; });
@@ -2663,26 +2605,6 @@
                 },
                 bagianBlokOptions() {
                     return (this.bagian.bloks || []).filter(b => b && b !== '-');
-                },
-                bagianSummary() {
-                    const units = this.bagian.units || [];
-                    const npm = new Set();
-                    units.forEach(u => (u.peserta || []).forEach(p => { if (p.npm) npm.add(p.npm); }));
-                    const total = units.length;
-                    const dukung = units.filter(u => this.unitHasPendukung(u)).length;
-                    const diterima = units.filter(u => this.unitPelaksanaanEligible(u));
-                    const laksana = diterima.filter(u => this.unitHasPelaksanaan(u)).length;
-                    const belum = units.filter(u => this.unitIncomplete(u)).length;
-                    return {
-                        totalKegiatan: total,
-                        totalPeserta: npm.size,
-                        pendukungAda: dukung,
-                        pendukungPct: total ? Math.round(dukung / total * 100) : 0,
-                        pelaksanaanAda: laksana,
-                        pelaksanaanDen: diterima.length,
-                        pelaksanaanPct: diterima.length ? Math.round(laksana / diterima.length * 100) : 0,
-                        belumLengkap: belum
-                    };
                 },
                 bagianFilteredUnits() {
                     let units = this.bagian.units || [];
