@@ -32,7 +32,7 @@
 - Consumes: array `rows` dari bootstrap (`idPengajuan`, `npm`, `namaLengkap`, `blok`, `jenis`, `pilihan`, `detail`, `tanggal`, `status`, `baMember`), `baList` (`BA ID`, `Blok`, `Nama Kegiatan`, `Tanggal Pelaksanaan`, `Jam`, `Dosen`, `Label`, `Catatan`, `File URL`, `selesai`, `peserta`), `jadwalList` (`JadwalID`, `Blok`, `NamaKegiatan`, `Tanggal`, `Jam`, `Dosen`, `Catatan`, `baId`, `peserta`).
 - Produces: `window.BagianState` dengan `normText`, `dateOnly`, `kegiatanName`, `sameKegiatan`, `baForKegiatan`, `jadwalForKegiatan`, `baForJadwal`, `statusOf`, `unscheduledPeserta`, `groupFullyScheduled`, `buildAllGroups`, `buildKegiatanGroups`, `buildJadwalItems`, `buildBaWorkItems`, `buildRiwayatItems`, `buildStats`, `buildBlokProgress`, `sortByDate`, `matchesQuery`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Create `new-code1-cf/test/bagian-state.test.js`:
 
@@ -156,12 +156,12 @@ describe('bagian-state helpers', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-state.test.js`
 Expected: FAIL — `bagian-state.js` 404 / `BagianState` undefined.
 
-- [ ] **Step 3: Implementasi `public/bagian-state.js`**
+- [x] **Step 3: Implementasi `public/bagian-state.js`**
 
 Create `new-code1-cf/public/bagian-state.js`:
 
@@ -504,12 +504,12 @@ Create `new-code1-cf/public/bagian-state.js`:
 })(typeof window !== 'undefined' ? window : globalThis);
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `cd /workspace/new-code1-cf && npx vitest run test/bagian-state.test.js`
 Expected: PASS, 10 test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /workspace
