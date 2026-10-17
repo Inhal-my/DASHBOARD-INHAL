@@ -56,7 +56,19 @@ describe('baAdmin create & peserta', () => {
     expect(res.data.peserta.length).toBe(1);
     expect(res.data.peserta[0].pages).toBe(1);
     expect(res.data.peserta[0].fileUrl).toBe('https://drive/f1');
+    expect(res.data.ba.legacyFileOnly).toBe(false);
     expect(res.data.candidates.map(c => c.idPengajuan)).toContain('INHAL-2');
+  });
+
+  it('menandai BA lama tanpa berkas per peserta sebagai berkas gabungan', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    await env.DB.prepare("UPDATE berita_acara_admin SET file_url='https://drive/old' WHERE ba_id=?1").bind(baId).run();
+    const res = await getBaAdminForPengajuan(env.DB, 'INHAL-1', ctx);
+    expect(res.data.peserta[0].pages).toBe(0);
+    expect(res.data.ba.legacyFileOnly).toBe(true);
   });
 
   it('kandidat mencakup semua status termasuk Menunggu', async () => {

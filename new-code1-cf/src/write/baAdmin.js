@@ -303,6 +303,7 @@ export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
     ba = { baId: str(baRow.ba_id), bagian: str(baRow.bagian), blok: str(baRow.blok), namaKegiatan: str(baRow.nama_kegiatan), tanggal: str(baRow.tanggal_pelaksanaan), jam: str(baRow.jam), catatan: str(baRow.catatan), fileUrl: str(baRow.file_url), baseFileUrl: str(baRow.base_file_url), baseFileName: str(baRow.base_file_name), jumlahPeserta: Number(baRow.jumlah_peserta) || 0, needsRegen: Number(baRow.needs_regen) === 1 };
     const rows = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1 ORDER BY urutan').bind(ba.baId).all()).results || [];
     const berkas = (await db.prepare('SELECT * FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 ORDER BY page_index').bind(ba.baId).all()).results || [];
+    ba.legacyFileOnly = !berkas.length && !!ba.fileUrl;
     const filesByPid = {};
     for (const b of berkas) {
       const k = str(b.id_pengajuan);

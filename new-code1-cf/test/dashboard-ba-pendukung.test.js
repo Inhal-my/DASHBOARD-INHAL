@@ -23,6 +23,8 @@ describe('dashboard modal Kelola BA Pendukung', () => {
     expect(html).toContain('.max-w-2xl');
     expect(html).toContain('.max-h-\\[60vh\\]');
     expect(html).toContain('refreshBaPendukungIndicators()');
+    expect(html).toContain('Berkas lama (PDF gabungan)');
+    expect(html).toContain('kb.data.ba.legacyFileOnly');
   });
 });
 

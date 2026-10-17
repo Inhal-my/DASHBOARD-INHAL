@@ -2085,6 +2085,7 @@
                                             <span class="text-xs font-semibold text-slate-700">{{ pe.urutan }}. {{ pe.namaLengkap || pe.npm }}</span>
                                             <span class="font-mono text-[10px] text-slate-400">{{ pe.npm }}</span>
                                             <span v-if="pe.pages" class="text-[11px] text-slate-400">{{ pe.pages }} halaman</span>
+                                            <span v-else-if="kb.data.ba && kb.data.ba.legacyFileOnly" class="rounded bg-slate-100 px-1.5 text-[10px] font-semibold text-slate-500" title="BA lama berisi satu PDF gabungan; halaman tidak terpisah per peserta">Berkas lama (PDF gabungan)</span>
                                             <span v-else class="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-700">Belum ada berkas</span>
                                             <span class="ml-auto flex gap-1">
                                                 <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="kb.uploadBusy" @click="kbStartBerkas('change-scan', pe)"><i class="bi bi-camera"></i> {{ pe.pages ? 'Ganti berkas' : 'Unggah/Scan' }}</button>
