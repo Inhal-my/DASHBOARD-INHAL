@@ -16,7 +16,8 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Hilangkan duplikat master dan tambahkan constraint.
   - Audit referensi blok lama, nilai kosong, dan `kegiatan_key` yang tidak sinkron.
 - [ ] **Poin 2 — Backup dan pemulihan**
-  - Backup terjadwal, retensi, dan prosedur restore yang sudah diuji.
+  - Implementasi selesai dan teruji lokal; menunggu aktivasi R2 untuk deploy dan uji produksi.
+  - Detail: `docs/superpowers/specs/2026-10-17-backup-restore-design.md`, `docs/ops/backup-restore.md`.
 - [ ] **Poin 3 — Observability**
   - Error tracking, alert, dan pemantauan kesehatan aplikasi.
 - [ ] **Poin 4 — Keamanan**
