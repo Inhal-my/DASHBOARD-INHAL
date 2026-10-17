@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 02 — Split Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .seg{display:inline-flex;background:var(--slate-100);border-radius:11px;padding:3px;gap:2px}
+  .seg a{font-size:12px;font-weight:700;color:var(--slate-500);text-decoration:none;padding:7px 14px;border-radius:9px}
+  .seg a.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+  .brandline{display:flex;align-items:center;gap:10px}
+  .brandline .mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#6366f1,#4338ca);display:flex;align-items:center;justify-content:center;color:#fff}
+  .brandline .nm{font-size:13.5px;font-weight:800;line-height:1.15}
+  .brandline .sb{font-size:10.5px;color:var(--slate-400);margin-top:1px}
+  .filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .detail-name{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:7px;font-size:11.5px;color:var(--slate-500)}
+  .meta span{display:flex;align-items:center;gap:5px}
+  .meta svg{width:13px;height:13px;color:var(--slate-400)}
+  .inlineform{background:var(--slate-50);border:1px dashed var(--slate-200);border-radius:13px;padding:13px}
+  .field label{display:block;font-size:10.5px;font-weight:800;color:var(--slate-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+  .field .input{width:100%;border:1px solid var(--slate-200);border-radius:10px;background:#fff;padding:9px 11px;font:inherit;font-size:12.5px;outline:0}
+  .field .input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-50)}
+  .timeline{position:relative;padding-left:20px}
+  .timeline::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--slate-200)}
+  .tli{position:relative;padding:0 0 14px}
+  .tli:last-child{padding-bottom:0}
+  .tli::before{content:"";position:absolute;left:-18px;top:3px;width:9px;height:9px;border-radius:999px;background:var(--emerald);box-shadow:0 0 0 3px var(--emerald-50)}
+  .tli.now::before{background:var(--brand);box-shadow:0 0 0 3px var(--brand-50)}
+  .tli .tt{font-size:12px;font-weight:800}
+  .tli .ss{font-size:11px;color:var(--slate-400);margin-top:2px}
+  .mobile-note{display:none}
+  @media (max-width:940px){.mobile-note{display:block}}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 02 &middot; dua panel</span>
+  <h1>Split Workspace — pilih kegiatan, aksi di kanan</h1>
+  <p>Satu layar kerja: daftar kegiatan di kiri (dengan pencarian, chip Blok, dan status Jadwal/BA), detail kegiatan di kanan. Tidak perlu berpindah tab untuk membuat jadwal atau BA. Navigasi atas hanya tiga tujuan: Peserta, Jadwal, Berita Acara.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Paling ringkas untuk kerja berulang: konteks tidak hilang saat berpindah kegiatan. Status jadwal & BA terlihat langsung di daftar. Sedikit klik.</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Di ponsel panel kanan harus jadi sheet/halaman terpisah. Daftar panjang perlu virtualisasi bila data besar.</div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="main">
+    <div class="topbar">
+      <div class="brandline">
+        <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+        <div><div class="nm">Panel Bagian</div><div class="sb">Praktikum / Lab Anatomi</div></div>
+      </div>
+      <div style="width:18px"></div>
+      <nav class="seg">
+        <a href="#">Peserta</a>
+        <a class="on" href="#">Jadwal</a>
+        <a href="#">Berita Acara</a>
+      </nav>
+      <div class="grow"></div>
+      <div class="search" style="min-width:220px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="Cari kegiatan atau peserta..."></div>
+      <div class="avatar">RN</div>
+      <button class="iconbtn" title="Keluar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></button>
+    </div>
+
+    <div class="content">
+      <div class="between wrap mb12">
+        <div>
+          <h2 style="font-size:18px">Jadwal &amp; Berita Acara</h2>
+          <p class="caption mt4">Pilih kegiatan di kiri. Aksi cepat muncul di panel kanan.</p>
+        </div>
+        <div class="row gap8">
+          <button class="btn btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg> Muat Ulang</button>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Buat BA</button>
+        </div>
+      </div>
+
+      <div class="filterbar">
+        <div class="search" style="min-width:280px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="Cari kegiatan, dosen, atau peserta..."></div>
+        <div class="chips">
+          <button class="chip on">Semua Blok</button>
+          <button class="chip">Psikiatry</button>
+          <button class="chip">Neuroni</button>
+          <button class="chip">Kardiovaskular</button>
+        </div>
+        <div class="grow"></div>
+        <button class="chip" style="border-color:#fde68a;background:var(--amber-50);color:var(--amber)">Perlu tindakan &middot; 12</button>
+      </div>
+
+      <div class="split">
+        <div class="pane">
+          <div class="ph between">
+            <div><div style="font-size:12.5px;font-weight:800">Kegiatan</div><div class="caption">24 kegiatan &middot; 4 Blok</div></div>
+            <span class="badge b-slate">Urut tanggal</span>
+          </div>
+
+          <div class="kitem on">
+            <div class="avatar">PS</div>
+            <div class="grow">
+              <div class="t">Psikiatry &middot; SGD Neurologi</div>
+              <div class="s">20 Okt 2026 &middot; 24 peserta</div>
+              <div class="row gap6 mt6"><span class="badge b-green">Jadwal</span><span class="badge b-amber">BA draft</span></div>
+            </div>
+            <div class="right"><div class="mono muted" style="font-size:10px">ACC</div><div class="mt6" style="color:var(--brand)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div></div>
+          </div>
+
+          <div class="kitem">
+            <div class="avatar g">NE</div>
+            <div class="grow">
+              <div class="t">Neuroni &middot; Praktikum Anatomi</div>
+              <div class="s">22 Okt 2026 &middot; 18 peserta</div>
+              <div class="row gap6 mt6"><span class="badge b-green">Jadwal</span><span class="badge b-slate">Belum BA</span></div>
+            </div>
+            <div class="right"><div class="mono muted" style="font-size:10px">ACC</div></div>
+          </div>
+
+          <div class="kitem">
+            <div class="avatar a">KV</div>
+            <div class="grow">
+              <div class="t">Kardiovaskular &middot; Ujian OSCE</div>
+              <div class="s">24 Okt 2026 &middot; 22 peserta</div>
+              <div class="row gap6 mt6"><span class="badge b-amber">Belum jadwal</span><span class="badge b-slate">Belum BA</span></div>
+            </div>
+            <div class="right"><div class="mono muted" style="font-size:10px">ACC</div></div>
+          </div>
+
+          <div class="kitem">
+            <div class="avatar g">RE</div>
+            <div class="grow">
+              <div class="t">Reproduksi &middot; SGD Reproduksi</div>
+              <div class="s">25 Okt 2026 &middot; 20 peserta</div>
+              <div class="row gap6 mt6"><span class="badge b-green">Jadwal</span><span class="badge b-green">BA lengkap</span></div>
+            </div>
+            <div class="right"><div class="mono muted" style="font-size:10px">ACC</div></div>
+          </div>
+
+          <div class="kitem">
+            <div class="avatar slate">PS</div>
+            <div class="grow">
+              <div class="t">Psikiatry &middot; Ujian Tulis</div>
+              <div class="s">27 Okt 2026 &middot; 26 peserta</div>
+              <div class="row gap6 mt6"><span class="badge b-amber">Belum jadwal</span><span class="badge b-slate">Belum BA</span></div>
+            </div>
+            <div class="right"><div class="mono muted" style="font-size:10px">Menunggu</div></div>
+          </div>
+        </div>
+
+        <div class="pane">
+          <div class="ph between" style="padding:16px 18px">
+            <div>
+              <div class="detail-name">Psikiatry &middot; SGD Neurologi</div>
+              <div class="meta">
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg> Sen, 20 Okt 2026</span>
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 08.00</span>
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg> dr. Andi Pratama</span>
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> 24 peserta</span>
+              </div>
+            </div>
+            <span class="badge b-brand">Draft BA</span>
+          </div>
+
+          <div class="body" style="padding:16px 18px">
+            <div class="steps">
+              <div class="st"><span class="dot done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="11" height="11"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb">ACC</span><span class="line done"></span></div>
+              <div class="st"><span class="dot done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="11" height="11"><path d="M20 6 9 17l-5-5"/></svg></span><span class="lb">Jadwal</span><span class="line done"></span></div>
+              <div class="st"><span class="dot on">3</span><span class="lb on">Berita Acara</span></div>
+            </div>
+
+            <div class="between mb8">
+              <div class="section-title" style="margin:0">Peserta hadir</div>
+              <button class="btn btn-ghost btn-sm">Pilih semua</button>
+            </div>
+            <div class="check on">
+              <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <div class="grow"><div style="font-size:12.5px;font-weight:800">Siti Aisyah</div><div class="mono muted" style="font-size:10.5px">2208260045</div></div>
+              <span class="badge b-green">ACC</span>
+            </div>
+            <div class="check on">
+              <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <div class="grow"><div style="font-size:12.5px;font-weight:800">Eko Prasetyo</div><div class="mono muted" style="font-size:10.5px">2208260222</div></div>
+              <span class="badge b-green">ACC</span>
+            </div>
+            <div class="check">
+              <span class="box"></span>
+              <div class="grow"><div style="font-size:12.5px;font-weight:800">Dewi Lestari</div><div class="mono muted" style="font-size:10.5px">2208260311</div></div>
+              <span class="badge b-green">ACC</span>
+            </div>
+            <div class="check">
+              <span class="box"></span>
+              <div class="grow"><div style="font-size:12.5px;font-weight:800">Rangga Wijaya</div><div class="mono muted" style="font-size:10.5px">2208260440</div></div>
+              <span class="badge b-amber">Menunggu</span>
+            </div>
+
+            <div class="between mt14 mb8">
+              <div class="section-title" style="margin:0">Detail Berita Acara</div>
+              <span class="badge b-slate">2 dari 4 dipilih</span>
+            </div>
+            <div class="inlineform">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="field"><label>Tanggal</label><input class="input" value="2026-10-20"></div>
+                <div class="field"><label>Jam</label><input class="input" value="08:00"></div>
+                <div class="field" style="grid-column:1/-1"><label>Dosen</label><input class="input" value="dr. Andi Pratama"></div>
+                <div class="field" style="grid-column:1/-1;margin-bottom:0"><label>Label (opsional)</label><input class="input" placeholder="mis. Sesi 1 / Hari ke-2"></div>
+              </div>
+              <div class="row gap8 mt12">
+                <button class="btn btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Scan</button>
+                <button class="btn btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Pilih PDF</button>
+                <div class="grow"></div>
+                <button class="btn btn-primary">Lanjut &amp; Upload</button>
+              </div>
+            </div>
+
+            <div class="section-title mt16">Riwayat BA</div>
+            <div class="timeline">
+              <div class="tli now"><div class="tt">Draft dibuat</div><div class="ss">Hari ini, 09.12 &middot; oleh dr. Rina</div></div>
+              <div class="tli"><div class="tt">Jadwal dibuat</div><div class="ss">14 Okt 2026, 10.40 &middot; dr. Andi Pratama</div></div>
+              <div class="tli"><div class="tt">Kegiatan ACC</div><div class="ss">11 Okt 2026</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="mobile-nav">
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Peserta</a>
+      <a class="on" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Jadwal</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>BA</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</a>
+    </nav>
+  </div>
+</div>
+<script>if(location.search.indexOf('embed')!==-1)document.body.classList.add('embed');</script>
+</body>
+</html>

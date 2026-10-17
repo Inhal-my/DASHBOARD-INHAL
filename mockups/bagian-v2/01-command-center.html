@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsep 01 — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<div class="page-head">
+  <a class="back" href="index.html">&larr; Semua konsep</a>
+  <span class="kicker">Konsep 01 &middot; sidebar + ringkasan</span>
+  <h1>Command Center — satu layar untuk semua tindakan</h1>
+  <p>Sidebar tetap berisi lima tujuan utama (Ringkasan, Jadwal, Berita Acara, Peserta, Riwayat). Halaman Ringkasan menampilkan KPI, daftar "Perlu Tindakan" yang bisa langsung dieksekusi, dan kelengkapan per Blok. Cocok untuk admin yang bekerja di laptop sepanjang hari.</p>
+  <div class="notes">
+    <div class="note good"><b>Cocok karena</b>Paling informatif: kondisi keseluruhan terlihat tanpa membuka tab. Aksi penting (lengkapi draft, buat jadwal/BA) langsung dari daftar. Navigasi jelas dan konsisten.</div>
+    <div class="note bad"><b>Perlu diperhatikan</b>Butuh data agregat baru (KPI & daftar tindakan). Lebih banyak elemen, jadi perlu disiplin agar tidak terasa padat.</div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+      <div><div class="nm">Panel Bagian</div><div class="sb">INHAL &middot; Praktikum</div></div>
+    </div>
+    <nav class="nav">
+      <div class="sec">Menu</div>
+      <a class="on" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Ringkasan</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Jadwal<span class="pill">9</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>Berita Acara<span class="pill">3</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Peserta</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</a>
+    </nav>
+    <div class="me">
+      <div class="row">
+        <div class="avatar" style="background:rgba(255,255,255,.12);color:#c7d2fe">RN</div>
+        <div class="min-w-0"><div class="nm">dr. Rina Nurhaliza</div><div class="sb">Praktikum / Lab Anatomi</div></div>
+      </div>
+      <a class="out" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg> Keluar</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumb">Praktikum / <b>Lab Anatomi</b></div>
+        <div class="title">Ringkasan</div>
+      </div>
+      <div class="grow"></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="Cari peserta, NPM, atau kegiatan..."></div>
+      <button class="iconbtn" title="Muat ulang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></button>
+      <button class="iconbtn" title="Notifikasi"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+      <div class="avatar">RN</div>
+    </div>
+
+    <div class="content">
+      <div class="between wrap mb16">
+        <div>
+          <h2 style="font-size:19px">Selamat pagi, dr. Rina</h2>
+          <p class="caption mt4">Kamis, 17 Oktober 2026 &middot; 9 kegiatan menunggu tindakan</p>
+        </div>
+        <div class="row gap8">
+          <button class="btn btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18M12 15v4M10 17h4"/></svg> Buat Jadwal</button>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Buat Berita Acara</button>
+        </div>
+      </div>
+
+      <div class="kpis mb16">
+        <div class="kpi">
+          <div class="lb">Total Peserta</div>
+          <div class="big">128</div>
+          <div class="sub"><b>+12</b> sejak minggu lalu</div>
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+        </div>
+        <div class="kpi">
+          <div class="lb">Siap Dijadwalkan</div>
+          <div class="big">9</div>
+          <div class="sub">kegiatan berstatus ACC</div>
+          <div class="ic a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></div>
+        </div>
+        <div class="kpi">
+          <div class="lb">Jadwal Aktif</div>
+          <div class="big">14</div>
+          <div class="sub">3 di antaranya minggu ini</div>
+          <div class="ic v"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        </div>
+        <div class="kpi">
+          <div class="lb">BA Selesai</div>
+          <div class="big">86%</div>
+          <div class="bar g mt10"><i style="width:86%"></i></div>
+          <div class="sub">107 dari 124 kegiatan</div>
+          <div class="ic g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.15fr .85fr;gap:16px" class="mb16">
+        <div class="card">
+          <div class="head">
+            <div class="ic" style="background:var(--amber-50);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+            <div class="grow"><h3>Perlu Tindakan</h3><div class="sub">Urut dari yang paling mendesak</div></div>
+            <span class="badge b-rose">12</span>
+          </div>
+          <div class="body" style="padding-top:4px;padding-bottom:4px">
+            <div class="todo">
+              <div class="ic r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></div>
+              <div class="grow"><div class="t">3 Draft BA belum lengkap</div><div class="s">Dosen / tanggal / jam belum diisi &middot; Psikiatry, Neuroni</div></div>
+              <button class="btn btn-soft btn-sm">Lengkapi</button>
+            </div>
+            <div class="todo">
+              <div class="ic b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></div>
+              <div class="grow"><div class="t">9 kegiatan ACC belum dijadwalkan</div><div class="s">Tertua: 2 Oktober 2026 &middot; Kardiovaskular</div></div>
+              <button class="btn btn-soft btn-sm">Buat Jadwal</button>
+            </div>
+            <div class="todo">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/></svg></div>
+              <div class="grow"><div class="t">2 jadwal siap dibuatkan BA</div><div class="s">Sudah lewat tanggal pelaksanaan</div></div>
+              <button class="btn btn-soft btn-sm">Buat BA</button>
+            </div>
+            <div class="todo">
+              <div class="ic b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+              <div class="grow"><div class="t">4 peserta masih berstatus Menunggu</div><div class="s">Perlu verifikasi sebelum masuk BA</div></div>
+              <button class="btn btn-soft btn-sm">Tinjau</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+            <div class="grow"><h3>Kelengkapan per Blok</h3><div class="sub">BA Pelaksanaan</div></div>
+            <a class="btn btn-ghost btn-sm" href="#">Lihat</a>
+          </div>
+          <div class="body">
+            <div class="between mb8"><span style="font-size:12.5px;font-weight:800">Psikiatry</span><span class="badge b-green">92%</span></div>
+            <div class="bar g mb14"><i style="width:92%"></i></div>
+            <div class="between mb8"><span style="font-size:12.5px;font-weight:800">Neuroni</span><span class="badge b-amber">78%</span></div>
+            <div class="bar a mb14"><i style="width:78%"></i></div>
+            <div class="between mb8"><span style="font-size:12.5px;font-weight:800">Kardiovaskular</span><span class="badge b-rose">64%</span></div>
+            <div class="bar r mb14"><i style="width:64%"></i></div>
+            <div class="between mb8"><span style="font-size:12.5px;font-weight:800">Reproduksi</span><span class="badge b-green">Lengkap</span></div>
+            <div class="bar g"><i style="width:100%"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="head">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></div>
+          <div class="grow"><h3>Jadwal Mendatang</h3><div class="sub">7 hari ke depan</div></div>
+          <a class="btn btn-ghost btn-sm" href="#">Semua jadwal</a>
+        </div>
+        <div class="body" style="padding-top:4px;padding-bottom:4px">
+          <div class="listrow">
+            <div class="avatar">PS</div>
+            <div class="grow"><div class="t">Psikiatry &middot; SGD Neurologi</div><div class="s">Sen, 20 Okt 2026 &middot; 08.00 &middot; dr. Andi Pratama</div></div>
+            <span class="badge b-brand">24 peserta</span>
+            <button class="btn btn-soft btn-sm">Buat BA</button>
+          </div>
+          <div class="listrow">
+            <div class="avatar g">NE</div>
+            <div class="grow"><div class="t">Neuroni &middot; Praktikum Anatomi</div><div class="s">Sel, 21 Okt 2026 &middot; 10.30 &middot; dr. Sari Dewi</div></div>
+            <span class="badge b-brand">18 peserta</span>
+            <button class="btn btn-soft btn-sm">Buat BA</button>
+          </div>
+          <div class="listrow">
+            <div class="avatar a">KV</div>
+            <div class="grow"><div class="t">Kardiovaskular &middot; Ujian OSCE</div><div class="s">Rab, 22 Okt 2026 &middot; 13.00 &middot; dr. Budi Santoso</div></div>
+            <span class="badge b-amber">Draft BA</span>
+            <button class="btn btn-soft btn-sm">Lengkapi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="mobile-nav">
+      <a class="on" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Ringkasan</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Jadwal</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>BA</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</a>
+    </nav>
+  </div>
+</div>
+<script>if(location.search.indexOf('embed')!==-1)document.body.classList.add('embed');</script>
+</body>
+</html>
