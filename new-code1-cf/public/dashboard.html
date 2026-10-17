@@ -187,6 +187,7 @@
         .pd-doc-ic.surat { background: var(--brand-soft); color: var(--brand); }
         .pd-doc-ic.acc { background: var(--emerald-soft); color: var(--emerald); }
         .pd-doc-ic.bukti { background: #fff7ed; color: #ea580c; }
+        .pd-doc-ic.ba { background: #e0f2fe; color: #0284c7; }
         .pd-doc-info { min-width: 0; flex: 1; }
         .pd-doc-info .t { font-size: 13.5px; font-weight: 700; color: var(--ink-900); }
         .pd-doc-info .s { font-size: 11.5px; color: var(--ink-400); margin-top: 2px; }
@@ -1860,6 +1861,16 @@
                                 </div>
 
                                 <div class="pd-doc-row">
+                                    <div class="pd-doc-ic ba"><i class="bi bi-file-earmark-check"></i></div>
+                                    <div class="pd-doc-info"><div class="t">Berita Acara</div><div class="s">PDF BA Pendukung per kegiatan, diunggah admin</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="detailBaPendukung" class="pd-pill-ok"><i class="bi bi-check-circle-fill"></i>Ada</span>
+                                        <span v-else class="pd-pill-no"><i class="bi bi-dash-circle"></i>Belum</span>
+                                        <a v-if="detailBaPendukung" :href="safeUrl(detailBaPendukung.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !px-2 !py-1 text-xs" title="Lihat Berita Acara"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <div class="pd-doc-row">
                                     <div class="pd-doc-ic acc"><i class="bi bi-patch-check"></i></div>
                                     <div class="pd-doc-info"><div class="t">ACC INHAL</div><div class="s">Dihasilkan sistem — tidak dapat diganti manual</div></div>
                                     <div class="flex items-center gap-2">
@@ -2461,6 +2472,7 @@
                     detailMap: {},
                     baSheet: { open: false, type: 'pelaksanaan', level: 'blok', blok: '', q: '', loading: false },
                     baPendukungIds: [],
+                    baPendukungByPengajuan: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
@@ -2524,6 +2536,14 @@
                 },
                 menungguCount() {
                     return (this.stats.perStatus || {})['Menunggu'] || 0;
+                },
+                detailBaPendukung() {
+                    const p = this.detail && this.detail.p;
+                    if (!p) return null;
+                    const id = String(p['ID Pengajuan'] || '').trim();
+                    if (!id) return null;
+                    const rec = (this.baPendukungByPengajuan || {})[id];
+                    return rec && rec.fileUrl ? rec : null;
                 },
                 berkasProgress() {
                     const p = this.detail.p;
@@ -3341,6 +3361,7 @@
                         this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
                         this.detailMap = b.detailMap || {};
                         this.baPendukungIds = b.baPendukungIds || [];
+                        this.baPendukungByPengajuan = b.baPendukungByPengajuan || {};
                         this.masterBiaya = b.masterBiaya || [];
                         this.dosenOptions = b.dosen || this.dosenOptions;
                         this.loaded.pengajuan = true;
@@ -3785,7 +3806,10 @@
                     this.loadBagian();
                     try {
                         const b = await this.run('getDashboardBootstrap');
-                        if (b) this.baPendukungIds = b.baPendukungIds || [];
+                        if (b) {
+                            this.baPendukungIds = b.baPendukungIds || [];
+                            this.baPendukungByPengajuan = b.baPendukungByPengajuan || {};
+                        }
                     } catch (e) {}
                 },
                 kbTogglePick(id) {

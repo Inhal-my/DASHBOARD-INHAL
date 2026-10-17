@@ -26,6 +26,36 @@ describe('dashboard read', () => {
     expect(boot.stats.total).toBe(1);
     expect(boot.detailMap['INHAL-1']).toHaveLength(1);
   });
+  it('memetakan PDF BA Pendukung per pengajuan', async () => {
+    await seed();
+    const ctx = await adminCtx();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jumlah_peserta,file_name,file_url,sumber,kegiatan_key) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0001','Ujian','A','UAS','2026-09-20','1','ba.pdf','https://drive/ba','Admin','ujian|a|uas')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,bagian,status_pengajuan,urutan,active) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0001','INHAL-1','2201010001','Aisyah','A','Ujian','ACC',1,1)"
+    ).run();
+    const boot = await getDashboardBootstrap(env.DB, ctx);
+    expect(boot.baPendukungByPengajuan['INHAL-1']).toEqual({ baId: 'BA-PEN-2026-0001', fileUrl: 'https://drive/ba' });
+  });
+
+  it('memakai dokumen dasar bila PDF BA Pendukung belum dirakit', async () => {
+    await seed();
+    const ctx = await adminCtx();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jumlah_peserta,file_name,file_url,base_file_url,sumber,kegiatan_key) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0002','Ujian','A','UAS','2026-09-20','1','','','https://drive/base','Admin','ujian|a|uas')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,bagian,status_pengajuan,urutan,active) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0002','INHAL-1','2201010001','Aisyah','A','Ujian','ACC',1,1)"
+    ).run();
+    const boot = await getDashboardBootstrap(env.DB, ctx);
+    expect(boot.baPendukungByPengajuan['INHAL-1'].fileUrl).toBe('https://drive/base');
+  });
+
   it('filters pengajuan list by status', async () => {
     await seed();
     const ctx = await adminCtx();

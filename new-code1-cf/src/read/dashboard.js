@@ -103,6 +103,19 @@ export async function getDashboardBootstrap(db, ctx) {
     'WHERE p.active = 1'
   ).all()).results || [];
   const baPendukungIds = Array.from(new Set(baPendukungRows.map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean)));
+  const baPendukungLinkRows = (await db.prepare(
+    'SELECT p.id_pengajuan, a.ba_id, a.file_url, a.base_file_url FROM berita_acara_admin_peserta p ' +
+    'JOIN berita_acara_admin a ON a.ba_id = p.ba_id WHERE p.active = 1 ' +
+    'ORDER BY a.timestamp DESC, a.ba_id DESC'
+  ).all()).results || [];
+  const baPendukungByPengajuan = {};
+  for (const r of baPendukungLinkRows) {
+    const pid = String(r.id_pengajuan || '').trim();
+    if (!pid || baPendukungByPengajuan[pid]) continue;
+    const fileUrl = String(r.file_url || '').trim() || String(r.base_file_url || '').trim();
+    if (!fileUrl) continue;
+    baPendukungByPengajuan[pid] = { baId: String(r.ba_id || '').trim(), fileUrl: fileUrl };
+  }
 
   return {
     stats,
@@ -110,7 +123,8 @@ export async function getDashboardBootstrap(db, ctx) {
     detailMap,
     masterBiaya,
     dosen: await getMasterOptions(db, 'Dosen'),
-    baPendukungIds
+    baPendukungIds,
+    baPendukungByPengajuan
   };
 }
 

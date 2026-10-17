@@ -585,5 +585,12 @@ describe('dashboard detail drawer', () => {
     expect(html).toContain('berkasProgress() {');
     expect(html).toContain("p['Link Surat Keterangan'], p['Link ACC INHAL'], p['Link Bukti Bayar']");
     expect(html).toContain(':style="{ width: (berkasProgress / 3 * 100) + \'%\' }"');
+    expect(html).toContain('detailBaPendukung');
+    expect(html).toContain('baPendukungByPengajuan');
+    const iBa = html.indexOf('detailBaPendukung.fileUrl');
+    const iAcc = html.indexOf('<div class="t">ACC INHAL</div>');
+    expect(iBa).toBeGreaterThan(-1);
+    expect(iAcc).toBeGreaterThan(-1);
+    expect(iBa).toBeLessThan(iAcc);
   });
 });
