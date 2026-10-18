@@ -37,7 +37,8 @@ Catatan:
 - `_headers` hanya berlaku untuk aset statis; header respons Worker diatur middleware.
 - Gaya inline diizinkan lewat `style-src 'unsafe-inline'` karena halaman memakai banyak atribut `style`.
 - `'unsafe-eval'` diperlukan oleh `vue.global.prod.js` (runtime compiler). Jika kelak memakai build Vue yang sudah dikompilasi, `unsafe-eval` dapat dihapus.
-- Google Fonts diizinkan pada `style-src` dan `font-src`.
+- Google Fonts diizinkan pada `style-src` dan `font-src`; font lokal Bootstrap Icons
+  diizinkan lewat `font-src 'self'`.
 
 ## 2. MFA admin (TOTP, opt-in)
 

@@ -34,6 +34,7 @@ describe('security headers', () => {
 
   it('CSP memuat hash semua script inline di halaman', async () => {
     expect(CSP).toContain("'unsafe-eval'");
+    expect(CSP).toContain("font-src 'self' https://fonts.gstatic.com");
     expect(CSP).toContain('https://fonts.gstatic.com');
     expect(CSP).toContain("img-src 'self' data: blob:");
     for (const path of ['/dashboard.html', '/portal.html', '/bagian.html', '/index.html', '/detail-laporan.html']) {
