@@ -93,7 +93,9 @@ npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-17-admin-
 npx wrangler deploy
 ```
 
-Deploy Poin 4 digabung dengan Poin 2/3 setelah R2 aktif, dengan urutan: migrasi MFA, deploy Worker, lalu verifikasi.
+Poin 4 sudah di-deploy pada 2026-10-18 (versi Worker `fcdfd4d1-108d-4149-970e-1ada867d49d8`) memakai konfigurasi sementara tanpa binding Workflow/R2. Migrasi MFA sudah diterapkan ke D1 produksi.
+
+Saat R2 aktif, deploy ulang memakai `wrangler.toml` lengkap untuk mengaktifkan Poin 2 (Workflow + bucket backup).
 
 ## 5. Verifikasi
 

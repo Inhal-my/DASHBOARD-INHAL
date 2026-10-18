@@ -18,12 +18,12 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 - [ ] **Poin 2 — Backup dan pemulihan**
   - Implementasi selesai dan teruji lokal; **deploy produksi ditunda** karena R2 belum aktif.
   - Detail: `docs/superpowers/specs/2026-10-17-backup-restore-design.md`, `docs/ops/backup-restore.md`.
-- [ ] **Poin 3 — Observability**
+- [x] **Poin 3 — Observability**
   - Error tracking, alert, dan pemantauan kesehatan aplikasi.
-  - Implementasi selesai dan teruji lokal; deploy produksi menunggu R2 aktif (digabung dengan Poin 2).
+  - Worker sudah di-deploy; binding Workflow/R2 tetap menunggu R2 aktif.
   - Detail: `docs/superpowers/specs/2026-10-17-observability-design.md`, `docs/ops/observability.md`.
-- [ ] **Poin 4 — Keamanan**
-  - Implementasi selesai dan teruji lokal; deploy produksi menunggu R2 aktif (digabung dengan Poin 2/3).
+- [x] **Poin 4 — Keamanan**
+  - MFA admin, security headers/CSP, dan audit akses berkas sudah di-deploy.
   - Detail: `docs/superpowers/specs/2026-10-17-security-design.md`, `docs/ops/security.md`.
 - [ ] **Poin 5 — Proses rilis**
   - CI/CD, staging, migrasi terkontrol, dan test end-to-end browser.
@@ -100,7 +100,15 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Modal Keamanan Akun dan kolom kode MFA pada login dashboard.
 - Test baru: `test/mfa-totp.test.js`, `test/mfa-recovery.test.js`, `test/mfa-flow.test.js`, `test/security-headers.test.js`, `test/file-audit.test.js`.
 - Dokumen operasional: `docs/ops/security.md`.
-- Deploy: migrasi `migrations/2026-10-17-admin-mfa.sql` harus dijalankan sebelum deploy Worker, karena `createSession` menulis `sessions.admin_id`.
+- Commit: `df9aa60` (`feat(security): MFA admin, security headers/CSP, dan audit akses berkas`), sudah di-push ke `origin/main`.
+- Deploy produksi: versi Worker `fcdfd4d1-108d-4149-970e-1ada867d49d8`.
+- Backup pra-migrasi: `/tmp/opencode/backups/inhal-poc-20261018-pre-poin4.sql`.
+- Migrasi produksi diterapkan: `migrations/2026-10-17-admin-mfa.sql`; verifikasi `admin_mfa` ada dan `sessions.admin_id` ada.
+- Verifikasi produksi:
+  - `GET /api/health` -> 200 `{ ok: true, db: "ok" }`, `cache-control: no-store`, `x-request-id` ada.
+  - `/portal` dan `/api/*` mengirim CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, dan `Cross-Origin-Opener-Policy`.
+  - RPC `mfaStatus` tanpa sesi mengembalikan error autentikasi (handler MFA aktif di produksi).
+- Catatan deploy: Worker di-deploy memakai konfigurasi sementara tanpa binding Workflow/R2 agar Poin 3/4 live lebih dulu. Repo tetap memakai `wrangler.toml` lengkap; setelah R2 aktif, deploy ulang dengan konfigurasi default untuk mengaktifkan Poin 2.
 
 ## Deploy tertunda
 
@@ -120,10 +128,9 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 
 ### Poin 3 — Observability
 
-- Status: kode selesai dan teruji lokal, belum di-deploy.
-- Blocker: sama dengan Poin 2 (R2 belum aktif); deploy digabung agar binding Workflow/R2 valid.
-- Yang belum dijalankan:
-  - Deploy Worker dengan `[observability]` dan `[observability.issues]`.
+- Status: Worker sudah di-deploy (versi `fcdfd4d1-108d-4149-970e-1ada867d49d8`); observability aktif.
+- Sisa:
   - Mengaktifkan Issues automation (email/webhook).
   - Memasang monitor uptime eksternal ke `/api/health`.
-  - Verifikasi log `http_request_failed`/`health_check_failed` dan header `x-request-id` di produksi.
+  - Verifikasi log `http_request_failed`/`health_check_failed` di produksi.
+- Binding Workflow/R2 belum ikut ter-deploy karena R2 belum aktif.
