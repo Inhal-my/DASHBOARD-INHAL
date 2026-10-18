@@ -23,7 +23,17 @@ Buka http://localhost:8787
 
 ```bash
 npm test
+npm run test:scripts
 ```
+
+## CI/CD dan staging
+
+- CI (`.github/workflows/ci.yml`): test, `csp:check`, guard migrasi, dan dry-run deploy.
+- Staging: `https://inhal-form-staging.prodi.workers.dev` (D1 terpisah).
+- Produksi: deploy manual dengan approval.
+- Migrasi: `npx wrangler d1 migrations list/apply`; file migrasi lama tidak boleh diubah.
+
+Panduan lengkap: `../docs/ops/release.md`.
 
 ## Endpoint
 

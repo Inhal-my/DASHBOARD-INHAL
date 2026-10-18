@@ -27,6 +27,8 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Detail: `docs/superpowers/specs/2026-10-17-security-design.md`, `docs/ops/security.md`.
 - [ ] **Poin 5 — Proses rilis**
   - CI/CD, staging, migrasi terkontrol, dan test end-to-end browser.
+  - Implementasi dan verifikasi lokal selesai; staging live; menunggu secret GitHub dan run Actions pertama.
+  - Detail: `docs/superpowers/specs/2026-10-18-release-process-design.md`, `docs/ops/release.md`.
 - [ ] **Poin 6 — Skalabilitas dan kualitas data**
   - Optimasi query, validasi input, dan pembersihan data lama.
 - [ ] **Poin 7 — UAT dan dokumentasi operasional**
@@ -109,6 +111,33 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - `/portal` dan `/api/*` mengirim CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, dan `Cross-Origin-Opener-Policy`.
   - RPC `mfaStatus` tanpa sesi mengembalikan error autentikasi (handler MFA aktif di produksi).
 - Catatan deploy: Worker di-deploy memakai konfigurasi sementara tanpa binding Workflow/R2 agar Poin 3/4 live lebih dulu. Repo tetap memakai `wrangler.toml` lengkap; setelah R2 aktif, deploy ulang dengan konfigurasi default untuk mengaktifkan Poin 2.
+
+## Hasil implementasi Poin 5 (2026-10-18)
+
+- Desain: `docs/superpowers/specs/2026-10-18-release-process-design.md`.
+- CI `.github/workflows/ci.yml`: `npm ci`, `npm test`, `npm run test:scripts`,
+  `npm run csp:check`, guard migrasi, dan `wrangler deploy --dry-run`.
+- Tooling rilis:
+  - `scripts/lib/migrations.mjs`, `scripts/check-migrations.mjs` (tolak ubah/hapus/rename migrasi lama).
+  - `scripts/migrations-baseline.mjs` (baseline `d1_migrations`).
+  - `scripts/generate-csp.mjs --check` (`npm run csp:check`).
+  - `scripts/seed-staging.mjs` (admin staging dari `STAGING_ADMIN_PASSWORD`).
+- Baseline produksi: backup `/tmp/opencode/backups/inhal-poc-20261018-pre-baseline.sql`;
+  21 migrasi terdaftar; `wrangler d1 migrations list --remote` -> tidak ada yang tertunda.
+- Staging:
+  - D1 `inhal-poc-staging` (`ca9a999b-51dc-4a0d-8588-edf25191aa5a`, APAC), data sintetis `schema.sql`.
+  - Worker `inhal-form-staging` live di https://inhal-form-staging.prodi.workers.dev.
+  - Baseline staging diterapkan; `/api/health` -> 200.
+- Workflow deploy: `deploy-staging.yml` (otomatis dari `main`), `deploy-production.yml`
+  (manual + environment approval + opsi migrasi), `seed-staging.yml`.
+- E2E `e2e/smoke.cjs` + workflow `e2e-staging.yml`: portal publik, login admin,
+  dashboard, modal Keamanan Akun. Diverifikasi lokal terhadap staging: lulus.
+- Dokumentasi: `docs/ops/release.md`; `DEPLOY.md` dan README diperbarui.
+- Verifikasi lokal: 88 file / 623 test Vitest lulus; 6 test Node tooling lulus; CSP sinkron;
+  dry-run deploy berhasil.
+- Sisa: tambahkan secret GitHub (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
+  `STAGING_ADMIN_PASSWORD`), buat environment `staging`/`production` + required reviewer,
+  lalu jalankan CI, Seed Staging Admin, Deploy Staging, dan E2E Staging pertama.
 
 ## Deploy tertunda
 

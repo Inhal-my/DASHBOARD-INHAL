@@ -62,6 +62,31 @@ const moduleSource = [
   ''
 ].join('\n');
 
-writeFileSync(join(publicDir, '_headers'), headerLines);
-writeFileSync(join(root, 'src', 'security', 'csp.js'), moduleSource);
+const check = process.argv.includes('--check');
+const headersPath = join(publicDir, '_headers');
+const modulePath = join(root, 'src', 'security', 'csp.js');
+
+if (check) {
+  const problems = [];
+  try {
+    if (readFileSync(headersPath, 'utf8') !== headerLines) problems.push('public/_headers');
+  } catch {
+    problems.push('public/_headers (tidak ada)');
+  }
+  try {
+    if (readFileSync(modulePath, 'utf8') !== moduleSource) problems.push('src/security/csp.js');
+  } catch {
+    problems.push('src/security/csp.js (tidak ada)');
+  }
+  if (problems.length) {
+    console.error('CSP tidak sinkron:', problems.join(', '));
+    console.error('Jalankan `npm run csp:generate` lalu commit hasilnya.');
+    process.exit(1);
+  }
+  console.log('CSP sinkron.');
+  process.exit(0);
+}
+
+writeFileSync(headersPath, headerLines);
+writeFileSync(modulePath, moduleSource);
 console.log('CSP diperbarui:', csp);

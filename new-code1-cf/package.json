@@ -9,7 +9,13 @@
     "db:local": "wrangler d1 execute inhal-poc --local --file=./schema.sql",
     "import:sheets": "node scripts/import-sheets.mjs",
     "test": "vitest run",
-    "csp:generate": "node scripts/generate-csp.mjs"
+    "test:scripts": "node --test scripts/__tests__/*.node.mjs",
+    "csp:generate": "node scripts/generate-csp.mjs",
+    "csp:check": "node scripts/generate-csp.mjs --check",
+    "migrations:check": "node scripts/check-migrations.mjs",
+    "migrations:baseline": "node scripts/migrations-baseline.mjs",
+    "seed:staging": "node scripts/seed-staging.mjs",
+    "e2e": "node e2e/smoke.cjs"
   },
   "dependencies": {
     "hono": "^4.6.0",
@@ -19,6 +25,7 @@
     "@cloudflare/vitest-pool-workers": "^0.5.0",
     "@vue/compiler-dom": "^3.5.42",
     "vitest": "~2.1.0",
-    "wrangler": "^4.151.1"
+    "wrangler": "^4.151.1",
+    "playwright": "^1.64.1"
   }
 }

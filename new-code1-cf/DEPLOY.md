@@ -12,6 +12,18 @@ Panduan langkah demi langkah memindahkan isi `new-code1-cf` ke Cloudflare (Worke
 | D1 database | `inhal-poc` (`8f412848-d213-4bb3-aeb7-0aff221f9ee3`, region APAC) |
 | Workers.dev subdomain | `prodi` |
 
+## Rilis (CI/CD)
+
+Rilis sekarang memakai GitHub Actions dan migrasi native Wrangler. Ringkasan:
+
+- CI: test, `csp:check`, guard migrasi, dan `wrangler deploy --dry-run`.
+- Staging otomatis dari `main` ke `inhal-form-staging`.
+- Produksi hanya lewat workflow manual dengan approval.
+- Migrasi: `npx wrangler d1 migrations list/apply` (bukan `d1 execute` per file).
+
+Panduan lengkap, daftar secret, baseline, dan rollback: `../docs/ops/release.md`.
+Langkah manual di bawah tetap berguna untuk operasi darurat atau deploy pertama.
+
 ## 0. Prasyarat
 
 - Node.js 22+ dan npm
@@ -107,10 +119,10 @@ kode baru membaca kolom dan tabel tersebut:
 CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-12-ba-pendukung-berkas.sql
 ```
 
-> **Penting — urutan dan idempotensi.** Repo ini menerapkan migrasi **per file** dengan
-> `wrangler d1 execute` (bukan `wrangler d1 migrations apply`). `ALTER TABLE ADD COLUMN` tidak
-> bisa dijalankan ulang (gagal `duplicate column name`), jadi jalankan file ini **tepat satu
-> kali** dan jangan mengulang file yang sudah pernah diterapkan.
+> **Penting — migrasi native.** Database produksi sudah di-baseline ke tabel
+> `d1_migrations`. Gunakan `npx wrangler d1 migrations apply inhal-poc --remote` untuk
+> migrasi baru. Perintah `d1 execute` per file di atas hanya untuk operasi darurat;
+> jangan mengulang file yang sudah tercatat di `d1_migrations`.
 
 ### 3.2 Migrasi BA Pendukung — berkas PDF (sekali, sebelum deploy Worker baru)
 
