@@ -142,6 +142,10 @@ Input `apply_migrations`:
 Langkah: test -> CSP check -> tampilkan migrasi tertunda -> (opsional) apply ->
 deploy -> smoke check `/api/health`.
 
+Saat ini deploy produksi memakai `wrangler.production.toml` (tanpa binding
+Workflow/R2) karena R2 belum aktif. Setelah R2 aktif dan bucket backup tersedia,
+ganti langkah deploy ke `npx wrangler deploy` dengan `wrangler.toml`.
+
 Sebelum menjalankan dengan `apply_migrations=true`:
 
 1. Backup D1 produksi.

@@ -1,0 +1,29 @@
+# Konfigurasi deploy produksi sementara tanpa binding Workflow/R2.
+# Dipakai sampai R2 aktif. Setelah bucket backup tersedia, deploy dengan
+# `wrangler.toml` agar binding BACKUP_WORKFLOW dan BACKUP_BUCKET ikut aktif.
+name = "inhal-form"
+main = "src/index.js"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.issues]
+enabled = true
+
+[vars]
+ACCOUNT_ID = "e2efd255f61d2b81c7f54c92eb57b946"
+DATABASE_ID = "8f412848-d213-4bb3-aeb7-0aff221f9ee3"
+GAS_DRIVE_URL = "https://script.google.com/a/macros/umsu.ac.id/s/AKfycbxwaFSaFkMiK5OGNNi4yK8eUVKx1l7KG-Dvs8WalYqwBtRAZSoR4ZtmMXvnMu26V8Ri/exec"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/", "/index.html"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc"
+database_id = "8f412848-d213-4bb3-aeb7-0aff221f9ee3"
