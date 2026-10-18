@@ -23,7 +23,8 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Implementasi selesai dan teruji lokal; deploy produksi menunggu R2 aktif (digabung dengan Poin 2).
   - Detail: `docs/superpowers/specs/2026-10-17-observability-design.md`, `docs/ops/observability.md`.
 - [ ] **Poin 4 — Keamanan**
-  - MFA admin, security headers/CSP, dan audit akses berkas.
+  - Implementasi selesai dan teruji lokal; deploy produksi menunggu R2 aktif (digabung dengan Poin 2/3).
+  - Detail: `docs/superpowers/specs/2026-10-17-security-design.md`, `docs/ops/security.md`.
 - [ ] **Poin 5 — Proses rilis**
   - CI/CD, staging, migrasi terkontrol, dan test end-to-end browser.
 - [ ] **Poin 6 — Skalabilitas dan kualitas data**
@@ -85,6 +86,21 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 - Deploy tertunda:
   - Menunggu R2 aktif karena `wrangler.toml` memuat binding `BACKUP_BUCKET` dan Workflow Poin 2.
   - Setelah deploy: aktifkan Issues automation dan monitor uptime, lalu verifikasi log/health di produksi.
+
+## Hasil implementasi Poin 4 (2026-10-18)
+
+- Kode dan test selesai; deploy produksi belum dijalankan.
+- Fitur:
+  - MFA admin TOTP opt-in: setup, aktifkan, nonaktifkan, 8 recovery code sekali pakai (hanya hash), anti-replay per langkah waktu.
+  - Tabel `admin_mfa` dan kolom `sessions.admin_id`; sesi admin terikat ke akun.
+  - Login `authenticateAdmin` menerima kode autentikator dan mengembalikan `mfaRequired` bila belum diisi.
+  - Security headers pada aset statis (`public/_headers`) dan respons Worker (middleware Hono), termasuk CSP dengan hash script inline dan `'unsafe-eval'` untuk Vue runtime compiler.
+  - `scripts/generate-csp.mjs` + `npm run csp:generate` menyinkronkan `public/_headers` dan `src/security/csp.js`.
+  - Audit `FILE_ACCESS` best-effort pada `GET /api/files/:id`.
+  - Modal Keamanan Akun dan kolom kode MFA pada login dashboard.
+- Test baru: `test/mfa-totp.test.js`, `test/mfa-recovery.test.js`, `test/mfa-flow.test.js`, `test/security-headers.test.js`, `test/file-audit.test.js`.
+- Dokumen operasional: `docs/ops/security.md`.
+- Deploy: migrasi `migrations/2026-10-17-admin-mfa.sql` harus dijalankan sebelum deploy Worker, karena `createSession` menulis `sessions.admin_id`.
 
 ## Deploy tertunda
 

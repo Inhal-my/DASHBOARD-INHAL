@@ -1,4 +1,5 @@
 import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass, requireAdmin, AUTH_ERROR } from './session.js';
+import { mfaStatus, mfaSetup, mfaEnable, mfaDisable } from './mfa/service.js';
 import { getBaginaConfig, getBagianBootstrap, getBeritaAcaraList } from './read/bagian.js';
 import { getLaporanBootstrap } from './read/laporan.js';
 import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList, getMasterOptions } from './repo.js';
@@ -35,7 +36,11 @@ import {
 } from './write/baAdmin.js';
 
 const HANDLERS = {
-  authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip),
+  authenticateAdmin: (db, args, ctx) => authenticateAdmin(db, args[0], ctx.ip, args[1]),
+  mfaStatus: (db, args, ctx) => mfaStatus(db, ctx),
+  mfaSetup: (db, args, ctx) => mfaSetup(db, ctx),
+  mfaEnable: (db, args, ctx) => mfaEnable(db, args[0], ctx),
+  mfaDisable: (db, args, ctx) => mfaDisable(db, args[0], args[1], ctx),
   authenticateBagian: (db, args, ctx) => authenticateBagian(db, args[0], args[1], args[2], ctx.ip),
   logoutSession: (db, args, ctx) => logoutSession(db, ctx.token),
   adminBagianBypass: (db, args, ctx) => adminBagianBypass(db, args[0], args[1], ctx.token, ctx.session),

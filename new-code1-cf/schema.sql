@@ -89,12 +89,17 @@ DROP TABLE IF EXISTS audit_log;
 CREATE TABLE admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, password TEXT, nama TEXT
 );
+CREATE TABLE admin_mfa (
+  admin_id INTEGER PRIMARY KEY, secret TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 0,
+  recovery TEXT NOT NULL DEFAULT '[]', last_step INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT, updated_at TEXT
+);
 CREATE TABLE bagian_staff (
   id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, kategori TEXT, nama TEXT, pass TEXT
 );
 CREATE TABLE sessions (
   token TEXT PRIMARY KEY, role TEXT, nama TEXT, kategori TEXT, sub_bagian TEXT,
-  kategoris TEXT, created_at TEXT, expires_at TEXT
+  kategoris TEXT, admin_id INTEGER, created_at TEXT, expires_at TEXT
 );
 CREATE TABLE auth_throttle (
   key TEXT PRIMARY KEY, fail_count INTEGER NOT NULL DEFAULT 0,

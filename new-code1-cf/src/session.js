@@ -1,6 +1,7 @@
 import { baginaHasAccess, getBagianAliasMap } from './read/common.js';
 import { throttleKey, getThrottleState, recordFailure, clearFailures, lockoutMessage } from './throttle.js';
 import { verifyPassword, hashPassword, isHashed } from './password.js';
+import { getAdminMfa, verifyAdminMfa } from './mfa/store.js';
 
 export const SESSION_TTL_SECS = 4 * 60 * 60;
 export const AUTH_ERROR = 'Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.';
@@ -19,10 +20,10 @@ export async function createSession(db, payload) {
   const token = crypto.randomUUID();
   const p = payload || {};
   await db.prepare(
-    'INSERT INTO sessions (token, role, nama, kategori, sub_bagian, kategoris, created_at, expires_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)'
+    'INSERT INTO sessions (token, role, nama, kategori, sub_bagian, kategoris, admin_id, created_at, expires_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)'
   ).bind(
     token, p.role || '', p.nama || '', p.kategori || '', p.subBagian || '',
-    JSON.stringify(p.kategoris || []), nowIso(), expiresAt()
+    JSON.stringify(p.kategoris || []), p.adminId || null, nowIso(), expiresAt()
   ).run();
   return token;
 }
@@ -39,7 +40,7 @@ export async function getSession(db, token) {
   try { kategoris = JSON.parse(row.kategoris || '[]'); } catch (e) { kategoris = []; }
   return {
     role: row.role || '', nama: row.nama || '', kategori: row.kategori || '',
-    subBagian: row.sub_bagian || '', kategoris: kategoris
+    subBagian: row.sub_bagian || '', kategoris: kategoris, adminId: row.admin_id || null
   };
 }
 
@@ -68,7 +69,7 @@ export async function requireBagianSession(db, kategori, subBagian, token, sessi
   return s;
 }
 
-export async function authenticateAdmin(db, password, ip) {
+export async function authenticateAdmin(db, password, ip, code) {
   const key = throttleKey('admin', ip);
   const lock = await getThrottleState(db, key);
   if (lock.locked) return { ok: false, message: lockoutMessage(lock.retryAfterMs) };
@@ -79,12 +80,23 @@ export async function authenticateAdmin(db, password, ip) {
     const stored = String(row.password || '').trim();
     if (!stored) continue;
     if (await verifyPassword(pwd, stored)) {
+      const mfa = await getAdminMfa(db, row.id);
+      if (mfa && Number(mfa.enabled) === 1) {
+        const check = await verifyAdminMfa(db, mfa, code);
+        if (!check.ok) {
+          if (check.reason === 'missing') {
+            return { ok: false, mfaRequired: true, message: 'Masukkan kode autentikator.' };
+          }
+          await recordFailure(db, key);
+          return { ok: false, mfaRequired: true, message: 'Kode autentikator atau recovery code salah.' };
+        }
+      }
       if (!isHashed(stored)) {
         await db.prepare('UPDATE admin SET password = ?1 WHERE id = ?2').bind(await hashPassword(pwd), row.id).run();
       }
       await clearFailures(db, key);
       const nama = String(row.nama || '').trim() || 'Admin';
-      return { ok: true, token: await createSession(db, { role: 'admin', nama }), nama };
+      return { ok: true, token: await createSession(db, { role: 'admin', nama, adminId: row.id }), nama };
     }
   }
   await recordFailure(db, key);

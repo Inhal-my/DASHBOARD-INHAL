@@ -1,0 +1,3 @@
+// AUTO-GENERATED oleh scripts/generate-csp.mjs. Jangan diedit manual.
+// Jalankan `npm run csp:generate` setelah mengubah script/style inline di public/*.html.
+export const CSP = "default-src 'self'; script-src 'self' 'unsafe-eval' 'sha256-1hS3XEuxNMnrMFa848OmzXYb1NgZHtlKAIbeaQ2gpDo=' 'sha256-2kLFWQRJAG7fbnyam2B+sLclu9KgnK3cEsvbzhQjLFg=' 'sha256-A68svxoDGHjw/bJCnnKlz/uv09O2AFWzBYS0X1Vh62s=' 'sha256-MthWh38H/BWR+0aWSW6glVmbLJAgp5gZv42UrB7snqE=' 'sha256-g/pBD3DhNIQPA8dR7yNYF0ZX0hht0Mv/sZIOPtsTYjM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";

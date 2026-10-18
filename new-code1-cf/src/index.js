@@ -8,8 +8,15 @@ import { getSession } from './session.js';
 import { exportDatabase } from './databaseExport.js';
 import { BackupWorkflow } from './backup/workflow.js';
 import { logEvent, logError } from './obs/log.js';
+import { writeAuditLog } from './audit.js';
+import { SECURITY_HEADERS } from './security/headers.js';
 
 const app = new Hono();
+
+app.use('*', async (c, next) => {
+  await next();
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
+});
 
 app.use('/api/*', async (c, next) => {
   const requestId = c.req.header('x-request-id') || crypto.randomUUID();
@@ -127,6 +134,17 @@ app.get('/api/files/:id', async (c) => {
   const session = await getSession(c.env.DB, token);
   if (!session || session.role !== 'admin') {
     return c.json({ error: 'Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.' }, 401);
+  }
+  try {
+    await writeAuditLog(c.env.DB, {
+      actor: session.nama,
+      action: 'FILE_ACCESS',
+      target: row.id,
+      detail: 'Akses berkas ' + String(row.file_name || ''),
+      alasan: ''
+    });
+  } catch {
+    // Audit bersifat best-effort: kegagalan sudah dicatat oleh writeAuditLog.
   }
   const name = String(row.file_name || row.id).replace(/"/g, '');
   return new Response(base64ToBytes(row.content), {
