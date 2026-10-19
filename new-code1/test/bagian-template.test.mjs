@@ -1,0 +1,44 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const bagianHtml = readFileSync(new URL('../pages/bagian.html', import.meta.url), 'utf8');
+
+describe('bagian template parity', () => {
+  it('memakai shell CF: top-nav, workspace, drawer, dan bottom-nav', () => {
+    assert.match(bagianHtml, /<nav class="top-nav"/);
+    assert.match(bagianHtml, /<nav class="bottom-nav"/);
+    assert.match(bagianHtml, /class="ws-detail"/);
+    assert.match(bagianHtml, /class="workspace"/);
+    assert.match(bagianHtml, /workspace--split/);
+    assert.match(bagianHtml, /max-w-7xl/);
+  });
+
+  it('menyediakan tab ringkasan, berita acara, dan riwayat tanpa tab jadwal', () => {
+    assert.match(bagianHtml, /id: 'ringkasan'/);
+    assert.match(bagianHtml, /id: 'ba'/);
+    assert.match(bagianHtml, /id: 'riwayat'/);
+    assert.doesNotMatch(bagianHtml, /id: 'jadwal'/);
+  });
+
+  it('mempertahankan alur backend GAS tanpa API CF', () => {
+    assert.match(bagianHtml, /google\.script\.run/);
+    assert.match(bagianHtml, /getBagianBootstrap/);
+    assert.match(bagianHtml, /uploadBeritaAcaraBagian/);
+    assert.doesNotMatch(bagianHtml, /fetch\('\/api\/rpc'\)/);
+  });
+
+  it('memakai safeUrl untuk tautan surat, final, dan file BA', () => {
+    assert.match(bagianHtml, /safeUrl\(r\.linkFinal\)/);
+    assert.match(bagianHtml, /safeUrl\(r\.linkSurat\)/);
+    assert.match(bagianHtml, /safeUrl\(item\.fileUrl\)/);
+    assert.match(bagianHtml, /safeUrl\(selectedItem\.fileUrl\)/);
+    assert.match(bagianHtml, /function safeUrl|safeUrl\(v\)/);
+  });
+
+  it('menghitung antrean BA dari kegiatan yang belum punya BA', () => {
+    assert.match(bagianHtml, /baForKegiatan/);
+    assert.match(bagianHtml, /if \(baForKegiatan\(g, this\.baList\)\) return false;/);
+    assert.match(bagianHtml, /ringkasanStats\(\)/);
+  });
+});

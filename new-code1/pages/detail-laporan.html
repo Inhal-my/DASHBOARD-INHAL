@@ -43,13 +43,87 @@
         .w-48 { width: 12rem; }
         .w-1\/2 { width: 50%; }
         .w-2\/3 { width: 66.6667%; }
+        .bg-sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%); }
+        .app-shell { --sidebar-w: 268px; }
+        .app-shell.sidebar-collapsed { --sidebar-w: 84px; }
+        .sidebar-aside { width: var(--sidebar-w); transition: width .22s ease, transform .3s ease; }
+        .main-wrap { transition: margin-left .22s ease; }
+        @media (min-width: 1024px) {
+            .main-wrap { margin-left: var(--sidebar-w); }
+            .app-shell.sidebar-collapsed .sb-hide { display: none !important; }
+            .app-shell.sidebar-collapsed .sb-brand { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
+            .app-shell.sidebar-collapsed .sb-link { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
+            .app-shell.sidebar-collapsed .sb-list { padding-left: .5rem; padding-right: .5rem; }
+            .app-shell.sidebar-collapsed .sb-user { justify-content: center; gap: 0; }
+            .app-shell.sidebar-collapsed .sb-foot { padding-left: .5rem; padding-right: .5rem; }
+            .app-shell.sidebar-collapsed .sb-grid { grid-template-columns: 1fr; }
+        }
+        .sidebar-toggle { position: absolute; top: 4.25rem; right: -0.85rem; z-index: 60; display: none; height: 1.75rem; width: 1.75rem; align-items: center; justify-content: center; border-radius: 9999px; background: #fff; color: #4f46e5; box-shadow: 0 2px 10px rgba(15,23,42,.28); border: 1px solid #e2e8f0; }
+        .sidebar-toggle i { transition: transform .22s ease; }
+        @media (min-width: 1024px) { .sidebar-toggle { display: flex; } }
+        .app-shell.sidebar-collapsed .sidebar-toggle i { transform: rotate(180deg); }
+        .topbar-search { display: none; align-items: center; gap: .5rem; width: 300px; border-radius: .75rem; background: #fff; border: 1px solid #e2e8f0; padding: .5rem .875rem; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
+        .topbar-search i { color: #94a3b8; }
+        .topbar-search input { border: 0; outline: 0; background: transparent; font-size: .8125rem; width: 100%; color: #0f172a; }
+        @media (min-width: 1024px) { .topbar-search { display: flex; } }
+        .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: rgba(255,255,255,.96); backdrop-filter: blur(14px); border-top: 1px solid #e2e8f0; box-shadow: 0 -8px 24px -18px rgba(15,23,42,.35); padding: .375rem .5rem calc(.375rem + env(safe-area-inset-bottom)); }
+        .bottom-nav-track { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: .25rem; max-width: 32rem; margin: 0 auto; }
+        .bnav-btn { position: relative; display: flex; flex-direction: column; align-items: center; gap: .15rem; padding: .4rem .25rem; border-radius: .85rem; font-size: .65rem; font-weight: 700; color: #94a3b8; transition: .15s ease; }
+        .bnav-btn i { font-size: 1.25rem; }
+        .bnav-btn.active { color: #4f46e5; background: #eef2ff; }
+        @media (min-width: 1024px) { .bottom-nav { display: none; } }
+        .sheet-overlay { position: fixed; inset: 0; z-index: 120; background: rgba(15,23,42,.45); backdrop-filter: blur(3px); }
+        .sheet-panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 125; max-height: 88vh; overflow-y: auto; border-radius: 1.5rem 1.5rem 0 0; background: #fff; padding: .75rem .75rem calc(1rem + env(safe-area-inset-bottom)); box-shadow: 0 -12px 40px -12px rgba(15,23,42,.4); }
+        .sheet-handle { width: 2.5rem; height: .25rem; border-radius: 9999px; background: #cbd5e1; margin: .25rem auto .75rem; }
+        .sheet-item { display: flex; width: 100%; align-items: center; gap: .75rem; padding: .75rem; border-radius: .85rem; font-size: .875rem; font-weight: 600; color: #334155; text-align: left; }
+        .sheet-item:hover { background: #f8fafc; }
+        .sheet-item.active { background: #eef2ff; color: #4338ca; }
+        .sheet-item i { width: 1.25rem; text-align: center; font-size: 1.05rem; }
+        .sheet-item.danger { color: #e11d48; }
+        .sheet-divider { height: 1px; background: #f1f5f9; margin: .35rem .25rem; }
+        @media (min-width: 1024px) { .sheet-panel, .sheet-overlay { display: none; } }
+        .mode-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .mode-head h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: #0f172a; }
+        .mode-head p { margin: 3px 0 0; font-size: 12.5px; color: #64748b; }
+        .mode-tabs { display: flex; gap: 4px; background: #fff; border: 1px solid #e8eaf1; border-radius: 12px; padding: 4px; box-shadow: 0 1px 2px rgba(15,23,42,.04); overflow-x: auto; }
+        .mode-tab { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 14px; border-radius: 9px; font-size: 12px; font-weight: 800; color: #64748b; white-space: nowrap; transition: .15s ease; }
+        .mode-tab:hover { background: #f8fafc; color: #334155; }
+        .mode-tab.is-active { background: #0f172a; color: #fff; }
+        .ringkas-kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+        .ringkas-kpi { background: #fff; border: 1px solid #e8eaf1; border-radius: 14px; padding: 15px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+        .ringkas-kpi .ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; font-size: 16px; background: #eef2ff; color: #4f46e5; }
+        .ringkas-kpi .num { margin-top: 10px; font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #0f172a; }
+        .ringkas-kpi .num.money { font-size: 19px; }
+        .ringkas-kpi .lb { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
+        @media (max-width: 768px) {
+            .ringkas-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .mode-head { align-items: flex-start; }
+            .mode-tabs { width: 100%; }
+            .mode-tab { flex: 1 1 0; padding: 8px 6px; font-size: 11.5px; }
+            .ringkas-kpi .num { font-size: 21px; }
+            .ringkas-kpi .num.money { font-size: 16px; }
+        }
+        @media (max-width: 639px) {
+            .topbar-hide { display: none !important; }
+            .topbar-actions { gap: .35rem; }
+            .topbar-actions .btn-soft { padding: .5rem .6rem; }
+        }
+        @media print {
+            .sidebar-aside, .sidebar-toggle, .bottom-nav, .sheet-overlay, .sheet-panel,
+            .topbar-search, .mode-tabs, .btn-soft, .btn-primary, .no-print { display: none !important; }
+            .main-wrap { margin-left: 0 !important; }
+            .sticky { position: static !important; }
+            body { background: #fff !important; }
+            .ringkas-kpi, .shadow-soft, .shadow-lift { box-shadow: none !important; }
+        }
     </style>
     <style>
 *,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.inset-x-0{left:0;right:0}.inset-y-0{top:0;bottom:0}.-left-10{left:-2.5rem}.-right-16{right:-4rem}.-top-16{top:-4rem}.bottom-0{bottom:0}.bottom-6{bottom:1.5rem}.left-0{left:0}.left-3{left:.75rem}.left-3\.5{left:.875rem}.left-4{left:1rem}.right-6{right:1.5rem}.top-0{top:0}.top-1{top:.25rem}.top-1\/2{top:50%}.top-16{top:4rem}.z-10{z-index:10}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[100\]{z-index:100}.z-\[110\]{z-index:110}.z-\[120\]{z-index:120}.col-span-2{grid-column:span 2/span 2}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-5{margin-top:1.25rem;margin-bottom:1.25rem}.\!mb-0{margin-bottom:0!important}.-mt-10{margin-top:-2.5rem}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.ml-3{margin-left:.75rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0{margin-top:0}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.contents{display:contents}.hidden{display:none}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2{height:.5rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-3{height:.75rem}.h-4{height:1rem}.h-40{height:10rem}.h-44{height:11rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-full{height:100%}.h-px{height:1px}.max-h-\[88vh\]{max-height:88vh}.max-h-\[92vh\]{max-height:92vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-20{width:5rem}.w-24{width:6rem}.w-3{width:.75rem}.w-36{width:9rem}.w-4{width:1rem}.w-40{width:10rem}.w-44{width:11rem}.w-5{width:1.25rem}.w-56{width:14rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-9{width:2.25rem}.w-\[268px\]{width:268px}.w-full{width:100%}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-5xl{max-width:64rem}.max-w-7xl{max-width:80rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-full{--tw-translate-x:-100%}.-translate-x-full,.-translate-y-1{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1{--tw-translate-y:-0.25rem}.-translate-y-1\/2{--tw-translate-y:-50%}.-translate-y-1\/2,.translate-x-0{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.translate-x-0{--tw-translate-x:0px}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-3{-moz-column-gap:.75rem;column-gap:.75rem}.gap-x-4{-moz-column-gap:1rem;column-gap:1rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-1{row-gap:.25rem}.gap-y-3{row-gap:.75rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-6>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-slate-50>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(248 250 252/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-t-3xl{border-top-left-radius:1.5rem;border-top-right-radius:1.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-brand-300{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-50{--tw-border-opacity:1;border-color:rgb(248 250 252/var(--tw-border-opacity,1))}.border-white{--tw-border-opacity:1;border-color:rgb(255 255 255/var(--tw-border-opacity,1))}.border-white\/10{border-color:hsla(0,0%,100%,.1)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36/var(--tw-bg-opacity,1))}.bg-amber-400\/90{background-color:rgba(251,191,36,.9)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.bg-brand-400{--tw-bg-opacity:1;background-color:rgb(129 140 248/var(--tw-bg-opacity,1))}.bg-brand-400\/20{background-color:rgba(129,140,248,.2)}.bg-brand-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-brand-500{--tw-bg-opacity:1;background-color:rgb(99 102 241/var(--tw-bg-opacity,1))}.bg-brand-500\/25{background-color:rgba(99,102,241,.25)}.bg-brand-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.bg-rose-600{--tw-bg-opacity:1;background-color:rgb(225 29 72/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-50\/60{background-color:rgba(248,250,252,.6)}.bg-slate-50\/70{background-color:rgba(248,250,252,.7)}.bg-slate-50\/80{background-color:rgba(248,250,252,.8)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/30{background-color:rgba(15,23,42,.3)}.bg-slate-900\/40{background-color:rgba(15,23,42,.4)}.bg-slate-900\/45{background-color:rgba(15,23,42,.45)}.bg-teal-50{--tw-bg-opacity:1;background-color:rgb(240 253 250/var(--tw-bg-opacity,1))}.bg-violet-50{--tw-bg-opacity:1;background-color:rgb(245 243 255/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/10{background-color:hsla(0,0%,100%,.1)}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.bg-white\/70{background-color:hsla(0,0%,100%,.7)}.bg-white\/80{background-color:hsla(0,0%,100%,.8)}.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-brand-400{--tw-gradient-from:#818cf8 var(--tw-gradient-from-position);--tw-gradient-to:rgba(129,140,248,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50{--tw-gradient-from:#eef2ff var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50\/60{--tw-gradient-from:rgba(238,242,255,.6) var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-500{--tw-gradient-from:#6366f1 var(--tw-gradient-from-position);--tw-gradient-to:rgba(99,102,241,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-600{--tw-gradient-from:#4f46e5 var(--tw-gradient-from-position);--tw-gradient-to:rgba(79,70,229,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-700{--tw-gradient-from:#4338ca var(--tw-gradient-from-position);--tw-gradient-to:rgba(67,56,202,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-teal-500{--tw-gradient-from:#14b8a6 var(--tw-gradient-from-position);--tw-gradient-to:rgba(20,184,166,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.via-brand-800{--tw-gradient-to:rgba(55,48,163,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#3730a3 var(--tw-gradient-via-position),var(--tw-gradient-to)}.to-brand-800{--tw-gradient-to:#3730a3 var(--tw-gradient-to-position)}.to-brand-900{--tw-gradient-to:#312e81 var(--tw-gradient-to-position)}.to-brand-950{--tw-gradient-to:#1e1b4b var(--tw-gradient-to-position)}.to-emerald-500{--tw-gradient-to:#10b981 var(--tw-gradient-to-position)}.to-violet-500{--tw-gradient-to:#8b5cf6 var(--tw-gradient-to-position)}.to-white{--tw-gradient-to:#fff var(--tw-gradient-to-position)}.p-1\.5{padding:.375rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.\!px-3{padding-left:.75rem!important;padding-right:.75rem!important}.\!py-1{padding-top:.25rem!important;padding-bottom:.25rem!important}.\!py-1\.5{padding-top:.375rem!important;padding-bottom:.375rem!important}.\!py-2{padding-top:.5rem!important;padding-bottom:.5rem!important}.\!py-2\.5{padding-top:.625rem!important;padding-bottom:.625rem!important}.\!py-3{padding-top:.75rem!important;padding-bottom:.75rem!important}.\!py-3\.5{padding-top:.875rem!important;padding-bottom:.875rem!important}.px-1{padding-left:.25rem;padding-right:.25rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0{padding-top:0;padding-bottom:0}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-12{padding-top:3rem;padding-bottom:3rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-16{padding-top:4rem;padding-bottom:4rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.\!pl-11{padding-left:2.75rem!important}.pb-2{padding-bottom:.5rem}.pb-20{padding-bottom:5rem}.pb-24{padding-bottom:6rem}.pb-8{padding-bottom:2rem}.pl-10{padding-left:2.5rem}.pt-14{padding-top:3.5rem}.pt-5{padding-top:1.25rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.font-sans{font-family:Plus Jakarta Sans,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3/var(--tw-text-opacity,1))}.text-brand-100{--tw-text-opacity:1;color:rgb(224 231 255/var(--tw-text-opacity,1))}.text-brand-200{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.text-brand-300{--tw-text-opacity:1;color:rgb(165 180 252/var(--tw-text-opacity,1))}.text-brand-400{--tw-text-opacity:1;color:rgb(129 140 248/var(--tw-text-opacity,1))}.text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}.text-brand-600{--tw-text-opacity:1;color:rgb(79 70 229/var(--tw-text-opacity,1))}.text-brand-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-brand-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153/var(--tw-text-opacity,1))}.text-emerald-500{--tw-text-opacity:1;color:rgb(16 185 129/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-ink{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-rose-400{--tw-text-opacity:1;color:rgb(251 113 133/var(--tw-text-opacity,1))}.text-rose-500{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-700{--tw-text-opacity:1;color:rgb(190 18 60/var(--tw-text-opacity,1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-teal-700{--tw-text-opacity:1;color:rgb(15 118 110/var(--tw-text-opacity,1))}.text-transparent{color:transparent}.text-violet-700{--tw-text-opacity:1;color:rgb(109 40 217/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-indigo-600{accent-color:#4f46e5}.opacity-25{opacity:.25}.opacity-75{opacity:.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lift{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color)}.shadow-lift,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.shadow-soft{--tw-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06);--tw-shadow-colored:0 1px 2px var(--tw-shadow-color),0 10px 28px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-indigo-200{--tw-shadow-color:#c7d2fe;--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-200\/50{--tw-shadow-color:rgba(199,210,254,.5);--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950{--tw-shadow-color:#1e1b4b;--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950\/50{--tw-shadow-color:rgba(30,27,75,.5);--tw-shadow:var(--tw-shadow-colored)}.outline{outline-style:solid}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-600{--tw-ring-opacity:1;--tw-ring-color:rgb(217 119 6/var(--tw-ring-opacity,1))}.ring-amber-600\/20{--tw-ring-color:rgba(217,119,6,.2)}.ring-brand-100{--tw-ring-opacity:1;--tw-ring-color:rgb(224 231 255/var(--tw-ring-opacity,1))}.ring-brand-600{--tw-ring-opacity:1;--tw-ring-color:rgb(79 70 229/var(--tw-ring-opacity,1))}.ring-brand-600\/20{--tw-ring-color:rgba(79,70,229,.2)}.ring-emerald-100{--tw-ring-opacity:1;--tw-ring-color:rgb(209 250 229/var(--tw-ring-opacity,1))}.ring-emerald-600{--tw-ring-opacity:1;--tw-ring-color:rgb(5 150 105/var(--tw-ring-opacity,1))}.ring-emerald-600\/20{--tw-ring-color:rgba(5,150,105,.2)}.ring-rose-100{--tw-ring-opacity:1;--tw-ring-color:rgb(255 228 230/var(--tw-ring-opacity,1))}.ring-rose-600{--tw-ring-opacity:1;--tw-ring-color:rgb(225 29 72/var(--tw-ring-opacity,1))}.ring-rose-600\/20{--tw-ring-color:rgba(225,29,72,.2)}.ring-slate-100{--tw-ring-opacity:1;--tw-ring-color:rgb(241 245 249/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.ring-slate-500{--tw-ring-opacity:1;--tw-ring-color:rgb(100 116 139/var(--tw-ring-opacity,1))}.ring-slate-500\/20{--tw-ring-color:rgba(100,116,139,.2)}.ring-slate-900{--tw-ring-opacity:1;--tw-ring-color:rgb(15 23 42/var(--tw-ring-opacity,1))}.ring-white{--tw-ring-opacity:1;--tw-ring-color:rgb(255 255 255/var(--tw-ring-opacity,1))}.ring-white\/20{--tw-ring-color:hsla(0,0%,100%,.2)}.ring-white\/60{--tw-ring-color:hsla(0,0%,100%,.6)}.blur{--tw-blur:blur(8px)}.blur,.blur-2xl{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.blur-2xl{--tw-blur:blur(40px)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.backdrop-blur-xl{--tw-backdrop-blur:blur(24px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.duration-500{transition-duration:.5s}.duration-700{transition-duration:.7s}.ease-out{transition-timing-function:cubic-bezier(0,0,.2,1)}.hover\:-translate-y-0\.5:hover{--tw-translate-y:-0.125rem;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-slate-200:hover{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.hover\:bg-brand-50\/40:hover{background-color:rgba(238,242,255,.4)}.hover\:bg-brand-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202/var(--tw-bg-opacity,1))}.hover\:bg-rose-50:hover{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-slate-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.hover\:bg-slate-50\/60:hover{background-color:rgba(248,250,252,.6)}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/20:hover{background-color:hsla(0,0%,100%,.2)}.hover\:bg-white\/25:hover{background-color:hsla(0,0%,100%,.25)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:text-rose-500:hover{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.hover\:shadow-lift:hover{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.hover\:ring-slate-300:hover{--tw-ring-opacity:1;--tw-ring-color:rgb(203 213 225/var(--tw-ring-opacity,1))}.active\:scale-\[\.98\]:active{--tw-scale-x:.98;--tw-scale-y:.98}.active\:scale-\[\.98\]:active,.active\:scale-\[\.99\]:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[\.99\]:active{--tw-scale-x:.99;--tw-scale-y:.99}.group:hover .group-hover\:text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:col-span-1{grid-column:span 1/span 1}.sm\:col-span-2{grid-column:span 2/span 2}.sm\:col-span-3{grid-column:span 3/span 3}.sm\:col-span-4{grid-column:span 4/span 4}.sm\:my-0{margin-top:0;margin-bottom:0}.sm\:inline{display:inline}.sm\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-end{align-items:flex-end}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width:768px){.md\:col-span-2{grid-column:span 2/span 2}.md\:col-span-3{grid-column:span 3/span 3}.md\:col-span-4{grid-column:span 4/span 4}.md\:col-span-6{grid-column:span 6/span 6}.md\:inline{display:inline}.md\:flex{display:flex}.md\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:p-6{padding:1.5rem}.md\:px-8{padding-left:2rem;padding-right:2rem}}@media (min-width:1024px){.lg\:ml-\[268px\]{margin-left:268px}.lg\:hidden{display:none}.lg\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg\:p-8{padding:2rem}}@media (min-width:1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.xl\:grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}}
     </style>
 </head>
 <body>
-    <div id="app" v-cloak class="font-sans text-ink antialiased">
+    <div id="app" v-cloak>
+    <div class="app-shell font-sans text-ink antialiased" :class="sidebarCollapsed ? 'sidebar-collapsed' : ''">
 
         <!-- login -->
         <transition name="fade">
@@ -88,48 +162,109 @@
             </div>
         </transition>
 
-        <!-- navbar -->
-        <nav v-if="loggedIn" class="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur">
-            <div class="flex h-16 items-center justify-between px-4 sm:px-6">
-                <a :href="appUrl" class="flex items-center gap-3">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-lg shadow-indigo-200/50">
-                        <i class="bi bi-file-earmark-bar-graph text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-[15px] font-bold tracking-tight text-slate-900">Laporan INHAL</div>
-                        <div class="text-[11px] text-slate-400">Rekapitulasi &amp; Berita Acara</div>
-                    </div>
-                </a>
-                <div class="flex items-center gap-2">
-                    <span class="hidden items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 md:flex"><i class="bi bi-person-circle"></i>{{ session.nama || 'Admin' }}</span>
-                    <a :href="appUrl + '?page=dashboard'" class="btn-soft !py-2 text-xs"><i class="bi bi-speedometer2"></i><span class="hidden sm:inline">Dashboard</span></a>
-                    <a :href="appUrl" class="btn-soft !py-2 text-xs"><i class="bi bi-house"></i><span class="hidden sm:inline">Beranda</span></a>
-                    <button @click="logout()" class="btn-soft !py-2 text-xs text-rose-500 hover:bg-rose-50"><i class="bi bi-box-arrow-right"></i><span class="hidden sm:inline">Keluar</span></button>
+        <!-- ============ MOBILE BACKDROP ============ -->
+        <transition name="fade">
+            <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden" @click="sidebarOpen=false"></div>
+        </transition>
+
+        <!-- ============ SIDEBAR ============ -->
+        <aside v-if="loggedIn" class="bg-sidebar sidebar-aside fixed inset-y-0 left-0 z-50 flex flex-col lg:translate-x-0"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            <button type="button" class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed" aria-label="Lipat atau bentangkan sidebar" title="Lipat / bentangkan sidebar">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="sb-brand flex h-16 items-center gap-3 border-b border-white/10 px-6">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-lg shadow-indigo-950/50">
+                    <i class="bi bi-file-earmark-bar-graph text-lg"></i>
+                </div>
+                <div class="sb-hide">
+                    <div class="text-[15px] font-bold tracking-tight text-white">Laporan INHAL</div>
+                    <div class="text-[11px] text-slate-400">Rekapitulasi &amp; Berita Acara</div>
                 </div>
             </div>
-        </nav>
 
-        <main v-if="loggedIn" class="w-full px-4 py-6 sm:px-6">
+            <div class="sb-list px-3 pt-5">
+                <div class="sb-hide px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Menu</div>
+                <nav class="space-y-1">
+                    <a v-for="n in tabs" :key="n.key" href="#" @click.prevent="switchTab(n.key)"
+                       :class="activeTab===n.key ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+                       class="sb-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition">
+                        <i :class="n.icon" class="w-5 shrink-0 text-base"></i>
+                        <span class="sb-hide flex-1">{{ n.label }}</span>
+                    </a>
+                </nav>
+            </div>
 
-            <!-- hero -->
-            <div class="mb-6 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-brand-600 to-violet-500 p-6 text-white shadow-lift">
-                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                    <i class="bi bi-graph-up-arrow text-2xl"></i>
+            <div class="sb-foot mt-auto border-t border-white/10 p-4">
+                <div class="sb-user flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="sb-hide min-w-0">
+                        <div class="truncate text-xs font-semibold text-white">{{ session.nama || 'Admin' }}</div>
+                        <div class="text-[11px] text-slate-400">Administrator</div>
+                    </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                    <h1 class="text-2xl font-extrabold tracking-tight">Laporan INHAL</h1>
-                    <p class="text-sm text-brand-100">Rekapitulasi pengajuan, dosen, bagian, dan berita acara.</p>
+                <div class="sb-grid mt-2 grid grid-cols-2 gap-2">
+                    <a :href="appUrl + '?page=dashboard'" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition" title="Dashboard">
+                        <i class="bi bi-speedometer2"></i> <span class="sb-hide">Dashboard</span>
+                    </a>
+                    <a :href="appUrl" class="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition" title="Beranda">
+                        <i class="bi bi-house"></i> <span class="sb-hide">Beranda</span>
+                    </a>
                 </div>
-                <span v-if="loadTimeMs" class="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-xs font-semibold text-white/90 ring-1 ring-white/20">
-                    <i class="bi bi-stopwatch"></i>Dimuat dalam {{ (loadTimeMs / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) }} dtk
-                </span>
-                <button class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold ring-1 ring-white/20 transition hover:bg-white/25" @click="loadData()">
-                    <i class="bi bi-arrow-clockwise"></i>Muat Ulang
+                <button @click="logout()" class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-rose-500/15 hover:text-rose-300 transition" title="Keluar">
+                    <i class="bi bi-box-arrow-right"></i> <span class="sb-hide">Keluar</span>
                 </button>
+            </div>
+        </aside>
+
+        <!-- ============ MAIN ============ -->
+        <main v-if="loggedIn" class="main-wrap min-h-screen">
+            <header class="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-slate-100 bg-white/80 px-4 backdrop-blur md:px-8">
+                <div class="flex items-center gap-3">
+                    <button class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" @click="sidebarOpen = !sidebarOpen" aria-label="Buka menu">
+                        <i class="bi bi-list text-xl"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <div class="whitespace-nowrap text-[13px] font-bold text-slate-900 sm:text-[15px]">{{ modeTitle }}</div>
+                        <div class="hidden text-[11px] text-slate-400 sm:block">Rekapitulasi &amp; Berita Acara</div>
+                    </div>
+                </div>
+                <div class="topbar-actions flex items-center gap-2">
+                    <label class="topbar-search">
+                        <i class="bi bi-search"></i>
+                        <input v-model="filters.search" placeholder="Cari NPM / nama..." @keyup.enter="loadData()">
+                    </label>
+                    <button type="button" class="btn-soft topbar-hide" @click="loadData()" title="Muat ulang data" aria-label="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
+                    <a :href="appUrl + '?page=dashboard'" class="btn-soft" title="Dashboard"><i class="bi bi-speedometer2"></i><span class="hidden md:inline">Dashboard</span></a>
+                    <a :href="appUrl" class="btn-soft topbar-hide" title="Beranda"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
+                    <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50" title="Keluar"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
+                </div>
+            </header>
+
+            <div class="p-4 md:p-6 lg:p-8">
+
+            <!-- mode halaman -->
+            <div class="mode-head">
+                <div>
+                    <h2>{{ modeTitle }}</h2>
+                    <p>{{ modeSubtitle }}</p>
+                </div>
+                <div class="mode-tabs" role="tablist" aria-label="Halaman laporan">
+                    <button type="button" role="tab" :aria-selected="laporanMode === 'ringkas' ? 'true' : 'false'"
+                        :class="laporanMode === 'ringkas' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('ringkas')">
+                        <i class="bi bi-list-ul"></i>Ringkas
+                    </button>
+                    <button type="button" role="tab" :aria-selected="laporanMode === 'analitis' ? 'true' : 'false'"
+                        :class="laporanMode === 'analitis' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('analitis')">
+                        <i class="bi bi-bar-chart-line"></i>Analitis
+                    </button>
+                </div>
             </div>
 
             <!-- filter bar (glassmorphism) -->
-            <div class="sticky top-16 z-30 mb-5 rounded-2xl bg-white/70 p-4 shadow-lift ring-1 ring-white/60 backdrop-blur-xl">
+            <div v-if="laporanMode !== 'ringkas'" class="sticky top-16 z-30 mb-5 rounded-2xl bg-white/70 p-4 shadow-lift ring-1 ring-white/60 backdrop-blur-xl">
                 <div class="grid gap-3 md:grid-cols-12">
                     <div class="md:col-span-3">
                         <label class="label">Dari Tanggal</label>
@@ -162,17 +297,108 @@
                 </div>
             </div>
 
-            <!-- tab switcher -->
-            <div class="mb-6 flex gap-2 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-soft ring-1 ring-slate-100">
-                <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key"
-                    :class="activeTab === t.key ? 'bg-gradient-to-r from-brand-600 to-violet-500 text-white shadow-lift' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
-                    class="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition">
-                    <i :class="t.icon"></i>{{ t.label }}
-                </button>
-            </div>
+            <!-- ===================== HALAMAN: RINGKAS ===================== -->
+            <section v-if="laporanMode === 'ringkas'" class="space-y-5">
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <button type="button" class="btn-soft" @click="switchLaporanMode('analitis')"><i class="bi bi-sliders"></i> Ubah filter</button>
+                    <button type="button" class="btn-primary" :disabled="exporting" @click="exportExcel()">
+                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
+                        {{ exporting ? 'Menyiapkan...' : 'Ekspor .xlsx' }}
+                    </button>
+                </div>
+
+                <div class="flex items-start gap-3 rounded-2xl bg-white p-4 text-[13px] text-slate-600 shadow-soft ring-1 ring-slate-100">
+                    <i class="bi bi-info-circle mt-0.5 text-base text-brand-500"></i>
+                    <div>Halaman ini hanya memuat agregat pokok. Untuk irisan data gunakan <b>Analitis</b>.</div>
+                </div>
+
+                <div v-if="loading" class="ringkas-kpis">
+                    <div v-for="i in 4" :key="'rk'+i" class="ringkas-kpi">
+                        <div class="h-9 w-9 animate-pulse rounded-xl bg-slate-200/70"></div>
+                        <div class="mt-3 h-4 w-2/3 animate-pulse rounded bg-slate-200/70"></div>
+                        <div class="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-200/70"></div>
+                    </div>
+                </div>
+                <template v-else>
+                    <div class="ringkas-kpis">
+                        <div v-for="c in summaryCards.slice(0, 4)" :key="c.label" class="ringkas-kpi">
+                            <div class="ic" :style="{ color: c.color }"><i :class="c.icon"></i></div>
+                            <div class="num" :class="c.money ? 'money' : ''">{{ c.num }}</div>
+                            <div class="lb">{{ c.label }}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i class="bi bi-pie-chart-fill text-brand-500"></i>
+                                <h2 class="text-sm font-bold text-slate-800">Distribusi Status</h2>
+                            </div>
+                            <div class="flex flex-col items-center gap-5 sm:flex-row">
+                                <svg viewBox="0 0 42 42" class="h-44 w-44 shrink-0">
+                                    <g transform="rotate(-90 21 21)">
+                                        <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f1f5f9" stroke-width="4.5"></circle>
+                                        <circle v-for="(s, i) in statusChart.segments" :key="i" cx="21" cy="21" r="15.9155" fill="none"
+                                            :stroke="s.color" stroke-width="4.5" pathLength="100"
+                                            :stroke-dasharray="(s.pct * donutProgress) + ' ' + (100 - s.pct * donutProgress)"
+                                            :stroke-dashoffset="(-s.start)"></circle>
+                                    </g>
+                                    <text x="21" y="20" text-anchor="middle" dominant-baseline="middle" fill="#0f172a" font-size="7.5" font-weight="800">{{ statusChart.total }}</text>
+                                    <text x="21" y="26" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="3.4">Total</text>
+                                </svg>
+                                <div class="w-full space-y-2">
+                                    <div v-for="s in statusChart.segments" :key="s.label" class="flex items-center gap-2 text-sm">
+                                        <span class="h-3 w-3 shrink-0 rounded-full" :style="{ background: s.color }"></span>
+                                        <span class="flex-1 text-slate-600">{{ s.label }}</span>
+                                        <span class="font-bold text-slate-800">{{ s.value }}</span>
+                                        <span class="w-12 text-right text-xs text-slate-400">{{ Math.round(s.pct) }}%</span>
+                                    </div>
+                                    <div v-if="!statusChart.total" class="text-sm text-slate-400">Belum ada data.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i class="bi bi-bar-chart-fill text-brand-500"></i>
+                                <h2 class="text-sm font-bold text-slate-800">Jumlah per Jenis Kegiatan</h2>
+                            </div>
+                            <div class="space-y-3">
+                                <div v-for="b in jenisChart" :key="b.label">
+                                    <div class="mb-1 flex items-center justify-between text-xs">
+                                        <span class="text-slate-600">{{ b.label }}</span>
+                                        <span class="font-bold text-slate-800">{{ b.value }}</span>
+                                    </div>
+                                    <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
+                                    </div>
+                                </div>
+                                <div v-if="!jenisChart.length" class="text-sm text-slate-400">Belum ada data.</div>
+                            </div>
+
+                            <div class="mb-4 mt-6 flex items-center gap-2">
+                                <i class="bi bi-grid-3x3-gap-fill text-brand-500"></i>
+                                <h2 class="text-sm font-bold text-slate-800">Jumlah per Blok</h2>
+                            </div>
+                            <div class="space-y-3">
+                                <div v-for="b in blokChart" :key="b.label">
+                                    <div class="mb-1 flex items-center justify-between text-xs">
+                                        <span class="text-slate-600">{{ b.label }}</span>
+                                        <span class="font-bold text-slate-800">{{ b.value }}</span>
+                                    </div>
+                                    <div class="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div>
+                                    </div>
+                                </div>
+                                <div v-if="!blokChart.length" class="text-sm text-slate-400">Belum ada data.</div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </section>
 
             <!-- tab contents -->
-            <transition name="fade" mode="out-in">
+            <transition v-else name="fade" mode="out-in">
                 <div :key="activeTab">
 
                     <!-- ===================== TAB 1: REKAP KESELURUHAN ===================== -->
@@ -928,7 +1154,49 @@
 
                 </div>
             </transition>
+
+            </div>
         </main>
+
+        <!-- ============ BOTTOM NAV (MOBILE) ============ -->
+        <nav v-if="loggedIn" class="bottom-nav lg:hidden" aria-label="Navigasi utama">
+            <div class="bottom-nav-track">
+                <a :href="appUrl + '?page=dashboard'" class="bnav-btn">
+                    <i class="bi bi-inbox"></i><span>Pengajuan</span>
+                </a>
+                <button type="button" class="bnav-btn" :class="laporanMode === 'analitis' && activeTab === 'ba' ? 'active' : ''"
+                    @click="switchTab('ba'); switchLaporanMode('analitis')">
+                    <i class="bi bi-clipboard2-check"></i><span>BA</span>
+                </button>
+                <button type="button" class="bnav-btn" :class="laporanMode === 'ringkas' ? 'active' : ''" @click="switchLaporanMode('ringkas')">
+                    <i class="bi bi-table"></i><span>Laporan</span>
+                </button>
+                <button type="button" class="bnav-btn" @click="mobileMenuOpen = true">
+                    <i class="bi bi-grid"></i><span>Menu</span>
+                </button>
+            </div>
+        </nav>
+
+        <transition name="fade">
+            <div v-if="mobileMenuOpen" class="sheet-overlay" @click="mobileMenuOpen = false"></div>
+        </transition>
+        <div v-if="mobileMenuOpen" class="sheet-panel">
+            <div class="sheet-handle"></div>
+            <div class="mb-2 flex items-center justify-between px-2">
+                <span class="text-sm font-extrabold text-slate-900">Menu Laporan</span>
+                <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="mobileMenuOpen = false" aria-label="Tutup menu"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <button v-for="n in tabs" :key="n.key" type="button" class="sheet-item"
+                :class="activeTab === n.key && laporanMode === 'analitis' ? 'active' : ''"
+                @click="switchTab(n.key); switchLaporanMode('analitis')">
+                <i :class="n.icon"></i>{{ n.label }}
+            </button>
+            <div class="sheet-divider"></div>
+            <a :href="appUrl + '?page=dashboard'" class="sheet-item"><i class="bi bi-speedometer2"></i>Dashboard</a>
+            <a :href="appUrl" class="sheet-item"><i class="bi bi-house"></i>Beranda</a>
+            <div class="sheet-divider"></div>
+            <button type="button" class="sheet-item danger" @click="logout()"><i class="bi bi-box-arrow-right"></i>Keluar</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
@@ -1103,6 +1371,11 @@
                     loginError: '',
                     loginLoading: false,
                     activeTab: 'rekap',
+                    laporanMode: 'ringkas',
+                    sidebarOpen: false,
+                    sidebarCollapsed: false,
+                    mobileMenuOpen: false,
+                    pendingPrint: false,
                     tabs: [
                         { key: 'rekap', label: 'Rekap Keseluruhan', icon: 'bi-pie-chart-fill' },
                         { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
@@ -1133,6 +1406,15 @@
             computed: {
                 loggedIn() {
                     return !!(this.session && this.session.token);
+                },
+                modeTitle() {
+                    if (this.laporanMode === 'ringkas') return 'Laporan Ringkas';
+                    const tab = this.tabs.find(t => t.key === this.activeTab);
+                    return tab ? tab.label : 'Laporan Analitis';
+                },
+                modeSubtitle() {
+                    if (this.laporanMode === 'ringkas') return 'Agregat pokok pengajuan dan pembayaran.';
+                    return 'Rincian ' + this.modeTitle.toLowerCase() + ' dengan filter tanggal, blok, dan status.';
                 },
                 statusOptions() {
                     const set = {};
@@ -1763,6 +2045,47 @@
                     this.session = null;
                     this.loginPwd = '';
                     this.loginError = '';
+                    this.sidebarOpen = false;
+                    this.mobileMenuOpen = false;
+                    this.sidebarCollapsed = false;
+                    this.laporanMode = 'ringkas';
+                    this.activeTab = 'rekap';
+                },
+                switchTab(key) {
+                    this.activeTab = key;
+                    if (this.laporanMode === 'ringkas') this.laporanMode = 'analitis';
+                    this.mobileMenuOpen = false;
+                },
+                switchLaporanMode(mode) {
+                    if (mode === 'cetak') {
+                        this.laporanMode = 'ringkas';
+                        this.printLaporan();
+                        return;
+                    }
+                    this.laporanMode = mode === 'analitis' ? 'analitis' : 'ringkas';
+                    this.mobileMenuOpen = false;
+                    try {
+                        const u = new URL(window.location.href);
+                        if (u.searchParams.get('mode')) {
+                            u.searchParams.set('mode', this.laporanMode);
+                            window.history.replaceState({}, '', u.toString());
+                        }
+                    } catch (e) {}
+                },
+                printLaporan() {
+                    window.print();
+                },
+                initLaporanMode() {
+                    let mode = 'ringkas';
+                    try {
+                        mode = new URL(window.location.href).searchParams.get('mode') || 'ringkas';
+                    } catch (e) {}
+                    if (mode === 'cetak') {
+                        this.laporanMode = 'ringkas';
+                        this.pendingPrint = true;
+                    } else {
+                        this.laporanMode = mode === 'analitis' ? 'analitis' : 'ringkas';
+                    }
                 },
                 normSearch(s) {
                     return String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -1978,6 +2301,10 @@
                     } finally {
                         this.loading = false;
                         console.timeEnd('getLaporanBootstrap');
+                        if (this.pendingPrint) {
+                            this.pendingPrint = false;
+                            setTimeout(() => window.print(), 350);
+                        }
                     }
                 },
                 _loadXlsx() {
@@ -2217,6 +2544,7 @@
                 }
             },
             mounted() {
+                this.initLaporanMode();
                 this.session = readSession();
                 if (this.loggedIn) this.loadData();
             }

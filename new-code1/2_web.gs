@@ -1,6 +1,6 @@
 const PAGE_TITLES = {
     index: 'Pendaftaran INHAL',
-    portal: 'Portal Mahasiswa INHAL',
+    portal: 'Pengajuan INHAL',
     admin: 'Dashboard INHAL',
     bagian: 'Panel Bagian INHAL',
     dashboard: 'Dashboard INHAL',
@@ -19,6 +19,10 @@ function doGet(e) {
         page = 'dashboard';
     }
     return renderPage(page);
+}
+
+function include(filename) {
+    return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
 function renderPage(page) {

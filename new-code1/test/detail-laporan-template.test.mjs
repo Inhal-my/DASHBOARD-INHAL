@@ -48,3 +48,50 @@ describe('detail laporan kejelasan tampilan', () => {
     assert.match(html, /<div v-if="activeMatrixCell" class="flex items-end md:col-span-2">/);
   });
 });
+
+describe('detail laporan shell CF', () => {
+  const html = readFileSync(new URL('../pages/detail-laporan.html', import.meta.url), 'utf8');
+  it('memakai wrapper app-shell di dalam #app', () => {
+    assert.match(html, /<div id="app" v-cloak>\s*<div class="app-shell font-sans/);
+    assert.doesNotMatch(html, /id="app"[^>]*class="[^"]*app-shell/);
+    assert.match(html, /class="bg-sidebar sidebar-aside/);
+    assert.match(html, /class="sidebar-toggle"/);
+    assert.match(html, /class="main-wrap min-h-screen"/);
+  });
+  it('punya bottom nav dan sheet menu mobile', () => {
+    assert.match(html, /class="bottom-nav lg:hidden"/);
+    assert.match(html, /class="bottom-nav-track"/);
+    assert.match(html, /class="bnav-btn"/);
+    assert.match(html, /class="sheet-overlay"/);
+    assert.match(html, /class="sheet-panel"/);
+    assert.match(html, /mobileMenuOpen/);
+  });
+  it('sidebar memilih tab laporan', () => {
+    assert.match(html, /@click\.prevent="switchTab\(n\.key\)"/);
+    assert.match(html, /switchTab\(key\) \{/);
+    assert.match(html, /this\.activeTab = key;/);
+  });
+});
+
+describe('detail laporan mode halaman', () => {
+  const html = readFileSync(new URL('../pages/detail-laporan.html', import.meta.url), 'utf8');
+  it('punya mode ringkas dan analitis', () => {
+    assert.match(html, /class="mode-head"/);
+    assert.match(html, /class="mode-tabs"/);
+    assert.match(html, /switchLaporanMode\('ringkas'\)/);
+    assert.match(html, /switchLaporanMode\('analitis'\)/);
+    assert.match(html, /laporanMode: 'ringkas'/);
+  });
+  it('judul mengikuti mode dan tab', () => {
+    assert.match(html, /modeTitle\(\)/);
+    assert.match(html, /modeSubtitle\(\)/);
+    assert.match(html, /laporanMode === 'ringkas'/);
+  });
+  it('mendukung cetak lewat mode dan URL', () => {
+    assert.match(html, /printLaporan\(\)/);
+    assert.match(html, /pendingPrint/);
+    assert.match(html, /searchParams\.get\('mode'\)/);
+    assert.match(html, /window\.print\(\)/);
+    assert.match(html, /@media print/);
+  });
+});

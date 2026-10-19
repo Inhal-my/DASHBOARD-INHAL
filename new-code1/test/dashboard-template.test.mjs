@@ -162,3 +162,53 @@ describe('dashboard tab persistence', () => {
     assert.match(html, /this\.isTabStale\('bagian'\) \|\| this\.isTabStale\('ba'\)/);
   });
 });
+
+describe('dashboard shell CF', () => {
+  it('sidebar bisa dilipat dan memakai app-shell', () => {
+    assert.match(html, /class="app-shell font-sans/);
+    assert.match(html, /sidebarCollapsed: false/);
+    assert.match(html, /class="sidebar-toggle"/);
+    assert.match(html, /sb-hide/);
+    assert.match(html, /\.app-shell\.sidebar-collapsed \{ --sidebar-w: 84px; \}/);
+  });
+  it('topbar punya pencarian dan notifikasi menunggu', () => {
+    assert.match(html, /class="topbar-search"/);
+    assert.match(html, /class="topbar-bell"/);
+    assert.match(html, /goMenunggu\(\)/);
+    assert.match(html, /runTopbarSearch\(\)/);
+    assert.match(html, /menungguCount\(\)/);
+  });
+  it('navigasi bawah mobile empat tombol dan menu sheet', () => {
+    assert.match(html, /class="bottom-nav lg:hidden"/);
+    assert.match(html, /bottom-nav-track/);
+    assert.match(html, /mobileMenuOpen = true/);
+    assert.match(html, /class="sheet-panel lg:hidden"/);
+    assert.match(html, /tab==='pengajuan' \? 'active' : ''/);
+    assert.match(html, /tab==='ba' \? 'active' : ''/);
+    assert.match(html, /tab==='master' \? 'active' : ''/);
+  });
+});
+
+describe('dashboard drawer detail CF', () => {
+  it('detail memakai pd-drawer bukan modal lebar', () => {
+    assert.match(html, /class="pd-overlay"/);
+    assert.match(html, /class="pd-drawer"/);
+    assert.match(html, /class="pd-foot"/);
+    assert.doesNotMatch(html, /modal-panel max-w-4xl/);
+  });
+  it('tiga langkah detail dan reset ke identitas', () => {
+    assert.match(html, /data-step="0"/);
+    assert.match(html, /data-step="1"/);
+    assert.match(html, /data-step="2"/);
+    assert.match(html, /setDetailStep\(n\)/);
+    assert.match(html, /this\.detail\.step = Math\.max\(0, Math\.min\(2, n\)\)/);
+    assert.match(html, /this\.detail\.step = 0;\s*\n\s*this\.detail\.open = true;/);
+  });
+  it('identitas memakai kartu pd-card dan avatar inisial', () => {
+    assert.match(html, /class="pd-card"/);
+    assert.match(html, /pengajuanInitials\(/);
+    assert.match(html, /pengajuanAvatarColor\(/);
+    assert.match(html, /detail\.step===0/);
+    assert.match(html, /detail\.step===1/);
+  });
+});

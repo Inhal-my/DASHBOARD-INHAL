@@ -62,7 +62,7 @@
                     </div>
                 </a>
                 <div class="flex items-center gap-2">
-                    <a :href="appUrl + '?page=portal'" class="btn-soft !py-2 text-xs"><i class="bi bi-search"></i><span class="hidden sm:inline">Portal Mahasiswa</span></a>
+                    <a :href="appUrl + '?page=portal'" class="btn-soft !py-2 text-xs"><i class="bi bi-search"></i><span class="hidden sm:inline">Pengajuan INHAL</span></a>
                     <a :href="appUrl + '?page=bagian'" class="btn-soft !py-2 text-xs"><i class="bi bi-people"></i><span class="hidden sm:inline">Panel Bagian</span></a>
                 </div>
             </div>
@@ -82,7 +82,7 @@
                             <div v-if="result.success && result.idPengajuan" class="mt-3 rounded-xl bg-white/70 p-3 text-sm">
                                 <div class="text-slate-600">Simpan ID Pengajuan Anda:</div>
                                 <div class="mt-1 font-mono text-base font-bold text-slate-900">{{ result.idPengajuan }}</div>
-                                <a :href="appUrl + '?page=portal'" class="link mt-1 inline-block text-sm">Cek status di Portal Mahasiswa</a>
+                                <a :href="appUrl + '?page=portal'" class="link mt-1 inline-block text-sm">Cek status di Pengajuan INHAL</a>
                             </div>
                         </div>
                         <button class="text-slate-400 hover:text-slate-600" @click="result=null"><i class="bi bi-x-lg"></i></button>
@@ -123,7 +123,7 @@
                             <label class="label">Blok <span class="text-rose-500">*</span></label>
                             <select v-model="form.blok" class="input">
                                 <option value="">-- Pilih Blok --</option>
-                                <option v-for="b in options.blok" :value="b">{{ b }}</option>
+                                <option v-for="b in options.blok" :key="b" :value="b">{{ b }}</option>
                             </select>
                         </div>
                     </div>
@@ -152,7 +152,7 @@
                                 <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
                                 <select v-model="ujian.pilihan" class="input">
                                     <option value="">-- Pilih Ujian --</option>
-                                    <option v-for="o in options.ujian" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.ujian" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
@@ -170,14 +170,14 @@
                                 <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
                                 <select v-model="sgd.pilihan" class="input">
                                     <option value="">-- Pilih SGD --</option>
-                                    <option v-for="o in options.sgd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.sgd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="label">Detail SGD</label>
                                 <select v-model="sgd.detail" class="input">
                                     <option value="">-- Pilih Detail --</option>
-                                    <option v-for="o in options.detailSgd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.detailSgd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
@@ -195,14 +195,14 @@
                                 <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
                                 <select v-model="kkd.pilihan" class="input">
                                     <option value="">-- Pilih KKD --</option>
-                                    <option v-for="o in options.kkd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.kkd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="label">Detail KKD</label>
                                 <select v-model="kkd.detail" class="input">
                                     <option value="">-- Pilih Detail --</option>
-                                    <option v-for="o in options.detailKkd" :value="o">{{ o }}</option>
+                                    <option v-for="o in options.detailKkd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
@@ -224,14 +224,14 @@
                                         <label class="label">Pilihan Lab</label>
                                         <select v-model="lab.lab" class="input !py-2 text-sm">
                                             <option value="">-- Lab --</option>
-                                            <option v-for="o in options.lab" :value="o">{{ o }}</option>
+                                            <option v-for="o in options.lab" :key="o" :value="o">{{ o }}</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-4">
                                         <label class="label">Kegiatan Lab</label>
                                         <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
                                             <option value="">-- Kegiatan --</option>
-                                            <option v-for="o in options.kegiatanLab" :value="o">{{ o }}</option>
+                                            <option v-for="o in options.kegiatanLab" :key="o" :value="o">{{ o }}</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-4">
@@ -275,6 +275,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script>
         const APP_URL = '<?= appUrl ?>';
+        const MAX_UPLOAD_FILE_BYTES = 5 * 1024 * 1024;
         const { createApp } = Vue;
 
         createApp({
@@ -323,7 +324,14 @@
                     } catch (e) { /* non-blokir */ }
                 },
                 onFileSurat(e) {
-                    this.fileSurat = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    if (f && f.size > MAX_UPLOAD_FILE_BYTES) {
+                        alert('Ukuran file surat maksimal 5 MB.');
+                        this.fileSurat = null;
+                        e.target.value = '';
+                        return;
+                    }
+                    this.fileSurat = f;
                 },
                 readFileAsBase64(file) {
                     return new Promise((resolve, reject) => {
@@ -383,7 +391,7 @@
                         }
 
                         if (this.fileSurat) {
-                            if (this.fileSurat.size > 5 * 1024 * 1024) {
+                            if (this.fileSurat.size > MAX_UPLOAD_FILE_BYTES) {
                                 alert('Ukuran file surat maksimal 5 MB.');
                                 this.loading = false;
                                 return;

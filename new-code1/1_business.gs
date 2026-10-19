@@ -455,12 +455,12 @@ function uploadBuktiBayar(uploadData, accUrl, buktiUrl) {
             'Jenis Kegiatan': (uploadData && (uploadData.jenisKegiatan || uploadData.JenisKegiatan) || '') || existing['Jenis Kegiatan'] || '',
             'Detail': detail.detail,
             'Tanggal': detail.tanggal,
-            'Link ACC INHAL': accUrl || '',
+            'Link ACC INHAL': accUrl || existing['Link ACC INHAL'] || '',
             'Link Bukti Bayar': buktiUrl || ''
         });
 
         upsertRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan, {
-            'Link ACC INHAL': accUrl || '',
+            'Link ACC INHAL': accUrl || existing['Link ACC INHAL'] || '',
             'Link Bukti Bayar': buktiUrl || '',
             'UpdatedAt': new Date()
         });
@@ -810,7 +810,7 @@ function getStudentPortalData(npm) {
             const tanggalKegiatan = pDetails.length
                 ? (pDetails[0]['Tanggal Pelaksanaan'] || '')
                 : (p['Tanggal Pelaksanaan'] || '');
-            const hasUpload = !!(p['Link ACC INHAL'] || p['Link Bukti Bayar']);
+            const hasUpload = !!p['Link Bukti Bayar'];
             history.push({
                 id: id,
                 idPengajuan: id,
