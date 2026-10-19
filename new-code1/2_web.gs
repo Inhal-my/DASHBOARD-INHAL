@@ -22,7 +22,17 @@ function doGet(e) {
 }
 
 function include(filename) {
-    return HtmlService.createHtmlOutputFromFile(filename).getContent();
+    const name = String(filename || '').trim();
+    const base = name.indexOf('/') !== -1 ? name.split('/').pop() : name;
+    const candidates = [name];
+    const alt = name.indexOf('/') !== -1 ? base : 'pages/' + name;
+    if (candidates.indexOf(alt) === -1) candidates.push(alt);
+    for (let i = 0; i < candidates.length; i++) {
+        try {
+            return HtmlService.createHtmlOutputFromFile(candidates[i]).getContent();
+        } catch (e) {}
+    }
+    throw new Error('No HTML file named ' + name + ' was found.');
 }
 
 function renderPage(page) {

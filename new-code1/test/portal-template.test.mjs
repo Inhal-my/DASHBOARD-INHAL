@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const indexHtml = readFileSync(new URL('../pages/index.html', import.meta.url), 'utf8');
 const portalHtml = readFileSync(new URL('../pages/portal.html', import.meta.url), 'utf8');
 const appCommonHtml = readFileSync(new URL('../pages/_app-common.html', import.meta.url), 'utf8');
+const webGs = readFileSync(new URL('../2_web.gs', import.meta.url), 'utf8');
 
 describe('index template parity', () => {
   it('memakai salinan CF dan tetap memakai google.script.run', () => {
@@ -31,6 +32,8 @@ describe('portal template parity', () => {
     assert.match(portalHtml, /:href="safeUrl\(detailItem\.linkFinal\)"/);
     assert.match(appCommonHtml, /root\.AppCommon/);
     assert.match(appCommonHtml, /function safeUrl/);
+    assert.match(webGs, /function include\(filename\)/);
+    assert.match(webGs, /name\.split\('\/'\)\.pop\(\)/);
   });
 
   it('hanya mengunggah bukti bayar dan mengirim npm', () => {
