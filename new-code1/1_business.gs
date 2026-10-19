@@ -188,7 +188,7 @@ function _resolveBagian12(rawLabel, pilihan, namaKegiatan, labs) {
     return '';
 }
 
-const MANUAL_STATUSES = ['Menunggu', 'Diterima'];
+const MANUAL_STATUSES = ['Menunggu'];
 
 function registerPengajuan(formData) {
     return _createPengajuan(formData, { manual: false });
@@ -390,7 +390,7 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
         if (catatan !== undefined && String(catatan || '').trim() !== '') update['Catatan Admin'] = String(catatan).trim();
 
         let nomorSurat = String(existing['Nomor Surat'] || '').trim();
-        if (newStatus === STATUS.DITERIMA && !nomorSurat) {
+        if (newStatus === STATUS.ACC && !nomorSurat) {
             nomorSurat = getNextSuratNumberYearly('INHAL');
             update['Nomor Surat'] = nomorSurat;
         }
@@ -405,7 +405,7 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
         });
 
         let notification = null;
-        if (newStatus === STATUS.DITERIMA || newStatus === STATUS.DITOLAK) {
+        if (newStatus === STATUS.ACC || newStatus === STATUS.DITOLAK) {
             try {
                 notification = _processStatusNotification(idPengajuan, newStatus);
             } catch (e) {
@@ -793,6 +793,27 @@ function getStudentPortalData(npm) {
         let namaLengkap = '';
         const history = [];
 
+        const jadwalById = {};
+        let jadwalRows = [];
+        try { jadwalRows = getAllRowsCached('JadwalPelaksanaan'); } catch (e) {}
+        jadwalRows.forEach(function(j) {
+            if (String(j.Active) === '0' || j.Active === false) return;
+            jadwalById[String(j['Jadwal ID'] || '').trim()] = {
+                JadwalID: String(j['Jadwal ID'] || '').trim(),
+                Tanggal: _clientDate(j.Tanggal) || String(j.Tanggal || '').trim(),
+                Jam: _clientTime(j.Jam),
+                Dosen: String(j.Dosen || '').trim()
+            };
+        });
+        const jadwalByPengajuan = {};
+        let jadwalPesertaRows = [];
+        try { jadwalPesertaRows = getAllRowsCached('JadwalPeserta'); } catch (e) {}
+        jadwalPesertaRows.forEach(function(jp) {
+            const info = jadwalById[String(jp['Jadwal ID'] || '').trim()];
+            const pid = String(jp['ID Pengajuan'] || '').trim();
+            if (info && pid) jadwalByPengajuan[pid] = info;
+        });
+
         const rows = all.filter(function(p) {
             return _normalizeNpm(p['NPM']) === npmKey;
         });
@@ -823,7 +844,8 @@ function getStudentPortalData(npm) {
                 reason: p['Catatan Admin'] || '',
                 hasUpload: hasUpload,
                 linkFinal: p['Link Final'] || '',
-                uploadTimestamp: hasUpload ? (_clientDate(p.UpdatedAt) || 'Uploaded') : ''
+                uploadTimestamp: hasUpload ? (_clientDate(p.UpdatedAt) || 'Uploaded') : '',
+                jadwal: jadwalByPengajuan[id] || null
             });
         });
 
@@ -969,6 +991,7 @@ function getBaginaConfig() {
         categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'],
         labOptions: getMasterOptions('Lab'),
         kegiatanLabOptions: getMasterOptions('Kegiatan Lab'),
+        dosen: getMasterOptions('Dosen'),
         ba: _getBagianBaSettings()
     };
 }
@@ -1005,9 +1028,12 @@ function _setConfigValue(key, value) {
 
 function _getBagianBaStatuses() {
     const raw = _getConfigValue('BAGIAN_BA_STATUSES', '');
-    const def = ['Diterima', 'ACC'];
+    const def = ['ACC'];
     if (!raw) return def;
-    const list = raw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    const list = raw.split(',').map(function(s) { return s.trim(); }).filter(function(s) {
+        return s && s !== 'Diterima';
+    });
+    if (list.indexOf('ACC') === -1) list.push('ACC');
     return list.length ? list : def;
 }
 
@@ -1240,6 +1266,9 @@ function uploadBeritaAcaraBagian(payload, kategori) {
         }
 
         const peserta = normalizeBaPeserta(payload);
+        if (!peserta.length) {
+            return { success: false, message: 'Upload dibatalkan: tidak ada peserta pada berita acara ini. Pilih minimal satu peserta.' };
+        }
 
         const blocked = _validateBaPesertaStatus(peserta);
         if (blocked.length) {
@@ -1250,11 +1279,27 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             };
         }
 
+        const jadwalId = String((payload && payload.jadwalId) || '').trim();
+        let jadwal = null;
+        if (jadwalId) {
+            jadwal = getRowByKey('JadwalPelaksanaan', 'Jadwal ID', jadwalId);
+            if (!jadwal || String(jadwal.Active) === '0' || jadwal.Active === false) {
+                return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan atau sudah dibatalkan.' };
+            }
+            if (_jadwalHasBa(jadwalId)) {
+                return { success: false, message: 'Berita acara untuk jadwal ini sudah ada.' };
+            }
+        }
+
+        const tanggalPelaksanaan = String((payload && payload.tanggalPelaksanaan) || (jadwal && jadwal.Tanggal) || '').trim();
+        const jam = _clientTime((payload && payload.jam) || (jadwal && jadwal.Jam) || '');
+        const dosen = String((payload && payload.dosen) || (jadwal && jadwal.Dosen) || '').trim();
+
         const dup = getAllRows('BeritaAcara').find(function(r) {
             return String(r.Bagian || '').trim() === String((payload && payload.bagian) || kategori || '').trim()
                 && String(r.Blok || '').trim() === String((payload && payload.blok) || '').trim()
                 && String(r['Nama Kegiatan'] || '').trim() === String((payload && payload.namaKegiatan) || '').trim()
-                && _dateOnly(r['Tanggal Pelaksanaan']) === _dateOnly(payload && payload.tanggalPelaksanaan);
+                && _dateOnly(r['Tanggal Pelaksanaan']) === _dateOnly(tanggalPelaksanaan);
         });
         if (dup) {
             return {
@@ -1269,12 +1314,15 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             'Bagian': String((payload && payload.bagian) || kategori || '').trim(),
             'Blok': String((payload && payload.blok) || '').trim(),
             'Nama Kegiatan': String((payload && payload.namaKegiatan) || '').trim(),
-            'Tanggal Pelaksanaan': String((payload && payload.tanggalPelaksanaan) || '').trim(),
+            'Tanggal Pelaksanaan': tanggalPelaksanaan,
             'Jumlah Peserta': peserta.length,
             'File Name': fileName,
             'File URL': fileUrl,
             'Catatan': String((payload && payload.catatan) || '').trim(),
-            'Sumber': 'Bagian'
+            'Sumber': 'Bagian',
+            'Jam': jam,
+            'Dosen': dosen,
+            'Jadwal ID': jadwalId
         });
 
         peserta.forEach(function(p) {
@@ -1292,6 +1340,301 @@ function uploadBeritaAcaraBagian(payload, kategori) {
         return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
     } catch (e) {
         return { success: false, message: e.message };
+    }
+}
+
+function generateJadwalId(sheet) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const prefix = 'JDW-' + year + '-';
+    let maxSeq = 0;
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+        const ids = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+        ids.forEach(function(row) {
+            const id = String(row[0] || '').trim();
+            if (id.indexOf(prefix) === 0) {
+                const num = parseInt(id.substring(prefix.length), 10);
+                if (!isNaN(num) && num > maxSeq) maxSeq = num;
+            }
+        });
+    }
+    return prefix + String(maxSeq + 1).padStart(4, '0');
+}
+
+function _getJadwalPesertaMap() {
+    const map = {};
+    let rows = [];
+    try { rows = getAllRowsCached('JadwalPeserta'); } catch (e) { return map; }
+    rows.forEach(function(r) {
+        const id = String(r['Jadwal ID'] || '').trim();
+        if (!id) return;
+        if (!map[id]) map[id] = [];
+        map[id].push({
+            idPengajuan: String(r['ID Pengajuan'] || '').trim(),
+            npm: String(r.NPM || '').trim(),
+            namaLengkap: String(r['Nama Lengkap'] || '').trim(),
+            blok: String(r.Blok || '').trim(),
+            statusPengajuan: String(r['Status Pengajuan'] || '').trim()
+        });
+    });
+    return map;
+}
+
+function _computeJadwalList(bagianFilter, kategori) {
+    let rows = [];
+    try { rows = getAllRowsCached('JadwalPelaksanaan'); } catch (e) { return []; }
+    rows = rows.filter(function(r) {
+        return String(r.Active === false ? '0' : (r.Active === '' || r.Active == null ? '1' : r.Active)).trim() !== '0';
+    });
+    const pesertaMap = _getJadwalPesertaMap();
+    const baByJadwal = {};
+    let baRows = [];
+    try { baRows = getAllRowsCached('BeritaAcara'); } catch (e) {}
+    baRows.forEach(function(b) {
+        const jid = String(b['Jadwal ID'] || '').trim();
+        const bid = String(b['BA ID'] || '').trim();
+        if (jid && bid && !baByJadwal[jid]) baByJadwal[jid] = bid;
+    });
+    const sanitized = rows.map(function(r) {
+        const jid = String(r['Jadwal ID'] || '').trim();
+        return {
+            JadwalID: jid,
+            Bagian: String(r.Bagian || '').trim(),
+            Blok: String(r.Blok || '').trim(),
+            NamaKegiatan: String(r['Nama Kegiatan'] || '').trim(),
+            kegiatan_key: String(r['Kegiatan Key'] || '').trim(),
+            Tanggal: _clientDate(r.Tanggal) || String(r.Tanggal || '').trim(),
+            Jam: _clientTime(r.Jam),
+            Dosen: String(r.Dosen || '').trim(),
+            Catatan: String(r.Catatan || '').trim(),
+            Active: 1,
+            punyaBa: !!baByJadwal[jid],
+            baId: baByJadwal[jid] || '',
+            peserta: pesertaMap[jid] || []
+        };
+    });
+    const filter = _normBaginaKey(bagianFilter);
+    if (!filter) return sanitized;
+    const kat = _normBaginaKey(kategori);
+    const isPraktikum = kat === 'praktikum';
+    const labs = isPraktikum ? getMasterOptions('Lab') : null;
+    return sanitized.filter(function(r) {
+        if (isPraktikum) {
+            const resolved = _resolveBagian12(r.Bagian, '', r.NamaKegiatan, labs);
+            return resolved ? _normBaginaKey(resolved) === filter : false;
+        }
+        return _normBaginaKey(r.Bagian) === filter;
+    });
+}
+
+function getJadwalList(bagianFilter, kategori) {
+    try {
+        requireBaginaSession(kategori, '', arguments[arguments.length - 1]);
+        return _computeJadwalList(bagianFilter, kategori);
+    } catch (e) {
+        return [];
+    }
+}
+
+function _validateJadwalPeserta(peserta) {
+    if (!peserta.length) return 'Simpan dibatalkan: pilih minimal satu peserta.';
+    const blocked = _validateBaPesertaStatus(peserta);
+    if (blocked.length) {
+        const allowed = _getBagianBaStatuses();
+        return 'Simpan dibatalkan: peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '.';
+    }
+    return '';
+}
+
+function _jadwalHasBa(jadwalId) {
+    return getAllRows('BeritaAcara').some(function(r) {
+        return String(r['Jadwal ID'] || '').trim() === String(jadwalId || '').trim();
+    });
+}
+
+function _deleteRowsByKey(sheetName, keyColumn, keyValue) {
+    const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) return 0;
+    const headers = getHeadersFromSheet(sheet);
+    const keyIdx = headers.indexOf(keyColumn);
+    if (keyIdx === -1) return 0;
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return 0;
+    const values = sheet.getRange(2, keyIdx + 1, lastRow - 1, 1).getValues();
+    const target = String(keyValue == null ? '' : keyValue).trim();
+    let removed = 0;
+    for (let i = values.length - 1; i >= 0; i--) {
+        if (String(values[i][0] == null ? '' : values[i][0]).trim() === target) {
+            sheet.deleteRow(i + 2);
+            removed++;
+        }
+    }
+    if (removed) invalidateSheetCache(sheetName);
+    return removed;
+}
+
+function saveJadwalPelaksanaan(payload, kategori) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const p = payload || {};
+        requireBaginaSession(kategori, p.bagian, arguments[arguments.length - 1]);
+        const bagian = String(p.bagian || kategori || '').trim();
+        const peserta = normalizeBaPeserta(p);
+        const invalid = _validateJadwalPeserta(peserta);
+        if (invalid) return { success: false, message: invalid };
+
+        const blok = String(p.blok || '').trim();
+        const namaKegiatan = String(p.namaKegiatan || '').trim();
+        const tanggal = String(p.tanggal || '').trim();
+        const jam = _clientTime(p.jam);
+        const key = _kegiatanKey(bagian, blok, namaKegiatan);
+
+        const ids = {};
+        peserta.forEach(function(x) {
+            if (x.idPengajuan) ids['id:' + x.idPengajuan] = true;
+            if (x.npm) ids['npm:' + x.npm] = true;
+        });
+        const dup = _computeJadwalList('', '').some(function(j) {
+            if (j.kegiatan_key !== key) return false;
+            if (String(j.Tanggal || '').slice(0, 10) !== tanggal.slice(0, 10)) return false;
+            if (_clientTime(j.Jam) !== jam) return false;
+            return (j.peserta || []).some(function(x) {
+                return (x.idPengajuan && ids['id:' + x.idPengajuan]) || (x.npm && ids['npm:' + x.npm]);
+            });
+        });
+        if (dup) return { success: false, message: 'Jadwal untuk kegiatan, tanggal, jam, dan peserta ini sudah ada.' };
+
+        const ss = getGlobalSpreadsheet();
+        ensureSheetWithHeaders(ss, 'JadwalPelaksanaan', SCHEMAS.JadwalPelaksanaan);
+        ensureSheetWithHeaders(ss, 'JadwalPeserta', SCHEMAS.JadwalPeserta);
+        const jadwalId = generateJadwalId(ss.getSheetByName('JadwalPelaksanaan'));
+        const now = new Date();
+        appendRowSafe('JadwalPelaksanaan', {
+            Timestamp: now,
+            'Jadwal ID': jadwalId,
+            'Bagian': bagian,
+            'Blok': blok,
+            'Nama Kegiatan': namaKegiatan,
+            'Kegiatan Key': key,
+            'Tanggal': tanggal,
+            'Jam': jam,
+            'Dosen': String(p.dosen || '').trim(),
+            'Catatan': String(p.catatan || '').trim(),
+            'Active': 1,
+            'Created By': getActorName(),
+            'Updated At': now
+        });
+        peserta.forEach(function(x) {
+            appendRowSafe('JadwalPeserta', {
+                Timestamp: now,
+                'Jadwal ID': jadwalId,
+                'ID Pengajuan': x.idPengajuan,
+                'NPM': x.npm,
+                'Nama Lengkap': x.namaLengkap,
+                'Blok': x.blok,
+                'Status Pengajuan': x.statusPengajuan
+            });
+        });
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'CREATE_JADWAL',
+            target: 'JadwalPelaksanaan',
+            detail: JSON.stringify({ jadwalId: jadwalId, bagian: bagian, blok: blok, namaKegiatan: namaKegiatan, tanggal: tanggal, jam: jam, peserta: peserta.length }),
+            alasan: ''
+        });
+        return { success: true, jadwalId: jadwalId, message: 'Jadwal pelaksanaan berhasil disimpan.' };
+    } catch (e) {
+        return { success: false, message: e.message };
+    } finally {
+        lock.releaseLock();
+    }
+}
+
+function updateJadwalPelaksanaan(jadwalId, payload, kategori) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const p = payload || {};
+        const id = String(jadwalId || '').trim();
+        const existing = getRowByKey('JadwalPelaksanaan', 'Jadwal ID', id);
+        if (!existing || String(existing.Active) === '0' || existing.Active === false) {
+            return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan.' };
+        }
+        requireBaginaSession(kategori, existing.Bagian, arguments[arguments.length - 1]);
+        if (_jadwalHasBa(id)) return { success: false, message: 'Jadwal terkunci: berita acara sudah dibuat.' };
+
+        const peserta = normalizeBaPeserta(p);
+        const invalid = _validateJadwalPeserta(peserta);
+        if (invalid) return { success: false, message: invalid };
+
+        const bagian = String(p.bagian || existing.Bagian || kategori || '').trim();
+        const blok = String(p.blok || '').trim();
+        const namaKegiatan = String(p.namaKegiatan || '').trim();
+        const now = new Date();
+        upsertRowByKey('JadwalPelaksanaan', 'Jadwal ID', id, {
+            'Bagian': bagian,
+            'Blok': blok,
+            'Nama Kegiatan': namaKegiatan,
+            'Kegiatan Key': _kegiatanKey(bagian, blok, namaKegiatan),
+            'Tanggal': String(p.tanggal || '').trim(),
+            'Jam': _clientTime(p.jam),
+            'Dosen': String(p.dosen || '').trim(),
+            'Catatan': String(p.catatan || '').trim(),
+            'Updated At': now
+        });
+        _deleteRowsByKey('JadwalPeserta', 'Jadwal ID', id);
+        peserta.forEach(function(x) {
+            appendRowSafe('JadwalPeserta', {
+                Timestamp: now,
+                'Jadwal ID': id,
+                'ID Pengajuan': x.idPengajuan,
+                'NPM': x.npm,
+                'Nama Lengkap': x.namaLengkap,
+                'Blok': x.blok,
+                'Status Pengajuan': x.statusPengajuan
+            });
+        });
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'UPDATE_JADWAL',
+            target: 'JadwalPelaksanaan',
+            detail: JSON.stringify({ jadwalId: id, peserta: peserta.length }),
+            alasan: ''
+        });
+        return { success: true, message: 'Jadwal pelaksanaan diperbarui.' };
+    } catch (e) {
+        return { success: false, message: e.message };
+    } finally {
+        lock.releaseLock();
+    }
+}
+
+function cancelJadwalPelaksanaan(jadwalId, kategori) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const id = String(jadwalId || '').trim();
+        const existing = getRowByKey('JadwalPelaksanaan', 'Jadwal ID', id);
+        if (!existing || String(existing.Active) === '0' || existing.Active === false) {
+            return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan.' };
+        }
+        requireBaginaSession(kategori, existing.Bagian, arguments[arguments.length - 1]);
+        if (_jadwalHasBa(id)) return { success: false, message: 'Jadwal terkunci: berita acara sudah dibuat.' };
+        upsertRowByKey('JadwalPelaksanaan', 'Jadwal ID', id, { 'Active': 0, 'Updated At': new Date() });
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'CANCEL_JADWAL',
+            target: 'JadwalPelaksanaan',
+            detail: JSON.stringify({ jadwalId: id }),
+            alasan: ''
+        });
+        return { success: true, message: 'Jadwal pelaksanaan dibatalkan.' };
+    } catch (e) {
+        return { success: false, message: e.message };
+    } finally {
+        lock.releaseLock();
     }
 }
 
@@ -1374,7 +1717,8 @@ function getBagianBootstrap(kategori, subBagian, token) {
         subBagian: String(subBagian || '').trim(),
         config: { categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'], labOptions: [], kegiatanLabOptions: [] },
         rows: [],
-        baList: []
+        baList: [],
+        jadwalList: []
     };
     try {
         const s = getSession(token);
@@ -1394,10 +1738,106 @@ function getBagianBootstrap(kategori, subBagian, token) {
         out.config.kegiatanLabOptions = getMasterOptions('Kegiatan Lab');
         out.rows = _computeBagianRows(kat, subBagian);
         out.baList = _computeBaList(subBagian || out.kategori, out.kategori);
+        out.jadwalList = _computeJadwalList(subBagian || out.kategori, out.kategori);
         return out;
     } catch (e) {
         out.message = e.message;
         return out;
+    }
+}
+
+function migrateFase6StatusDanJadwal() {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const ss = getGlobalSpreadsheet();
+        const ensured = [];
+        ['JadwalPelaksanaan', 'JadwalPeserta'].forEach(function(name) {
+            const res = ensureSheetWithHeaders(ss, name, SCHEMAS[name]);
+            ensured.push({ sheet: name, action: res.action, added: res.added || [] });
+            invalidateSheetCache(name);
+        });
+        const baRes = ensureSheetWithHeaders(ss, 'BeritaAcara', SCHEMAS.BeritaAcara);
+        ensured.push({ sheet: 'BeritaAcara', action: baRes.action, added: baRes.added || [] });
+        invalidateSheetCache('BeritaAcara');
+
+        const normalize = function(sheetName, columnName) {
+            const sheet = ss.getSheetByName(sheetName);
+            if (!sheet) return { sheet: sheetName, column: columnName, changed: 0, skipped: 'sheet tidak ada' };
+            const headers = getHeadersFromSheet(sheet);
+            const idx = headers.indexOf(columnName);
+            if (idx === -1) return { sheet: sheetName, column: columnName, changed: 0, skipped: 'kolom tidak ada' };
+            const lastRow = sheet.getLastRow();
+            if (lastRow < 2) return { sheet: sheetName, column: columnName, changed: 0 };
+            const range = sheet.getRange(2, idx + 1, lastRow - 1, 1);
+            const values = range.getValues();
+            let changed = 0;
+            for (let i = 0; i < values.length; i++) {
+                if (String(values[i][0] || '').trim() === 'Diterima') {
+                    values[i][0] = STATUS.ACC;
+                    changed++;
+                }
+            }
+            if (changed) {
+                range.setValues(values);
+                invalidateSheetCache(sheetName);
+            }
+            return { sheet: sheetName, column: columnName, changed: changed };
+        };
+
+        const normalized = [
+            normalize('Pengajuan', 'Status'),
+            normalize('StatusHistory', 'Status'),
+            normalize('BeritaAcaraPeserta', 'Status Pengajuan'),
+            normalize('JadwalPeserta', 'Status Pengajuan')
+        ];
+
+        let configChanged = 0;
+        const configSheet = ss.getSheetByName('Config');
+        if (configSheet && configSheet.getLastRow() > 1) {
+            const headers = getHeadersFromSheet(configSheet);
+            const keyIdx = headers.indexOf('Key');
+            const valIdx = headers.indexOf('Value');
+            if (keyIdx !== -1 && valIdx !== -1) {
+                const last = configSheet.getLastRow();
+                const rows = configSheet.getRange(2, 1, last - 1, headers.length).getValues();
+                for (let i = 0; i < rows.length; i++) {
+                    if (String(rows[i][keyIdx] || '').trim() !== 'BAGIAN_BA_STATUSES') continue;
+                    const before = String(rows[i][valIdx] || '');
+                    const parts = before.split(',').map(function(v) { return v.trim(); }).filter(function(v) {
+                        return v && v !== 'Diterima';
+                    });
+                    if (parts.indexOf('ACC') === -1) parts.push('ACC');
+                    const after = parts.length ? parts.join(',') : 'ACC';
+                    if (after !== before) {
+                        configSheet.getRange(i + 2, valIdx + 1).setValue(after);
+                        configChanged++;
+                    }
+                }
+                if (configChanged) invalidateSheetCache('Config');
+            }
+        }
+
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'MIGRATE_FASE6',
+            target: 'Database',
+            detail: JSON.stringify({ ensured: ensured, normalized: normalized, configChanged: configChanged }),
+            alasan: 'Normalisasi status Diterima menjadi ACC dan penyiapan sheet jadwal.'
+        });
+
+        const totalChanged = normalized.reduce(function(n, r) { return n + (r.changed || 0); }, 0) + configChanged;
+        return {
+            success: true,
+            message: 'Migrasi Fase 6 selesai. ' + totalChanged + ' nilai status diperbarui dan sheet jadwal siap.',
+            ensured: ensured,
+            normalized: normalized,
+            configChanged: configChanged
+        };
+    } catch (e) {
+        return { success: false, message: 'Migrasi gagal: ' + e.message };
+    } finally {
+        lock.releaseLock();
     }
 }
 
@@ -1562,7 +2002,6 @@ function getLaporanBootstrap() {
     });
 
     let totalPendaftar = 0;
-    let totalDiterima = 0;
     let totalDitolak = 0;
     let totalMenunggu = 0;
     let totalAcc = 0;
@@ -1575,7 +2014,6 @@ function getLaporanBootstrap() {
         const id = String(p['ID Pengajuan'] || '').trim();
         const status = String(p.Status || '').trim();
         totalPendaftar++;
-        if (status === 'Diterima') totalDiterima++;
         if (status === 'Ditolak') totalDitolak++;
         if (status === 'Menunggu') totalMenunggu++;
         if (status === 'ACC') totalAcc++;
@@ -1625,7 +2063,6 @@ function getLaporanBootstrap() {
     return {
         summary: {
             totalPendaftar: totalPendaftar,
-            totalDiterima: totalDiterima,
             totalDitolak: totalDitolak,
             totalMenunggu: totalMenunggu,
             totalAcc: totalAcc,
@@ -1636,6 +2073,7 @@ function getLaporanBootstrap() {
         },
         rows: rows,
         beritaAcara: beritaAcara,
+        jadwalList: _computeJadwalList('', ''),
         dosen: dosen,
         blok: blok,
         bagian: {
@@ -1660,7 +2098,7 @@ function _computeUnitProgress(unit) {
     const total = peserta.length;
     const decided = peserta.filter(function(p) {
         const s = String(p.statusPengajuan || '').trim();
-        return s === 'Diterima' || s === 'ACC' || s === 'Ditolak';
+        return s === 'ACC' || s === 'Ditolak';
     }).length;
     const finalCount = peserta.filter(function(p) { return p.linkFinal; }).length;
     const field = function(obj, lowerKey, clientKey) {
@@ -1785,7 +2223,7 @@ function _buildBagianAggregation() {
                 blok: String(c.Blok || '').replace(/\s+/g, ' ').trim(),
                 namaKegiatan: String(c['Nama Kegiatan'] || '').replace(/\s+/g, ' ').trim(),
                 tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
-                jam: String(c.Jam || '').trim(),
+                jam: _clientTime(c.Jam),
                 dosen: String(c.Dosen || '').trim(),
                 kegiatanKey: String(c['Kegiatan Key'] || '').trim(),
                 fileUrl: String(c['File URL'] || '').trim(),
@@ -1951,7 +2389,7 @@ function updateBeritaAcaraBagian(baId, payload) {
         if (rowIndex < 2) return { success: false, message: 'Berita acara tidak ditemukan.' };
         const merged = Object.assign({}, existing, {
             'Tanggal Pelaksanaan': tanggal,
-            Jam: p.jam !== undefined ? String(p.jam || '').trim() : existing.Jam,
+            Jam: p.jam !== undefined ? _clientTime(p.jam) : _clientTime(existing.Jam),
             Dosen: p.dosen !== undefined ? String(p.dosen || '').trim() : existing.Dosen,
             Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
         });
@@ -1979,7 +2417,7 @@ function updateBeritaAcaraAdmin(baId, payload) {
         if (rowIndex < 2) return { success: false, message: 'Berita acara tidak ditemukan.' };
         const merged = Object.assign({}, existing, {
             'Tanggal Pelaksanaan': tanggal,
-            Jam: p.jam !== undefined ? String(p.jam || '').trim() : existing.Jam,
+            Jam: p.jam !== undefined ? _clientTime(p.jam) : _clientTime(existing.Jam),
             Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
         });
         sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
@@ -2717,8 +3155,8 @@ function sendStatusNotificationEmail(idPengajuan) {
         const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan);
         if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
         const status = String(pengajuan.Status || '').trim();
-        if (status !== STATUS.DITERIMA && status !== STATUS.DITOLAK) {
-            return { success: false, message: 'Email notifikasi hanya untuk status Diterima/Ditolak. Status saat ini: ' + (status || '-') };
+        if (status !== STATUS.ACC && status !== STATUS.DITOLAK) {
+            return { success: false, message: 'Email notifikasi hanya untuk status ACC/Ditolak. Status saat ini: ' + (status || '-') };
         }
         const result = _processStatusNotification(idPengajuan, status);
         return result.ok

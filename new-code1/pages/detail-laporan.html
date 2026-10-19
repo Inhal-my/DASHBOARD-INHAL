@@ -1268,7 +1268,6 @@
         function statusBadgeCls(status) {
             const cls = {
                 'Menunggu': 'bg-amber-50 text-amber-700 ring-amber-600/20',
-                'Diterima': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
                 'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
                 'ACC': 'bg-brand-50 text-brand-700 ring-brand-600/20',
                 'Dibatalkan': 'bg-slate-100 text-slate-500 ring-slate-500/20'
@@ -1278,7 +1277,6 @@
         function statusChipCls(status) {
             return {
                 'Menunggu': 'bg-amber-50 text-amber-700',
-                'Diterima': 'bg-emerald-50 text-emerald-700',
                 'Ditolak': 'bg-rose-50 text-rose-700',
                 'ACC': 'bg-indigo-50 text-indigo-700',
                 'Dibatalkan': 'bg-slate-100 text-slate-500'
@@ -1287,7 +1285,6 @@
         function statusColor(status) {
             return {
                 'Menunggu': '#f59e0b',
-                'Diterima': '#10b981',
                 'ACC': '#6366f1',
                 'Ditolak': '#f43f5e',
                 'Dibatalkan': '#94a3b8'
@@ -1397,7 +1394,7 @@
                     baFilter: { bagian: '', blok: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
                     activeMatrixCell: null,
-                    animated: { totalPendaftar: 0, totalMenunggu: 0, totalDiterima: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
+                    animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
                     barProgress: 0,
                     toast: { show: false, icon: '', msg: '' }
@@ -1419,7 +1416,7 @@
                 statusOptions() {
                     const set = {};
                     Object.keys(this.summary.perStatus || {}).forEach(k => { set[k] = 1; });
-                    ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(k => { set[k] = 1; });
+                    ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(k => { set[k] = 1; });
                     return Object.keys(set);
                 },
                 jenisOptions() {
@@ -1479,7 +1476,6 @@
                     return [
                         { label: 'Total Pendaftar', num: this.animated.totalPendaftar, icon: 'bi-people-fill', color: '#4f46e5', tint: 'bg-brand-50' },
                         { label: 'Menunggu', num: this.animated.totalMenunggu, icon: 'bi-hourglass-split', color: '#d97706', tint: 'bg-amber-50' },
-                        { label: 'Diterima', num: this.animated.totalDiterima, icon: 'bi-check2-circle', color: '#059669', tint: 'bg-emerald-50' },
                         { label: 'ACC', num: this.animated.totalAcc, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'bg-indigo-50' },
                         { label: 'Ditolak', num: this.animated.totalDitolak, icon: 'bi-x-circle', color: '#e11d48', tint: 'bg-rose-50' },
                         { label: 'Total Biaya', num: fmtRupiah(this.animated.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'bg-teal-50' }
@@ -1493,7 +1489,7 @@
                         counts[s] = (counts[s] || 0) + 1;
                         total++;
                     });
-                    const order = ['Menunggu', 'Diterima', 'ACC', 'Ditolak', 'Dibatalkan', 'Lainnya'];
+                    const order = ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan', 'Lainnya'];
                     const keys = Object.keys(counts).sort((a, b) => {
                         const ia = order.indexOf(a); const ib = order.indexOf(b);
                         return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
@@ -2236,7 +2232,6 @@
                     const targets = {
                         totalPendaftar: s.totalPendaftar || 0,
                         totalMenunggu: s.totalMenunggu || 0,
-                        totalDiterima: s.totalDiterima || 0,
                         totalAcc: s.totalAcc || 0,
                         totalDitolak: s.totalDitolak || 0,
                         totalBiaya: s.totalBiaya || 0

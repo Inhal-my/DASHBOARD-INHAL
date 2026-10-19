@@ -7,7 +7,6 @@ const TEMPLATE_ACC_FINAL = 'template-acc-final';
 
 const STATUS = {
     MENUNGGU: 'Menunggu',
-    DITERIMA: 'Diterima',
     DITOLAK: 'Ditolak',
     ACC: 'ACC',
     DIBATALKAN: 'Dibatalkan'
@@ -140,7 +139,8 @@ const SCHEMAS = {
         'Catatan',
         'Sumber',
         'Jam',
-        'Dosen'
+        'Dosen',
+        'Jadwal ID'
     ],
     BeritaAcaraPeserta: [
         'Timestamp',
@@ -173,6 +173,30 @@ const SCHEMAS = {
         'Nama Lengkap',
         'Blok',
         'Bagian',
+        'Status Pengajuan'
+    ],
+    JadwalPelaksanaan: [
+        'Timestamp',
+        'Jadwal ID',
+        'Bagian',
+        'Blok',
+        'Nama Kegiatan',
+        'Kegiatan Key',
+        'Tanggal',
+        'Jam',
+        'Dosen',
+        'Catatan',
+        'Active',
+        'Created By',
+        'Updated At'
+    ],
+    JadwalPeserta: [
+        'Timestamp',
+        'Jadwal ID',
+        'ID Pengajuan',
+        'NPM',
+        'Nama Lengkap',
+        'Blok',
         'Status Pengajuan'
     ],
     CheckData: [
@@ -219,6 +243,31 @@ function _clientDate(v) {
         'T' + p(v.getHours()) + ':' + p(v.getMinutes()) + ':' + p(v.getSeconds());
 }
 
+// Jam pada Sheets disimpan sebagai Date "1899-12-30" atau string ISO.
+// Kembalikan format HH:mm agar tidak tampil sebagai 1899-12-30T07:52:48.000Z.
+function _clientTime(v) {
+    if (v === null || v === undefined || v === '') return '';
+    const p = function(n) { return (n < 10 ? '0' : '') + n; };
+    const formatDate = function(d) {
+        if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+        try {
+            return Utilities.formatDate(d, getGlobalSpreadsheet().getSpreadsheetTimeZone(), 'HH:mm');
+        } catch (e) {
+            return p(d.getHours()) + ':' + p(d.getMinutes());
+        }
+    };
+    if (v instanceof Date) return formatDate(v);
+    const s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+        const d = new Date(s);
+        const out = formatDate(d);
+        if (out) return out;
+    }
+    const hm = s.match(/^(\d{1,2})[.:](\d{2})$/);
+    if (hm) return p(parseInt(hm[1], 10)) + ':' + hm[2];
+    return s;
+}
+
 function _dateOnly(v) {
     const s = String(v || '').trim();
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -228,7 +277,7 @@ function _dateOnly(v) {
 function _clientRow(obj) {
     const out = {};
     Object.keys(obj || {}).forEach(function(k) {
-        out[k] = _clientDate(obj[k]);
+        out[k] = (k === 'Jam' || k === 'jam') ? _clientTime(obj[k]) : _clientDate(obj[k]);
     });
     return out;
 }

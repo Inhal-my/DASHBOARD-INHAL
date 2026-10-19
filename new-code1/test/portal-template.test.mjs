@@ -44,9 +44,10 @@ describe('portal template parity', () => {
     assert.doesNotMatch(portalHtml, /accFile:/);
   });
 
-  it('mempertahankan status Diterima dan menyembunyikan fitur jadwal CF', () => {
-    assert.match(portalHtml, /s\.indexOf\('diterima'\)/);
-    assert.doesNotMatch(portalHtml, /detailItem\.jadwal/);
+  it('menampilkan jadwal pelaksanaan dan tidak lagi memakai status Diterima', () => {
+    assert.doesNotMatch(portalHtml, /diterima/i);
+    assert.match(portalHtml, /detailItem\.jadwal/);
+    assert.match(portalHtml, /stepJadwalDotClass/);
     assert.doesNotMatch(portalHtml, /uploadResetAt/);
   });
 

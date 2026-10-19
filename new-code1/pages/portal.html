@@ -260,6 +260,17 @@
                                         </div>
                                         <p v-else class="mt-1 text-xs text-slate-400">{{ detailItem.statusCode === 'rejected' || detailItem.statusCode === 'cancelled' ? 'Proses dihentikan.' : 'Menunggu persetujuan admin.' }}</p>
                                     </div>
+                                    <!-- step: jadwal pelaksanaan -->
+                                    <div v-if="detailItem.statusCode === 'approved'" class="t-item">
+                                        <div class="t-dot" :class="stepJadwalDotClass"></div>
+                                        <div class="text-sm font-bold" :class="stepJadwalTitleClass">Jadwal Pelaksanaan</div>
+                                        <div v-if="detailItem.jadwal" class="mt-1.5 space-y-0.5 text-xs text-slate-600">
+                                            <div><i class="bi bi-calendar3 mr-1 text-slate-400"></i>{{ formatTanggal(detailItem.jadwal.Tanggal) }}</div>
+                                            <div v-if="detailItem.jadwal.Jam"><i class="bi bi-clock mr-1 text-slate-400"></i>{{ formatJam(detailItem.jadwal.Jam) }}</div>
+                                            <div v-if="detailItem.jadwal.Dosen"><i class="bi bi-person-badge mr-1 text-slate-400"></i>{{ detailItem.jadwal.Dosen }}</div>
+                                        </div>
+                                        <p v-else class="mt-1 text-xs text-slate-400">Belum dijadwalkan.</p>
+                                    </div>
                                     <!-- step 3 -->
                                     <div class="t-item">
                                         <div class="t-dot" :class="step3DotClass"></div>
@@ -595,6 +606,12 @@
                     if (this.detailItem.linkFinal) return 'text-emerald-700';
                     if (this.detailItem.hasUpload) return 'text-slate-700';
                     return 'text-slate-400';
+                },
+                stepJadwalDotClass() {
+                    return this.detailItem.jadwal ? 'bg-blue-500' : 'bg-slate-300';
+                },
+                stepJadwalTitleClass() {
+                    return this.detailItem.jadwal ? 'text-slate-900' : 'text-slate-400';
                 }
             },
             methods: {
@@ -613,7 +630,7 @@
                 },
                 mapStatusCode(status) {
                     const s = String(status || '').toLowerCase();
-                    if (s.indexOf('diterima') !== -1 || s.indexOf('acc') !== -1 || s.indexOf('disetujui') !== -1) return 'approved';
+                    if (s.indexOf('acc') !== -1 || s.indexOf('disetujui') !== -1) return 'approved';
                     if (s.indexOf('ditolak') !== -1) return 'rejected';
                     if (s.indexOf('dibatalkan') !== -1) return 'cancelled';
                     return 'pending';
@@ -647,6 +664,18 @@
                 },
                 safeUrl(v) {
                     return AppCommon.safeUrl(v);
+                },
+                formatJam(v) {
+                    if (v === null || v === undefined || v === '') return '';
+                    if (v instanceof Date && !isNaN(v.getTime())) {
+                        return String(v.getHours()).padStart(2, '0') + ':' + String(v.getMinutes()).padStart(2, '0');
+                    }
+                    const s = String(v).trim();
+                    const iso = s.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/);
+                    if (iso) return String(parseInt(iso[1], 10)).padStart(2, '0') + ':' + iso[2];
+                    const hm = s.match(/^(\d{1,2})[.:](\d{2})$/);
+                    if (hm) return String(parseInt(hm[1], 10)).padStart(2, '0') + ':' + hm[2];
+                    return s;
                 },
                 formatTanggal(v) {
                     return AppCommon.formatTanggal(v);

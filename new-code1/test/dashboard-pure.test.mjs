@@ -46,7 +46,7 @@ describe('computeUnitProgress', () => {
   it('menandai tahap sebagian dan selesai', () => {
     const p = computeUnitProgress({
       peserta: [
-        { statusPengajuan: 'Diterima', linkFinal: 'x' },
+        { statusPengajuan: 'ACC', linkFinal: 'x' },
         { statusPengajuan: 'Menunggu', linkFinal: '' }
       ],
       baPendukung: [{ baId: 'BA-1' }],

@@ -14,11 +14,23 @@ describe('bagian template parity', () => {
     assert.match(bagianHtml, /max-w-7xl/);
   });
 
-  it('menyediakan tab ringkasan, berita acara, dan riwayat tanpa tab jadwal', () => {
+  it('menyediakan tab ringkasan, jadwal, berita acara, dan riwayat', () => {
     assert.match(bagianHtml, /id: 'ringkasan'/);
+    assert.match(bagianHtml, /id: 'jadwal'/);
     assert.match(bagianHtml, /id: 'ba'/);
     assert.match(bagianHtml, /id: 'riwayat'/);
-    assert.doesNotMatch(bagianHtml, /id: 'jadwal'/);
+  });
+
+  it('memakai backend jadwal GAS dan mengaitkan BA ke jadwal', () => {
+    assert.match(bagianHtml, /getJadwalList/);
+    assert.match(bagianHtml, /saveJadwalPelaksanaan/);
+    assert.match(bagianHtml, /updateJadwalPelaksanaan/);
+    assert.match(bagianHtml, /cancelJadwalPelaksanaan/);
+    assert.match(bagianHtml, /jadwalId: this\.baJadwal\.JadwalID/);
+  });
+
+  it('tidak lagi memakai status Diterima', () => {
+    assert.doesNotMatch(bagianHtml, /Diterima/);
   });
 
   it('mempertahankan alur backend GAS tanpa API CF', () => {

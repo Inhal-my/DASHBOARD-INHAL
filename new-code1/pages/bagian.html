@@ -223,6 +223,11 @@
                             <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
                                 <div class="section-title"><i class="bi bi-list-check"></i> Perlu Tindakan</div>
                                 <div class="space-y-2">
+                                    <button type="button" class="flex w-full items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3 text-left" @click="setTab('jadwal', { filter: 'belum' })">
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-brand-600"><i class="bi bi-calendar-plus"></i></div>
+                                        <div class="min-w-0 flex-1"><div class="text-sm font-bold text-slate-900">Belum dijadwalkan</div><div class="text-[11px] text-slate-500">Kegiatan ACC tanpa jadwal</div></div>
+                                        <span class="chip bg-white text-brand-700">{{ ringkasanStats.belumDijadwalkan }}</span>
+                                    </button>
                                     <button type="button" class="flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left" @click="setTab('ba')">
                                         <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-amber-600"><i class="bi bi-file-earmark-plus"></i></div>
                                         <div class="min-w-0 flex-1"><div class="text-sm font-bold text-slate-900">Kegiatan belum ada BA</div><div class="text-[11px] text-slate-500">Seluruh peserta sudah ACC</div></div>
@@ -331,8 +336,54 @@
                     </section>
 
                     <!-- ===== WORKSPACE ===== -->
-                    <div v-else class="workspace" :class="{ 'workspace--split': activeTab==='ba', 'workspace--riwayat': activeTab==='riwayat', 'has-detail': !!selectedItem }">
+                    <div v-else class="workspace" :class="{ 'workspace--split': activeTab==='jadwal' || activeTab==='ba', 'workspace--riwayat': activeTab==='riwayat', 'has-detail': !!selectedItem }">
                         <div class="ws-list">
+                            <!-- ===== TAB: JADWAL ===== -->
+                            <section v-if="activeTab==='jadwal'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                                <div class="flex items-center gap-3 border-b border-slate-100 p-4">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-calendar-week"></i></div>
+                                    <div class="min-w-0 flex-1">
+                                        <h2 class="text-base font-bold text-slate-900">Jadwal Pelaksanaan</h2>
+                                        <p class="text-xs text-slate-400">{{ jadwalList.length }} jadwal aktif · {{ jadwalPendingGroups.length }} perlu dijadwalkan</p>
+                                    </div>
+                                    <button type="button" class="btn-soft !py-2 text-xs" :disabled="!jadwalPendingGroups.length" @click="startFirstPendingJadwal"><i class="bi bi-plus-circle"></i> Buat Jadwal</button>
+                                </div>
+                                <div class="border-b border-slate-100 p-3">
+                                    <input v-model="q" type="search" class="input" placeholder="Cari kegiatan, peserta...">
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <button type="button" class="chip" :class="jadwalFilter==='semua' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="jadwalFilter='semua'">Semua</button>
+                                        <button type="button" class="chip" :class="jadwalFilter==='belum' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="jadwalFilter='belum'">Belum dijadwalkan</button>
+                                        <button type="button" class="chip" :class="jadwalFilter==='sudah' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="jadwalFilter='sudah'">Sudah dijadwalkan</button>
+                                    </div>
+                                </div>
+                                <div v-if="!visibleJadwalItems.length" class="p-8 text-center">
+                                    <i class="bi bi-calendar-check mb-2 block text-4xl text-slate-300"></i>
+                                    <p class="text-sm text-slate-500">Belum ada kegiatan ACC untuk dijadwalkan.</p>
+                                </div>
+                                <div v-else class="divide-y divide-slate-50">
+                                    <button v-for="item in visibleJadwalItems" :key="item.id" type="button" class="flex w-full items-start gap-3 p-4 text-left transition hover:bg-slate-50" :class="selKind===item.kind && selKey===item.key ? 'bg-brand-50/60' : ''" @click="selectItem(item.kind, item.key)">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" :class="item.kind==='jadwal' ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-500'">
+                                            <i class="bi" :class="item.kind==='jadwal' ? 'bi-calendar-check' : 'bi-calendar-plus'"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="truncate text-sm font-bold text-slate-900">{{ item.nama }}</div>
+                                            <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                                                <span class="flex items-center gap-1"><i class="bi bi-grid"></i>Blok {{ item.blok }}</span>
+                                                <span v-if="item.tanggal" class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(item.tanggal) }}</span>
+                                                <span v-if="item.kind==='jadwal' && item.jadwal.Jam" class="flex items-center gap-1"><i class="bi bi-clock"></i>{{ formatJam(item.jadwal.Jam) }}</span>
+                                                <span class="flex items-center gap-1"><i class="bi bi-people"></i>{{ item.peserta.length }} peserta</span>
+                                            </div>
+                                            <div v-if="item.dosen" class="mt-1 text-[11px] text-slate-500"><i class="bi bi-person-badge mr-1"></i>{{ item.dosen }}</div>
+                                        </div>
+                                        <div class="flex shrink-0 flex-col items-end gap-1">
+                                            <span v-if="item.kind==='jadwal'" class="chip" :class="item.ba ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-50 text-brand-700'">{{ item.ba ? 'BA selesai' : 'Sudah dijadwalkan' }}</span>
+                                            <span v-else class="chip bg-slate-100 text-slate-600">Belum dijadwalkan</span>
+                                            <span v-if="item.kind==='jadwal'" class="text-[11px] font-semibold text-brand-600">Detail</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </section>
+
                             <!-- ===== TAB: BERITA ACARA ===== -->
                             <section v-if="activeTab==='ba'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                                 <div class="flex items-center gap-3 border-b border-slate-100 p-4">
@@ -451,67 +502,179 @@
                                         <div class="truncate text-base font-bold text-slate-900">{{ selectedItem.nama }}</div>
                                         <div class="text-[11px] text-slate-400">Blok {{ selectedItem.blok }}<template v-if="selectedItem.tanggal"> · {{ formatTanggal(selectedItem.tanggal) }}</template></div>
                                     </div>
-                                    <span class="chip shrink-0" :class="selectedItem.kind==='ba' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ selectedItem.kind==='ba' ? 'Selesai' : 'Belum dibuat' }}</span>
+                                    <span class="chip shrink-0" :class="selectedItem.kind==='ba' ? 'bg-emerald-50 text-emerald-700' : ((selectedItem.kind==='jadwal' || baJadwal) ? 'bg-brand-50 text-brand-700' : 'bg-amber-50 text-amber-700')">{{ selectedItem.kind==='ba' ? 'Selesai' : ((selectedItem.kind==='jadwal' || baJadwal) ? 'Terjadwal' : 'Belum dijadwalkan') }}</span>
                                 </div>
                                 <div class="flex items-center gap-1 border-b border-slate-100 px-4 py-3 text-[10px] font-bold uppercase tracking-wide">
                                     <span class="text-brand-600">ACC</span>
                                     <i class="bi bi-chevron-right text-slate-300"></i>
-                                    <span class="text-slate-300">Jadwal</span>
+                                    <span :class="(selectedItem.kind==='jadwal' || baJadwal) ? 'text-brand-600' : 'text-slate-300'">Jadwal</span>
                                     <i class="bi bi-chevron-right text-slate-300"></i>
                                     <span :class="selectedItem.kind==='ba' ? 'text-brand-600' : 'text-slate-300'">Berita Acara</span>
                                 </div>
 
+                                <!-- DETAIL: FORM JADWAL -->
+                                <div v-if="jadwal.open" class="space-y-4 p-4">
+                                    <div v-if="jadwalFormGroup" class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm"><i class="bi bi-calendar-plus"></i></div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-sm font-bold text-slate-900">{{ jadwalFormGroup.nama || jadwalFormGroup.label }}</div>
+                                            <div class="text-[11px] text-slate-400">{{ jadwalFormGroup.peserta.length }} peserta belum dijadwalkan</div>
+                                        </div>
+                                    </div>
+
+                                    <template v-if="jadwalFormGroup">
+                                        <div>
+                                            <div class="mb-2 flex items-center justify-between">
+                                                <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
+                                                <button type="button" class="text-xs font-semibold text-brand-600" @click="toggleAllJadwalPeserta">{{ jadwalAllSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                            </div>
+                                            <div class="max-h-56 space-y-2 overflow-y-auto pr-1">
+                                                <label v-for="p in jadwalFormGroup.peserta" :key="p.idPengajuan" class="flex items-center gap-3 rounded-xl border p-3 transition" :class="jadwal.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                    <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!jadwal.selected[p.idPengajuan]" @change="toggleJadwalPeserta(p.idPengajuan)">
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="truncate text-sm font-semibold text-slate-800">{{ p.namaLengkap }}</div>
+                                                        <div class="font-mono text-[11px] text-slate-400">NPM {{ p.npm }}</div>
+                                                    </div>
+                                                    <span class="chip shrink-0" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                                </label>
+                                            </div>
+                                            <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ jadwalSelectedList.length }} peserta</p>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div><label class="label">Tanggal</label><input v-model="jadwal.tanggal" type="date" class="input"></div>
+                                            <div><label class="label">Jam</label><input v-model="jadwal.jam" type="time" class="input"></div>
+                                        </div>
+                                        <div>
+                                            <label class="label">Dosen</label>
+                                            <input v-model="jadwal.dosen" class="input" list="dosen-options" placeholder="Ketik nama dosen..." autocomplete="off">
+                                            <datalist id="dosen-options">
+                                                <option v-for="d in (config.dosen || [])" :key="'jd-'+d" :value="d"></option>
+                                            </datalist>
+                                        </div>
+                                        <div><label class="label">Catatan (Opsional)</label><input v-model="jadwal.catatan" class="input" placeholder="opsional"></div>
+
+                                        <div class="flex gap-3">
+                                            <button class="btn-soft flex-1" @click="closeDetail">Batal</button>
+                                            <button class="btn-primary flex-1" :disabled="loading" @click="saveJadwal"><i class="bi bi-save"></i> {{ jadwal.editingId ? 'Simpan Perubahan' : 'Simpan Jadwal' }}</button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- DETAIL: JADWAL TERSIMPAN -->
+                                <div v-else-if="selectedItem.kind==='jadwal'" class="space-y-4 p-4">
+                                    <div class="flex items-start gap-3 rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-100">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm"><i class="bi bi-calendar-check"></i></div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-sm font-bold text-slate-900">{{ selectedItem.jadwal.JadwalID }}</div>
+                                            <div class="text-[11px] text-slate-500">{{ selectedItem.peserta.length }} peserta · {{ selectedItem.jadwal.punyaBa ? 'BA sudah dibuat' : 'Belum ada BA' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-4">
+                                        <div><div class="label">Tanggal</div><div class="value">{{ formatTanggal(selectedItem.jadwal.Tanggal) }}</div></div>
+                                        <div><div class="label">Jam</div><div class="value">{{ formatJam(selectedItem.jadwal.Jam) || '-' }}</div></div>
+                                        <div class="col-span-2"><div class="label">Dosen</div><div class="value">{{ selectedItem.jadwal.Dosen || '-' }}</div></div>
+                                        <div v-if="selectedItem.jadwal.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value">{{ selectedItem.jadwal.Catatan }}</div></div>
+                                    </div>
+                                    <div>
+                                        <div class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta</div>
+                                        <div class="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+                                            <div v-for="(p, i) in selectedItem.peserta" :key="i" class="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 ring-1 ring-slate-100">
+                                                <div class="min-w-0">
+                                                    <div class="truncate text-xs font-semibold text-slate-800">{{ p.namaLengkap }}</div>
+                                                    <div class="font-mono text-[10px] text-slate-400">NPM {{ p.npm }}</div>
+                                                </div>
+                                                <span class="chip shrink-0" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="selectedItem.jadwal.punyaBa" class="rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] text-amber-800 ring-1 ring-amber-200"><i class="bi bi-lock mr-1"></i> Jadwal terkunci karena berita acara sudah dibuat.</div>
+                                    <div v-if="jadwal.cancelId === selectedItem.key" class="rounded-xl bg-rose-50 p-3 ring-1 ring-rose-200">
+                                        <div class="text-xs font-semibold text-rose-800">Batalkan jadwal pelaksanaan ini?</div>
+                                        <div class="mt-2 flex gap-2">
+                                            <button type="button" class="btn-soft flex-1" @click="jadwal.cancelId=null">Tidak</button>
+                                            <button type="button" class="btn-primary flex-1 !bg-rose-600" :disabled="loading" @click="cancelJadwal(selectedItem.key)">Ya, Batalkan</button>
+                                        </div>
+                                    </div>
+                                    <div v-else class="flex flex-wrap gap-2">
+                                        <button v-if="!selectedItem.jadwal.punyaBa" class="btn-primary flex-1" @click="openBaFromJadwal(selectedItem.key)"><i class="bi bi-file-earmark-plus"></i> Buat BA</button>
+                                        <button v-if="!selectedItem.jadwal.punyaBa" class="btn-soft flex-1" @click="editJadwal(selectedItem.key)"><i class="bi bi-pencil"></i> Edit</button>
+                                        <button v-if="!selectedItem.jadwal.punyaBa" class="btn-soft flex-1 text-rose-600" @click="jadwal.cancelId=selectedItem.key"><i class="bi bi-x-circle"></i> Batalkan</button>
+                                    </div>
+                                </div>
+
                                 <!-- DETAIL: BUAT BA -->
-                                <div v-if="selectedItem.kind==='group'" class="space-y-4 p-4">
+                                <div v-else-if="selectedItem.kind==='group'" class="space-y-4 p-4">
                                     <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
                                         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm"><i class="bi bi-journal-check"></i></div>
                                         <div class="min-w-0 flex-1">
                                             <div class="text-sm font-bold text-slate-900">{{ selectedGroup ? selectedGroup.label : '' }}</div>
-                                            <div class="text-[11px] text-slate-400">{{ selectedGroup ? selectedGroup.peserta.length : 0 }} peserta</div>
+                                            <div class="text-[11px] text-slate-400">{{ baPesertaSource.length }} peserta pada jadwal</div>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <div class="mb-2 flex items-center justify-between">
-                                            <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
-                                            <button class="text-xs font-semibold text-brand-600" @click="toggleAllPeserta">{{ allSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                    <div v-if="!baJadwal" class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+                                        <div class="flex items-start gap-2 text-xs leading-relaxed text-amber-800">
+                                            <i class="bi bi-exclamation-triangle mt-0.5 shrink-0"></i>
+                                            <span>Kegiatan ini belum dijadwalkan. Buat jadwal pelaksanaan terlebih dahulu sebelum mengunggah berita acara.</span>
                                         </div>
-                                        <div class="max-h-56 space-y-2 overflow-y-auto pr-1">
-                                            <label v-for="p in (selectedGroup ? selectedGroup.peserta : [])" :key="p.idPengajuan"
-                                                class="flex items-center gap-3 rounded-xl border p-3 transition"
-                                                :class="ba.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
-                                                <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!ba.selected[p.idPengajuan]" @change="togglePeserta(p.idPengajuan)">
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="truncate text-sm font-semibold text-slate-800">{{ p.namaLengkap }}</div>
-                                                    <div class="font-mono text-[11px] text-slate-400">NPM {{ p.npm }}</div>
-                                                </div>
-                                                <span class="chip shrink-0" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
-                                            </label>
-                                        </div>
-                                        <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ selectedCount }} peserta</p>
+                                        <button type="button" class="btn-soft mt-3 w-full" @click="startJadwalForGroup(selectedGroup ? selectedGroup.key : null)"><i class="bi bi-calendar-plus"></i> Buat Jadwal</button>
                                     </div>
 
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="label">Tanggal Pelaksanaan</label>
-                                            <input v-model="ba.tanggal" type="date" class="input">
+                                    <template v-else>
+                                        <div class="rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-100">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="text-xs font-bold uppercase tracking-wide text-brand-700">Jadwal Pelaksanaan</div>
+                                                <span class="chip bg-white text-brand-700">{{ baJadwal.JadwalID }}</span>
+                                            </div>
+                                            <div class="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                                                <div><i class="bi bi-calendar3 mr-1 text-brand-500"></i>{{ formatTanggal(baJadwal.Tanggal) }}</div>
+                                                <div><i class="bi bi-clock mr-1 text-brand-500"></i>{{ formatJam(baJadwal.Jam) || '-' }}</div>
+                                                <div class="col-span-2"><i class="bi bi-person-badge mr-1 text-brand-500"></i>{{ baJadwal.Dosen || '-' }}</div>
+                                            </div>
+                                            <select v-if="baJadwalOptions.length > 1" v-model="ba.jadwalId" class="input mt-3" @change="onBaJadwalChange">
+                                                <option v-for="j in baJadwalOptions" :key="j.JadwalID" :value="j.JadwalID">{{ j.JadwalID }} · {{ formatTanggal(j.Tanggal) }} {{ formatJam(j.Jam) }}</option>
+                                            </select>
                                         </div>
+
                                         <div>
-                                            <label class="label">File Berita Acara (PDF)</label>
-                                            <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
-                                                <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
-                                                <div class="min-w-0 flex-1 text-xs text-slate-500">
-                                                    <span v-if="ba.fileName" class="font-semibold text-slate-700">{{ ba.fileName }}</span>
-                                                    <span v-else>Pilih file PDF...</span>
+                                            <div class="mb-2 flex items-center justify-between">
+                                                <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
+                                                <button class="text-xs font-semibold text-brand-600" @click="toggleAllPeserta">{{ allSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                            </div>
+                                            <div class="max-h-56 space-y-2 overflow-y-auto pr-1">
+                                                <label v-for="p in baPesertaSource" :key="p.idPengajuan"
+                                                    class="flex items-center gap-3 rounded-xl border p-3 transition"
+                                                    :class="ba.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                    <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!ba.selected[p.idPengajuan]" @change="togglePeserta(p.idPengajuan)">
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="truncate text-sm font-semibold text-slate-800">{{ p.namaLengkap }}</div>
+                                                        <div class="font-mono text-[11px] text-slate-400">NPM {{ p.npm }}</div>
+                                                    </div>
+                                                    <span class="chip shrink-0" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
+                                                </label>
+                                            </div>
+                                            <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ selectedCount }} peserta</p>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="label">File Berita Acara (PDF)</label>
+                                                <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
+                                                    <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
+                                                    <div class="min-w-0 flex-1 text-xs text-slate-500">
+                                                        <span v-if="ba.fileName" class="font-semibold text-slate-700">{{ ba.fileName }}</span>
+                                                        <span v-else>Pilih file PDF...</span>
+                                                    </div>
+                                                    <input id="ba-file-input" type="file" accept=".pdf" class="ml-auto w-24 text-[11px] text-transparent" @change="onBaFile">
                                                 </div>
-                                                <input id="ba-file-input" type="file" accept=".pdf" class="ml-auto w-24 text-[11px] text-transparent" @change="onBaFile">
+                                            </div>
+                                            <div>
+                                                <label class="label">Catatan (Opsional)</label>
+                                                <input v-model="ba.catatan" class="input" placeholder="opsional">
                                             </div>
                                         </div>
-                                        <div>
-                                            <label class="label">Catatan (Opsional)</label>
-                                            <input v-model="ba.catatan" class="input" placeholder="opsional">
-                                        </div>
-                                    </div>
+                                    </template>
 
                                     <div v-if="baDuplicate" class="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-800 ring-1 ring-amber-200">
                                         <i class="bi bi-exclamation-triangle mt-0.5 shrink-0"></i>
@@ -520,7 +683,7 @@
 
                                     <div class="flex gap-3">
                                         <button class="btn-soft flex-1" @click="closeDetail">Batal</button>
-                                        <button class="btn-primary flex-1" :disabled="loading" @click="submitBa">
+                                        <button class="btn-primary flex-1" :disabled="loading || !baJadwal" @click="submitBa">
                                             <svg v-if="loading" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -576,7 +739,7 @@
                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-shield-check"></i></div>
                         <div class="min-w-0 flex-1">
                             <h3 class="text-sm font-bold text-slate-900">Konfirmasi Berita Acara</h3>
-                            <p class="text-xs text-slate-400">Pastikan seluruh peserta berstatus Diterima / ACC</p>
+                            <p class="text-xs text-slate-400">Pastikan seluruh peserta berstatus ACC</p>
                         </div>
                     </div>
                     <div class="mt-3 rounded-2xl bg-slate-50 p-3">
@@ -659,8 +822,11 @@
         function sameKegiatan(blokA, namaA, blokB, namaB) {
             return normKey(blokA) === normKey(blokB) && normKey(namaA) === normKey(namaB);
         }
+        function kegiatanName(g) {
+            return String((g && g.pilihan) || '') + (g && g.detail ? ' - ' + g.detail : '');
+        }
         function baForKegiatan(g, baList) {
-            const nama = String((g && g.pilihan) || '') + (g && g.detail ? ' - ' + g.detail : '');
+            const nama = kegiatanName(g);
             const candidates = (baList || []).filter(function(b) {
                 return sameKegiatan(g && g.blok, nama, b.Blok, b['Nama Kegiatan']);
             });
@@ -671,6 +837,44 @@
             });
             return exact.length ? exact[0] : candidates[0];
         }
+        function baForJadwal(j, baList) {
+            if (!j) return null;
+            const id = String(j.baId || '').trim();
+            if (id) {
+                const found = (baList || []).filter(function(b) { return String(b['BA ID'] || '').trim() === id; })[0];
+                if (found) return found;
+            }
+            return baForKegiatan({ blok: j.Blok, nama: j.NamaKegiatan, tanggal: j.Tanggal }, baList);
+        }
+        function jadwalForKegiatan(ref, jadwalList) {
+            const candidates = (jadwalList || []).filter(function(j) {
+                return sameKegiatan(ref && ref.blok, ref && ref.nama, j.Blok, j.NamaKegiatan);
+            });
+            if (!candidates.length) return null;
+            const tgl = String((ref && ref.tanggal) || '').slice(0, 10);
+            const exact = candidates.filter(function(j) {
+                return String(j.Tanggal || '').slice(0, 10) === tgl;
+            });
+            return exact.length ? exact[0] : candidates[0];
+        }
+        function scheduledIdsFor(g, jadwalList) {
+            const ids = {};
+            (jadwalList || []).forEach(function(j) {
+                if (!sameKegiatan(g && g.blok, kegiatanName(g), j.Blok, j.NamaKegiatan)) return;
+                (j.peserta || []).forEach(function(p) { ids[String(p.idPengajuan)] = true; });
+            });
+            return ids;
+        }
+        function groupFullyScheduled(g, jadwalList) {
+            const peserta = (g && g.peserta) || [];
+            if (!peserta.length) return false;
+            const ids = scheduledIdsFor(g, jadwalList);
+            return peserta.every(function(p) { return !!ids[String(p.idPengajuan)]; });
+        }
+        function unscheduledPeserta(g, jadwalList) {
+            const ids = scheduledIdsFor(g, jadwalList);
+            return ((g && g.peserta) || []).filter(function(p) { return !ids[String(p.idPengajuan)]; });
+        }
 
         const { createApp } = Vue;
 
@@ -680,8 +884,8 @@
                     loading: false,
                     appUrl: APP_URL,
                     userEmail: USER_EMAIL,
-                    config: { labOptions: [] },
-                    baConfig: { statuses: ['Diterima', 'ACC'], finalOnly: true },
+                    config: { labOptions: [], dosen: [] },
+                    baConfig: { statuses: ['ACC'], finalOnly: true },
                     kategori: '',
                     subBagian: '',
                     namaBagian: '',
@@ -700,8 +904,11 @@
                     listOpen: true,
                     filterOpen: false,
                     error: null,
-                    ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false },
+                    ba: { open: false, kegiatanKey: null, jadwalId: '', tanggal: '', jam: '', dosen: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false },
                     baList: [],
+                    jadwalList: [],
+                    jadwalFilter: 'semua',
+                    jadwal: { open: false, editingId: null, cancelId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} },
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
                     pollTimer: null
@@ -710,7 +917,7 @@
             computed: {
                 kegiatanGroups() {
                     const map = {};
-                    const statuses = this.baConfig.statuses || ['Diterima', 'ACC'];
+                    const statuses = this.baConfig.statuses || ['ACC'];
                     const finalOnly = this.baConfig.finalOnly !== false;
                     this.rows.forEach(function(r) {
                         const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
@@ -752,7 +959,7 @@
                 },
                 accGroups() {
                     const map = {};
-                    const statuses = this.baConfig.statuses || ['Diterima', 'ACC'];
+                    const statuses = this.baConfig.statuses || ['ACC'];
                     this.rows.forEach(function(r) {
                         if (statuses.indexOf(r.status) === -1) return;
                         const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
@@ -772,14 +979,139 @@
                 navItems() {
                     return [
                         { id: 'ringkasan', icon: 'bi-grid-1x2', label: 'Ringkasan' },
+                        { id: 'jadwal', icon: 'bi-calendar-plus', label: 'Jadwal' },
                         { id: 'ba', icon: 'bi-file-earmark-text', label: 'Berita Acara' },
                         { id: 'riwayat', icon: 'bi-clock-history', label: 'Riwayat' }
                     ];
                 },
+                jadwalKegiatanGroups() {
+                    return this.kegiatanGroups;
+                },
+                jadwalPendingGroups() {
+                    return this.kegiatanGroups.map(function(g) {
+                        const peserta = unscheduledPeserta(g, this.jadwalList);
+                        return Object.assign({}, g, { peserta: peserta });
+                    }.bind(this)).filter(function(g) { return g.peserta.length > 0; });
+                },
+                jadwalItems() {
+                    const out = (this.jadwalList || []).map(function(j) {
+                        const ba = baForJadwal(j, this.baList);
+                        return {
+                            id: 'j:' + j.JadwalID,
+                            kind: 'jadwal',
+                            key: j.JadwalID,
+                            blok: j.Blok,
+                            nama: j.NamaKegiatan,
+                            tanggal: j.Tanggal,
+                            jadwal: j,
+                            ba: ba,
+                            status: ba ? 'selesai' : 'terjadwal',
+                            peserta: j.peserta || [],
+                            dosen: j.Dosen || ''
+                        };
+                    }.bind(this));
+                    this.kegiatanGroups.forEach(function(g) {
+                        if (groupFullyScheduled(g, this.jadwalList)) return;
+                        const peserta = unscheduledPeserta(g, this.jadwalList);
+                        if (!peserta.length) return;
+                        out.push({
+                            id: 'g:' + g.key,
+                            kind: 'group',
+                            key: g.key,
+                            blok: g.blok,
+                            nama: g.nama,
+                            tanggal: g.tanggal,
+                            jadwal: jadwalForKegiatan({ blok: g.blok, nama: g.nama, tanggal: g.tanggal }, this.jadwalList),
+                            ba: baForKegiatan(g, this.baList),
+                            status: 'acc',
+                            peserta: peserta,
+                            group: g,
+                            dosen: ''
+                        });
+                    }.bind(this));
+                    return out;
+                },
+                visibleJadwalItems() {
+                    let list = this.jadwalItems.slice();
+                    if (this.jadwalFilter === 'belum') list = list.filter(function(i) { return i.kind === 'group'; });
+                    else if (this.jadwalFilter === 'sudah') list = list.filter(function(i) { return i.kind === 'jadwal'; });
+                    const q = String(this.q || '').toLowerCase().trim();
+                    if (q) {
+                        list = list.filter(function(i) {
+                            const peserta = (i.peserta || []).map(function(p) { return (p.namaLengkap || '') + ' ' + (p.npm || ''); }).join(' ');
+                            return (String(i.nama || '') + ' ' + String(i.blok || '') + ' ' + peserta).toLowerCase().indexOf(q) !== -1;
+                        });
+                    }
+                    const groups = list.filter(function(i) { return i.kind === 'group'; });
+                    const jadwals = list.filter(function(i) { return i.kind === 'jadwal'; }).sort(function(a, b) {
+                        return String(a.tanggal || '').localeCompare(String(b.tanggal || ''));
+                    });
+                    return groups.concat(jadwals);
+                },
+                jadwalFormGroup() {
+                    const key = this.jadwal.kegiatanKey;
+                    if (!key) return null;
+                    const source = this.jadwal.editingId ? this.jadwalKegiatanGroups : this.jadwalPendingGroups;
+                    return source.find(function(g) { return g.key === key; })
+                        || this.jadwalKegiatanGroups.find(function(g) { return g.key === key; })
+                        || null;
+                },
+                jadwalSelectedList() {
+                    const g = this.jadwalFormGroup;
+                    if (!g) return [];
+                    return (g.peserta || []).filter(function(p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
+                },
+                jadwalAllSelected() {
+                    const g = this.jadwalFormGroup;
+                    if (!g || !g.peserta.length) return false;
+                    return g.peserta.every(function(p) { return !!this.jadwal.selected[p.idPengajuan]; }.bind(this));
+                },
+                baJadwalOptions() {
+                    if (!this.selectedGroup) return [];
+                    return (this.jadwalList || []).filter(function(j) {
+                        return jadwalForKegiatan(this.selectedGroup, [j]) !== null;
+                    }.bind(this));
+                },
+                baJadwal() {
+                    const id = this.ba.jadwalId;
+                    if (id) {
+                        const j = (this.jadwalList || []).find(function(x) { return String(x.JadwalID) === String(id); }.bind(this));
+                        if (j) return j;
+                    }
+                    return this.selectedGroup ? jadwalForKegiatan(this.selectedGroup, this.jadwalList) : null;
+                },
+                baPesertaSource() {
+                    const j = this.baJadwal;
+                    if (!j) return [];
+                    const byId = {};
+                    const byNpm = {};
+                    (this.rows || []).forEach(function(r) {
+                        if (r.idPengajuan) byId[String(r.idPengajuan)] = r;
+                        if (r.npm) byNpm[String(r.npm)] = r;
+                    });
+                    return (j.peserta || []).map(function(p) {
+                        const r = byId[String(p.idPengajuan)] || byNpm[String(p.npm)];
+                        return r ? {
+                            idPengajuan: r.idPengajuan,
+                            npm: r.npm,
+                            namaLengkap: r.namaLengkap,
+                            blok: r.blok,
+                            statusPengajuan: r.status
+                        } : p;
+                    });
+                },
+                jadwalLewatTanpaBa() {
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    return (this.jadwalList || []).filter(function(j) {
+                        if (j.punyaBa) return false;
+                        const d = new Date(j.Tanggal);
+                        return !isNaN(d.getTime()) && d < today;
+                    });
+                },
                 ringkasanStats() {
                     const rows = this.rows || [];
                     const groups = this.accGroups || [];
-                    const statuses = this.baConfig.statuses || ['Diterima', 'ACC'];
+                    const statuses = this.baConfig.statuses || ['ACC'];
                     let pesertaAcc = 0;
                     let pesertaMenunggu = 0;
                     rows.forEach(function(r) {
@@ -793,6 +1125,8 @@
                         kegiatanAcc: total,
                         belumBa: Math.max(total - done, 0),
                         baSelesai: (this.baList || []).length,
+                        belumDijadwalkan: this.jadwalPendingGroups.length,
+                        jadwalLewatTanpaBa: this.jadwalLewatTanpaBa.length,
                         pesertaAcc: pesertaAcc,
                         pesertaMenunggu: pesertaMenunggu,
                         persenSelesai: total ? Math.round(done / total * 100) : 0
@@ -846,8 +1180,17 @@
                     });
                 },
                 selectedItem() {
+                    if (this.selKind === 'jadwal') {
+                        const j = (this.jadwalList || []).find(function(x) { return String(x.JadwalID) === String(this.selKey); }.bind(this));
+                        if (!j) return null;
+                        return {
+                            kind: 'jadwal', key: j.JadwalID, id: j.JadwalID, jadwal: j,
+                            nama: j.NamaKegiatan || '-', blok: j.Blok, tanggal: j.Tanggal,
+                            peserta: j.peserta || [], ba: baForJadwal(j, this.baList)
+                        };
+                    }
                     if (this.selKind === 'group') {
-                        const g = this.selectedGroup;
+                        const g = this.jadwalFormGroup || this.selectedGroup;
                         if (!g) return null;
                         return { kind: 'group', key: g.key, nama: g.nama, blok: g.blok, tanggal: g.tanggal, peserta: g.peserta };
                     }
@@ -877,8 +1220,7 @@
                     return Object.keys(this.ba.selected).filter(function(k) { return this.ba.selected[k]; }.bind(this)).length;
                 },
                 selectedList() {
-                    if (!this.selectedGroup) return [];
-                    return this.selectedGroup.peserta.filter(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
+                    return (this.baPesertaSource || []).filter(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
                 },
                 baDuplicate() {
                     if (!this.selectedGroup || !this.ba.tanggal) return null;
@@ -895,8 +1237,7 @@
                     return match || null;
                 },
                 allSelected() {
-                    if (!this.selectedGroup) return false;
-                    const list = this.selectedGroup.peserta;
+                    const list = this.baPesertaSource || [];
                     return list.length > 0 && list.every(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
                 },
                 blokOptions() {
@@ -910,7 +1251,7 @@
                 },
                 filteredRows() {
                     const q = String(this.q || '').toLowerCase().trim();
-                    const statuses = this.baConfig.statuses || ['Diterima', 'ACC'];
+                    const statuses = this.baConfig.statuses || ['ACC'];
                     return this.rows.filter(function(r) {
                         if (this.fBlok && String(r.blok || '').trim() !== this.fBlok) return false;
                         if (this.fStatus === 'ACC') {
@@ -944,6 +1285,18 @@
                     if (this.toastTimer) clearTimeout(this.toastTimer);
                     this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3200);
                 },
+                formatJam(v) {
+                    if (v === null || v === undefined || v === '') return '';
+                    if (v instanceof Date && !isNaN(v.getTime())) {
+                        return String(v.getHours()).padStart(2, '0') + ':' + String(v.getMinutes()).padStart(2, '0');
+                    }
+                    const s = String(v).trim();
+                    const iso = s.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/);
+                    if (iso) return String(parseInt(iso[1], 10)).padStart(2, '0') + ':' + iso[2];
+                    const hm = s.match(/^(\d{1,2})[.:](\d{2})$/);
+                    if (hm) return String(parseInt(hm[1], 10)).padStart(2, '0') + ':' + hm[2];
+                    return s;
+                },
                 formatTanggal(v) {
                     if (!v) return '-';
                     const d = new Date(v);
@@ -965,7 +1318,6 @@
                 statusBadge(status) {
                     const cls = {
                         'Menunggu': 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
-                        'Diterima': 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
                         'Ditolak': 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20',
                         'ACC': 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20',
                         'Dibatalkan': 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-500/20'
@@ -1002,6 +1354,7 @@
                             this.namaBagian = cached.nama || '';
                             this.rows = cached.rows || [];
                             this.baList = cached.baList || [];
+                            this.jadwalList = cached.jadwalList || [];
                             this.error = null;
                         }
                         this.loggedIn = true;
@@ -1024,6 +1377,7 @@
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
+                                this.jadwalList = [];
                                 this.error = null;
                             } else {
                                 this.showToast('Gagal memuat data terbaru: ' + msg, 'error');
@@ -1048,6 +1402,7 @@
                     this.namaBagian = res.nama || '';
                     this.rows = res.rows || [];
                     this.baList = res.baList || [];
+                    this.jadwalList = res.jadwalList || [];
                     this.error = null;
                     this.writeCache();
                 },
@@ -1069,6 +1424,7 @@
                             nama: this.namaBagian,
                             rows: this.rows,
                             baList: this.baList,
+                            jadwalList: this.jadwalList,
                             ts: Date.now()
                         }));
                     } catch (e) {}
@@ -1116,6 +1472,13 @@
                         this.baList = [];
                     }
                 },
+                async loadJadwalList() {
+                    try {
+                        this.jadwalList = await this.run('getJadwalList', this.subBagian || this.kategori, this.kategori) || [];
+                    } catch (e) {
+                        this.jadwalList = [];
+                    }
+                },
                 setTab(t, opts) {
                     this.activeTab = t;
                     this.q = '';
@@ -1123,18 +1486,30 @@
                     this.selKey = null;
                     this.mobileDetail = false;
                     this.ba.confirm = false;
+                    this.jadwal.open = false;
+                    this.jadwal.cancelId = null;
+                    if (t === 'jadwal') this.jadwalFilter = (opts && opts.filter) || 'semua';
                     if (opts && opts.blok) this.fBlok = String(opts.blok);
                     else if (t !== 'ringkasan') this.fBlok = '';
                     if (t !== 'ringkasan' && this.listOpen) this.listOpen = false;
                     window.scrollTo(0, 0);
                 },
                 selectItem(kind, key) {
+                    if (kind === 'group' && this.activeTab === 'jadwal') {
+                        this.startJadwalForGroup(key);
+                        return;
+                    }
                     this.selKind = kind;
                     this.selKey = key;
+                    this.jadwal.open = false;
                     if (kind === 'group') {
                         const g = this.kegiatanGroups.find(function(x) { return x.key === key; });
+                        const jw = g ? jadwalForKegiatan(g, this.jadwalList) : null;
                         this.ba.kegiatanKey = g ? key : null;
-                        this.ba.tanggal = g ? this.dateOnly(g.tanggal) : '';
+                        this.ba.jadwalId = jw ? jw.JadwalID : '';
+                        this.ba.tanggal = jw ? this.dateOnly(jw.Tanggal) : (g ? this.dateOnly(g.tanggal) : '');
+                        this.ba.jam = jw ? this.formatJam(jw.Jam) : '';
+                        this.ba.dosen = jw ? (jw.Dosen || '') : '';
                         this.ba.catatan = '';
                         this.ba.file = null;
                         this.ba.fileName = '';
@@ -1149,8 +1524,12 @@
                     this.selKind = null;
                     this.selKey = null;
                     this.ba.kegiatanKey = null;
+                    this.ba.jadwalId = '';
                     this.ba.selected = {};
                     this.ba.confirm = false;
+                    this.jadwal.open = false;
+                    this.jadwal.editingId = null;
+                    this.jadwal.cancelId = null;
                 },
                 startFirstPending() {
                     if (!this.baQueue.length) return;
@@ -1160,11 +1539,193 @@
                     this.ba.selected[idPengajuan] = !this.ba.selected[idPengajuan];
                 },
                 toggleAllPeserta() {
-                    if (!this.selectedGroup) return;
                     const target = !this.allSelected;
-                    this.selectedGroup.peserta.forEach(function(p) {
+                    (this.baPesertaSource || []).forEach(function(p) {
                         this.ba.selected[p.idPengajuan] = target;
                     }.bind(this));
+                },
+                onBaJadwalChange() {
+                    const id = this.ba.jadwalId;
+                    const j = (this.jadwalList || []).find(function(x) { return String(x.JadwalID) === String(id); }.bind(this));
+                    if (!j) return;
+                    this.ba.tanggal = this.dateOnly(j.Tanggal);
+                    this.ba.jam = this.formatJam(j.Jam);
+                    this.ba.dosen = j.Dosen || '';
+                    const selected = {};
+                    (j.peserta || []).forEach(function(p) { selected[p.idPengajuan] = true; });
+                    this.ba.selected = selected;
+                },
+                startFirstPendingJadwal() {
+                    if (!this.jadwalPendingGroups.length) return;
+                    this.startJadwalForGroup(this.jadwalPendingGroups[0].key);
+                },
+                startJadwalForGroup(key) {
+                    if (!key) return;
+                    const g = this.jadwalPendingGroups.find(function(x) { return x.key === key; })
+                        || this.jadwalKegiatanGroups.find(function(x) { return x.key === key; });
+                    if (!g) {
+                        this.showToast('Kegiatan tidak ditemukan atau sudah dijadwalkan.', 'error');
+                        return;
+                    }
+                    const peserta = unscheduledPeserta(g, this.jadwalList);
+                    if (!peserta.length) {
+                        this.showToast('Seluruh peserta kegiatan ini sudah dijadwalkan.', 'info');
+                        return;
+                    }
+                    const selected = {};
+                    peserta.forEach(function(p) { selected[p.idPengajuan] = true; });
+                    this.jadwal = {
+                        open: true,
+                        editingId: null,
+                        cancelId: null,
+                        kegiatanKey: g.key,
+                        tanggal: this.dateOnly(g.tanggal) || new Date().toISOString().slice(0, 10),
+                        jam: '',
+                        dosen: '',
+                        catatan: '',
+                        selected: selected
+                    };
+                    this.activeTab = 'jadwal';
+                    this.selKind = 'group';
+                    this.selKey = g.key;
+                    this.mobileDetail = true;
+                    window.scrollTo(0, 0);
+                },
+                editJadwal(id) {
+                    const j = (this.jadwalList || []).find(function(x) { return String(x.JadwalID) === String(id); }.bind(this));
+                    if (!j) return;
+                    if (j.punyaBa) {
+                        this.showToast('Jadwal terkunci: berita acara sudah dibuat.', 'error');
+                        return;
+                    }
+                    const g = this.jadwalKegiatanGroups.find(function(x) {
+                        return jadwalForKegiatan(x, [j]) !== null;
+                    }.bind(this));
+                    if (!g) {
+                        this.showToast('Kegiatan tidak ditemukan di data ACC saat ini.', 'error');
+                        return;
+                    }
+                    const selected = {};
+                    (j.peserta || []).forEach(function(p) { selected[p.idPengajuan] = true; });
+                    this.jadwal = {
+                        open: true,
+                        editingId: j.JadwalID,
+                        cancelId: null,
+                        kegiatanKey: g.key,
+                        tanggal: this.dateOnly(j.Tanggal),
+                        jam: this.formatJam(j.Jam),
+                        dosen: j.Dosen || '',
+                        catatan: j.Catatan || '',
+                        selected: selected
+                    };
+                    this.activeTab = 'jadwal';
+                    this.selKind = 'group';
+                    this.selKey = g.key;
+                    this.mobileDetail = true;
+                    window.scrollTo(0, 0);
+                },
+                toggleJadwalPeserta(idPengajuan) {
+                    this.jadwal.selected[idPengajuan] = !this.jadwal.selected[idPengajuan];
+                },
+                toggleAllJadwalPeserta() {
+                    const g = this.jadwalFormGroup;
+                    if (!g) return;
+                    const target = !this.jadwalAllSelected;
+                    (g.peserta || []).forEach(function(p) {
+                        this.jadwal.selected[p.idPengajuan] = target;
+                    }.bind(this));
+                },
+                async saveJadwal() {
+                    if (this.loading) return;
+                    const g = this.jadwalFormGroup;
+                    if (!g) {
+                        this.showToast('Kegiatan tidak ditemukan.', 'error');
+                        return;
+                    }
+                    if (!this.jadwalSelectedList.length) {
+                        this.showToast('Pilih minimal satu peserta.', 'error');
+                        return;
+                    }
+                    if (!this.jadwal.tanggal) {
+                        this.showToast('Isi tanggal pelaksanaan terlebih dahulu.', 'error');
+                        return;
+                    }
+                    if (!this.jadwal.jam) {
+                        this.showToast('Isi jam pelaksanaan terlebih dahulu.', 'error');
+                        return;
+                    }
+                    const payload = {
+                        bagian: this.subBagian || this.kategori,
+                        blok: g.blok,
+                        namaKegiatan: kegiatanName(g),
+                        tanggal: this.jadwal.tanggal,
+                        jam: this.jadwal.jam,
+                        dosen: String(this.jadwal.dosen || '').trim(),
+                        catatan: String(this.jadwal.catatan || '').trim(),
+                        peserta: this.jadwalSelectedList
+                    };
+                    this.loading = true;
+                    try {
+                        const editingId = this.jadwal.editingId;
+                        const res = editingId
+                            ? await this.run('updateJadwalPelaksanaan', editingId, payload, this.kategori)
+                            : await this.run('saveJadwalPelaksanaan', payload, this.kategori);
+                        this.showToast(res.message || (res.success ? 'Jadwal disimpan.' : 'Gagal menyimpan jadwal.'), res.success ? 'success' : 'error');
+                        if (res.success) {
+                            await this.loadJadwalList();
+                            this.setTab('jadwal');
+                        }
+                    } catch (e) {
+                        this.showToast('Gagal: ' + ((e && e.message) ? e.message : String(e)), 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async cancelJadwal(id) {
+                    if (!id || this.loading) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('cancelJadwalPelaksanaan', id, this.kategori);
+                        this.showToast(res.message || (res.success ? 'Jadwal dibatalkan.' : 'Gagal membatalkan jadwal.'), res.success ? 'success' : 'error');
+                        if (res.success) {
+                            this.closeDetail();
+                            await this.loadJadwalList();
+                            this.setTab('jadwal');
+                        }
+                    } catch (e) {
+                        this.showToast('Gagal: ' + ((e && e.message) ? e.message : String(e)), 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                openBaFromJadwal(id) {
+                    const j = (this.jadwalList || []).find(function(x) { return String(x.JadwalID) === String(id); }.bind(this));
+                    if (!j) return;
+                    const g = this.kegiatanGroups.find(function(x) { return jadwalForKegiatan(x, [j]) !== null; }.bind(this));
+                    if (!g) {
+                        this.showToast('Kegiatan tidak ditemukan di data ACC saat ini.', 'error');
+                        return;
+                    }
+                    const selected = {};
+                    (j.peserta || []).forEach(function(p) { selected[p.idPengajuan] = true; });
+                    this.ba = {
+                        open: true,
+                        kegiatanKey: g.key,
+                        jadwalId: j.JadwalID,
+                        tanggal: this.dateOnly(j.Tanggal),
+                        jam: this.formatJam(j.Jam),
+                        dosen: j.Dosen || '',
+                        catatan: '',
+                        file: null,
+                        fileName: '',
+                        selected: selected,
+                        confirm: false
+                    };
+                    this.activeTab = 'ba';
+                    this.selKind = 'group';
+                    this.selKey = g.key;
+                    this.mobileDetail = true;
+                    window.scrollTo(0, 0);
                 },
                 onBaFile(e) {
                     this.ba.file = e.target.files && e.target.files.length ? e.target.files[0] : null;
@@ -1181,6 +1742,10 @@
                 async submitBa() {
                     if (!this.selectedGroup) {
                         this.showToast('Pilih kegiatan terlebih dahulu.', 'error');
+                        return;
+                    }
+                    if (!this.baJadwal) {
+                        this.showToast('Buat jadwal pelaksanaan terlebih dahulu.', 'error');
                         return;
                     }
                     if (!this.selectedList.length) {
@@ -1203,8 +1768,11 @@
                     this.loading = true;
                     try {
                         const payload = {
-                            namaKegiatan: this.selectedGroup.pilihan + (this.selectedGroup.detail ? ' - ' + this.selectedGroup.detail : ''),
+                            namaKegiatan: kegiatanName(this.selectedGroup),
                             tanggalPelaksanaan: this.ba.tanggal,
+                            jam: this.ba.jam,
+                            dosen: this.ba.dosen,
+                            jadwalId: this.baJadwal.JadwalID,
                             blok: this.selectedGroup.blok,
                             catatan: this.ba.catatan.trim(),
                             bagian: this.subBagian || this.kategori,
@@ -1218,6 +1786,7 @@
                             const fileEl = document.getElementById('ba-file-input');
                             if (fileEl) fileEl.value = '';
                             await this.loadBaList();
+                            await this.loadJadwalList();
                             this.setTab('riwayat');
                         }
                     } catch (e) {
@@ -1241,6 +1810,7 @@
                     this.namaBagian = '';
                     this.rows = [];
                     this.baList = [];
+                    this.jadwalList = [];
                     this.error = null;
                     this.activeTab = 'ringkasan';
                     this.selKind = null;
@@ -1249,7 +1819,8 @@
                     this.q = '';
                     this.fBlok = '';
                     this.fStatus = '';
-                    this.ba = { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false };
+                    this.ba = { open: false, kegiatanKey: null, jadwalId: '', tanggal: '', jam: '', dosen: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false };
+                    this.jadwal = { open: false, editingId: null, cancelId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} };
                 }
             },
             mounted() {
@@ -1286,7 +1857,7 @@
                     .then(c => {
                         c = c || {};
                         this.config = c;
-                        this.baConfig = c.ba || { statuses: ['Diterima', 'ACC'], finalOnly: true };
+                        this.baConfig = c.ba || { statuses: ['ACC'], finalOnly: true };
                     })
                     .catch(() => { this.config = { labOptions: [] }; });
             }
