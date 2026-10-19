@@ -48,6 +48,15 @@ describe('bagian template parity', () => {
     assert.match(bagianHtml, /function safeUrl|safeUrl\(v\)/);
   });
 
+  it('memakai KPI row 4 kolom dan hanya menampilkan tindakan yang perlu', () => {
+    assert.match(bagianHtml, /class="grid grid-cols-2 gap-3 lg:grid-cols-4"/);
+    assert.match(bagianHtml, /class="grid gap-4 lg:grid-cols-2"/);
+    assert.match(bagianHtml, /tindakanAktif\(\)/);
+    assert.match(bagianHtml, /v-if="ringkasanStats\.belumDijadwalkan > 0"/);
+    assert.match(bagianHtml, /v-if="ringkasanStats\.belumBa > 0"/);
+    assert.match(bagianHtml, /v-if="ringkasanStats\.pesertaMenunggu > 0"/);
+  });
+
   it('menghitung antrean BA dari kegiatan yang belum punya BA', () => {
     assert.match(bagianHtml, /baForKegiatan/);
     assert.match(bagianHtml, /if \(baForKegiatan\(g, this\.baList\)\) return false;/);
