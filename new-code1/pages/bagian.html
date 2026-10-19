@@ -244,61 +244,44 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-4 lg:grid-cols-2">
-                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
-                                <div class="mb-3 flex items-center justify-between">
-                                    <div class="section-title !mb-0"><i class="bi bi-lightning-charge"></i> Perlu Tindakan</div>
-                                    <span v-if="tindakanAktif" class="chip bg-amber-50 text-amber-700">{{ tindakanAktif }}</span>
-                                </div>
-                                <div v-if="tindakanAktif" class="space-y-3">
-                                    <button v-if="ringkasanStats.belumDijadwalkan > 0" type="button" class="flex w-full items-center gap-3 rounded-xl border border-brand-300 bg-brand-50 p-3 text-left" @click="setTab('jadwal', { filter: 'belum' })">
-                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600"><i class="bi bi-calendar-plus"></i></div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="text-sm font-bold text-slate-900">Jadwalkan {{ ringkasanStats.belumDijadwalkan }} kegiatan</div>
-                                            <div class="text-[11px] text-slate-500">Sudah ACC, belum ada jadwal</div>
-                                        </div>
-                                        <i class="bi bi-arrow-right text-brand-600"></i>
-                                    </button>
-                                    <button v-if="ringkasanStats.belumBa > 0" type="button" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-amber-50 p-3 text-left" @click="setTab('ba')">
-                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-amber-600"><i class="bi bi-file-earmark-plus"></i></div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="text-sm font-bold text-slate-900">Buat {{ ringkasanStats.belumBa }} berita acara</div>
-                                            <div class="text-[11px] text-slate-500">Seluruh peserta sudah ACC</div>
-                                        </div>
-                                        <i class="bi bi-arrow-right text-amber-600"></i>
-                                    </button>
-                                    <button v-if="ringkasanStats.pesertaMenunggu > 0" type="button" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left" @click="fStatus='Menunggu'; listOpen=true">
-                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500"><i class="bi bi-hourglass-split"></i></div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="text-sm font-bold text-slate-900">Tinjau {{ ringkasanStats.pesertaMenunggu }} peserta</div>
-                                            <div class="text-[11px] text-slate-500">Menunggu verifikasi admin</div>
-                                        </div>
-                                        <i class="bi bi-arrow-right text-slate-400"></i>
-                                    </button>
-                                </div>
-                                <div v-else class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-[11px] text-slate-500">
-                                    <i class="bi bi-check2-circle mr-1 text-emerald-600"></i> Tidak ada tindakan tertunda.
-                                </div>
+                        <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
+                            <div class="mb-3 flex items-center justify-between">
+                                <div class="section-title !mb-0"><i class="bi bi-lightning-charge"></i> Perlu Tindakan</div>
+                                <span v-if="tindakanAktif" class="chip bg-amber-50 text-amber-700">{{ tindakanAktif }}</span>
                             </div>
-                            <div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-slate-100">
-                                <div class="section-title"><i class="bi bi-grid-3x3-gap"></i> Kelengkapan per Blok</div>
-                                <div v-if="!blokProgress.length" class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">Belum ada data.</div>
-                                <div v-else class="space-y-3">
-                                    <button v-for="b in blokProgress" :key="b.blok" type="button" class="w-full text-left" @click="setTab('ba', { blok: b.blok })">
-                                        <div class="mb-1 flex items-center justify-between gap-2">
-                                            <span class="text-xs font-bold text-slate-700">Blok {{ b.blok }}</span>
-                                            <span class="text-[11px] text-slate-500">{{ b.done }}/{{ b.total }} · {{ b.persen }}%</span>
-                                        </div>
-                                        <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-                                            <div class="h-full rounded-full bg-brand-600" :style="{ width: b.persen + '%' }"></div>
-                                        </div>
-                                    </button>
-                                </div>
+                            <div v-if="tindakanAktif" class="space-y-3">
+                                <button v-if="ringkasanStats.belumDijadwalkan > 0" type="button" class="flex w-full items-center gap-3 rounded-xl border border-brand-300 bg-brand-50 p-3 text-left" @click="setTab('jadwal', { filter: 'belum' })">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600"><i class="bi bi-calendar-plus"></i></div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-sm font-bold text-slate-900">Jadwalkan {{ ringkasanStats.belumDijadwalkan }} kegiatan</div>
+                                        <div class="text-[11px] text-slate-500">Sudah ACC, belum ada jadwal</div>
+                                    </div>
+                                    <i class="bi bi-arrow-right text-brand-600"></i>
+                                </button>
+                                <button v-if="ringkasanStats.belumBa > 0" type="button" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-amber-50 p-3 text-left" @click="setTab('ba')">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-amber-600"><i class="bi bi-file-earmark-plus"></i></div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-sm font-bold text-slate-900">Buat {{ ringkasanStats.belumBa }} berita acara</div>
+                                        <div class="text-[11px] text-slate-500">Seluruh peserta sudah ACC</div>
+                                    </div>
+                                    <i class="bi bi-arrow-right text-amber-600"></i>
+                                </button>
+                                <button v-if="ringkasanStats.pesertaMenunggu > 0" type="button" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left" @click="fStatus='Menunggu'; listOpen=true">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500"><i class="bi bi-hourglass-split"></i></div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-sm font-bold text-slate-900">Tinjau {{ ringkasanStats.pesertaMenunggu }} peserta</div>
+                                        <div class="text-[11px] text-slate-500">Menunggu verifikasi admin</div>
+                                    </div>
+                                    <i class="bi bi-arrow-right text-slate-400"></i>
+                                </button>
+                            </div>
+                            <div v-else class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-[11px] text-slate-500">
+                                <i class="bi bi-check2-circle mr-1 text-emerald-600"></i> Tidak ada tindakan tertunda.
                             </div>
                         </div>
 
                         <!-- ===== DAFTAR PESERTA ===== -->
-                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <div class="rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
                             <div class="flex items-center gap-3 border-b border-slate-100 p-5">
                                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-list-ul"></i></div>
                                 <div class="min-w-0 flex-1 cursor-pointer select-none" @click="listOpen = !listOpen">
@@ -313,18 +296,28 @@
                                 <div v-if="listOpen">
                                     <div class="border-b border-slate-100 p-3">
                                         <input v-model="q" type="search" class="input" placeholder="Cari nama, NPM, kegiatan...">
-                                        <div class="mt-2 flex flex-wrap gap-2">
-                                            <button type="button" class="chip" :class="fStatus==='' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fStatus=''">Semua</button>
-                                            <button type="button" class="chip" :class="fStatus==='Menunggu' ? 'bg-amber-500 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fStatus='Menunggu'">Menunggu</button>
-                                            <button type="button" class="chip" :class="fStatus==='ACC' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fStatus='ACC'">ACC</button>
-                                            <button type="button" class="chip" :class="fStatus==='Ditolak' ? 'bg-rose-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fStatus='Ditolak'">Ditolak</button>
-                                            <template v-if="fBlok">
-                                                <button type="button" class="chip bg-brand-50 text-brand-700" @click="fBlok=''">Blok {{ fBlok }} ×</button>
-                                            </template>
+                                        <div class="mt-2 grid grid-cols-2 gap-2">
+                                            <button type="button" class="input relative z-40 flex cursor-pointer items-center justify-between gap-2 text-left" :class="fStatus ? 'text-slate-900' : 'text-slate-400'" aria-haspopup="listbox" :aria-expanded="filterOpen==='status'" @click="toggleFilter('status')">
+                                                <span class="truncate">{{ statusFilterLabel }}</span>
+                                                <i class="bi bi-chevron-down shrink-0 text-[11px] text-slate-400"></i>
+                                            </button>
+                                            <button type="button" class="input relative z-40 flex cursor-pointer items-center justify-between gap-2 text-left" :class="fBlok ? 'text-slate-900' : 'text-slate-400'" aria-haspopup="listbox" :aria-expanded="filterOpen==='blok'" @click="toggleFilter('blok')">
+                                                <span class="truncate">{{ blokFilterLabel }}</span>
+                                                <i class="bi bi-chevron-down shrink-0 text-[11px] text-slate-400"></i>
+                                            </button>
                                         </div>
-                                        <div v-if="blokOptions.length > 1" class="mt-2 flex flex-wrap gap-2">
-                                            <button type="button" class="chip" :class="fBlok==='' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fBlok=''">Semua Blok</button>
-                                            <button v-for="b in blokOptions" :key="b" type="button" class="chip" :class="fBlok===b ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="fBlok=b">Blok {{ b }}</button>
+                                        <div v-if="filterOpen" class="relative">
+                                            <div class="fixed inset-0 z-30" @click="filterOpen=''"></div>
+                                            <div class="absolute left-0 z-40 mt-2 w-full rounded-xl bg-white p-2 shadow-lift ring-1 ring-slate-200">
+                                                <input ref="filterSearch" v-model="filterSearch" type="search" class="input !py-2 text-xs" :placeholder="filterOpen==='status' ? 'Cari status...' : 'Cari blok...'" @keydown.esc="filterOpen=''">
+                                                <div class="mt-1 max-h-56 overflow-y-auto">
+                                                    <button v-for="opt in filteredFilterOptions" :key="opt.value" type="button" class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100" :class="(filterOpen==='status' ? fStatus : fBlok) === opt.value ? 'bg-brand-50 text-brand-700' : ''" @click="chooseFilter(opt.value)">
+                                                        <span class="truncate">{{ opt.label }}</span>
+                                                        <i v-if="(filterOpen==='status' ? fStatus : fBlok) === opt.value" class="bi bi-check2 text-brand-600"></i>
+                                                    </button>
+                                                    <div v-if="!filteredFilterOptions.length" class="px-3 py-4 text-center text-[11px] text-slate-400">Tidak ada pilihan.</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div v-if="error" class="p-6 text-center text-sm text-rose-500">{{ error }}</div>
@@ -937,7 +930,8 @@
                     selKey: null,
                     mobileDetail: false,
                     listOpen: true,
-                    filterOpen: false,
+                    filterOpen: '',
+                    filterSearch: '',
                     error: null,
                     ba: { open: false, kegiatanKey: null, jadwalId: '', tanggal: '', jam: '', dosen: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false },
                     baList: [],
@@ -1171,20 +1165,6 @@
                     const s = this.ringkasanStats;
                     return (s.belumDijadwalkan > 0 ? 1 : 0) + (s.belumBa > 0 ? 1 : 0) + (s.pesertaMenunggu > 0 ? 1 : 0);
                 },
-                blokProgress() {
-                    const map = {};
-                    this.accGroups.forEach(function(g) {
-                        const blok = String(g.blok || '').trim() || '-';
-                        if (!map[blok]) map[blok] = { blok: blok, total: 0, done: 0 };
-                        map[blok].total += 1;
-                        if (baForKegiatan(g, this.baList)) map[blok].done += 1;
-                    }.bind(this));
-                    return Object.keys(map).sort().map(function(k) {
-                        const b = map[k];
-                        b.persen = b.total ? Math.round(b.done / b.total * 100) : 0;
-                        return b;
-                    });
-                },
                 baQueue() {
                     const q = String(this.q || '').toLowerCase().trim();
                     const fBlok = String(this.fBlok || '').trim();
@@ -1287,6 +1267,36 @@
                         if (b && !seen[b]) { seen[b] = true; out.push(b); }
                     });
                     return out.sort();
+                },
+                statusFilterOptions() {
+                    return [
+                        { value: '', label: 'Semua status' },
+                        { value: 'Menunggu', label: 'Menunggu' },
+                        { value: 'ACC', label: 'ACC' },
+                        { value: 'Ditolak', label: 'Ditolak' }
+                    ];
+                },
+                blokFilterOptions() {
+                    return [{ value: '', label: 'Semua blok' }].concat(this.blokOptions.map(function(b) {
+                        return { value: b, label: 'Blok ' + b };
+                    }));
+                },
+                activeFilterOptions() {
+                    return this.filterOpen === 'blok' ? this.blokFilterOptions : this.statusFilterOptions;
+                },
+                filteredFilterOptions() {
+                    const q = String(this.filterSearch || '').toLowerCase().trim();
+                    if (!q) return this.activeFilterOptions;
+                    return this.activeFilterOptions.filter(function(o) {
+                        return o.label.toLowerCase().indexOf(q) !== -1;
+                    });
+                },
+                statusFilterLabel() {
+                    const found = this.statusFilterOptions.filter(function(o) { return o.value === this.fStatus; }.bind(this))[0];
+                    return found ? found.label : 'Semua status';
+                },
+                blokFilterLabel() {
+                    return this.fBlok ? ('Blok ' + this.fBlok) : 'Semua blok';
                 },
                 filteredRows() {
                     const q = String(this.q || '').toLowerCase().trim();
@@ -1527,11 +1537,28 @@
                     this.ba.confirm = false;
                     this.jadwal.open = false;
                     this.jadwal.cancelId = null;
+                    this.filterOpen = '';
+                    this.filterSearch = '';
                     if (t === 'jadwal') this.jadwalFilter = (opts && opts.filter) || 'semua';
                     if (opts && opts.blok) this.fBlok = String(opts.blok);
                     else if (t !== 'ringkasan') this.fBlok = '';
                     if (t !== 'ringkasan' && this.listOpen) this.listOpen = false;
                     window.scrollTo(0, 0);
+                },
+                toggleFilter(name) {
+                    this.filterOpen = this.filterOpen === name ? '' : name;
+                    this.filterSearch = '';
+                    if (!this.filterOpen) return;
+                    this.$nextTick(() => {
+                        const el = this.$refs.filterSearch;
+                        if (el) el.focus();
+                    });
+                },
+                chooseFilter(value) {
+                    if (this.filterOpen === 'status') this.fStatus = value;
+                    else if (this.filterOpen === 'blok') this.fBlok = value;
+                    this.filterOpen = '';
+                    this.filterSearch = '';
                 },
                 selectItem(kind, key) {
                     if (kind === 'group' && this.activeTab === 'jadwal') {

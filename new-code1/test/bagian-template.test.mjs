@@ -50,8 +50,13 @@ describe('bagian template parity', () => {
 
   it('memakai KPI row 4 kolom dan hanya menampilkan tindakan yang perlu', () => {
     assert.match(bagianHtml, /class="grid grid-cols-2 gap-3 lg:grid-cols-4"/);
-    assert.match(bagianHtml, /class="grid gap-4 lg:grid-cols-2"/);
     assert.match(bagianHtml, /tindakanAktif\(\)/);
+    assert.match(bagianHtml, /class="mt-2 grid grid-cols-2 gap-2"/);
+    assert.match(bagianHtml, /toggleFilter\('status'\)/);
+    assert.match(bagianHtml, /toggleFilter\('blok'\)/);
+    assert.match(bagianHtml, /filteredFilterOptions/);
+    assert.doesNotMatch(bagianHtml, /Kelengkapan per Blok/);
+    assert.doesNotMatch(bagianHtml, /blokProgress/);
     assert.match(bagianHtml, /v-if="ringkasanStats\.belumDijadwalkan > 0"/);
     assert.match(bagianHtml, /v-if="ringkasanStats\.belumBa > 0"/);
     assert.match(bagianHtml, /v-if="ringkasanStats\.pesertaMenunggu > 0"/);
