@@ -1,3 +1,26 @@
+<style>
+    .bukti-preview { position: fixed; z-index: 150; width: 880px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
+    .bukti-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
+    .bukti-preview.is-above::before { top: auto; bottom: -12px; }
+    .bukti-preview.is-left::before { top: 0; bottom: 0; left: auto; right: -12px; width: 12px; height: auto; }
+    .bukti-preview.is-right::before { top: 0; bottom: 0; left: -12px; right: auto; width: 12px; height: auto; }
+    .bukti-preview img { display: block; width: 100%; max-height: 84vh; object-fit: contain; border-radius: 8px; background: #f8fafc; }
+    .bukti-preview-state { display: flex; align-items: center; justify-content: center; min-height: 360px; padding: 12px; text-align: center; font-size: 11px; color: #94a3b8; }
+    .bukti-preview-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 10.5px; color: #94a3b8; }
+    @media (max-width:1023px){ .bukti-preview { display: none !important; } }
+    .ba-ic { position: relative; display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 8px; text-decoration: none; transition: background .15s ease, color .15s ease; }
+    .ba-ic .bi { font-size: .95rem; }
+    .ba-ic.is-p { color: #4338ca; background: #eef2ff; }
+    .ba-ic.is-p:hover { background: #e0e7ff; color: #3730a3; }
+    .ba-ic.is-l { color: #0f766e; background: #ecfdf5; }
+    .ba-ic.is-l:hover { background: #d1fae5; color: #115e59; }
+    .ba-ic.is-empty { color: #cbd5e1; background: #f8fafc; cursor: default; }
+    .ba-count { position: absolute; top: -5px; right: -5px; display: flex; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 9999px; background: #1f2937; color: #fff; font-size: 9.5px; font-weight: 700; }
+    .ba-menu { position: fixed; z-index: 145; width: 280px; max-width: calc(100vw - 24px); max-height: 340px; overflow: auto; padding: 6px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); }
+    .ba-menu-head { display: flex; align-items: center; gap: 6px; padding: 4px 6px 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #64748b; }
+    .ba-menu-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px; font-size: 11.5px; color: #334155; text-decoration: none; }
+    .ba-menu-item:hover { background: #f1f5f9; text-decoration: none; }
+</style>
 <script>
     (function (root) {
         'use strict';
@@ -75,13 +98,209 @@
             return /^https?:\/\//i.test(s) ? s : '#';
         }
 
+        const BUKTI_PREVIEW = { delay: 200, closeDelay: 150, maxWidth: 880, minWidth: 360 };
+
+        function driveFileId(v) {
+            const s = String(v || '');
+            let m = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+            if (m) return m[1];
+            m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+            if (m) return m[1];
+            m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+            if (m) return m[1];
+            return '';
+        }
+
+        function driveThumbUrl(v, size) {
+            const id = driveFileId(v);
+            if (!id) return '';
+            return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (Number(size) || 1600);
+        }
+
+        function emptyBuktiPreview() {
+            return { open: false, src: '', label: '', top: 0, left: 0, width: BUKTI_PREVIEW.maxWidth, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
+        }
+
+        const buktiPreviewMixin = {
+            data() {
+                return {
+                    buktiPreview: emptyBuktiPreview(),
+                    buktiPreviewTimer: null,
+                    buktiPreviewCloseTimer: null
+                };
+            },
+            mounted() {
+                if (typeof window === 'undefined') return;
+                window.addEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
+                window.addEventListener('resize', this.handleBuktiPreviewViewportChange);
+            },
+            beforeUnmount() { this.teardownBuktiPreview(); },
+            unmounted() { this.teardownBuktiPreview(); },
+            methods: {
+                buktiPreviewEnabled(event) {
+                    if (!event || event.pointerType !== 'mouse') return false;
+                    if (typeof window === 'undefined' || !window.matchMedia) return true;
+                    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+                },
+                onBuktiEnter(event, url, label) {
+                    if (!this.buktiPreviewEnabled(event)) return;
+                    const src = driveThumbUrl(url, 1600);
+                    if (!src) return;
+                    if (this.buktiPreview.hoverCard) return;
+                    this.cancelBuktiPreviewClose();
+                    if (this.buktiPreviewTimer) clearTimeout(this.buktiPreviewTimer);
+                    const anchor = event.currentTarget;
+                    this.buktiPreviewTimer = setTimeout(() => {
+                        this.buktiPreviewTimer = null;
+                        if (!anchor || !anchor.isConnected) return;
+                        const rect = anchor.getBoundingClientRect();
+                        this.buktiPreview.rectTop = rect.top;
+                        this.buktiPreview.rectBottom = rect.bottom;
+                        this.buktiPreview.rectLeft = rect.left;
+                        this.buktiPreview.rectWidth = rect.width;
+                        this.buktiPreview.src = src;
+                        this.buktiPreview.label = String(label || '').trim();
+                        this.buktiPreview.loading = true;
+                        this.buktiPreview.error = false;
+                        this.buktiPreview.ready = false;
+                        this.buktiPreview.open = true;
+                        this.$nextTick(() => this.positionBuktiPreview());
+                    }, BUKTI_PREVIEW.delay);
+                },
+                onBuktiLeave() {
+                    if (this.buktiPreviewTimer) {
+                        clearTimeout(this.buktiPreviewTimer);
+                        this.buktiPreviewTimer = null;
+                    }
+                    if (this.buktiPreview.hoverCard) return;
+                    this.scheduleBuktiPreviewClose();
+                },
+                onBuktiCardEnter() {
+                    this.cancelBuktiPreviewClose();
+                    this.buktiPreview.hoverCard = true;
+                },
+                onBuktiCardLeave() {
+                    this.buktiPreview.hoverCard = false;
+                    this.scheduleBuktiPreviewClose();
+                },
+                scheduleBuktiPreviewClose() {
+                    if (!this.buktiPreview.open) return;
+                    this.cancelBuktiPreviewClose();
+                    this.buktiPreviewCloseTimer = setTimeout(() => {
+                        this.buktiPreviewCloseTimer = null;
+                        this.closeBuktiPreview();
+                    }, BUKTI_PREVIEW.closeDelay);
+                },
+                cancelBuktiPreviewClose() {
+                    if (this.buktiPreviewCloseTimer) {
+                        clearTimeout(this.buktiPreviewCloseTimer);
+                        this.buktiPreviewCloseTimer = null;
+                    }
+                },
+                positionBuktiPreview() {
+                    const card = this.$refs.buktiPreview;
+                    const rectWidth = this.buktiPreview.rectWidth;
+                    if (!card || !this.buktiPreview.open || !rectWidth) return;
+                    const margin = 12;
+                    const gap = 12;
+                    const viewportW = window.innerWidth;
+                    const viewportH = window.innerHeight;
+                    const height = card.offsetHeight || 360;
+                    const rightEdge = this.buktiPreview.rectLeft + rectWidth;
+                    const leftSpace = this.buktiPreview.rectLeft - gap - margin;
+                    const rightSpace = viewportW - rightEdge - gap - margin;
+                    let placement;
+                    let width;
+                    let left;
+                    if (leftSpace >= BUKTI_PREVIEW.minWidth) {
+                        placement = 'left';
+                        width = Math.min(BUKTI_PREVIEW.maxWidth, leftSpace);
+                        left = this.buktiPreview.rectLeft - gap - width;
+                    } else if (rightSpace >= BUKTI_PREVIEW.minWidth) {
+                        placement = 'right';
+                        width = Math.min(BUKTI_PREVIEW.maxWidth, rightSpace);
+                        left = rightEdge + gap;
+                    } else {
+                        placement = 'below';
+                        width = Math.min(BUKTI_PREVIEW.maxWidth, viewportW - margin * 2);
+                        left = this.buktiPreview.rectLeft + (rectWidth / 2) - (width / 2);
+                        if (left + width > viewportW - margin) left = viewportW - width - margin;
+                        if (left < margin) left = margin;
+                    }
+                    let top = placement === 'below' ? this.buktiPreview.rectBottom + gap : this.buktiPreview.rectTop;
+                    if (placement === 'below' && top + height > viewportH - margin) {
+                        const above = this.buktiPreview.rectTop - height - gap;
+                        if (above >= margin) {
+                            top = above;
+                            placement = 'above';
+                        } else {
+                            top = Math.max(margin, viewportH - height - margin);
+                        }
+                    } else {
+                        if (top + height > viewportH - margin) top = viewportH - height - margin;
+                        if (top < margin) top = margin;
+                    }
+                    this.buktiPreview.width = Math.round(width);
+                    this.buktiPreview.left = Math.round(left);
+                    this.buktiPreview.top = Math.round(top);
+                    this.buktiPreview.placement = placement;
+                    this.buktiPreview.ready = true;
+                },
+                onBuktiImageLoad() {
+                    this.buktiPreview.loading = false;
+                    this.buktiPreview.error = false;
+                    this.$nextTick(() => this.positionBuktiPreview());
+                },
+                onBuktiImageError() {
+                    this.buktiPreview.loading = false;
+                    this.buktiPreview.error = true;
+                    this.$nextTick(() => this.positionBuktiPreview());
+                },
+                closeBuktiPreview() {
+                    if (this.buktiPreviewTimer) {
+                        clearTimeout(this.buktiPreviewTimer);
+                        this.buktiPreviewTimer = null;
+                    }
+                    if (this.buktiPreviewCloseTimer) {
+                        clearTimeout(this.buktiPreviewCloseTimer);
+                        this.buktiPreviewCloseTimer = null;
+                    }
+                    this.buktiPreview = emptyBuktiPreview();
+                },
+                handleBuktiPreviewViewportChange(event) {
+                    const card = this.$refs.buktiPreview;
+                    const target = event && event.target;
+                    if (card && target && typeof target.nodeType === 'number' && card.contains(target)) return;
+                    this.closeBuktiPreview();
+                },
+                teardownBuktiPreview() {
+                    if (this.buktiPreviewTimer) {
+                        clearTimeout(this.buktiPreviewTimer);
+                        this.buktiPreviewTimer = null;
+                    }
+                    if (this.buktiPreviewCloseTimer) {
+                        clearTimeout(this.buktiPreviewCloseTimer);
+                        this.buktiPreviewCloseTimer = null;
+                    }
+                    if (typeof window !== 'undefined') {
+                        window.removeEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
+                        window.removeEventListener('resize', this.handleBuktiPreviewViewportChange);
+                    }
+                }
+            }
+        };
+
         root.AppCommon = {
             normBagian: normBagian,
             resolveBagianLabel: resolveBagianLabel,
             formatTanggal: formatTanggal,
             formatTanggalWaktu: formatTanggalWaktu,
             formatRupiah: formatRupiah,
-            safeUrl: safeUrl
+            safeUrl: safeUrl,
+            driveFileId: driveFileId,
+            driveThumbUrl: driveThumbUrl,
+            buktiPreview: BUKTI_PREVIEW,
+            buktiPreviewMixin: buktiPreviewMixin
         };
     })(typeof window !== 'undefined' ? window : this);
 </script>

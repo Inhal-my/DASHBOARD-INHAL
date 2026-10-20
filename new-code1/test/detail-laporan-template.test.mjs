@@ -95,3 +95,37 @@ describe('detail laporan mode halaman', () => {
     assert.match(html, /@media print/);
   });
 });
+
+describe('detail laporan preview dan kolom BA', () => {
+  const html = readFileSync(new URL('../pages/detail-laporan.html', import.meta.url), 'utf8');
+  it('memakai partial preview bersama', () => {
+    assert.match(html, /<\?!= include\('pages\/_app-common'\) \?>/);
+    assert.match(html, /mixins: \[AppCommon\.buktiPreviewMixin\]/);
+    assert.match(html, /ref="buktiPreview"/);
+    assert.match(html, /class="bukti-preview"/);
+  });
+  it('kolom Berita Acara di tab pembayaran', () => {
+    assert.match(html, /<th class="whitespace-nowrap px-3 py-2\.5 text-center">Berita Acara<\/th>/);
+    assert.match(html, /class="ba-ic is-p"/);
+    assert.match(html, /class="ba-ic is-l"/);
+    assert.match(html, /m\.baPendukung/);
+    assert.match(html, /m\.baPelaksanaan/);
+    assert.match(html, /colspan="9"/);
+  });
+  it('popover daftar BA untuk lebih dari satu berkas', () => {
+    assert.match(html, /baMenu: \{ open: false/);
+    assert.match(html, /onBaEnter\(event, type, items\)/);
+    assert.match(html, /openBaMenu\(anchor, type, items\)/);
+    assert.match(html, /class="ba-menu"/);
+  });
+  it('preview pada bukti bayar dan berita acara', () => {
+    assert.match(html, /onBuktiEnter\(\$event, bayarBuktiUrl\(m\), 'Bukti Bayar'\)/);
+    assert.match(html, /onBuktiEnter\(\$event, b\['File URL'\], 'BA ' \+ \(b\.Label \|\| 'Kegiatan'\)\)/);
+  });
+  it('export menambah kolom BA', () => {
+    assert.match(html, /'BA Pendukung': m\.baPendukung\.map\(b => b\.baId\)\.join\(', '\)/);
+    assert.match(html, /'BA Pelaksanaan': m\.baPelaksanaan\.map\(b => b\.baId\)\.join\(', '\)/);
+    assert.match(html, /'Link BA Pendukung'/);
+    assert.match(html, /'Link BA Pelaksanaan'/);
+  });
+});

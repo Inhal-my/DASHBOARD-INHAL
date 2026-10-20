@@ -957,7 +957,7 @@
                                                     <template v-if="r.__orphan"><span class="text-xs text-slate-400">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in unitPendukungBa(r)" :key="'p'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in unitPendukungBa(r)" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]" @pointerenter="onBuktiEnter($event, b.fileUrl, 'BA Pendukung')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3"><span v-if="!r.__orphan" class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(unitKeputusan(r))">{{ unitKeputusan(r) }}</span><span v-else class="text-xs text-slate-400">-</span></td>
@@ -966,7 +966,7 @@
                                                     <template v-else-if="!unitPelaksanaanEligible(r)"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPelaksanaan(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPelaksanaan(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'l'+bi"><a v-if="b.fileUrl" :href="b.fileUrl" target="_blank" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]" @pointerenter="onBuktiEnter($event, b.fileUrl, 'BA Pelaksanaan')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()">{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3">
@@ -1267,7 +1267,7 @@
                                     <div v-else class="divide-y divide-slate-50">
                                         <div v-for="(r, i) in bab.baList" :key="i" class="p-4">
                                             <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                                                <a v-if="r['File URL']" :href="r['File URL']" target="_blank" class="link font-mono">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
+                                                <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" rel="noopener noreferrer" class="link font-mono" @pointerenter="onBuktiEnter($event, r['File URL'], 'BA Pelaksanaan')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
                                                 <span>·</span>
                                                 <span>{{ formatTanggal(r.Timestamp) }}</span>
                                                 <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(r['BA ID'], 'Bagian')"><i class="bi bi-trash text-xs"></i></button>
@@ -1627,7 +1627,7 @@
                                 <div v-if="detail.baList && detail.baList.length" class="ba-align-card rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
                                     <div class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"><i class="bi bi-file-earmark-pdf text-base text-rose-600"></i> Berita Acara</div>
                                     <div class="flex flex-wrap gap-2">
-                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="b['File URL']" target="_blank" class="btn-primary"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
+                                        <a v-for="b in detail.baList" :key="b['BA ID']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="btn-primary" @pointerenter="onBuktiEnter($event, b['File URL'], 'BA Pendukung')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b['Nama Kegiatan'] || 'Berita Acara' }}</a>
                                     </div>
                                 </div>
                             </div>
@@ -1901,9 +1901,23 @@
                 <button type="button" class="sheet-item danger" @click="logout()"><i class="bi bi-box-arrow-right"></i> Keluar</button>
             </div>
         </transition>
+        <teleport to="body">
+            <div v-if="buktiPreview.open" ref="buktiPreview" class="bukti-preview" :class="{ 'is-above': buktiPreview.placement === 'above', 'is-left': buktiPreview.placement === 'left', 'is-right': buktiPreview.placement === 'right' }" :style="{ top: buktiPreview.top + 'px', left: buktiPreview.left + 'px', width: buktiPreview.width + 'px', visibility: buktiPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau berita acara" @pointerenter="onBuktiCardEnter" @pointerleave="onBuktiCardLeave">
+                <div class="relative">
+                    <img v-show="!buktiPreview.loading && !buktiPreview.error" :src="buktiPreview.src" :alt="buktiPreview.label ? 'Pratinjau ' + buktiPreview.label : 'Pratinjau berita acara'" @load="onBuktiImageLoad" @error="onBuktiImageError">
+                    <div v-if="buktiPreview.loading" class="bukti-preview-state"><i class="bi bi-hourglass-split mr-1"></i> Memuat pratinjau...</div>
+                    <div v-else-if="buktiPreview.error" class="bukti-preview-state">Pratinjau tidak tersedia.<br>Klik untuk membuka file.</div>
+                </div>
+                <div class="bukti-preview-foot">
+                    <span>{{ buktiPreview.label ? 'Pratinjau ' + buktiPreview.label : 'Pratinjau berita acara' }}</span>
+                    <span>Klik untuk membuka</span>
+                </div>
+            </div>
+        </teleport>
     </div>
     </div>
 
+    <?!= include('pages/_app-common') ?>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script>
@@ -2041,6 +2055,7 @@
         const { createApp } = Vue;
 
         createApp({
+            mixins: [AppCommon.buktiPreviewMixin],
             data() {
                 return {
                     loading: false,
@@ -2387,6 +2402,7 @@
                 }
             },
             watch: {
+                tab() { this.closeBuktiPreview(); },
                 anyModalOpen(open) {
                     document.body.style.overflow = open ? 'hidden' : '';
                 },
@@ -2826,6 +2842,9 @@
                     if (!keys.length) return [];
                     const max = Math.max.apply(null, keys.map(k => o[k]));
                     return keys.map(k => ({ label: k, value: o[k], pct: max ? Math.round(o[k] / max * 100) : 0 }));
+                },
+                safeUrl(v) {
+                    return AppCommon.safeUrl(v);
                 },
                 switchTab(tab) {
                     if (TAB_KEYS.indexOf(tab) === -1) tab = 'pengajuan';

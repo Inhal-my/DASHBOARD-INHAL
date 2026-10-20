@@ -212,3 +212,23 @@ describe('dashboard drawer detail CF', () => {
     assert.match(html, /detail\.step===1/);
   });
 });
+
+describe('dashboard preview BA', () => {
+  const html = readFileSync(new URL('../pages/dashboard.html', import.meta.url), 'utf8');
+  it('memakai partial preview bersama', () => {
+    assert.match(html, /<\?!= include\('pages\/_app-common'\) \?>/);
+    assert.match(html, /mixins: \[AppCommon\.buktiPreviewMixin\]/);
+    assert.match(html, /ref="buktiPreview"/);
+  });
+  it('hover BA ID menampilkan pratinjau', () => {
+    assert.match(html, /onBuktiEnter\(\$event, b\.fileUrl, 'BA Pendukung'\)/);
+    assert.match(html, /onBuktiEnter\(\$event, b\.fileUrl, 'BA Pelaksanaan'\)/);
+    assert.match(html, /onBuktiEnter\(\$event, r\['File URL'\], 'BA Pelaksanaan'\)/);
+  });
+  it('tombol BA di modal detail punya pratinjau', () => {
+    assert.match(html, /onBuktiEnter\(\$event, b\['File URL'\], 'BA Pendukung'\)/);
+  });
+  it('preview ditutup saat pindah tab', () => {
+    assert.match(html, /tab\(\) \{ this\.closeBuktiPreview\(\); \}/);
+  });
+});

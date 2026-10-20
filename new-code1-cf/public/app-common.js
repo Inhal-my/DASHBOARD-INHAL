@@ -245,7 +245,8 @@
       },
       handleBuktiPreviewViewportChange(event) {
         const card = this.$refs.buktiPreview;
-        if (card && event && event.target && card.contains(event.target)) return;
+        const target = event && event.target;
+        if (card && target && typeof target.nodeType === 'number' && card.contains(target)) return;
         this.closeBuktiPreview();
       },
       teardownBuktiPreview() {

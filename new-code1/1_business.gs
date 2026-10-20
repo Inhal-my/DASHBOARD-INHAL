@@ -1638,6 +1638,22 @@ function cancelJadwalPelaksanaan(jadwalId, kategori) {
     }
 }
 
+function _getRowsOptional(sheetName) {
+    try {
+        return getAllRows(sheetName);
+    } catch (e) {
+        return [];
+    }
+}
+
+function _getRowsCachedOptional(sheetName) {
+    try {
+        return getAllRowsCached(sheetName);
+    } catch (e) {
+        return [];
+    }
+}
+
 function _baSumber(r) {
     const s = String((r && r.Sumber) || '').trim().toLowerCase();
     return s === 'admin' ? 'Admin' : 'Bagian';
@@ -1645,7 +1661,7 @@ function _baSumber(r) {
 
 function _getBaPesertaMap() {
     const map = {};
-    getAllRowsCached('BeritaAcaraPeserta').forEach(function(r) {
+    _getRowsCachedOptional('BeritaAcaraPeserta').forEach(function(r) {
         const id = String(r['BA ID'] || '').trim();
         if (!id) return;
         if (!map[id]) map[id] = [];
@@ -1660,7 +1676,7 @@ function _getBaPesertaMap() {
 
 function _getBaPesertaMapAdmin() {
     const map = {};
-    getAllRowsCached('BeritaAcaraAdminPeserta').forEach(function(r) {
+    _getRowsCachedOptional('BeritaAcaraAdminPeserta').forEach(function(r) {
         const id = String(r['BA ID'] || '').trim();
         if (!id) return;
         if (!map[id]) map[id] = [];
@@ -1984,9 +2000,11 @@ function getLaporanBootstrap() {
     const details = getAllRows('DetailKegiatan');
     const histories = getAllRows('StatusHistory');
     const ba = getAllRows('BeritaAcara');
+    const baAdmin = _getRowsOptional('BeritaAcaraAdmin');
     const biayaMap = _getBiayaMap();
     const overrideMap = _getBiayaOverrideMap();
     const baPesertaMap = _getBaPesertaMap();
+    const baAdminPesertaMap = _getBaPesertaMapAdmin();
 
     const detailById = {};
     details.forEach(function(d) {
@@ -2045,6 +2063,35 @@ function getLaporanBootstrap() {
         c.peserta = baPesertaMap[String(r['BA ID'] || '').trim()] || [];
         return c;
     });
+
+    const toBaRef = function(r, sumber, pesertaMap) {
+        const c = _clientRow(r);
+        const baId = String(c['BA ID'] || '').trim();
+        return {
+            baId: baId,
+            sumber: sumber,
+            bagian: String(c.Bagian || '').trim(),
+            blok: String(c.Blok || '').replace(/\s+/g, ' ').trim(),
+            namaKegiatan: String(c['Nama Kegiatan'] || '').replace(/\s+/g, ' ').trim(),
+            tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
+            jam: String(c.Jam || '').trim(),
+            label: String(c.Label || '').trim(),
+            fileUrl: String(c['File URL'] || '').trim(),
+            kegiatanKey: String(c['Kegiatan Key'] || '').trim(),
+            peserta: pesertaMap[baId] || []
+        };
+    };
+    try {
+        const baRefs = ba.map(function(r) { return toBaRef(r, 'Bagian', baPesertaMap); })
+            .concat(baAdmin.map(function(r) { return toBaRef(r, 'Admin', baAdminPesertaMap); }));
+        _attachBaToLaporanRows(rows, baRefs, getMasterOptions('Lab'));
+    } catch (baError) {
+        rows.forEach(function(row) {
+            row.baPendukung = [];
+            row.baPelaksanaan = [];
+        });
+        console.error('getLaporanBootstrap BA: ' + ((baError && baError.message) ? baError.message : baError));
+    }
 
     const pushUnique = function(list, v) {
         v = String(v || '').replace(/\s+/g, ' ').trim();
@@ -2122,6 +2169,57 @@ function _computeUnitProgress(unit) {
         selesai: selesai ? 'all' : 'none',
         counts: { peserta: total, keputusan: decided, final: finalCount }
     };
+}
+
+function _attachBaToLaporanRows(rows, baList, labs) {
+    const units = [];
+    const unitIndex = {};
+    const keyFor = function(row, d) {
+        const p = row.pengajuan || {};
+        const bagian = _resolveBagian12(d['Jenis Kegiatan'] || d.Bagian, d.Pilihan || d.Bagian, '', labs) || 'Lainnya';
+        const blok = String(p.Blok || '').replace(/\s+/g, ' ').trim() || '-';
+        const pilihan = String(d.Pilihan || '').trim();
+        const detailText = String(d.Detail || '').trim();
+        const label = detailText ? (pilihan + ' - ' + detailText) : (pilihan || '-');
+        return { key: _kegiatanKey(bagian, blok, label), bagian: bagian, blok: blok, label: label };
+    };
+    (rows || []).forEach(function(row) {
+        const p = row.pengajuan || {};
+        const idp = String(p['ID Pengajuan'] || '').trim();
+        (row.details || []).forEach(function(d) {
+            const info = keyFor(row, d);
+            if (unitIndex[info.key] === undefined) {
+                unitIndex[info.key] = units.length;
+                units.push({ key: info.key, bagian: info.bagian, blok: info.blok, label: info.label, peserta: [], ba: [] });
+            }
+            const unit = units[unitIndex[info.key]];
+            if (!unit.peserta.some(function(x) { return x.idPengajuan === idp; })) {
+                unit.peserta.push({ idPengajuan: idp, npm: String(p.NPM || '').trim() });
+            }
+        });
+    });
+    _attachBaToUnits(units, baList, function(raw, pilihan, nama) {
+        return _resolveBagian12(raw, pilihan, nama, labs);
+    });
+    const baByKey = {};
+    units.forEach(function(u) { baByKey[u.key] = u.ba || []; });
+    (rows || []).forEach(function(row) {
+        const pendukung = [];
+        const pelaksanaan = [];
+        (row.details || []).forEach(function(d) {
+            const list = baByKey[keyFor(row, d).key] || [];
+            list.forEach(function(b) {
+                const entry = { baId: b.baId || '', fileUrl: b.fileUrl || '', tanggal: b.tanggal || '', jam: b.jam || '', label: b.label || '' };
+                const bucket = b.sumber === 'Admin' ? pendukung : pelaksanaan;
+                const token = entry.fileUrl || entry.baId;
+                if (!token) return;
+                if (bucket.some(function(x) { return (x.fileUrl || x.baId) === token; })) return;
+                bucket.push(entry);
+            });
+        });
+        row.baPendukung = pendukung;
+        row.baPelaksanaan = pelaksanaan;
+    });
 }
 
 function _attachBaToUnits(units, baList, resolveBagian12) {
@@ -2213,7 +2311,7 @@ function _buildBagianAggregation() {
     });
 
     function collectBa(sheetName, pesertaMap, sumber) {
-        return getAllRowsCached(sheetName).map(function(r) {
+        return _getRowsCachedOptional(sheetName).map(function(r) {
             const c = _clientRow(r);
             const baId = String(c['BA ID'] || '').trim();
             return {
@@ -2308,7 +2406,7 @@ function getBeritaAcaraAdminList() {
 }
 
 function _buildBeritaAcaraAdminList() {
-    const rows = getAllRowsCached('BeritaAcaraAdmin').slice();
+    const rows = _getRowsCachedOptional('BeritaAcaraAdmin').slice();
     rows.sort(function(a, b) {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });

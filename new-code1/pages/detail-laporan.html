@@ -995,10 +995,10 @@
                                                     <div class="space-y-4">
                                                         <div v-for="b in s.row.items" :key="b['BA ID']" class="rounded-xl bg-white p-3 ring-1 ring-slate-100">
                                                             <div class="flex flex-wrap items-center gap-3">
-                                                                <span class="font-mono text-xs text-slate-400">{{ b['BA ID'] }}</span>
+                                                                <span class="font-mono text-xs text-slate-400" @pointerenter="b['File URL'] && onBuktiEnter($event, b['File URL'], 'BA ' + (b.Label || 'Kegiatan'))" @pointerleave="onBuktiLeave">{{ b['BA ID'] }}</span>
                                                                 <span class="text-xs text-slate-400">{{ b['Tanggal Pelaksanaan'] ? fmtTanggalWaktu(b['Tanggal Pelaksanaan']) : '-' }}</span>
                                                                 <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ (b.peserta || []).length }} peserta</span>
-                                                                <a v-if="b['File URL']" :href="b['File URL']" target="_blank" class="btn-soft ml-auto !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
+                                                                <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="btn-soft ml-auto !py-1.5 text-xs" @pointerenter="onBuktiEnter($event, b['File URL'], 'BA ' + (b.Label || 'Kegiatan'))" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>Lihat File</a>
                                                             </div>
                                                             <div v-if="b.peserta && b.peserta.length" class="mt-2 space-y-1">
                                                                 <div v-for="(p, i) in b.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs">
@@ -1097,6 +1097,7 @@
                                             <th class="w-8 px-3 py-2.5"></th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">NPM</th>
                                             <th class="px-3 py-2.5 text-left">Nama</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Berita Acara</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Jml Kegiatan</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Status</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-right">Total Biaya</th>
@@ -1106,7 +1107,7 @@
                                     </thead>
                                     <tbody>
                                         <tr v-if="!pembayaranFiltered.length">
-                                            <td colspan="8" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data pembayaran untuk filter ini.</td>
+                                            <td colspan="9" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data pembayaran untuk filter ini.</td>
                                         </tr>
                                         <template v-for="m in pembayaranFiltered" :key="m.npm">
                                             <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand('bayar:' + m.npm)">
@@ -1115,6 +1116,20 @@
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-slate-700">{{ m.npm }}</td>
                                                 <td class="px-3 py-2.5 font-semibold text-slate-800">{{ m.nama }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center">
+                                                    <div class="flex items-center justify-center gap-1">
+                                                        <a v-if="m.baPendukung.length" :href="safeUrl(m.baPendukung[0].fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-ic is-p" :title="'BA Pendukung (' + m.baPendukung.length + ')'" aria-label="Buka BA Pendukung" @pointerenter="onBaEnter($event, 'Pendukung', m.baPendukung)" @pointerleave="onBaLeave" @click.stop="onBaClick($event, 'Pendukung', m.baPendukung)">
+                                                            <i class="bi bi-file-earmark-text"></i>
+                                                            <span v-if="m.baPendukung.length > 1" class="ba-count">{{ m.baPendukung.length }}</span>
+                                                        </a>
+                                                        <span v-else class="ba-ic is-empty" title="Belum ada BA Pendukung" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
+                                                        <a v-if="m.baPelaksanaan.length" :href="safeUrl(m.baPelaksanaan[0].fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-ic is-l" :title="'BA Pelaksanaan (' + m.baPelaksanaan.length + ')'" aria-label="Buka BA Pelaksanaan" @pointerenter="onBaEnter($event, 'Pelaksanaan', m.baPelaksanaan)" @pointerleave="onBaLeave" @click.stop="onBaClick($event, 'Pelaksanaan', m.baPelaksanaan)">
+                                                            <i class="bi bi-file-earmark-check"></i>
+                                                            <span v-if="m.baPelaksanaan.length > 1" class="ba-count">{{ m.baPelaksanaan.length }}</span>
+                                                        </a>
+                                                        <span v-else class="ba-ic is-empty" title="Belum ada BA Pelaksanaan" aria-hidden="true"><i class="bi bi-file-earmark-check"></i></span>
+                                                    </div>
+                                                </td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ m.jumlahPengajuan }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-center">
                                                     <span v-for="s in statusList(m)" :key="s" :class="statusChipCls(s)" class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ s }}</span>
@@ -1124,12 +1139,12 @@
                                                     <span :class="m.lunas ? 'bg-emerald-50 text-emerald-700' : (m.jumlahBukti ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500')" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="bayarBuktiUrl(m)" :href="bayarBuktiUrl(m)" target="_blank" class="link text-xs" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                                    <a v-if="bayarBuktiUrl(m)" :href="bayarBuktiUrl(m)" target="_blank" rel="noopener noreferrer" class="link text-xs" @pointerenter="onBuktiEnter($event, bayarBuktiUrl(m), 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
                                             <tr v-if="expanded['bayar:' + m.npm]">
-                                                <td colspan="8" class="bg-slate-50/60 px-6 py-4">
+                                                <td colspan="9" class="bg-slate-50/60 px-6 py-4">
                                                     <div class="space-y-2">
                                                         <div v-for="(it, i) in m.items" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs ring-1 ring-slate-100">
                                                             <span class="font-semibold text-slate-800">{{ it.jenis }}</span>
@@ -1137,7 +1152,7 @@
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
                                                             <span :class="statusChipCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
-                                                            <a v-if="it.linkBukti" :href="it.linkBukti" target="_blank" class="link ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="link ml-auto whitespace-nowrap" @pointerenter="onBuktiEnter($event, it.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
                                                             <a v-if="it.linkAcc" :href="it.linkAcc" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
                                                         </div>
@@ -1151,6 +1166,37 @@
                         </div>
                         </template>
                     </section>
+
+                    <teleport to="body">
+                        <div v-if="baMenu.open" class="ba-menu" :style="{ top: baMenu.top + 'px', left: baMenu.left + 'px' }" role="menu" :aria-label="'Daftar BA ' + baMenu.type" @pointerenter="onBaMenuEnter" @pointerleave="onBaMenuLeave">
+                            <div class="ba-menu-head">
+                                <i :class="baMenu.type === 'Pendukung' ? 'bi bi-file-earmark-text' : 'bi bi-file-earmark-check'"></i>
+                                <span>BA {{ baMenu.type }}</span>
+                                <span class="ml-auto font-mono normal-case">{{ baMenu.items.length }} berkas</span>
+                            </div>
+                            <a v-for="b in baMenu.items" :key="b.fileUrl || b.baId" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-menu-item" @pointerenter="onBuktiEnter($event, b.fileUrl, 'BA ' + baMenu.type)" @pointerleave="onBuktiLeave" @click.stop="closeBaMenu(); closeBuktiPreview()">
+                                <i class="bi bi-file-earmark-pdf text-slate-400"></i>
+                                <span class="min-w-0 flex-1">
+                                    <b class="block truncate font-mono text-[11px] font-bold text-slate-700">{{ b.baId }}</b>
+                                    <small v-if="b.tanggal || b.jam || b.label" class="block truncate text-[10px] text-slate-400">{{ b.tanggal ? fmtTanggal(b.tanggal) : '' }}{{ b.jam ? ' · ' + b.jam : '' }}{{ b.label ? ' · ' + b.label : '' }}</small>
+                                </span>
+                                <i class="bi bi-box-arrow-up-right text-[10px] text-slate-400"></i>
+                            </a>
+                        </div>
+                    </teleport>
+                    <teleport to="body">
+                        <div v-if="buktiPreview.open" ref="buktiPreview" class="bukti-preview" :class="{ 'is-above': buktiPreview.placement === 'above', 'is-left': buktiPreview.placement === 'left', 'is-right': buktiPreview.placement === 'right' }" :style="{ top: buktiPreview.top + 'px', left: buktiPreview.left + 'px', width: buktiPreview.width + 'px', visibility: buktiPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau bukti" @pointerenter="onBuktiCardEnter" @pointerleave="onBuktiCardLeave">
+                            <div class="relative">
+                                <img v-show="!buktiPreview.loading && !buktiPreview.error" :src="buktiPreview.src" :alt="buktiPreview.label ? 'Pratinjau ' + buktiPreview.label : 'Pratinjau bukti'" @load="onBuktiImageLoad" @error="onBuktiImageError">
+                                <div v-if="buktiPreview.loading" class="bukti-preview-state"><i class="bi bi-hourglass-split mr-1"></i> Memuat pratinjau...</div>
+                                <div v-else-if="buktiPreview.error" class="bukti-preview-state">Pratinjau tidak tersedia.<br>Klik untuk membuka file.</div>
+                            </div>
+                            <div class="bukti-preview-foot">
+                                <span>{{ buktiPreview.label ? 'Pratinjau ' + buktiPreview.label : 'Pratinjau bukti' }}</span>
+                                <span>Klik untuk membuka</span>
+                            </div>
+                        </div>
+                    </teleport>
 
                 </div>
             </transition>
@@ -1199,6 +1245,7 @@
         </div>
     </div>
 
+    <?!= include('pages/_app-common') ?>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
     <script>
         function bootDetailLaporan() {
@@ -1356,6 +1403,7 @@
 
         const app = createApp({
             components: { ExpandedDetail },
+            mixins: [AppCommon.buktiPreviewMixin],
             data() {
                 return {
                     loading: false,
@@ -1393,6 +1441,9 @@
                     bagianFilter: { bagian: '', blok: '', q: '' },
                     baFilter: { bagian: '', blok: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
+                    baMenu: { open: false, type: '', items: [], top: 0, left: 0, hover: false },
+                    baMenuTimer: null,
+                    baMenuCloseTimer: null,
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
@@ -1553,7 +1604,9 @@
                             status: String(p.Status || '').trim() || '-',
                             biaya: Number(p.Biaya) || 0,
                             linkBukti: String(p['Link Bukti Bayar'] || '').trim(),
-                            linkAcc: String(p['Link ACC INHAL'] || '').trim()
+                            linkAcc: String(p['Link ACC INHAL'] || '').trim(),
+                            baPendukung: Array.isArray(r.baPendukung) ? r.baPendukung : [],
+                            baPelaksanaan: Array.isArray(r.baPelaksanaan) ? r.baPelaksanaan : []
                         });
                     });
                     return map;
@@ -1563,10 +1616,14 @@
                         const totalBiaya = m.items.reduce((t, x) => t + x.biaya, 0);
                         const jumlahBukti = m.items.filter(x => x.linkBukti).length;
                         const jumlahAcc = m.items.filter(x => x.linkAcc).length;
+                        const baPendukung = this.baEntries(m.items.reduce((acc, x) => acc.concat(x.baPendukung || []), []));
+                        const baPelaksanaan = this.baEntries(m.items.reduce((acc, x) => acc.concat(x.baPelaksanaan || []), []));
                         return {
                             npm: m.npm,
                             nama: m.nama || '-',
                             items: m.items,
+                            baPendukung: baPendukung,
+                            baPelaksanaan: baPelaksanaan,
                             jumlahPengajuan: m.items.length,
                             totalBiaya: totalBiaya,
                             jumlahBukti: jumlahBukti,
@@ -2098,6 +2155,115 @@
                     const it = (m.items || []).find(x => x.linkBukti);
                     return it ? it.linkBukti : '';
                 },
+                safeUrl(v) {
+                    return AppCommon.safeUrl(v);
+                },
+                baEntries(list) {
+                    const out = [];
+                    const seen = {};
+                    (list || []).forEach(b => {
+                        const fileUrl = String(b.fileUrl || '').trim();
+                        const baId = String(b.baId || '').trim();
+                        const key = fileUrl || baId;
+                        if (!key || seen[key]) return;
+                        seen[key] = 1;
+                        out.push({ baId: baId || 'BA', fileUrl: fileUrl, tanggal: String(b.tanggal || '').trim(), jam: String(b.jam || '').trim(), label: String(b.label || '').trim() });
+                    });
+                    out.sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)) || a.baId.localeCompare(b.baId));
+                    return out;
+                },
+                onBaEnter(event, type, items) {
+                    if (!this.buktiPreviewEnabled(event)) return;
+                    const list = items || [];
+                    if (!list.length) return;
+                    this.cancelBaMenuClose();
+                    if (list.length === 1) {
+                        this.closeBaMenu();
+                        this.onBuktiEnter(event, list[0].fileUrl, 'BA ' + type);
+                        return;
+                    }
+                    if (this.baMenuTimer) clearTimeout(this.baMenuTimer);
+                    const anchor = event.currentTarget;
+                    this.baMenuTimer = setTimeout(() => {
+                        this.baMenuTimer = null;
+                        if (!anchor || !anchor.isConnected) return;
+                        this.openBaMenu(anchor, type, list);
+                    }, AppCommon.buktiPreview.delay);
+                },
+                onBaLeave() {
+                    if (this.baMenuTimer) {
+                        clearTimeout(this.baMenuTimer);
+                        this.baMenuTimer = null;
+                    }
+                    if (this.baMenu.hover) return;
+                    this.scheduleBaMenuClose();
+                },
+                onBaClick(event, type, items) {
+                    const list = items || [];
+                    if (!list.length) return;
+                    if (list.length === 1) {
+                        this.closeBaMenu();
+                        this.closeBuktiPreview();
+                        return;
+                    }
+                    event.preventDefault();
+                    this.openBaMenu(event.currentTarget, type, list);
+                },
+                openBaMenu(anchor, type, items) {
+                    if (!anchor) return;
+                    this.cancelBaMenuClose();
+                    const rect = anchor.getBoundingClientRect();
+                    const width = 280;
+                    const estHeight = Math.min(52 + items.length * 46, 340);
+                    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+                    let top = rect.bottom + 8;
+                    if (top + estHeight > window.innerHeight - 12) top = Math.max(12, rect.top - estHeight - 8);
+                    this.baMenu = { open: true, type: type, items: items, top: top, left: left, hover: false };
+                },
+                closeBaMenu() {
+                    if (this.baMenuTimer) {
+                        clearTimeout(this.baMenuTimer);
+                        this.baMenuTimer = null;
+                    }
+                    this.cancelBaMenuClose();
+                    this.baMenu = { open: false, type: '', items: [], top: 0, left: 0, hover: false };
+                },
+                onBaMenuEnter() {
+                    this.cancelBaMenuClose();
+                    this.baMenu.hover = true;
+                },
+                onBaMenuLeave() {
+                    this.baMenu.hover = false;
+                    this.scheduleBaMenuClose();
+                },
+                scheduleBaMenuClose() {
+                    if (!this.baMenu.open) return;
+                    this.cancelBaMenuClose();
+                    this.baMenuCloseTimer = setTimeout(() => {
+                        this.baMenuCloseTimer = null;
+                        if (this.baMenu.hover) return;
+                        if (this.buktiPreview.open && this.buktiPreview.hoverCard) {
+                            this.scheduleBaMenuClose();
+                            return;
+                        }
+                        this.closeBaMenu();
+                    }, 300);
+                },
+                cancelBaMenuClose() {
+                    if (this.baMenuCloseTimer) {
+                        clearTimeout(this.baMenuCloseTimer);
+                        this.baMenuCloseTimer = null;
+                    }
+                },
+                handleBaMenuViewportChange() {
+                    this.closeBaMenu();
+                },
+                handleBaMenuOutside(event) {
+                    if (!this.baMenu.open) return;
+                    const target = event.target;
+                    if (target && target.closest && target.closest('.ba-menu, .ba-ic, .bukti-preview')) return;
+                    this.closeBaMenu();
+                },
                 normBagian(v) {
                     return String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
                 },
@@ -2416,13 +2582,19 @@
                             const bayarRows = this.pembayaranFiltered.map(m => ({
                                 'NPM': m.npm,
                                 'Nama': m.nama,
+                                'BA Pendukung': m.baPendukung.map(b => b.baId).join(', '),
+                                'BA Pelaksanaan': m.baPelaksanaan.map(b => b.baId).join(', '),
                                 'Jumlah Kegiatan': m.jumlahPengajuan,
                                 'Total Biaya': m.totalBiaya,
                                 'Bukti Bayar': m.jumlahBukti + '/' + m.jumlahPengajuan,
                                 'Status Bukti': m.lunas ? 'Lunas' : (m.jumlahBukti ? 'Sebagian' : 'Belum ada bukti'),
+                                'Link BA Pendukung': m.baPendukung.map(b => b.fileUrl).filter(Boolean).join('\n'),
+                                'Link BA Pelaksanaan': m.baPelaksanaan.map(b => b.fileUrl).filter(Boolean).join('\n'),
                                 'Link Bukti Bayar': this.bayarBuktiUrl(m)
                             }));
                             const wsBayar = XLSX.utils.json_to_sheet(bayarRows);
+                            setUrlHyperlinks(wsBayar, 'Link BA Pendukung', 'Buka BA pendukung');
+                            setUrlHyperlinks(wsBayar, 'Link BA Pelaksanaan', 'Buka BA pelaksanaan');
                             setUrlHyperlinks(wsBayar, 'Link Bukti Bayar', 'Buka link bukti bayar');
                             XLSX.utils.book_append_sheet(wb, wsBayar, 'Pembayaran Mahasiswa');
 
@@ -2436,12 +2608,18 @@
                                     'Tanggal': it.tanggal ? fmtTanggalWaktu(it.tanggal) : '',
                                     'Status': it.status,
                                     'Biaya': it.biaya,
+                                    'BA Pendukung': (it.baPendukung || []).map(b => b.baId).join(', '),
+                                    'BA Pelaksanaan': (it.baPelaksanaan || []).map(b => b.baId).join(', '),
                                     'Bukti Bayar': it.linkBukti ? 'Ada' : 'Belum',
+                                    'Link BA Pendukung': (it.baPendukung || []).map(b => b.fileUrl).filter(Boolean).join('\n'),
+                                    'Link BA Pelaksanaan': (it.baPelaksanaan || []).map(b => b.fileUrl).filter(Boolean).join('\n'),
                                     'Link Bukti Bayar': it.linkBukti,
                                     'Link ACC INHAL': it.linkAcc
                                 });
                             }));
                             const wsBayarDetail = XLSX.utils.json_to_sheet(bayarDetailRows);
+                            setUrlHyperlinks(wsBayarDetail, 'Link BA Pendukung', 'Buka BA pendukung');
+                            setUrlHyperlinks(wsBayarDetail, 'Link BA Pelaksanaan', 'Buka BA pelaksanaan');
                             setUrlHyperlinks(wsBayarDetail, 'Link Bukti Bayar', 'Buka link bukti bayar');
                             setUrlHyperlinks(wsBayarDetail, 'Link ACC INHAL', 'Buka link ACC INHAL');
                             XLSX.utils.book_append_sheet(wb, wsBayarDetail, 'Pembayaran Detail');
@@ -2542,6 +2720,9 @@
                 this.initLaporanMode();
                 this.session = readSession();
                 if (this.loggedIn) this.loadData();
+                window.addEventListener('scroll', this.handleBaMenuViewportChange, true);
+                window.addEventListener('resize', this.handleBaMenuViewportChange);
+                document.addEventListener('pointerdown', this.handleBaMenuOutside, true);
             }
         });
 

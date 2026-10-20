@@ -112,3 +112,16 @@ describe('preview bukti bersama', () => {
     expect(dashboard).toContain('class="bukti-preview"');
   });
 });
+
+describe('preview bukti viewport guard', () => {
+  it('tidak memanggil contains untuk target non-Node', async () => {
+    const AppCommon = await loadCommon();
+    let closed = false;
+    const ctx = {
+      $refs: { buktiPreview: { contains() { throw new Error('contains should not be called'); } } },
+      closeBuktiPreview() { closed = true; }
+    };
+    AppCommon.buktiPreviewMixin.methods.handleBuktiPreviewViewportChange.call(ctx, { target: {} });
+    expect(closed).toBe(true);
+  });
+});
