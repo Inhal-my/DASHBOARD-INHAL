@@ -1887,8 +1887,8 @@
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-slate-700">{{ m.npm }}</td>
                                                 <td class="px-3 py-2.5 font-semibold text-slate-800">{{ m.nama }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <div class="flex items-center gap-1">
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center">
+                                                    <div class="flex items-center justify-center gap-1">
                                                         <a v-if="m.baPendukung.length" :href="safeUrl(m.baPendukung[0].fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-ic is-p" :title="'BA Pendukung (' + m.baPendukung.length + ')'" aria-label="Buka BA Pendukung" @pointerenter="onBaEnter($event, 'Pendukung', m.baPendukung)" @pointerleave="onBaLeave" @click.stop="onBaClick($event, 'Pendukung', m.baPendukung)">
                                                             <i class="bi bi-file-earmark-text"></i>
                                                             <span v-if="m.baPendukung.length > 1" class="ba-count">{{ m.baPendukung.length }}</span>

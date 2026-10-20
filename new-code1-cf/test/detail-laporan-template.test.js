@@ -202,6 +202,7 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('unitsByPengajuan');
     expect(html).toContain("baEntriesFor(this.unitsByPengajuan");
     expect(html).toContain("'baPendukung')");
+    expect(html).toContain('justify-center gap-1');
     expect(html).toContain('class="ba-ic is-p"');
     expect(html).toContain('class="ba-ic is-l"');
     expect(html).toContain('bi-file-earmark-text');
