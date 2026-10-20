@@ -37,6 +37,8 @@ describe('security headers', () => {
     expect(CSP).toContain("font-src 'self' https://fonts.gstatic.com");
     expect(CSP).toContain('https://fonts.gstatic.com');
     expect(CSP).toContain("img-src 'self' data: blob:");
+    expect(CSP).toContain('https://drive.google.com');
+    expect(CSP).toContain('https://*.googleusercontent.com');
     for (const path of ['/dashboard.html', '/portal.html', '/bagian.html', '/index.html', '/detail-laporan.html']) {
       const { status, text } = await asset(path);
       expect(status).toBe(200);

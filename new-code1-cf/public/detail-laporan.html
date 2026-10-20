@@ -221,20 +221,16 @@
         .in-docdot.on.bukti { background:#ea580c; }
         .in-cards { display:none; flex-direction:column; gap:12px; padding:12px; }
         @media (max-width:1023px){ .in-cards { display:flex; } }
-        .bayar-preview { position: fixed; z-index: 150; max-height: min(70vh, 560px); overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 12px; font-size: 12px; }
-        .bayar-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
-        .bayar-preview.is-above::before { top: auto; bottom: -8px; }
-        .bayar-preview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 9px; border-bottom: 1px solid #f1f5f9; }
-        .bayar-preview-name { font-size: 13px; font-weight: 800; color: var(--ink-900); }
-        .bayar-preview-sub { margin-top: 2px; font-size: 10.5px; color: var(--ink-400); font-weight: 600; }
-        .bayar-preview-list { display: flex; flex-direction: column; gap: 8px; padding: 9px 0; }
-        .bayar-preview-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 8px 9px; background: #fcfdff; }
-        .bayar-preview-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 9px; font-size: 11.5px; color: var(--ink-500); }
-        .bayar-preview-foot b { font-size: 13px; color: var(--ink-900); }
+        .bukti-preview { position: fixed; z-index: 150; width: 320px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
+        .bukti-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
+        .bukti-preview.is-above::before { top: auto; bottom: -8px; }
+        .bukti-preview img { display: block; width: 100%; max-height: 420px; object-fit: contain; border-radius: 8px; background: #f8fafc; }
+        .bukti-preview-state { display: flex; align-items: center; justify-content: center; min-height: 140px; padding: 12px; text-align: center; font-size: 11px; color: var(--ink-400); }
+        .bukti-preview-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 10.5px; color: var(--ink-400); }
         .bayar-hint-mobile { display: inline; }
         .bayar-hint-desktop { display: none; }
         @media (min-width:1024px){ .bayar-hint-mobile { display: none; } .bayar-hint-desktop { display: inline; } }
-        @media (max-width:1023px){ .bayar-preview { display: none !important; } }
+        @media (max-width:1023px){ .bukti-preview { display: none !important; } }
         @media (max-width:1023px){ .in-desktop-only { display:none; } }
         .in-mcard { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
         .in-mcard .row1 { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -987,7 +983,7 @@
                                                 <td class="px-3 py-3 text-slate-600">{{ r.pengajuan['Biaya Rupiah'] || fmtRupiah(r.pengajuan.Biaya) }}</td>
                                                 <td class="px-4 py-3">
                                                     <div class="flex gap-[5px]">
-                                                        <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="in-docdot on bukti" title="Bukti Bayar" @click.stop><i class="bi bi-cash-coin"></i></a>
+                                                        <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="in-docdot on bukti" title="Bukti Bayar" @pointerenter="onBuktiEnter($event, r.pengajuan['Link Bukti Bayar'])" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i></a>
                                                         <a v-if="r.pengajuan['Link ACC INHAL']" :href="safeUrl(r.pengajuan['Link ACC INHAL'])" target="_blank" rel="noopener noreferrer" class="in-docdot on acc" title="ACC INHAL" @click.stop><i class="bi bi-patch-check"></i></a>
                                                         <span v-if="!r.pengajuan['Link Bukti Bayar'] && !r.pengajuan['Link ACC INHAL']" class="text-slate-300">-</span>
                                                     </div>
@@ -1302,7 +1298,7 @@
                                                             <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
                                                             <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
                                                             <span v-if="biayaForNpm(p.npm, s.row.blok)" class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(biayaForNpm(p.npm, s.row.blok)) }}</span>
-                                                            <a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti whitespace-nowrap" @pointerenter="onBuktiEnter($event, p.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="text-slate-300">-</span>
                                                         </div>
                                                     </div>
@@ -1852,7 +1848,7 @@
                             <div class="lap-card-head">
                                 <div>
                                     <div class="lap-card-title">Data Pembayaran per Mahasiswa</div>
-                                    <div class="lap-card-sub"><span class="bayar-hint-desktop">Arahkan kursor untuk pratinjau cepat; klik baris untuk membuka rincian</span><span class="bayar-hint-mobile">Ketuk baris untuk membuka rincian</span></div>
+                                    <div class="lap-card-sub"><span class="bayar-hint-desktop">Arahkan kursor ke tombol Bukti untuk pratinjau file; klik untuk membuka</span><span class="bayar-hint-mobile">Ketuk Bukti untuk membuka file</span></div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportExcel()">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -1877,7 +1873,7 @@
                                             <td colspan="8" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data pembayaran untuk filter ini.</td>
                                         </tr>
                                         <template v-for="m in pembayaranFiltered" :key="m.npm">
-                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @pointerenter="onBayarPreviewEnter(m, $event)" @pointerleave="onBayarPreviewLeave($event)" @click="onBayarRowClick(m)">
+                                            <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand('bayar:' + m.npm)">
                                                 <td class="px-3 py-2.5 text-slate-400">
                                                     <i :class="expanded['bayar:' + m.npm] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                                                 </td>
@@ -1892,7 +1888,7 @@
                                                     <span :class="m.lunas ? 'in-badge acc' : (m.jumlahBukti ? 'in-badge wait' : 'in-badge cancel')" class="whitespace-nowrap" title="Pengajuan dengan bukti bayar / total pengajuan">{{ m.jumlahBukti }}/{{ m.jumlahPengajuan }}</span>
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                                    <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, bayarBuktiUrl(m))" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                                     <span v-else class="text-slate-300">-</span>
                                                 </td>
                                             </tr>
@@ -1905,7 +1901,7 @@
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
                                                             <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap">{{ it.status }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
-                                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti ml-auto whitespace-nowrap" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
                                                             <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" rel="noopener noreferrer" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
                                                         </div>
@@ -1931,53 +1927,34 @@
                                                 <span class="font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
                                             </div>
                                             <div class="mt-1 flex flex-wrap gap-2">
-                                                <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                 <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" rel="noopener noreferrer" class="btn-acc" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="actions">
-                                        <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @click.stop><i class="bi bi-cash-coin"></i> Bukti</a>
+                                        <a v-if="bayarBuktiUrl(m)" :href="safeUrl(bayarBuktiUrl(m))" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, bayarBuktiUrl(m))" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                         <button class="btn-soft" @click.stop="toggleExpand('bayar:' + m.npm)"><i class="bi bi-chevron-down"></i> Rincian</button>
                                     </div>
                                 </article>
                             </div>
                         </div>
-                        <teleport to="body">
-                            <div v-if="bayarPreviewRow" ref="bayarPreview" class="bayar-preview" :class="{ 'is-above': bayarPreview.placement === 'above' }" :style="{ top: bayarPreview.top + 'px', left: bayarPreview.left + 'px', width: bayarPreview.width + 'px', visibility: bayarPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau pembayaran" @pointerenter="onBayarPreviewCardEnter" @pointerleave="onBayarPreviewCardLeave">
-                                <div class="bayar-preview-head">
-                                    <div class="min-w-0">
-                                        <div class="bayar-preview-name">{{ bayarPreviewRow.nama }}</div>
-                                        <div class="bayar-preview-sub">{{ bayarPreviewRow.npm }} &middot; {{ bayarPreviewRow.jumlahPengajuan }} pengajuan</div>
-                                    </div>
-                                    <span :class="bayarPreviewRow.lunas ? 'in-badge acc' : (bayarPreviewRow.jumlahBukti ? 'in-badge wait' : 'in-badge cancel')" class="whitespace-nowrap">{{ bayarPreviewRow.jumlahBukti }}/{{ bayarPreviewRow.jumlahPengajuan }}</span>
-                                </div>
-                                <div class="bayar-preview-list">
-                                    <div v-for="(it, i) in bayarPreviewRow.items" :key="i" class="bayar-preview-item">
-                                        <div class="flex items-start justify-between gap-2">
-                                            <div class="min-w-0">
-                                                <div class="font-semibold text-slate-800">{{ it.jenis }}</div>
-                                                <div class="mt-0.5 text-[11px] text-slate-400">{{ it.blok }} &middot; {{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</div>
-                                                <div v-if="it.detail" class="mt-0.5 truncate text-[11px] text-slate-400" :title="it.detail">{{ it.detail }}</div>
-                                            </div>
-                                            <span :class="statusBadgeCls(it.status)" class="whitespace-nowrap">{{ it.status }}</span>
-                                        </div>
-                                        <div class="mt-1.5 flex flex-wrap items-center gap-2">
-                                            <span class="font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
-                                            <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti ml-auto whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
-                                            <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
-                                            <a v-if="it.linkAcc" :href="safeUrl(it.linkAcc)" target="_blank" rel="noopener noreferrer" class="btn-acc whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bayar-preview-foot">
-                                    <span>Total {{ bayarPreviewRow.jumlahPengajuan }} pengajuan</span>
-                                    <b>{{ fmtRupiah(bayarPreviewRow.totalBiaya) }}</b>
-                                </div>
-                            </div>
-                        </teleport>
                         </template>
                     </section>
+
+                    <teleport to="body">
+                        <div v-if="buktiPreview.open" ref="buktiPreview" class="bukti-preview" :class="{ 'is-above': buktiPreview.placement === 'above' }" :style="{ top: buktiPreview.top + 'px', left: buktiPreview.left + 'px', visibility: buktiPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau bukti bayar" @pointerenter="onBuktiCardEnter" @pointerleave="onBuktiCardLeave">
+                            <div class="relative">
+                                <img v-show="!buktiPreview.loading && !buktiPreview.error" :src="buktiPreview.src" alt="Pratinjau bukti bayar" @load="onBuktiImageLoad" @error="onBuktiImageError">
+                                <div v-if="buktiPreview.loading" class="bukti-preview-state"><i class="bi bi-hourglass-split mr-1"></i> Memuat pratinjau...</div>
+                                <div v-else-if="buktiPreview.error" class="bukti-preview-state">Pratinjau tidak tersedia.<br>Klik untuk membuka file.</div>
+                            </div>
+                            <div class="bukti-preview-foot">
+                                <span>Pratinjau bukti bayar</span>
+                                <span>Klik untuk membuka</span>
+                            </div>
+                        </div>
+                    </teleport>
 
                 </div>
             </transition>
@@ -2197,6 +2174,21 @@
         function safeUrl(v) {
             return AppCommon.safeUrl(v);
         }
+        function driveFileId(v) {
+            const s = String(v || '');
+            let m = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+            if (m) return m[1];
+            m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+            if (m) return m[1];
+            m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+            if (m) return m[1];
+            return '';
+        }
+        function driveThumbUrl(v, size) {
+            const id = driveFileId(v);
+            if (!id) return '';
+            return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (Number(size) || 800);
+        }
         function setUrlHyperlinks(ws, header, tooltip) {
             if (!ws || !ws['!ref']) return;
             const range = XLSX.utils.decode_range(ws['!ref']);
@@ -2406,7 +2398,7 @@
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Bukti Bayar</div>
-                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti">Lihat</a>
+                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="safeUrl(r.pengajuan['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, r.pengajuan['Link Bukti Bayar'])" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Link Final</div>
@@ -2447,8 +2439,8 @@
         };
 
         const { createApp } = Vue;
-        const BAYAR_PREVIEW_DELAY = 200;
-        const BAYAR_PREVIEW_CLOSE_DELAY = 120;
+        const BUKTI_PREVIEW_DELAY = 200;
+        const BUKTI_PREVIEW_CLOSE_DELAY = 150;
 
         function initialData() {
             return {
@@ -2495,9 +2487,9 @@
                     jadwal: [],
                     jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
-                    bayarPreview: { npm: '', top: 0, left: 0, width: 380, ready: false, placement: 'below', hoverCard: false },
-                    bayarPreviewTimer: null,
-                    bayarPreviewCloseTimer: null,
+                    buktiPreview: { open: false, src: '', top: 0, left: 0, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 },
+                    buktiPreviewTimer: null,
+                    buktiPreviewCloseTimer: null,
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
@@ -2895,10 +2887,6 @@
                         belum: list.length - sudah,
                         biaya: list.reduce((t, m) => t + m.totalBiaya, 0)
                     };
-                },
-                bayarPreviewRow() {
-                    if (!this.bayarPreview.npm) return null;
-                    return this.pembayaranFiltered.find(m => m.npm === this.bayarPreview.npm) || null;
                 },
                 dosenSuggestionsList() {
                     const arr = this.dosenOptions || [];
@@ -3477,10 +3465,7 @@
                 'dosenFilter.to': function () { this.activeDosenCell = null; },
                 'dosenFilter.bagian': function () { this.activeDosenCell = null; },
                 'dosenFilter.q': function () { this.activeDosenCell = null; },
-                activeTab: function () { this.closeBayarPreview(); },
-                'bayarFilter.q': function () { this.closeBayarPreview(); },
-                'bayarFilter.status': function () { this.closeBayarPreview(); },
-                'bayarFilter.kelengkapan': function () { this.closeBayarPreview(); },
+                activeTab: function () { this.closeBuktiPreview(); },
             },
             methods: {
                 toggleSidebar() { this.sidebarCollapsed = !this.sidebarCollapsed; },
@@ -3579,71 +3564,80 @@
                     const it = (m.items || []).find(x => x.linkBukti);
                     return it ? it.linkBukti : '';
                 },
-                bayarPreviewEnabled(event) {
+                buktiPreviewEnabled(event) {
                     if (!event || event.pointerType !== 'mouse') return false;
                     if (typeof window === 'undefined' || !window.matchMedia) return true;
                     return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
                 },
-                onBayarPreviewEnter(m, event) {
-                    if (!this.bayarPreviewEnabled(event)) return;
-                    if (this.bayarPreview.hoverCard) return;
-                    if (this.expanded['bayar:' + m.npm]) return;
-                    this.cancelBayarPreviewClose();
-                    if (this.bayarPreviewTimer) clearTimeout(this.bayarPreviewTimer);
-                    const source = event.currentTarget;
-                    this.bayarPreviewTimer = setTimeout(() => {
-                        this.bayarPreviewTimer = null;
-                        if (!source || !source.isConnected) return;
-                        this.bayarPreview.npm = m.npm;
-                        this.bayarPreview.ready = false;
-                        this.$nextTick(() => this.positionBayarPreview(source));
-                    }, BAYAR_PREVIEW_DELAY);
+                onBuktiEnter(event, url) {
+                    if (!this.buktiPreviewEnabled(event)) return;
+                    const src = driveThumbUrl(url, 800);
+                    if (!src) return;
+                    if (this.buktiPreview.hoverCard) return;
+                    this.cancelBuktiPreviewClose();
+                    if (this.buktiPreviewTimer) clearTimeout(this.buktiPreviewTimer);
+                    const anchor = event.currentTarget;
+                    this.buktiPreviewTimer = setTimeout(() => {
+                        this.buktiPreviewTimer = null;
+                        if (!anchor || !anchor.isConnected) return;
+                        const rect = anchor.getBoundingClientRect();
+                        this.buktiPreview.rectTop = rect.top;
+                        this.buktiPreview.rectBottom = rect.bottom;
+                        this.buktiPreview.rectLeft = rect.left;
+                        this.buktiPreview.rectWidth = rect.width;
+                        this.buktiPreview.src = src;
+                        this.buktiPreview.loading = true;
+                        this.buktiPreview.error = false;
+                        this.buktiPreview.ready = false;
+                        this.buktiPreview.open = true;
+                        this.$nextTick(() => this.positionBuktiPreview());
+                    }, BUKTI_PREVIEW_DELAY);
                 },
-                onBayarPreviewLeave() {
-                    if (this.bayarPreviewTimer) {
-                        clearTimeout(this.bayarPreviewTimer);
-                        this.bayarPreviewTimer = null;
+                onBuktiLeave() {
+                    if (this.buktiPreviewTimer) {
+                        clearTimeout(this.buktiPreviewTimer);
+                        this.buktiPreviewTimer = null;
                     }
-                    if (this.bayarPreview.hoverCard) return;
-                    this.scheduleBayarPreviewClose();
+                    if (this.buktiPreview.hoverCard) return;
+                    this.scheduleBuktiPreviewClose();
                 },
-                onBayarPreviewCardEnter() {
-                    this.cancelBayarPreviewClose();
-                    this.bayarPreview.hoverCard = true;
+                onBuktiCardEnter() {
+                    this.cancelBuktiPreviewClose();
+                    this.buktiPreview.hoverCard = true;
                 },
-                onBayarPreviewCardLeave() {
-                    this.bayarPreview.hoverCard = false;
-                    this.scheduleBayarPreviewClose();
+                onBuktiCardLeave() {
+                    this.buktiPreview.hoverCard = false;
+                    this.scheduleBuktiPreviewClose();
                 },
-                scheduleBayarPreviewClose() {
-                    if (!this.bayarPreview.npm) return;
-                    this.cancelBayarPreviewClose();
-                    this.bayarPreviewCloseTimer = setTimeout(() => {
-                        this.bayarPreviewCloseTimer = null;
-                        this.closeBayarPreview();
-                    }, BAYAR_PREVIEW_CLOSE_DELAY);
+                scheduleBuktiPreviewClose() {
+                    if (!this.buktiPreview.open) return;
+                    this.cancelBuktiPreviewClose();
+                    this.buktiPreviewCloseTimer = setTimeout(() => {
+                        this.buktiPreviewCloseTimer = null;
+                        this.closeBuktiPreview();
+                    }, BUKTI_PREVIEW_CLOSE_DELAY);
                 },
-                cancelBayarPreviewClose() {
-                    if (this.bayarPreviewCloseTimer) {
-                        clearTimeout(this.bayarPreviewCloseTimer);
-                        this.bayarPreviewCloseTimer = null;
+                cancelBuktiPreviewClose() {
+                    if (this.buktiPreviewCloseTimer) {
+                        clearTimeout(this.buktiPreviewCloseTimer);
+                        this.buktiPreviewCloseTimer = null;
                     }
                 },
-                positionBayarPreview(source) {
-                    const card = this.$refs.bayarPreview;
-                    if (!card || !source || !this.bayarPreview.npm) return;
-                    const rect = source.getBoundingClientRect();
+                positionBuktiPreview() {
+                    const card = this.$refs.buktiPreview;
+                    const rectWidth = this.buktiPreview.rectWidth;
+                    if (!card || !this.buktiPreview.open || !rectWidth) return;
                     const margin = 12;
                     const gap = 8;
-                    const width = Math.min(420, window.innerWidth - margin * 2);
-                    const height = card.offsetHeight;
-                    let left = rect.left;
+                    const width = card.offsetWidth || 320;
+                    const height = card.offsetHeight || 140;
+                    let left = this.buktiPreview.rectLeft + (rectWidth / 2) - (width / 2);
                     if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
                     if (left < margin) left = margin;
-                    let top = rect.bottom + gap;
+                    let top = this.buktiPreview.rectBottom + gap;
                     let placement = 'below';
                     if (top + height > window.innerHeight - margin) {
-                        const above = rect.top - height - gap;
+                        const above = this.buktiPreview.rectTop - height - gap;
                         if (above >= margin) {
                             top = above;
                             placement = 'above';
@@ -3651,31 +3645,36 @@
                             top = Math.max(margin, window.innerHeight - height - margin);
                         }
                     }
-                    this.bayarPreview.left = Math.round(left);
-                    this.bayarPreview.top = Math.round(top);
-                    this.bayarPreview.width = Math.round(width);
-                    this.bayarPreview.placement = placement;
-                    this.bayarPreview.ready = true;
+                    this.buktiPreview.left = Math.round(left);
+                    this.buktiPreview.top = Math.round(top);
+                    this.buktiPreview.placement = placement;
+                    this.buktiPreview.ready = true;
                 },
-                closeBayarPreview() {
-                    if (this.bayarPreviewTimer) {
-                        clearTimeout(this.bayarPreviewTimer);
-                        this.bayarPreviewTimer = null;
+                onBuktiImageLoad() {
+                    this.buktiPreview.loading = false;
+                    this.buktiPreview.error = false;
+                    this.$nextTick(() => this.positionBuktiPreview());
+                },
+                onBuktiImageError() {
+                    this.buktiPreview.loading = false;
+                    this.buktiPreview.error = true;
+                    this.$nextTick(() => this.positionBuktiPreview());
+                },
+                closeBuktiPreview() {
+                    if (this.buktiPreviewTimer) {
+                        clearTimeout(this.buktiPreviewTimer);
+                        this.buktiPreviewTimer = null;
                     }
-                    if (this.bayarPreviewCloseTimer) {
-                        clearTimeout(this.bayarPreviewCloseTimer);
-                        this.bayarPreviewCloseTimer = null;
+                    if (this.buktiPreviewCloseTimer) {
+                        clearTimeout(this.buktiPreviewCloseTimer);
+                        this.buktiPreviewCloseTimer = null;
                     }
-                    this.bayarPreview = { npm: '', top: 0, left: 0, width: 380, ready: false, placement: 'below', hoverCard: false };
+                    this.buktiPreview = { open: false, src: '', top: 0, left: 0, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
                 },
-                onBayarRowClick(m) {
-                    this.closeBayarPreview();
-                    this.toggleExpand('bayar:' + m.npm);
-                },
-                handleBayarPreviewViewportChange(event) {
-                    const card = this.$refs.bayarPreview;
+                handleBuktiPreviewViewportChange(event) {
+                    const card = this.$refs.buktiPreview;
                     if (card && event && event.target && card.contains(event.target)) return;
-                    this.closeBayarPreview();
+                    this.closeBuktiPreview();
                 },
                 normBagian(v) {
                     return AppCommon.normBagian(v);
@@ -4375,17 +4374,17 @@
                     if (['ringkas', 'analitis', 'cetak'].indexOf(mode) !== -1) this.laporanMode = mode;
                 } catch (e) { /* abaikan URL tidak valid */ }
                 if (this.loggedIn) this.loadData();
-                window.addEventListener('scroll', this.handleBayarPreviewViewportChange, true);
-                window.addEventListener('resize', this.handleBayarPreviewViewportChange);
+                window.addEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
+                window.addEventListener('resize', this.handleBuktiPreviewViewportChange);
             },
             beforeUnmount() {
                 if (this.rafNumbers) cancelAnimationFrame(this.rafNumbers);
                 if (this.rafCharts) cancelAnimationFrame(this.rafCharts);
                 if (this.toastTimer) clearTimeout(this.toastTimer);
-                if (this.bayarPreviewTimer) clearTimeout(this.bayarPreviewTimer);
-                if (this.bayarPreviewCloseTimer) clearTimeout(this.bayarPreviewCloseTimer);
-                window.removeEventListener('scroll', this.handleBayarPreviewViewportChange, true);
-                window.removeEventListener('resize', this.handleBayarPreviewViewportChange);
+                if (this.buktiPreviewTimer) clearTimeout(this.buktiPreviewTimer);
+                if (this.buktiPreviewCloseTimer) clearTimeout(this.buktiPreviewCloseTimer);
+                window.removeEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
+                window.removeEventListener('resize', this.handleBuktiPreviewViewportChange);
             }
         });
 

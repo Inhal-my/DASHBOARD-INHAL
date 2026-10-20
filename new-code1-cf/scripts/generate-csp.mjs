@@ -33,7 +33,7 @@ export function buildCsp() {
     ["script-src 'self' 'unsafe-eval'", ...scripts].join(' '),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     ["font-src 'self'", ...EXTERNAL.font].join(' '),
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://drive.google.com https://*.googleusercontent.com",
     "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

@@ -184,32 +184,34 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('>Total Tagihan</div>');
     expect(html).toContain('in-mcard');
   });
-  it('baris pembayaran memakai hover preview dan klik untuk rincian', async () => {
+  it('tautan bukti memakai hover preview file dan klik untuk membuka', async () => {
     const html = await loadHtml();
-    expect(html).toContain('@pointerenter="onBayarPreviewEnter(m, $event)"');
-    expect(html).toContain('@pointerleave="onBayarPreviewLeave($event)"');
-    expect(html).toContain('@click="onBayarRowClick(m)"');
-    expect(html).toContain('Arahkan kursor untuk pratinjau cepat');
+    expect(html).toContain('@pointerenter="onBuktiEnter($event, it.linkBukti)"');
+    expect(html).toContain('@pointerenter="onBuktiEnter($event, bayarBuktiUrl(m))"');
+    expect(html).toContain('@pointerenter="onBuktiEnter($event, p.linkBukti)"');
+    expect(html).toContain('@pointerleave="onBuktiLeave"');
+    expect(html).toContain('@click.stop="closeBuktiPreview()"');
+    expect(html).toContain('Arahkan kursor ke tombol Bukti');
   });
-  it('kartu preview memakai teleport dan hanya satu di tab pembayaran', async () => {
+  it('kartu preview file memakai teleport dan thumbnail Google Drive', async () => {
     const html = await loadHtml();
-    const bayarStart = html.indexOf("activeTab === 'bayar'");
-    const teleport = html.indexOf('<teleport to="body">');
-    const pembayaranEnd = html.indexOf('<!-- ===================== HALAMAN: CETAK ===================== -->');
-    expect(bayarStart).toBeGreaterThan(-1);
-    expect(teleport).toBeGreaterThan(bayarStart);
-    expect(teleport).toBeLessThan(pembayaranEnd);
-    expect(html.split('<teleport to="body">').length - 1).toBe(1);
-    expect(html).toContain('class="bayar-preview"');
-    expect(html).toContain('@pointerenter="onBayarPreviewCardEnter"');
-    expect(html).toContain('@pointerleave="onBayarPreviewCardLeave"');
+    expect(html).toContain('<teleport to="body">');
+    expect(html).toContain('class="bukti-preview"');
+    expect(html).toContain('@pointerenter="onBuktiCardEnter"');
+    expect(html).toContain('@pointerleave="onBuktiCardLeave"');
+    expect(html).toContain('function driveFileId(');
+    expect(html).toContain('function driveThumbUrl(');
+    expect(html).toContain("https://drive.google.com/thumbnail?id=");
+    expect(html).toContain('Pratinjau tidak tersedia');
+    expect(html).not.toContain('bayarPreviewRow');
+    expect(html).not.toContain('onBayarPreviewEnter');
   });
-  it('preview punya jeda 200ms dan dinonaktifkan di layar sentuh', async () => {
+  it('preview file punya jeda 200ms dan dinonaktifkan di layar sentuh', async () => {
     const html = await loadHtml();
-    expect(html).toContain('BAYAR_PREVIEW_DELAY = 200');
+    expect(html).toContain('BUKTI_PREVIEW_DELAY = 200');
     expect(html).toContain("event.pointerType !== 'mouse'");
     expect(html).toContain('(hover: hover) and (pointer: fine)');
-    expect(html).toContain('@media (max-width:1023px){ .bayar-preview { display: none !important; } }');
+    expect(html).toContain('@media (max-width:1023px){ .bukti-preview { display: none !important; } }');
   });
 });
 
