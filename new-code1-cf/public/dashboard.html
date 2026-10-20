@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="/vendor/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/bukti-preview.css" rel="stylesheet">
 <style>
         body { background: #f5f6fa; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -49,6 +50,9 @@
         .btn-primary:disabled, .btn-soft:disabled, .btn-danger:disabled { opacity: .6; cursor: not-allowed; }
         .link { font-weight: 600; color: #4f46e5; text-decoration: none; }
         .link:hover { text-decoration: underline; }
+        .ba-chip { display: inline-flex; align-items: center; gap: .22rem; margin-left: .25rem; padding: .12rem .45rem; border-radius: 9999px; background: #eef2ff; color: #4338ca; font-size: 10.5px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: background .15s ease; }
+        .ba-chip:hover { background: #e0e7ff; text-decoration: none; }
+        .ba-chip .bi { font-size: .72rem; }
         @media (min-width: 1024px) {
             .ba-align-card { margin-top: 1.625rem; }
         }
@@ -1196,7 +1200,7 @@
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
                                                         <span class="ml-1 text-[10px] text-slate-400">{{ r.pesertaDenganBa }}/{{ r.jumlahPeserta }}</span>
-                                                        <template v-for="(b, bi) in r.__pendukungBa" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in r.__pendukungBa" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3"><span v-if="!r.__orphan" class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(unitKeputusan(r))">{{ unitKeputusan(r) }}</span><span v-else class="text-xs text-slate-400">-</span></td>
@@ -1205,7 +1209,7 @@
                                                     <template v-else-if="!unitPelaksanaanEligible(r)"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPelaksanaan(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPelaksanaan(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in r.__pelaksanaanBa" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-1 text-[11px]">{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in r.__pelaksanaanBa" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3">
@@ -1251,7 +1255,7 @@
                                                             <div v-if="!r.ba.length" class="text-xs text-slate-400">Belum ada BA.</div>
                                                             <div v-for="(b, bi) in r.ba" :key="bi" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
                                                                 <div class="flex flex-wrap items-center gap-2">
-                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="link font-mono font-bold text-slate-700">{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip font-mono" @pointerenter="onBuktiEnter($event, b.fileUrl)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
                                                                     <button class="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
@@ -2572,6 +2576,20 @@
                 <button type="button" class="sheet-item danger" @click="logout()"><i class="bi bi-box-arrow-right"></i> Keluar</button>
             </div>
         </transition>
+
+        <teleport to="body">
+            <div v-if="buktiPreview.open" ref="buktiPreview" class="bukti-preview" :class="{ 'is-above': buktiPreview.placement === 'above', 'is-left': buktiPreview.placement === 'left', 'is-right': buktiPreview.placement === 'right' }" :style="{ top: buktiPreview.top + 'px', left: buktiPreview.left + 'px', width: buktiPreview.width + 'px', visibility: buktiPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau berita acara" @pointerenter="onBuktiCardEnter" @pointerleave="onBuktiCardLeave">
+                <div class="relative">
+                    <img v-show="!buktiPreview.loading && !buktiPreview.error" :src="buktiPreview.src" alt="Pratinjau berita acara" @load="onBuktiImageLoad" @error="onBuktiImageError">
+                    <div v-if="buktiPreview.loading" class="bukti-preview-state"><i class="bi bi-hourglass-split mr-1"></i> Memuat pratinjau...</div>
+                    <div v-else-if="buktiPreview.error" class="bukti-preview-state">Pratinjau tidak tersedia.<br>Klik untuk membuka file.</div>
+                </div>
+                <div class="bukti-preview-foot">
+                    <span>Pratinjau berita acara</span>
+                    <span>Klik untuk membuka</span>
+                </div>
+            </div>
+        </teleport>
     </div>
 
     <script src="/gs-shim.js"></script>
@@ -2695,6 +2713,7 @@
         }
 
         createApp({
+            mixins: [AppCommon.buktiPreviewMixin],
             data() {
                 return initialData();
             },

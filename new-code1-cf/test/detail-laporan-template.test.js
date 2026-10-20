@@ -193,30 +193,18 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('@click.stop="closeBuktiPreview()"');
     expect(html).toContain('Arahkan kursor ke tombol Bukti');
   });
-  it('kartu preview file memakai teleport dan thumbnail Google Drive', async () => {
+  it('kartu preview file memakai teleport dan mixin bersama', async () => {
     const html = await loadHtml();
+    expect(html).toContain('<link href="/bukti-preview.css" rel="stylesheet">');
     expect(html).toContain('<teleport to="body">');
     expect(html).toContain('class="bukti-preview"');
     expect(html).toContain("'is-left': buktiPreview.placement === 'left'");
-    expect(html).toContain('const minWidth = 360');
-    expect(html).toContain('const maxWidth = 720');
-    expect(html).toContain('placement = \'left\'');
-    expect(html).toContain('.bukti-preview.is-left::before');
     expect(html).toContain('@pointerenter="onBuktiCardEnter"');
     expect(html).toContain('@pointerleave="onBuktiCardLeave"');
-    expect(html).toContain('function driveFileId(');
-    expect(html).toContain('function driveThumbUrl(');
-    expect(html).toContain("https://drive.google.com/thumbnail?id=");
     expect(html).toContain('Pratinjau tidak tersedia');
+    expect(html).toContain('mixins: [AppCommon.buktiPreviewMixin]');
     expect(html).not.toContain('bayarPreviewRow');
     expect(html).not.toContain('onBayarPreviewEnter');
-  });
-  it('preview file punya jeda 200ms dan dinonaktifkan di layar sentuh', async () => {
-    const html = await loadHtml();
-    expect(html).toContain('BUKTI_PREVIEW_DELAY = 200');
-    expect(html).toContain("event.pointerType !== 'mouse'");
-    expect(html).toContain('(hover: hover) and (pointer: fine)');
-    expect(html).toContain('@media (max-width:1023px){ .bukti-preview { display: none !important; } }');
   });
 });
 

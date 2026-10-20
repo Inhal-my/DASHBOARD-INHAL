@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="/vendor/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/bukti-preview.css" rel="stylesheet">
     <style>
         body { background: #f5f6fa; }
         [v-cloak] { display: none; }
@@ -221,14 +222,6 @@
         .in-docdot.on.bukti { background:#ea580c; }
         .in-cards { display:none; flex-direction:column; gap:12px; padding:12px; }
         @media (max-width:1023px){ .in-cards { display:flex; } }
-        .bukti-preview { position: fixed; z-index: 150; width: 720px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
-        .bukti-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
-        .bukti-preview.is-above::before { top: auto; bottom: -12px; }
-        .bukti-preview.is-left::before { top: 0; bottom: 0; left: auto; right: -12px; width: 12px; height: auto; }
-        .bukti-preview.is-right::before { top: 0; bottom: 0; left: -12px; right: auto; width: 12px; height: auto; }
-        .bukti-preview img { display: block; width: 100%; max-height: 74vh; object-fit: contain; border-radius: 8px; background: #f8fafc; }
-        .bukti-preview-state { display: flex; align-items: center; justify-content: center; min-height: 320px; padding: 12px; text-align: center; font-size: 11px; color: var(--ink-400); }
-        .bukti-preview-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 10.5px; color: var(--ink-400); }
         .bayar-hint-mobile { display: inline; }
         .bayar-hint-desktop { display: none; }
         @media (min-width:1024px){ .bayar-hint-mobile { display: none; } .bayar-hint-desktop { display: inline; } }
@@ -2176,21 +2169,6 @@
         function safeUrl(v) {
             return AppCommon.safeUrl(v);
         }
-        function driveFileId(v) {
-            const s = String(v || '');
-            let m = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
-            if (m) return m[1];
-            m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-            if (m) return m[1];
-            m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
-            if (m) return m[1];
-            return '';
-        }
-        function driveThumbUrl(v, size) {
-            const id = driveFileId(v);
-            if (!id) return '';
-            return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (Number(size) || 800);
-        }
         function setUrlHyperlinks(ws, header, tooltip) {
             if (!ws || !ws['!ref']) return;
             const range = XLSX.utils.decode_range(ws['!ref']);
@@ -2441,8 +2419,6 @@
         };
 
         const { createApp } = Vue;
-        const BUKTI_PREVIEW_DELAY = 200;
-        const BUKTI_PREVIEW_CLOSE_DELAY = 150;
 
         function initialData() {
             return {
@@ -2489,9 +2465,6 @@
                     jadwal: [],
                     jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
-                    buktiPreview: { open: false, src: '', top: 0, left: 0, width: 720, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 },
-                    buktiPreviewTimer: null,
-                    buktiPreviewCloseTimer: null,
                     activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
@@ -2507,6 +2480,7 @@
         }
 
         const app = createApp({
+            mixins: [AppCommon.buktiPreviewMixin],
             components: { ExpandedDetail },
             data() {
                 return initialData();
@@ -3566,142 +3540,6 @@
                     const it = (m.items || []).find(x => x.linkBukti);
                     return it ? it.linkBukti : '';
                 },
-                buktiPreviewEnabled(event) {
-                    if (!event || event.pointerType !== 'mouse') return false;
-                    if (typeof window === 'undefined' || !window.matchMedia) return true;
-                    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-                },
-                onBuktiEnter(event, url) {
-                    if (!this.buktiPreviewEnabled(event)) return;
-                    const src = driveThumbUrl(url, 1600);
-                    if (!src) return;
-                    if (this.buktiPreview.hoverCard) return;
-                    this.cancelBuktiPreviewClose();
-                    if (this.buktiPreviewTimer) clearTimeout(this.buktiPreviewTimer);
-                    const anchor = event.currentTarget;
-                    this.buktiPreviewTimer = setTimeout(() => {
-                        this.buktiPreviewTimer = null;
-                        if (!anchor || !anchor.isConnected) return;
-                        const rect = anchor.getBoundingClientRect();
-                        this.buktiPreview.rectTop = rect.top;
-                        this.buktiPreview.rectBottom = rect.bottom;
-                        this.buktiPreview.rectLeft = rect.left;
-                        this.buktiPreview.rectWidth = rect.width;
-                        this.buktiPreview.src = src;
-                        this.buktiPreview.loading = true;
-                        this.buktiPreview.error = false;
-                        this.buktiPreview.ready = false;
-                        this.buktiPreview.open = true;
-                        this.$nextTick(() => this.positionBuktiPreview());
-                    }, BUKTI_PREVIEW_DELAY);
-                },
-                onBuktiLeave() {
-                    if (this.buktiPreviewTimer) {
-                        clearTimeout(this.buktiPreviewTimer);
-                        this.buktiPreviewTimer = null;
-                    }
-                    if (this.buktiPreview.hoverCard) return;
-                    this.scheduleBuktiPreviewClose();
-                },
-                onBuktiCardEnter() {
-                    this.cancelBuktiPreviewClose();
-                    this.buktiPreview.hoverCard = true;
-                },
-                onBuktiCardLeave() {
-                    this.buktiPreview.hoverCard = false;
-                    this.scheduleBuktiPreviewClose();
-                },
-                scheduleBuktiPreviewClose() {
-                    if (!this.buktiPreview.open) return;
-                    this.cancelBuktiPreviewClose();
-                    this.buktiPreviewCloseTimer = setTimeout(() => {
-                        this.buktiPreviewCloseTimer = null;
-                        this.closeBuktiPreview();
-                    }, BUKTI_PREVIEW_CLOSE_DELAY);
-                },
-                cancelBuktiPreviewClose() {
-                    if (this.buktiPreviewCloseTimer) {
-                        clearTimeout(this.buktiPreviewCloseTimer);
-                        this.buktiPreviewCloseTimer = null;
-                    }
-                },
-                positionBuktiPreview() {
-                    const card = this.$refs.buktiPreview;
-                    const rectWidth = this.buktiPreview.rectWidth;
-                    if (!card || !this.buktiPreview.open || !rectWidth) return;
-                    const margin = 12;
-                    const gap = 12;
-                    const minWidth = 360;
-                    const maxWidth = 720;
-                    const viewportW = window.innerWidth;
-                    const viewportH = window.innerHeight;
-                    const height = card.offsetHeight || 320;
-                    const rightEdge = this.buktiPreview.rectLeft + rectWidth;
-                    const leftSpace = this.buktiPreview.rectLeft - gap - margin;
-                    const rightSpace = viewportW - rightEdge - gap - margin;
-                    let placement;
-                    let width;
-                    let left;
-                    if (leftSpace >= minWidth) {
-                        placement = 'left';
-                        width = Math.min(maxWidth, leftSpace);
-                        left = this.buktiPreview.rectLeft - gap - width;
-                    } else if (rightSpace >= minWidth) {
-                        placement = 'right';
-                        width = Math.min(maxWidth, rightSpace);
-                        left = rightEdge + gap;
-                    } else {
-                        placement = 'below';
-                        width = Math.min(maxWidth, viewportW - margin * 2);
-                        left = this.buktiPreview.rectLeft + (rectWidth / 2) - (width / 2);
-                        if (left + width > viewportW - margin) left = viewportW - width - margin;
-                        if (left < margin) left = margin;
-                    }
-                    let top = placement === 'below' ? this.buktiPreview.rectBottom + gap : this.buktiPreview.rectTop;
-                    if (placement === 'below' && top + height > viewportH - margin) {
-                        const above = this.buktiPreview.rectTop - height - gap;
-                        if (above >= margin) {
-                            top = above;
-                            placement = 'above';
-                        } else {
-                            top = Math.max(margin, viewportH - height - margin);
-                        }
-                    } else {
-                        if (top + height > viewportH - margin) top = viewportH - height - margin;
-                        if (top < margin) top = margin;
-                    }
-                    this.buktiPreview.width = Math.round(width);
-                    this.buktiPreview.left = Math.round(left);
-                    this.buktiPreview.top = Math.round(top);
-                    this.buktiPreview.placement = placement;
-                    this.buktiPreview.ready = true;
-                },
-                onBuktiImageLoad() {
-                    this.buktiPreview.loading = false;
-                    this.buktiPreview.error = false;
-                    this.$nextTick(() => this.positionBuktiPreview());
-                },
-                onBuktiImageError() {
-                    this.buktiPreview.loading = false;
-                    this.buktiPreview.error = true;
-                    this.$nextTick(() => this.positionBuktiPreview());
-                },
-                closeBuktiPreview() {
-                    if (this.buktiPreviewTimer) {
-                        clearTimeout(this.buktiPreviewTimer);
-                        this.buktiPreviewTimer = null;
-                    }
-                    if (this.buktiPreviewCloseTimer) {
-                        clearTimeout(this.buktiPreviewCloseTimer);
-                        this.buktiPreviewCloseTimer = null;
-                    }
-                    this.buktiPreview = { open: false, src: '', top: 0, left: 0, width: 720, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
-                },
-                handleBuktiPreviewViewportChange(event) {
-                    const card = this.$refs.buktiPreview;
-                    if (card && event && event.target && card.contains(event.target)) return;
-                    this.closeBuktiPreview();
-                },
                 normBagian(v) {
                     return AppCommon.normBagian(v);
                 },
@@ -4400,17 +4238,11 @@
                     if (['ringkas', 'analitis', 'cetak'].indexOf(mode) !== -1) this.laporanMode = mode;
                 } catch (e) { /* abaikan URL tidak valid */ }
                 if (this.loggedIn) this.loadData();
-                window.addEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
-                window.addEventListener('resize', this.handleBuktiPreviewViewportChange);
             },
             beforeUnmount() {
                 if (this.rafNumbers) cancelAnimationFrame(this.rafNumbers);
                 if (this.rafCharts) cancelAnimationFrame(this.rafCharts);
                 if (this.toastTimer) clearTimeout(this.toastTimer);
-                if (this.buktiPreviewTimer) clearTimeout(this.buktiPreviewTimer);
-                if (this.buktiPreviewCloseTimer) clearTimeout(this.buktiPreviewCloseTimer);
-                window.removeEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
-                window.removeEventListener('resize', this.handleBuktiPreviewViewportChange);
             }
         });
 

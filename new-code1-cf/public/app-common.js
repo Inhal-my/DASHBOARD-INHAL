@@ -74,12 +74,206 @@
     return /^https?:\/\//i.test(s) ? s : '#';
   }
 
+  const BUKTI_PREVIEW = { delay: 200, closeDelay: 150, maxWidth: 880, minWidth: 360 };
+
+  function driveFileId(v) {
+    const s = String(v || '');
+    let m = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (m) return m[1];
+    m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (m) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if (m) return m[1];
+    return '';
+  }
+
+  function driveThumbUrl(v, size) {
+    const id = driveFileId(v);
+    if (!id) return '';
+    return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (Number(size) || 1600);
+  }
+
+  function emptyBuktiPreview() {
+    return { open: false, src: '', top: 0, left: 0, width: BUKTI_PREVIEW.maxWidth, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
+  }
+
+  const buktiPreviewMixin = {
+    data() {
+      return {
+        buktiPreview: emptyBuktiPreview(),
+        buktiPreviewTimer: null,
+        buktiPreviewCloseTimer: null
+      };
+    },
+    mounted() {
+      if (typeof window === 'undefined') return;
+      window.addEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
+      window.addEventListener('resize', this.handleBuktiPreviewViewportChange);
+    },
+    beforeUnmount() { this.teardownBuktiPreview(); },
+    unmounted() { this.teardownBuktiPreview(); },
+    methods: {
+      buktiPreviewEnabled(event) {
+        if (!event || event.pointerType !== 'mouse') return false;
+        if (typeof window === 'undefined' || !window.matchMedia) return true;
+        return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      },
+      onBuktiEnter(event, url) {
+        if (!this.buktiPreviewEnabled(event)) return;
+        const src = driveThumbUrl(url, 1600);
+        if (!src) return;
+        if (this.buktiPreview.hoverCard) return;
+        this.cancelBuktiPreviewClose();
+        if (this.buktiPreviewTimer) clearTimeout(this.buktiPreviewTimer);
+        const anchor = event.currentTarget;
+        this.buktiPreviewTimer = setTimeout(() => {
+          this.buktiPreviewTimer = null;
+          if (!anchor || !anchor.isConnected) return;
+          const rect = anchor.getBoundingClientRect();
+          this.buktiPreview.rectTop = rect.top;
+          this.buktiPreview.rectBottom = rect.bottom;
+          this.buktiPreview.rectLeft = rect.left;
+          this.buktiPreview.rectWidth = rect.width;
+          this.buktiPreview.src = src;
+          this.buktiPreview.loading = true;
+          this.buktiPreview.error = false;
+          this.buktiPreview.ready = false;
+          this.buktiPreview.open = true;
+          this.$nextTick(() => this.positionBuktiPreview());
+        }, BUKTI_PREVIEW.delay);
+      },
+      onBuktiLeave() {
+        if (this.buktiPreviewTimer) {
+          clearTimeout(this.buktiPreviewTimer);
+          this.buktiPreviewTimer = null;
+        }
+        if (this.buktiPreview.hoverCard) return;
+        this.scheduleBuktiPreviewClose();
+      },
+      onBuktiCardEnter() {
+        this.cancelBuktiPreviewClose();
+        this.buktiPreview.hoverCard = true;
+      },
+      onBuktiCardLeave() {
+        this.buktiPreview.hoverCard = false;
+        this.scheduleBuktiPreviewClose();
+      },
+      scheduleBuktiPreviewClose() {
+        if (!this.buktiPreview.open) return;
+        this.cancelBuktiPreviewClose();
+        this.buktiPreviewCloseTimer = setTimeout(() => {
+          this.buktiPreviewCloseTimer = null;
+          this.closeBuktiPreview();
+        }, BUKTI_PREVIEW.closeDelay);
+      },
+      cancelBuktiPreviewClose() {
+        if (this.buktiPreviewCloseTimer) {
+          clearTimeout(this.buktiPreviewCloseTimer);
+          this.buktiPreviewCloseTimer = null;
+        }
+      },
+      positionBuktiPreview() {
+        const card = this.$refs.buktiPreview;
+        const rectWidth = this.buktiPreview.rectWidth;
+        if (!card || !this.buktiPreview.open || !rectWidth) return;
+        const margin = 12;
+        const gap = 12;
+        const viewportW = window.innerWidth;
+        const viewportH = window.innerHeight;
+        const height = card.offsetHeight || 360;
+        const rightEdge = this.buktiPreview.rectLeft + rectWidth;
+        const leftSpace = this.buktiPreview.rectLeft - gap - margin;
+        const rightSpace = viewportW - rightEdge - gap - margin;
+        let placement;
+        let width;
+        let left;
+        if (leftSpace >= BUKTI_PREVIEW.minWidth) {
+          placement = 'left';
+          width = Math.min(BUKTI_PREVIEW.maxWidth, leftSpace);
+          left = this.buktiPreview.rectLeft - gap - width;
+        } else if (rightSpace >= BUKTI_PREVIEW.minWidth) {
+          placement = 'right';
+          width = Math.min(BUKTI_PREVIEW.maxWidth, rightSpace);
+          left = rightEdge + gap;
+        } else {
+          placement = 'below';
+          width = Math.min(BUKTI_PREVIEW.maxWidth, viewportW - margin * 2);
+          left = this.buktiPreview.rectLeft + (rectWidth / 2) - (width / 2);
+          if (left + width > viewportW - margin) left = viewportW - width - margin;
+          if (left < margin) left = margin;
+        }
+        let top = placement === 'below' ? this.buktiPreview.rectBottom + gap : this.buktiPreview.rectTop;
+        if (placement === 'below' && top + height > viewportH - margin) {
+          const above = this.buktiPreview.rectTop - height - gap;
+          if (above >= margin) {
+            top = above;
+            placement = 'above';
+          } else {
+            top = Math.max(margin, viewportH - height - margin);
+          }
+        } else {
+          if (top + height > viewportH - margin) top = viewportH - height - margin;
+          if (top < margin) top = margin;
+        }
+        this.buktiPreview.width = Math.round(width);
+        this.buktiPreview.left = Math.round(left);
+        this.buktiPreview.top = Math.round(top);
+        this.buktiPreview.placement = placement;
+        this.buktiPreview.ready = true;
+      },
+      onBuktiImageLoad() {
+        this.buktiPreview.loading = false;
+        this.buktiPreview.error = false;
+        this.$nextTick(() => this.positionBuktiPreview());
+      },
+      onBuktiImageError() {
+        this.buktiPreview.loading = false;
+        this.buktiPreview.error = true;
+        this.$nextTick(() => this.positionBuktiPreview());
+      },
+      closeBuktiPreview() {
+        if (this.buktiPreviewTimer) {
+          clearTimeout(this.buktiPreviewTimer);
+          this.buktiPreviewTimer = null;
+        }
+        if (this.buktiPreviewCloseTimer) {
+          clearTimeout(this.buktiPreviewCloseTimer);
+          this.buktiPreviewCloseTimer = null;
+        }
+        this.buktiPreview = emptyBuktiPreview();
+      },
+      handleBuktiPreviewViewportChange(event) {
+        const card = this.$refs.buktiPreview;
+        if (card && event && event.target && card.contains(event.target)) return;
+        this.closeBuktiPreview();
+      },
+      teardownBuktiPreview() {
+        if (this.buktiPreviewTimer) {
+          clearTimeout(this.buktiPreviewTimer);
+          this.buktiPreviewTimer = null;
+        }
+        if (this.buktiPreviewCloseTimer) {
+          clearTimeout(this.buktiPreviewCloseTimer);
+          this.buktiPreviewCloseTimer = null;
+        }
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('scroll', this.handleBuktiPreviewViewportChange, true);
+          window.removeEventListener('resize', this.handleBuktiPreviewViewportChange);
+        }
+      }
+    }
+  };
+
   root.AppCommon = {
     normBagian: normBagian,
     resolveBagianLabel: resolveBagianLabel,
     formatTanggal: formatTanggal,
     formatTanggalWaktu: formatTanggalWaktu,
     formatRupiah: formatRupiah,
-    safeUrl: safeUrl
+    safeUrl: safeUrl,
+    driveFileId: driveFileId,
+    driveThumbUrl: driveThumbUrl,
+    buktiPreview: BUKTI_PREVIEW,
+    buktiPreviewMixin: buktiPreviewMixin
   };
 })(typeof window !== 'undefined' ? window : this);
