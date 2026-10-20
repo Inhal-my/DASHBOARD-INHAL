@@ -184,6 +184,33 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('>Total Tagihan</div>');
     expect(html).toContain('in-mcard');
   });
+  it('baris pembayaran memakai hover preview dan klik untuk rincian', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('@pointerenter="onBayarPreviewEnter(m, $event)"');
+    expect(html).toContain('@pointerleave="onBayarPreviewLeave($event)"');
+    expect(html).toContain('@click="onBayarRowClick(m)"');
+    expect(html).toContain('Arahkan kursor untuk pratinjau cepat');
+  });
+  it('kartu preview memakai teleport dan hanya satu di tab pembayaran', async () => {
+    const html = await loadHtml();
+    const bayarStart = html.indexOf("activeTab === 'bayar'");
+    const teleport = html.indexOf('<teleport to="body">');
+    const pembayaranEnd = html.indexOf('<!-- ===================== HALAMAN: CETAK ===================== -->');
+    expect(bayarStart).toBeGreaterThan(-1);
+    expect(teleport).toBeGreaterThan(bayarStart);
+    expect(teleport).toBeLessThan(pembayaranEnd);
+    expect(html.split('<teleport to="body">').length - 1).toBe(1);
+    expect(html).toContain('class="bayar-preview"');
+    expect(html).toContain('@pointerenter="onBayarPreviewCardEnter"');
+    expect(html).toContain('@pointerleave="onBayarPreviewCardLeave"');
+  });
+  it('preview punya jeda 200ms dan dinonaktifkan di layar sentuh', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('BAYAR_PREVIEW_DELAY = 200');
+    expect(html).toContain("event.pointerType !== 'mouse'");
+    expect(html).toContain('(hover: hover) and (pointer: fine)');
+    expect(html).toContain('@media (max-width:1023px){ .bayar-preview { display: none !important; } }');
+  });
 });
 
 describe('detail laporan kejelasan tampilan', () => {
