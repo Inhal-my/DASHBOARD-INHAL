@@ -197,6 +197,11 @@ describe('detail laporan tab pembayaran', () => {
     const html = await loadHtml();
     expect(html).toContain('<teleport to="body">');
     expect(html).toContain('class="bukti-preview"');
+    expect(html).toContain("'is-left': buktiPreview.placement === 'left'");
+    expect(html).toContain('const minWidth = 360');
+    expect(html).toContain('const maxWidth = 720');
+    expect(html).toContain('placement = \'left\'');
+    expect(html).toContain('.bukti-preview.is-left::before');
     expect(html).toContain('@pointerenter="onBuktiCardEnter"');
     expect(html).toContain('@pointerleave="onBuktiCardLeave"');
     expect(html).toContain('function driveFileId(');

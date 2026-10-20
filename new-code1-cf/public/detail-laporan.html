@@ -221,11 +221,13 @@
         .in-docdot.on.bukti { background:#ea580c; }
         .in-cards { display:none; flex-direction:column; gap:12px; padding:12px; }
         @media (max-width:1023px){ .in-cards { display:flex; } }
-        .bukti-preview { position: fixed; z-index: 150; width: 320px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
-        .bukti-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
-        .bukti-preview.is-above::before { top: auto; bottom: -8px; }
-        .bukti-preview img { display: block; width: 100%; max-height: 420px; object-fit: contain; border-radius: 8px; background: #f8fafc; }
-        .bukti-preview-state { display: flex; align-items: center; justify-content: center; min-height: 140px; padding: 12px; text-align: center; font-size: 11px; color: var(--ink-400); }
+        .bukti-preview { position: fixed; z-index: 150; width: 720px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
+        .bukti-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
+        .bukti-preview.is-above::before { top: auto; bottom: -12px; }
+        .bukti-preview.is-left::before { top: 0; bottom: 0; left: auto; right: -12px; width: 12px; height: auto; }
+        .bukti-preview.is-right::before { top: 0; bottom: 0; left: -12px; right: auto; width: 12px; height: auto; }
+        .bukti-preview img { display: block; width: 100%; max-height: 74vh; object-fit: contain; border-radius: 8px; background: #f8fafc; }
+        .bukti-preview-state { display: flex; align-items: center; justify-content: center; min-height: 320px; padding: 12px; text-align: center; font-size: 11px; color: var(--ink-400); }
         .bukti-preview-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 10.5px; color: var(--ink-400); }
         .bayar-hint-mobile { display: inline; }
         .bayar-hint-desktop { display: none; }
@@ -1943,7 +1945,7 @@
                     </section>
 
                     <teleport to="body">
-                        <div v-if="buktiPreview.open" ref="buktiPreview" class="bukti-preview" :class="{ 'is-above': buktiPreview.placement === 'above' }" :style="{ top: buktiPreview.top + 'px', left: buktiPreview.left + 'px', visibility: buktiPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau bukti bayar" @pointerenter="onBuktiCardEnter" @pointerleave="onBuktiCardLeave">
+                        <div v-if="buktiPreview.open" ref="buktiPreview" class="bukti-preview" :class="{ 'is-above': buktiPreview.placement === 'above', 'is-left': buktiPreview.placement === 'left', 'is-right': buktiPreview.placement === 'right' }" :style="{ top: buktiPreview.top + 'px', left: buktiPreview.left + 'px', width: buktiPreview.width + 'px', visibility: buktiPreview.ready ? 'visible' : 'hidden' }" role="dialog" aria-label="Pratinjau bukti bayar" @pointerenter="onBuktiCardEnter" @pointerleave="onBuktiCardLeave">
                             <div class="relative">
                                 <img v-show="!buktiPreview.loading && !buktiPreview.error" :src="buktiPreview.src" alt="Pratinjau bukti bayar" @load="onBuktiImageLoad" @error="onBuktiImageError">
                                 <div v-if="buktiPreview.loading" class="bukti-preview-state"><i class="bi bi-hourglass-split mr-1"></i> Memuat pratinjau...</div>
@@ -2487,7 +2489,7 @@
                     jadwal: [],
                     jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
-                    buktiPreview: { open: false, src: '', top: 0, left: 0, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 },
+                    buktiPreview: { open: false, src: '', top: 0, left: 0, width: 720, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 },
                     buktiPreviewTimer: null,
                     buktiPreviewCloseTimer: null,
                     activeMatrixCell: null,
@@ -3571,7 +3573,7 @@
                 },
                 onBuktiEnter(event, url) {
                     if (!this.buktiPreviewEnabled(event)) return;
-                    const src = driveThumbUrl(url, 800);
+                    const src = driveThumbUrl(url, 1600);
                     if (!src) return;
                     if (this.buktiPreview.hoverCard) return;
                     this.cancelBuktiPreviewClose();
@@ -3628,23 +3630,47 @@
                     const rectWidth = this.buktiPreview.rectWidth;
                     if (!card || !this.buktiPreview.open || !rectWidth) return;
                     const margin = 12;
-                    const gap = 8;
-                    const width = card.offsetWidth || 320;
-                    const height = card.offsetHeight || 140;
-                    let left = this.buktiPreview.rectLeft + (rectWidth / 2) - (width / 2);
-                    if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
-                    if (left < margin) left = margin;
-                    let top = this.buktiPreview.rectBottom + gap;
-                    let placement = 'below';
-                    if (top + height > window.innerHeight - margin) {
+                    const gap = 12;
+                    const minWidth = 360;
+                    const maxWidth = 720;
+                    const viewportW = window.innerWidth;
+                    const viewportH = window.innerHeight;
+                    const height = card.offsetHeight || 320;
+                    const rightEdge = this.buktiPreview.rectLeft + rectWidth;
+                    const leftSpace = this.buktiPreview.rectLeft - gap - margin;
+                    const rightSpace = viewportW - rightEdge - gap - margin;
+                    let placement;
+                    let width;
+                    let left;
+                    if (leftSpace >= minWidth) {
+                        placement = 'left';
+                        width = Math.min(maxWidth, leftSpace);
+                        left = this.buktiPreview.rectLeft - gap - width;
+                    } else if (rightSpace >= minWidth) {
+                        placement = 'right';
+                        width = Math.min(maxWidth, rightSpace);
+                        left = rightEdge + gap;
+                    } else {
+                        placement = 'below';
+                        width = Math.min(maxWidth, viewportW - margin * 2);
+                        left = this.buktiPreview.rectLeft + (rectWidth / 2) - (width / 2);
+                        if (left + width > viewportW - margin) left = viewportW - width - margin;
+                        if (left < margin) left = margin;
+                    }
+                    let top = placement === 'below' ? this.buktiPreview.rectBottom + gap : this.buktiPreview.rectTop;
+                    if (placement === 'below' && top + height > viewportH - margin) {
                         const above = this.buktiPreview.rectTop - height - gap;
                         if (above >= margin) {
                             top = above;
                             placement = 'above';
                         } else {
-                            top = Math.max(margin, window.innerHeight - height - margin);
+                            top = Math.max(margin, viewportH - height - margin);
                         }
+                    } else {
+                        if (top + height > viewportH - margin) top = viewportH - height - margin;
+                        if (top < margin) top = margin;
                     }
+                    this.buktiPreview.width = Math.round(width);
                     this.buktiPreview.left = Math.round(left);
                     this.buktiPreview.top = Math.round(top);
                     this.buktiPreview.placement = placement;
@@ -3669,7 +3695,7 @@
                         clearTimeout(this.buktiPreviewCloseTimer);
                         this.buktiPreviewCloseTimer = null;
                     }
-                    this.buktiPreview = { open: false, src: '', top: 0, left: 0, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
+                    this.buktiPreview = { open: false, src: '', top: 0, left: 0, width: 720, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
                 },
                 handleBuktiPreviewViewportChange(event) {
                     const card = this.$refs.buktiPreview;
