@@ -94,7 +94,7 @@
   }
 
   function emptyBuktiPreview() {
-    return { open: false, src: '', top: 0, left: 0, width: BUKTI_PREVIEW.maxWidth, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
+    return { open: false, src: '', label: '', top: 0, left: 0, width: BUKTI_PREVIEW.maxWidth, ready: false, placement: 'below', loading: false, error: false, hoverCard: false, rectTop: 0, rectBottom: 0, rectLeft: 0, rectWidth: 0 };
   }
 
   const buktiPreviewMixin = {
@@ -118,7 +118,7 @@
         if (typeof window === 'undefined' || !window.matchMedia) return true;
         return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
       },
-      onBuktiEnter(event, url) {
+      onBuktiEnter(event, url, label) {
         if (!this.buktiPreviewEnabled(event)) return;
         const src = driveThumbUrl(url, 1600);
         if (!src) return;
@@ -135,6 +135,7 @@
           this.buktiPreview.rectLeft = rect.left;
           this.buktiPreview.rectWidth = rect.width;
           this.buktiPreview.src = src;
+          this.buktiPreview.label = String(label || '').trim();
           this.buktiPreview.loading = true;
           this.buktiPreview.error = false;
           this.buktiPreview.ready = false;

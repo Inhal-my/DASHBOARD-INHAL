@@ -193,6 +193,41 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('@click.stop="closeBuktiPreview()"');
     expect(html).toContain('Arahkan kursor ke tombol Bukti');
   });
+  it('menyediakan kolom Berita Acara setelah Nama dengan dua ikon BA', async () => {
+    const html = await loadHtml();
+    const nama = html.indexOf('<th class="px-3 py-2.5 text-left">Nama</th>');
+    const ba = html.indexOf('>Berita Acara</th>');
+    expect(nama).toBeGreaterThan(-1);
+    expect(ba).toBeGreaterThan(nama);
+    expect(html).toContain('unitsByPengajuan');
+    expect(html).toContain("baEntriesFor(this.unitsByPengajuan");
+    expect(html).toContain("'baPendukung')");
+    expect(html).toContain('class="ba-ic is-p"');
+    expect(html).toContain('class="ba-ic is-l"');
+    expect(html).toContain('bi-file-earmark-text');
+    expect(html).toContain('bi-file-earmark-check');
+    expect(html).toContain('@pointerenter="onBaEnter($event, \'Pendukung\', m.baPendukung)"');
+    expect(html).toContain('@pointerenter="onBaEnter($event, \'Pelaksanaan\', m.baPelaksanaan)"');
+    expect(html).toContain('@click.stop="onBaClick($event, \'Pendukung\', m.baPendukung)"');
+    expect(html).toContain('colspan="9"');
+  });
+  it('hover ikon BA menampilkan daftar bila lebih dari satu berkas', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('class="ba-menu"');
+    expect(html).toContain('onBaMenuEnter');
+    expect(html).toContain('onBaMenuLeave');
+    expect(html).toContain('scheduleBaMenuClose');
+    expect(html).toContain('baMenu.items');
+    expect(html).toContain('ba-count');
+    expect(html).toContain("'BA ' + baMenu.type");
+  });
+  it('export pembayaran memuat ID dan link BA', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("'BA Pendukung': m.baPendukung.map(b => b.baId).join(', ')");
+    expect(html).toContain("'BA Pelaksanaan': m.baPelaksanaan.map(b => b.baId).join(', ')");
+    expect(html).toContain("'Link BA Pendukung'");
+    expect(html).toContain("'Link BA Pelaksanaan'");
+  });
   it('kartu preview file memakai teleport dan mixin bersama', async () => {
     const html = await loadHtml();
     expect(html).toContain('<link href="/bukti-preview.css" rel="stylesheet">');

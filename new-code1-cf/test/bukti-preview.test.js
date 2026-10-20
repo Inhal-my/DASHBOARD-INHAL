@@ -60,6 +60,9 @@ describe('preview bukti bersama', () => {
 
   it('memakai jeda 200ms dan lebar maksimum 880px', async () => {
     const AppCommon = await loadCommon();
+    const src = await asset('/app-common.js');
+    expect(src).toContain('onBuktiEnter(event, url, label)');
+    expect(src).toContain("label: ''");
     expect(AppCommon.buktiPreview.delay).toBe(200);
     expect(AppCommon.buktiPreview.closeDelay).toBe(150);
     expect(AppCommon.buktiPreview.maxWidth).toBe(880);
@@ -102,7 +105,8 @@ describe('preview bukti bersama', () => {
     const dashboard = await asset('/dashboard.html');
     expect(dashboard).toContain('<link href="/bukti-preview.css" rel="stylesheet">');
     expect(dashboard).toContain('mixins: [AppCommon.buktiPreviewMixin]');
-    expect(dashboard).toContain('class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl)"');
+    expect(dashboard).toContain("onBuktiEnter($event, b.fileUrl, 'BA Pendukung')");
+    expect(dashboard).toContain("onBuktiEnter($event, b.fileUrl, 'BA Pelaksanaan')");
     expect(dashboard).toContain('r.__pendukungBa');
     expect(dashboard).toContain('r.__pelaksanaanBa');
     expect(dashboard).toContain('class="bukti-preview"');

@@ -1200,7 +1200,7 @@
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPendukung(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPendukung(r) ? 'Ada' : 'Belum' }}</span>
                                                         <span class="ml-1 text-[10px] text-slate-400">{{ r.pesertaDenganBa }}/{{ r.jumlahPeserta }}</span>
-                                                        <template v-for="(b, bi) in r.__pendukungBa" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in r.__pendukungBa" :key="'p'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl, 'BA Pendukung')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3"><span v-if="!r.__orphan" class="rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset" :class="statusBadge(unitKeputusan(r))">{{ unitKeputusan(r) }}</span><span v-else class="text-xs text-slate-400">-</span></td>
@@ -1209,7 +1209,7 @@
                                                     <template v-else-if="!unitPelaksanaanEligible(r)"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">-</span></template>
                                                     <template v-else>
                                                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="unitHasPelaksanaan(r) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">{{ unitHasPelaksanaan(r) ? 'Ada' : 'Belum' }}</span>
-                                                        <template v-for="(b, bi) in r.__pelaksanaanBa" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a></template>
+                                                        <template v-for="(b, bi) in r.__pelaksanaanBa" :key="'l'+bi"><a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip" @pointerenter="onBuktiEnter($event, b.fileUrl, 'BA Pelaksanaan')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a></template>
                                                     </template>
                                                 </td>
                                                 <td class="p-3">
@@ -1255,7 +1255,7 @@
                                                             <div v-if="!r.ba.length" class="text-xs text-slate-400">Belum ada BA.</div>
                                                             <div v-for="(b, bi) in r.ba" :key="bi" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
                                                                 <div class="flex flex-wrap items-center gap-2">
-                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip font-mono" @pointerenter="onBuktiEnter($event, b.fileUrl)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                                    <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="ba-chip font-mono" @pointerenter="onBuktiEnter($event, b.fileUrl, 'BA ' + (b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung'))" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i>{{ b.baId }}</a><span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
                                                                     <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
                                                                     <button class="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
@@ -2585,7 +2585,7 @@
                     <div v-else-if="buktiPreview.error" class="bukti-preview-state">Pratinjau tidak tersedia.<br>Klik untuk membuka file.</div>
                 </div>
                 <div class="bukti-preview-foot">
-                    <span>Pratinjau berita acara</span>
+                    <span>{{ buktiPreview.label ? 'Pratinjau ' + buktiPreview.label : 'Pratinjau berita acara' }}</span>
                     <span>Klik untuk membuka</span>
                 </div>
             </div>
