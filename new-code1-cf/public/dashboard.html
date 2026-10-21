@@ -2040,7 +2040,7 @@
                                 <h3 id="auditIntegritasTitle" class="text-sm font-bold text-slate-900">Audit Integritas Data</h3>
                                 <p class="mt-0.5 text-[11px] text-slate-500">Duplikat master, referensi blok asing, kunci kegiatan, dan kualitas data transaksi.</p>
                             </div>
-                            <button type="button" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeMasterAudit()"><i class="bi bi-x-lg"></i></button>
+                            <button type="button" aria-label="Tutup" :disabled="master.audit.loading" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40" @click="closeMasterAudit()"><i class="bi bi-x-lg"></i></button>
                         </div>
                         <div class="modal-body space-y-4 px-6 py-4">
                             <div v-if="master.audit.error" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100">{{ master.audit.error }}</div>
@@ -2164,7 +2164,7 @@
                             </div>
                         </div>
                         <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
-                            <button class="btn-soft" @click="closeMasterAudit()">Tutup</button>
+                            <button class="btn-soft" :disabled="master.audit.loading" @click="closeMasterAudit()">Tutup</button>
                             <button class="btn-primary" :disabled="master.audit.loading" @click="loadMasterAudit()"><i class="bi bi-arrow-repeat"></i> {{ master.audit.loading ? 'Menjalankan...' : 'Jalankan ulang' }}</button>
                         </div>
                     </div>

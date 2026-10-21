@@ -44,6 +44,7 @@ async function main() {
     await page.getByRole('button', { name: 'Audit' }).click();
     const auditDialog = page.getByRole('dialog', { name: /Audit Integritas Data/ });
     await auditDialog.getByRole('heading', { name: 'Audit Integritas Data' }).waitFor({ timeout: 15000 });
+    await auditDialog.getByRole('button', { name: 'Jalankan ulang' }).waitFor({ timeout: 15000 });
     await auditDialog.getByRole('button', { name: 'Tutup', exact: true }).first().click();
     await auditDialog.waitFor({ state: 'hidden' });
     console.log('OK audit integritas data');
