@@ -2,6 +2,7 @@ import { requireBagianSession } from '../session.js';
 import { nextIdNumber } from '../sequence.js';
 import { kegiatanKey, getBagianBaStatuses } from '../read/common.js';
 import { validateBaPesertaStatus } from './beritaAcara.js';
+import { validateJadwalInput } from '../validation.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -101,6 +102,8 @@ async function hasDuplicateJadwal(db, meta, peserta) {
 export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
   const p = payload || {};
   await requireBagianSession(db, kategori, p.bagian, ctx.token, ctx.session);
+  const input = validateJadwalInput(p);
+  if (!input.ok) return { success: false, message: input.message };
   const bagian = str(p.bagian) || str(kategori);
   const peserta = normalizePeserta(p);
   const check = await validatePayload(db, peserta);
@@ -137,6 +140,8 @@ export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, c
   if (!existing) return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan.' };
   await requireBagianSession(db, kategori, existing.bagian, ctx.token, ctx.session);
   if (await hasBa(db, id)) return { success: false, message: 'Jadwal terkunci: berita acara sudah dibuat.' };
+  const input = validateJadwalInput(p);
+  if (!input.ok) return { success: false, message: input.message };
 
   const peserta = normalizePeserta(p);
   const check = await validatePayload(db, peserta);

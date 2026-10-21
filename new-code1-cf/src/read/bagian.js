@@ -97,7 +97,7 @@ async function getBaPesertaMap(db) {
 }
 
 async function getBaAdminPesertaMap(db) {
-  const rows = (await db.prepare('SELECT * FROM berita_acara_admin_peserta').all()).results || [];
+  const rows = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE active = 1').all()).results || [];
   const map = {};
   for (const r of rows) {
     const id = String(r.ba_id || '').trim();

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
-import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan, getBagianAggregation, getUploadMonitor } from '../src/read/dashboard.js';
+import { getDashboardBootstrap, getPengajuanList, getBaUploadOptions, getLabOptions, uploadSuratKeterangan, getBagianAggregation, getUploadMonitor, getBeritaAcaraAdminList } from '../src/read/dashboard.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -54,6 +54,25 @@ describe('dashboard read', () => {
     ).run();
     const boot = await getDashboardBootstrap(env.DB, ctx);
     expect(boot.baPendukungByPengajuan['INHAL-1'].fileUrl).toBe('https://drive/base');
+  });
+
+  it('hanya menampilkan peserta BA Pendukung yang aktif', async () => {
+    await seed();
+    const ctx = await adminCtx();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jumlah_peserta,sumber,kegiatan_key) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0003','Ujian','A','UAS','2026-09-20','1','Admin','ujian|a|uas')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,bagian,status_pengajuan,urutan,active) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0003','INHAL-1','2201010001','Aisyah','A','Ujian','ACC',1,1)"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,bagian,status_pengajuan,urutan,active) " +
+      "VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0003','INHAL-2','2201010002','Budi','A','Ujian','ACC',2,0)"
+    ).run();
+    const list = await getBeritaAcaraAdminList(env.DB, ctx);
+    expect(list[0].peserta.map((p) => p.npm)).toEqual(['2201010001']);
   });
 
   it('filters pengajuan list by status', async () => {

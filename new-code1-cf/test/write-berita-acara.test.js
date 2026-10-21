@@ -59,6 +59,8 @@ describe('berita acara admin', () => {
     const pes = await env.DB.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(res.baId).all();
     expect(pes.results).toHaveLength(1);
     expect(pes.results[0].npm).toBe('2201010001');
+    const audit = await env.DB.prepare("SELECT aksi FROM audit_log WHERE target = ?1 AND aksi = 'BA_CREATE'").bind(res.baId).first();
+    expect(audit.aksi).toBe('BA_CREATE');
   });
 
   it('rejects uploads without any peserta', async () => {

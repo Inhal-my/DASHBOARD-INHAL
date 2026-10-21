@@ -2,6 +2,8 @@ import { requireAdmin, requireBagianSession } from '../session.js';
 import { getBagianBaStatuses, kegiatanKey, getMasterOptions, resolveBagian12 } from '../read/common.js';
 import { nextIdNumber } from '../sequence.js';
 import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
+import { validateBaCreateInput, validateBaUpdateInput } from '../validation.js';
+import { writeAuditLog } from '../audit.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -19,6 +21,20 @@ function nowIso() {
 }
 
 const BA_ID_CODE = { berita_acara: 'PEL', berita_acara_admin: 'PEN' };
+
+async function auditBa(db, ctx, action, baId, detail) {
+  try {
+    await writeAuditLog(db, {
+      actor: str(ctx && ctx.session && ctx.session.nama) || 'Sistem',
+      action: action,
+      target: baId,
+      detail: JSON.stringify(detail || {}),
+      alasan: ''
+    });
+  } catch {
+    // Audit BA bersifat best-effort; kegagalan sudah dicatat oleh writeAuditLog.
+  }
+}
 
 export async function nextBaId(db, table) {
   const year = new Date().getFullYear();
@@ -221,6 +237,8 @@ async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
 export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const p = payload || {};
+  const input = validateBaCreateInput(p);
+  if (!input.ok) return { success: false, message: input.message };
   const baId = await nextBaId(db, 'berita_acara_admin');
   const bagian = str(p.bagian) || 'Admin';
 
@@ -252,6 +270,7 @@ export async function saveBeritaAcaraAdmin(db, payload, ctx) {
     baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
     kegiatanKey: key, withDosen: false
   });
+  await auditBa(db, ctx, 'BA_CREATE', baId, { jenis: 'Pendukung', bagian: bagian, jumlahPeserta: peserta.length });
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
@@ -316,6 +335,7 @@ export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
     if (fileId && fileIds.indexOf(fileId) === -1) fileIds.push(fileId);
   }
   for (const fileId of fileIds) await trashDriveFile(ctx.env, fileId);
+  await auditBa(db, ctx, 'BA_DELETE', id, { jenis: 'Pendukung' });
 
   return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
@@ -324,10 +344,12 @@ export async function updateBeritaAcaraAdmin(db, baId, payload, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const p = payload || {};
+  const input = validateBaUpdateInput(p);
+  if (!input.ok) return { success: false, message: input.message };
   const existing = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
 
-  const p = payload || {};
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
 
@@ -337,6 +359,7 @@ export async function updateBeritaAcaraAdmin(db, baId, payload, ctx) {
     p.catatan !== undefined ? str(p.catatan) : str(existing.catatan)
   ];
   await db.prepare('UPDATE berita_acara_admin SET tanggal_pelaksanaan = ?1, jam = ?2, catatan = ?3 WHERE ba_id = ?4').bind(...vals, id).run();
+  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pendukung', tanggal: tanggal, jam: vals[1] });
   return { success: true, message: 'Berita acara pendukung diperbarui.' };
 }
 
@@ -360,6 +383,7 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
 
   const fileId = parseDriveFileId(existing.file_url);
   if (fileId) await trashDriveFile(ctx.env, fileId);
+  await auditBa(db, ctx, 'BA_DELETE', id, { jenis: 'Pelaksanaan' });
 
   return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
@@ -367,6 +391,8 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
 export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   const p = payload || {};
   await requireBagianSession(db, kategori, p.bagian, ctx.token, ctx.session);
+  const input = validateBaCreateInput(p);
+  if (!input.ok) return { success: false, message: input.message };
   const bagian = str(p.bagian) || str(kategori);
 
   const peserta = normalizeBaPeserta(p);
@@ -431,6 +457,7 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     }),
     ...buildSyncStmts(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam))
   ]);
+  await auditBa(db, ctx, 'BA_CREATE', baId, { jenis: 'Pelaksanaan', bagian: bagian, jumlahPeserta: peserta.length });
 
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
@@ -443,6 +470,8 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
 
   const p = payload || {};
+  const input = validateBaUpdateInput(p);
+  if (!input.ok) return { success: false, message: input.message };
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
   const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
@@ -502,6 +531,7 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   }
 
   await db.batch(stmts);
+  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pelaksanaan', jumlahPeserta: pesertaIds ? pesertaIds.length : currentIds.length });
   return {
     success: true,
     message: 'Berita acara diperbarui.',
@@ -517,6 +547,8 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   await requireBagianSession(db, kategori, existing.bagian, ctx.token, ctx.session);
 
   const p = payload || {};
+  const input = validateBaUpdateInput(p);
+  if (!input.ok) return { success: false, message: input.message };
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
   const dosen = p.dosen !== undefined ? str(p.dosen) : str(existing.dosen);
@@ -529,5 +561,6 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
       .bind(tanggal, jam, dosen, catatan, label, id),
     ...buildSyncStmts(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), dosen, tanggal, jam)
   ]);
+  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pelaksanaan', lengkapi: true });
   return { success: true, message: 'Berita acara dilengkapi.' };
 }

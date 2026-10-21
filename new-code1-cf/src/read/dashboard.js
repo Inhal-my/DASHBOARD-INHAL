@@ -352,7 +352,7 @@ export async function getBeritaAcaraAdminList(db, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const rows = (await db.prepare('SELECT * FROM berita_acara_admin').all()).results || [];
   rows.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
-  const peserta = (await db.prepare('SELECT * FROM berita_acara_admin_peserta').all()).results || [];
+  const peserta = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE active = 1').all()).results || [];
   const map = {};
   for (const r of peserta) {
     const id = String(r.ba_id || '').trim();

@@ -1,6 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { kegiatanKey, norm } from './common.js';
 import { BLOK_REF_TABLES, KEGIATAN_KEY_TABLES } from '../masterRefs.js';
+import { auditDataQuality } from './dataQuality.js';
 
 function clean(v) {
   return String(v === undefined || v === null ? '' : v).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
@@ -69,6 +70,7 @@ export async function auditMasterIntegrity(db, ctx) {
     orphans: orphans,
     blanks: blanks,
     keyDrift: keyDrift,
+    dataQuality: await auditDataQuality(db),
     totals: {
       duplicates: duplicates.length,
       orphans: orphans.reduce((sum, o) => sum + o.count, 0),

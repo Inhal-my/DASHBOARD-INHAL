@@ -132,7 +132,7 @@ describe('dashboard template', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('@click="openMasterAudit()"');
     expect(html).toContain('auditMasterIntegrity');
-    expect(html).toContain('Audit Integritas Master');
+    expect(html).toContain('Audit Integritas Data');
     expect(html).toContain('auditDriftTables');
     expect(html).toContain('auditBlankRows');
   });

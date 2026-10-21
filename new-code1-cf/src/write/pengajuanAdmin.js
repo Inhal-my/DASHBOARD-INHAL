@@ -300,7 +300,7 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
   const existing = await db.prepare('SELECT id FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
-  const tables = ['detail_kegiatan', 'status_history', 'check_data', 'log_upload', 'berita_acara_peserta', 'berita_acara_admin_peserta'];
+  const tables = ['detail_kegiatan', 'status_history', 'check_data', 'log_upload', 'berita_acara_peserta', 'berita_acara_admin_peserta', 'berita_acara_admin_berkas'];
   let deleted = 0;
   for (const table of tables) {
     const c = await db.prepare('SELECT COUNT(*) AS n FROM ' + table + ' WHERE id_pengajuan = ?1').bind(id).first();
@@ -308,16 +308,51 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
   }
   const uploadCount = await db.prepare('SELECT COUNT(*) AS n FROM uploads WHERE pengajuan_id = ?1').bind(id).first();
   deleted += Number(uploadCount && uploadCount.n) || 0;
+
+  const adminBaIds = (await db.prepare(
+    'SELECT DISTINCT ba_id FROM berita_acara_admin_peserta WHERE id_pengajuan = ?1'
+  ).bind(id).all()).results || [];
+  const bagianBaIds = (await db.prepare(
+    'SELECT DISTINCT ba_id FROM berita_acara_peserta WHERE id_pengajuan = ?1'
+  ).bind(id).all()).results || [];
+
+  const cleanupBa = [];
+  for (const row of adminBaIds) {
+    const baId = str(row.ba_id);
+    if (!baId) continue;
+    cleanupBa.push(
+      db.prepare(
+        'DELETE FROM berita_acara_admin WHERE ba_id = ?1 AND NOT EXISTS (' +
+        'SELECT 1 FROM berita_acara_admin_peserta p WHERE p.ba_id = ?1 AND p.active = 1)'
+      ).bind(baId),
+      db.prepare(
+        'DELETE FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND NOT EXISTS (' +
+        'SELECT 1 FROM berita_acara_admin a WHERE a.ba_id = ?1)'
+      ).bind(baId)
+    );
+  }
+  for (const row of bagianBaIds) {
+    const baId = str(row.ba_id);
+    if (!baId) continue;
+    cleanupBa.push(
+      db.prepare(
+        'DELETE FROM berita_acara WHERE ba_id = ?1 AND NOT EXISTS (' +
+        'SELECT 1 FROM berita_acara_peserta p WHERE p.ba_id = ?1)'
+      ).bind(baId)
+    );
+  }
+
   await db.batch([
     ...tables.map((t) => db.prepare('DELETE FROM ' + t + ' WHERE id_pengajuan = ?1').bind(id)),
     db.prepare('DELETE FROM uploads WHERE pengajuan_id = ?1').bind(id),
+    ...cleanupBa,
     db.prepare('DELETE FROM pengajuan WHERE id_pengajuan = ?1').bind(id)
   ]);
   await writeAuditLog(db, {
     actor: actorName(ctx),
     action: 'DELETE',
     target: 'Pengajuan',
-    detail: JSON.stringify({ idPengajuan: id, deleted: deleted }),
+    detail: JSON.stringify({ idPengajuan: id, deleted: deleted, baDiperiksa: adminBaIds.length + bagianBaIds.length }),
     alasan: str(alasan)
   });
   return { success: true, message: 'Pengajuan beserta data terkait berhasil dihapus (' + deleted + ' baris terkait).', deleted: deleted };

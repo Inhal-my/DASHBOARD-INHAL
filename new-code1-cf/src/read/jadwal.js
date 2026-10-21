@@ -17,7 +17,7 @@ function timeKey(v) {
   return m ? String(Number(m[1])).padStart(2, '0') + ':' + m[2] : str(v);
 }
 
-function jadwalIdentity(r) {
+export function jadwalIdentity(r) {
   const peserta = (r.peserta || [])
     .map((p) => str(p.npm) || str(p.idPengajuan))
     .filter(Boolean)

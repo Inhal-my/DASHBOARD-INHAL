@@ -2037,8 +2037,8 @@
                     <div class="modal-panel max-w-2xl shadow-lift">
                         <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900">Audit Integritas Master</h3>
-                                <p class="mt-0.5 text-[11px] text-slate-500">Duplikat, referensi blok asing, blok kosong, dan kunci kegiatan yang tidak sinkron.</p>
+                                <h3 class="text-sm font-bold text-slate-900">Audit Integritas Data</h3>
+                                <p class="mt-0.5 text-[11px] text-slate-500">Duplikat master, referensi blok asing, kunci kegiatan, dan kualitas data transaksi.</p>
                             </div>
                             <button type="button" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" @click="closeMasterAudit()"><i class="bi bi-x-lg"></i></button>
                         </div>
@@ -2064,6 +2064,61 @@
                                     <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
                                         <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.totals.keyDrift }}</div>
                                         <div class="text-[11px] text-slate-500">Kunci tidak sinkron</div>
+                                    </div>
+                                </div>
+                                <div v-if="master.audit.data.dataQuality" class="space-y-3">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Kualitas data transaksi</div>
+                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.mahasiswaBlokKosong }}</div>
+                                            <div class="text-[11px] text-slate-500">Blok mahasiswa kosong</div>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.baOrphan }}</div>
+                                            <div class="text-[11px] text-slate-500">BA tanpa peserta</div>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.jadwalDuplikat }}</div>
+                                            <div class="text-[11px] text-slate-500">Jadwal duplikat</div>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.baNeedsRegen }}</div>
+                                            <div class="text-[11px] text-slate-500">BA perlu regenerasi</div>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.baPesertaNonaktif }}</div>
+                                            <div class="text-[11px] text-slate-500">Peserta BA nonaktif</div>
+                                        </div>
+                                    </div>
+                                    <div v-if="!master.audit.data.dataQuality.totals.mahasiswaBlokKosong && !master.audit.data.dataQuality.totals.baOrphan && !master.audit.data.dataQuality.totals.jadwalDuplikat && !master.audit.data.dataQuality.totals.baNeedsRegen && !master.audit.data.dataQuality.totals.baPesertaNonaktif" class="rounded-xl bg-emerald-50 px-3 py-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                                        <i class="bi bi-check2-circle"></i> Tidak ada temuan kualitas data transaksi.
+                                    </div>
+                                    <div v-if="master.audit.data.dataQuality.baAdminOrphan.samples.length || master.audit.data.dataQuality.baBagianOrphan.samples.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">BA tanpa peserta</div>
+                                        <div class="space-y-1">
+                                            <div v-for="b in master.audit.data.dataQuality.baAdminOrphan.samples.concat(master.audit.data.dataQuality.baBagianOrphan.samples)" :key="b.ba_id" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                                <span class="font-semibold text-slate-700">{{ b.ba_id }} · {{ b.nama_kegiatan }}</span>
+                                                <span class="text-slate-500">{{ b.bagian }} / {{ b.blok }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="master.audit.data.dataQuality.jadwalDuplikat.groups.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Jadwal duplikat</div>
+                                        <div class="space-y-1">
+                                            <div v-for="g in master.audit.data.dataQuality.jadwalDuplikat.groups.slice(0, 10)" :key="g.key" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                                <span class="font-semibold text-slate-700">{{ g.contoh.NamaKegiatan }} · {{ g.contoh.Tanggal }} {{ g.contoh.Jam }}</span>
+                                                <span class="text-slate-500">{{ g.count }} baris</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="master.audit.data.dataQuality.mahasiswaBlokKosong.samples.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Contoh mahasiswa tanpa blok</div>
+                                        <div class="space-y-1">
+                                            <div v-for="m in master.audit.data.dataQuality.mahasiswaBlokKosong.samples" :key="m.npm" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                                <span class="font-semibold text-slate-700">{{ m.npm }}</span>
+                                                <span class="text-slate-500">{{ m.nama_lengkap }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div v-if="!master.audit.data.totals.duplicates && !master.audit.data.totals.orphans && !master.audit.data.totals.blanks && !master.audit.data.totals.keyDrift" class="rounded-xl bg-emerald-50 px-3 py-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">

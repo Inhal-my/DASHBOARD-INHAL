@@ -208,6 +208,44 @@ describe('pengajuan admin status and delete', () => {
     expect(audit.results).toHaveLength(1);
     expect(audit.results[0].alasan).toBe('Salah input');
   });
+
+  it('membersihkan BA yang tidak lagi punya peserta saat pengajuan dihapus', async () => {
+    await seedPengajuan();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010002','Budi','A','SGD','Menunggu')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,kegiatan_key) VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0001','SGD','A','SGD 1','sgd|a|sgd 1')"
+    ).run();
+    for (const [id, npm, nama] of [['INHAL-1', '2201010001', 'Aisyah'], ['INHAL-2', '2201010002', 'Budi']]) {
+      await env.DB.prepare(
+        "INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,active) VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0001',?1,?2,?3,'A',1)"
+      ).bind(id, npm, nama).run();
+    }
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,page_index,file_name,file_url,active) VALUES ('2026-09-20T08:00:00','BA-PEN-2026-0001','INHAL-1','2201010001',0,'a.pdf','https://drive/a',1)"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan) VALUES ('2026-09-20T08:00:00','BA-PEL-2026-0001','SGD','A','SGD 1')"
+    ).run();
+    for (const [id, npm, nama] of [['INHAL-1', '2201010001', 'Aisyah'], ['INHAL-2', '2201010002', 'Budi']]) {
+      await env.DB.prepare(
+        "INSERT INTO berita_acara_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok) VALUES ('2026-09-20T08:00:00','BA-PEL-2026-0001',?1,?2,?3,'A')"
+      ).bind(id, npm, nama).run();
+    }
+
+    const ctx = await adminCtx();
+    const first = await deletePengajuanAdmin(env.DB, 'INHAL-1', 'Salah input', ctx);
+    expect(first.success).toBe(true);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin WHERE ba_id='BA-PEN-2026-0001'").first()).n)).toBe(1);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id='BA-PEN-2026-0001'").first()).n)).toBe(0);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara WHERE ba_id='BA-PEL-2026-0001'").first()).n)).toBe(1);
+
+    const second = await deletePengajuanAdmin(env.DB, 'INHAL-2', 'Salah input', ctx);
+    expect(second.success).toBe(true);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin WHERE ba_id='BA-PEN-2026-0001'").first()).n)).toBe(0);
+    expect(Number((await env.DB.prepare("SELECT COUNT(*) AS n FROM berita_acara WHERE ba_id='BA-PEL-2026-0001'").first()).n)).toBe(0);
+  });
 });
 
 describe('reset upload bukti', () => {
