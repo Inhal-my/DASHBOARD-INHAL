@@ -210,6 +210,20 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
   juga `ok`, tanpa duplikat/orphan/drift.
 - Latihan ini tidak menggantikan uji restore R2; uji R2 tetap menunggu bucket aktif.
 
+### 2026-10-21 (staging restore drill)
+
+- Workflow: **Restore Drill Staging**, run `39554233150`, hasil `success`.
+- Sumber: D1 staging diekspor baca-saja, lalu diverifikasi `ok`.
+- Restore: dump diimpor ke database scratch lokal di runner, diekspor ulang,
+  diverifikasi `ok`, dan jumlah tabel inti sama.
+- Jumlah tabel inti: mahasiswa 3, pengajuan 0, master_kegiatan 11, berita_acara 0,
+  berita_acara_admin 0.
+- Aplikasi: Worker lokal membaca database hasil restore; `/api/health`, opsi
+  pendaftaran, portal mahasiswa, dan `/portal` lulus.
+- Bukti: artifact `restore-drill-evidence` (kedaluwarsa 2026-11-04).
+- Catatan: drill memakai salinan lokal, bukan mengarahkan staging ke database baru.
+  Staging dan produksi tidak diubah.
+
 ### 2026-10-21 (produksi)
 
 - Deploy produksi Poin 6: run `39551735466`, versi Worker

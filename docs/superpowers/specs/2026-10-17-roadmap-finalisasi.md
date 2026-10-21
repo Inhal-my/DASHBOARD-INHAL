@@ -34,7 +34,7 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Detail hasil: bagian "Hasil implementasi Poin 6" di bawah.
 - [ ] **Poin 7 — UAT dan dokumentasi operasional**
   - Perangkat UAT, perbaikan aksesibilitas, E2E, dan SOP selesai; E2E staging lulus.
-  - Menunggu pelaksanaan UAT dengan pengguna dan uji restore di staging.
+  - Restore drill staging lulus; menunggu pelaksanaan UAT dengan pengguna dan sign-off.
   - Detail: bagian "Hasil implementasi Poin 7" di bawah.
 
 ## Temuan awal Poin 1 (audit produksi 2026-10-17)
@@ -174,6 +174,11 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   operator), aksesibilitas, performa, kriteria lulus, dan sign-off.
 - E2E staging lulus 2026-10-21 (run `39551581712`): portal, login, navigasi, audit,
   keamanan akun, menu mobile, dan logout.
+- Restore drill staging lulus 2026-10-21 (run `39554233150`): dump staging
+  diekspor baca-saja, diverifikasi, diimpor ke database scratch lokal, diekspor
+  ulang, jumlah tabel inti sama, dan Worker lokal membaca data lewat health,
+  opsi pendaftaran, portal mahasiswa, serta `/portal`. Bukti: artifact
+  `restore-drill-evidence`. UAT-O05 ditandai lulus.
 - Aksesibilitas:
   - Label/`for` dan `id` pada formulir pendaftaran, login admin, dan login bagian.
   - `role="alert"` untuk pesan login, `role="status"`/`aria-live` untuk loading,
@@ -188,9 +193,9 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   guard migrasi lulus, dan `wrangler deploy --dry-run` berhasil.
 - Latihan restore lokal: dump D1 lokal `ok`, impor ke database scratch berhasil,
   jumlah tabel inti sama, dan ekspor ulang scratch `ok` (dicatat di SOP backup).
-- Sisa: jalankan UAT dengan pengguna, uji restore staging, dan lampirkan bukti/sign-off.
-  Batasan aksesibilitas yang belum ditutup: focus trap seluruh modal dan Escape
-  untuk semua modal selain dialog konfirmasi.
+- Sisa: jalankan UAT dengan pengguna dan lampirkan bukti/sign-off. Restore drill
+  staging sudah lulus (run `39554233150`). Batasan aksesibilitas yang belum ditutup:
+  focus trap seluruh modal dan Escape untuk semua modal selain dialog konfirmasi.
 
 ## Deploy tertunda
 
