@@ -39,7 +39,8 @@ Aturan keselamatan:
 - Lulus: M01-M05, M07, A01-A03, A05, A07-A12, B01-B05.
 - Temuan: A04 (status peserta BA/jadwal tidak ikut berubah saat pengajuan
   ditolak), M06 dan A06 (perlu detail error; dugaan konfigurasi Drive staging).
-- A04 sudah diperbaiki di kode dan menunggu retest setelah deploy staging.
+- A04 sudah diperbaiki di commit `e165892` dan ter-deploy ke staging (run
+  `39564633105`). Status tetap `[!]` sampai retest lulus.
 
 ## Matriks UAT
 
@@ -65,7 +66,7 @@ tautan tiket.
 | UAT-A01 | Login kosong/salah | Buka `/dashboard`, klik Masuk tanpa password; ulangi dengan password salah | Pesan kesalahan diumumkan (`role="alert"`), tidak masuk | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-A02 | Login + MFA | Masukkan password dan kode autentikator/recovery yang valid | Sidebar tampil, sesi berlaku, MFA tidak diminta ulang | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-A03 | Verifikasi pengajuan | Buka tab Pengajuan, cari dan filter data | Daftar, status, dan detail sesuai data staging | Sesi UAT staging 2026-10-21 | [x] |
-| UAT-A04 | ACC/tolak/batal | Proses satu pengajuan sampai ACC, lalu tolak/batalkan pengajuan lain | Status berubah, nomor surat berurutan, audit tercatat | Gagal: status peserta BA/jadwal tetap ACC setelah pengajuan ditolak. Perbaikan dibuat; menunggu retest | [!] |
+| UAT-A04 | ACC/tolak/batal | Proses satu pengajuan sampai ACC, lalu tolak/batalkan pengajuan lain | Status berubah, nomor surat berurutan, audit tercatat | Gagal saat sesi pertama: status peserta BA/jadwal tetap ACC. Diperbaiki di commit `e165892`, sudah deploy staging (run `39564633105`); menunggu retest | [!] |
 | UAT-A05 | Input manual | Tambah pengajuan manual dengan data valid | Pengajuan muncul di daftar dan portal mahasiswa | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-A06 | BA Pendukung | Unggah BA, kelola peserta, regenerate PDF | Berkas dan peserta tersimpan; PDF dapat diunduh | Gagal; perlu detail error. Cek konfigurasi Drive/PDF | [!] |
 | UAT-A07 | BA Pelaksanaan | Unggah BA Pelaksanaan dan pilih peserta | BA tersimpan, label benar, peserta tidak duplikat | Sesi UAT staging 2026-10-21 | [x] |
