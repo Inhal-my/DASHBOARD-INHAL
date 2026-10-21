@@ -10,6 +10,9 @@ head_sampling_rate = 1
 [observability.issues]
 enabled = true
 
+[vars]
+GAS_DRIVE_URL = "https://script.google.com/a/macros/umsu.ac.id/s/AKfycbxwaFSaFkMiK5OGNNi4yK8eUVKx1l7KG-Dvs8WalYqwBtRAZSoR4ZtmMXvnMu26V8Ri/exec"
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
