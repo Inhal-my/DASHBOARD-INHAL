@@ -29,11 +29,11 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - CI/CD, staging, migrasi terkontrol, dan test end-to-end browser.
   - Implementasi dan verifikasi lokal selesai; staging live; menunggu secret GitHub dan run Actions pertama.
   - Detail: `docs/superpowers/specs/2026-10-18-release-process-design.md`, `docs/ops/release.md`.
-- [ ] **Poin 6 — Skalabilitas dan kualitas data**
-  - Kode dan test lokal selesai; migrasi indeks/backfill belum diterapkan ke produksi.
+- [x] **Poin 6 — Skalabilitas dan kualitas data**
+  - Kode, migrasi, dan deploy produksi selesai 2026-10-21.
   - Detail hasil: bagian "Hasil implementasi Poin 6" di bawah.
 - [ ] **Poin 7 — UAT dan dokumentasi operasional**
-  - Perangkat UAT, perbaikan aksesibilitas, E2E, dan SOP sudah disiapkan lokal.
+  - Perangkat UAT, perbaikan aksesibilitas, E2E, dan SOP selesai; E2E staging lulus.
   - Menunggu pelaksanaan UAT dengan pengguna dan uji restore di staging.
   - Detail: bagian "Hasil implementasi Poin 7" di bawah.
 
@@ -144,7 +144,7 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 
 ## Hasil implementasi Poin 6 (2026-10-21)
 
-- Status: kode, migrasi, dan test selesai; sudah di-commit, belum di-deploy, dan belum diterapkan ke produksi.
+- Status: kode, migrasi, test, dan deploy produksi selesai 2026-10-21 (run `39551735466`, versi Worker `40c4f4a2-12c0-49ab-8ebf-dea26bd596b2`).
 - Indeks baru: `idx_ba_admin_berkas_pengajuan_active`, `idx_ba_admin_peserta_ba_active`,
   `idx_ba_admin_peserta_pengajuan_active`, `idx_ba_peserta_pengajuan`, `idx_pengajuan_blok`,
   `idx_pengajuan_status`, `idx_jadwal_active_tanggal`.
@@ -159,14 +159,18 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 - Verifikasi lokal: 93 file / 664 test Vitest lulus; GAS 113 test lulus; CSP, `test:scripts`,
   dan `migrations:check` lulus. `EXPLAIN QUERY PLAN` berubah dari `SCAN` menjadi
   `SEARCH ... USING INDEX` untuk peserta BA Pendukung, status pengajuan, dan jadwal aktif.
-- Sisa sebelum produksi: hitung baris terdampak + backup D1, terapkan migrasi di staging,
-  verifikasi, lalu produksi. Skrip dry-run pembersihan duplikat jadwal belum dibuat; saat ini
-  audit hanya bersifat read-only dan tidak menghapus data.
+- Deploy: migrasi staging dan produksi diterapkan; health produksi `200 { ok: true, db: "ok" }`.
+  Recovery point produksi: Time Travel bookmark
+  `000001f8-0000000e-0000510b-9ea1ed190410e6b647b71d99001a0cf4` (R2 belum aktif, tanpa dump ekspor).
+- Backlog: skrip dry-run pembersihan duplikat jadwal belum dibuat; saat ini audit hanya
+  bersifat read-only dan tidak menghapus data.
 
 ## Hasil implementasi Poin 7 (2026-10-21, lokal)
 
 - Matriks UAT baru `docs/ops/uat.md`: kasus per peran (mahasiswa, admin, bagian,
   operator), aksesibilitas, performa, kriteria lulus, dan sign-off.
+- E2E staging lulus 2026-10-21 (run `39551581712`): portal, login, navigasi, audit,
+  keamanan akun, menu mobile, dan logout.
 - Aksesibilitas:
   - Label/`for` dan `id` pada formulir pendaftaran, login admin, dan login bagian.
   - `role="alert"` untuk pesan login, `role="status"`/`aria-live` untuk loading,

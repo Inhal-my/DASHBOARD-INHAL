@@ -209,3 +209,14 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
 - Restore ke database scratch lokal berhasil (131 perintah). Ekspor ulang scratch
   juga `ok`, tanpa duplikat/orphan/drift.
 - Latihan ini tidak menggantikan uji restore R2; uji R2 tetap menunggu bucket aktif.
+
+### 2026-10-21 (produksi)
+
+- Deploy produksi Poin 6: run `39551735466`, versi Worker
+  `40c4f4a2-12c0-49ab-8ebf-dea26bd596b2`.
+- Time Travel bookmark sebelum migrasi:
+  `000001f8-0000000e-0000510b-9ea1ed190410e6b647b71d99001a0cf4`.
+- Migrasi `2026-10-21-poin6-backfill-mahasiswa-blok.sql` dan
+  `2026-10-21-poin6-indexes.sql` berstatus diterapkan; health produksi 200.
+- Tidak ada dump ekspor produksi pada rilis ini karena R2 belum aktif dan token
+  Cloudflare lokal tidak tersedia. Gunakan Time Travel atau backup R2 setelah aktif.
