@@ -32,6 +32,15 @@ Aturan keselamatan:
 | Bagian | Akun bagian staging | Workspace bagian, jadwal, BA Pelaksanaan |
 | Operator/IT | Akses Cloudflare/GitHub | Deploy, migrasi, backup, observability |
 
+## Catatan Sesi 2026-10-21
+
+- Lingkungan: staging.
+- Penguji: petugas Bagian KKD dan mahasiswa NPM `1908260051`.
+- Lulus: M01-M05, M07, A01-A03, A05, A07-A12, B01-B05.
+- Temuan: A04 (status peserta BA/jadwal tidak ikut berubah saat pengajuan
+  ditolak), M06 dan A06 (perlu detail error; dugaan konfigurasi Drive staging).
+- A04 sudah diperbaiki di kode dan menunggu retest setelah deploy staging.
+
 ## Matriks UAT
 
 Status: `[ ]` belum, `[x]` lulus, `[!]` gagal. Isi kolom Bukti dengan nama file atau
@@ -41,40 +50,40 @@ tautan tiket.
 
 | ID | Skenario | Langkah | Hasil yang diharapkan | Bukti | Status |
 |---|---|---|---|---|---|
-| UAT-M01 | Buka portal | Buka `/` | Judul "Pengajuan INHAL", input NPM tampil, tanpa error konsol | | [ ] |
-| UAT-M02 | NPM tidak terdaftar | Isi NPM `0000000000`, klik Periksa | Pesan "tidak ditemukan/periksa kembali" muncul, tidak ada data bocor | | [ ] |
-| UAT-M03 | Masuk dengan NPM valid | Isi NPM data staging, klik Periksa | Kartu status dan riwayat pengajuan tampil | | [ ] |
-| UAT-M04 | Validasi form kosong | Buka form pendaftaran, klik Kirim tanpa mengisi | Pesan kesalahan jelas di layar, fokus tetap di form, tidak ada `alert()` | | [ ] |
-| UAT-M05 | Kirim pendaftaran | Isi NPM, nama, email, HP, blok, dan jenis kegiatan yang valid | Pengajuan tersimpan, ID pengajuan tampil, status awal benar | | [ ] |
-| UAT-M06 | Unggah ACC/bukti | Setelah status ACC, unggah PDF/JPG/PNG sesuai batas | Berkas tersimpan, status dan tautan berubah, ukuran salah ditolak | | [ ] |
-| UAT-M07 | NPM salah format | Isi NPM dengan huruf/spasi | Pesan validasi, tidak ada permintaan jaringan yang mengubah data | | [ ] |
+| UAT-M01 | Buka portal | Buka `/` | Judul "Pengajuan INHAL", input NPM tampil, tanpa error konsol | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-M02 | NPM tidak terdaftar | Isi NPM `0000000000`, klik Periksa | Pesan "tidak ditemukan/periksa kembali" muncul, tidak ada data bocor | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-M03 | Masuk dengan NPM valid | Isi NPM data staging, klik Periksa | Kartu status dan riwayat pengajuan tampil | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-M04 | Validasi form kosong | Buka form pendaftaran, klik Kirim tanpa mengisi | Pesan kesalahan jelas di layar, fokus tetap di form, tidak ada `alert()` | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-M05 | Kirim pendaftaran | Isi NPM, nama, email, HP, blok, dan jenis kegiatan yang valid | Pengajuan tersimpan, ID pengajuan tampil, status awal benar | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-M06 | Unggah ACC/bukti | Setelah status ACC, unggah PDF/JPG/PNG sesuai batas | Berkas tersimpan, status dan tautan berubah, ukuran salah ditolak | Gagal; perlu detail error. Cek konfigurasi Drive staging dan status ACC | [!] |
+| UAT-M07 | NPM salah format | Isi NPM dengan huruf/spasi | Pesan validasi, tidak ada permintaan jaringan yang mengubah data | Sesi UAT staging 2026-10-21 | [x] |
 
 ### Admin
 
 | ID | Skenario | Langkah | Hasil yang diharapkan | Bukti | Status |
 |---|---|---|---|---|---|
-| UAT-A01 | Login kosong/salah | Buka `/dashboard`, klik Masuk tanpa password; ulangi dengan password salah | Pesan kesalahan diumumkan (`role="alert"`), tidak masuk | | [ ] |
-| UAT-A02 | Login + MFA | Masukkan password dan kode autentikator/recovery yang valid | Sidebar tampil, sesi berlaku, MFA tidak diminta ulang | | [ ] |
-| UAT-A03 | Verifikasi pengajuan | Buka tab Pengajuan, cari dan filter data | Daftar, status, dan detail sesuai data staging | | [ ] |
-| UAT-A04 | ACC/tolak/batal | Proses satu pengajuan sampai ACC, lalu tolak/batalkan pengajuan lain | Status berubah, nomor surat berurutan, audit tercatat | | [ ] |
-| UAT-A05 | Input manual | Tambah pengajuan manual dengan data valid | Pengajuan muncul di daftar dan portal mahasiswa | | [ ] |
-| UAT-A06 | BA Pendukung | Unggah BA, kelola peserta, regenerate PDF | Berkas dan peserta tersimpan; PDF dapat diunduh | | [ ] |
-| UAT-A07 | BA Pelaksanaan | Unggah BA Pelaksanaan dan pilih peserta | BA tersimpan, label benar, peserta tidak duplikat | | [ ] |
-| UAT-A08 | Master data | Tambah, ubah, hapus, dan ganti nama blok | Perubahan konsisten; ganti nama blok menandai BA perlu regen | | [ ] |
-| UAT-A09 | Audit integritas | Buka Master Data > Audit | Ringkasan master dan kualitas data tampil; tombol ulangi berfungsi | | [ ] |
-| UAT-A10 | Ekspor database | Jalankan ekspor XLSX | File terunduh, sheet dan kolom sesuai, tanpa data sensitif | | [ ] |
-| UAT-A11 | Keamanan akun | Buka modal Keamanan, aktifkan/nonaktifkan MFA | Perubahan tersimpan dan login berikutnya mengikuti status MFA | | [ ] |
-| UAT-A12 | Logout | Klik Keluar | Kembali ke layar login, sesi tidak dapat dipakai lagi | | [ ] |
+| UAT-A01 | Login kosong/salah | Buka `/dashboard`, klik Masuk tanpa password; ulangi dengan password salah | Pesan kesalahan diumumkan (`role="alert"`), tidak masuk | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A02 | Login + MFA | Masukkan password dan kode autentikator/recovery yang valid | Sidebar tampil, sesi berlaku, MFA tidak diminta ulang | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A03 | Verifikasi pengajuan | Buka tab Pengajuan, cari dan filter data | Daftar, status, dan detail sesuai data staging | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A04 | ACC/tolak/batal | Proses satu pengajuan sampai ACC, lalu tolak/batalkan pengajuan lain | Status berubah, nomor surat berurutan, audit tercatat | Gagal: status peserta BA/jadwal tetap ACC setelah pengajuan ditolak. Perbaikan dibuat; menunggu retest | [!] |
+| UAT-A05 | Input manual | Tambah pengajuan manual dengan data valid | Pengajuan muncul di daftar dan portal mahasiswa | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A06 | BA Pendukung | Unggah BA, kelola peserta, regenerate PDF | Berkas dan peserta tersimpan; PDF dapat diunduh | Gagal; perlu detail error. Cek konfigurasi Drive/PDF | [!] |
+| UAT-A07 | BA Pelaksanaan | Unggah BA Pelaksanaan dan pilih peserta | BA tersimpan, label benar, peserta tidak duplikat | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A08 | Master data | Tambah, ubah, hapus, dan ganti nama blok | Perubahan konsisten; ganti nama blok menandai BA perlu regen | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A09 | Audit integritas | Buka Master Data > Audit | Ringkasan master dan kualitas data tampil; tombol ulangi berfungsi | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A10 | Ekspor database | Jalankan ekspor XLSX | File terunduh, sheet dan kolom sesuai, tanpa data sensitif | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A11 | Keamanan akun | Buka modal Keamanan, aktifkan/nonaktifkan MFA | Perubahan tersimpan dan login berikutnya mengikuti status MFA | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A12 | Logout | Klik Keluar | Kembali ke layar login, sesi tidak dapat dipakai lagi | Sesi UAT staging 2026-10-21 | [x] |
 
 ### Bagian
 
 | ID | Skenario | Langkah | Hasil yang diharapkan | Bukti | Status |
 |---|---|---|---|---|---|
-| UAT-B01 | Login bagian | Pilih kategori (dan lab untuk Praktikum), masukkan password | Workspace bagian tampil sesuai kategori | | [ ] |
-| UAT-B02 | Data terbatas | Buka ringkasan dan daftar kegiatan | Hanya data bagian sendiri yang tampil | | [ ] |
-| UAT-B03 | Jadwal | Tambah dan ubah jadwal pada kegiatan tanpa BA | Jadwal tersimpan; duplikat identik tidak ditampilkan dua kali | | [ ] |
-| UAT-B04 | BA Pelaksanaan | Unggah BA dan pilih peserta yang belum punya BA | BA tersimpan, sisa peserta berkurang, PDF dapat diunduh | | [ ] |
-| UAT-B05 | Akses lintas bagian | Coba akses ID kegiatan/BA bagian lain melalui permintaan langsung | Ditolak dengan pesan kewenangan, tidak ada data terkirim | | [ ] |
+| UAT-B01 | Login bagian | Pilih kategori (dan lab untuk Praktikum), masukkan password | Workspace bagian tampil sesuai kategori | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-B02 | Data terbatas | Buka ringkasan dan daftar kegiatan | Hanya data bagian sendiri yang tampil | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-B03 | Jadwal | Tambah dan ubah jadwal pada kegiatan tanpa BA | Jadwal tersimpan; duplikat identik tidak ditampilkan dua kali | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-B04 | BA Pelaksanaan | Unggah BA dan pilih peserta yang belum punya BA | BA tersimpan, sisa peserta berkurang, PDF dapat diunduh | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-B05 | Akses lintas bagian | Coba akses ID kegiatan/BA bagian lain melalui permintaan langsung | Ditolak dengan pesan kewenangan, tidak ada data terkirim | Sesi UAT staging 2026-10-21 | [x] |
 
 ### Operator/IT
 
