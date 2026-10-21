@@ -189,6 +189,30 @@ describe('pengajuan admin status and delete', () => {
     expect(row.catatan_admin).toBe('Berkas tidak lengkap');
   });
 
+  it('menyinkronkan status peserta BA dan jadwal saat status berubah', async () => {
+    await seedPengajuan({ status: 'ACC' });
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_peserta (ba_id,id_pengajuan,status_pengajuan) VALUES ('BA-1','INHAL-1','ACC')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_peserta (ba_id,id_pengajuan,status_pengajuan,active) VALUES ('BA-PEN-1','INHAL-1','ACC',1)"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO jadwal_peserta (jadwal_id,id_pengajuan,status_pengajuan) VALUES ('JDW-1','INHAL-1','ACC')"
+    ).run();
+
+    const ctx = await adminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Berkas tidak lengkap', '', ctx);
+    expect(res.success).toBe(true);
+
+    const bagian = await env.DB.prepare("SELECT status_pengajuan FROM berita_acara_peserta WHERE ba_id = 'BA-1'").first();
+    expect(bagian.status_pengajuan).toBe('Ditolak');
+    const pendukung = await env.DB.prepare("SELECT status_pengajuan FROM berita_acara_admin_peserta WHERE ba_id = 'BA-PEN-1'").first();
+    expect(pendukung.status_pengajuan).toBe('Ditolak');
+    const jadwal = await env.DB.prepare("SELECT status_pengajuan FROM jadwal_peserta WHERE jadwal_id = 'JDW-1'").first();
+    expect(jadwal.status_pengajuan).toBe('Ditolak');
+  });
+
   it('deletes a pengajuan with its related rows', async () => {
     await seedPengajuan();
     await seedDetail();

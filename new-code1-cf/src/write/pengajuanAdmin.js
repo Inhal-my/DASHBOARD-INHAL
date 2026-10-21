@@ -253,7 +253,12 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     : db.prepare(
       'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
     ).bind(ts, id, status, catatanVal, actor);
-  await db.batch([db.prepare(updateSql).bind(...vals, id), historyStmt]);
+  const syncStatusStmts = [
+    db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(status, id),
+    db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(status, id),
+    db.prepare('UPDATE jadwal_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(status, id)
+  ];
+  await db.batch([db.prepare(updateSql).bind(...vals, id), historyStmt, ...syncStatusStmts]);
 
   if (claimNumber) {
     const after = await db.prepare('SELECT nomor_surat FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
