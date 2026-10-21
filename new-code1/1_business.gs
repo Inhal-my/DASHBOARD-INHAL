@@ -1715,6 +1715,32 @@ function _computeBaList(bagianFilter, kategori) {
     return sanitized;
 }
 
+function _computeBaPendukungList(bagianFilter, kategori) {
+    const rows = _getRowsCachedOptional('BeritaAcaraAdmin');
+    const filter = _normBaginaKey(bagianFilter);
+    const kat = _normBaginaKey(kategori);
+    const isPraktikum = kat === 'praktikum';
+    const labs = isPraktikum ? getMasterOptions('Lab') : null;
+    const pesertaMap = _getBaPesertaMapAdmin();
+    const sanitized = rows.map(function(r) {
+        const c = _clientRow(r);
+        c.peserta = pesertaMap[String(r['BA ID'] || '').trim()] || [];
+        return c;
+    }).sort(function(a, b) {
+        return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
+    });
+    if (filter) {
+        return sanitized.filter(function(r) {
+            if (isPraktikum) {
+                const resolved = _resolveBagian12(r.Bagian, '', r['Nama Kegiatan'], labs);
+                if (resolved && _normBaginaKey(resolved) === filter) return true;
+            }
+            return _normBaginaKey(r.Bagian) === filter;
+        });
+    }
+    return sanitized;
+}
+
 function getBeritaAcaraList(bagianFilter, kategori) {
     try {
         requireBaginaSession(kategori, '', arguments[arguments.length - 1]);
@@ -1734,6 +1760,7 @@ function getBagianBootstrap(kategori, subBagian, token) {
         config: { categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'], labOptions: [], kegiatanLabOptions: [] },
         rows: [],
         baList: [],
+        baPendukungList: [],
         jadwalList: []
     };
     try {
@@ -1754,6 +1781,7 @@ function getBagianBootstrap(kategori, subBagian, token) {
         out.config.kegiatanLabOptions = getMasterOptions('Kegiatan Lab');
         out.rows = _computeBagianRows(kat, subBagian);
         out.baList = _computeBaList(subBagian || out.kategori, out.kategori);
+        out.baPendukungList = _computeBaPendukungList(subBagian || out.kategori, out.kategori);
         out.jadwalList = _computeJadwalList(subBagian || out.kategori, out.kategori);
         return out;
     } catch (e) {

@@ -96,6 +96,42 @@ async function getBaPesertaMap(db) {
   return map;
 }
 
+async function getBaAdminPesertaMap(db) {
+  const rows = (await db.prepare('SELECT * FROM berita_acara_admin_peserta').all()).results || [];
+  const map = {};
+  for (const r of rows) {
+    const id = String(r.ba_id || '').trim();
+    if (!id) continue;
+    if (!map[id]) map[id] = [];
+    map[id].push({ npm: String(r.npm || '').trim(), namaLengkap: String(r.nama_lengkap || '').trim(), blok: String(r.blok || '').trim() });
+  }
+  return map;
+}
+
+async function computeBaPendukungList(db, bagianFilter, kategori) {
+  const all = (await db.prepare('SELECT * FROM berita_acara_admin').all()).results || [];
+  const filter = baginaKey(bagianFilter);
+  const kat = baginaKey(kategori);
+  const labs = kat === 'praktikum' ? await getMasterOptions(db, 'Lab') : null;
+  const pesertaMap = await getBaAdminPesertaMap(db);
+  const rows = all
+    .slice()
+    .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+    .map((r) => {
+      const c = toClientRow('berita_acara_admin', r);
+      c.peserta = pesertaMap[String(r.ba_id || '').trim()] || [];
+      return c;
+    });
+  if (!filter) return rows;
+  return rows.filter((r) => {
+    if (kat === 'praktikum') {
+      const resolved = resolveBagian12(r.Bagian, '', r['Nama Kegiatan'], labs);
+      if (resolved && baginaKey(resolved) === filter) return true;
+    }
+    return baginaKey(r.Bagian) === filter;
+  });
+}
+
 async function computeBaList(db, bagianFilter, kategori) {
   const all = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
   const rows = all.map((r) => toClientRow('berita_acara', r)).filter((r) => baSumber(r) === 'Bagian');
@@ -127,7 +163,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
     ok: false, message: '', nama: '',
     kategori: String(kategori || '').trim(), subBagian: String(subBagian || '').trim(),
     config: { categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'], labOptions: [], kegiatanLabOptions: [] },
-    rows: [], baList: [], jadwalList: []
+    rows: [], baList: [], baPendukungList: [], jadwalList: []
   };
   try {
     const s = ctx.session ? ctx.session : await getSession(db, ctx.token);
@@ -146,6 +182,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
     out.config.kegiatanLabOptions = await getMasterOptions(db, 'Kegiatan Lab');
     out.rows = await computeBagianRows(db, kat, subBagian);
     out.baList = await computeBaList(db, subBagian || out.kategori, out.kategori);
+    out.baPendukungList = await computeBaPendukungList(db, subBagian || out.kategori, out.kategori);
     out.jadwalList = await computeJadwalList(db, subBagian || out.kategori, out.kategori);
     return out;
   } catch (e) {

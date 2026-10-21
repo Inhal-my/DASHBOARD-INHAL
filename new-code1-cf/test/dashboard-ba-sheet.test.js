@@ -59,10 +59,10 @@ describe('dashboard BA sheet template', () => {
     });
   });
 
-  it('menyediakan state baSheet dengan default pelaksanaan', async () => {
+  it('menyediakan state baSheet dengan default pendukung', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('baSheet: {');
-    expect(html).toContain("type: 'pelaksanaan'");
+    expect(html).toContain("type: 'pendukung'");
     expect(html).toContain("level: 'blok'");
   });
 
@@ -110,6 +110,16 @@ describe('dashboard BA sheet template', () => {
     expect(html).toContain('deriveBagianScope(bagian)');
     expect(html).toContain('babEnsureSession(kategori, subBagian)');
     expect(html).toContain('_baSheetPickPelaksanaan(u)');
+  });
+
+  it('mengirim jadwal, jam, dan dosen saat membuat BA Pelaksanaan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('this.bab.jadwalList = boot.jadwalList || []');
+    expect(html).toContain('babSelectedJadwal()');
+    expect(html).toContain('const jadwal = this.babSelectedJadwal || {}');
+    expect(html).toContain('jadwalId: jadwal.JadwalID ||');
+    expect(html).toContain('jam: jadwal.Jam ||');
+    expect(html).toContain('dosen: jadwal.Dosen ||');
   });
 
   it('menampilkan nama blok tanpa awalan "Blok"', async () => {

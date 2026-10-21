@@ -29,6 +29,17 @@ describe('bagian read', () => {
     expect(boot.baList).toHaveLength(1);
     expect(boot.baList[0].peserta).toHaveLength(1);
   });
+  it('menyertakan BA Pendukung admin untuk bagian terkait', async () => {
+    await seed();
+    await env.DB.prepare("INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jumlah_peserta,file_url,sumber) VALUES ('2026-09-11T08:00:00','BA-PEN-2026-0001','Ujian','A','UAS','2026-09-20','1','https://example.com/pen.pdf','Admin')").run();
+    await env.DB.prepare("INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,npm,nama_lengkap,blok) VALUES ('2026-09-11T08:00:00','BA-PEN-2026-0001','2201010001','Aisyah','A')").run();
+    await env.DB.prepare("INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jumlah_peserta,sumber) VALUES ('2026-09-11T09:00:00','BA-PEN-2026-0002','SGD','B','SGD 1','2026-09-21','1','Admin')").run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot.baPendukungList).toHaveLength(1);
+    expect(boot.baPendukungList[0]['BA ID']).toBe('BA-PEN-2026-0001');
+    expect(boot.baPendukungList[0].peserta).toHaveLength(1);
+    expect(boot.baList[0]['BA ID']).toBe('BA-2026-0001');
+  });
   it('returns bootstrap with ok=false on invalid session', async () => {
     const boot = await getBagianBootstrap(env.DB, 'Ujian', '', { token: 'nope' });
     expect(boot.ok).toBe(false);

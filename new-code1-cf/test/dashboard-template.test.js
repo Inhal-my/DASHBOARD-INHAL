@@ -78,7 +78,7 @@ describe('dashboard template', () => {
     expect(html).toContain('Dua tahap: unggah BA Pendukung');
     expect(html).toContain('Kelengkapan per Blok');
     expect(html).not.toContain('Peta Kelengkapan Bagian × Blok');
-    expect(html).toContain('Buat BA');
+    expect(html).toContain('Buat Berita Acara');
     expect(html).not.toContain('Unggah BA Pendukung');
     expect(html).toContain('Unggah BA Pelaksanaan');
     expect(html).toContain('Belum Pendukung');
@@ -473,6 +473,17 @@ describe('dashboard ubah status ke ACC', () => {
     expect(html).toContain('Jadikan ACC');
     expect(html).toContain("status === 'ACC'");
     expect(html).toContain('Surat keterangan final (PDF) dikirim');
+  });
+  it('memisahkan aksi cepat ACC dari aksi destruktif Tolak', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('Aksi cepat');
+    expect(html).toContain('class="btn-danger-soft sm:ml-auto"');
+    expect(html).toContain("@click=\"quickStatus('Ditolak')\"");
+    expect(html).toContain('Tolak Pengajuan');
+    const acc = html.indexOf("@click=\"quickStatus('ACC')\"");
+    const tolak = html.indexOf("@click=\"quickStatus('Ditolak')\"");
+    expect(acc).toBeGreaterThan(-1);
+    expect(tolak).toBeGreaterThan(acc);
   });
 });
 

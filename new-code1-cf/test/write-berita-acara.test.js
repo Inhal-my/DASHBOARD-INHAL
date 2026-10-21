@@ -204,9 +204,19 @@ describe('berita acara bagian', () => {
 
   it('issues consecutive BA ids', async () => {
     await seedPengajuan();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010002','Budi','A','SGD','ACC')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-2','SGD','SGD 2','','2026-09-20','')"
+    ).run();
     const ctx = await bagianCtx(['SGD']);
     const first = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
-    const second = await saveBeritaAcaraBagian(env.DB, { ...payload, namaKegiatan: 'SGD 2' }, 'SGD', ctx);
+    const second = await saveBeritaAcaraBagian(env.DB, {
+      ...payload,
+      namaKegiatan: 'SGD 2',
+      peserta: [{ idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'ACC' }]
+    }, 'SGD', ctx);
     expect(first.success).toBe(true);
     expect(second.success).toBe(true);
     const nums = [first.baId, second.baId].map((id) => parseInt(id.slice(-4), 10)).sort((a, b) => a - b);

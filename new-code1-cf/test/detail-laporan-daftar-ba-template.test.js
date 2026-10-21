@@ -73,12 +73,12 @@ describe('daftar BA: pembersihan dead code', () => {
 describe('daftar BA: lapisan data', () => {
   it('menyediakan state filter', async () => {
     const html = await loadHtml();
-    expect(html).toContain("baListFilter: { bagian: '', blok: '', jenis: '', from: '', to: '', dosen: '', sumber: '', kelengkapan: '', q: '' }");
+    expect(html).toContain("baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '' }");
   });
   it('menyediakan computed dan helper', async () => {
     const html = await loadHtml();
     for (const name of ['daftarBaRows()', 'filteredDaftarBa()', 'daftarBaBagianOptions()',
-      'daftarBaBlokOptions()', 'daftarBaJenisOptions()', 'daftarBaSumberOptions()',
+      'daftarBaJenisOptions()', 'daftarBaSumberOptions()',
       'daftarBaLengkapCount()', 'daftarBaDraftCount()', 'daftarBaUnitCount()', 'daftarBaUnitRows()',
       'baLengkap(', 'baTanggalEfektif(', 'baDaftarItem(']) {
       expect(html).toContain(name);
@@ -98,10 +98,18 @@ describe('daftar BA: tab & UI', () => {
       '>Kelengkapan</th>', '>Berkas</th>', '>Sumber</th>', '>Peserta</th>']) {
       expect(html).toContain(s);
     }
-    for (const s of ['baListFilter.bagian', 'baListFilter.blok', 'baListFilter.jenis',
-      'baListFilter.from', 'baListFilter.to', 'baListFilter.dosen', 'baListFilter.sumber',
-      'baListFilter.kelengkapan', 'baListFilter.q']) {
+    for (const s of ['baListFilter.bagian', 'baListFilter.jenis',
+      'baListFilter.dosen', 'baListFilter.sumber', 'baListFilter.kelengkapan']) {
       expect(html).toContain(s);
+    }
+    for (const s of ['baListFilter.blok', 'baListFilter.from', 'baListFilter.to', 'baListFilter.q']) {
+      expect(html).not.toContain(s);
+    }
+    const start = html.indexOf('filteredDaftarBa()');
+    const end = html.indexOf('daftarBaBagianOptions()', start);
+    const block = html.slice(start, end);
+    for (const s of ['this.filters.from', 'this.filters.to', 'this.filters.blok', 'this.filters.search']) {
+      expect(block).toContain(s);
     }
   });
 });

@@ -1107,7 +1107,7 @@
                             <p class="mt-0.5 text-sm text-slate-500">Dua tahap: unggah BA Pendukung sebelum keputusan, lalu BA Pelaksanaan setelah kegiatan di Bagian.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button class="btn-primary !py-2 text-xs" @click="openBaSheet()"><i class="bi bi-plus-lg"></i> Buat BA</button>
+                            <button class="btn-primary !py-2 text-xs" @click="openBaSheet()"><i class="bi bi-plus-lg"></i> Buat Berita Acara</button>
                             <button class="btn-soft !py-2 text-xs" @click="bab.showPanel = true"><i class="bi bi-people"></i> Sesi Bagian</button>
                             <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
                         </div>
@@ -1328,7 +1328,7 @@
                             <p class="mt-0.5 text-sm text-slate-500">Sesi Bagian: unggah BA pelaksanaan atas nama staf Bagian.</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button class="btn-primary !py-2 text-xs" @click="openBaSheet('pelaksanaan')"><i class="bi bi-plus-circle"></i> Buat Berita Acara</button>
+                            <button class="btn-primary !py-2 text-xs" @click="openBaSheet('pelaksanaan')"><i class="bi bi-plus-circle"></i> Buat BA Pelaksanaan</button>
                             <button class="btn-soft !py-2 text-xs" @click="closePelaksanaanPanel()"><i class="bi bi-x-lg"></i> Tutup</button>
                         </div>
                     </div>
@@ -1897,9 +1897,14 @@
                                             <textarea v-model="detail.catatan" class="input" rows="3" placeholder="Catatan keputusan..."></textarea>
                                         </div>
                                         <div class="mt-3 flex flex-wrap gap-2">
-                                            <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
-                                            <button class="btn-soft" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
-                                            <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
+                                            <button class="btn-primary" :disabled="loading" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
+                                        </div>
+                                        <div class="mt-4 border-t border-slate-100 pt-3">
+                                            <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Aksi cepat</div>
+                                            <div class="mt-2 flex flex-wrap gap-2">
+                                                <button class="btn-soft" :disabled="loading" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
+                                                <button class="btn-danger-soft sm:ml-auto" :disabled="loading" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak Pengajuan</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2657,7 +2662,7 @@
                         options: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], lab: [], kegiatanLab: [] }
                     },
                     detailMap: {},
-                    baSheet: { open: false, type: 'pelaksanaan', level: 'blok', blok: '', q: '', loading: false },
+                    baSheet: { open: false, type: 'pendukung', level: 'blok', blok: '', q: '', loading: false },
                     baPendukungIds: [],
                     baPendukungByPengajuan: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
@@ -2680,6 +2685,7 @@
                         loading: false,
                         rows: [],
                         baList: [],
+                        jadwalList: [],
                         fBlok: '',
                         baSettings: { statuses: ['ACC'], finalOnly: true },
                         ba: { open: false, kegiatanKey: null, label: '', tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
@@ -2818,6 +2824,18 @@
                 babSelectedGroup() {
                     if (!this.bab.ba.kegiatanKey) return null;
                     return this.babKegiatanGroups.find(g => g.key === this.bab.ba.kegiatanKey) || null;
+                },
+                babSelectedJadwal() {
+                    const g = this.babSelectedGroup;
+                    if (!g) return null;
+                    const nama = g.pilihan + (g.detail ? ' - ' + g.detail : '');
+                    const blok = this.blokName(g.blok);
+                    const candidates = (this.bab.jadwalList || []).filter(j =>
+                        this.blokName(j.Blok) === blok
+                        && this.normBagian(j.NamaKegiatan) === this.normBagian(nama));
+                    if (!candidates.length) return null;
+                    const tanggal = this.dateOnly(g.tanggal);
+                    return candidates.find(j => this.dateOnly(j.Tanggal) === tanggal) || candidates[0];
                 },
                 babDuplicate() {
                     const g = this.babSelectedGroup;
@@ -3140,7 +3158,7 @@
                 },
                 babEnd() {
                     if (this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
-                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], fBlok: '', baSettings: { statuses: ['ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, label: '', tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], jadwalList: [], fBlok: '', baSettings: { statuses: ['ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, label: '', tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
                     this.notify('Sesi bagian diakhiri.');
                 },
                 async babLoad() {
@@ -3155,6 +3173,7 @@
                         if (!boot || !boot.ok) { this.notify((boot && boot.message) || 'Gagal memuat data bagian.', false); return; }
                         this.bab.rows = boot.rows || [];
                         this.bab.baList = boot.baList || [];
+                        this.bab.jadwalList = boot.jadwalList || [];
                     } catch (e) {
                         this.notify('Gagal memuat data: ' + e, false);
                     } finally {
@@ -3230,9 +3249,13 @@
                     this.bab.ba.confirm = false;
                     this.loading = true;
                     try {
+                        const jadwal = this.babSelectedJadwal || {};
                         const payload = {
                             namaKegiatan: this.babSelectedGroup.pilihan + (this.babSelectedGroup.detail ? ' - ' + this.babSelectedGroup.detail : ''),
                             tanggalPelaksanaan: this.bab.ba.tanggal,
+                            jam: jadwal.Jam || '',
+                            dosen: jadwal.Dosen || '',
+                            jadwalId: jadwal.JadwalID || '',
                             label: this.bab.ba.label.trim(),
                             blok: this.babSelectedGroup.blok,
                             catatan: this.bab.ba.catatan.trim(),
@@ -4223,7 +4246,7 @@
                     this.openKelolaBaPendukung(p[0].idPengajuan);
                 },
                 openBaSheet(type) {
-                    if (type) this.baSheet.type = type === 'pendukung' ? 'pendukung' : 'pelaksanaan';
+                    this.baSheet.type = type === 'pelaksanaan' ? 'pelaksanaan' : 'pendukung';
                     this.baSheet.open = true;
                     this.baSheet.level = 'blok';
                     this.baSheet.blok = '';

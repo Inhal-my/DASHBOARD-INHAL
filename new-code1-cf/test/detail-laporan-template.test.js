@@ -156,7 +156,7 @@ describe('detail laporan tab pembayaran', () => {
     const html = await loadHtml();
     expect(html).toContain("key: 'bayar', label: 'Data Pembayaran'");
     expect(html).toContain("activeTab === 'bayar'");
-    expect(html).toContain("bayarFilter: { q: '', status: '', kelengkapan: '' }");
+    expect(html).toContain("bayarFilter: { kelengkapan: '' }");
   });
   it('agregasi pembayaran per mahasiswa', async () => {
     const html = await loadHtml();
@@ -257,12 +257,60 @@ describe('detail laporan kejelasan tampilan', () => {
     expect(html).toContain('{{ baKegiatanBaTotal }} BA total');
     expect(html).toContain('{{ baKegiatanRows.length }} kegiatan');
   });
-  it('filter rekap punya label dan Reset tidak menyisakan kolom kosong', async () => {
+  it('filter global memuat jenis dan pencarian serta filter lokal tidak diduplikasi', async () => {
     const html = await loadHtml();
-    expect(html).toContain('<label class="label">Jenis Kegiatan</label>');
-    expect(html).toContain('<label class="label">Cari Mahasiswa</label>');
-    expect(html).toContain('<div v-if="activeDosenCell" class="flex items-end md:col-span-6">');
-    expect(html).toContain('<div v-if="activeMatrixCell" class="flex items-end md:col-span-2">');
+    const desktopStart = html.indexOf('class="filter-desktop');
+    const desktop = html.slice(desktopStart, html.indexOf('filter-mobile-bar', desktopStart));
+    expect(desktop).toContain('v-model="filters.jenis"');
+    expect(desktop).toContain('v-model="filters.search"');
+    expect(desktop).toContain('resetGlobalFilters()');
+
+    const sheetStart = html.indexOf('class="filter-mobile sheet-panel"');
+    const sheet = html.slice(sheetStart, html.indexOf('<!-- tab switcher -->', sheetStart));
+    expect(sheet).toContain('v-model="filters.jenis"');
+    expect(sheet).toContain('v-model="filters.search"');
+
+    for (const s of ['dosenFilter.blok', 'dosenFilter.jenis', 'dosenFilter.from', 'dosenFilter.to',
+      'bagianFilter.blok', 'bagianFilter.q', 'baFilter.blok', 'baFilter.q',
+      'baListFilter.blok', 'baListFilter.from', 'baListFilter.to', 'baListFilter.q',
+      'bayarFilter.q', 'bayarFilter.status']) {
+      expect(html).not.toContain(s);
+    }
+    expect(html).toContain('bayarFilter.kelengkapan');
+    expect(html).toContain('showGlobalFilters');
+    expect(html).toContain('Filter jadwal terpisah dari filter laporan.');
+    expect(html).toContain("['from', 'to', 'blok', 'status', 'jenis', 'search']");
+  });
+  it('filter global dipakai bersama oleh filteredRows', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('rowMatchesGlobal(p');
+    const start = html.indexOf('filteredRows()');
+    const end = html.indexOf('filteredBa()', start);
+    expect(html.slice(start, end)).toContain('rowMatchesGlobal');
+  });
+  it('pencarian global menjangkau jenis dan detail kegiatan', async () => {
+    const html = await loadHtml();
+    const start = html.indexOf('rowMatchesGlobal(p, opts) {');
+    const end = html.indexOf('rowForUnitPeserta(p)', start);
+    const block = html.slice(start, end);
+    expect(block).toContain('o.details');
+    expect(block).toContain("p['Jenis Kegiatan']");
+    const rowsStart = html.indexOf('filteredRows()');
+    const rowsEnd = html.indexOf('filteredBa()', rowsStart);
+    expect(html.slice(rowsStart, rowsEnd)).toContain('details: r.details');
+    const payStart = html.indexOf('pembayaranFiltered() {');
+    const payEnd = html.indexOf('pembayaranSummary()', payStart);
+    expect(html.slice(payStart, payEnd)).toContain('x.detail');
+  });
+  it('reset filter global mengosongkan enam field dan bagian', async () => {
+    const html = await loadHtml();
+    const start = html.indexOf('resetGlobalFilters() {');
+    const end = html.indexOf('animateNumbers()', start);
+    const block = html.slice(start, end);
+    for (const s of ['this.filters.from', 'this.filters.to', 'this.filters.blok',
+      'this.filters.status', 'this.filters.jenis', 'this.filters.search', 'this.filters.bagian']) {
+      expect(block).toContain(s);
+    }
   });
 });
 

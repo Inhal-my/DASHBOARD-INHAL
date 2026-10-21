@@ -699,7 +699,7 @@
             </section>
 
             <!-- filter bar desktop (glassmorphism) -->
-            <div class="filter-desktop sticky top-16 z-30 mb-5 lap-card" v-show="laporanMode !== 'ringkas'">
+            <div class="filter-desktop sticky top-16 z-30 mb-5 lap-card" v-show="showGlobalFilters">
                 <div class="in-toolbar">
                 <div class="grid w-full gap-3 md:grid-cols-12">
                     <div class="md:col-span-3">
@@ -724,7 +724,23 @@
                             <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
                         </select>
                     </div>
+                    <div class="md:col-span-2">
+                        <label class="label">Jenis Kegiatan</label>
+                        <select v-model="filters.jenis" class="in-input">
+                            <option value="">Semua Jenis</option>
+                            <option v-for="j in jenisOptions" :key="j" :value="j">{{ j }}</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-6">
+                        <label class="label">Cari</label>
+                        <input v-model="filters.search" class="in-input" placeholder="Cari NPM / nama / kegiatan...">
+                    </div>
                     <div class="flex items-end md:col-span-2">
+                        <button type="button" class="btn-soft w-full" @click="resetGlobalFilters()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>
+                    <div class="flex items-end md:col-span-4">
                         <button class="btn-primary w-full" :disabled="exporting" @click="exportExcel()">
                             <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
                             {{ exporting ? 'Menyiapkan...' : 'Export .xlsx' }}
@@ -735,7 +751,7 @@
             </div>
 
             <!-- filter bar mobile: mini-bar + bottom sheet (ala dashboard) -->
-            <div class="filter-mobile-bar" v-show="laporanMode !== 'ringkas'">
+            <div class="filter-mobile-bar" v-show="showGlobalFilters">
                 <button type="button" class="btn-soft flex-1 !py-3" :aria-expanded="filterSheetOpen ? 'true' : 'false'" @click="filterSheetOpen = true">
                     <i class="bi bi-funnel"></i>
                     Filter
@@ -747,10 +763,10 @@
                 </button>
             </div>
             <transition name="fade">
-                <div v-if="filterSheetOpen" class="filter-mobile sheet-overlay" @click="filterSheetOpen = false"></div>
+                <div v-if="filterSheetOpen && showGlobalFilters" class="filter-mobile sheet-overlay" @click="filterSheetOpen = false"></div>
             </transition>
             <transition name="pop">
-                <div v-if="filterSheetOpen" class="filter-mobile sheet-panel" role="dialog" aria-modal="true" aria-label="Filter Laporan">
+                <div v-if="filterSheetOpen && showGlobalFilters" class="filter-mobile sheet-panel" role="dialog" aria-modal="true" aria-label="Filter Laporan">
                     <div class="sheet-handle"></div>
                     <div class="mb-3 flex items-center justify-between">
                         <div class="text-sm font-bold text-slate-900">Filter Laporan</div>
@@ -778,6 +794,17 @@
                                 <option value="">Semua Status</option>
                                 <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
                             </select>
+                        </div>
+                        <div>
+                            <label class="label">Jenis Kegiatan</label>
+                            <select v-model="filters.jenis" class="input">
+                                <option value="">Semua Jenis</option>
+                                <option v-for="j in jenisOptions" :key="j" :value="j">{{ j }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Cari</label>
+                            <input v-model="filters.search" class="input" placeholder="Cari NPM / nama / kegiatan...">
                         </div>
                     </div>
                     <div class="mt-4 flex gap-2">
@@ -911,29 +938,13 @@
 
                         <!-- table filters -->
                         <div class="lap-card p-4">
-                            <div class="mb-3 flex flex-wrap gap-2">
+                            <div class="flex flex-wrap gap-2">
                                 <button v-for="c in statusChips" :key="c.key" type="button"
                                         :class="filters.status === c.key ? 'in-chip is-active' : 'in-chip'"
                                         @click="filters.status = c.key">
                                     <span class="dot" :style="{background:c.dot}"></span>{{ c.label }}
                                     <span class="opacity-70">{{ c.count }}</span>
                                 </button>
-                            </div>
-                            <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-6">
-                                    <label class="label">Jenis Kegiatan</label>
-                                    <select v-model="filters.jenis" class="input">
-                                        <option value="">Semua Jenis</option>
-                                        <option v-for="j in jenisOptions" :key="j" :value="j">{{ j }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-6">
-                                    <label class="label">Cari Mahasiswa</label>
-                                    <div class="relative">
-                                        <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                        <input v-model="filters.search" class="input pl-10" placeholder="Cari NPM / nama...">
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -1043,40 +1054,18 @@
                         <template v-else>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-3">
-                                    <label class="label">Blok</label>
-                                    <select v-model="dosenFilter.blok" class="input">
-                                        <option value="">Semua Blok</option>
-                                        <option v-for="o in blok" :key="o" :value="o">{{ o }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-3">
-                                    <label class="label">Jenis Kegiatan</label>
-                                    <select v-model="dosenFilter.jenis" class="input">
-                                        <option value="">Semua Jenis</option>
-                                        <option v-for="o in jenisOptions" :key="o" :value="o">{{ o }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-3">
+                                <div class="md:col-span-4">
                                     <label class="label">Bagian</label>
                                     <select v-model="dosenFilter.bagian" class="input">
                                         <option value="">Semua Bagian</option>
                                         <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
                                 </div>
-                                <div class="md:col-span-3">
+                                <div class="md:col-span-5">
                                     <label class="label">Cari Dosen</label>
                                     <input v-model="dosenFilter.q" class="input" placeholder="Ketik nama dosen...">
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="label">Dari Tanggal</label>
-                                    <input v-model="dosenFilter.from" type="date" class="input">
-                                </div>
-                                <div class="md:col-span-3">
-                                    <label class="label">Sampai Tanggal</label>
-                                    <input v-model="dosenFilter.to" type="date" class="input">
-                                </div>
-                                <div v-if="activeDosenCell" class="flex items-end md:col-span-6">
+                                <div v-if="activeDosenCell" class="flex items-end md:col-span-3">
                                     <button class="btn-soft w-full" @click="resetDosenCell">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                                     </button>
@@ -1206,25 +1195,14 @@
                         <template v-else>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-3">
+                                <div class="md:col-span-6">
                                     <label class="label">Bagian</label>
                                     <select v-model="bagianFilter.bagian" class="input">
                                         <option value="">Semua Bagian</option>
                                         <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="label">Blok</label>
-                                    <select v-model="bagianFilter.blok" class="input">
-                                        <option value="">Semua Blok</option>
-                                        <option v-for="o in bagianBlokOptions" :key="o" :value="o">{{ o }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-4">
-                                    <label class="label">Cari</label>
-                                    <input v-model="bagianFilter.q" class="input" placeholder="Kegiatan, NPM, atau nama mahasiswa...">
-                                </div>
-                                <div v-if="activeMatrixCell" class="flex items-end md:col-span-2">
+                                <div v-if="activeMatrixCell" class="flex items-end md:col-span-6">
                                     <button class="btn-soft w-full" @click="resetMatrixCell">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                                     </button>
@@ -1400,23 +1378,12 @@
                         </div>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-4">
+                                <div class="md:col-span-6">
                                     <label class="label">Bagian</label>
                                     <select v-model="baFilter.bagian" class="input">
                                         <option value="">Semua Bagian</option>
                                         <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
-                                </div>
-                                <div class="md:col-span-4">
-                                    <label class="label">Blok</label>
-                                    <select v-model="baFilter.blok" class="input">
-                                        <option value="">Semua Blok</option>
-                                        <option v-for="o in baBlokOptions" :key="o" :value="o">{{ o }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-4">
-                                    <label class="label">Cari</label>
-                                    <input v-model="baFilter.q" class="input" placeholder="Kegiatan, BA ID, NPM, atau nama...">
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
@@ -1622,14 +1589,10 @@
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="baListFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in daftarBaBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
-                                <div class="md:col-span-3"><label class="label">Blok</label><select v-model="baListFilter.blok" class="input"><option value="">Semua Blok</option><option v-for="o in daftarBaBlokOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Jenis BA</label><select v-model="baListFilter.jenis" class="input"><option value="">Semua Jenis</option><option v-for="o in daftarBaJenisOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Sumber</label><select v-model="baListFilter.sumber" class="input"><option value="">Semua Sumber</option><option v-for="o in daftarBaSumberOptions" :key="o" :value="o">{{ o }}</option></select></div>
-                                <div class="md:col-span-3"><label class="label">Dari Tanggal</label><input v-model="baListFilter.from" type="date" class="input"></div>
-                                <div class="md:col-span-3"><label class="label">Sampai Tanggal</label><input v-model="baListFilter.to" type="date" class="input"></div>
                                 <div class="md:col-span-3"><label class="label">Dosen</label><select v-model="baListFilter.dosen" class="input"><option value="">Semua Dosen</option><option v-for="o in dosenOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Kelengkapan</label><select v-model="baListFilter.kelengkapan" class="input"><option value="">Semua</option><option value="Lengkap">Lengkap</option><option value="Draft">Draft</option></select></div>
-                                <div class="md:col-span-6"><label class="label">Cari</label><input v-model="baListFilter.q" class="input" placeholder="BA ID, kegiatan, NPM, atau nama..."></div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                                 <span class="lap-chip">{{ filteredDaftarBa.length }} BA</span>
@@ -1721,6 +1684,10 @@
                             <div class="b"><div class="k">BA Extra</div><div class="n">{{ jadwalExtraCount }}</div><div class="p">tanpa jadwal</div></div>
                         </div>
                         <div class="lap-card p-4">
+                            <div class="mb-3 flex items-start gap-2 text-[12.5px] text-slate-600">
+                                <i class="bi bi-info-circle mt-0.5 text-base text-brand-500"></i>
+                                <div>Filter jadwal terpisah dari filter laporan.</div>
+                            </div>
                             <div class="grid gap-3 md:grid-cols-12">
                                 <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="jadwalFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in jadwalBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Blok</label><select v-model="jadwalFilter.blok" class="input"><option value="">Semua Blok</option><option v-for="o in jadwalBlokOptions" :key="o" :value="o">{{ o }}</option></select></div>
@@ -1817,18 +1784,7 @@
                         <div class="lap-card">
                             <div class="in-toolbar">
                             <div class="grid w-full gap-3 md:grid-cols-12">
-                                <div class="md:col-span-4">
-                                    <label class="label">Cari Mahasiswa</label>
-                                    <input v-model="bayarFilter.q" class="in-input" placeholder="NPM atau nama mahasiswa...">
-                                </div>
-                                <div class="md:col-span-3">
-                                    <label class="label">Status Pengajuan</label>
-                                    <select v-model="bayarFilter.status" class="in-input">
-                                        <option value="">Semua Status</option>
-                                        <option v-for="o in statusOptions" :key="o" :value="o">{{ o }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-3">
+                                <div class="md:col-span-6">
                                     <label class="label">Kelengkapan Bukti</label>
                                     <select v-model="bayarFilter.kelengkapan" class="in-input">
                                         <option value="">Semua</option>
@@ -1836,8 +1792,8 @@
                                         <option value="belum">Belum ada bukti</option>
                                     </select>
                                 </div>
-                                <div class="flex items-end md:col-span-2">
-                                    <button class="btn-soft w-full" @click="bayarFilter = { q: '', status: '', kelengkapan: '' }">
+                                <div class="flex items-end md:col-span-3">
+                                    <button class="btn-soft w-full" @click="bayarFilter = { kelengkapan: '' }">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                                     </button>
                                 </div>
@@ -2512,14 +2468,14 @@
                     bagian: { categories: [], labs: [] },
                     filters: { from: '', to: '', blok: '', status: '', jenis: '', search: '', bagian: '' },
                     expanded: {},
-                    dosenFilter: { blok: '', jenis: '', from: '', to: '', bagian: '', q: '' },
+                    dosenFilter: { bagian: '', q: '' },
                     activeDosenCell: null,
-                    bagianFilter: { bagian: '', blok: '', q: '' },
-                    baFilter: { bagian: '', blok: '', q: '' },
-                    baListFilter: { bagian: '', blok: '', jenis: '', from: '', to: '', dosen: '', sumber: '', kelengkapan: '', q: '' },
+                    bagianFilter: { bagian: '' },
+                    baFilter: { bagian: '' },
+                    baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '' },
                     jadwal: [],
                     jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
-                    bayarFilter: { q: '', status: '', kelengkapan: '' },
+                    bayarFilter: { kelengkapan: '' },
                     baMenu: { open: false, type: '', items: [], top: 0, left: 0, hover: false },
                     baMenuTimer: null,
                     baMenuCloseTimer: null,
@@ -2562,7 +2518,10 @@
                     return ['Ujian', 'SGD', 'KKD'].concat(this.bagian.labs || []);
                 },
                 activeFilterCount() {
-                    return ['from', 'to', 'blok', 'status'].filter(k => this.filters[k]).length;
+                    return ['from', 'to', 'blok', 'status', 'jenis', 'search'].filter(k => this.filters[k]).length;
+                },
+                showGlobalFilters() {
+                    return !(this.laporanMode === 'analitis' && this.activeTab === 'jadwal');
                 },
                 modeTitle() {
                     return { ringkas: 'Ringkasan Laporan', analitis: 'Analisis Laporan', cetak: 'Cetak Laporan' }[this.laporanMode] || 'Laporan';
@@ -2575,29 +2534,7 @@
                     }[this.laporanMode] || '';
                 },
                 ringkasKegiatanAll() {
-                    const blok = this.filters.blok;
-                    const status = this.filters.status;
-                    const q = this.normSearch(this.filters.search);
-                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
-                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
-                    if (toD) toD.setHours(23, 59, 59, 999);
-                    return this.bagianKegiatanAll.filter(k => {
-                        if (blok && String(k.blok || '').trim() !== blok) return false;
-                        if (fromD || toD) {
-                            const d = this.dateVal(k.tanggal);
-                            if (!d) return false;
-                            if (fromD && d < fromD) return false;
-                            if (toD && d > toD) return false;
-                        }
-                        const peserta = k.peserta || [];
-                        if (status && !peserta.some(p => String(p.status || '').trim() === status)) return false;
-                        if (q) {
-                            if (this.normSearch(k.nama).indexOf(q) !== -1) return true;
-                            if (peserta.some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1)) return true;
-                            return false;
-                        }
-                        return true;
-                    }).map(k => {
+                    return this.bagianKegiatanAll.map(k => {
                         const peserta = k.peserta || [];
                         const counts = {};
                         peserta.forEach(p => {
@@ -2729,41 +2666,38 @@
                     });
                 },
                 filteredRows() {
+                    return this.rows.filter(r => this.rowMatchesGlobal(r.pengajuan, { details: r.details }));
+                },
+                filteredBa() {
                     const blok = this.filters.blok;
+                    const bagian = this.filters.bagian;
                     const status = this.filters.status;
                     const jenis = this.filters.jenis;
                     const q = this.normSearch(this.filters.search);
                     const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
                     const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
                     if (toD) toD.setHours(23, 59, 59, 999);
-                    return this.rows.filter(r => {
-                        const p = r.pengajuan;
-                        if (blok && (p.Blok || '') !== blok) return false;
-                        if (status && (p.Status || '') !== status) return false;
-                        if (jenis && (p['Jenis Kegiatan'] || '') !== jenis) return false;
-                        if (q) {
-                            const npm = this.normSearch(p.NPM);
-                            const nama = this.normSearch(p['Nama Lengkap']);
-                            if (npm.indexOf(q) === -1 && nama.indexOf(q) === -1) return false;
-                        }
-                        if (fromD || toD) {
-                            const d = this.dateVal(p['Tanggal Pelaksanaan']);
-                            if (!d) return false;
-                            if (fromD && d < fromD) return false;
-                            if (toD && d > toD) return false;
-                        }
-                        return true;
-                    });
-                },
-                filteredBa() {
-                    const blok = this.filters.blok;
-                    const bagian = this.filters.bagian;
-                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
-                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
-                    if (toD) toD.setHours(23, 59, 59, 999);
                     return this.beritaAcara.filter(b => {
-                        if (blok && (b.Blok || '') !== blok) return false;
+                        if (blok && String(b.Blok || '').trim() !== String(blok || '').trim()) return false;
                         if (bagian && this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) !== bagian) return false;
+                        const peserta = b.peserta || [];
+                        if (status) {
+                            const statusHit = peserta.some(p => {
+                                const row = this.rowForUnitPeserta(p);
+                                const value = row ? row.pengajuan.Status : (p.statusPengajuan || p.status);
+                                return String(value || '').trim() === status;
+                            });
+                            if (!statusHit) return false;
+                        }
+                        if (jenis && !peserta.some(p => {
+                            const info = this.npmInfoFor(String(p.npm || '').trim(), b.Blok);
+                            return info && info.jenis === jenis;
+                        })) return false;
+                        if (q) {
+                            const hay = this.normSearch(b['Nama Kegiatan']);
+                            const rowHit = peserta.some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
+                            if (hay.indexOf(q) === -1 && !rowHit) return false;
+                        }
                         if (fromD || toD) {
                             const d = this.dateVal(b['Tanggal Pelaksanaan']);
                             if (!d) return false;
@@ -2854,6 +2788,21 @@
                     });
                     return map;
                 },
+                rowLookup() {
+                    const byId = {};
+                    const byNpm = {};
+                    this.rows.forEach(r => {
+                        const p = r.pengajuan;
+                        const id = String(p['ID Pengajuan'] || '').trim();
+                        const npm = String(p.NPM || '').trim();
+                        if (id) byId[id] = r;
+                        if (npm) {
+                            if (!byNpm[npm]) byNpm[npm] = [];
+                            byNpm[npm].push(r);
+                        }
+                    });
+                    return { byId: byId, byNpm: byNpm };
+                },
                 unitsByPengajuan() {
                     const map = {};
                     (this.kegiatan || []).forEach(u => {
@@ -2868,7 +2817,7 @@
                 },
                 npmPembayaranMap() {
                     const map = {};
-                    this.rows.forEach(r => {
+                    this.filteredRows.forEach(r => {
                         const p = r.pengajuan;
                         const npm = String(p.NPM || '').trim();
                         if (!npm) return;
@@ -2920,11 +2869,14 @@
                     }).sort((a, b) => a.nama.localeCompare(b.nama) || a.npm.localeCompare(b.npm));
                 },
                 pembayaranFiltered() {
-                    const q = this.normSearch(this.bayarFilter.q);
-                    const status = this.bayarFilter.status;
+                    const q = this.normSearch(this.filters.search);
+                    const status = this.filters.status;
                     const kel = this.bayarFilter.kelengkapan;
                     return this.pembayaranRows.filter(m => {
-                        if (q && this.normSearch(m.npm).indexOf(q) === -1 && this.normSearch(m.nama).indexOf(q) === -1) return false;
+                        if (q) {
+                            const itemHit = m.items.some(x => this.normSearch([x.jenis, x.detail, x.blok].join(' ')).indexOf(q) !== -1);
+                            if (this.normSearch(m.npm).indexOf(q) === -1 && this.normSearch(m.nama).indexOf(q) === -1 && !itemHit) return false;
+                        }
                         if (status && !m.items.some(x => x.status === status)) return false;
                         if (kel === 'ada' && m.jumlahBukti === 0) return false;
                         if (kel === 'belum' && m.jumlahBukti > 0) return false;
@@ -2970,22 +2922,6 @@
                     }
                     out.push({ label: 'Selesai', detail: (r.progress && r.progress.selesai === 'all') ? 'lengkap' : 'belum', time: '' });
                     return out;
-                },
-                bagianBlokOptions() {
-                    const sel = this.bagianFilter.bagian;
-                    const set = {};
-                    const add = (bagianLabel, blokRaw) => {
-                        const blok = String(blokRaw || '').trim();
-                        if (!blok) return;
-                        if (!sel || bagianLabel === sel) set[blok] = 1;
-                    };
-                    this.beritaAcara.forEach(b => add(this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya', b.Blok));
-                    this.rows.forEach(r => {
-                        const p = r.pengajuan;
-                        const dets = (r.details && r.details.length) ? r.details : [{ 'Jenis Kegiatan': p['Jenis Kegiatan'] }];
-                        dets.forEach(d => add(this.resolveBagianLabel(d['Jenis Kegiatan'] || d.Bagian, d.Pilihan || d.Bagian, '') || 'Lainnya', p.Blok));
-                    });
-                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
                 },
                 bagianKegiatanAll() {
                     const normBlok = s => String(s || '').trim() || 'Tanpa Blok';
@@ -3071,7 +3007,7 @@
                         });
                     });
                     out.sort((a, b) => this.normBagian(a.bagian).localeCompare(this.normBagian(b.bagian)) || String(a.blok).localeCompare(String(b.blok)) || normName(a.nama).localeCompare(normName(b.nama)) || String(a.tanggal || '').localeCompare(String(b.tanggal || '')));
-                    return out;
+                    return out.filter(k => this.kegiatanMatchesGlobal(k));
                 },
                 bagianAllLabels() {
                     const cats = (this.bagian.categories && this.bagian.categories.length) ? this.bagian.categories : ['Ujian', 'SGD', 'KKD'];
@@ -3115,19 +3051,36 @@
                     return t;
                 },
                 dosenFilteredBa() {
-                    const blok = String(this.dosenFilter.blok || '').trim();
-                    const jenis = String(this.dosenFilter.jenis || '').trim();
-                    const fromD = this.dosenFilter.from ? this.dateVal(this.dosenFilter.from) : null;
-                    const toD = this.dosenFilter.to ? this.dateVal(this.dosenFilter.to) : null;
+                    const blok = String(this.filters.blok || '').trim();
+                    const jenis = String(this.filters.jenis || '').trim();
+                    const bagian = String(this.dosenFilter.bagian || '').trim();
+                    const q = this.normSearch(this.filters.search);
+                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
+                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
                     if (toD) toD.setHours(23, 59, 59, 999);
                     return this.beritaAcara.filter(b => {
                         if (blok && String(b.Blok || '').trim() !== blok) return false;
+                        if (bagian && this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) !== bagian) return false;
+                        const peserta = b.peserta || [];
                         if (jenis) {
-                            const ok = (b.peserta || []).some(p => {
+                            const ok = peserta.some(p => {
                                 const info = this.npmInfoFor(String(p.npm || '').trim(), b.Blok);
                                 return info && info.jenis === jenis;
                             });
                             if (!ok) return false;
+                        }
+                        if (this.filters.status) {
+                            const status = String(this.filters.status || '').trim();
+                            const ok = peserta.some(p => {
+                                const row = this.rowForUnitPeserta(p);
+                                return row && String(row.pengajuan.Status || '').trim() === status;
+                            });
+                            if (!ok) return false;
+                        }
+                        if (q) {
+                            const namaHit = this.normSearch(b['Nama Kegiatan']).indexOf(q) !== -1;
+                            const pesertaHit = peserta.some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
+                            if (!namaHit && !pesertaHit) return false;
                         }
                         if (fromD || toD) {
                             const d = this.dateVal(b['Tanggal Pelaksanaan']);
@@ -3218,16 +3171,8 @@
                 },
                 bagianDetailRows() {
                     const selBagian = this.bagianFilter.bagian;
-                    const selBlok = this.bagianFilter.blok;
-                    const q = this.normSearch(this.bagianFilter.q);
-                    const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
                     const rows = this.bagianKegiatanAll.filter(k => {
                         if (selBagian && this.normBagian(k.bagian) !== this.normBagian(selBagian)) return false;
-                        if (selBlok && k.blok !== selBlok) return false;
-                        if (q) {
-                            if (normName(k.nama).indexOf(q) !== -1) return true;
-                            return (k.peserta || []).some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
-                        }
                         return true;
                     });
                     rows.forEach((r, i) => {
@@ -3263,31 +3208,11 @@
                     this.bagianDetailRows.forEach(r => r.peserta.forEach(p => { const key = (p.npm || p.namaLengkap || '').toLowerCase(); if (key) seen[key] = 1; }));
                     return Object.keys(seen).length;
                 },
-                baBlokOptions() {
-                    const set = {};
-                    const sel = this.baFilter.bagian;
-                    this.beritaAcara.forEach(b => {
-                        const blok = String(b.Blok || '').trim();
-                        if (!blok) return;
-                        if (!sel || this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) === sel) set[blok] = 1;
-                    });
-                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
-                },
                 baKegiatanRows() {
                     const bagian = this.baFilter.bagian;
-                    const blok = String(this.baFilter.blok || '').trim();
-                    const q = this.normSearch(this.baFilter.q);
                     return (this.kegiatan || []).filter(r => {
                         if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return false;
-                        if (blok && String(r.blok || '').trim() !== blok) return false;
-                        if (q) {
-                            if (this.normSearch(r.label).indexOf(q) !== -1) return true;
-                            if (this.normSearch((r.bagian || '') + ' ' + (r.blok || '')).indexOf(q) !== -1) return true;
-                            if ((r.baPendukung || []).some(b => this.normSearch(b['BA ID']).indexOf(q) !== -1)) return true;
-                            if ((r.baPelaksanaan || []).some(b => this.normSearch(b['BA ID']).indexOf(q) !== -1)) return true;
-                            return (r.peserta || []).some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
-                        }
-                        return true;
+                        return this.baUnitMatchesGlobal(r);
                     });
                 },
                 baKegiatanPendukungTotal() {
@@ -3318,12 +3243,12 @@
                 filteredDaftarBa() {
                     const f = this.baListFilter;
                     const bagian = f.bagian;
-                    const blok = String(f.blok || '').trim();
-                    const fromD = f.from ? this.dateVal(f.from) : null;
-                    const toD = f.to ? this.dateVal(f.to) : null;
+                    const blok = String(this.filters.blok || '').trim();
+                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
+                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
                     if (toD) toD.setHours(23, 59, 59, 999);
                     const dosen = f.dosen ? this.normSearch(f.dosen) : '';
-                    const q = this.normSearch(f.q);
+                    const q = this.normSearch(this.filters.search);
                     return this.daftarBaRows.filter((r) => {
                         if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return false;
                         if (blok && String(r.blok || '').trim() !== blok) return false;
@@ -3349,16 +3274,6 @@
                     this.daftarBaRows.forEach((r) => { if (r.bagian) set[r.bagian] = 1; });
                     return Object.keys(set).sort((a, b) => a.localeCompare(b));
                 },
-                daftarBaBlokOptions() {
-                    const bagian = this.baListFilter.bagian;
-                    const set = {};
-                    this.daftarBaRows.forEach((r) => {
-                        if (!r.blok) return;
-                        if (bagian && this.normBagian(r.bagian) !== this.normBagian(bagian)) return;
-                        set[r.blok] = 1;
-                    });
-                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
-                },
                 daftarBaJenisOptions() {
                     return ['Pendukung', 'Pelaksanaan'];
                 },
@@ -3382,11 +3297,9 @@
                 },
                 daftarBaUnitRows() {
                     const bagian = this.baListFilter.bagian;
-                    const blok = String(this.baListFilter.blok || '').trim();
                     return (this.kegiatan || []).filter((u) => {
                         if (bagian && this.normBagian(u.bagian) !== this.normBagian(bagian)) return false;
-                        if (blok && String(u.blok || '').trim() !== blok) return false;
-                        return true;
+                        return this.baUnitMatchesGlobal(u);
                     });
                 },
                 baPelaksanaanIndex() {
@@ -3509,24 +3422,22 @@
                 }
             },
             watch: {
-                'filters.blok': function () { this.animateCharts(); },
-                'filters.status': function () { this.animateCharts(); },
-                'filters.jenis': function () { this.animateCharts(); },
-                'filters.from': function () { this.animateCharts(); },
-                'filters.to': function () { this.animateCharts(); },
+                'filters.blok': function () {
+                    this.animateCharts();
+                    this.activeDosenCell = null;
+                    if (this.activeMatrixCell && this.activeMatrixCell.blok !== this.filters.blok) this.activeMatrixCell = null;
+                },
+                'filters.status': function () { this.animateCharts(); this.activeDosenCell = null; },
+                'filters.jenis': function () { this.animateCharts(); this.activeDosenCell = null; },
+                'filters.from': function () { this.animateCharts(); this.activeDosenCell = null; },
+                'filters.to': function () { this.animateCharts(); this.activeDosenCell = null; },
+                'filters.search': function () { this.activeDosenCell = null; },
                 'bagianFilter.bagian': function (v) {
                     if (this.activeMatrixCell && v !== this.activeMatrixCell.bagian) this.activeMatrixCell = null;
                 },
-                'bagianFilter.blok': function (v) {
-                    if (this.activeMatrixCell && v !== this.activeMatrixCell.blok) this.activeMatrixCell = null;
-                },
-                'dosenFilter.blok': function () { this.activeDosenCell = null; },
-                'dosenFilter.jenis': function () { this.activeDosenCell = null; },
-                'dosenFilter.from': function () { this.activeDosenCell = null; },
-                'dosenFilter.to': function () { this.activeDosenCell = null; },
                 'dosenFilter.bagian': function () { this.activeDosenCell = null; },
                 'dosenFilter.q': function () { this.activeDosenCell = null; },
-                activeTab: function () { this.closeBuktiPreview(); this.closeBaMenu(); },
+                activeTab: function () { this.closeBuktiPreview(); this.closeBaMenu(); this.filterSheetOpen = false; },
             },
             methods: {
                 toggleSidebar() { this.sidebarCollapsed = !this.sidebarCollapsed; },
@@ -3773,6 +3684,98 @@
                     const info = this.npmInfoFor(npm, baBlok);
                     return info ? info.dosen : null;
                 },
+                rowMatchesGlobal(p, opts) {
+                    if (!p) return false;
+                    const o = opts || {};
+                    const f = this.filters;
+                    if (!o.skipBlok && f.blok && String(p.Blok || '').trim() !== String(f.blok || '').trim()) return false;
+                    if (f.status && String(p.Status || '').trim() !== f.status) return false;
+                    if (f.jenis && String(p['Jenis Kegiatan'] || '').trim() !== f.jenis) return false;
+                    if (!o.skipSearch) {
+                        const q = this.normSearch(f.search);
+                        if (q) {
+                            const details = o.details || [];
+                            const detailText = details.map(d => [d['Jenis Kegiatan'], d.Pilihan, d.Detail].filter(Boolean).join(' ')).join(' ');
+                            const hay = this.normSearch([p.NPM, p['Nama Lengkap'], p['Jenis Kegiatan'], detailText].join(' '));
+                            if (hay.indexOf(q) === -1) return false;
+                        }
+                    }
+                    const fromD = f.from ? this.dateVal(f.from) : null;
+                    const toD = f.to ? this.dateVal(f.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    if (fromD || toD) {
+                        const d = this.dateVal(p['Tanggal Pelaksanaan']);
+                        if (!d) return false;
+                        if (fromD && d < fromD) return false;
+                        if (toD && d > toD) return false;
+                    }
+                    return true;
+                },
+                rowForUnitPeserta(p) {
+                    if (!p) return null;
+                    const id = String(p.idPengajuan || '').trim();
+                    if (id && this.rowLookup.byId[id]) return this.rowLookup.byId[id];
+                    const npm = String(p.npm || '').trim();
+                    const list = this.rowLookup.byNpm[npm] || [];
+                    const blok = String(p.blok || '').trim();
+                    if (blok) {
+                        const sameBlok = list.find(r => String(r.pengajuan.Blok || '').trim() === blok);
+                        if (sameBlok) return sameBlok;
+                    }
+                    return list[0] || null;
+                },
+                kegiatanMatchesGlobal(k) {
+                    if (!k) return false;
+                    const f = this.filters;
+                    if (f.blok && String(k.blok || '').trim() !== String(f.blok || '').trim()) return false;
+                    const peserta = k.peserta || [];
+                    if (f.status && !peserta.some(p => String(p.status || '').trim() === f.status)) return false;
+                    if (f.jenis) {
+                        const jenis = String(f.jenis || '').trim();
+                        const rowHit = peserta.some(p => {
+                            const row = this.rowForUnitPeserta(p);
+                            return row && String(row.pengajuan['Jenis Kegiatan'] || '').trim() === jenis;
+                        });
+                        if (!rowHit && this.normBagian(k.bagian) !== this.normBagian(jenis)) return false;
+                    }
+                    const q = this.normSearch(f.search);
+                    if (q) {
+                        const hay = this.normSearch((k.nama || '') + ' ' + (k.bagian || '') + ' ' + (k.blok || ''));
+                        const rowHit = peserta.some(p => this.normSearch((p.npm || '') + ' ' + (p.namaLengkap || '')).indexOf(q) !== -1);
+                        if (hay.indexOf(q) === -1 && !rowHit) return false;
+                    }
+                    const fromD = f.from ? this.dateVal(f.from) : null;
+                    const toD = f.to ? this.dateVal(f.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    if (fromD || toD) {
+                        const d = this.dateVal(k.tanggal);
+                        if (!d) return false;
+                        if (fromD && d < fromD) return false;
+                        if (toD && d > toD) return false;
+                    }
+                    return true;
+                },
+                baUnitMatchesGlobal(u) {
+                    if (!u) return false;
+                    const f = this.filters;
+                    if (f.blok && String(u.blok || '').trim() !== String(f.blok || '').trim()) return false;
+                    const rows = (u.peserta || []).map(p => this.rowForUnitPeserta(p)).filter(Boolean);
+                    if (f.status || f.jenis || f.from || f.to) {
+                        if (!rows.some(r => this.rowMatchesGlobal(r.pengajuan, { skipBlok: true, skipSearch: true }))) return false;
+                    }
+                    const q = this.normSearch(f.search);
+                    if (q) {
+                        const baParts = [];
+                        (u.baPendukung || []).forEach(b => baParts.push(b['BA ID'], b['Nama Kegiatan']));
+                        (u.baPelaksanaan || []).forEach(b => baParts.push(b['BA ID'], b['Nama Kegiatan']));
+                        const hay = this.normSearch([u.label, u.bagian, u.blok].concat(baParts).join(' '));
+                        if (hay.indexOf(q) === -1) {
+                            const rowHit = rows.some(r => this.normSearch((r.pengajuan.NPM || '') + ' ' + (r.pengajuan['Nama Lengkap'] || '')).indexOf(q) !== -1);
+                            if (!rowHit) return false;
+                        }
+                    }
+                    return true;
+                },
                 dateVal(v) {
                     if (!v) return null;
                     if (v instanceof Date) return v;
@@ -3820,7 +3823,7 @@
                 },
                 filterByMatrixCell(bagian, blok) {
                     this.bagianFilter.bagian = bagian;
-                    this.bagianFilter.blok = blok;
+                    this.filters.blok = blok;
                     this.activeMatrixCell = { key: this.matrixCellKey(blok, bagian), bagian: bagian, blok: blok };
                     this.$nextTick(() => {
                         const el = document.getElementById('bagian-detail');
@@ -3829,7 +3832,7 @@
                 },
                 resetMatrixCell() {
                     this.bagianFilter.bagian = '';
-                    this.bagianFilter.blok = '';
+                    this.filters.blok = '';
                     this.activeMatrixCell = null;
                 },
                 openDosenCell(dosen, bagian) {
@@ -3850,6 +3853,9 @@
                     this.filters.to = '';
                     this.filters.blok = '';
                     this.filters.status = '';
+                    this.filters.jenis = '';
+                    this.filters.search = '';
+                    this.filters.bagian = '';
                 },
                 animateNumbers() {
                     const s = this.summary || {};
@@ -4115,7 +4121,7 @@
                             setUrlHyperlinks(wsDetailPeserta, 'Link Bukti Bayar', 'Buka link bukti bayar');
                             XLSX.utils.book_append_sheet(wb, wsDetailPeserta, 'Detail Peserta');
 
-                            const baRows = this.baReportRows({ blok: this.filters.blok, bagian: this.filters.bagian, from: this.filters.from, to: this.filters.to }, '');
+                            const baRows = this.baReportRows({ blok: this.filters.blok, bagian: this.filters.bagian, from: this.filters.from, to: this.filters.to }, this.filters.search);
                             const wsBa = baExportSheet(baRows);
                             setUrlHyperlinks(wsBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsBa, 'Berita Acara');
@@ -4324,7 +4330,7 @@
                             }));
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap BA');
 
-                            const detailRows = this.baReportRows({ blok: this.baFilter.blok, bagian: this.baFilter.bagian }, this.baFilter.q);
+                            const detailRows = this.baReportRows({ blok: this.filters.blok, bagian: this.baFilter.bagian, from: this.filters.from, to: this.filters.to }, this.filters.search);
                             const wsDetailBa = baExportSheet(detailRows);
                             setUrlHyperlinks(wsDetailBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsDetailBa, 'Detail BA');

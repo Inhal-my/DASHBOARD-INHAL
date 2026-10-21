@@ -1,5 +1,5 @@
 import { requireAdmin, requireBagianSession } from '../session.js';
-import { getBagianBaStatuses, kegiatanKey } from '../read/common.js';
+import { getBagianBaStatuses, kegiatanKey, getMasterOptions, resolveBagian12 } from '../read/common.js';
 import { nextIdNumber } from '../sequence.js';
 import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
 
@@ -106,6 +106,47 @@ export async function validateBaPesertaStatus(db, peserta) {
   return blocked;
 }
 
+async function validateBaPesertaKegiatan(db, peserta, bagian, blok, namaKegiatan) {
+  const key = kegiatanKey(bagian, str(blok), str(namaKegiatan));
+  const pengajuan = (await db.prepare('SELECT id_pengajuan, blok FROM pengajuan').all()).results || [];
+  const pMap = {};
+  for (const p of pengajuan) pMap[str(p.id_pengajuan)] = p;
+  const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
+  const detailMap = {};
+  for (const d of details) {
+    const pid = str(d.id_pengajuan);
+    if (!pid) continue;
+    if (!detailMap[pid]) detailMap[pid] = [];
+    detailMap[pid].push(d);
+  }
+  const labs = await getMasterOptions(db, 'Lab');
+  const problems = [];
+  const seen = new Set();
+  for (const p of peserta) {
+    const pid = str(p.idPengajuan);
+    const label = str(p.namaLengkap) || str(p.npm) || pid || '(tanpa identitas)';
+    if (!pid) { problems.push(label + ' (ID pengajuan kosong)'); continue; }
+    if (!pMap[pid]) { problems.push(label + ' (tidak ditemukan)'); continue; }
+    if (seen.has(pid)) { problems.push(label + ' (duplikat)'); continue; }
+    seen.add(pid);
+    if (str(pMap[pid].blok).replace(/\s+/g, ' ') !== str(blok).replace(/\s+/g, ' ')) {
+      problems.push(label + ' (blok tidak sesuai)');
+      continue;
+    }
+    let matches = false;
+    for (const d of detailMap[pid] || []) {
+      const jenis = str(d.jenis_kegiatan);
+      const nama = str(d.pilihan) + (str(d.detail) ? ' - ' + str(d.detail) : '');
+      const dBagian = lowsp(jenis) === 'praktikum'
+        ? (resolveBagian12('Praktikum', str(d.pilihan), nama, labs) || 'Praktikum')
+        : jenis;
+      if (kegiatanKey(dBagian, str(blok), nama) === key) { matches = true; break; }
+    }
+    if (!matches) problems.push(label + ' (kegiatan tidak sesuai)');
+  }
+  return problems;
+}
+
 function buildPersistBaStmts(db, table, pesertaTable, payload, meta) {
   const ts = nowIso();
   const cols = {
@@ -151,10 +192,14 @@ async function persistBa(db, table, pesertaTable, payload, meta) {
   await db.batch(buildPersistBaStmts(db, table, pesertaTable, payload, meta));
 }
 
-function buildSyncStmts(db, peserta, dosen, tanggal, jam) {
+function pelaksanaanValue(tanggal, jam) {
   const tgl = str(tanggal);
   const j = str(jam);
-  const value = tgl && j ? (tgl + 'T' + j) : tgl;
+  return tgl && j ? (tgl + 'T' + j) : tgl;
+}
+
+function buildSyncStmts(db, peserta, dosen, tanggal, jam) {
+  const value = pelaksanaanValue(tanggal, jam);
   const ts = nowIso();
   const stmts = [];
   for (const p of peserta) {
@@ -216,16 +261,22 @@ export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
   const id = str(baId);
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
 
-  const existing = await db.prepare('SELECT ba_id, file_url FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  const existing = await db.prepare('SELECT ba_id, file_url, base_file_url FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
 
+  const berkas = (await db.prepare('SELECT file_url FROM berita_acara_admin_berkas WHERE ba_id = ?1').bind(id).all()).results || [];
   await db.batch([
+    db.prepare('DELETE FROM berita_acara_admin_berkas WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_admin WHERE ba_id = ?1').bind(id)
   ]);
 
-  const fileId = parseDriveFileId(existing.file_url);
-  if (fileId) await trashDriveFile(ctx.env, fileId);
+  const fileIds = [];
+  for (const url of [existing.file_url, existing.base_file_url].concat(berkas.map((r) => r.file_url))) {
+    const fileId = parseDriveFileId(url);
+    if (fileId && fileIds.indexOf(fileId) === -1) fileIds.push(fileId);
+  }
+  for (const fileId of fileIds) await trashDriveFile(ctx.env, fileId);
 
   return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
@@ -259,14 +310,24 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
 
   const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
-  const ids = peserta.map((r) => str(r.id_pengajuan)).filter(Boolean);
+  const ids = Array.from(new Set(peserta.map((r) => str(r.id_pengajuan)).filter(Boolean)));
   const ts = nowIso();
-  const clears = ids.map((pid) =>
-    db.prepare('UPDATE pengajuan SET dosen = \'\', tanggal_pelaksanaan = \'\', updated_at = ?1 WHERE id_pengajuan = ?2').bind(ts, pid)
-  );
+  const syncs = [];
+  for (const pid of ids) {
+    const next = await db.prepare(
+      'SELECT a.dosen, a.tanggal_pelaksanaan, a.jam FROM berita_acara_peserta p ' +
+      'JOIN berita_acara a ON a.ba_id = p.ba_id ' +
+      'WHERE p.id_pengajuan = ?1 AND p.ba_id <> ?2 ' +
+      'ORDER BY a.timestamp DESC, a.ba_id DESC LIMIT 1'
+    ).bind(pid, id).first();
+    syncs.push(
+      db.prepare('UPDATE pengajuan SET dosen = ?1, tanggal_pelaksanaan = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
+        .bind(next ? str(next.dosen) : '', next ? pelaksanaanValue(next.tanggal_pelaksanaan, next.jam) : '', ts, pid)
+    );
+  }
 
   await db.batch([
-    ...clears,
+    ...syncs,
     db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
   ]);
@@ -287,6 +348,14 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     return { success: false, message: 'Upload dibatalkan: tidak ada peserta pada berita acara ini. Pilih minimal satu peserta.' };
   }
 
+  const invalidPeserta = await validateBaPesertaKegiatan(db, peserta, bagian, p.blok, p.namaKegiatan);
+  if (invalidPeserta.length) {
+    return {
+      success: false,
+      message: 'Upload dibatalkan: peserta tidak sesuai dengan kegiatan BA — ' + invalidPeserta.join(', ') + '. Muat ulang data terlebih dahulu.'
+    };
+  }
+
   const blocked = await validateBaPesertaStatus(db, peserta);
   if (blocked.length) {
     const allowed = await getBagianBaStatuses(db);
@@ -298,9 +367,19 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
 
   const jadwalId = str(p.jadwalId);
   if (jadwalId) {
-    const jd = await db.prepare('SELECT jadwal_id, active FROM jadwal_pelaksanaan WHERE jadwal_id = ?1').bind(jadwalId).first();
+    const jd = await db.prepare('SELECT * FROM jadwal_pelaksanaan WHERE jadwal_id = ?1').bind(jadwalId).first();
     if (!jd || Number(jd.active) !== 1) {
       return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan atau sudah dibatalkan.' };
+    }
+    const key = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
+    const jadwalKey = str(jd.kegiatan_key) || kegiatanKey(str(jd.bagian), str(jd.blok), str(jd.nama_kegiatan));
+    if (jadwalKey !== key) {
+      return { success: false, message: 'Jadwal pelaksanaan tidak sesuai dengan kegiatan berita acara.' };
+    }
+    const jadwalTanggal = str(jd.tanggal).slice(0, 10);
+    const baTanggal = str(p.tanggalPelaksanaan).slice(0, 10);
+    if (jadwalTanggal && baTanggal && jadwalTanggal !== baTanggal) {
+      return { success: false, message: 'Tanggal BA tidak sesuai dengan tanggal jadwal pelaksanaan.' };
     }
     const dup = await db.prepare('SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1').bind(jadwalId).first();
     if (dup) return { success: false, message: 'Berita acara untuk jadwal ini sudah ada.' };

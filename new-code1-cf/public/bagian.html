@@ -329,7 +329,7 @@
                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-file-earmark-text"></i></div>
                             <div class="min-w-0 flex-1">
                                 <h2 class="text-base font-bold text-slate-900">Berita Acara</h2>
-                                <p class="text-xs text-slate-400">{{ baWorkItems.length }} kegiatan dalam antrean</p>
+                                <p class="text-xs text-slate-400">{{ baWorkItems.length }} kegiatan dalam antrean · {{ baPendukungList.length }} BA Pendukung</p>
                             </div>
                         </div>
                         <div class="border-b border-slate-100 p-3">
@@ -360,6 +360,17 @@
                                         <span class="flex items-center gap-1"><i class="bi bi-people"></i>{{ item.peserta.length }} peserta</span>
                                     </div>
                                     <div v-if="item.kind==='ba' && item.jadwal" class="mt-1 text-[11px] text-slate-400">Dari jadwal {{ item.jadwal.JadwalID }}</div>
+                                    <div class="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
+                                        <template v-if="baPendukungFor(item)">
+                                            <i class="bi bi-file-earmark-check text-indigo-500"></i>
+                                            <a v-if="baPendukungFor(item)['File URL']" :href="safeUrl(baPendukungFor(item)['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:underline" @click.stop>BA Pendukung {{ baPendukungFor(item)['BA ID'] }}</a>
+                                            <span v-else class="font-semibold text-indigo-600">BA Pendukung {{ baPendukungFor(item)['BA ID'] }}</span>
+                                        </template>
+                                        <template v-else>
+                                            <i class="bi bi-file-earmark-x text-rose-400"></i>
+                                            <span class="text-rose-500">BA Pendukung belum ada</span>
+                                        </template>
+                                    </div>
                                 </div>
                                 <div class="flex shrink-0 flex-col items-end gap-1">
                                     <span class="chip" :class="statusBadgeClass(item.status)">{{ item.status==='draft' ? 'Draft' : statusLabel(item.status) }}</span>
@@ -586,6 +597,17 @@
                                                 <div class="text-[11px] text-slate-400">{{ selectedItem.peserta.length }} peserta</div>
                                             </div>
                                         </div>
+                                        <div class="rounded-2xl p-3 text-xs ring-1" :class="selectedPendukung ? 'bg-indigo-50 text-indigo-700 ring-indigo-100' : 'bg-rose-50 text-rose-700 ring-rose-100'">
+                                            <div class="flex items-center gap-2 font-bold">
+                                                <i class="bi" :class="selectedPendukung ? 'bi-file-earmark-check' : 'bi-file-earmark-x'"></i>
+                                                BA Pendukung
+                                            </div>
+                                            <div v-if="selectedPendukung" class="mt-1">
+                                                <a v-if="selectedPendukung['File URL']" :href="safeUrl(selectedPendukung['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold underline">{{ selectedPendukung['BA ID'] }}</a>
+                                                <span v-else class="font-semibold">{{ selectedPendukung['BA ID'] }} (file belum tersedia)</span>
+                                            </div>
+                                            <div v-else class="mt-1">Belum diunggah admin dashboard.</div>
+                                        </div>
                                         <div>
                                             <div class="mb-2 flex items-center justify-between">
                                                 <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
@@ -616,13 +638,14 @@
                                             <div><label class="label">Tanggal Pelaksanaan</label><input v-model="ba.tanggal" type="date" class="input"></div>
                                             <div>
                                                 <label class="label">File Berita Acara (PDF)</label>
-                                                <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
+                                                <div class="flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
                                                     <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
                                                     <div class="min-w-0 flex-1 text-xs text-slate-500">
                                                         <span v-if="ba.fileName" class="font-semibold text-slate-700">{{ ba.fileName }}</span>
                                                         <span v-else>Pilih file PDF atau scan kamera...</span>
                                                     </div>
-                                                    <input type="file" accept=".pdf" class="ml-auto w-24 text-[11px] text-transparent" @change="onBaFile">
+                                                    <button type="button" class="btn-soft h-11 shrink-0 !py-2 text-xs" @click="$refs.baFile.click()"><i class="bi bi-folder2-open"></i> Pilih File PDF</button>
+                                                    <input ref="baFile" type="file" accept=".pdf" class="hidden" @change="onBaFile">
                                                 </div>
                                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                                     <button type="button" class="btn-soft text-xs" :disabled="ba.scanBusy" @click="$refs.scanCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
@@ -676,7 +699,7 @@
         <!-- ===== KONFIRMASI BERITA ACARA ===== -->
         <transition name="slide">
             <div v-if="ba.confirm" class="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="ba.confirm=false"></div>
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="!loading && (ba.confirm=false)"></div>
                 <div class="safe-b relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-lift sm:rounded-3xl">
                     <div class="flex items-center gap-3">
                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-shield-check"></i></div>
@@ -704,6 +727,13 @@
                     </div>
                     <div v-if="ba.fileName" class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700">
                         <i class="bi bi-file-earmark-pdf"></i> {{ ba.fileName }}
+                    </div>
+                    <div v-if="loading" class="mt-3 flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-[11px] font-semibold text-brand-700" role="status" aria-live="polite">
+                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        Mengunggah file... mohon tunggu.
                     </div>
                     <div class="mt-4 flex gap-3">
                         <button class="btn-soft flex-1" :disabled="loading" @click="ba.confirm=false"><i class="bi bi-arrow-repeat"></i> Periksa Ulang</button>
@@ -776,6 +806,7 @@
                     fBlok: '',
                     ba: { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null },
                     baList: [],
+                    baPendukungList: [],
                     jadwalList: [],
                     activeTab: 'ringkasan',
                     sel: { kind: '', key: '' },
@@ -920,6 +951,11 @@
                     if (!this.ba.kegiatanKey) return null;
                     return this.kegiatanGroups.find(function(g) { return g.key === this.ba.kegiatanKey; }.bind(this)) || null;
                 },
+                selectedPendukung() {
+                    const g = this.selectedGroup;
+                    if (!g) return null;
+                    return this.baPendukungFor({ blok: g.blok, nama: window.BagianState.kegiatanName(g), tanggal: g.tanggal });
+                },
                 selectedCount() {
                     return Object.keys(this.ba.selected).filter(function(k) { return this.ba.selected[k]; }.bind(this)).length;
                 },
@@ -974,6 +1010,10 @@
             methods: {
                 safeUrl(v) {
                     return AppCommon.safeUrl(v);
+                },
+                baPendukungFor(ref) {
+                    if (!ref) return null;
+                    return window.BagianState.baForKegiatan(ref, this.baPendukungList);
                 },
                 run(fn, ...args) {
                     if (this.session && this.session.token) args.push(this.session.token);
@@ -1060,6 +1100,7 @@
                             this.namaBagian = cached.nama || '';
                             this.rows = cached.rows || [];
                             this.baList = cached.baList || [];
+                            this.baPendukungList = cached.baPendukungList || [];
                             this.jadwalList = cached.jadwalList || [];
                         }
                         this.loggedIn = true;
@@ -1075,12 +1116,14 @@
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
+                                this.baPendukungList = [];
                             } else if (!cached) {
                                 this.showToast('Gagal: ' + msg, 'error');
                                 this.loggedIn = false;
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
+                                this.baPendukungList = [];
                             } else {
                                 this.showToast('Gagal memuat data terbaru: ' + msg, 'error');
                             }
@@ -1104,6 +1147,7 @@
                     this.namaBagian = res.nama || '';
                     this.rows = res.rows || [];
                     this.baList = res.baList || [];
+                    this.baPendukungList = res.baPendukungList || [];
                     this.jadwalList = res.jadwalList || [];
                     this.writeCache();
                     this.loadBaConfig();
@@ -1134,6 +1178,7 @@
                             nama: this.namaBagian,
                             rows: this.rows,
                             baList: this.baList,
+                            baPendukungList: this.baPendukungList,
                             jadwalList: this.jadwalList,
                             ts: Date.now()
                         }));
@@ -1599,7 +1644,6 @@
                 },
                 async doUploadBa() {
                     if (this.loading) return;
-                    this.ba.confirm = false;
                     this.loading = true;
                     try {
                         const payload = {
@@ -1619,7 +1663,7 @@
                         this.showToast(res.message, res.success ? 'success' : 'error');
                         if (res.success) {
                             this.closeBaPicker();
-                            const fileEl = document.querySelector('input[type=file]');
+                            const fileEl = this.$refs.baFile;
                             if (fileEl) fileEl.value = '';
                             await this.loadData();
                         }
@@ -1644,6 +1688,7 @@
                     this.namaBagian = '';
                     this.rows = [];
                     this.baList = [];
+                    this.baPendukungList = [];
                     this.jadwalList = [];
                     this.activeTab = 'ringkasan';
                     this.sel = { kind: '', key: '' };
@@ -1665,6 +1710,7 @@
                         this.namaBagian = cached.nama || '';
                         this.rows = cached.rows || [];
                         this.baList = cached.baList || [];
+                        this.baPendukungList = cached.baPendukungList || [];
                     }
                     this.startPolling();
                     this._fetchBootstrap().then(res => {

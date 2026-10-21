@@ -81,6 +81,34 @@ describe('bagian template', () => {
     const html = await loadBagianHtml();
     expect(html).toContain(`v-if="activeTab==='ba'" class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100"`);
   });
+
+  it('input file BA punya tombol pilih file yang terlihat dan target sentuh cukup', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('ref="baFile"');
+    expect(html).toContain('Pilih File PDF');
+    expect(html).toContain('class="hidden" @change="onBaFile"');
+    expect(html).not.toContain('text-[11px] text-transparent');
+  });
+
+  it('konfirmasi upload tetap terbuka dan menampilkan progres sampai selesai', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Mengunggah file... mohon tunggu.');
+    expect(html).toContain(':disabled="loading" @click="ba.confirm=false"');
+    const start = html.indexOf('async doUploadBa()');
+    const end = html.indexOf('async doUploadBa()') + 1800;
+    const body = html.slice(start, end);
+    expect(body).not.toContain('this.ba.confirm = false;\n                    this.loading = true;');
+    expect(body).toContain('const fileEl = this.$refs.baFile;');
+  });
+
+  it('menampilkan BA Pendukung admin sebagai informasi read-only', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('baPendukungList');
+    expect(html).toContain('selectedPendukung');
+    expect(html).toContain('BA Pendukung belum ada');
+    expect(html).toContain('Belum diunggah admin dashboard.');
+    expect(html).toContain('rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:underline" @click.stop');
+  });
 });
 
 describe('guard BA Pelaksanaan multi', () => {

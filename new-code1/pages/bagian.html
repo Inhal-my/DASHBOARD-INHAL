@@ -418,7 +418,7 @@
                                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-file-earmark-text"></i></div>
                                     <div class="min-w-0 flex-1">
                                         <h2 class="text-base font-bold text-slate-900">Berita Acara</h2>
-                                        <p class="text-xs text-slate-400">{{ baQueue.length }} kegiatan dalam antrean</p>
+                                        <p class="text-xs text-slate-400">{{ baQueue.length }} kegiatan dalam antrean · {{ baPendukungList.length }} BA Pendukung</p>
                                     </div>
                                     <button type="button" class="btn-soft !py-2 text-xs" :disabled="!baQueue.length" @click="startFirstPending"><i class="bi bi-plus-circle"></i> Buat BA</button>
                                 </div>
@@ -442,6 +442,17 @@
                                                 <span class="flex items-center gap-1"><i class="bi bi-grid"></i>Blok {{ item.blok }}</span>
                                                 <span v-if="item.tanggal" class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(item.tanggal) }}</span>
                                                 <span class="flex items-center gap-1"><i class="bi bi-people"></i>{{ item.peserta.length }} peserta</span>
+                                            </div>
+                                            <div class="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
+                                                <template v-if="baPendukungFor(item)">
+                                                    <i class="bi bi-file-earmark-check text-indigo-500"></i>
+                                                    <a v-if="baPendukungFor(item)['File URL']" :href="safeUrl(baPendukungFor(item)['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:underline" @click.stop>BA Pendukung {{ baPendukungFor(item)['BA ID'] }}</a>
+                                                    <span v-else class="font-semibold text-indigo-600">BA Pendukung {{ baPendukungFor(item)['BA ID'] }}</span>
+                                                </template>
+                                                <template v-else>
+                                                    <i class="bi bi-file-earmark-x text-rose-400"></i>
+                                                    <span class="text-rose-500">BA Pendukung belum ada</span>
+                                                </template>
                                             </div>
                                         </div>
                                         <div class="flex shrink-0 flex-col items-end gap-1">
@@ -641,6 +652,18 @@
                                         </div>
                                     </div>
 
+                                    <div class="rounded-2xl p-3 text-xs ring-1" :class="selectedPendukung ? 'bg-indigo-50 text-indigo-700 ring-indigo-100' : 'bg-rose-50 text-rose-700 ring-rose-100'">
+                                        <div class="flex items-center gap-2 font-bold">
+                                            <i class="bi" :class="selectedPendukung ? 'bi-file-earmark-check' : 'bi-file-earmark-x'"></i>
+                                            BA Pendukung
+                                        </div>
+                                        <div v-if="selectedPendukung" class="mt-1">
+                                            <a v-if="selectedPendukung['File URL']" :href="safeUrl(selectedPendukung['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold underline">{{ selectedPendukung['BA ID'] }}</a>
+                                            <span v-else class="font-semibold">{{ selectedPendukung['BA ID'] }} (file belum tersedia)</span>
+                                        </div>
+                                        <div v-else class="mt-1">Belum diunggah admin dashboard.</div>
+                                    </div>
+
                                     <div v-if="!baJadwal" class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
                                         <div class="flex items-start gap-2 text-xs leading-relaxed text-amber-800">
                                             <i class="bi bi-exclamation-triangle mt-0.5 shrink-0"></i>
@@ -732,6 +755,17 @@
                                         </div>
                                     </div>
                                     <div v-if="selectedItem.catatan" class="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">{{ selectedItem.catatan }}</div>
+                                    <div class="rounded-2xl p-3 text-xs ring-1" :class="selectedPendukung ? 'bg-indigo-50 text-indigo-700 ring-indigo-100' : 'bg-rose-50 text-rose-700 ring-rose-100'">
+                                        <div class="flex items-center gap-2 font-bold">
+                                            <i class="bi" :class="selectedPendukung ? 'bi-file-earmark-check' : 'bi-file-earmark-x'"></i>
+                                            BA Pendukung
+                                        </div>
+                                        <div v-if="selectedPendukung" class="mt-1">
+                                            <a v-if="selectedPendukung['File URL']" :href="safeUrl(selectedPendukung['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold underline">{{ selectedPendukung['BA ID'] }}</a>
+                                            <span v-else class="font-semibold">{{ selectedPendukung['BA ID'] }} (file belum tersedia)</span>
+                                        </div>
+                                        <div v-else class="mt-1">Belum diunggah admin dashboard.</div>
+                                    </div>
                                     <div>
                                         <div class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta</div>
                                         <div class="max-h-64 space-y-1.5 overflow-y-auto pr-1">
@@ -935,6 +969,7 @@
                     error: null,
                     ba: { open: false, kegiatanKey: null, jadwalId: '', tanggal: '', jam: '', dosen: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false },
                     baList: [],
+                    baPendukungList: [],
                     jadwalList: [],
                     jadwalFilter: 'semua',
                     jadwal: { open: false, editingId: null, cancelId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} },
@@ -1235,6 +1270,13 @@
                     if (!this.ba.kegiatanKey) return null;
                     return this.kegiatanGroups.find(function(g) { return g.key === this.ba.kegiatanKey; }.bind(this)) || null;
                 },
+                selectedPendukung() {
+                    const item = this.selectedItem;
+                    if (item && item.kind === 'ba') return this.baPendukungFor({ blok: item.blok, nama: item.nama, tanggal: item.tanggal });
+                    const g = this.selectedGroup;
+                    if (!g) return null;
+                    return this.baPendukungFor({ blok: g.blok, nama: kegiatanName(g), tanggal: g.tanggal });
+                },
                 selectedCount() {
                     return Object.keys(this.ba.selected).filter(function(k) { return this.ba.selected[k]; }.bind(this)).length;
                 },
@@ -1364,6 +1406,10 @@
                     const s = String(v == null ? '' : v).trim();
                     return /^https?:\/\//i.test(s) ? s : '';
                 },
+                baPendukungFor(ref) {
+                    if (!ref) return null;
+                    return baForKegiatan(ref, this.baPendukungList);
+                },
                 statusBadge(status) {
                     const cls = {
                         'Menunggu': 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
@@ -1403,6 +1449,7 @@
                             this.namaBagian = cached.nama || '';
                             this.rows = cached.rows || [];
                             this.baList = cached.baList || [];
+                            this.baPendukungList = cached.baPendukungList || [];
                             this.jadwalList = cached.jadwalList || [];
                             this.error = null;
                         }
@@ -1419,6 +1466,7 @@
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
+                                this.baPendukungList = [];
                                 this.error = null;
                             } else if (!cached) {
                                 this.showToast('Gagal: ' + msg, 'error');
@@ -1426,6 +1474,7 @@
                                 this.namaBagian = '';
                                 this.rows = [];
                                 this.baList = [];
+                                this.baPendukungList = [];
                                 this.jadwalList = [];
                                 this.error = null;
                             } else {
@@ -1451,6 +1500,7 @@
                     this.namaBagian = res.nama || '';
                     this.rows = res.rows || [];
                     this.baList = res.baList || [];
+                    this.baPendukungList = res.baPendukungList || [];
                     this.jadwalList = res.jadwalList || [];
                     this.error = null;
                     this.writeCache();
@@ -1473,6 +1523,7 @@
                             nama: this.namaBagian,
                             rows: this.rows,
                             baList: this.baList,
+                            baPendukungList: this.baPendukungList,
                             jadwalList: this.jadwalList,
                             ts: Date.now()
                         }));
@@ -1876,6 +1927,7 @@
                     this.namaBagian = '';
                     this.rows = [];
                     this.baList = [];
+                    this.baPendukungList = [];
                     this.jadwalList = [];
                     this.error = null;
                     this.activeTab = 'ringkasan';
@@ -1901,6 +1953,7 @@
                         this.namaBagian = cached.nama || '';
                         this.rows = cached.rows || [];
                         this.baList = cached.baList || [];
+                        this.baPendukungList = cached.baPendukungList || [];
                         this.error = null;
                     }
                     this.startPolling();
