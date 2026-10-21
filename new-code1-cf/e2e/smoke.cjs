@@ -41,7 +41,7 @@ async function main() {
     await page.getByRole('heading', { name: 'Master Data', exact: true }).waitFor();
     console.log('OK navigasi dashboard');
 
-    await page.getByRole('button', { name: 'Audit', exact: true }).click();
+    await page.getByRole('button', { name: 'Audit' }).click();
     await page.getByRole('heading', { name: 'Audit Integritas Data' }).waitFor({ timeout: 15000 });
     await page.getByRole('button', { name: 'Tutup', exact: true }).last().click();
     console.log('OK audit integritas data');
