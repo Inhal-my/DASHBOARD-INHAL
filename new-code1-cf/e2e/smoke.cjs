@@ -18,23 +18,48 @@ async function main() {
     await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     assert.equal(await page.title(), 'Pengajuan INHAL');
     await page.getByRole('heading', { name: 'Pengajuan INHAL' }).waitFor();
-    console.log('OK portal publik');
+    await page.getByLabel('NPM (Nomor Pokok Mahasiswa)').fill('0000000000');
+    await page.getByRole('button', { name: 'Periksa Pengajuan INHAL' }).click();
+    await page.getByText(/tidak ditemukan|periksa kembali|gagal terhubung/i).first().waitFor({ timeout: 15000 });
+    console.log('OK portal publik dan validasi NPM');
 
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     assert.equal(await page.title(), 'Dashboard');
-    const passwordInput = page.locator('input[type="password"]');
-    await passwordInput.waitFor();
-    await passwordInput.fill(password);
+    await page.getByLabel('Password Admin').fill(password);
     await page.getByRole('button', { name: 'Masuk' }).click();
 
     const sidebar = page.locator('aside').filter({ hasText: 'INHAL Admin' });
     await sidebar.waitFor({ timeout: 20000 });
+    await page.getByRole('heading', { name: 'Verifikasi Pengajuan' }).waitFor();
     console.log('OK login admin');
+
+    await sidebar.getByRole('link', { name: 'Statistik' }).click();
+    await page.getByRole('heading', { name: 'Statistik Pendaftaran' }).waitFor();
+    await sidebar.getByRole('link', { name: 'Berita Acara' }).click();
+    await page.getByRole('heading', { name: 'Berita Acara', exact: true }).waitFor();
+    await sidebar.getByRole('link', { name: 'Master Data' }).click();
+    await page.getByRole('heading', { name: 'Master Data', exact: true }).waitFor();
+    console.log('OK navigasi dashboard');
+
+    await page.getByRole('button', { name: 'Audit', exact: true }).click();
+    await page.getByRole('heading', { name: 'Audit Integritas Data' }).waitFor({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Tutup', exact: true }).last().click();
+    console.log('OK audit integritas data');
 
     await page.getByTitle('Keamanan Akun').click();
     await page.getByRole('heading', { name: 'Keamanan Akun' }).waitFor({ timeout: 10000 });
     await page.getByText(/MFA aktif|Autentikasi dua faktor/).first().waitFor({ timeout: 10000 });
-    console.log('OK modal keamanan');
+    await page.getByRole('button', { name: 'Tutup', exact: true }).last().click();
+    console.log('OK modal keamanan akun');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'Buka menu' }).click();
+    await sidebar.getByRole('link', { name: 'Pengajuan' }).click();
+    await page.getByRole('heading', { name: 'Verifikasi Pengajuan' }).waitFor();
+    await page.getByRole('button', { name: 'Buka menu' }).click();
+    await sidebar.getByTitle('Keluar').click();
+    await page.getByLabel('Password Admin').waitFor({ timeout: 10000 });
+    console.log('OK navigasi mobile dan logout');
 
     if (pageErrors.length) {
       throw new Error(`Error halaman: ${pageErrors.join(' | ')}`);

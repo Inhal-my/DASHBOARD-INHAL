@@ -113,6 +113,42 @@ Blok kosong dilaporkan tetapi tidak menggagalkan verifikasi karena dapat merupak
 
 Catat hasil di bagian catatan di bawah.
 
+## Latihan restore lokal (tanpa R2)
+
+Dipakai untuk menguji prosedur sebelum R2 aktif atau saat latihan di laptop.
+
+```bash
+# Ekspor D1 lokal
+npx wrangler d1 export inhal-poc --local --output=/tmp/opencode/backups/inhal-local.sql
+
+# Verifikasi dump
+node scripts/verify-backup.mjs /tmp/opencode/backups/inhal-local.sql
+```
+
+Buat konfigurasi sementara di luar repo (jangan commit) yang menunjuk database
+scratch:
+
+```toml
+name = "inhal-form-restore"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc-restore"
+database_id = "11111111-2222-4333-8444-555555555555"
+```
+
+```bash
+# Impor dump ke database scratch lokal
+npx wrangler d1 execute inhal-poc-restore --local --config /tmp/opencode/wrangler.restore.toml --file=/tmp/opencode/backups/inhal-local.sql
+
+# Bandingkan jumlah tabel inti
+npx wrangler d1 execute inhal-poc-restore --local --config /tmp/opencode/wrangler.restore.toml --json --command "SELECT (SELECT COUNT(*) FROM mahasiswa) AS mahasiswa, (SELECT COUNT(*) FROM pengajuan) AS pengajuan, (SELECT COUNT(*) FROM master_kegiatan) AS master_kegiatan, (SELECT COUNT(*) FROM berita_acara) AS berita_acara, (SELECT COUNT(*) FROM berita_acara_admin) AS berita_acara_admin"
+```
+
+Ekspor ulang database scratch lalu jalankan `scripts/verify-backup.mjs`; hasil harus
+`"ok": true`.
+
 ## Restore Time Travel
 
 Gunakan untuk insiden yang masih dalam jendela retensi Time Travel.
@@ -164,3 +200,12 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
 - Backup pra-Poin 1: `inhal-poc-20261017-pre-poin1.sql`, integritas `ok`, ditemukan 2 duplikat master.
 - Backup pasca-Poin 1: `inhal-poc-20261017-post-poin1.sql`, integritas `ok`, duplikat 0, referensi blok asing 0, `kegiatan_key` drift 0.
 - Uji restore R2 pertama menunggu aktivasi R2 dan backup harian pertama.
+
+### 2026-10-21 (lokal)
+
+- Dump: `/tmp/opencode/backups/inhal-local-20261021.sql`, integritas `ok`.
+- Jumlah: mahasiswa 6, pengajuan 6, master_kegiatan 13, berita_acara 2,
+  berita_acara_admin 1.
+- Restore ke database scratch lokal berhasil (131 perintah). Ekspor ulang scratch
+  juga `ok`, tanpa duplikat/orphan/drift.
+- Latihan ini tidak menggantikan uji restore R2; uji R2 tetap menunggu bucket aktif.

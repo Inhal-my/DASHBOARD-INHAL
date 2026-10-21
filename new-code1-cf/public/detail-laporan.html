@@ -410,7 +410,7 @@
 
         <!-- toast -->
         <transition name="pop">
-            <div v-if="toast.show" class="fixed bottom-6 right-6 z-[120] flex max-w-sm items-start gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lift">
+            <div v-if="toast.show" role="status" aria-live="polite" aria-atomic="true" class="fixed bottom-6 right-6 z-[120] flex max-w-sm items-start gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lift">
                 <i :class="toast.icon" class="mt-0.5 text-lg"></i>
                 <div class="text-sm">{{ toast.msg }}</div>
                 <button type="button" aria-label="Tutup notifikasi" class="ml-1 text-slate-400 hover:text-white" @click="toast.show=false"><i class="bi bi-x-lg"></i></button>
@@ -465,10 +465,10 @@
             </div>
         </div>
         <div v-if="riwayat.open" class="fixed inset-0 z-[130] flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
-            <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift">
+            <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="riwayatTitle">
                 <div class="mb-4 flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-slate-900">Riwayat Proses</h3>
-                    <button class="text-slate-400 hover:text-slate-600" @click="riwayat.open = false"><i class="bi bi-x-lg"></i></button>
+                    <h3 id="riwayatTitle" class="text-sm font-bold text-slate-900">Riwayat Proses</h3>
+                    <button type="button" class="text-slate-400 hover:text-slate-600" aria-label="Tutup riwayat" @click="riwayat.open = false"><i class="bi bi-x-lg"></i></button>
                 </div>
                 <div v-if="riwayat.unit" class="mb-4">
                     <div class="text-sm font-bold text-slate-900">{{ riwayat.unit.label }}</div>

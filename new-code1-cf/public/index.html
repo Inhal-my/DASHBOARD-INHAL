@@ -39,7 +39,7 @@
 
         <!-- loading overlay -->
         <transition name="fade">
-            <div v-if="loading" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
+            <div v-if="loading" role="status" aria-live="polite" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
                 <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 shadow-lift">
                     <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -74,6 +74,7 @@
             <!-- result banner -->
             <transition name="fade">
                 <div v-if="result" :class="result.success ? 'bg-emerald-50 ring-emerald-100' : 'bg-rose-50 ring-rose-100'"
+                     :role="result.success ? 'status' : 'alert'" aria-live="polite"
                      class="mb-5 rounded-2xl p-5 ring-1">
                     <div class="flex items-start gap-3">
                         <i :class="result.success ? 'bi-check-circle-fill text-emerald-500' : 'bi-x-circle-fill text-rose-500'" class="mt-0.5 text-lg"></i>
@@ -86,7 +87,7 @@
                                 <a :href="appUrl + '?page=portal'" class="link mt-1 inline-block text-sm">Cek status di Pengajuan INHAL</a>
                             </div>
                         </div>
-                        <button class="text-slate-400 hover:text-slate-600" @click="result=null"><i class="bi bi-x-lg"></i></button>
+                        <button type="button" class="text-slate-400 hover:text-slate-600" aria-label="Tutup pesan" @click="result=null"><i class="bi bi-x-lg"></i></button>
                     </div>
                 </div>
             </transition>
@@ -104,25 +105,25 @@
                     <div class="section-title"><i class="bi bi-person-fill"></i> Data Mahasiswa</div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="label">NPM <span class="text-rose-500">*</span></label>
-                            <input v-model="form.npm" class="input" placeholder="Contoh: 2201010001" @blur="onNpmBlur">
+                            <label class="label" for="npm">NPM <span class="text-rose-500">*</span></label>
+                            <input id="npm" v-model="form.npm" class="input" placeholder="Contoh: 2201010001" autocomplete="username" @blur="onNpmBlur">
                             <p class="mt-1 text-[11px] text-slate-400">Masukkan NPM, nama akan terisi otomatis bila terdaftar.</p>
                         </div>
                         <div>
-                            <label class="label">Nama Lengkap <span class="text-rose-500">*</span></label>
-                            <input v-model="form.namaLengkap" class="input" placeholder="Nama sesuai KTP">
+                            <label class="label" for="namaLengkap">Nama Lengkap <span class="text-rose-500">*</span></label>
+                            <input id="namaLengkap" v-model="form.namaLengkap" class="input" placeholder="Nama sesuai KTP" autocomplete="name">
                         </div>
                         <div>
-                            <label class="label">Email Aktif <span class="text-rose-500">*</span></label>
-                            <input v-model="form.email" type="email" class="input" placeholder="nama@email.com" required>
+                            <label class="label" for="email">Email Aktif <span class="text-rose-500">*</span></label>
+                            <input id="email" v-model="form.email" type="email" class="input" placeholder="nama@email.com" autocomplete="email" required>
                         </div>
                         <div>
-                            <label class="label">No. HP / WhatsApp <span class="text-rose-500">*</span></label>
-                            <input v-model="form.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx" required>
+                            <label class="label" for="noHp">No. HP / WhatsApp <span class="text-rose-500">*</span></label>
+                            <input id="noHp" v-model="form.noHp" type="tel" class="input" placeholder="08xxxxxxxxxx" autocomplete="tel" required>
                         </div>
                         <div>
-                            <label class="label">Blok <span class="text-rose-500">*</span></label>
-                            <select v-model="form.blok" class="input">
+                            <label class="label" for="blok">Blok <span class="text-rose-500">*</span></label>
+                            <select id="blok" v-model="form.blok" class="input">
                                 <option value="">-- Pilih Blok --</option>
                                 <option v-for="b in options.blok" :key="b" :value="b">{{ b }}</option>
                             </select>
@@ -134,8 +135,8 @@
                     <div class="section-title"><i class="bi bi-calendar-check"></i> Jenis Kegiatan</div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="label">Jenis Kegiatan <span class="text-rose-500">*</span></label>
-                            <select v-model="form.jenisKegiatan" class="input">
+                            <label class="label" for="jenisKegiatan">Jenis Kegiatan <span class="text-rose-500">*</span></label>
+                            <select id="jenisKegiatan" v-model="form.jenisKegiatan" class="input">
                                 <option value="">-- Pilih Jenis --</option>
                                 <option value="Ujian">Ujian</option>
                                 <option value="SGD">SGD</option>
@@ -150,15 +151,15 @@
                         <div class="section-title"><i class="bi bi-pencil-square"></i> Detail Ujian</div>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label class="label">Pilihan Ujian <span class="text-rose-500">*</span></label>
-                                <select v-model="ujian.pilihan" class="input">
+                                <label class="label" for="ujianPilihan">Pilihan Ujian <span class="text-rose-500">*</span></label>
+                                <select id="ujianPilihan" v-model="ujian.pilihan" class="input">
                                     <option value="">-- Pilih Ujian --</option>
                                     <option v-for="o in options.ujian" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="label">Tanggal Ujian <span class="text-rose-500">*</span></label>
-                                <input v-model="ujian.tanggal" type="date" class="input">
+                                <label class="label" for="ujianTanggal">Tanggal Ujian <span class="text-rose-500">*</span></label>
+                                <input id="ujianTanggal" v-model="ujian.tanggal" type="date" class="input">
                             </div>
                         </div>
                     </div>
@@ -168,22 +169,22 @@
                         <div class="section-title"><i class="bi bi-people"></i> Detail SGD</div>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label class="label">Pilihan SGD <span class="text-rose-500">*</span></label>
-                                <select v-model="sgd.pilihan" class="input">
+                                <label class="label" for="sgdPilihan">Pilihan SGD <span class="text-rose-500">*</span></label>
+                                <select id="sgdPilihan" v-model="sgd.pilihan" class="input">
                                     <option value="">-- Pilih SGD --</option>
                                     <option v-for="o in options.sgd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="label">Detail SGD</label>
-                                <select v-model="sgd.detail" class="input">
+                                <label class="label" for="sgdDetail">Detail SGD</label>
+                                <select id="sgdDetail" v-model="sgd.detail" class="input">
                                     <option value="">-- Pilih Detail --</option>
                                     <option v-for="o in options.detailSgd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="label">Tanggal SGD <span class="text-rose-500">*</span></label>
-                                <input v-model="sgd.tanggal" type="date" class="input">
+                                <label class="label" for="sgdTanggal">Tanggal SGD <span class="text-rose-500">*</span></label>
+                                <input id="sgdTanggal" v-model="sgd.tanggal" type="date" class="input">
                             </div>
                         </div>
                     </div>
@@ -193,22 +194,22 @@
                         <div class="section-title"><i class="bi bi-journal-text"></i> Detail KKD</div>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label class="label">Pilihan KKD <span class="text-rose-500">*</span></label>
-                                <select v-model="kkd.pilihan" class="input">
+                                <label class="label" for="kkdPilihan">Pilihan KKD <span class="text-rose-500">*</span></label>
+                                <select id="kkdPilihan" v-model="kkd.pilihan" class="input">
                                     <option value="">-- Pilih KKD --</option>
                                     <option v-for="o in options.kkd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="label">Detail KKD</label>
-                                <select v-model="kkd.detail" class="input">
+                                <label class="label" for="kkdDetail">Detail KKD</label>
+                                <select id="kkdDetail" v-model="kkd.detail" class="input">
                                     <option value="">-- Pilih Detail --</option>
                                     <option v-for="o in options.detailKkd" :key="o" :value="o">{{ o }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="label">Tanggal KKD <span class="text-rose-500">*</span></label>
-                                <input v-model="kkd.tanggal" type="date" class="input">
+                                <label class="label" for="kkdTanggal">Tanggal KKD <span class="text-rose-500">*</span></label>
+                                <input id="kkdTanggal" v-model="kkd.tanggal" type="date" class="input">
                             </div>
                         </div>
                     </div>
@@ -222,22 +223,22 @@
                             <div v-for="(lab, i) in labs" :key="i" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
                                 <div class="grid gap-3 sm:grid-cols-12 sm:items-end">
                                     <div class="sm:col-span-4">
-                                        <label class="label">Pilihan Lab</label>
-                                        <select v-model="lab.lab" class="input !py-2 text-sm">
+                                        <label class="label" :for="'labPilihan-' + i">Pilihan Lab</label>
+                                        <select :id="'labPilihan-' + i" v-model="lab.lab" class="input !py-2 text-sm">
                                             <option value="">-- Lab --</option>
                                             <option v-for="o in options.lab" :key="o" :value="o">{{ o }}</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-4">
-                                        <label class="label">Kegiatan Lab</label>
-                                        <select v-model="lab.kegiatanLab" class="input !py-2 text-sm">
+                                        <label class="label" :for="'labKegiatan-' + i">Kegiatan Lab</label>
+                                        <select :id="'labKegiatan-' + i" v-model="lab.kegiatanLab" class="input !py-2 text-sm">
                                             <option value="">-- Kegiatan --</option>
                                             <option v-for="o in options.kegiatanLab" :key="o" :value="o">{{ o }}</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-4">
-                                        <label class="label">Tanggal Praktikum</label>
-                                        <input v-model="lab.tanggal" type="date" class="input !py-2 text-sm">
+                                        <label class="label" :for="'labTanggal-' + i">Tanggal Praktikum</label>
+                                        <input :id="'labTanggal-' + i" v-model="lab.tanggal" type="date" class="input !py-2 text-sm">
                                     </div>
                                 </div>
                             </div>
@@ -249,18 +250,18 @@
                     <div class="section-title"><i class="bi bi-file-earmark-text"></i> Keterangan & Berkas</div>
                     <div class="grid gap-4">
                         <div>
-                            <label class="label">Keterangan (Opsional)</label>
-                            <textarea v-model="form.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
+                            <label class="label" for="keterangan">Keterangan (Opsional)</label>
+                            <textarea id="keterangan" v-model="form.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
                         </div>
                         <div>
-                            <label class="label">Upload Surat Keterangan (PDF / JPG / PNG)</label>
+                            <label class="label" for="suratKeterangan">Upload Surat Keterangan (PDF / JPG / PNG)</label>
                             <div class="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-4">
                                 <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
                                 <div class="text-xs text-slate-500">
                                     <span v-if="!fileSurat">Opsional. Maksimal 5 MB.</span>
                                     <span v-else class="font-semibold text-slate-700">{{ fileSurat.name }}</span>
                                 </div>
-                                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onFileSurat">
+                                <input id="suratKeterangan" type="file" accept=".pdf,.jpg,.jpeg,.png" class="ml-auto text-xs" @change="onFileSurat">
                             </div>
                         </div>
                     </div>
@@ -338,7 +339,7 @@
                 onFileSurat(e) {
                     const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
                     if (f && f.size > MAX_UPLOAD_FILE_BYTES) {
-                        alert('Ukuran file surat maksimal 5 MB.');
+                        this.result = { success: false, message: 'Ukuran file surat maksimal 5 MB.' };
                         this.fileSurat = null;
                         e.target.value = '';
                         return;
@@ -356,17 +357,17 @@
                 async submit() {
                     const jenis = this.form.jenisKegiatan;
                     if (!this.form.npm.trim() || !this.form.namaLengkap.trim() || !this.form.blok || !jenis) {
-                        alert('Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan terlebih dahulu.');
+                        this.result = { success: false, message: 'Lengkapi NPM, Nama Lengkap, Blok, dan Jenis Kegiatan terlebih dahulu.' };
                         return;
                     }
                     const email = this.form.email.trim();
                     const noHp = this.form.noHp.trim();
                     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-                        alert('Email aktif wajib diisi dengan format yang benar.');
+                        this.result = { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
                         return;
                     }
                     if (!noHp || !/^[0-9+\-\s().]{8,20}$/.test(noHp)) {
-                        alert('No. HP/WhatsApp wajib diisi dengan format yang benar.');
+                        this.result = { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
                         return;
                     }
                     this.loading = true;
@@ -395,7 +396,7 @@
                         } else if (jenis === 'Praktikum') {
                             const labs = this.labs.filter(l => l.lab || l.kegiatanLab);
                             if (labs.length === 0) {
-                                alert('Tambahkan minimal satu detail praktikum.');
+                                this.result = { success: false, message: 'Tambahkan minimal satu detail praktikum.' };
                                 this.loading = false;
                                 return;
                             }
@@ -404,7 +405,7 @@
 
                         if (this.fileSurat) {
                             if (this.fileSurat.size > MAX_UPLOAD_FILE_BYTES) {
-                                alert('Ukuran file surat maksimal 5 MB.');
+                                this.result = { success: false, message: 'Ukuran file surat maksimal 5 MB.' };
                                 this.loading = false;
                                 return;
                             }

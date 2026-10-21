@@ -159,21 +159,32 @@ hari pukul 02:00 UTC.
 
 Cakupan smoke:
 
-- Portal publik `/portal` terbuka.
+- Portal publik `/` terbuka dan validasi NPM tidak terdaftar memberi pesan.
 - Login admin staging berhasil.
-- Sidebar dashboard tampil.
-- Modal Keamanan Akun terbuka.
+- Navigasi dashboard: Verifikasi Pengajuan, Statistik, Berita Acara, Master Data.
+- Modal Audit Integritas Data dan Keamanan Akun terbuka.
+- Menu mobile dapat dibuka, tab berpindah, dan logout kembali ke login.
 
-Lokal:
+Lokal (dari `new-code1-cf/`):
 
 ```bash
 export E2E_BASE_URL='https://inhal-form-staging.prodi.workers.dev'
 export STAGING_ADMIN_PASSWORD='<password-admin-staging>'
-NODE_PATH="$(npm root -g)" node e2e/smoke.cjs
+node e2e/smoke.cjs
 ```
 
 Jika gagal, screenshot disimpan di `/tmp/inhal-e2e-failure.png` dan diunggah sebagai
 artifact workflow.
+
+## UAT dan aksesibilitas
+
+Sebelum deploy produksi, jalankan matriks UAT di `docs/ops/uat.md` pada staging.
+Kasus yang menulis data hanya dilakukan di staging. Produksi hanya untuk smoke
+read-only.
+
+Pemeriksaan aksesibilitas otomatis ada di `test/accessibility.test.js` dan berjalan
+sebagai bagian dari `npm test` (label formulir, nama dialog, `role="alert"`,
+`aria-live`, bahasa, viewport, dan alt gambar).
 
 ## Rollback
 

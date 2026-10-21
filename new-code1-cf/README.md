@@ -33,7 +33,7 @@ npm run test:scripts
 - Produksi: deploy manual dengan approval.
 - Migrasi: `npx wrangler d1 migrations list/apply`; file migrasi lama tidak boleh diubah.
 
-Panduan lengkap: `../docs/ops/release.md`.
+Panduan lengkap: `../docs/ops/release.md`. Matriks UAT dan aksesibilitas: `../docs/ops/uat.md`.
 
 ## Endpoint
 

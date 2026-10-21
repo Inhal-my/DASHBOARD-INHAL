@@ -30,9 +30,12 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Implementasi dan verifikasi lokal selesai; staging live; menunggu secret GitHub dan run Actions pertama.
   - Detail: `docs/superpowers/specs/2026-10-18-release-process-design.md`, `docs/ops/release.md`.
 - [ ] **Poin 6 — Skalabilitas dan kualitas data**
-  - Optimasi query, validasi input, dan pembersihan data lama.
+  - Kode dan test lokal selesai; migrasi indeks/backfill belum diterapkan ke produksi.
+  - Detail hasil: bagian "Hasil implementasi Poin 6" di bawah.
 - [ ] **Poin 7 — UAT dan dokumentasi operasional**
-  - UAT pengguna, uji aksesibilitas, SOP backup/restore, dan SOP rilis.
+  - Perangkat UAT, perbaikan aksesibilitas, E2E, dan SOP sudah disiapkan lokal.
+  - Menunggu pelaksanaan UAT dengan pengguna dan uji restore di staging.
+  - Detail: bagian "Hasil implementasi Poin 7" di bawah.
 
 ## Temuan awal Poin 1 (audit produksi 2026-10-17)
 
@@ -138,6 +141,49 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 - Sisa: tambahkan secret GitHub (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
   `STAGING_ADMIN_PASSWORD`), buat environment `staging`/`production` + required reviewer,
   lalu jalankan CI, Seed Staging Admin, Deploy Staging, dan E2E Staging pertama.
+
+## Hasil implementasi Poin 6 (2026-10-21)
+
+- Status: kode, migrasi, dan test selesai; sudah di-commit, belum di-deploy, dan belum diterapkan ke produksi.
+- Indeks baru: `idx_ba_admin_berkas_pengajuan_active`, `idx_ba_admin_peserta_ba_active`,
+  `idx_ba_admin_peserta_pengajuan_active`, `idx_ba_peserta_pengajuan`, `idx_pengajuan_blok`,
+  `idx_pengajuan_status`, `idx_jadwal_active_tanggal`.
+- Filter `active = 1` diterapkan pada pembacaan peserta/berkas BA Pendukung di dashboard dan bagian.
+- Validasi terpusat `src/validation.js` dipakai untuk simpan/ubah jadwal dan BA (batas teks,
+  tanggal `YYYY-MM-DD`, maksimal 500 peserta).
+- Hapus pengajuan ikut membersihkan BA tanpa peserta aktif dan berkas BA yatim; audit mencatat
+  `BA_CREATE`/`BA_UPDATE`/`BA_DELETE`.
+- Backfill `mahasiswa.blok` hanya untuk NPM dengan tepat satu blok non-kosong.
+- Audit kualitas data baru (BA yatim, jadwal duplikat, mahasiswa tanpa blok, BA perlu regen,
+  peserta nonaktif) tampil di modal "Audit Integritas Data".
+- Verifikasi lokal: 93 file / 664 test Vitest lulus; GAS 113 test lulus; CSP, `test:scripts`,
+  dan `migrations:check` lulus. `EXPLAIN QUERY PLAN` berubah dari `SCAN` menjadi
+  `SEARCH ... USING INDEX` untuk peserta BA Pendukung, status pengajuan, dan jadwal aktif.
+- Sisa sebelum produksi: hitung baris terdampak + backup D1, terapkan migrasi di staging,
+  verifikasi, lalu produksi. Skrip dry-run pembersihan duplikat jadwal belum dibuat; saat ini
+  audit hanya bersifat read-only dan tidak menghapus data.
+
+## Hasil implementasi Poin 7 (2026-10-21, lokal)
+
+- Matriks UAT baru `docs/ops/uat.md`: kasus per peran (mahasiswa, admin, bagian,
+  operator), aksesibilitas, performa, kriteria lulus, dan sign-off.
+- Aksesibilitas:
+  - Label/`for` dan `id` pada formulir pendaftaran, login admin, dan login bagian.
+  - `role="alert"` untuk pesan login, `role="status"`/`aria-live` untuk loading,
+    toast, dan hasil validasi.
+  - Nama aksesibel pada dialog, riwayat, dan tombol tutup.
+  - `alert()` pada formulir pendaftaran diganti pesan inline.
+  - Regresi otomatis di `test/accessibility.test.js` (4 test).
+- E2E `e2e/smoke.cjs` diperluas: validasi NPM portal, navigasi dashboard, audit
+  integritas, keamanan akun, menu mobile, dan logout.
+- Dokumen rilis diperbarui: cakupan E2E, tautan UAT, dan pemeriksaan aksesibilitas.
+- Verifikasi lokal: 93 file / 664 test lulus, `test:scripts` 7 test lulus, CSP sinkron,
+  guard migrasi lulus, dan `wrangler deploy --dry-run` berhasil.
+- Latihan restore lokal: dump D1 lokal `ok`, impor ke database scratch berhasil,
+  jumlah tabel inti sama, dan ekspor ulang scratch `ok` (dicatat di SOP backup).
+- Sisa: jalankan UAT dengan pengguna, uji restore staging, dan lampirkan bukti/sign-off.
+  Batasan aksesibilitas yang belum ditutup: focus trap seluruh modal dan Escape
+  untuk semua modal selain dialog konfirmasi.
 
 ## Deploy tertunda
 
