@@ -256,6 +256,45 @@ export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
 }
 
+async function resolveBaPesertaByIds(db, ids) {
+  const list = Array.from(new Set((ids || []).map(str).filter(Boolean)));
+  const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
+  const pMap = {};
+  for (const p of pengajuan) pMap[str(p.id_pengajuan)] = p;
+  const peserta = [];
+  const missing = [];
+  for (const id of list) {
+    const p = pMap[id];
+    if (!p) { missing.push(id); continue; }
+    peserta.push({
+      idPengajuan: id,
+      npm: str(p.npm),
+      namaLengkap: str(p.nama_lengkap),
+      blok: str(p.blok),
+      statusPengajuan: str(p.status)
+    });
+  }
+  return { peserta, missing };
+}
+
+async function buildRestorePengajuanStmts(db, ids, excludeBaId) {
+  const ts = nowIso();
+  const stmts = [];
+  for (const pid of ids) {
+    const next = await db.prepare(
+      'SELECT a.dosen, a.tanggal_pelaksanaan, a.jam FROM berita_acara_peserta p ' +
+      'JOIN berita_acara a ON a.ba_id = p.ba_id ' +
+      'WHERE p.id_pengajuan = ?1 AND p.ba_id <> ?2 ' +
+      'ORDER BY a.timestamp DESC, a.ba_id DESC LIMIT 1'
+    ).bind(pid, excludeBaId).first();
+    stmts.push(
+      db.prepare('UPDATE pengajuan SET dosen = ?1, tanggal_pelaksanaan = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
+        .bind(next ? str(next.dosen) : '', next ? pelaksanaanValue(next.tanggal_pelaksanaan, next.jam) : '', ts, pid)
+    );
+  }
+  return stmts;
+}
+
 export async function deleteBeritaAcaraAdmin(db, baId, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
@@ -311,20 +350,7 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
 
   const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
   const ids = Array.from(new Set(peserta.map((r) => str(r.id_pengajuan)).filter(Boolean)));
-  const ts = nowIso();
-  const syncs = [];
-  for (const pid of ids) {
-    const next = await db.prepare(
-      'SELECT a.dosen, a.tanggal_pelaksanaan, a.jam FROM berita_acara_peserta p ' +
-      'JOIN berita_acara a ON a.ba_id = p.ba_id ' +
-      'WHERE p.id_pengajuan = ?1 AND p.ba_id <> ?2 ' +
-      'ORDER BY a.timestamp DESC, a.ba_id DESC LIMIT 1'
-    ).bind(pid, id).first();
-    syncs.push(
-      db.prepare('UPDATE pengajuan SET dosen = ?1, tanggal_pelaksanaan = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
-        .bind(next ? str(next.dosen) : '', next ? pelaksanaanValue(next.tanggal_pelaksanaan, next.jam) : '', ts, pid)
-    );
-  }
+  const syncs = await buildRestorePengajuanStmts(db, ids, id);
 
   await db.batch([
     ...syncs,
@@ -419,22 +445,68 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   const p = payload || {};
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
+  const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
+  const dosen = p.dosen !== undefined ? str(p.dosen) : str(existing.dosen);
+  const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
+  const label = p.label !== undefined ? str(p.label) : str(existing.label);
 
-  const sets = ['tanggal_pelaksanaan = ?1', 'jam = ?2', 'dosen = ?3', 'catatan = ?4', 'label = ?5'];
-  const vals = [
-    tanggal,
-    p.jam !== undefined ? str(p.jam) : str(existing.jam),
-    p.dosen !== undefined ? str(p.dosen) : str(existing.dosen),
-    p.catatan !== undefined ? str(p.catatan) : str(existing.catatan),
-    p.label !== undefined ? str(p.label) : str(existing.label)
+  const current = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const currentIds = current.map((r) => str(r.id_pengajuan)).filter(Boolean);
+
+  let pesertaIds = null;
+  let pesertaBaru = [];
+  if (p.pesertaIds !== undefined) {
+    if (!Array.isArray(p.pesertaIds)) return { success: false, message: 'Daftar peserta tidak valid.' };
+    pesertaIds = Array.from(new Set(p.pesertaIds.map(str).filter(Boolean)));
+    if (!pesertaIds.length) return { success: false, message: 'Pilih minimal satu peserta.' };
+
+    const resolved = await resolveBaPesertaByIds(db, pesertaIds);
+    if (resolved.missing.length) {
+      return { success: false, message: 'Peserta tidak ditemukan: ' + resolved.missing.join(', ') + '.' };
+    }
+    pesertaBaru = resolved.peserta;
+    const problems = await validateBaPesertaKegiatan(db, pesertaBaru, existing.bagian, existing.blok, existing.nama_kegiatan);
+    if (problems.length) {
+      return { success: false, message: 'Peserta tidak sesuai dengan kegiatan BA — ' + problems.join(', ') + '.' };
+    }
+    const blocked = await validateBaPesertaStatus(db, pesertaBaru);
+    if (blocked.length) {
+      const allowed = await getBagianBaStatuses(db);
+      return { success: false, message: 'Peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '.' };
+    }
+  }
+
+  const stmts = [
+    db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan = ?1, jam = ?2, dosen = ?3, catatan = ?4, label = ?5 WHERE ba_id = ?6')
+      .bind(tanggal, jam, dosen, catatan, label, id)
   ];
-  const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
-  await db.batch([
-    db.prepare('UPDATE berita_acara SET ' + sets.join(', ') + ' WHERE ba_id = ?' + (vals.length + 1)).bind(...vals, id),
-    ...buildSyncStmts(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), vals[2], tanggal, vals[1])
-  ]);
 
-  return { success: true, message: 'Berita acara diperbarui.' };
+  if (pesertaIds) {
+    const baruSet = new Set(pesertaIds);
+    const removed = currentIds.filter((pid) => !baruSet.has(pid));
+    const ts = nowIso();
+    stmts.push(db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id));
+    for (const peserta of pesertaBaru) {
+      stmts.push(
+        db.prepare(
+          'INSERT INTO berita_acara_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan) ' +
+          'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)'
+        ).bind(ts, id, peserta.idPengajuan, peserta.npm, peserta.namaLengkap, peserta.blok, existing.bagian, peserta.statusPengajuan)
+      );
+    }
+    stmts.push(db.prepare('UPDATE berita_acara SET jumlah_peserta = ?1 WHERE ba_id = ?2').bind(pesertaIds.length, id));
+    stmts.push(...await buildRestorePengajuanStmts(db, removed, id));
+    stmts.push(...buildSyncStmts(db, pesertaBaru, dosen, tanggal, jam));
+  } else {
+    stmts.push(...buildSyncStmts(db, currentIds.map((pid) => ({ idPengajuan: pid })), dosen, tanggal, jam));
+  }
+
+  await db.batch(stmts);
+  return {
+    success: true,
+    message: 'Berita acara diperbarui.',
+    jumlahPeserta: pesertaIds ? pesertaIds.length : currentIds.length
+  };
 }
 
 export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx) {

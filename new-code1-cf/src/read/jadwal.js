@@ -5,6 +5,57 @@ function str(v) {
   return String(v).replace(/\u00a0/g, ' ').trim();
 }
 
+function normKey(v) {
+  return str(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ').trim()
+    .replace(/^blok\s+/, '').replace(/ /g, '');
+}
+
+function timeKey(v) {
+  const m = str(v).match(/(\d{1,2})[.:](\d{2})/);
+  return m ? String(Number(m[1])).padStart(2, '0') + ':' + m[2] : str(v);
+}
+
+function jadwalIdentity(r) {
+  const peserta = (r.peserta || [])
+    .map((p) => str(p.npm) || str(p.idPengajuan))
+    .filter(Boolean)
+    .sort();
+  return [
+    normKey(r.Bagian), normKey(r.Blok), normKey(r.NamaKegiatan),
+    str(r.Tanggal).slice(0, 10), timeKey(r.Jam), normKey(r.Dosen), peserta.join(',')
+  ].join('|');
+}
+
+function mergeJadwal(a, b) {
+  const preferB = !!b.punyaBa && !a.punyaBa;
+  const base = preferB ? b : a;
+  const other = preferB ? a : b;
+  const merged = Object.assign({}, base);
+  if (!merged.punyaBa && other.punyaBa) {
+    merged.punyaBa = true;
+    merged.baId = other.baId;
+  }
+  if ((other.peserta || []).length > (merged.peserta || []).length) merged.peserta = other.peserta;
+  return merged;
+}
+
+function dedupeJadwal(rows) {
+  const out = [];
+  const index = {};
+  for (const row of rows) {
+    const key = jadwalIdentity(row);
+    if (index[key] === undefined) {
+      index[key] = out.length;
+      out.push(row);
+    } else {
+      out[index[key]] = mergeJadwal(out[index[key]], row);
+    }
+  }
+  return out;
+}
+
 export async function computeJadwalList(db, bagianFilter, kategori) {
   const jadwal = (await db.prepare('SELECT * FROM jadwal_pelaksanaan').all()).results || [];
   const pesertaRows = (await db.prepare('SELECT * FROM jadwal_peserta').all()).results || [];
@@ -48,12 +99,13 @@ export async function computeJadwalList(db, bagianFilter, kategori) {
     });
   }
 
+  const deduped = dedupeJadwal(rows);
   const filter = baginaKey(bagianFilter);
-  if (!filter) return rows;
+  if (!filter) return deduped;
   const kat = baginaKey(kategori);
   const isPraktikum = kat === 'praktikum';
   const labs = isPraktikum ? await getMasterOptions(db, 'Lab') : null;
-  return rows.filter((r) => {
+  return deduped.filter((r) => {
     if (isPraktikum) {
       const resolved = resolveBagian12(r.Bagian, '', r.NamaKegiatan, labs);
       return resolved ? baginaKey(resolved) === filter : false;

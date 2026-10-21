@@ -1381,6 +1381,53 @@ function _getJadwalPesertaMap() {
     return map;
 }
 
+function _jadwalIdentity(r) {
+    const peserta = ((r && r.peserta) || [])
+        .map(function(p) { return String(p.npm || p.idPengajuan || '').trim(); })
+        .filter(Boolean)
+        .sort();
+    const norm = function(v) {
+        return String(v || '').toLowerCase()
+            .replace(/^blok\s+/, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/ /g, '');
+    };
+    return [
+        norm(r && r.Bagian), norm(r && r.Blok), norm(r && r.NamaKegiatan),
+        String((r && r.Tanggal) || '').slice(0, 10),
+        _clientTime(r && r.Jam),
+        norm(r && r.Dosen),
+        peserta.join(',')
+    ].join('|');
+}
+
+function _dedupeJadwalList(rows) {
+    const out = [];
+    const index = {};
+    (rows || []).forEach(function(row) {
+        const key = _jadwalIdentity(row);
+        if (index[key] === undefined) {
+            index[key] = out.length;
+            out.push(row);
+            return;
+        }
+        const prev = out[index[key]];
+        const preferRow = !!row.punyaBa && !prev.punyaBa;
+        const base = preferRow ? row : prev;
+        const other = preferRow ? prev : row;
+        const merged = Object.assign({}, base);
+        if (!merged.punyaBa && other.punyaBa) {
+            merged.punyaBa = true;
+            merged.baId = other.baId;
+        }
+        if ((other.peserta || []).length > (merged.peserta || []).length) merged.peserta = other.peserta;
+        out[index[key]] = merged;
+    });
+    return out;
+}
+
 function _computeJadwalList(bagianFilter, kategori) {
     let rows = [];
     try { rows = getAllRowsCached('JadwalPelaksanaan'); } catch (e) { return []; }
@@ -1414,12 +1461,13 @@ function _computeJadwalList(bagianFilter, kategori) {
             peserta: pesertaMap[jid] || []
         };
     });
+    const deduped = _dedupeJadwalList(sanitized);
     const filter = _normBaginaKey(bagianFilter);
-    if (!filter) return sanitized;
+    if (!filter) return deduped;
     const kat = _normBaginaKey(kategori);
     const isPraktikum = kat === 'praktikum';
     const labs = isPraktikum ? getMasterOptions('Lab') : null;
-    return sanitized.filter(function(r) {
+    return deduped.filter(function(r) {
         if (isPraktikum) {
             const resolved = _resolveBagian12(r.Bagian, '', r.NamaKegiatan, labs);
             return resolved ? _normBaginaKey(resolved) === filter : false;
@@ -2497,6 +2545,70 @@ function deleteBeritaAcaraBagian(baId) {
     });
 }
 
+function _resolveBaPesertaByIds(ids, ba) {
+    const list = [];
+    const seen = {};
+    (ids || []).forEach(function(raw) {
+        const id = String(raw || '').trim();
+        if (id && !seen[id]) {
+            seen[id] = true;
+            list.push(id);
+        }
+    });
+    const pMap = {};
+    getAllRows('Pengajuan').forEach(function(p) {
+        const id = String(p['ID Pengajuan'] || '').trim();
+        if (id) pMap[id] = p;
+    });
+    const detailMap = {};
+    getAllRows('DetailKegiatan').forEach(function(d) {
+        const id = String(d['ID Pengajuan'] || '').trim();
+        if (!id) return;
+        if (!detailMap[id]) detailMap[id] = [];
+        detailMap[id].push(d);
+    });
+    const labs = getMasterOptions('Lab');
+    const targetKey = _kegiatanKey(ba.Bagian, ba.Blok, ba['Nama Kegiatan']);
+    const targetBlok = String(ba.Blok || '').replace(/\s+/g, ' ').trim();
+    const peserta = [];
+    const missing = [];
+    const problems = [];
+    list.forEach(function(id) {
+        const p = pMap[id];
+        if (!p) {
+            missing.push(id);
+            return;
+        }
+        const nama = String(p['Nama Lengkap'] || '').trim();
+        const label = nama || String(p.NPM || '').trim() || id;
+        if (String(p.Blok || '').replace(/\s+/g, ' ').trim() !== targetBlok) {
+            problems.push(label + ' (blok tidak sesuai)');
+            return;
+        }
+        let matches = false;
+        (detailMap[id] || []).forEach(function(d) {
+            const jenis = String(d['Jenis Kegiatan'] || '').trim();
+            const pilihan = String(d.Pilihan || '').trim();
+            const detail = String(d.Detail || '').trim();
+            const kegiatan = detail ? (pilihan + ' - ' + detail) : pilihan;
+            const bagian = _resolveBagian12(jenis, pilihan, kegiatan, labs) || jenis;
+            if (_kegiatanKey(bagian, ba.Blok, kegiatan) === targetKey) matches = true;
+        });
+        if (!matches) {
+            problems.push(label + ' (kegiatan tidak sesuai)');
+            return;
+        }
+        peserta.push({
+            idPengajuan: id,
+            npm: String(p.NPM || '').trim(),
+            namaLengkap: nama,
+            blok: String(p.Blok || '').trim(),
+            statusPengajuan: String(p.Status || '').trim()
+        });
+    });
+    return { ids: list, peserta: peserta, missing: missing, problems: problems };
+}
+
 function updateBeritaAcaraBagian(baId, payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     return _lockMutate(function() {
@@ -2507,6 +2619,26 @@ function updateBeritaAcaraBagian(baId, payload) {
         const p = payload || {};
         const tanggal = p.tanggal !== undefined ? String(p.tanggal || '').trim() : String(existing['Tanggal Pelaksanaan'] || '').trim();
         if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
+
+        let pesertaBaru = null;
+        if (p.pesertaIds !== undefined) {
+            if (!Array.isArray(p.pesertaIds)) return { success: false, message: 'Daftar peserta tidak valid.' };
+            const resolved = _resolveBaPesertaByIds(p.pesertaIds, existing);
+            if (!resolved.ids.length) return { success: false, message: 'Pilih minimal satu peserta.' };
+            if (resolved.missing.length) {
+                return { success: false, message: 'Peserta tidak ditemukan: ' + resolved.missing.join(', ') + '.' };
+            }
+            if (resolved.problems.length) {
+                return { success: false, message: 'Peserta tidak sesuai dengan kegiatan BA — ' + resolved.problems.join(', ') + '.' };
+            }
+            const blocked = _validateBaPesertaStatus(resolved.peserta);
+            if (blocked.length) {
+                const allowed = _getBagianBaStatuses();
+                return { success: false, message: 'Peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '.' };
+            }
+            pesertaBaru = resolved.peserta;
+        }
+
         const sheet = getGlobalSpreadsheet().getSheetByName('BeritaAcara');
         const headers = getHeadersFromSheet(sheet);
         const idx = headers.indexOf('BA ID');
@@ -2519,9 +2651,33 @@ function updateBeritaAcaraBagian(baId, payload) {
             Dosen: p.dosen !== undefined ? String(p.dosen || '').trim() : existing.Dosen,
             Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
         });
+        if (pesertaBaru) merged['Jumlah Peserta'] = pesertaBaru.length;
         sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
         invalidateSheetCache('BeritaAcara');
-        return { success: true, message: 'Berita acara pelaksanaan diperbarui.' };
+
+        if (pesertaBaru) {
+            while (getRowByKey('BeritaAcaraPeserta', 'BA ID', id)) {
+                deleteRowByKey('BeritaAcaraPeserta', 'BA ID', id, 'Perbarui peserta BA', getActorName());
+            }
+            pesertaBaru.forEach(function(peserta) {
+                appendRowSafe('BeritaAcaraPeserta', {
+                    Timestamp: new Date(),
+                    'BA ID': id,
+                    'NPM': peserta.npm,
+                    'Nama Lengkap': peserta.namaLengkap,
+                    'Blok': peserta.blok,
+                    'Bagian': String(existing.Bagian || '').trim(),
+                    'Status Pengajuan': peserta.statusPengajuan
+                });
+            });
+            invalidateSheetCache('BeritaAcaraPeserta');
+        }
+
+        return {
+            success: true,
+            message: 'Berita acara pelaksanaan diperbarui.',
+            jumlahPeserta: pesertaBaru ? pesertaBaru.length : undefined
+        };
     });
 }
 

@@ -419,7 +419,7 @@
 
         <!-- kelola ba -->
         <div v-if="kelola.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="kelola.open = false">
-            <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift">
+            <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
                 <h3 class="mb-4 text-sm font-bold text-slate-900">Kelola BA {{ kelola.baId }}</h3>
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div>
@@ -444,10 +444,23 @@
                         </div>
                     </div>
                     <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
+                    <div v-if="kelola.sumber !== 'Admin' && kelola.pesertaOpsi.length" class="sm:col-span-2">
+                        <div class="mb-1 flex items-center justify-between">
+                            <label class="label !mb-0">Peserta BA</label>
+                            <span class="text-[11px] text-slate-400">{{ kelola.pesertaIds.length }} dipilih</span>
+                        </div>
+                        <div class="max-h-44 overflow-y-auto rounded-xl border border-slate-200">
+                            <label v-for="p in kelola.pesertaOpsi" :key="p.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2 last:border-0">
+                                <input v-model="kelola.pesertaIds" type="checkbox" :value="p.idPengajuan" class="h-4 w-4 accent-brand-600">
+                                <span class="text-xs text-slate-700">{{ p.npm }} — {{ p.namaLengkap }} <span class="text-slate-400">({{ p.blok }})</span></span>
+                            </label>
+                        </div>
+                        <p class="mt-1 text-[11px] text-amber-600">Mengubah peserta tidak mengubah isi file PDF.</p>
+                    </div>
                 </div>
                 <div class="mt-5 flex justify-end gap-2">
                     <button class="btn-soft" @click="kelola.open = false">Batal</button>
-                    <button class="btn-primary" :disabled="loading" @click="submitKelolaBa">Simpan</button>
+                    <button class="btn-primary" :disabled="loading || (kelola.sumber !== 'Admin' && kelola.pesertaOpsi.length > 0 && !kelola.pesertaIds.length)" @click="submitKelolaBa">Simpan</button>
                 </div>
             </div>
         </div>
@@ -2483,7 +2496,7 @@
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
                     barProgress: 0,
-                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '' },
+                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
                     dosenPick: { open: false },
                     riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' },
@@ -3963,11 +3976,20 @@
                     this.dosenPick.open = false;
                 },
                 openKelolaBa(baId, sumber) {
-                    const list = (this.kegiatan || []).flatMap(u => (u.baPendukung || []).concat(u.baPelaksanaan || []));
-                    const found = list.find(b => b['BA ID'] === baId) || {};
+                    const units = this.kegiatan || [];
+                    let found = {};
+                    let unit = null;
+                    for (const u of units) {
+                        const hit = (u.baPelaksanaan || []).concat(u.baPendukung || []).find(b => b['BA ID'] === baId);
+                        if (hit) { found = hit; unit = u; break; }
+                    }
+                    const opsi = ((unit && unit.peserta) || []).slice();
+                    const npmSet = new Set((found.peserta || []).map((p) => p.npm));
+                    const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan);
                     this.kelola = {
                         open: true, baId: baId, sumber: sumber || found.Sumber || 'Bagian',
-                        tanggal: found['Tanggal Pelaksanaan'] || '', jam: found.Jam || '', dosen: found.Dosen || '', catatan: found.Catatan || ''
+                        tanggal: found['Tanggal Pelaksanaan'] || '', jam: found.Jam || '', dosen: found.Dosen || '', catatan: found.Catatan || '',
+                        pesertaIds: pesertaIds, pesertaOpsi: opsi
                     };
                 },
                 async submitKelolaBa() {
@@ -3975,7 +3997,9 @@
                     this.loading = true;
                     try {
                         const fn = k.sumber === 'Admin' ? 'updateBeritaAcaraAdmin' : 'updateBeritaAcaraBagian';
-                        const res = await this.run(fn, k.baId, { tanggal: k.tanggal, jam: k.jam, dosen: k.dosen, catatan: k.catatan });
+                        const payload = { tanggal: k.tanggal, jam: k.jam, dosen: k.dosen, catatan: k.catatan };
+                        if (k.sumber !== 'Admin' && k.pesertaOpsi.length) payload.pesertaIds = k.pesertaIds.slice();
+                        const res = await this.run(fn, k.baId, payload);
                         this.showToast('bi-check-circle', (res && res.message) || 'BA diperbarui.');
                         if (res && res.success) {
                             k.open = false;

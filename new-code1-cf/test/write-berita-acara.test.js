@@ -24,6 +24,17 @@ async function seedPengajuan({ status = 'ACC' } = {}) {
   ).run();
 }
 
+async function seedPengajuanTambahan(rows) {
+  for (const r of rows) {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00',?1,?2,?3,'A','SGD',?4)"
+    ).bind(r.id, r.npm, r.nama, r.status || 'ACC').run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00',?1,'SGD',?2,'','2026-09-20','')"
+    ).bind(r.id, r.kegiatan || 'SGD 1').run();
+  }
+}
+
 const adminPayload = {
   bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20T09:00',
   jenis: 'SGD', pilihan: 'SGD 1', detail: '', catatan: ''
@@ -300,6 +311,86 @@ describe('berita acara bagian', () => {
     const p = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
     expect(p.dosen).toBe('dr. Budi');
     expect(p.tanggal_pelaksanaan).toBe('2026-09-20T13:30');
+  });
+
+  it('mengganti peserta BA Pelaksanaan lewat pesertaIds tanpa mengubah file', async () => {
+    await seedPengajuan();
+    await seedPengajuanTambahan([
+      { id: 'INHAL-2', npm: '2201010002', nama: 'Budi' },
+      { id: 'INHAL-3', npm: '2201010003', nama: 'Citra' },
+      { id: 'INHAL-4', npm: '2201010004', nama: 'Dewi' }
+    ]);
+    const bagian = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      jam: '09:00', dosen: 'dr. Andi', catatan: '',
+      peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+    }, 'SGD', bagian);
+    await env.DB.prepare('UPDATE berita_acara SET file_url = ?1 WHERE ba_id = ?2')
+      .bind('https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view', res.baId).run();
+
+    const admin = await adminCtx();
+    const up = await updateBeritaAcaraBagian(env.DB, res.baId, {
+      pesertaIds: ['INHAL-1', 'INHAL-2', 'INHAL-3', 'INHAL-4']
+    }, admin);
+    expect(up.success).toBe(true);
+    expect(up.jumlahPeserta).toBe(4);
+
+    const ba = await env.DB.prepare('SELECT jumlah_peserta, file_url, dosen, jam FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(Number(ba.jumlah_peserta)).toBe(4);
+    expect(ba.file_url).toContain('AAAABBBBCCCCDDDDEEEEFFFFGGGG12345');
+    expect(ba.dosen).toBe('dr. Andi');
+    expect(ba.jam).toBe('09:00');
+
+    const rows = await env.DB.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1 ORDER BY id_pengajuan').bind(res.baId).all();
+    expect(rows.results.map((r) => r.id_pengajuan)).toEqual(['INHAL-1', 'INHAL-2', 'INHAL-3', 'INHAL-4']);
+    const p2 = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-2').first();
+    expect(p2.dosen).toBe('dr. Andi');
+    expect(p2.tanggal_pelaksanaan).toBe('2026-09-20T09:00');
+  });
+
+  it('menolak peserta BA Pelaksanaan dari kegiatan lain atau daftar kosong', async () => {
+    await seedPengajuan();
+    await seedPengajuanTambahan([{ id: 'INHAL-9', npm: '2201010009', nama: 'Lain', kegiatan: 'SGD 2' }]);
+    const bagian = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+    }, 'SGD', bagian);
+    const admin = await adminCtx();
+
+    const beda = await updateBeritaAcaraBagian(env.DB, res.baId, { pesertaIds: ['INHAL-1', 'INHAL-9'] }, admin);
+    expect(beda.success).toBe(false);
+    expect(beda.message).toContain('tidak sesuai');
+
+    const kosong = await updateBeritaAcaraBagian(env.DB, res.baId, { pesertaIds: [] }, admin);
+    expect(kosong.success).toBe(false);
+    expect(kosong.message).toContain('minimal satu peserta');
+
+    const rows = await env.DB.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(res.baId).all();
+    expect(rows.results.map((r) => r.id_pengajuan)).toEqual(['INHAL-1']);
+  });
+
+  it('mengeluarkan peserta BA dan memulihkan dosen/tanggal pengajuan', async () => {
+    await seedPengajuan();
+    await seedPengajuanTambahan([{ id: 'INHAL-2', npm: '2201010002', nama: 'Budi' }]);
+    const bagian = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      jam: '09:00', dosen: 'dr. Andi', catatan: '',
+      peserta: [
+        { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' },
+        { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'ACC' }
+      ]
+    }, 'SGD', bagian);
+    const admin = await adminCtx();
+    const up = await updateBeritaAcaraBagian(env.DB, res.baId, { pesertaIds: ['INHAL-1'] }, admin);
+    expect(up.success).toBe(true);
+    expect(up.jumlahPeserta).toBe(1);
+
+    const p2 = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-2').first();
+    expect(p2.dosen).toBe('');
+    expect(p2.tanggal_pelaksanaan).toBe('');
   });
 
   it('requires admin to delete and reports missing BA', async () => {

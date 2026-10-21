@@ -46,3 +46,15 @@ describe('computeJadwalList', () => {
     expect(list[0].JadwalID).toBe('JDW-2026-0002');
   });
 });
+
+describe('computeJadwalList dedupe', () => {
+  it('menyembunyikan baris jadwal identik dan memilih baris yang punya BA', async () => {
+    await seedJadwal('JDW-2026-0001');
+    await seedJadwal('JDW-2026-0002');
+    await env.DB.prepare("INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,sumber,kegiatan_key,jadwal_id) VALUES ('2026-10-02T09:00:00','BA-PEL-2026-0001','SGD','A','SGD 1','2026-10-02','Bagian','sgd|a|sgd 1','JDW-2026-0002')").run();
+    const list = await computeJadwalList(env.DB, '', '');
+    expect(list).toHaveLength(1);
+    expect(list[0].JadwalID).toBe('JDW-2026-0002');
+    expect(list[0].punyaBa).toBe(true);
+  });
+});
