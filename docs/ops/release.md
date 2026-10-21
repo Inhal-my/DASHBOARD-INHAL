@@ -176,6 +176,34 @@ node e2e/smoke.cjs
 Jika gagal, screenshot disimpan di `/tmp/inhal-e2e-failure.png` dan diunggah sebagai
 artifact workflow.
 
+## Restore drill staging
+
+Workflow **Restore Drill Staging** (`.github/workflows/restore-drill-staging.yml`)
+hanya manual dan tidak mengubah staging maupun produksi. Workflow ini:
+
+1. Mengekspor D1 staging secara baca-saja.
+2. Menjalankan `scripts/verify-backup.mjs` pada dump.
+3. Mengimpor dump ke database scratch lokal di runner.
+4. Mengekspor ulang, memverifikasi, dan membandingkan jumlah tabel inti.
+5. Menjalankan Worker lokal terhadap database hasil restore, lalu memeriksa
+   `/api/health`, opsi pendaftaran, portal mahasiswa, dan halaman `/portal`.
+
+Jalankan dari tab Actions, pilih **Restore Drill Staging**, lalu **Run workflow**.
+Bukti verifikasi diunggah sebagai artifact `restore-drill-evidence` selama 14 hari.
+Hasil ini dipakai untuk UAT-O05 di `docs/ops/uat.md`.
+
+## Audit duplikat jadwal
+
+Jalankan audit dry-run sebelum membersihkan jadwal duplikat:
+
+```bash
+cd new-code1-cf
+npm run audit:jadwal -- /tmp/opencode/jadwal-staging.sql
+```
+
+Script hanya membaca dump dan tidak menghasilkan perintah hapus. Prosedur lengkap:
+`docs/ops/data-quality.md`.
+
 ## UAT dan aksesibilitas
 
 Sebelum deploy produksi, jalankan matriks UAT di `docs/ops/uat.md` pada staging.

@@ -162,8 +162,11 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 - Deploy: migrasi staging dan produksi diterapkan; health produksi `200 { ok: true, db: "ok" }`.
   Recovery point produksi: Time Travel bookmark
   `000001f8-0000000e-0000510b-9ea1ed190410e6b647b71d99001a0cf4` (R2 belum aktif, tanpa dump ekspor).
-- Backlog: skrip dry-run pembersihan duplikat jadwal belum dibuat; saat ini audit hanya
-  bersifat read-only dan tidak menghapus data.
+- Skrip dry-run duplikat jadwal tersedia: `scripts/audit-jadwal-duplikat.mjs`
+  (`npm run audit:jadwal -- <dump.sql>`) dan prosedur `docs/ops/data-quality.md`.
+  Script hanya membaca dump, menampilkan baris yang disarankan dipertahankan, serta
+  menandai baris terkait BA yang perlu review manual. Hasil dump lokal 2026-10-21:
+  2 jadwal aktif, 0 duplikat.
 
 ## Hasil implementasi Poin 7 (2026-10-21, lokal)
 

@@ -84,7 +84,7 @@ tautan tiket.
 | UAT-O02 | CI dan deploy | Push ke `main`, tunggu CI lalu Deploy Staging | CI lulus, staging ter-deploy, smoke `/api/health` lulus | | [ ] |
 | UAT-O03 | Migrasi | Terapkan migrasi tertunda di staging, lalu produksi setelah backup | Migrasi tercatat di `d1_migrations`, aplikasi tetap sehat | | [ ] |
 | UAT-O04 | Backup | Jalankan ekspor D1 sesuai `docs/ops/backup-restore.md` | Dump tersimpan, `scripts/verify-backup.mjs` melaporkan `ok: true` | | [ ] |
-| UAT-O05 | Restore drill | Pulihkan dump ke database baru, arahkan Worker sementara | Data inti utuh dan aplikasi dapat membaca data | | [ ] |
+| UAT-O05 | Restore drill | Jalankan workflow **Restore Drill Staging**, lalu periksa artifact dan ringkasan run | Data inti utuh, dump diverifikasi, dan Worker sementara dapat membaca data | | [ ] |
 | UAT-O06 | Observability | Periksa log Worker, Issues, dan uptime monitor | Error memiliki `requestId`; tidak ada kegagalan health berulang | | [ ] |
 | UAT-O07 | Rollback | Simulasikan rollback Worker dan migrasi di staging | Worker kembali ke versi sebelumnya; prosedur tercatat | | [ ] |
 
