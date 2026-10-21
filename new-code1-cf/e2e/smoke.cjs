@@ -44,7 +44,7 @@ async function main() {
     await page.getByRole('button', { name: 'Audit' }).click();
     const auditDialog = page.getByRole('dialog', { name: /Audit Integritas Data/ });
     await auditDialog.getByRole('heading', { name: 'Audit Integritas Data' }).waitFor({ timeout: 15000 });
-    await auditDialog.getByRole('button', { name: 'Tutup' }).click();
+    await auditDialog.getByRole('button', { name: 'Tutup', exact: true }).first().click();
     await auditDialog.waitFor({ state: 'hidden' });
     console.log('OK audit integritas data');
 
@@ -52,7 +52,7 @@ async function main() {
     const securityDialog = page.getByRole('dialog', { name: /Keamanan Akun/ });
     await securityDialog.getByRole('heading', { name: 'Keamanan Akun' }).waitFor({ timeout: 10000 });
     await securityDialog.getByText(/MFA aktif|Autentikasi dua faktor/).first().waitFor({ timeout: 10000 });
-    await securityDialog.getByRole('button', { name: 'Tutup' }).click();
+    await securityDialog.getByRole('button', { name: 'Tutup', exact: true }).first().click();
     await securityDialog.waitFor({ state: 'hidden' });
     console.log('OK modal keamanan akun');
 
