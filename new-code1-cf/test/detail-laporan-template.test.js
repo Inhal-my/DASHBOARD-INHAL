@@ -172,12 +172,21 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('it.statusPembayaran');
     expect(html).toContain("p['Status Pembayaran']");
   });
-  it('menyembunyikan baris final dan BA dari daftar', async () => {
+  it('menampilkan baris final dan BA untuk diperiksa', async () => {
     const html = await loadHtml();
-    expect(html).toContain('final: !!p[\'Pembayaran Final\']');
-    expect(html).toContain('pembayaranFilteredAll.filter(it => !it.final)');
+    expect(html).toContain("final: !!p['Pembayaran Final']");
+    expect(html).toContain('return this.pembayaranFilteredAll;');
+    expect(html).toContain("it => !it.final && it.statusPembayaran === 'menunggu'");
     expect(html).toContain('finalCount');
-    expect(html).toContain('final/BA disembunyikan');
+    expect(html).toContain('Final/BA');
+    expect(html).toContain('tetap ditampilkan untuk diperiksa');
+  });
+  it('baris final tidak dapat divalidasi atau dikoreksi', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('v-if="periksa.item.final"');
+    expect(html).toContain('tidak dapat divalidasi atau dikoreksi');
+    expect(html).toContain('Pembayaran final/BA hanya dapat diperiksa.');
+    expect(html).toContain('v-if="!periksa.item.final" type="button" class="btn-primary" @click="openKoreksi"');
   });
   it('export memuat status pembayaran dan kolom baru', async () => {
     const html = await loadHtml();

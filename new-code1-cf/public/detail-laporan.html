@@ -1833,7 +1833,7 @@
                                 <span class="lap-chip is-emerald">{{ pembayaranSummary.valid }} valid</span>
                                 <span class="lap-chip is-amber">{{ pembayaranSummary.menunggu }} menunggu</span>
                                 <span class="lap-chip">{{ pembayaranSummary.gratis }} gratis</span>
-                                <span v-if="pembayaranSummary.finalCount" class="lap-chip">{{ pembayaranSummary.finalCount }} final/BA disembunyikan</span>
+                                <span v-if="pembayaranSummary.finalCount" class="lap-chip">{{ pembayaranSummary.finalCount }} final/BA</span>
                             </div>
                         </div>
 
@@ -1841,7 +1841,7 @@
                             <div class="lap-card-head">
                                 <div>
                                     <div class="lap-card-title">Data Pembayaran per Pengajuan</div>
-                                    <div class="lap-card-sub">Arahkan kursor ke tombol Bukti untuk pratinjau file; klik Periksa untuk memvalidasi. Baris yang sudah ACC Final atau masuk BA tidak ditampilkan.</div>
+                                    <div class="lap-card-sub">Arahkan kursor ke tombol Bukti untuk pratinjau file; klik Periksa untuk melihat detail. Baris ACC Final/BA tetap ditampilkan dan hanya dapat diperiksa.</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" type="button" :disabled="exporting" @click="exportExcel()">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -1878,6 +1878,7 @@
                                             <td class="whitespace-nowrap px-3 py-3 text-center">
                                                 <span :class="bayarBadgeCls(it.statusPembayaran)" class="whitespace-nowrap">{{ bayarLabel(it.statusPembayaran) }}</span>
                                                 <div v-if="it.statusPembayaran === 'valid' && it.kesesuaian !== 'pas'" class="mt-1 text-[10px] font-semibold" :class="it.kesesuaian === 'kurang' ? 'text-amber-600' : 'text-violet-600'">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }} {{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</div>
+                                                <div v-if="it.final" class="mt-1"><span class="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Final/BA</span></div>
                                             </td>
                                             <td class="whitespace-nowrap px-3 py-3 text-center">
                                                 <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
@@ -1893,7 +1894,7 @@
                             <div class="in-cards">
                                 <article v-for="it in pembayaranFiltered" :key="'m-' + it.id" class="in-mcard cursor-pointer" @click="openPeriksa(it)">
                                     <div class="row1">
-                                        <span class="font-semibold text-slate-800">{{ it.nama }}</span>
+                                        <span class="font-semibold text-slate-800">{{ it.nama }} <span v-if="it.final" class="ml-1 rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Final/BA</span></span>
                                         <span :class="bayarBadgeCls(it.statusPembayaran)">{{ bayarLabel(it.statusPembayaran) }}</span>
                                     </div>
                                     <div class="kv"><span>NPM</span><b class="font-mono">{{ it.npm }}</b><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Blok</span><b>{{ it.blok }}</b><span>Tagihan</span><b class="text-brand-700">{{ fmtRupiah(it.biaya) }}</b></div>
@@ -1941,7 +1942,7 @@
                                 </div>
                                 <div class="space-y-2">
                                     <button v-for="it in bayarColumnItems(col.key)" :key="'k-' + it.id" type="button" class="w-full rounded-xl bg-white p-2.5 text-left ring-1 ring-slate-100 transition hover:ring-slate-300" @click="openPeriksa(it)">
-                                        <div class="text-xs font-semibold text-slate-800">{{ it.nama }}</div>
+                                        <div class="text-xs font-semibold text-slate-800">{{ it.nama }} <span v-if="it.final" class="ml-1 rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Final/BA</span></div>
                                         <div class="font-mono text-[10px] text-slate-400">{{ it.npm }}</div>
                                         <div class="mt-1 text-[11px] text-slate-500">{{ it.jenis }} <span v-if="it.detail">- {{ it.detail }}</span></div>
                                         <div class="mt-1 flex items-center justify-between gap-1">
@@ -1958,14 +1959,14 @@
                         <template v-if="bayarView === 'ringkasan'">
                             <div class="lap-card p-4">
                                 <div class="lap-card-title">Ringkasan Pembayaran</div>
-                                <div class="lap-card-sub">Total tagihan menghitung semua pengajuan, termasuk baris final/BA yang tidak tampil di daftar.</div>
+                                <div class="lap-card-sub">Total tagihan menghitung semua pengajuan, termasuk baris ACC Final/BA.</div>
                                 <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
                                     <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total Tagihan</div><div class="mt-1 font-semibold text-slate-800">{{ fmtRupiah(pembayaranSummary.biaya) }}</div></div>
                                     <div class="rounded-xl bg-emerald-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-emerald-600">Valid</div><div class="mt-1 font-semibold text-emerald-800">{{ pembayaranSummary.valid }} <span class="text-xs font-normal">- {{ fmtRupiah(pembayaranSummary.validBiaya) }}</span></div></div>
                                     <div class="rounded-xl bg-amber-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-amber-600">Menunggu</div><div class="mt-1 font-semibold text-amber-800">{{ pembayaranSummary.menunggu }}</div></div>
                                     <div class="rounded-xl bg-rose-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-rose-600">Belum Bayar</div><div class="mt-1 font-semibold text-rose-800">{{ pembayaranSummary.belum }}</div></div>
                                 </div>
-                                <p v-if="pembayaranSummary.finalCount" class="mt-3 text-xs text-slate-500"><i class="bi bi-info-circle"></i> {{ pembayaranSummary.finalCount }} baris sudah ACC Final/BA terkirim sehingga disembunyikan dari daftar, dengan total tagihan {{ fmtRupiah(pembayaranSummary.finalBiaya) }}.</p>
+                                <p v-if="pembayaranSummary.finalCount" class="mt-3 text-xs text-slate-500"><i class="bi bi-info-circle"></i> {{ pembayaranSummary.finalCount }} baris sudah ACC Final/BA terkirim dan tetap ditampilkan untuk diperiksa, dengan total tagihan {{ fmtRupiah(pembayaranSummary.finalBiaya) }}. Baris final tidak dapat divalidasi atau dikoreksi.</p>
                             </div>
 
                             <div class="overflow-hidden lap-card">
@@ -1996,14 +1997,14 @@
                                                 <td class="whitespace-nowrap px-3 py-3 text-right text-slate-600">{{ fmtRupiah(it.biaya) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-800">{{ fmtRupiah(it.nominal) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-right font-semibold" :class="it.nominal < it.biaya ? 'text-amber-600' : 'text-violet-600'">{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</td>
-                                                <td class="whitespace-nowrap px-3 py-3 text-center"><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></td>
+                                                <td class="whitespace-nowrap px-3 py-3 text-center"><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span><span v-if="it.final" class="ml-1 rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Final/BA</span></td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
                                 <div class="in-cards">
                                     <article v-for="it in pembayaranSelisih" :key="'sm-' + it.id" class="in-mcard">
-                                        <div class="row1"><span class="font-semibold text-slate-800">{{ it.nama }}</span><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></div>
+                                        <div class="row1"><span class="font-semibold text-slate-800">{{ it.nama }}</span><span><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span><span v-if="it.final" class="ml-1 rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Final/BA</span></span></div>
                                         <div class="kv"><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Tagihan</span><b>{{ fmtRupiah(it.biaya) }}</b><span>Dibayar</span><b>{{ fmtRupiah(it.nominal) }}</b><span>Selisih</span><b>{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</b></div>
                                     </article>
                                     <p v-if="!pembayaranSelisih.length" class="py-8 text-center text-sm text-slate-400">Tidak ada selisih nominal.</p>
@@ -2029,6 +2030,10 @@
                                         <div><div class="text-slate-400">Revisi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.revision }}</div></div>
                                     </div>
 
+                                    <div v-if="periksa.item.final" class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                                        <i class="bi bi-lock mr-1"></i> Pembayaran sudah ACC Final/BA terkirim. Data ditampilkan untuk diperiksa dan tidak dapat divalidasi atau dikoreksi.
+                                    </div>
+
                                     <div class="rounded-xl border border-slate-100 p-3">
                                         <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Bukti Bayar</div>
                                         <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti"><i class="bi bi-box-arrow-up-right"></i> Buka Bukti Bayar</a>
@@ -2047,12 +2052,16 @@
                                         <div v-if="periksa.item.catatanVerifikasi" class="rounded-xl bg-slate-50 p-3 text-xs"><div class="text-slate-400">Catatan</div><div class="mt-1 text-slate-700">{{ periksa.item.catatanVerifikasi }}</div></div>
                                         <div class="flex flex-wrap justify-end gap-2">
                                             <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
-                                            <button type="button" class="btn-primary" @click="openKoreksi"><i class="bi bi-pencil-square"></i> Koreksi</button>
+                                            <button v-if="!periksa.item.final" type="button" class="btn-primary" @click="openKoreksi"><i class="bi bi-pencil-square"></i> Koreksi</button>
                                         </div>
                                     </div>
 
                                     <div v-else-if="periksa.mode === 'view'" class="space-y-3">
-                                        <div v-if="periksa.item.statusPembayaran === 'gratis'" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Pembayaran gratis, tidak perlu diverifikasi.</div>
+                                        <div v-if="periksa.item.final" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">
+                                            <div>Pembayaran sudah ACC Final/BA terkirim, tidak perlu diverifikasi. Data hanya dapat diperiksa.</div>
+                                            <div class="mt-2 flex justify-end"><button type="button" class="btn-soft" @click="closePeriksa">Tutup</button></div>
+                                        </div>
+                                        <div v-else-if="periksa.item.statusPembayaran === 'gratis'" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Pembayaran gratis, tidak perlu diverifikasi.</div>
                                         <template v-else>
                                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                 <div>
@@ -3094,19 +3103,20 @@
                     return this.pembayaranItemsAll.filter(it => this.bayarMatches(it));
                 },
                 pembayaranFiltered() {
-                    return this.pembayaranFilteredAll.filter(it => !it.final);
+                    return this.pembayaranFilteredAll;
                 },
                 pembayaranQueue() {
                     return this.pembayaranFiltered
-                        .filter(it => it.statusPembayaran === 'menunggu')
+                        .filter(it => !it.final && it.statusPembayaran === 'menunggu')
                         .slice()
                         .sort((a, b) => String(a.timestamp || '').localeCompare(String(b.timestamp || '')) || a.id.localeCompare(b.id));
                 },
                 pembayaranSummary() {
                     const all = this.pembayaranFilteredAll;
                     const list = this.pembayaranFiltered;
-                    const count = (status) => list.filter(it => it.statusPembayaran === status).length;
-                    const validItems = list.filter(it => it.statusPembayaran === 'valid');
+                    const active = list.filter(it => !it.final);
+                    const count = (status) => active.filter(it => it.statusPembayaran === status).length;
+                    const validItems = active.filter(it => it.statusPembayaran === 'valid');
                     const finalItems = all.filter(it => it.final);
                     return {
                         total: list.length,
@@ -3844,6 +3854,10 @@
                 openKoreksi() {
                     const it = this.periksa.item;
                     if (!it) return;
+                    if (it.final) {
+                        this.showToast('bi-lock', 'Pembayaran final/BA hanya dapat diperiksa.');
+                        return;
+                    }
                     this.koreksi = {
                         mode: 'administratif', saving: false, alasan: '',
                         tanggal: it.tanggalBayar || this.bayarToday(),
