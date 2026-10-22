@@ -101,14 +101,13 @@ describe('verifyPembayaran', () => {
     expect(res.message).toMatch(/kesesuaian/i);
   });
 
-  it('rejects a payment that already has ACC Final', async () => {
+  it('verifies a payment that already has ACC Final', async () => {
     await seedPengajuan({ linkFinal: 'https://drive.example/final.pdf' });
     const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtx());
-    expect(res.success).toBe(false);
-    expect(res.message).toMatch(/final/i);
+    expect(res).toMatchObject({ success: true, status: 'valid', revision: 1 });
   });
 
-  it('rejects a payment whose participant is already in a BA', async () => {
+  it('verifies a payment whose participant is already in a BA', async () => {
     await seedPengajuan();
     await env.DB.prepare(
       "INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jam,dosen,jumlah_peserta,file_name,file_url,catatan,sumber,kegiatan_key,label,jadwal_id) VALUES ('2026-10-01T08:00:00','BA-1','A','A','SGD','2026-10-02','08:00','','1','','', '','','','','')"
@@ -117,8 +116,7 @@ describe('verifyPembayaran', () => {
       "INSERT INTO berita_acara_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,bagian,status_pengajuan) VALUES ('2026-10-01T08:00:00','BA-1','INHAL-1','2201010001','Siti','A','A','ACC')"
     ).run();
     const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtx());
-    expect(res.success).toBe(false);
-    expect(res.message).toMatch(/BA/i);
+    expect(res).toMatchObject({ success: true, status: 'valid', revision: 1 });
   });
 
   it('rejects a stale revision', async () => {
@@ -177,6 +175,20 @@ describe('correctPembayaran', () => {
     expect(p.verified_at).toBe('');
     const rev = await env.DB.prepare("SELECT * FROM pembayaran_revisi WHERE id_pengajuan = 'INHAL-1' AND revision = 2").first();
     expect(rev).toMatchObject({ mode: 'buka_kembali', status_lama: 'valid', status_baru: 'menunggu' });
+  });
+
+  it('corrects a payment that already has ACC Final', async () => {
+    await seedPengajuan({ linkFinal: 'https://drive.example/final.pdf' });
+    const ctx = await adminCtx();
+    await verifyPembayaran(env.DB, verifyPayload(), ctx);
+    const res = await correctPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      mode: 'administratif',
+      metode: 'Transfer BNI',
+      alasan: 'Salah pilih metode transfer',
+      expectedRevision: 1
+    }, ctx);
+    expect(res).toMatchObject({ success: true, status: 'valid', revision: 2 });
   });
 
   it('requires a reason', async () => {

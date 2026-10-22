@@ -172,28 +172,26 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('it.statusPembayaran');
     expect(html).toContain("p['Status Pembayaran']");
   });
-  it('menampilkan baris final dan BA untuk diperiksa', async () => {
+  it('menampilkan semua baris tanpa penanda final/BA', async () => {
     const html = await loadHtml();
-    expect(html).toContain("final: !!p['Pembayaran Final']");
     expect(html).toContain('return this.pembayaranFilteredAll;');
-    expect(html).toContain("it => !it.final && it.statusPembayaran === 'menunggu'");
-    expect(html).toContain('finalCount');
-    expect(html).toContain('Final/BA');
-    expect(html).toContain('tetap ditampilkan untuk diperiksa');
+    expect(html).toContain("it.statusPembayaran === 'menunggu'");
+    expect(html).not.toContain("final: !!p['Pembayaran Final']");
+    expect(html).not.toContain('Final/BA');
+    expect(html).not.toContain('finalCount');
   });
-  it('baris final tidak dapat divalidasi atau dikoreksi', async () => {
+  it('semua baris dapat diperiksa dan dikoreksi', async () => {
     const html = await loadHtml();
-    expect(html).toContain('v-if="periksa.item.final"');
-    expect(html).toContain('tidak dapat divalidasi atau dikoreksi');
-    expect(html).toContain('Pembayaran final/BA hanya dapat diperiksa.');
-    expect(html).toContain('v-if="!periksa.item.final" type="button" class="btn-primary" @click="openKoreksi"');
+    expect(html).not.toContain('periksa.item.final');
+    expect(html).not.toContain('Pembayaran final/BA hanya dapat diperiksa.');
+    expect(html).toContain('@click="openKoreksi"');
   });
   it('export memuat status pembayaran dan kolom baru', async () => {
     const html = await loadHtml();
     expect(html).toContain("'Status Pembayaran': this.bayarLabel(it.statusPembayaran)");
     expect(html).toContain("'Nominal Dibayar': it.nominal || 0");
     expect(html).toContain("'Kesesuaian': this.bayarKesesuaianLabel(it.kesesuaian)");
-    expect(html).toContain("'Final/BA': it.final ? 'Ya' : 'Tidak'");
+    expect(html).not.toContain("'Final/BA'");
     expect(html).toContain("'Link ACC INHAL': it.linkAcc");
     expect(html).toContain("XLSX.utils.book_append_sheet(wb, wsBayar, 'Pembayaran')");
   });

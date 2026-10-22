@@ -45,14 +45,6 @@ async function resolveTagihan(db, row) {
   }, biayaMap, overrideMap);
 }
 
-async function isFinal(db, row) {
-  if (str(row.link_final)) return true;
-  const ba = await db.prepare(
-    'SELECT 1 AS ada FROM berita_acara_peserta WHERE id_pengajuan = ?1 LIMIT 1'
-  ).bind(str(row.id_pengajuan)).first();
-  return !!(ba && ba.ada);
-}
-
 function sameRevision(expected, row) {
   return Number(expected) === revisionOf(row);
 }
@@ -88,7 +80,6 @@ export async function verifyPembayaran(db, payload, ctx) {
   if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
   if (status(row) === 'valid') return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi.' };
   if (status(row) === 'gratis') return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
-  if (await isFinal(db, row)) return { success: false, message: 'Pembayaran sudah ACC Final/BA terkirim dan tidak perlu diverifikasi.' };
   if (!str(row.link_bukti_bayar)) return { success: false, message: 'Belum ada bukti bayar untuk diverifikasi.' };
   if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 
@@ -147,7 +138,6 @@ export async function correctPembayaran(db, payload, ctx) {
 
   const row = await loadRow(db, id);
   if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
-  if (await isFinal(db, row)) return { success: false, message: 'Pembayaran sudah ACC Final/BA terkirim dan tidak perlu dikoreksi.' };
   if (status(row) !== 'valid') return { success: false, message: 'Hanya pembayaran valid yang bisa dikoreksi.' };
   if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 
