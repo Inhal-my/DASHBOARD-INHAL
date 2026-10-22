@@ -1,7 +1,7 @@
 # Desain Verifikasi Pembayaran dan Koreksi
 
 Tanggal: 22 Oktober 2026
-Status: diimplementasikan; revisi tampilan baris final/BA 22 Oktober 2026
+Status: diimplementasikan; pembayaran dipisahkan dari ACC Final/BA 22 Oktober 2026
 Mockup acuan: `mockups/pembayaran-verifikasi/` revisi 3.2
 
 ## Tujuan
@@ -16,7 +16,7 @@ Menambahkan status verifikasi pembayaran per pengajuan, alur validasi, dan alur 
    - Buka kembali: nominal, bukti, atau kesesuaian bermasalah. Status kembali `menunggu`.
 3. Semua admin Keuangan boleh memvalidasi dan mengoreksi. Alasan koreksi wajib. Pelaku dan waktu dicatat.
 4. Tidak ada aturan SLA/hari. Semua penanda usia dihapus.
-5. Baris yang ACC Final atau BA-nya sudah terkirim tetap ditampilkan agar bisa diperiksa, tetapi tidak dapat divalidasi atau dikoreksi.
+5. Status pembayaran tidak bergantung pada ACC Final/BA. Semua baris dapat diperiksa, divalidasi, dan dikoreksi sesuai status pembayarannya.
 6. Implementasi tahap pertama mencakup keempat tampilan: tabel, antrean, papan status, ringkasan.
 7. Tidak ada email pemberitahuan verifikasi/koreksi.
 8. Tidak ada status Ditolak dan tidak ada tombol Batalkan verifikasi.
@@ -48,21 +48,15 @@ Kesesuaian wajib cocok dengan nominal:
 
 Jika pilihan tidak cocok, server menolak. Nilai `kurang`/`lebih` tetap boleh berstatus `valid` sebagai keputusan admin.
 
-## Aturan tampilan ACC Final/BA
+## Pemisahan dari ACC Final/BA
 
-Baris dianggap final jika salah satu benar:
+Modul pembayaran tidak memakai flag ACC Final/BA sebagai syarat atau penanda:
 
-- `pengajuan.link_final` tidak kosong, atau
-- peserta masuk BA Pelaksanaan (`masukBa`).
-
-Baris final:
-
-- tetap tampil di tabel, papan status, dan daftar selisih/perlu perhatian dengan penanda `Final/BA`;
-- tidak dimasukkan ke Antrean Verifikasi karena tidak perlu diverifikasi;
-- bisa dibuka lewat Periksa untuk melihat nominal, bukti, dan riwayat, tetapi panel hanya read-only;
-- tidak bisa diverifikasi atau dikoreksi; server tetap menolak permintaan tersebut;
-- dihitung di total tagihan Ringkasan; jumlah dan total tagihannya juga ditampilkan sebagai catatan;
-- tidak dihitung dalam angka aktif `valid`/`menunggu`/`belum`/`gratis` agar angka antrean tidak tercampur.
+- `link_final` dan `masukBa` tetap dipakai di modul laporan/BA, bukan di tab Data Pembayaran;
+- tidak ada badge atau catatan `Final/BA` di kolom status maupun Ringkasan;
+- semua baris `menunggu` masuk Antrean Verifikasi;
+- semua baris dapat divalidasi dan dikoreksi sesuai aturan status pembayaran;
+- server tidak menolak verifikasi/koreksi hanya karena baris sudah final atau masuk BA.
 
 ## Model data
 
@@ -116,7 +110,7 @@ Modul baru `src/write/pembayaran.js`, didaftarkan di `src/rpc.js`.
 `verifyPembayaran(payload)`:
 
 - payload: `idPengajuan`, `nominal`, `tanggal`, `metode`, `kesesuaian`, `catatan`, `expectedRevision`.
-- syarat: admin, baris tidak final, status `menunggu`, bukti ada, nominal > 0.
+- syarat: admin, status `menunggu`, bukti ada, nominal > 0.
 - validasi kesesuaian terhadap nominal.
 - transaksi: update `pengajuan`, insert `pembayaran_revisi` mode `verifikasi`, tulis audit log.
 - hasil: status `valid`, revisi + 1.
@@ -124,7 +118,7 @@ Modul baru `src/write/pembayaran.js`, didaftarkan di `src/rpc.js`.
 `correctPembayaran(payload)`:
 
 - payload: `idPengajuan`, `mode`, `alasan`, `expectedRevision`, plus field sesuai mode.
-- syarat: admin, baris tidak final, status `valid`, alasan minimal 5 karakter.
+- syarat: admin, status `valid`, alasan minimal 5 karakter.
 - `administratif`: hanya `tanggal`, `metode`, `catatan_verifikasi` yang boleh berubah; status tetap valid.
 - `buka_kembali`: status menjadi `menunggu`; `verified_at`/`verified_by` dikosongkan; nominal/tanggal/metode tidak diubah di langkah ini.
 - transaksi: update + revisi + audit.
@@ -143,7 +137,7 @@ Pengaman pada alur lama:
 
 - kolom pembayaran baru per pengajuan;
 - `pembayaranRevisi` (semua revisi, dikelompokkan per `id_pengajuan`);
-- `linkFinal` dan `masukBa` per peserta agar UI bisa menyembunyikan baris final.
+- `linkFinal` dan `masukBa` tetap tersedia untuk modul laporan/BA, tidak dipakai untuk membatasi modul pembayaran.
 
 Kolom baru ditambahkan ke `src/read/columns.js`.
 
@@ -162,7 +156,7 @@ Tab Data Pembayaran memakai segmented control dengan empat tampilan:
 
 Perilaku tabel:
 
-- Baris final/BA tetap ditampilkan dengan penanda dan aksi Periksa read-only.
+- Semua baris tampil dan dapat diperiksa tanpa memandang ACC Final/BA.
 - Baris `valid` yang baru divalidasi tetap tampil sampai muat ulang (state sesi), setelah itu hanya lewat chip Valid.
 - `gratis` tetap tampil.
 - `belum` tidak punya tombol Valid.
@@ -177,22 +171,22 @@ Panel koreksi:
 
 Ringkasan:
 
-- Tabel `Selisih nominal` memuat semua baris valid yang selisih, termasuk yang final, dengan penanda `Final/BA`;
+- Tabel `Selisih nominal` memuat semua baris valid yang selisih;
 - Daftar perlu perhatian memakai status dan masalah bukti, tanpa penanda hari.
-- Catatan jumlah dan total tagihan baris ACC Final/BA yang tetap ditampilkan.
+- Tidak ada catatan atau angka terpisah untuk ACC Final/BA.
 
 ## Ekspor
 
-- Ekspor mengikuti data yang tampil di tab Pembayaran, termasuk baris final/BA.
+- Ekspor mengikuti data yang tampil di tab Pembayaran.
 - Tambah kolom: Status Pembayaran, Kesesuaian, Nominal Dibayar, Tanggal Bayar, Metode Bayar, Diverifikasi Oleh, Diverifikasi Pada, Revisi.
-- Ringkasan menyediakan angka total termasuk baris final/BA melalui catatan terpisah.
+- Ringkasan menghitung seluruh baris pembayaran tanpa pemisahan final/BA.
 
 ## Pengujian
 
 Unit/integration:
 
 - validasi status dan kesesuaian nominal;
-- verifikasi sukses dan penolakan baris final;
+- verifikasi sukses pada baris yang sudah ACC Final atau masuk BA;
 - koreksi administratif tetap valid;
 - buka kembali mengembalikan ke menunggu;
 - alasan wajib dan permission admin;
@@ -203,7 +197,7 @@ Unit/integration:
 Template/UI:
 
 - keempat tampilan ada;
-- baris final tampil dengan penanda dan panel read-only;
+- semua baris dapat diperiksa, divalidasi, dan dikoreksi;
 - chip dan panel koreksi;
 - ekspor memuat kolom baru.
 
@@ -212,7 +206,7 @@ E2E staging:
 - unggah bukti -> menunggu -> valid;
 - koreksi administratif;
 - buka kembali -> valid ulang;
-- baris dengan link final/BA tetap tampil, bisa diperiksa, dan tombol validasi/koreksi tidak tersedia.
+- baris dengan link final/BA tetap bisa divalidasi dan dikoreksi.
 
 ## Rollout
 
