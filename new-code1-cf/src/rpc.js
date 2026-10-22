@@ -22,6 +22,7 @@ import {
   updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
 } from './write/beritaAcara.js';
 import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan } from './write/jadwal.js';
+import { verifyPembayaran, correctPembayaran } from './write/pembayaran.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
   updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti, uploadBuktiAdmin
@@ -80,6 +81,8 @@ const HANDLERS = {
   updateDetailKegiatan: (db, args, ctx) => updateDetailKegiatan(db, args[0], args[1], args[2], ctx),
   deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),
   updatePengajuanStatus: (db, args, ctx) => updatePengajuanStatus(db, args[0], args[1], args[2], args[3], ctx),
+  verifyPembayaran: (db, args, ctx) => verifyPembayaran(db, args[0], ctx),
+  correctPembayaran: (db, args, ctx) => correctPembayaran(db, args[0], ctx),
   deletePengajuanAdmin: (db, args, ctx) => deletePengajuanAdmin(db, args[0], args[1], ctx),
   sendFinalEmail: (db, args, ctx) => sendFinalEmail(db, args[0], ctx),
   sendAccFinalToBagian: (db, args, ctx) => sendAccFinalToBagian(db, args[0], ctx),

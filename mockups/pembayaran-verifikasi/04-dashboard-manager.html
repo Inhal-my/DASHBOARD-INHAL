@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 04 — Ringkasan pengelola · Verifikasi Pembayaran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css?v=3.2">
+<style>
+  .tbl.compact { min-width: 0; }
+  .tbl.compact td, .tbl.compact th { padding: 9px 12px; }
+  .exp-cols { display: flex; gap: 5px; flex-wrap: wrap; }
+  .exp-cols .tag { font-weight: 700; }
+  .sla-note { display: grid; gap: 4px; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">IN</div>
+      <div>
+        <div class="brand-name">INHAL Keuangan</div>
+        <div class="brand-sub">Dummy data · mockup</div>
+      </div>
+    </div>
+    <nav class="topnav" aria-label="Navigasi utama">
+      <a href="index.html">Galeri</a>
+      <a href="01-tabel-drawer.html">Data Pembayaran</a>
+      <a href="02-antrean-detail.html">Antrean</a>
+      <a href="03-kanban-status.html">Papan Status</a>
+      <a href="04-dashboard-manager.html" class="active">Ringkasan</a>
+    </nav>
+    <div class="topbar-right">
+      <button class="btn sm" onclick="toast('Mockup: bantuan belum aktif')">Bantuan</button>
+      <div class="userbox">
+        <div class="avatar">RN</div>
+        <div>
+          <div class="name">Rani</div>
+          <div class="role">Petugas Keuangan</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">Keuangan · Ringkasan pengelola</span>
+        <h1>Ringkasan Pembayaran</h1>
+        <p class="lede">Angka untuk memantau kesehatan penerimaan, bukan untuk menggantikan antrean. Fokus halaman ini: berapa yang sudah valid, berapa yang menggantung, dan siapa yang perlu ditindaklanjuti hari ini.</p>
+      </div>
+      <div class="actions">
+        <select class="btn" style="padding-right:10px" aria-label="Periode">
+          <option>Oktober 2026</option>
+          <option>September 2026</option>
+        </select>
+        <button class="btn primary" onclick="toast('Mockup: ekspor rekonsiliasi belum aktif')">Ekspor XLSX</button>
+      </div>
+    </div>
+
+    <div class="summary-grid" id="stats"></div>
+
+    <div class="manager-grid">
+      <div style="display:grid;gap:16px">
+        <section class="card">
+          <div class="card-head">
+            <div><div class="card-title">Nilai menurut status</div><div class="card-sub">Total tagihan aktif <span id="totalTagihan"></span></div></div>
+            <span class="badge indigo">Oktober 2026</span>
+          </div>
+          <div class="card-body">
+            <div class="bars" id="bars"></div>
+            <div class="note-box" style="margin-top:14px">Hanya status <b>Valid</b> yang dihitung sebagai penerimaan. Nilai <b>Menunggu</b> belum boleh dilaporkan sebagai masuk; selisih nominal <b>Kurang / Lebih</b> dicatat sebagai kesesuaian saat validasi, bukan status tersendiri.</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><div class="card-title">Rekap status</div><div class="card-sub">Jumlah peserta dan nilai per status</div></div>
+          </div>
+          <div class="table-wrap">
+            <table class="tbl compact">
+              <thead><tr><th>Status</th><th>Peserta</th><th>Nilai</th><th>Porsi</th><th></th></tr></thead>
+              <tbody id="rekap"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><div class="card-title">Selisih nominal</div><div class="card-sub">Peserta yang dibayar tidak sama dengan tagihan</div></div>
+            <span class="badge rose" id="selisihCount"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="tbl compact">
+              <thead><tr><th>Peserta</th><th>Detail Kegiatan</th><th>Tagihan</th><th>Dibayar</th><th>Selisih</th><th>Status</th><th></th></tr></thead>
+              <tbody id="selisih"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div style="display:grid;gap:16px">
+        <section class="card">
+          <div class="card-head">
+            <div><div class="card-title">Perlu perhatian</div><div class="card-sub">Diurutkan dari yang paling mendesak</div></div>
+            <span class="badge rose" id="attnCount"></span>
+          </div>
+          <div class="card-body">
+            <div class="list" id="attention"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><div class="card-title">Ekspor rekonsiliasi</div><div class="card-sub">Satu baris per peserta, versi bukti terakhir</div></div>
+          </div>
+          <div class="card-body" style="display:grid;gap:12px">
+            <div class="exp-cols">
+              <span class="tag p">Nama</span><span class="tag p">NPM</span><span class="tag p">Prodi</span>
+              <span class="tag">Kegiatan</span><span class="tag">Tagihan</span><span class="tag">Dibayar</span>
+              <span class="tag">Selisih</span><span class="tag g">Status</span><span class="tag">Metode</span>
+              <span class="tag">Tanggal</span><span class="tag">Verifikator</span><span class="tag">Catatan</span>
+              <span class="tag">Versi</span>
+            </div>
+            <div class="sla-note">
+              <span>Kolom <b>Selisih</b> dihitung server: <span class="mono">dibayar − tagihan</span>.</span>
+              <span>Status <b>Gratis</b> tetap diekspor agar tidak dianggap tunggakan.</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn primary sm" onclick="toast('Mockup: ekspor XLSX belum aktif')">Unduh .xlsx</button>
+              <button class="btn sm" onclick="toast('Mockup: pratinjau belum aktif')">Pratinjau</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <p class="footnote"><b>Catatan desain:</b> ACC Final dan validnya pembayaran adalah dua hal terpisah. Karena aturan eksternal kadang mengirim ACC Final lebih dulu, dashboard menampilkan penanda <i>final terkirim, bayar belum valid</i> alih-alih memblokir. Daftar ini yang dipakai saat rapat evaluasi, bukan seluruh tabel.</p>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="_data.js?v=3.2"></script>
+<script>
+var toastTimer = null;
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2200);
+}
+
+function shortRp(n) {
+  if (n >= 1000000) return 'Rp' + (n / 1000000).toFixed(2).replace('.', ',') + ' jt';
+  if (n >= 1000) return 'Rp' + Math.round(n / 1000) + ' rb';
+  return 'Rp' + n;
+}
+
+function group() {
+  var map = {
+    belum: { label: 'Belum Bayar', cls: 'slate', count: 0, value: 0 },
+    menunggu: { label: 'Menunggu Verifikasi', cls: 'amber', count: 0, value: 0 },
+    valid: { label: 'Valid', cls: 'green', count: 0, value: 0 },
+    gratis: { label: 'Gratis', cls: 'indigo', count: 0, value: 0 }
+  };
+  MOCK_ROWS.forEach(function (r) {
+    map[r.status].count += 1;
+    map[r.status].value += r.tagihan;
+  });
+  return map;
+}
+
+function render() {
+  var g = group();
+  var total = MOCK_ROWS.reduce(function (a, r) { return a + r.tagihan; }, 0);
+  var valid = g.valid.value;
+  var waiting = g.menunggu.value;
+  var unpaid = g.belum.value;
+  var flagged = MOCK_ROWS.filter(function (r) { return r.finalSent && r.status !== 'valid' && r.status !== 'gratis'; });
+
+  document.getElementById('totalTagihan').textContent = rp(total);
+  document.getElementById('stats').innerHTML =
+    '<div class="card stat"><div class="stat-ic indigo">Rp</div><div><div class="k">Total tagihan</div><div class="v">' + rp(total) + '</div><div class="s">' + MOCK_ROWS.length + ' peserta · 1 periode</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic green">OK</div><div><div class="k">Terverifikasi</div><div class="v">' + rp(valid) + '</div><div class="s good">' + Math.round(valid / total * 100) + '% dari tagihan</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic amber">…</div><div><div class="k">Menunggu</div><div class="v">' + rp(waiting) + '</div><div class="s warn">' + g.menunggu.count + ' peserta belum diputuskan</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic slate">–</div><div><div class="k">Belum bayar</div><div class="v">' + rp(unpaid) + '</div><div class="s">' + g.belum.count + ' peserta · ' + flagged.length + ' ACC Final terkirim</div></div></div>';
+
+  var rows = [
+    { label: 'Valid', value: valid, cls: 'green' },
+    { label: 'Menunggu', value: waiting, cls: 'amber' },
+    { label: 'Belum bayar', value: unpaid, cls: 'slate' }
+  ];
+  document.getElementById('bars').innerHTML = rows.map(function (b) {
+    var pct = total ? Math.round(b.value / total * 1000) / 10 : 0;
+    return '<div class="bar-row">' +
+      '<div class="lbl">' + b.label + '</div>' +
+      '<div class="bar-track"><div class="bar-fill ' + b.cls + '" style="width:' + pct + '%"></div></div>' +
+      '<div class="n">' + shortRp(b.value) + '</div>' +
+    '</div>';
+  }).join('');
+
+  var order = ['valid', 'menunggu', 'gratis', 'belum'];
+  document.getElementById('rekap').innerHTML = order.map(function (k) {
+    var s = g[k];
+    var porsi = total ? Math.round(s.value / total * 100) : 0;
+    return '<tr>' +
+      '<td>' + badge(k) + '</td>' +
+      '<td class="money">' + s.count + '</td>' +
+      '<td class="money">' + rp(s.value) + '</td>' +
+      '<td><div class="bar-track" style="width:80px"><div class="bar-fill ' + s.cls + '" style="width:' + porsi + '%"></div></div></td>' +
+      '<td><a class="filelink" href="01-tabel-drawer.html">Lihat</a></td>' +
+    '</tr>';
+  }).join('');
+
+  var selisih = MOCK_ROWS.filter(function (r) {
+    return r.status !== 'gratis' && r.status !== 'belum' && r.dibayar !== r.tagihan;
+  }).sort(function (a, b) {
+    var aw = a.status === 'menunggu' ? 0 : 1;
+    var bw = b.status === 'menunggu' ? 0 : 1;
+    return aw - bw || Math.abs(b.dibayar - b.tagihan) - Math.abs(a.dibayar - a.tagihan);
+  });
+  document.getElementById('selisihCount').textContent = selisih.length + ' peserta';
+  document.getElementById('selisih').innerHTML = selisih.length ? selisih.map(function (r) {
+    var d = diffInfo(r);
+    return '<tr>' +
+      '<td><b>' + r.nama + '</b><div class="cell-sub">' + r.npm + ' · ' + r.prodi + '</div></td>' +
+      '<td>' + r.kegiatan + '</td>' +
+      '<td class="money">' + rp(r.tagihan) + '</td>' +
+      '<td class="money">' + rp(r.dibayar) + '</td>' +
+      '<td><span class="diff-inline ' + d.cls + '">' + d.short + '</span></td>' +
+      '<td>' + badge(r.status) + '</td>' +
+      '<td><a class="filelink" href="01-tabel-drawer.html?open=' + r.id + '">Periksa</a></td>' +
+    '</tr>';
+  }).join('') : '<tr><td colspan="7"><div class="empty-state" style="margin:8px">Tidak ada selisih nominal.</div></td></tr>';
+
+  var attn = [
+    { r: byId('p2'), note: 'Kurang Rp50.000 · ACC Final sudah terkirim' },
+    { r: byId('p8'), note: 'ACC Final terkirim sebelum pembayaran valid' },
+    { r: byId('p7'), note: 'Bukti tidak sesuai · perlu ditinjau' },
+    { r: byId('p3'), note: 'Menunggu verifikasi' }
+  ];
+  document.getElementById('attnCount').textContent = attn.length + ' item';
+  document.getElementById('attention').innerHTML = attn.map(function (a) {
+    return '<div class="list-item">' +
+      '<div class="avatar" style="width:32px;height:32px;font-size:11px">' + initials(a.r.nama) + '</div>' +
+      '<div class="li-main">' +
+        '<div class="li-title">' + a.r.nama + '</div>' +
+        '<div class="li-sub">' + a.note + '</div>' +
+        '<div style="margin-top:6px">' + badge(a.r.status) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;display:grid;gap:7px">' +
+        '<div class="li-amt">' + (a.r.tagihan ? rp(a.r.tagihan) : 'Gratis') + '</div>' +
+        '<a class="btn sm" href="02-antrean-detail.html">Tindak lanjuti</a>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+render();
+</script>
+</body>
+</html>

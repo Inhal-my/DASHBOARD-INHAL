@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 02 — Antrean + detail · Verifikasi Pembayaran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css?v=3.2">
+<style>
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .pmeta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .qfilter { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--line-2); }
+  .qi-diff.kurang { color: var(--rose); }
+  .qi-diff.lebih { color: var(--amber); }
+  .qi-diff.pas { color: var(--green); }
+  .verify-row { display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid var(--line-2); padding-top: 12px; }
+  .verify-row .field { margin: 0; }
+  .verify-row .btn { height: 40px; }
+  @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">IN</div>
+      <div>
+        <div class="brand-name">INHAL Keuangan</div>
+        <div class="brand-sub">Dummy data · mockup</div>
+      </div>
+    </div>
+    <nav class="topnav" aria-label="Navigasi utama">
+      <a href="index.html">Galeri</a>
+      <a href="01-tabel-drawer.html">Data Pembayaran</a>
+      <a href="02-antrean-detail.html" class="active">Antrean</a>
+      <a href="03-kanban-status.html">Papan Status</a>
+      <a href="04-dashboard-manager.html">Ringkasan</a>
+    </nav>
+    <div class="topbar-right">
+      <button class="btn sm" onclick="toast('Mockup: bantuan belum aktif')">Bantuan</button>
+      <div class="userbox">
+        <div class="avatar">RN</div>
+        <div>
+          <div class="name">Rani</div>
+          <div class="role">Petugas Keuangan</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">Keuangan · Antrean harian</span>
+        <h1>Periksa Pembayaran</h1>
+        <p class="lede">Tampilan kerja untuk satu petugas: daftar di kiri, bukti dan keputusan di kanan. Pilih peserta, cocokkan nominal, lalu putuskan tanpa berpindah halaman. Tekan <b>J</b> / <b>K</b> untuk berpindah antrean.</p>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="toast('Mockup: filter tanggal belum aktif')">Hari ini</button>
+        <button class="btn primary" onclick="toast('Mockup: ekspor antrean belum aktif')">Ekspor antrean</button>
+      </div>
+    </div>
+
+    <div class="summary-grid" id="stats"></div>
+
+    <div class="split">
+      <section class="card queue" aria-label="Antrean verifikasi">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Antrean verifikasi</div>
+            <div class="card-sub">Terlama di atas · <span id="qcount"></span></div>
+          </div>
+          <span class="badge amber" id="openCount"></span>
+        </div>
+        <div class="queue-list" id="queue"></div>
+      </section>
+
+      <section class="card detail-panel" id="detail" aria-live="polite"></section>
+    </div>
+
+    <p class="footnote"><b>Catatan desain:</b> antrean hanya memuat bukti yang sudah diunggah dan belum divalidasi. Pilih <b>Kurang / Lebih / Pas</b>, lalu klik <b>Valid</b>. Setelah valid, peserta keluar dari antrean; versi bukti lama tetap tersimpan pada riwayat.</p>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="_data.js?v=3.2"></script>
+<script>
+var queue = MOCK_ROWS.filter(function (r) { return r.status === 'menunggu'; });
+var selected = 'p2';
+var toastTimer = null;
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2200);
+}
+
+function renderStats() {
+  var total = queue.reduce(function (a, r) { return a + r.dibayar; }, 0);
+  var selisih = queue.filter(function (r) { return r.dibayar !== r.tagihan; }).length;
+  var flagged = queue.filter(function (r) { return r.finalSent; }).length;
+  document.getElementById('openCount').textContent = queue.length + ' terbuka';
+  document.getElementById('stats').innerHTML =
+    '<div class="card stat"><div class="stat-ic amber">…</div><div><div class="k">Antrean</div><div class="v">' + queue.length + '</div><div class="s">Semua menunggu divalidasi</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic indigo">Rp</div><div><div class="k">Nilai menunggu</div><div class="v">' + rp(total) + '</div><div class="s">Belum masuk kategori valid</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic rose">!</div><div><div class="k">Selisih nominal</div><div class="v">' + selisih + '</div><div class="s warn">Kurang atau lebih bayar</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic teal">A</div><div><div class="k">Final sudah terkirim</div><div class="v">' + flagged + '</div><div class="s warn">Bayar belum valid</div></div></div>';
+}
+
+function queueItem(r) {
+  var d = diffInfo(r);
+  return '<div class="queue-item ' + (r.id === selected ? 'active' : '') + '" onclick="select(\'' + r.id + '\')">' +
+    '<div class="avatar">' + initials(r.nama) + '</div>' +
+    '<div class="qi-main">' +
+      '<div class="qi-row"><div class="qi-name">' + r.nama + '</div></div>' +
+      '<div class="qi-sub">' + r.kegiatan + '</div>' +
+      '<div class="qi-amt">' + rp(r.dibayar) + ' <span style="color:var(--muted);font-weight:600">/ ' + rp(r.tagihan) + '</span></div>' +
+      '<div class="qi-diff ' + (d.cls || '') + '">' + d.text + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderQueue() {
+  document.getElementById('queue').innerHTML = queue.length
+    ? queue.map(queueItem).join('')
+    : '<div class="empty-state" style="margin:12px">Tidak ada antrean yang menunggu.</div>';
+  document.getElementById('qcount').textContent = queue.length + ' peserta menunggu keputusan';
+}
+
+function detailHTML(r) {
+  var d = diffInfo(r);
+  var diffColor = d.cls === 'kurang' ? 'var(--rose)' : d.cls === 'lebih' ? 'var(--amber)' : 'var(--green)';
+  var warning = r.finalSent
+    ? '<div class="warn" style="margin:0"><span class="warn-ic">!</span><div><b>ACC Final sudah terkirim.</b> Selesaikan verifikasi; jangan tarik ACC. Catat pengecualian agar muncul di daftar pembayaran bermasalah.</div></div>'
+    : '';
+  var ocr = ocrHTML(r);
+  return '' +
+    '<div class="detail-head">' +
+      '<div>' +
+        '<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap"><div class="drawer-title">' + r.nama + '</div>' + badge(r.status) + '</div>' +
+        '<div class="drawer-sub">' + r.npm + ' · ' + r.prodi + '</div>' +
+        '<div class="pmeta"><span class="badge slate">' + r.kegiatan + '</span><span class="badge indigo">Versi ' + r.versi + '</span></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button class="btn sm" onclick="move(-1)">&lsaquo; Sebelumnya</button>' +
+        '<button class="btn sm" onclick="move(1)">Berikutnya &rsaquo;</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="detail-body">' +
+      warning +
+      '<div class="detail-grid">' +
+        '<div class="mini"><div class="k">Tagihan</div><div class="v money">' + rp(r.tagihan) + '</div></div>' +
+        '<div class="mini"><div class="k">Diterima</div><div class="v money">' + rp(r.dibayar) + '</div></div>' +
+        '<div class="mini"><div class="k">Selisih</div><div class="v money" style="color:' + diffColor + '">' + d.short + '</div></div>' +
+      '</div>' +
+      '<div class="two-col">' +
+        '<div><div class="section-label" style="margin-bottom:7px">Bukti transfer</div>' + receiptHTML(r) + '</div>' +
+        '<div style="display:grid;gap:10px;align-content:start">' +
+          '<div class="section-label">Pembanding</div>' +
+          ocr +
+          '<div class="diffbox ' + d.cls + '"><div class="big">' + d.text + '</div><div style="font-weight:600;font-size:11px;margin-top:2px">Tagihan ' + rp(r.tagihan) + ' · diterima ' + rp(r.dibayar) + '</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="detail-grid">' +
+        '<div class="field"><label>Nominal diterima</label><input value="' + r.dibayar + '"><div class="hint">Koreksi bila OCR salah baca</div></div>' +
+        '<div class="field"><label>Tanggal bayar</label><input value="' + r.tanggal + '"></div>' +
+        '<div class="field"><label>Metode</label><input value="' + r.metode + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>Catatan internal</label><textarea>' + r.catatan + '</textarea></div>' +
+      '<div><div class="section-label" style="margin-bottom:8px">Riwayat bukti</div>' + timelineHTML(r) + '</div>' +
+      '<div class="verify-row">' +
+        '<div class="field" style="flex:1"><label>Kesesuaian nominal</label><select id="kesesuaian">' + optionList(suggestKesesuaian(r)) + '</select><div class="hint">Saran sistem: <b>' + KESESUAIAN[suggestKesesuaian(r)].label + '</b></div></div>' +
+        '<button class="btn primary" onclick="verifyCurrent()">Valid</button>' +
+      '</div>' +
+      '<div class="panel-note">Setelah Valid, peserta keluar dari antrean dan antrean maju otomatis. Pilihan kesesuaian tersimpan bersama nominal.</div>' +
+    '</div>';
+}
+
+function renderDetail() {
+  var r = byId(selected);
+  document.getElementById('detail').innerHTML = detailHTML(r);
+}
+
+function select(id) {
+  selected = id;
+  renderQueue();
+  renderDetail();
+}
+
+function optionList(current) {
+  return ['kurang', 'lebih', 'pas'].map(function (k) {
+    return '<option value="' + k + '"' + (k === current ? ' selected' : '') + '>' + KESESUAIAN[k].label + '</option>';
+  }).join('');
+}
+
+function move(delta) {
+  var i = queue.findIndex(function (r) { return r.id === selected; });
+  if (i === -1) i = 0;
+  var next = queue[(i + delta + queue.length) % queue.length];
+  if (next) select(next.id);
+}
+
+function verifyCurrent() {
+  var r = byId(selected);
+  if (!r) return;
+  var sel = document.getElementById('kesesuaian');
+  var value = sel ? sel.value : suggestKesesuaian(r);
+  r.status = 'valid';
+  r.kesesuaian = value;
+  r.verifikator = 'Rani · Keuangan';
+  queue = queue.filter(function (x) { return x.id !== r.id; });
+  toast('Pembayaran ' + r.nama + ' divalidasi sebagai ' + KESESUAIAN[value].label + ' dan keluar dari antrean.');
+  refresh();
+}
+
+function refresh() {
+  if (!queue.some(function (r) { return r.id === selected; }) && queue.length) selected = queue[0].id;
+  renderStats();
+  renderQueue();
+  if (queue.length) {
+    renderDetail();
+  } else {
+    document.getElementById('detail').innerHTML = '<div class="detail-head"><div><div class="drawer-title">Antrean selesai</div><div class="drawer-sub">Tidak ada bukti yang menunggu keputusan.</div></div></div><div class="detail-body"><div class="empty-state">Semua pembayaran pada antrean sudah diproses.</div></div>';
+    document.getElementById('openCount').textContent = '0 terbuka';
+  }
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'j' || e.key === 'J' || e.key === 'ArrowDown') move(1);
+  if (e.key === 'k' || e.key === 'K' || e.key === 'ArrowUp') move(-1);
+});
+
+renderStats();
+renderQueue();
+renderDetail();
+</script>
+</body>
+</html>

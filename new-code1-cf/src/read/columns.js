@@ -17,6 +17,10 @@ export const TABLE_COLUMNS = {
     email_bagian: 'Email Bagian', catatan_info_bagian: 'Catatan Info Bagian', updated_at: 'UpdatedAt',
     dosen: 'Dosen', tanggal_pelaksanaan: 'Tanggal Pelaksanaan', lampiran_email: 'Lampiran Email',
     upload_reset_at: 'Upload Reset At', upload_reset_by: 'Upload Reset By', upload_reset_note: 'Upload Reset Note',
+    status_pembayaran: 'Status Pembayaran', kesesuaian_pembayaran: 'Kesesuaian Pembayaran',
+    nominal_dibayar: 'Nominal Dibayar', tanggal_bayar: 'Tanggal Bayar', metode_bayar: 'Metode Bayar',
+    catatan_verifikasi: 'Catatan Verifikasi', verified_at: 'Verified At', verified_by: 'Verified By',
+    payment_revision: 'Payment Revision',
     sumber: 'Sumber'
   },
   detail_kegiatan: {

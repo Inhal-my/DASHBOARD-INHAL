@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 01 — Tabel + panel validasi · Verifikasi Pembayaran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css?v=3.2">
+<style>
+  .stat.link { cursor: pointer; transition: .15s ease; }
+  .stat.link:hover { border-color: #c7d2fe; transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  .verify-foot { display: grid; gap: 10px; }
+  .verify-foot .field { margin: 0; }
+  .verify-actions { display: flex; gap: 8px; }
+  .verify-actions .btn.primary { flex: 1; }
+  .kesesuaian-tag { display: inline-flex; margin-top: 4px; font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 7px; background: var(--slate-soft); color: var(--ink-2); }
+  .kesesuaian-tag.kurang { background: var(--rose-soft); color: var(--rose); }
+  .kesesuaian-tag.lebih { background: var(--amber-soft); color: var(--amber); }
+  .kesesuaian-tag.pas { background: var(--green-soft); color: var(--green); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">IN</div>
+      <div>
+        <div class="brand-name">INHAL Keuangan</div>
+        <div class="brand-sub">Dummy data · mockup revisi 3.2</div>
+      </div>
+    </div>
+    <nav class="topnav" aria-label="Navigasi utama">
+      <a href="index.html">Galeri</a>
+      <a href="01-tabel-drawer.html" class="active">Data Pembayaran</a>
+      <a href="02-antrean-detail.html">Antrean</a>
+      <a href="03-kanban-status.html">Papan Status</a>
+      <a href="04-dashboard-manager.html">Ringkasan</a>
+    </nav>
+    <div class="topbar-right">
+      <button class="btn sm">Bantuan</button>
+      <div class="userbox">
+        <div class="avatar">RN</div>
+        <div>
+          <div class="name">Rani</div>
+          <div class="role">Petugas Keuangan</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">Keuangan · Verifikasi</span>
+        <h1>Data Pembayaran</h1>
+        <p class="lede">Alur singkat: klik <b>Periksa</b>, pilih <b>Kurang / Lebih / Pas</b> pada dropdown, lalu klik <b>Valid</b>. Baris yang baru divalidasi tetap tampil sampai halaman dimuat ulang; setelah itu baris <b>Valid</b> disembunyikan dan hanya muncul lewat chip <b>Valid</b>. Peserta <b>Gratis</b> tetap tampil sebagai informasi.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="toast('Mockup: ekspor XLSX belum aktif')">Ekspor XLSX</button>
+      </div>
+    </div>
+
+    <div class="warn">
+      <span class="warn-ic">!</span>
+      <div><b>Mockup dummy.</b> Data dan keputusan di halaman ini hanya contoh. Tombol Valid mengubah tampilan sementara dan tidak menyimpan apa pun.</div>
+    </div>
+
+    <div class="summary-grid" id="stats"></div>
+
+    <section class="card" aria-label="Daftar pembayaran">
+      <div class="toolbar">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <input id="q" type="search" placeholder="Cari nama, NPM, detail kegiatan, atau prodi" aria-label="Cari peserta">
+        </div>
+        <div class="chips" id="chips"></div>
+        <label class="toggle"><input type="checkbox" id="onlyFlag"> Hanya bermasalah</label>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Peserta</th>
+              <th>Detail Kegiatan</th>
+              <th>Tagihan</th>
+              <th>Dibayar</th>
+              <th>Status</th>
+              <th>Bukti</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="toolbar" style="border-top:1px solid var(--line);border-bottom:0;justify-content:space-between">
+        <span class="cell-sub" id="rowCount"></span>
+        <span class="cell-sub">Klik <b>Periksa</b> → pilih kesesuaian → <b>Valid</b></span>
+      </div>
+    </section>
+
+    <p class="footnote"><b>Catatan desain:</b> tidak ada tombol Minta Perbaikan, tidak ada status Ditolak, dan tidak ada email pemberitahuan. Selisih nominal dicatat lewat pilihan <b>Kurang / Lebih / Pas</b> saat validasi. Baris Valid baru bertahan sampai halaman dimuat ulang; setelah muat ulang, baris Valid hanya terlihat lewat chip Valid.</p>
+  </main>
+</div>
+
+<div class="drawer-overlay" id="overlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Panel verifikasi pembayaran"></aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="_data.js?v=3.2"></script>
+<script>
+var activeChip = 'aktif';
+var justVerified = [];
+var rowsEl = document.getElementById('rows');
+var chipsEl = document.getElementById('chips');
+var qEl = document.getElementById('q');
+var onlyFlag = document.getElementById('onlyFlag');
+var toastTimer = null;
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 3000);
+}
+
+function setChip(key) {
+  activeChip = key;
+  renderChips();
+  renderRows();
+}
+
+function isVisibleActive(r) {
+  return r.status !== 'valid' || justVerified.indexOf(r.id) !== -1;
+}
+
+function renderStats() {
+  var total = MOCK_ROWS.reduce(function (a, r) { return a + r.tagihan; }, 0);
+  var valid = MOCK_ROWS.filter(function (r) { return r.status === 'valid'; });
+  var validAmt = valid.reduce(function (a, r) { return a + r.dibayar; }, 0);
+  var waiting = MOCK_ROWS.filter(function (r) { return r.status === 'menunggu'; });
+  var waitAmt = waiting.reduce(function (a, r) { return a + r.dibayar; }, 0);
+  var unpaid = MOCK_ROWS.filter(function (r) { return r.status === 'belum'; });
+  var unpaidAmt = unpaid.reduce(function (a, r) { return a + r.tagihan; }, 0);
+  var flagged = MOCK_ROWS.filter(function (r) { return r.finalSent && r.status !== 'valid' && r.status !== 'gratis'; });
+  var gratis = MOCK_ROWS.filter(function (r) { return r.status === 'gratis'; }).length;
+
+  document.getElementById('stats').innerHTML =
+    '<div class="card stat"><div class="stat-ic indigo">Rp</div><div><div class="k">Tagihan aktif</div><div class="v">' + rp(total) + '</div><div class="s">' + MOCK_ROWS.length + ' peserta · 1 periode</div></div></div>' +
+    '<div class="card stat link" onclick="setChip(\'valid\')" title="Tampilkan baris valid"><div class="stat-ic green">OK</div><div><div class="k">Terverifikasi</div><div class="v">' + rp(validAmt) + '</div><div class="s good">' + valid.length + ' pembayaran · klik untuk melihat</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic amber">…</div><div><div class="k">Menunggu verifikasi</div><div class="v">' + waiting.length + '</div><div class="s warn">' + rp(waitAmt) + ' · ' + flagged.length + ' final terkirim</div></div></div>' +
+    '<div class="card stat"><div class="stat-ic slate" style="background:var(--slate-soft);color:var(--muted)">—</div><div><div class="k">Belum bayar</div><div class="v">' + unpaid.length + '</div><div class="s">' + rp(unpaidAmt) + ' · ' + gratis + ' peserta gratis</div></div></div>';
+}
+
+function renderChips() {
+  var order = ['aktif', 'menunggu', 'belum', 'gratis', 'valid', 'semua'];
+  var labels = {
+    aktif: 'Aktif', menunggu: 'Menunggu', belum: 'Belum',
+    gratis: 'Gratis', valid: 'Valid', semua: 'Semua'
+  };
+  chipsEl.innerHTML = order.map(function (key) {
+    var n;
+    if (key === 'semua') n = MOCK_ROWS.length;
+    else if (key === 'aktif') n = MOCK_ROWS.filter(isVisibleActive).length;
+    else if (key === 'menunggu') n = MOCK_ROWS.filter(function (r) { return r.status === 'menunggu'; }).length;
+    else if (key === 'belum') n = MOCK_ROWS.filter(function (r) { return r.status === 'belum'; }).length;
+    else if (key === 'gratis') n = MOCK_ROWS.filter(function (r) { return r.status === 'gratis'; }).length;
+    else n = MOCK_ROWS.filter(function (r) { return r.status === 'valid'; }).length;
+    return '<button class="chip ' + (activeChip === key ? 'active' : '') + '" data-chip="' + key + '">' + labels[key] + '<span class="n">' + n + '</span></button>';
+  }).join('');
+  chipsEl.querySelectorAll('[data-chip]').forEach(function (b) {
+    b.addEventListener('click', function () { setChip(b.dataset.chip); });
+  });
+}
+
+function inChip(r) {
+  if (activeChip === 'semua') return true;
+  if (activeChip === 'aktif') return isVisibleActive(r);
+  if (activeChip === 'menunggu') return r.status === 'menunggu';
+  if (activeChip === 'belum') return r.status === 'belum';
+  if (activeChip === 'gratis') return r.status === 'gratis';
+  return r.status === 'valid';
+}
+
+function statusCell(r) {
+  var html = badge(r.status);
+  if (r.status === 'valid') {
+    var k = KESESUAIAN[r.kesesuaian] || KESESUAIAN.pas;
+    var isNew = justVerified.indexOf(r.id) !== -1;
+    html += '<div><span class="kesesuaian-tag ' + k.cls + '">' + k.label + '</span></div>';
+    if (isNew) html += '<div class="cell-sub" style="color:var(--brand);font-weight:800">Baru divalidasi</div>';
+  } else {
+    var flag = flagText(r);
+    if (flag) html += '<div class="diff-inline kurang" style="max-width:150px;white-space:normal">' + flag + '</div>';
+  }
+  return html;
+}
+
+function rowHTML(r) {
+  var d = diffInfo(r);
+  var proof = r.bukti
+    ? '<a class="filelink" href="#" onclick="openDrawerById(\'' + r.id + '\');return false"><span class="file-ic">PDF</span>Lihat</a><div class="cell-sub">versi ' + r.versi + ' · ' + r.tanggal + '</div>'
+    : '<span class="empty-file">Belum ada</span>';
+  var done = r.status === 'valid' || r.status === 'gratis';
+  return '<tr>' +
+    '<td><div class="person"><div class="avatar">' + initials(r.nama) + '</div><div><div class="nm">' + r.nama + '</div><div class="meta">' + r.npm + ' · ' + r.prodi + '</div></div></div></td>' +
+    '<td><div class="cell-main">' + r.kegiatan + '</div><div class="cell-sub">' + (r.finalSent ? 'ACC Final terkirim' : 'ACC Final belum terkirim') + '</div></td>' +
+    '<td class="money">' + rp(r.tagihan) + '</td>' +
+    '<td><div class="money ' + (r.bukti ? '' : 'muted') + '">' + (r.bukti ? rp(r.dibayar) : '—') + '</div><div class="diff-inline ' + d.cls + '">' + d.short + '</div></td>' +
+    '<td>' + statusCell(r) + '</td>' +
+    '<td>' + proof + '</td>' +
+    '<td><button class="btn sm" onclick="openDrawerById(\'' + r.id + '\')">' + (done ? 'Lihat' : 'Periksa') + '</button></td>' +
+  '</tr>';
+}
+
+function renderRows() {
+  var q = qEl.value.trim().toLowerCase();
+  var list = MOCK_ROWS.filter(function (r) {
+    if (!inChip(r)) return false;
+    if (onlyFlag.checked) {
+      var isFlagged = (r.finalSent && r.status !== 'valid' && r.status !== 'gratis') || !!r.masalah;
+      if (!isFlagged) return false;
+    }
+    if (q && (r.nama + ' ' + r.npm + ' ' + r.kegiatan + ' ' + r.prodi).toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  rowsEl.innerHTML = list.length
+    ? list.map(rowHTML).join('')
+    : '<tr><td colspan="7"><div class="empty-state" style="margin:14px">Tidak ada data yang cocok dengan filter.</div></td></tr>';
+
+  var totalValid = MOCK_ROWS.filter(function (r) { return r.status === 'valid'; }).length;
+  var hiddenValid = totalValid - justVerified.length;
+  var text = list.length + ' baris ditampilkan';
+  if (activeChip === 'aktif') {
+    if (justVerified.length) text += ' · ' + justVerified.length + ' baru divalidasi';
+    if (hiddenValid > 0) text += ' · ' + hiddenValid + ' valid disembunyikan';
+  }
+  document.getElementById('rowCount').textContent = text;
+}
+
+function kesesuaianOptions(r) {
+  var current = suggestKesesuaian(r);
+  var order = ['kurang', 'lebih', 'pas'];
+  return order.map(function (k) {
+    return '<option value="' + k + '"' + (k === current ? ' selected' : '') + '>' + KESESUAIAN[k].label + '</option>';
+  }).join('');
+}
+
+function drawerHTML(r) {
+  var d = diffInfo(r);
+  var isDone = r.status === 'valid';
+  var isGratis = r.status === 'gratis';
+  var noProof = r.status === 'belum';
+  var warning = '';
+  if (r.finalSent && !isDone && !isGratis) {
+    warning = '<div class="warn" style="margin:0"><span class="warn-ic">!</span><div><b>ACC Final sudah terkirim.</b> Pembayaran belum valid. ACC tidak ditarik; selesaikan validasi dan catat pengecualiannya.</div></div>';
+  } else if (r.masalah) {
+    warning = '<div class="warn" style="margin:0"><span class="warn-ic">!</span><div><b>' + r.masalah + '.</b> ' + r.catatan + ' Pastikan bukti sudah benar sebelum menekan Valid.</div></div>';
+  }
+
+  var k = KESESUAIAN[r.kesesuaian] || null;
+  var bodyNote = '';
+  if (isGratis) {
+    bodyNote = '<div class="note-box">Peserta gratis. Tidak ada pembayaran yang perlu divalidasi.</div>';
+  } else if (isDone) {
+    bodyNote = '<div class="note-box">Sudah divalidasi sebagai <b>' + (k ? k.label : 'Pas') + '</b> oleh <b>' + r.verifikator + '</b>. Baris ini hanya muncul lewat chip <b>Valid</b> setelah halaman dimuat ulang.</div>';
+  } else if (noProof) {
+    bodyNote = '<div class="note-box">Belum ada bukti bayar. Tidak ada yang bisa divalidasi sampai peserta mengunggah bukti.</div>';
+  }
+
+  var footer = '';
+  if (!isDone && !isGratis && !noProof) {
+    footer =
+      '<div class="drawer-foot verify-foot">' +
+        '<div class="field">' +
+          '<label for="kesesuaian">Kesesuaian nominal</label>' +
+          '<select id="kesesuaian">' + kesesuaianOptions(r) + '</select>' +
+          '<div class="hint">Saran sistem: <b>' + (KESESUAIAN[suggestKesesuaian(r)] || KESESUAIAN.pas).label + '</b>. Pilih sebelum menekan Valid.</div>' +
+        '</div>' +
+        '<div class="verify-actions">' +
+          '<button class="btn primary" onclick="markValid(\'' + r.id + '\')">Valid</button>' +
+          '<button class="btn ghost" onclick="closeDrawer()">Tutup</button>' +
+        '</div>' +
+      '</div>';
+  } else {
+    footer = '<div class="drawer-foot"><button class="btn ghost" onclick="closeDrawer()">Tutup</button></div>';
+  }
+
+  return '' +
+    '<div class="drawer-head">' +
+      '<div><div class="drawer-title">' + r.nama + '</div><div class="drawer-sub">' + r.npm + ' · ' + r.prodi + '</div><div style="margin-top:8px">' + badge(r.status) + '</div></div>' +
+      '<button class="iconbtn" onclick="closeDrawer()" aria-label="Tutup panel">&times;</button>' +
+    '</div>' +
+    '<div class="drawer-body">' +
+      warning +
+      '<div><div class="section-label">Detail Kegiatan</div><div style="font-weight:800;font-size:13.5px;margin-top:3px">' + r.kegiatan + '</div></div>' +
+      '<div class="info-card"><div class="info-grid">' +
+        '<div><div class="k">Tagihan</div><div class="v money">' + rp(r.tagihan) + '</div></div>' +
+        '<div><div class="k">Diterima</div><div class="v money">' + (r.bukti ? rp(r.dibayar) : '—') + '</div></div>' +
+        '<div><div class="k">Metode</div><div class="v">' + r.metode + '</div></div>' +
+        '<div><div class="k">Tanggal unggah</div><div class="v">' + r.tanggal + '</div></div>' +
+        '<div><div class="k">Versi bukti</div><div class="v">' + (r.versi || '—') + '</div></div>' +
+        '<div><div class="k">Kesesuaian</div><div class="v">' + (k ? k.label : (r.status === 'menunggu' ? 'Belum dipilih' : '—')) + '</div></div>' +
+      '</div></div>' +
+      receiptHTML(r) +
+      ocrHTML(r) +
+      '<div class="diffbox ' + d.cls + '"><div class="big">' + d.text + '</div><div style="font-weight:600;font-size:11px;margin-top:2px">Tagihan ' + rp(r.tagihan) + ' · diterima ' + (r.bukti ? rp(r.dibayar) : '—') + '</div></div>' +
+      bodyNote +
+      (r.bukti && !isDone && !isGratis ? '<div class="field"><label>Catatan internal</label><textarea>' + r.catatan + '</textarea></div>' : '') +
+      '<div><div class="section-label" style="margin-bottom:8px">Riwayat bukti</div>' + timelineHTML(r) + '</div>' +
+      '<div class="note-box">Validasi tidak menarik ACC Final. Pilihan Kesesuaian tersimpan bersama nominal dan petugas yang memvalidasi.</div>' +
+    '</div>' +
+    footer;
+}
+
+function openDrawerById(id) {
+  var r = byId(id);
+  if (!r) return;
+  document.getElementById('drawer').innerHTML = drawerHTML(r);
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function refreshAll() {
+  renderStats();
+  renderChips();
+  renderRows();
+}
+
+var STORAGE_KEY = 'mk3-pembayaran-status';
+
+function saveState() {
+  var s = {};
+  MOCK_ROWS.forEach(function (r) {
+    if (r.status === 'valid' || r.kesesuaian) {
+      s[r.id] = { status: r.status, kesesuaian: r.kesesuaian, verifikator: r.verifikator };
+    }
+  });
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+}
+
+function restoreState() {
+  try {
+    var s = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+    MOCK_ROWS.forEach(function (r) {
+      if (s[r.id]) {
+        r.status = s[r.id].status || r.status;
+        r.kesesuaian = s[r.id].kesesuaian || r.kesesuaian;
+        r.verifikator = s[r.id].verifikator || r.verifikator;
+      }
+    });
+  } catch (e) {}
+}
+
+function markValid(id) {
+  var r = byId(id);
+  var sel = document.getElementById('kesesuaian');
+  var value = sel ? sel.value : suggestKesesuaian(r);
+  r.status = 'valid';
+  r.kesesuaian = value;
+  r.verifikator = 'Rani · Keuangan';
+  if (justVerified.indexOf(id) === -1) justVerified.push(id);
+  saveState();
+  closeDrawer();
+  refreshAll();
+  toast('Pembayaran ' + r.nama + ' divalidasi sebagai ' + KESESUAIAN[value].label + '. Baris tetap tampil sampai halaman dimuat ulang.');
+}
+
+qEl.addEventListener('input', renderRows);
+onlyFlag.addEventListener('change', renderRows);
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+
+restoreState();
+refreshAll();
+
+var openParam = new URLSearchParams(window.location.search).get('open');
+if (openParam && byId(openParam)) openDrawerById(openParam);
+</script>
+</body>
+</html>

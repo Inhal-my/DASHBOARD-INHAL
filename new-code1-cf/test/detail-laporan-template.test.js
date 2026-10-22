@@ -152,82 +152,82 @@ describe('detail laporan tab rekap (mockup)', () => {
 });
 
 describe('detail laporan tab pembayaran', () => {
-  it('punya tab Data Pembayaran', async () => {
+  it('punya tab Data Pembayaran dengan empat tampilan', async () => {
     const html = await loadHtml();
     expect(html).toContain("key: 'bayar', label: 'Data Pembayaran'");
     expect(html).toContain("activeTab === 'bayar'");
     expect(html).toContain("bayarFilter: { kelengkapan: '' }");
+    expect(html).toContain("bayarView: 'tabel'");
+    expect(html).toContain("label: 'Antrean'");
+    expect(html).toContain("label: 'Papan'");
+    expect(html).toContain("label: 'Ringkasan'");
   });
-  it('agregasi pembayaran per mahasiswa', async () => {
+  it('agregasi pembayaran per pengajuan dan status verifikasi', async () => {
     const html = await loadHtml();
-    expect(html).toContain('npmPembayaranMap()');
-    expect(html).toContain('pembayaranRows()');
+    expect(html).toContain('pembayaranItemsAll()');
     expect(html).toContain('pembayaranFiltered()');
+    expect(html).toContain('pembayaranQueue()');
     expect(html).toContain('pembayaranSummary()');
-    expect(html).toContain('bayarBuktiUrl(m)');
-    expect(html).toContain('m.statuses');
+    expect(html).toContain('pembayaranSelisih()');
+    expect(html).toContain('it.statusPembayaran');
+    expect(html).toContain("p['Status Pembayaran']");
   });
-  it('kolom Bukti Bayar punya keterangan rasio', async () => {
+  it('menyembunyikan baris final dan BA dari daftar', async () => {
     const html = await loadHtml();
-    expect(html).toContain('Peserta yang sudah unggah bukti bayar / total peserta kegiatan');
-    expect(html).toContain('sudah unggah bukti / total peserta kegiatan');
+    expect(html).toContain('final: !!p[\'Pembayaran Final\']');
+    expect(html).toContain('pembayaranFilteredAll.filter(it => !it.final)');
+    expect(html).toContain('finalCount');
+    expect(html).toContain('final/BA disembunyikan');
   });
-  it('export memuat sheet pembayaran', async () => {
+  it('export memuat status pembayaran dan kolom baru', async () => {
     const html = await loadHtml();
-    expect(html).toContain("'Pembayaran Mahasiswa'");
-    expect(html).toContain("'Pembayaran Detail'");
+    expect(html).toContain("'Status Pembayaran': this.bayarLabel(it.statusPembayaran)");
+    expect(html).toContain("'Nominal Dibayar': it.nominal || 0");
+    expect(html).toContain("'Kesesuaian': this.bayarKesesuaianLabel(it.kesesuaian)");
+    expect(html).toContain("'Final/BA': it.final ? 'Ya' : 'Tidak'");
     expect(html).toContain("'Link ACC INHAL': it.linkAcc");
+    expect(html).toContain("XLSX.utils.book_append_sheet(wb, wsBayar, 'Pembayaran')");
+  });
+  it('export pembayaran memuat ID dan link BA', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("'BA Pendukung': (it.baPendukung || []).map(b => b.baId).join(', ')");
+    expect(html).toContain("'BA Pelaksanaan': (it.baPelaksanaan || []).map(b => b.baId).join(', ')");
+    expect(html).toContain("'Link BA Pendukung'");
+    expect(html).toContain("'Link BA Pelaksanaan'");
   });
   it('pembayaran memakai band kartu statistik dan kartu mobile', async () => {
     const html = await loadHtml();
-    expect(html).toContain('sharePct');
     expect(html).toContain('>Total Tagihan</div>');
     expect(html).toContain('in-mcard');
+    expect(html).toContain('bayarColumns');
   });
   it('tautan bukti memakai hover preview file dan klik untuk membuka', async () => {
     const html = await loadHtml();
     expect(html).toContain('@pointerenter="onBuktiEnter($event, it.linkBukti)"');
-    expect(html).toContain('@pointerenter="onBuktiEnter($event, bayarBuktiUrl(m))"');
     expect(html).toContain('@pointerenter="onBuktiEnter($event, p.linkBukti)"');
     expect(html).toContain('@pointerleave="onBuktiLeave"');
     expect(html).toContain('@click.stop="closeBuktiPreview()"');
     expect(html).toContain('Arahkan kursor ke tombol Bukti');
   });
-  it('menyediakan kolom Berita Acara setelah Nama dengan dua ikon BA', async () => {
+  it('menyediakan panel Periksa, Valid, dan Koreksi ber-audit', async () => {
     const html = await loadHtml();
-    const nama = html.indexOf('<th class="px-3 py-2.5 text-left">Nama</th>');
-    const ba = html.indexOf('>Berita Acara</th>');
-    expect(nama).toBeGreaterThan(-1);
-    expect(ba).toBeGreaterThan(nama);
-    expect(html).toContain('unitsByPengajuan');
-    expect(html).toContain("baEntriesFor(this.unitsByPengajuan");
-    expect(html).toContain("'baPendukung')");
-    expect(html).toContain('justify-center gap-1');
-    expect(html).toContain('class="ba-ic is-p"');
-    expect(html).toContain('class="ba-ic is-l"');
-    expect(html).toContain('bi-file-earmark-text');
-    expect(html).toContain('bi-file-earmark-check');
-    expect(html).toContain('@pointerenter="onBaEnter($event, \'Pendukung\', m.baPendukung)"');
-    expect(html).toContain('@pointerenter="onBaEnter($event, \'Pelaksanaan\', m.baPelaksanaan)"');
-    expect(html).toContain('@click.stop="onBaClick($event, \'Pendukung\', m.baPendukung)"');
-    expect(html).toContain('colspan="9"');
+    expect(html).toContain('openPeriksa');
+    expect(html).toContain('submitValid');
+    expect(html).toContain("run('verifyPembayaran'");
+    expect(html).toContain('expectedRevision: it.revision');
+    expect(html).toContain('openKoreksi');
+    expect(html).toContain('submitKoreksi');
+    expect(html).toContain("run('correctPembayaran'");
+    expect(html).toContain('Alasan Koreksi');
+    expect(html).toContain('buka_kembali');
+    expect(html).toContain('Koreksi administratif');
   });
-  it('hover ikon BA menampilkan daftar bila lebih dari satu berkas', async () => {
+  it('menampilkan riwayat verifikasi dan koreksi per pengajuan', async () => {
     const html = await loadHtml();
-    expect(html).toContain('class="ba-menu"');
-    expect(html).toContain('onBaMenuEnter');
-    expect(html).toContain('onBaMenuLeave');
-    expect(html).toContain('scheduleBaMenuClose');
-    expect(html).toContain('baMenu.items');
-    expect(html).toContain('ba-count');
-    expect(html).toContain("'BA ' + baMenu.type");
-  });
-  it('export pembayaran memuat ID dan link BA', async () => {
-    const html = await loadHtml();
-    expect(html).toContain("'BA Pendukung': m.baPendukung.map(b => b.baId).join(', ')");
-    expect(html).toContain("'BA Pelaksanaan': m.baPelaksanaan.map(b => b.baId).join(', ')");
-    expect(html).toContain("'Link BA Pendukung'");
-    expect(html).toContain("'Link BA Pelaksanaan'");
+    expect(html).toContain('bayarRevisiFor');
+    expect(html).toContain('Riwayat Verifikasi & Koreksi');
+    expect(html).toContain('bayarModeLabel');
+    expect(html).toContain('pembayaranRevisi = data.pembayaranRevisi || []');
   });
   it('kartu preview file memakai teleport dan mixin bersama', async () => {
     const html = await loadHtml();
@@ -298,9 +298,9 @@ describe('detail laporan kejelasan tampilan', () => {
     const rowsStart = html.indexOf('filteredRows()');
     const rowsEnd = html.indexOf('filteredBa()', rowsStart);
     expect(html.slice(rowsStart, rowsEnd)).toContain('details: r.details');
-    const payStart = html.indexOf('pembayaranFiltered() {');
-    const payEnd = html.indexOf('pembayaranSummary()', payStart);
-    expect(html.slice(payStart, payEnd)).toContain('x.detail');
+    const payStart = html.indexOf('bayarMatches(it) {');
+    const payEnd = html.indexOf('bayarColumnItems(', payStart);
+    expect(html.slice(payStart, payEnd)).toContain('it.detail');
   });
   it('reset filter global mengosongkan enam field dan bagian', async () => {
     const html = await loadHtml();
@@ -385,7 +385,7 @@ describe('detail laporan kolom Detail Kegiatan pada export xlsx', () => {
   });
   it('mengambil Detail Kegiatan dari Pilihan detail pengajuan', async () => {
     const html = await loadHtml();
-    expect(html).toContain("detail: (r.details || []).map(d => String(d.Pilihan || '').trim()).filter(Boolean).join('; ')");
+    expect(html).toContain("const isi = String(d.Detail || '').trim();");
   });
 });
 

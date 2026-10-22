@@ -5,6 +5,7 @@
 -- setelahnya, karena ALTER TABLE ADD COLUMN akan gagal "duplicate column name".
 -- File di migrations/ hanya untuk database lama yang belum memiliki kolom terkait.
 
+DROP TABLE IF EXISTS pembayaran_revisi;
 DROP TABLE IF EXISTS status_history;
 DROP TABLE IF EXISTS detail_kegiatan;
 DROP TABLE IF EXISTS pengajuan;
@@ -33,7 +34,16 @@ CREATE TABLE pengajuan (
   lampiran_email TEXT, nomor_surat TEXT, link_acc_inhal TEXT, link_bukti_bayar TEXT,
   link_final TEXT, status_info_bagian TEXT, waktu_info_bagian TEXT, email_bagian TEXT,
   catatan_info_bagian TEXT, updated_at TEXT, sumber TEXT,
-  upload_reset_at TEXT, upload_reset_by TEXT, upload_reset_note TEXT
+  upload_reset_at TEXT, upload_reset_by TEXT, upload_reset_note TEXT,
+  status_pembayaran TEXT NOT NULL DEFAULT 'belum',
+  kesesuaian_pembayaran TEXT,
+  nominal_dibayar INTEGER,
+  tanggal_bayar TEXT,
+  metode_bayar TEXT,
+  catatan_verifikasi TEXT,
+  verified_at TEXT,
+  verified_by TEXT,
+  payment_revision INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE detail_kegiatan (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, id_pengajuan TEXT,
@@ -43,6 +53,20 @@ CREATE TABLE status_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, id_pengajuan TEXT,
   status TEXT, catatan TEXT, actor_email TEXT
 );
+CREATE TABLE pembayaran_revisi (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id_pengajuan TEXT NOT NULL,
+  revision INTEGER NOT NULL,
+  mode TEXT NOT NULL,
+  status_lama TEXT, status_baru TEXT,
+  kesesuaian_lama TEXT, kesesuaian_baru TEXT,
+  nominal_lama INTEGER, nominal_baru INTEGER,
+  tanggal_lama TEXT, tanggal_baru TEXT,
+  metode_lama TEXT, metode_baru TEXT,
+  alasan TEXT, catatan TEXT, actor TEXT, created_at TEXT,
+  before_json TEXT, after_json TEXT
+);
+CREATE INDEX idx_pembayaran_revisi_pengajuan ON pembayaran_revisi(id_pengajuan, revision);
 CREATE INDEX idx_pengajuan_npm ON pengajuan(npm);
 CREATE UNIQUE INDEX idx_pengajuan_form_key ON pengajuan(form_key);
 CREATE INDEX idx_detail_pengajuan ON detail_kegiatan(id_pengajuan);

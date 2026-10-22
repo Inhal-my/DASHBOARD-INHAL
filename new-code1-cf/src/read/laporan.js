@@ -17,6 +17,13 @@ export async function getLaporanBootstrap(db, ctx) {
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
   const baPeserta = (await db.prepare('SELECT * FROM berita_acara_peserta').all()).results || [];
+  const baPengajuanIds = new Set(baPeserta.map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean));
+  let revisionRows = [];
+  try {
+    revisionRows = (await db.prepare('SELECT * FROM pembayaran_revisi ORDER BY id ASC').all()).results || [];
+  } catch (_) {
+    revisionRows = [];
+  }
   const pesertaMap = {};
   for (const r of baPeserta) {
     const id = String(r.ba_id || '').trim();
@@ -108,6 +115,8 @@ export async function getLaporanBootstrap(db, ctx) {
     perBlok[blok] = (perBlok[blok] || 0) + 1;
     row.Biaya = resolveBiayaForPengajuan(row, biayaMap, overrideMap);
     row['Biaya Rupiah'] = formatRupiah(row.Biaya);
+    row['Masuk BA'] = baPengajuanIds.has(id);
+    row['Pembayaran Final'] = !!String(row['Link Final'] || '').trim() || row['Masuk BA'];
     totalBiaya += row.Biaya;
     return { pengajuan: row, details: detailById[id] || [], history: historyById[id] || [] };
   });
@@ -210,6 +219,16 @@ export async function getLaporanBootstrap(db, ctx) {
     blok,
     kegiatan: units,
     jadwal: jadwalList,
+    pembayaranRevisi: revisionRows.map((r) => ({
+      id: r.id, idPengajuan: r.id_pengajuan, revision: r.revision, mode: r.mode,
+      statusLama: r.status_lama || '', statusBaru: r.status_baru || '',
+      kesesuaianLama: r.kesesuaian_lama || '', kesesuaianBaru: r.kesesuaian_baru || '',
+      nominalLama: r.nominal_lama == null ? null : Number(r.nominal_lama),
+      nominalBaru: r.nominal_baru == null ? null : Number(r.nominal_baru),
+      tanggalLama: r.tanggal_lama || '', tanggalBaru: r.tanggal_baru || '',
+      metodeLama: r.metode_lama || '', metodeBaru: r.metode_baru || '',
+      alasan: r.alasan || '', catatan: r.catatan || '', actor: r.actor || '', createdAt: r.created_at || ''
+    })),
     bagian: { categories: ['Ujian', 'SGD', 'KKD'], labs }
   };
 }
