@@ -74,7 +74,7 @@
     return /^https?:\/\//i.test(s) ? s : '#';
   }
 
-  const BUKTI_PREVIEW = { delay: 200, closeDelay: 150, maxWidth: 880, minWidth: 360 };
+  const BUKTI_PREVIEW = { delay: 200, closeDelay: 150, maxWidth: 1200, minWidth: 360 };
 
   function driveFileId(v) {
     const s = String(v || '');
@@ -120,7 +120,7 @@
       },
       onBuktiEnter(event, url, label) {
         if (!this.buktiPreviewEnabled(event)) return;
-        const src = driveThumbUrl(url, 1600);
+        const src = driveThumbUrl(url, 2400);
         if (!src) return;
         if (this.buktiPreview.hoverCard) return;
         this.cancelBuktiPreviewClose();

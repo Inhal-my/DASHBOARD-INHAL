@@ -1,9 +1,9 @@
-.bukti-preview { position: fixed; z-index: 150; width: 880px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line, #e2e8f0); border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
+.bukti-preview { position: fixed; z-index: 150; width: 1200px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line, #e2e8f0); border-radius: 12px; box-shadow: 0 18px 44px -12px rgba(15,23,42,.28), 0 1px 2px rgba(15,23,42,.04); padding: 8px; }
 .bukti-preview::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
 .bukti-preview.is-above::before { top: auto; bottom: -12px; }
 .bukti-preview.is-left::before { top: 0; bottom: 0; left: auto; right: -12px; width: 12px; height: auto; }
 .bukti-preview.is-right::before { top: 0; bottom: 0; left: -12px; right: auto; width: 12px; height: auto; }
-.bukti-preview img { display: block; width: 100%; max-height: 84vh; object-fit: contain; border-radius: 8px; background: #f8fafc; }
+.bukti-preview img { display: block; width: 100%; max-height: 88vh; object-fit: contain; border-radius: 8px; background: #f8fafc; }
 .bukti-preview-state { display: flex; align-items: center; justify-content: center; min-height: 360px; padding: 12px; text-align: center; font-size: 11px; color: var(--ink-400, #94a3b8); }
 .bukti-preview-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 10.5px; color: var(--ink-400, #94a3b8); }
 @media (max-width:1023px){ .bukti-preview { display: none !important; } }

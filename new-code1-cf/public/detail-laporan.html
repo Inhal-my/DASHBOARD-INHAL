@@ -2029,7 +2029,7 @@
 
                                     <div class="rounded-xl border border-slate-100 p-3">
                                         <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Bukti Bayar</div>
-                                        <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti"><i class="bi bi-box-arrow-up-right"></i> Buka Bukti Bayar</a>
+                                        <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, periksa.item.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-box-arrow-up-right"></i> Buka Bukti Bayar</a>
                                         <span v-else class="text-sm text-slate-400">Belum ada bukti bayar.</span>
                                     </div>
 

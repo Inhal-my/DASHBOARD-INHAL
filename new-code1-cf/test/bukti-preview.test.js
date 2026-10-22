@@ -58,14 +58,15 @@ describe('preview bukti bersama', () => {
     expect(AppCommon.driveThumbUrl('')).toBe('');
   });
 
-  it('memakai jeda 200ms dan lebar maksimum 880px', async () => {
+  it('memakai jeda 200ms dan lebar maksimum 1200px', async () => {
     const AppCommon = await loadCommon();
     const src = await asset('/app-common.js');
     expect(src).toContain('onBuktiEnter(event, url, label)');
+    expect(src).toContain('driveThumbUrl(url, 2400)');
     expect(src).toContain("label: ''");
     expect(AppCommon.buktiPreview.delay).toBe(200);
     expect(AppCommon.buktiPreview.closeDelay).toBe(150);
-    expect(AppCommon.buktiPreview.maxWidth).toBe(880);
+    expect(AppCommon.buktiPreview.maxWidth).toBe(1200);
     expect(AppCommon.buktiPreview.minWidth).toBe(360);
     expect(typeof AppCommon.buktiPreviewMixin.methods.onBuktiEnter).toBe('function');
     expect(typeof AppCommon.buktiPreviewMixin.methods.positionBuktiPreview).toBe('function');
@@ -81,13 +82,13 @@ describe('preview bukti bersama', () => {
 
     const left = await run(1440, 1200, 80);
     expect(left.placement).toBe('left');
-    expect(left.width).toBe(880);
-    expect(left.left).toBe(308);
+    expect(left.width).toBe(1176);
+    expect(left.left).toBe(12);
     expect(left.ready).toBe(true);
 
     const right = await run(1440, 200, 80);
     expect(right.placement).toBe('right');
-    expect(right.width).toBe(880);
+    expect(right.width).toBe(1136);
 
     const below = await run(700, 300, 100);
     expect(below.placement).toBe('below');
@@ -97,10 +98,15 @@ describe('preview bukti bersama', () => {
   it('CSS dan halaman memakai berkas preview bersama', async () => {
     const css = await asset('/bukti-preview.css');
     expect(css).toContain('.bukti-preview {');
-    expect(css).toContain('width: 880px');
-    expect(css).toContain('max-height: 84vh');
+    expect(css).toContain('width: 1200px');
+    expect(css).toContain('max-height: 88vh');
     expect(css).toContain('.bukti-preview.is-left::before');
     expect(css).toContain('@media (max-width:1023px){ .bukti-preview { display: none !important; } }');
+
+    const detail = await asset('/detail-laporan.html');
+    expect(detail).toContain("periksa.item.linkBukti, 'Bukti Bayar'");
+    expect(detail).toContain('@pointerenter="onBuktiEnter($event, periksa.item.linkBukti');
+    expect(detail).toContain('@pointerleave="onBuktiLeave"');
 
     const dashboard = await asset('/dashboard.html');
     expect(dashboard).toContain('<link href="/bukti-preview.css" rel="stylesheet">');
