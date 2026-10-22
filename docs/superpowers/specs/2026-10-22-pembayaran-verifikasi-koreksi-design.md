@@ -1,7 +1,7 @@
 # Desain Verifikasi Pembayaran dan Koreksi
 
 Tanggal: 22 Oktober 2026
-Status: draft untuk persetujuan
+Status: diimplementasikan; revisi tampilan baris final/BA 22 Oktober 2026
 Mockup acuan: `mockups/pembayaran-verifikasi/` revisi 3.2
 
 ## Tujuan
@@ -16,7 +16,7 @@ Menambahkan status verifikasi pembayaran per pengajuan, alur validasi, dan alur 
    - Buka kembali: nominal, bukti, atau kesesuaian bermasalah. Status kembali `menunggu`.
 3. Semua admin Keuangan boleh memvalidasi dan mengoreksi. Alasan koreksi wajib. Pelaku dan waktu dicatat.
 4. Tidak ada aturan SLA/hari. Semua penanda usia dihapus.
-5. Baris yang ACC Final atau BA-nya sudah terkirim disembunyikan dari tab Pembayaran dan tidak perlu dikoreksi.
+5. Baris yang ACC Final atau BA-nya sudah terkirim tetap ditampilkan agar bisa diperiksa, tetapi tidak dapat divalidasi atau dikoreksi.
 6. Implementasi tahap pertama mencakup keempat tampilan: tabel, antrean, papan status, ringkasan.
 7. Tidak ada email pemberitahuan verifikasi/koreksi.
 8. Tidak ada status Ditolak dan tidak ada tombol Batalkan verifikasi.
@@ -48,7 +48,7 @@ Kesesuaian wajib cocok dengan nominal:
 
 Jika pilihan tidak cocok, server menolak. Nilai `kurang`/`lebih` tetap boleh berstatus `valid` sebagai keputusan admin.
 
-## Aturan sembunyikan ACC Final/BA
+## Aturan tampilan ACC Final/BA
 
 Baris dianggap final jika salah satu benar:
 
@@ -57,11 +57,12 @@ Baris dianggap final jika salah satu benar:
 
 Baris final:
 
-- tidak tampil di tabel, antrean, dan papan status;
-- tidak muncul di daftar selisih/perlu perhatian;
-- tidak bisa diverifikasi atau dikoreksi;
-- tetap dihitung di total tagihan Ringkasan agar angka tidak hilang, tetapi tidak dihitung sebagai `valid` kecuali memang sudah valid;
-- jumlah yang disembunyikan ditampilkan sebagai catatan di Ringkasan.
+- tetap tampil di tabel, papan status, dan daftar selisih/perlu perhatian dengan penanda `Final/BA`;
+- tidak dimasukkan ke Antrean Verifikasi karena tidak perlu diverifikasi;
+- bisa dibuka lewat Periksa untuk melihat nominal, bukti, dan riwayat, tetapi panel hanya read-only;
+- tidak bisa diverifikasi atau dikoreksi; server tetap menolak permintaan tersebut;
+- dihitung di total tagihan Ringkasan; jumlah dan total tagihannya juga ditampilkan sebagai catatan;
+- tidak dihitung dalam angka aktif `valid`/`menunggu`/`belum`/`gratis` agar angka antrean tidak tercampur.
 
 ## Model data
 
@@ -161,7 +162,7 @@ Tab Data Pembayaran memakai segmented control dengan empat tampilan:
 
 Perilaku tabel:
 
-- Baris final/BA tidak ditampilkan.
+- Baris final/BA tetap ditampilkan dengan penanda dan aksi Periksa read-only.
 - Baris `valid` yang baru divalidasi tetap tampil sampai muat ulang (state sesi), setelah itu hanya lewat chip Valid.
 - `gratis` tetap tampil.
 - `belum` tidak punya tombol Valid.
@@ -176,15 +177,15 @@ Panel koreksi:
 
 Ringkasan:
 
-- Tabel `Selisih nominal` hanya berisi baris yang belum final;
+- Tabel `Selisih nominal` memuat semua baris valid yang selisih, termasuk yang final, dengan penanda `Final/BA`;
 - Daftar perlu perhatian memakai status dan masalah bukti, tanpa penanda hari.
-- Catatan jumlah baris yang disembunyikan karena ACC Final/BA.
+- Catatan jumlah dan total tagihan baris ACC Final/BA yang tetap ditampilkan.
 
 ## Ekspor
 
-- Ekspor mengikuti data yang tampil di tab Pembayaran (baris final/BA tidak ikut).
+- Ekspor mengikuti data yang tampil di tab Pembayaran, termasuk baris final/BA.
 - Tambah kolom: Status Pembayaran, Kesesuaian, Nominal Dibayar, Tanggal Bayar, Metode Bayar, Diverifikasi Oleh, Diverifikasi Pada, Revisi.
-- Ringkasan tetap menyediakan angka total termasuk baris final/BA melalui catatan terpisah.
+- Ringkasan menyediakan angka total termasuk baris final/BA melalui catatan terpisah.
 
 ## Pengujian
 
@@ -202,7 +203,7 @@ Unit/integration:
 Template/UI:
 
 - keempat tampilan ada;
-- baris final tidak tampil;
+- baris final tampil dengan penanda dan panel read-only;
 - chip dan panel koreksi;
 - ekspor memuat kolom baru.
 
@@ -211,7 +212,7 @@ E2E staging:
 - unggah bukti -> menunggu -> valid;
 - koreksi administratif;
 - buka kembali -> valid ulang;
-- baris dengan link final/BA hilang dari tab.
+- baris dengan link final/BA tetap tampil, bisa diperiksa, dan tombol validasi/koreksi tidak tersedia.
 
 ## Rollout
 
