@@ -47,7 +47,8 @@ describe('fase 6 jadwal dan normalisasi status', () => {
 
   it('halaman tidak lagi memakai status Diterima', () => {
     ['../pages/bagian.html', '../pages/portal.html', '../pages/dashboard.html', '../pages/detail-laporan.html'].forEach((p) => {
-      assert.doesNotMatch(read(p), /Diterima/);
+      const html = read(p).split('Nominal Diterima').join('');
+      assert.doesNotMatch(html, /Diterima/);
     });
   });
 });

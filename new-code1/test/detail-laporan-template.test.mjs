@@ -129,3 +129,50 @@ describe('detail laporan preview dan kolom BA', () => {
     assert.match(html, /'Link BA Pelaksanaan'/);
   });
 });
+
+describe('detail laporan pratinjau bukti bayar', () => {
+  it('tautan bukti di daftar sesi, BA, dan detail pengajuan memakai hover', () => {
+    assert.match(html, /@pointerenter="onBuktiEnter\(\$event, p\.linkBukti, 'Bukti Bayar'\)"/);
+    assert.match(html, /@pointerenter="onBuktiEnter\(\$event, linkBuktiForNpm\(p\.npm\), 'Bukti Bayar'\)"/);
+    assert.match(html, /@pointerenter="onBuktiEnter\(\$event, r\.pengajuan\['Link Bukti Bayar'\], 'Bukti Bayar'\)"/);
+  });
+});
+
+describe('detail laporan verifikasi pembayaran', () => {
+  it('menampilkan status pembayaran dan tombol periksa pada rincian', () => {
+    assert.match(html, /bayarLabel\(it\.statusPembayaran\)/);
+    assert.match(html, /@click\.stop="openPeriksa\(it\)"/);
+    assert.match(html, /Periksa Pembayaran/);
+  });
+  it('memuat form validasi dan koreksi', () => {
+    assert.match(html, /submitValid\(\)/);
+    assert.match(html, /submitKoreksi\(\)/);
+    assert.match(html, /verifyPembayaran/);
+    assert.match(html, /correctPembayaran/);
+    assert.match(html, /Riwayat Verifikasi &amp; Koreksi/);
+  });
+  it('menyimpan riwayat revisi dari bootstrap', () => {
+    assert.match(html, /pembayaranRevisi: \[\]/);
+    assert.match(html, /this\.pembayaranRevisi = data\.pembayaranRevisi \|\| \[\]/);
+  });
+});
+
+describe('detail laporan tab daftar BA dan jadwal', () => {
+  it('menambah tab dan section daftar BA', () => {
+    assert.match(html, /key: 'daftarba', label: 'Daftar BA'/);
+    assert.match(html, /activeTab === 'daftarba'/);
+    assert.match(html, /filteredDaftarBa/);
+    assert.match(html, /exportDaftarBa/);
+  });
+  it('menambah tab dan section jadwal vs realisasi', () => {
+    assert.match(html, /key: 'jadwal', label: 'Jadwal vs Realisasi'/);
+    assert.match(html, /activeTab === 'jadwal'/);
+    assert.match(html, /jadwalRealisasiFiltered/);
+    assert.match(html, /exportJadwalRealisasi/);
+  });
+  it('memuat data BA pendukung dan jadwal dari bootstrap', () => {
+    assert.match(html, /this\.beritaAcaraAdmin = data\.beritaAcaraAdmin \|\| \[\]/);
+    assert.match(html, /this\.jadwal = data\.jadwal \|\| \[\]/);
+    assert.match(html, /this\.dosenOptions = data\.dosenOptions \|\| \[\]/);
+  });
+});

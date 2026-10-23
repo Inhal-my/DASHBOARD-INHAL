@@ -29,6 +29,12 @@ describe('partial bersama preview bukti', () => {
     assert.match(html, /pointerType !== 'mouse'/);
     assert.match(html, /\(hover: hover\) and \(pointer: fine\)/);
   });
+  it('memakai ukuran pratinjau besar 1200px dan thumbnail 2400px', () => {
+    assert.match(html, /maxWidth: 1200/);
+    assert.match(html, /driveThumbUrl\(url, 2400\)/);
+    assert.match(html, /\.bukti-preview \{ position: fixed[^}]*width: 1200px/);
+    assert.match(html, /\.bukti-preview img \{[^}]*max-height: 88vh/);
+  });
   it('menyertakan CSS preview dan ikon BA', () => {
     assert.match(html, /\.bukti-preview \{ position: fixed/);
     assert.match(html, /\.ba-ic\.is-p/);

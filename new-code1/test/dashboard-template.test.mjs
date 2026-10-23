@@ -128,7 +128,7 @@ describe('dashboard unggah bukti bayar oleh admin', () => {
 
 describe('dashboard scan kamera', () => {
   it('menyisipkan ScanPdf dan kontrol scan kamera untuk bukti, BA pendukung, dan pelaksanaan', () => {
-    assert.match(html, /window\.ScanPdf = \{ buildPdf: buildPdf, compressToJpeg: compressToJpeg \}/);
+    assert.match(html, /window\.ScanPdf = \{ buildPdf: buildPdf, compressToJpeg: compressToJpeg[^}]*\}/);
     assert.match(html, /scanBuildPdf\('bukti'\)/);
     assert.match(html, /scanBuildPdf\('pendukung'\)/);
     assert.match(html, /scanBuildPdf\('pelaksanaan'\)/);

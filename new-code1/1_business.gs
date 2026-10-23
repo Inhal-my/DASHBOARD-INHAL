@@ -779,6 +779,122 @@ function uploadBuktiAdmin(idPengajuan, filePayload) {
     }
 }
 
+function uploadSuratKeterangan(idPengajuan, filePayload) {
+    try {
+        requireAdmin(arguments[arguments.length - 1]);
+        const id = String(idPengajuan || '').trim();
+        if (!id) return { success: false, message: 'ID pengajuan tidak valid.' };
+        const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', id);
+        if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+
+        const file = filePayload || {};
+        if (!file.data) return { success: false, message: 'Berkas surat keterangan tidak valid.' };
+        const mime = String(file.mimeType || '').trim();
+        const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        if (allowed.indexOf(mime) === -1) {
+            return { success: false, message: 'Format berkas tidak didukung. Gunakan PDF / JPG / PNG.' };
+        }
+
+        const url = _saveFileToDrive(file.data, mime, file.name, 'surat-' + id);
+        upsertRowByKey('Pengajuan', 'ID Pengajuan', id, {
+            'Link Surat Keterangan': url,
+            'UpdatedAt': new Date()
+        });
+        writeAuditLog({
+            actor: getActorName(),
+            action: 'UPLOAD_SURAT',
+            target: 'Pengajuan',
+            detail: JSON.stringify({ idPengajuan: id, linkSurat: url }),
+            alasan: 'Unggah surat keterangan oleh admin'
+        });
+        return { success: true, url: url, message: 'Surat keterangan berhasil diunggah.' };
+    } catch (e) {
+        return { success: false, message: e.message };
+    }
+}
+
+function getUploadMonitor() {
+    try {
+        requireAdmin(arguments[arguments.length - 1]);
+        const rows = getAllRowsCached('Pengajuan').filter(function(r) {
+            return String(r.Status || '').trim() === 'ACC';
+        }).map(function(r) {
+            return {
+                'ID Pengajuan': r['ID Pengajuan'] || '',
+                NPM: r.NPM || '',
+                'Nama Lengkap': r['Nama Lengkap'] || '',
+                'Jenis Kegiatan': r['Jenis Kegiatan'] || '',
+                Status: r.Status || '',
+                'Link ACC INHAL': r['Link ACC INHAL'] || '',
+                'Link Bukti Bayar': r['Link Bukti Bayar'] || '',
+                'Link Final': r['Link Final'] || '',
+                'Upload Reset At': _clientDate(r['Upload Reset At']),
+                'Upload Reset By': r['Upload Reset By'] || '',
+                'Upload Reset Note': r['Upload Reset Note'] || ''
+            };
+        }).sort(function(a, b) {
+            return String(b['Upload Reset At'] || '').localeCompare(String(a['Upload Reset At'] || ''));
+        });
+        return { success: true, rows: rows };
+    } catch (e) {
+        return { success: false, message: e.message, rows: [] };
+    }
+}
+
+function resetUploadBukti(idPengajuan, payload) {
+    try {
+        requireAdmin(arguments[arguments.length - 1]);
+        return _lockMutate(function() {
+            const id = String(idPengajuan || '').trim();
+            if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+            const existing = getRowByKey('Pengajuan', 'ID Pengajuan', id);
+            if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+            if (String(existing.Status || '').trim() !== 'ACC') {
+                return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus ACC.' };
+            }
+            const acc = String(existing['Link ACC INHAL'] || '').trim();
+            const bukti = String(existing['Link Bukti Bayar'] || '').trim();
+            const final = String(existing['Link Final'] || '').trim();
+            if (!acc && !bukti && !final) {
+                return { success: false, message: 'Tidak ada berkas unggahan untuk direset.' };
+            }
+            const note = String((payload && payload.note) || '').trim();
+            const detail = _getPengajuanDetailSummary(id);
+            upsertRowByKey('Pengajuan', 'ID Pengajuan', id, {
+                'Link ACC INHAL': '',
+                'Link Bukti Bayar': '',
+                'Link Final': '',
+                'Upload Reset At': new Date(),
+                'Upload Reset By': getActorName(),
+                'Upload Reset Note': note,
+                'UpdatedAt': new Date()
+            });
+            appendRowSafe('LogUpload', {
+                Timestamp: new Date(),
+                'ID Pengajuan': id,
+                'NPM': existing.NPM || '',
+                'Nama Lengkap': existing['Nama Lengkap'] || '',
+                'Blok': existing.Blok || '',
+                'Jenis Kegiatan': existing['Jenis Kegiatan'] || '',
+                'Detail': 'Reset unggahan oleh admin' + (note ? ' — ' + note : ''),
+                'Tanggal': detail.tanggal,
+                'Link ACC INHAL': acc,
+                'Link Bukti Bayar': bukti
+            });
+            writeAuditLog({
+                actor: getActorName(),
+                action: 'RESET_UPLOAD',
+                target: 'Pengajuan',
+                detail: JSON.stringify({ idPengajuan: id, linkAcc: acc, linkBukti: bukti, linkFinal: final }),
+                alasan: note || 'Reset unggahan oleh admin'
+            });
+            return { success: true, message: 'Unggahan berhasil direset. Mahasiswa dapat mengunggah ulang.' };
+        });
+    } catch (e) {
+        return { success: false, message: e.message };
+    }
+}
+
 // Portal mahasiswa: kembalikan payload ringkas dalam kontrak info.html
 // { nama, npm, buktiMode, history[] } atau { error }.
 function getStudentPortalData(npm) {
@@ -1333,7 +1449,8 @@ function uploadBeritaAcaraBagian(payload, kategori) {
                 'Nama Lengkap': p.namaLengkap,
                 'Blok': p.blok,
                 'Bagian': String((payload && payload.bagian) || kategori || '').trim(),
-                'Status Pengajuan': p.statusPengajuan
+                'Status Pengajuan': p.statusPengajuan,
+                'ID Pengajuan': p.idPengajuan || ''
             });
         });
 
@@ -2081,6 +2198,28 @@ function getLaporanBootstrap() {
     const overrideMap = _getBiayaOverrideMap();
     const baPesertaMap = _getBaPesertaMap();
     const baAdminPesertaMap = _getBaPesertaMapAdmin();
+    const pembayaranRevisi = _getRowsOptional('PembayaranRevisi').map(function(r) {
+        return {
+            id: _paymentStr(r['Revisi ID']),
+            idPengajuan: _paymentStr(r['ID Pengajuan']),
+            revision: Number(r.Revision) || 0,
+            mode: _paymentStr(r.Mode),
+            statusLama: _paymentStr(r['Status Lama']),
+            statusBaru: _paymentStr(r['Status Baru']),
+            kesesuaianLama: _paymentStr(r['Kesesuaian Lama']),
+            kesesuaianBaru: _paymentStr(r['Kesesuaian Baru']),
+            nominalLama: r['Nominal Lama'] === '' || r['Nominal Lama'] == null ? null : Number(r['Nominal Lama']),
+            nominalBaru: r['Nominal Baru'] === '' || r['Nominal Baru'] == null ? null : Number(r['Nominal Baru']),
+            tanggalLama: _paymentStr(r['Tanggal Lama']),
+            tanggalBaru: _paymentStr(r['Tanggal Baru']),
+            metodeLama: _paymentStr(r['Metode Lama']),
+            metodeBaru: _paymentStr(r['Metode Baru']),
+            alasan: _paymentStr(r.Alasan),
+            catatan: _paymentStr(r.Catatan),
+            actor: _paymentStr(r.Actor),
+            createdAt: _paymentStr(r['Created At'])
+        };
+    });
 
     const detailById = {};
     details.forEach(function(d) {
@@ -2139,6 +2278,29 @@ function getLaporanBootstrap() {
         c.peserta = baPesertaMap[String(r['BA ID'] || '').trim()] || [];
         return c;
     });
+    const beritaAcaraAdmin = baAdmin.slice().sort(function(a, b) {
+        return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
+    }).map(function(r) {
+        const c = _clientRow(r);
+        c.peserta = baAdminPesertaMap[String(r['BA ID'] || '').trim()] || [];
+        return c;
+    });
+    const jadwalList = _computeJadwalList('', '');
+    const jadwal = jadwalList.map(function(j) {
+        return {
+            jadwalId: j.JadwalID || '',
+            bagian: j.Bagian || '',
+            blok: j.Blok || '',
+            namaKegiatan: j.NamaKegiatan || '',
+            label: j.NamaKegiatan || '',
+            tanggal: j.Tanggal || '',
+            jam: j.Jam || '',
+            dosen: j.Dosen || '',
+            catatan: j.Catatan || '',
+            peserta: j.peserta || [],
+            baId: j.baId || ''
+        };
+    });
 
     const toBaRef = function(r, sumber, pesertaMap) {
         const c = _clientRow(r);
@@ -2196,8 +2358,12 @@ function getLaporanBootstrap() {
         },
         rows: rows,
         beritaAcara: beritaAcara,
-        jadwalList: _computeJadwalList('', ''),
+        beritaAcaraAdmin: beritaAcaraAdmin,
+        jadwalList: jadwalList,
+        jadwal: jadwal,
+        pembayaranRevisi: pembayaranRevisi,
         dosen: dosen,
+        dosenOptions: getMasterOptions('Dosen'),
         blok: blok,
         bagian: {
             categories: ['Ujian', 'SGD', 'KKD'],
@@ -2503,22 +2669,14 @@ function deleteBeritaAcaraAdmin(baId) {
     const existing = getRowByKey('BeritaAcaraAdmin', 'BA ID', baIdVal);
     if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
 
-    deleteRowByKey('BeritaAcaraAdmin', 'BA ID', baIdVal, 'Dihapus dari Panel Admin', getActorName());
-
-    const pesertaRows = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
+    deleteRowsByMatch('BeritaAcaraAdminPeserta', function(r) {
         return String(r['BA ID'] || '').trim() === baIdVal;
-    });
-    pesertaRows.forEach(function(r) {
-        deleteRowByKey('BeritaAcaraAdminPeserta', 'BA ID', baIdVal, 'Hapus peserta menyertai BA', getActorName());
-    });
+    }, 'Hapus peserta menyertai BA', getActorName());
+    _deleteBaAdminBerkasForBa(baIdVal);
 
-    const fileUrl = String(existing['File URL'] || '');
-    const idMatch = fileUrl.match(/[=\/]([\w\-]{20,})/);
-    if (idMatch) {
-        try {
-            DriveApp.getFileById(idMatch[1]).setTrashed(true);
-        } catch (e) { }
-    }
+    deleteRowByKey('BeritaAcaraAdmin', 'BA ID', baIdVal, 'Dihapus dari Panel Admin', getActorName());
+    _baAdminTrashUrl(existing['File URL']);
+    _baAdminTrashUrl(existing['Base File URL']);
 
     return { success: true, message: 'Berita acara berhasil dihapus.' };
 }
@@ -2667,7 +2825,8 @@ function updateBeritaAcaraBagian(baId, payload) {
                     'Nama Lengkap': peserta.namaLengkap,
                     'Blok': peserta.blok,
                     'Bagian': String(existing.Bagian || '').trim(),
-                    'Status Pengajuan': peserta.statusPengajuan
+                    'Status Pengajuan': peserta.statusPengajuan,
+                    'ID Pengajuan': peserta.idPengajuan || ''
                 });
             });
             invalidateSheetCache('BeritaAcaraPeserta');
@@ -3905,6 +4064,7 @@ function _resolveBaPesertaFromDetail(payload) {
         const nama = String(p['Nama Lengkap'] || '').trim();
         if (npm || nama) {
             peserta.push({
+                idPengajuan: String(p['ID Pengajuan'] || '').trim(),
                 npm: npm,
                 namaLengkap: nama,
                 blok: String(p.Blok || '').trim(),
@@ -3953,7 +4113,11 @@ function uploadBeritaAcaraAdmin(payload) {
             'File Name': fileName,
             'File URL': fileUrl,
             'Catatan': String((payload && payload.catatan) || '').trim(),
-            'Sumber': 'Admin'
+            'Sumber': 'Admin',
+            'Kegiatan Key': _kegiatanKey(String((payload && payload.bagian) || 'Admin').trim(), String((payload && payload.blok) || '').trim(), String((payload && payload.namaKegiatan) || '').trim()),
+            'Base File URL': fileUrl,
+            'Base File Name': fileName,
+            'Needs Regen': '0'
         });
 
         peserta.forEach(function(p) {
@@ -3964,11 +4128,431 @@ function uploadBeritaAcaraAdmin(payload) {
                 'Nama Lengkap': p.namaLengkap,
                 'Blok': p.blok,
                 'Bagian': String((payload && payload.bagian) || 'Admin').trim(),
-                'Status Pengajuan': p.statusPengajuan
+                'Status Pengajuan': p.statusPengajuan,
+                'ID Pengajuan': p.idPengajuan || ''
             });
         });
 
         return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+
+function _baAdminStr(v) {
+    return String(v === null || v === undefined ? '' : v).replace(/\u00a0/g, ' ').trim();
+}
+
+function _baAdminActive(row) {
+    const v = row && row.Active;
+    if (v === undefined || v === null || v === '') return true;
+    return String(v) !== '0' && String(v).toLowerCase() !== 'false';
+}
+
+function _baAdminFileId(url) {
+    const m = String(url || '').match(/[=\/]([\w\-]{20,})/);
+    return m ? m[1] : '';
+}
+
+function _baAdminTrashUrl(url) {
+    const id = _baAdminFileId(url);
+    if (!id) return;
+    try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { }
+}
+
+function _baAdminMime(file) {
+    let mime = String((file && (file.mimeType || file.mime)) || '').toLowerCase();
+    if (mime === 'image/jpg') mime = 'image/jpeg';
+    if (mime === 'application/pdf' || mime === 'image/jpeg' || mime === 'image/png') return mime;
+    const name = String((file && file.name) || '').toLowerCase();
+    if (/\.pdf$/.test(name)) return 'application/pdf';
+    if (/\.jpe?g$/.test(name)) return 'image/jpeg';
+    if (/\.png$/.test(name)) return 'image/png';
+    return '';
+}
+
+function _baAdminBerkasRows(baId) {
+    return _getRowsOptional('BeritaAcaraAdminBerkas').filter(function(r) {
+        return _baAdminStr(r['BA ID']) === _baAdminStr(baId) && _baAdminActive(r);
+    });
+}
+
+function _deleteBaAdminBerkasForBa(baId) {
+    const id = _baAdminStr(baId);
+    if (!id) return 0;
+    const rows = _getRowsOptional('BeritaAcaraAdminBerkas').filter(function(r) {
+        return _baAdminStr(r['BA ID']) === id;
+    });
+    rows.forEach(function(r) { _baAdminTrashUrl(r['File URL']); });
+    const res = deleteRowsByMatch('BeritaAcaraAdminBerkas', function(r) {
+        return _baAdminStr(r['BA ID']) === id;
+    }, 'Hapus berkas menyertai BA', getActorName());
+    return Number(res && res.deleted) || 0;
+}
+
+function _baAdminBaKey(ba) {
+    return _baAdminStr(ba && ba['Kegiatan Key']) || _kegiatanKey(ba && ba.Bagian, ba && ba.Blok, ba && ba['Nama Kegiatan']);
+}
+
+function _baAdminPengajuanMatches(p, ba, detailMap, labs) {
+    const targetKey = _baAdminBaKey(ba);
+    if (!targetKey) return false;
+    const details = detailMap[_baAdminStr(p['ID Pengajuan'])] || [];
+    let matches = false;
+    details.forEach(function(d) {
+        const jenis = _baAdminStr(d['Jenis Kegiatan']);
+        const pilihan = _baAdminStr(d.Pilihan);
+        const detail = _baAdminStr(d.Detail);
+        const nama = detail ? (pilihan + ' - ' + detail) : pilihan;
+        if (!nama) return;
+        const bagian = _resolveBagian12(jenis, pilihan, nama, labs) || jenis;
+        if (_kegiatanKey(bagian, p.Blok, nama) === targetKey) matches = true;
+    });
+    return matches;
+}
+
+function getBaAdminDetail(baId) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    try {
+        const id = _baAdminStr(baId);
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        const berkas = _baAdminBerkasRows(id);
+        let baseUrl = _baAdminStr(ba['Base File URL']);
+        let baseName = _baAdminStr(ba['Base File Name']);
+        if (!baseUrl && !berkas.length && _baAdminStr(ba['File URL'])) {
+            baseUrl = _baAdminStr(ba['File URL']);
+            baseName = _baAdminStr(ba['File Name']);
+            updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
+                'Base File URL': baseUrl,
+                'Base File Name': baseName
+            });
+        }
+        const filesByPid = {};
+        berkas.forEach(function(r) {
+            const pid = _baAdminStr(r['ID Pengajuan']);
+            if (!filesByPid[pid]) filesByPid[pid] = [];
+            filesByPid[pid].push({
+                pageIndex: Number(r['Page Index']) || 0,
+                fileUrl: _baAdminStr(r['File URL']),
+                fileName: _baAdminStr(r['File Name']),
+                pageCount: Number(r['Page Count']) || 1
+            });
+        });
+        filesByPid && Object.keys(filesByPid).forEach(function(pid) {
+            filesByPid[pid].sort(function(a, b) { return a.pageIndex - b.pageIndex; });
+        });
+        const pesertaRows = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminActive(r);
+        }).sort(function(a, b) { return (Number(a.Urutan) || 0) - (Number(b.Urutan) || 0); });
+        const peserta = pesertaRows.map(function(r) {
+            const pid = _baAdminStr(r['ID Pengajuan']);
+            const files = (filesByPid[pid] || []);
+            const pages = files.reduce(function(n, f) { return n + (Number(f.pageCount) || 1); }, 0);
+            return {
+                idPengajuan: pid,
+                npm: _baAdminStr(r.NPM),
+                namaLengkap: _baAdminStr(r['Nama Lengkap']),
+                blok: _baAdminStr(r.Blok),
+                urutan: Number(r.Urutan) || 0,
+                pages: pages,
+                fileUrl: files.length ? files[0].fileUrl : '',
+                files: files
+            };
+        });
+        const activeIds = {};
+        peserta.forEach(function(p) { activeIds[p.idPengajuan] = true; });
+        const labs = getMasterOptions('Lab');
+        const detailMap = {};
+        getAllRows('DetailKegiatan').forEach(function(d) {
+            const pid = _baAdminStr(d['ID Pengajuan']);
+            if (!pid) return;
+            if (!detailMap[pid]) detailMap[pid] = [];
+            detailMap[pid].push(d);
+        });
+        const candidates = [];
+        getAllRows('Pengajuan').forEach(function(p) {
+            const pid = _baAdminStr(p['ID Pengajuan']);
+            if (!pid || activeIds[pid]) return;
+            if (!_baAdminPengajuanMatches(p, ba, detailMap, labs)) return;
+            candidates.push({
+                idPengajuan: pid,
+                npm: _baAdminStr(p.NPM),
+                namaLengkap: _baAdminStr(p['Nama Lengkap']),
+                blok: _baAdminStr(p.Blok),
+                bagian: _baAdminStr(ba.Bagian),
+                statusPengajuan: _baAdminStr(p.Status)
+            });
+        });
+        candidates.sort(function(a, b) { return a.npm.toLowerCase().localeCompare(b.npm.toLowerCase()); });
+        return {
+            success: true,
+            data: {
+                ba: {
+                    baId: id,
+                    bagian: _baAdminStr(ba.Bagian),
+                    blok: _baAdminStr(ba.Blok),
+                    namaKegiatan: _baAdminStr(ba['Nama Kegiatan']),
+                    tanggal: _clientDate(ba['Tanggal Pelaksanaan']),
+                    jam: _clientTime(ba.Jam),
+                    catatan: _baAdminStr(ba.Catatan),
+                    fileUrl: _baAdminStr(ba['File URL']),
+                    fileName: _baAdminStr(ba['File Name']),
+                    baseFileUrl: baseUrl,
+                    baseFileName: baseName,
+                    needsRegen: String(ba['Needs Regen'] || '') === '1'
+                },
+                peserta: peserta,
+                candidates: candidates
+            }
+        };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+function setBaAdminBaseFile(baId, file) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    try {
+        const id = _baAdminStr(baId);
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        if (!file || !file.data) return { success: false, message: 'Tidak ada dokumen dasar yang diunggah.' };
+        const mime = _baAdminMime(file);
+        if (!mime) return { success: false, message: 'Dokumen dasar harus PDF, JPG, atau PNG.' };
+        const name = _baAdminStr(file.name) || ('dokumen-dasar-' + id);
+        const url = _saveFileToDrive(String(file.data), mime, name, 'ba-admin-base-' + id);
+        updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
+            'Base File URL': url,
+            'Base File Name': name,
+            'Needs Regen': '1'
+        });
+        return { success: true, baseFileUrl: url, message: 'Dokumen dasar disimpan. Jalankan Regenerate PDF.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+function removeBaAdminBaseFile(baId) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    try {
+        const id = _baAdminStr(baId);
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        const oldUrl = _baAdminStr(ba['Base File URL']);
+        updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
+            'Base File URL': '',
+            'Base File Name': '',
+            'Needs Regen': '1'
+        });
+        _baAdminTrashUrl(oldUrl);
+        return { success: true, message: 'Dokumen dasar dihapus. Jalankan Regenerate PDF.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+function addBaAdminPesertaBerkas(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const uploaded = [];
+    try {
+        const p = payload || {};
+        const id = _baAdminStr(p.baId);
+        const pid = _baAdminStr(p.idPengajuan);
+        const files = Array.isArray(p.files) ? p.files : [];
+        if (!id || !pid) return { success: false, message: 'BA ID / pengajuan kosong.' };
+        if (!files.length) return { success: false, message: 'Berkas wajib diunggah untuk menambah peserta BA.' };
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', pid);
+        if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+
+        const labs = getMasterOptions('Lab');
+        const detailMap = {};
+        getAllRows('DetailKegiatan').forEach(function(d) {
+            const key = _baAdminStr(d['ID Pengajuan']);
+            if (!key) return;
+            if (!detailMap[key]) detailMap[key] = [];
+            detailMap[key].push(d);
+        });
+        if (!_baAdminPengajuanMatches(pengajuan, ba, detailMap, labs)) {
+            return { success: false, message: 'Peserta tidak sesuai dengan kegiatan BA ini.' };
+        }
+
+        const prepared = [];
+        let newPages = 0;
+        let newBytes = 0;
+        for (let i = 0; i < files.length; i += 1) {
+            const f = files[i] || {};
+            if (!f.data) return { success: false, message: 'Berkas halaman kosong.' };
+            const mime = _baAdminMime(f);
+            if (!mime) return { success: false, message: 'Format halaman harus PDF, JPG, atau PNG.' };
+            const pageCount = Math.max(1, Math.min(50, Number(f.pageCount) || 1));
+            const byteSize = Math.floor(String(f.data).length * 3 / 4);
+            newPages += pageCount;
+            newBytes += byteSize;
+            prepared.push({
+                data: String(f.data),
+                mime: mime,
+                name: _baAdminStr(f.name) || ('halaman-' + (i + 1)),
+                pageCount: pageCount,
+                byteSize: byteSize
+            });
+        }
+
+        const others = _baAdminBerkasRows(id).filter(function(r) { return _baAdminStr(r['ID Pengajuan']) !== pid; });
+        let otherPages = 0;
+        let otherBytes = 0;
+        others.forEach(function(r) {
+            otherPages += Number(r['Page Count']) || 1;
+            otherBytes += Number(r['Byte Size']) || 0;
+        });
+        if (otherPages + newPages > 50) return { success: false, message: 'Batas 50 halaman per BA terlampaui.' };
+        if (otherBytes + newBytes > 20 * 1024 * 1024) return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+
+        const npm = _baAdminStr(pengajuan.NPM);
+        let pageIndex = 0;
+        prepared.forEach(function(f) {
+            const url = _saveFileToDrive(f.data, f.mime, f.name, 'ba-admin-' + id + '-' + (npm || pid) + '-' + (pageIndex + 1));
+            uploaded.push(url);
+            f.url = url;
+            f.pageIndex = pageIndex;
+            pageIndex += 1;
+        });
+
+        const existingRows = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminStr(r['ID Pengajuan']) === pid;
+        });
+        let urutan = existingRows.length ? (Number(existingRows[0].Urutan) || 0) : 0;
+        if (!urutan) {
+            getAllRows('BeritaAcaraAdminPeserta').forEach(function(r) {
+                if (_baAdminStr(r['BA ID']) !== id) return;
+                urutan = Math.max(urutan, Number(r.Urutan) || 0);
+            });
+            urutan += 1;
+        }
+        if (existingRows.length) {
+            updateRowsByMatch('BeritaAcaraAdminPeserta', function(r) {
+                return _baAdminStr(r['BA ID']) === id && _baAdminStr(r['ID Pengajuan']) === pid;
+            }, { Active: '1', Urutan: urutan, 'Nama Lengkap': _baAdminStr(pengajuan['Nama Lengkap']), NPM: npm, Blok: _baAdminStr(pengajuan.Blok), 'Status Pengajuan': _baAdminStr(pengajuan.Status) });
+        } else {
+            appendRowSafe('BeritaAcaraAdminPeserta', {
+                Timestamp: new Date(),
+                'BA ID': id,
+                'NPM': npm,
+                'Nama Lengkap': _baAdminStr(pengajuan['Nama Lengkap']),
+                'Blok': _baAdminStr(pengajuan.Blok),
+                'Bagian': _baAdminStr(ba.Bagian),
+                'Status Pengajuan': _baAdminStr(pengajuan.Status),
+                'ID Pengajuan': pid,
+                'Urutan': urutan,
+                'Active': '1'
+            });
+        }
+        updateRowsByMatch('BeritaAcaraAdminBerkas', function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminStr(r['ID Pengajuan']) === pid && _baAdminActive(r);
+        }, { Active: '0', 'Superseded At': new Date() });
+        prepared.forEach(function(f) {
+            appendRowSafe('BeritaAcaraAdminBerkas', {
+                Timestamp: new Date(),
+                'BA ID': id,
+                'ID Pengajuan': pid,
+                'NPM': npm,
+                'Urutan': urutan,
+                'Page Index': f.pageIndex,
+                'File Name': f.name,
+                'File URL': f.url,
+                'Page Count': f.pageCount,
+                'Byte Size': f.byteSize,
+                'Active': '1',
+                'Superseded At': ''
+            });
+        });
+        const count = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminActive(r);
+        }).length;
+        updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, { 'Jumlah Peserta': count, 'Needs Regen': '1' });
+        return { success: true, pages: newPages, message: 'Peserta & berkas disimpan. Jalankan Regenerate PDF.' };
+    } catch (e) {
+        uploaded.forEach(function(url) { _baAdminTrashUrl(url); });
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+function removeBaAdminPeserta(baId, idPengajuan) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    try {
+        const id = _baAdminStr(baId);
+        const pid = _baAdminStr(idPengajuan);
+        if (!id || !pid) return { success: false, message: 'BA ID / pengajuan kosong.' };
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        const peserta = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminStr(r['ID Pengajuan']) === pid;
+        });
+        if (!peserta.length) return { success: false, message: 'Peserta tidak ditemukan pada BA ini.' };
+        updateRowsByMatch('BeritaAcaraAdminPeserta', function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminStr(r['ID Pengajuan']) === pid;
+        }, { Active: '0' });
+        updateRowsByMatch('BeritaAcaraAdminBerkas', function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminStr(r['ID Pengajuan']) === pid && _baAdminActive(r);
+        }, { Active: '0', 'Superseded At': new Date() });
+        const count = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
+            return _baAdminStr(r['BA ID']) === id && _baAdminActive(r);
+        }).length;
+        updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, { 'Jumlah Peserta': count, 'Needs Regen': '1' });
+        return { success: true, message: 'Peserta dihapus dari BA. Jalankan Regenerate PDF.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+function getBaAdminFileBase64(baId, fileUrl) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    try {
+        const id = _baAdminStr(baId);
+        const url = _baAdminStr(fileUrl);
+        if (!id || !url) return { success: false, message: 'BA ID / file kosong.' };
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        const allowed = _baAdminStr(ba['Base File URL']) === url || _baAdminBerkasRows(id).some(function(r) {
+            return _baAdminStr(r['File URL']) === url;
+        });
+        if (!allowed) return { success: false, message: 'Berkas bukan milik BA ini.' };
+        const fileId = _baAdminFileId(url);
+        if (!fileId) return { success: false, message: 'ID berkas tidak valid.' };
+        const blob = DriveApp.getFileById(fileId).getBlob();
+        const bytes = blob.getBytes();
+        if (bytes.length > 20 * 1024 * 1024) return { success: false, message: 'Berkas melebihi 20 MB.' };
+        return {
+            success: true,
+            base64: Utilities.base64Encode(bytes),
+            mimeType: blob.getContentType() || '',
+            name: blob.getName() || ''
+        };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+function saveBaAdminMergedPdf(baId, file) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    try {
+        const id = _baAdminStr(baId);
+        const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
+        if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+        if (!file || !file.data) return { success: false, message: 'PDF gabungan kosong.' };
+        const mime = _baAdminMime(file) || 'application/pdf';
+        if (mime !== 'application/pdf') return { success: false, message: 'Hasil gabungan harus PDF.' };
+        const name = _baAdminStr(file.name) || ('ba-' + id + '.pdf');
+        const url = _saveFileToDrive(String(file.data), mime, name, 'ba-admin-' + id + '-pdf');
+        updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
+            'File URL': url,
+            'File Name': name,
+            'Needs Regen': '0'
+        });
+        return { success: true, fileUrl: url, message: 'PDF gabungan disimpan.' };
     } catch (e) {
         return { success: false, message: (e && e.message) ? e.message : String(e) };
     }
@@ -4153,6 +4737,66 @@ function updatePengajuanFields(idPengajuan, payload) {
     }
 }
 
+function _trashDriveFileFromUrl(url) {
+    const idMatch = String(url || '').match(/[=\/]([\w\-]{20,})/);
+    if (!idMatch) return;
+    try {
+        DriveApp.getFileById(idMatch[1]).setTrashed(true);
+    } catch (e) { }
+}
+
+function _cleanupBaForPengajuan(idVal, npmVal) {
+    const pid = String(idVal || '').trim();
+    const npm = String(npmVal || '').trim();
+    if (!pid && !npm) return 0;
+    let deleted = 0;
+    const pairs = [
+        { peserta: 'BeritaAcaraPeserta', ba: 'BeritaAcara' },
+        { peserta: 'BeritaAcaraAdminPeserta', ba: 'BeritaAcaraAdmin' }
+    ];
+    pairs.forEach(function(pair) {
+        const baIds = {};
+        getAllRows(pair.peserta).forEach(function(r) {
+            const rowPid = String(r['ID Pengajuan'] || '').trim();
+            const rowNpm = String(r.NPM || '').trim();
+            const match = (pid && rowPid === pid) || (!rowPid && npm && rowNpm === npm);
+            if (match) baIds[String(r['BA ID'] || '').trim()] = true;
+        });
+        const ids = Object.keys(baIds).filter(Boolean);
+        if (!ids.length) return;
+        const res = deleteRowsByMatch(pair.peserta, function(r) {
+            const rowPid = String(r['ID Pengajuan'] || '').trim();
+            const rowNpm = String(r.NPM || '').trim();
+            return (pid && rowPid === pid) || (!rowPid && npm && rowNpm === npm);
+        }, 'Hapus pengajuan ' + (pid || npm), getActorName());
+        deleted += Number(res && res.deleted) || 0;
+        ids.forEach(function(baId) {
+            const remaining = getAllRows(pair.peserta).filter(function(r) {
+                return String(r['BA ID'] || '').trim() === baId;
+            });
+            if (remaining.length) return;
+            const baRow = getRowByKey(pair.ba, 'BA ID', baId);
+            if (!baRow) return;
+            if (pair.ba === 'BeritaAcaraAdmin') {
+                deleted += _deleteBaAdminBerkasForBa(baId);
+                _baAdminTrashUrl(baRow['Base File URL']);
+            }
+            deleteRowByKey(pair.ba, 'BA ID', baId, 'Hapus BA kosong setelah pengajuan dihapus', getActorName());
+            _trashDriveFileFromUrl(baRow['File URL']);
+            deleted += 1;
+        });
+    });
+    if (pid || npm) {
+        const href = deleteRowsByMatch('BeritaAcaraAdminBerkas', function(r) {
+            const rowPid = String(r['ID Pengajuan'] || '').trim();
+            const rowNpm = String(r.NPM || '').trim();
+            return (pid && rowPid === pid) || (!rowPid && npm && rowNpm === npm);
+        }, 'Hapus berkas peserta BA', getActorName());
+        deleted += Number(href && href.deleted) || 0;
+    }
+    return deleted;
+}
+
 function deletePengajuanAdmin(idPengajuan, alasan) {
     requireAuthorized(arguments[arguments.length - 1]);
     try {
@@ -4171,11 +4815,230 @@ function deletePengajuanAdmin(idPengajuan, alasan) {
             });
         });
 
+        deleted += _cleanupBaForPengajuan(idVal, String(existing.NPM || '').trim());
+
         deleteRowByKey('Pengajuan', 'ID Pengajuan', idVal, alasan || 'Dihapus oleh admin', getActorName());
 
         return { success: true, message: 'Pengajuan beserta data terkait berhasil dihapus (' + deleted + ' baris terkait).' };
     } catch (e) {
         return { success: false, message: (e && e.message) ? e.message : String(e) };
+    }
+}
+
+// =================================================================
+// ==================== VERIFIKASI PEMBAYARAN ======================
+// =================================================================
+
+function _paymentStr(v) {
+    return String(v === null || v === undefined ? '' : v).replace(/\u00a0/g, ' ').trim();
+}
+
+function _paymentNowIso() {
+    const d = new Date();
+    const p = function(n) { return (n < 10 ? '0' : '') + n; };
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + 'T' +
+        p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+}
+
+function _paymentAmount(v) {
+    if (v === undefined || v === null || v === '') return 0;
+    const n = Number(String(v).replace(/[^\d-]/g, ''));
+    return Number.isFinite(n) ? Math.trunc(n) : 0;
+}
+
+function _paymentStatus(row) {
+    return _paymentStr(row && row['Status Pembayaran']) || 'belum';
+}
+
+function _paymentRevisionOf(row) {
+    const n = Number(row && row['Payment Revision']);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function _paymentExpectedKesesuaian(nominal, tagihan) {
+    if (nominal === tagihan) return 'pas';
+    return nominal < tagihan ? 'kurang' : 'lebih';
+}
+
+function _appendPembayaranRevisi(data) {
+    appendRowSafe('PembayaranRevisi', {
+        Timestamp: new Date(),
+        'Revisi ID': generateId('REV'),
+        'ID Pengajuan': data.idPengajuan,
+        Revision: data.revision,
+        Mode: data.mode,
+        'Status Lama': data.statusLama,
+        'Status Baru': data.statusBaru,
+        'Kesesuaian Lama': data.kesesuaianLama,
+        'Kesesuaian Baru': data.kesesuaianBaru,
+        'Nominal Lama': data.nominalLama,
+        'Nominal Baru': data.nominalBaru,
+        'Tanggal Lama': data.tanggalLama,
+        'Tanggal Baru': data.tanggalBaru,
+        'Metode Lama': data.metodeLama,
+        'Metode Baru': data.metodeBaru,
+        Alasan: data.alasan || '',
+        Catatan: data.catatan || '',
+        Actor: data.actor || '',
+        'Created At': data.createdAt,
+        'Before JSON': JSON.stringify(data.before || {}),
+        'After JSON': JSON.stringify(data.after || {})
+    });
+    invalidateSheetCache('PembayaranRevisi');
+}
+
+function _paymentTagihan(row) {
+    return _resolveBiayaForPengajuan(row, _getBiayaMap(), _getBiayaOverrideMap());
+}
+
+function verifyPembayaran(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const p = payload || {};
+        const id = _paymentStr(p.idPengajuan);
+        if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+        const row = getRowByKey('Pengajuan', 'ID Pengajuan', id);
+        if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+        const currentStatus = _paymentStatus(row);
+        if (currentStatus === 'valid') return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi.' };
+        if (currentStatus === 'gratis') return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
+        if (!_paymentStr(row['Link Bukti Bayar'])) return { success: false, message: 'Belum ada bukti bayar untuk diverifikasi.' };
+        if (Number(p.expectedRevision || 0) !== _paymentRevisionOf(row)) {
+            return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
+        }
+
+        const tagihan = _paymentTagihan(row);
+        const nominal = _paymentAmount(p.nominal);
+        if (tagihan <= 0) return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
+        if (nominal <= 0) return { success: false, message: 'Nominal diterima harus lebih dari nol.' };
+        const cocok = _paymentExpectedKesesuaian(nominal, tagihan);
+        const kesesuaian = _paymentStr(p.kesesuaian) || cocok;
+        if (kesesuaian !== cocok) {
+            return { success: false, message: 'Kesesuaian tidak cocok dengan nominal. Pilih ' + cocok + '.' };
+        }
+
+        const tanggal = _paymentStr(p.tanggal) || _paymentNowIso().slice(0, 10);
+        const metode = _paymentStr(p.metode);
+        const catatan = _paymentStr(p.catatan);
+        const actor = getActorName();
+        const ts = _paymentNowIso();
+        const revision = _paymentRevisionOf(row) + 1;
+
+        _setPengajuanColumns(id, {
+            'Status Pembayaran': 'valid',
+            'Kesesuaian Pembayaran': kesesuaian,
+            'Nominal Dibayar': nominal,
+            'Tanggal Bayar': tanggal,
+            'Metode Bayar': metode,
+            'Catatan Verifikasi': catatan,
+            'Verified At': ts,
+            'Verified By': actor,
+            'Payment Revision': revision,
+            UpdatedAt: new Date()
+        });
+        invalidateSheetCache('Pengajuan');
+        _appendPembayaranRevisi({
+            idPengajuan: id, revision: revision, mode: 'verifikasi',
+            statusLama: currentStatus, statusBaru: 'valid',
+            kesesuaianLama: _paymentStr(row['Kesesuaian Pembayaran']), kesesuaianBaru: kesesuaian,
+            nominalLama: row['Nominal Dibayar'] === '' || row['Nominal Dibayar'] == null ? null : _paymentAmount(row['Nominal Dibayar']),
+            nominalBaru: nominal,
+            tanggalLama: _paymentStr(row['Tanggal Bayar']), tanggalBaru: tanggal,
+            metodeLama: _paymentStr(row['Metode Bayar']), metodeBaru: metode,
+            alasan: '', catatan: catatan, actor: actor, createdAt: ts,
+            before: { status: currentStatus, kesesuaian: _paymentStr(row['Kesesuaian Pembayaran']), nominal: row['Nominal Dibayar'] || null },
+            after: { status: 'valid', kesesuaian: kesesuaian, nominal: nominal }
+        });
+        writeAuditLog({
+            actor: actor, action: 'VERIFY', target: 'Pembayaran',
+            detail: JSON.stringify({ idPengajuan: id, nominal: nominal, kesesuaian: kesesuaian, tanggal: tanggal }),
+            alasan: ''
+        });
+        return { success: true, status: 'valid', revision: revision, message: 'Pembayaran divalidasi.' };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    } finally {
+        lock.releaseLock();
+    }
+}
+
+function correctPembayaran(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const p = payload || {};
+        const id = _paymentStr(p.idPengajuan);
+        if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+        const row = getRowByKey('Pengajuan', 'ID Pengajuan', id);
+        if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+        if (_paymentStatus(row) !== 'valid') return { success: false, message: 'Hanya pembayaran valid yang bisa dikoreksi.' };
+        if (Number(p.expectedRevision || 0) !== _paymentRevisionOf(row)) {
+            return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
+        }
+
+        const mode = _paymentStr(p.mode);
+        if (mode !== 'administratif' && mode !== 'buka_kembali') return { success: false, message: 'Jenis koreksi tidak dikenal.' };
+        const alasan = _paymentStr(p.alasan);
+        if (alasan.length < 5) return { success: false, message: 'Alasan koreksi wajib diisi minimal 5 karakter.' };
+
+        if (mode === 'administratif') {
+            if (p.nominal !== undefined && _paymentAmount(p.nominal) !== _paymentAmount(row['Nominal Dibayar'])) {
+                return { success: false, message: 'Nominal berubah. Gunakan buka kembali.' };
+            }
+            if (p.kesesuaian !== undefined && _paymentStr(p.kesesuaian) !== _paymentStr(row['Kesesuaian Pembayaran'])) {
+                return { success: false, message: 'Kesesuaian berubah. Gunakan buka kembali.' };
+            }
+        }
+
+        const actor = getActorName();
+        const ts = _paymentNowIso();
+        const revision = _paymentRevisionOf(row) + 1;
+        const nextStatus = mode === 'buka_kembali' ? 'menunggu' : 'valid';
+        const tanggal = mode === 'administratif' && p.tanggal !== undefined ? _paymentStr(p.tanggal) : _paymentStr(row['Tanggal Bayar']);
+        const metode = mode === 'administratif' && p.metode !== undefined ? _paymentStr(p.metode) : _paymentStr(row['Metode Bayar']);
+        const catatan = mode === 'administratif' && p.catatan !== undefined ? _paymentStr(p.catatan) : _paymentStr(row['Catatan Verifikasi']);
+        const verifiedAt = mode === 'buka_kembali' ? '' : _paymentStr(row['Verified At']);
+        const verifiedBy = mode === 'buka_kembali' ? '' : _paymentStr(row['Verified By']);
+
+        _setPengajuanColumns(id, {
+            'Status Pembayaran': nextStatus,
+            'Tanggal Bayar': tanggal,
+            'Metode Bayar': metode,
+            'Catatan Verifikasi': catatan,
+            'Verified At': verifiedAt,
+            'Verified By': verifiedBy,
+            'Payment Revision': revision,
+            UpdatedAt: new Date()
+        });
+        invalidateSheetCache('Pengajuan');
+        _appendPembayaranRevisi({
+            idPengajuan: id, revision: revision, mode: mode,
+            statusLama: 'valid', statusBaru: nextStatus,
+            kesesuaianLama: _paymentStr(row['Kesesuaian Pembayaran']), kesesuaianBaru: _paymentStr(row['Kesesuaian Pembayaran']),
+            nominalLama: row['Nominal Dibayar'] === '' || row['Nominal Dibayar'] == null ? null : _paymentAmount(row['Nominal Dibayar']),
+            nominalBaru: row['Nominal Dibayar'] === '' || row['Nominal Dibayar'] == null ? null : _paymentAmount(row['Nominal Dibayar']),
+            tanggalLama: _paymentStr(row['Tanggal Bayar']), tanggalBaru: tanggal,
+            metodeLama: _paymentStr(row['Metode Bayar']), metodeBaru: metode,
+            alasan: alasan, catatan: catatan, actor: actor, createdAt: ts,
+            before: { status: 'valid', tanggal: _paymentStr(row['Tanggal Bayar']), metode: _paymentStr(row['Metode Bayar']), catatan: _paymentStr(row['Catatan Verifikasi']) },
+            after: { status: nextStatus, tanggal: tanggal, metode: metode, catatan: catatan }
+        });
+        writeAuditLog({
+            actor: actor, action: 'CORRECT', target: 'Pembayaran',
+            detail: JSON.stringify({ idPengajuan: id, mode: mode, statusBaru: nextStatus }),
+            alasan: alasan
+        });
+        return {
+            success: true, status: nextStatus, revision: revision,
+            message: mode === 'buka_kembali' ? 'Pembayaran dikembalikan ke antrean.' : 'Koreksi administratif disimpan.'
+        };
+    } catch (e) {
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    } finally {
+        lock.releaseLock();
     }
 }
 

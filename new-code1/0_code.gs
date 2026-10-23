@@ -47,7 +47,19 @@ const SCHEMAS = {
         'Email Bagian',
         'Catatan Info Bagian',
         'UpdatedAt',
-        'Sumber'
+        'Sumber',
+        'Status Pembayaran',
+        'Kesesuaian Pembayaran',
+        'Nominal Dibayar',
+        'Tanggal Bayar',
+        'Metode Bayar',
+        'Catatan Verifikasi',
+        'Verified At',
+        'Verified By',
+        'Payment Revision',
+        'Upload Reset At',
+        'Upload Reset By',
+        'Upload Reset Note'
     ],
     DetailKegiatan: [
         'Timestamp',
@@ -149,7 +161,8 @@ const SCHEMAS = {
         'Nama Lengkap',
         'Blok',
         'Bagian',
-        'Status Pengajuan'
+        'Status Pengajuan',
+        'ID Pengajuan'
     ],
     BeritaAcaraAdmin: [
         'Timestamp',
@@ -164,7 +177,11 @@ const SCHEMAS = {
         'Catatan',
         'Sumber',
         'Jam',
-        'Dosen'
+        'Dosen',
+        'Kegiatan Key',
+        'Base File URL',
+        'Base File Name',
+        'Needs Regen'
     ],
     BeritaAcaraAdminPeserta: [
         'Timestamp',
@@ -173,7 +190,24 @@ const SCHEMAS = {
         'Nama Lengkap',
         'Blok',
         'Bagian',
-        'Status Pengajuan'
+        'Status Pengajuan',
+        'ID Pengajuan',
+        'Urutan',
+        'Active'
+    ],
+    BeritaAcaraAdminBerkas: [
+        'Timestamp',
+        'BA ID',
+        'ID Pengajuan',
+        'NPM',
+        'Urutan',
+        'Page Index',
+        'File Name',
+        'File URL',
+        'Page Count',
+        'Byte Size',
+        'Active',
+        'Superseded At'
     ],
     JadwalPelaksanaan: [
         'Timestamp',
@@ -198,6 +232,29 @@ const SCHEMAS = {
         'Nama Lengkap',
         'Blok',
         'Status Pengajuan'
+    ],
+    PembayaranRevisi: [
+        'Timestamp',
+        'Revisi ID',
+        'ID Pengajuan',
+        'Revision',
+        'Mode',
+        'Status Lama',
+        'Status Baru',
+        'Kesesuaian Lama',
+        'Kesesuaian Baru',
+        'Nominal Lama',
+        'Nominal Baru',
+        'Tanggal Lama',
+        'Tanggal Baru',
+        'Metode Lama',
+        'Metode Baru',
+        'Alasan',
+        'Catatan',
+        'Actor',
+        'Created At',
+        'Before JSON',
+        'After JSON'
     ],
     CheckData: [
         'Timestamp',
@@ -615,6 +672,57 @@ function upsertRowByKey(sheetName, keyColumn, keyValue, obj) {
     return { success: true, rowIndex: sheet.getLastRow(), created: true, data: rowToObject(headers, row) };
 }
 
+function updateRowByKey(sheetName, keyColumn, keyValue, values) {
+    invalidateSheetCache(sheetName);
+    const ss = getGlobalSpreadsheet();
+    if (!ss.getSheetByName(sheetName) && SCHEMAS[sheetName]) {
+        ensureSheetWithHeaders(ss, sheetName, SCHEMAS[sheetName]);
+    }
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) throw new Error('Sheet ' + sheetName + ' tidak ditemukan.');
+    const headers = getHeadersFromSheet(sheet);
+    const keyIdx = headers.indexOf(keyColumn);
+    if (keyIdx === -1) throw new Error('Kolom kunci ' + keyColumn + ' tidak ditemukan di ' + sheetName + '.');
+    const rowIndex = findRowByColumnValue(sheet, keyIdx + 1, keyValue);
+    if (rowIndex === -1) return { success: false, message: 'Data tidak ditemukan.' };
+    const range = sheet.getRange(rowIndex, 1, 1, headers.length);
+    const row = range.getValues()[0];
+    Object.keys(values || {}).forEach(function(header) {
+        const idx = headers.indexOf(header);
+        if (idx !== -1) row[idx] = values[header];
+    });
+    range.setValues([row]);
+    invalidateSheetCache(sheetName);
+    return { success: true, rowIndex: rowIndex, data: rowToObject(headers, row) };
+}
+
+function updateRowsByMatch(sheetName, matcher, values) {
+    invalidateSheetCache(sheetName);
+    const ss = getGlobalSpreadsheet();
+    if (!ss.getSheetByName(sheetName) && SCHEMAS[sheetName]) {
+        ensureSheetWithHeaders(ss, sheetName, SCHEMAS[sheetName]);
+    }
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) throw new Error('Sheet ' + sheetName + ' tidak ditemukan.');
+    const headers = getHeadersFromSheet(sheet);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: true, updated: 0 };
+    const rows = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    let updated = 0;
+    rows.forEach(function(row, i) {
+        const data = rowToObject(headers, row);
+        if (!matcher(data)) return;
+        Object.keys(values || {}).forEach(function(header) {
+            const idx = headers.indexOf(header);
+            if (idx !== -1) row[idx] = values[header];
+        });
+        sheet.getRange(i + 2, 1, 1, headers.length).setValues([row]);
+        updated += 1;
+    });
+    invalidateSheetCache(sheetName);
+    return { success: true, updated: updated };
+}
+
 function getRowByKey(sheetName, keyColumn, keyValue) {
     const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
     if (!sheet) throw new Error('Sheet ' + sheetName + ' tidak ditemukan.');
@@ -681,6 +789,32 @@ function deleteRowByKey(sheetName, keyColumn, keyValue, reason, actorEmail) {
     });
 
     return { success: true, message: 'Data berhasil dihapus.', deleted: data };
+}
+
+function deleteRowsByMatch(sheetName, matcher, reason, actorEmail) {
+    invalidateSheetCache(sheetName);
+    const sheet = getGlobalSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) return { success: true, deleted: 0 };
+    const headers = getHeadersFromSheet(sheet);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: true, deleted: 0 };
+    const values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    let deleted = 0;
+    for (let i = values.length - 1; i >= 0; i -= 1) {
+        const data = rowToObject(headers, values[i]);
+        if (!matcher(data)) continue;
+        sheet.deleteRow(i + 2);
+        writeAuditLog({
+            actor: actorEmail || getActorName(),
+            action: 'DELETE',
+            target: sheetName,
+            detail: JSON.stringify(data),
+            alasan: reason || ''
+        });
+        deleted += 1;
+    }
+    invalidateSheetCache(sheetName);
+    return { success: true, deleted: deleted };
 }
 
 function migrateBeritaAcaraSheets() {

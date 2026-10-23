@@ -827,7 +827,7 @@
                                                             <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
                                                             <span v-if="p.status" :class="statusBadgeCls(p.status)" class="ml-auto whitespace-nowrap">{{ p.status }}</span>
                                                             <span v-if="biayaForNpm(p.npm, s.row.blok)" class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(biayaForNpm(p.npm, s.row.blok)) }}</span>
-                                                            <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                            <a v-if="p.linkBukti" :href="p.linkBukti" target="_blank" class="link whitespace-nowrap" @pointerenter="onBuktiEnter($event, p.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="text-slate-300">-</span>
                                                         </div>
                                                     </div>
@@ -1004,7 +1004,7 @@
                                                                 <div v-for="(p, i) in b.peserta" :key="i" class="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs">
                                                                     <span class="font-mono font-semibold text-slate-600">{{ p.npm || '-' }}</span>
                                                                     <span class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</span>
-                                                                    <a v-if="linkBuktiForNpm(p.npm)" :href="linkBuktiForNpm(p.npm)" target="_blank" class="link ml-auto whitespace-nowrap"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
+                                                                    <a v-if="linkBuktiForNpm(p.npm)" :href="linkBuktiForNpm(p.npm)" target="_blank" class="link ml-auto whitespace-nowrap" @pointerenter="onBuktiEnter($event, linkBuktiForNpm(p.npm), 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                                     <span v-else class="ml-auto text-slate-300">-</span>
                                                                 </div>
                                                             </div>
@@ -1035,6 +1035,152 @@
                     </section>
 
                     <!-- ===================== TAB 5: DATA PEMBAYARAN ===================== -->
+                    <section v-if="activeTab === 'daftarba'" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">BA Terfilter</div><div class="mt-1 text-2xl font-bold text-slate-800">{{ filteredDaftarBa.length }}</div><div class="text-xs text-slate-400">pendukung + pelaksanaan</div></div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Lengkap</div><div class="mt-1 text-2xl font-bold text-emerald-700">{{ daftarBaLengkapCount }}</div><div class="text-xs text-slate-400">siap</div></div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Draft</div><div class="mt-1 text-2xl font-bold text-amber-700">{{ daftarBaDraftCount }}</div><div class="text-xs text-slate-400">belum lengkap</div></div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Unit Kegiatan</div><div class="mt-1 text-2xl font-bold text-slate-800">{{ daftarBaUnitCount }}</div><div class="text-xs text-slate-400">terkait</div></div>
+                        </div>
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="baListFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in daftarBaBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Jenis BA</label><select v-model="baListFilter.jenis" class="input"><option value="">Semua Jenis</option><option v-for="o in daftarBaJenisOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Sumber</label><select v-model="baListFilter.sumber" class="input"><option value="">Semua Sumber</option><option v-for="o in daftarBaSumberOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Dosen</label><select v-model="baListFilter.dosen" class="input"><option value="">Semua Dosen</option><option v-for="o in dosenOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Kelengkapan</label><select v-model="baListFilter.kelengkapan" class="input"><option value="">Semua</option><option value="Lengkap">Lengkap</option><option value="Draft">Draft</option></select></div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ filteredDaftarBa.length }} BA</span>
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">{{ daftarBaLengkapCount }} lengkap</span>
+                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700">{{ daftarBaDraftCount }} draft</span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                                <div>
+                                    <div class="font-bold text-slate-800">Daftar Berita Acara</div>
+                                    <div class="text-xs text-slate-400">Semua BA Pendukung &amp; Pelaksanaan lintas kegiatan</div>
+                                </div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportDaftarBa"><i class="bi bi-file-earmark-excel"></i> Export XLSX</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">BA ID</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Jenis</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Label</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Jam</th>
+                                            <th class="px-3 py-2.5 text-left">Dosen</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Sumber</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Dibuat</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Kelengkapan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Berkas</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="r in filteredDaftarBa" :key="r.jenis + '-' + r.id" class="border-t border-slate-50">
+                                            <td class="whitespace-nowrap px-3 py-2.5 font-mono text-xs font-semibold text-slate-700">{{ r.id }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.jenis === 'Pendukung' ? 'bg-indigo-50 text-indigo-700' : 'bg-teal-50 text-teal-700'">{{ r.jenis }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-700">{{ r.bagian }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
+                                            <td class="px-3 py-2.5 text-slate-800">{{ r.kegiatan || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.label || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.jam || '-' }}</td>
+                                            <td class="px-3 py-2.5 text-slate-600">{{ r.dosen || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.pesertaCount }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.sumber === 'Admin' ? 'bg-violet-50 text-violet-700' : 'bg-emerald-50 text-emerald-700'">{{ r.sumber }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.dibuat ? fmtTanggalWaktu(r.dibuat) : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.lengkap ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.lengkap ? 'Lengkap' : 'Draft' }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.berkasAda ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.berkasAda ? 'Ada' : 'Hilang' }}</span> <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="link">Lihat</a> <a v-if="r.jenis === 'Pendukung' && r.baseFileUrl" :href="safeUrl(r.baseFileUrl)" target="_blank" rel="noopener noreferrer" class="link">Base</a></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-right"><button class="btn-soft !py-1 px-2 text-[11px] text-rose-600" title="Hapus BA" @click.stop="r.sumber === 'Admin' ? deleteBaAdmin(r.id) : deleteBaBagian(r.id)"><i class="bi bi-trash"></i></button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-if="!filteredDaftarBa.length" class="px-4 py-14 text-center">
+                                    <i class="bi bi-table text-3xl text-slate-300"></i>
+                                    <p class="mt-3 text-sm text-slate-400">Tidak ada BA sesuai filter.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section v-if="activeTab === 'jadwal'" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Sesi Jadwal</div><div class="mt-1 text-2xl font-bold text-slate-800">{{ jadwalTotalCount }}</div><div class="text-xs text-slate-400">terfilter</div></div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Sesuai</div><div class="mt-1 text-2xl font-bold text-emerald-700">{{ jadwalSesuaiCount }}</div><div class="text-xs text-slate-400">punya BA</div></div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Belum</div><div class="mt-1 text-2xl font-bold text-amber-700">{{ jadwalBelumCount }}</div><div class="text-xs text-slate-400">tanpa BA</div></div>
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">BA Extra</div><div class="mt-1 text-2xl font-bold text-violet-700">{{ jadwalExtraCount }}</div><div class="text-xs text-slate-400">tanpa jadwal</div></div>
+                        </div>
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                            <div class="mb-3 flex items-start gap-2 text-[12.5px] text-slate-600"><i class="bi bi-info-circle mt-0.5 text-base text-brand-500"></i><div>Filter jadwal terpisah dari filter laporan.</div></div>
+                            <div class="grid gap-3 md:grid-cols-12">
+                                <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="jadwalFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in jadwalBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Blok</label><select v-model="jadwalFilter.blok" class="input"><option value="">Semua Blok</option><option v-for="o in jadwalBlokOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Dari Tanggal</label><input v-model="jadwalFilter.from" type="date" class="input"></div>
+                                <div class="md:col-span-3"><label class="label">Sampai Tanggal</label><input v-model="jadwalFilter.to" type="date" class="input"></div>
+                                <div class="md:col-span-3"><label class="label">Status</label><select v-model="jadwalFilter.status" class="input"><option value="">Semua Status</option><option v-for="o in jadwalStatusOptions" :key="o" :value="o">{{ o }}</option></select></div>
+                                <div class="md:col-span-6"><label class="label">Cari</label><input v-model="jadwalFilter.q" class="input" placeholder="Jadwal ID, BA ID, kegiatan, atau dosen..."></div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-500">{{ jadwalTotalCount }} sesi</span>
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">{{ jadwalSesuaiCount }} sesuai</span>
+                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700">{{ jadwalBelumCount }} belum</span>
+                                <span class="rounded-full bg-violet-50 px-2.5 py-0.5 font-semibold text-violet-700">{{ jadwalExtraCount }} extra</span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                                <div><div class="font-bold text-slate-800">Jadwal vs Realisasi</div><div class="text-xs text-slate-400">Perbandingan sesi jadwal pelaksanaan dengan BA realisasi</div></div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportJadwalRealisasi"><i class="bi bi-file-earmark-excel"></i> Export XLSX</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Jadwal</th>
+                                            <th class="px-3 py-2.5 text-left">Dosen Jadwal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta Jadwal</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Realisasi</th>
+                                            <th class="px-3 py-2.5 text-left">Dosen Realisasi</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta BA</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="r in jadwalRealisasiFiltered" :key="r.key" class="border-t border-slate-50">
+                                            <td class="px-3 py-2.5 text-slate-800">{{ r.kegiatan || '-' }}<span v-if="r.label" class="text-slate-400"> · {{ r.label }}</span></td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-700">{{ r.bagian }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-slate-600"><span v-if="r.jadwalTanggal">{{ fmtTanggal(r.jadwalTanggal) }}</span><span v-else class="text-slate-300">-</span><span v-if="r.jadwalJam" class="text-slate-400"> {{ r.jadwalJam }}</span></td>
+                                            <td class="px-3 py-2.5 text-slate-600">{{ r.jadwalDosen || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.jenis === 'Extra' ? '-' : r.jadwalPesertaCount }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span v-if="r.baId" class="font-mono text-xs text-slate-700">{{ r.baId }}</span><span v-else class="text-slate-300">-</span><span v-if="r.baTanggal" class="text-slate-400"> · {{ fmtTanggal(r.baTanggal) }}</span><span v-if="r.baJam" class="text-slate-400"> {{ r.baJam }}</span></td>
+                                            <td class="px-3 py-2.5 text-slate-600">{{ r.baDosen || '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.baId ? r.baPesertaCount : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.status === 'Sesuai' ? 'bg-emerald-50 text-emerald-700' : (r.status === 'Belum' ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-violet-700')">{{ r.status }}</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-if="!jadwalRealisasiFiltered.length" class="px-4 py-14 text-center">
+                                    <i class="bi bi-calendar2-x text-3xl text-slate-300"></i>
+                                    <p class="mt-3 text-sm text-slate-400">Tidak ada data jadwal/realisasi.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <section v-if="activeTab === 'bayar'" class="space-y-4">
                         <div v-if="loading" class="space-y-4">
                             <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
@@ -1077,6 +1223,9 @@
                                 <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">{{ pembayaranSummary.sudah }} sudah ada bukti</span>
                                 <span class="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700">{{ pembayaranSummary.belum }} belum ada bukti</span>
                                 <span class="rounded-full bg-teal-50 px-2.5 py-0.5 font-semibold text-teal-700">Total {{ fmtRupiah(pembayaranSummary.biaya) }}</span>
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">{{ pembayaranSummary.valid }} valid</span>
+                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-amber-700">{{ pembayaranSummary.menunggu }} menunggu</span>
+                                <span class="rounded-full bg-rose-50 px-2.5 py-0.5 font-semibold text-rose-700">{{ pembayaranSummary.belumBayar }} belum bayar</span>
                             </div>
                         </div>
 
@@ -1151,10 +1300,12 @@
                                                             <span class="text-slate-400">{{ it.blok }}</span>
                                                             <span class="text-slate-400">{{ it.tanggal ? fmtTanggalWaktu(it.tanggal) : '-' }}</span>
                                                             <span :class="statusChipCls(it.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ it.status }}</span>
+                                                            <span :class="bayarBadgeCls(it.statusPembayaran)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ bayarLabel(it.statusPembayaran) }}</span>
                                                             <span class="whitespace-nowrap font-semibold text-teal-700">{{ fmtRupiah(it.biaya) }}</span>
                                                             <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="link ml-auto whitespace-nowrap" @pointerenter="onBuktiEnter($event, it.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a>
                                                             <span v-else class="ml-auto text-slate-300">Belum ada bukti</span>
                                                             <a v-if="it.linkAcc" :href="it.linkAcc" target="_blank" class="link whitespace-nowrap" @click.stop><i class="bi bi-patch-check"></i> ACC INHAL</a>
+                                                            <button type="button" class="btn-soft !py-1 px-2 text-[11px]" @click.stop="openPeriksa(it)"><i class="bi bi-search"></i> Periksa</button>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -1165,6 +1316,108 @@
                             </div>
                         </div>
                         </template>
+
+                    <div v-if="periksa.open && periksa.item" class="fixed inset-0 z-50 flex justify-end bg-slate-900/40" @click.self="closePeriksa">
+                        <aside class="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl">
+                            <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-5 py-4">
+                                <div>
+                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Periksa Pembayaran</div>
+                                    <div class="text-lg font-bold text-slate-800">{{ periksa.item.nama || '-' }}</div>
+                                    <div class="text-xs text-slate-500">{{ periksa.item.npm }} <span class="text-slate-300">|</span> {{ periksa.item.jenis }}<span v-if="periksa.item.detail"> - {{ periksa.item.detail }}</span></div>
+                                </div>
+                                <button type="button" class="btn-soft !p-2" aria-label="Tutup" @click="closePeriksa"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                            <div class="space-y-4 px-5 py-4">
+                                <div class="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs md:grid-cols-4">
+                                    <div><div class="text-slate-400">Tagihan</div><div class="mt-0.5 font-semibold text-slate-800">{{ fmtRupiah(periksa.item.biaya) }}</div></div>
+                                    <div><div class="text-slate-400">Status</div><div class="mt-0.5"><span :class="bayarBadgeCls(periksa.item.statusPembayaran)" class="rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ bayarLabel(periksa.item.statusPembayaran) }}</span></div></div>
+                                    <div><div class="text-slate-400">Blok</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.blok }}</div></div>
+                                    <div><div class="text-slate-400">Revisi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.revision }}</div></div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 p-3">
+                                    <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Bukti Bayar</div>
+                                    <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-soft" @pointerenter="onBuktiEnter($event, periksa.item.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-box-arrow-up-right"></i> Buka Bukti Bayar</a>
+                                    <span v-else class="text-sm text-slate-400">Belum ada bukti bayar.</span>
+                                </div>
+
+                                <div v-if="periksa.mode === 'view' && periksa.item.statusPembayaran === 'valid'" class="space-y-3">
+                                    <div class="grid grid-cols-1 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-xs sm:grid-cols-2">
+                                        <div><div class="text-slate-400">Nominal Diterima</div><div class="mt-0.5 text-base font-bold text-slate-800">{{ fmtRupiah(periksa.item.nominal) }}</div></div>
+                                        <div><div class="text-slate-400">Kesesuaian</div><div class="mt-0.5 font-semibold">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
+                                        <div><div class="text-slate-400">Tanggal Bayar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.tanggalBayar ? fmtTanggal(periksa.item.tanggalBayar) : '-' }}</div></div>
+                                        <div><div class="text-slate-400">Metode</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.metode || '-' }}</div></div>
+                                        <div><div class="text-slate-400">Diverifikasi Oleh</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.verifiedBy || '-' }}</div></div>
+                                        <div><div class="text-slate-400">Waktu Verifikasi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.verifiedAt ? fmtTanggalWaktu(periksa.item.verifiedAt) : '-' }}</div></div>
+                                    </div>
+                                    <div v-if="periksa.item.catatanVerifikasi" class="rounded-xl bg-slate-50 p-3 text-xs"><div class="text-slate-400">Catatan</div><div class="mt-1 text-slate-700">{{ periksa.item.catatanVerifikasi }}</div></div>
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
+                                        <button type="button" class="btn-primary" @click="openKoreksi"><i class="bi bi-pencil-square"></i> Koreksi</button>
+                                    </div>
+                                </div>
+
+                                <div v-else-if="periksa.mode === 'view'" class="space-y-3">
+                                    <div v-if="periksa.item.statusPembayaran === 'gratis'" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Pembayaran gratis, tidak perlu diverifikasi.</div>
+                                    <template v-else>
+                                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div><label class="label">Nominal Diterima</label><input v-model="periksa.form.nominal" type="number" min="0" class="input" @input="onNominalInput"></div>
+                                            <div><label class="label">Kesesuaian</label><input :value="bayarKesesuaianLabel(periksa.form.kesesuaian)" class="input bg-slate-50" readonly></div>
+                                            <div><label class="label">Tanggal Bayar</label><input v-model="periksa.form.tanggal" type="date" class="input"></div>
+                                            <div><label class="label">Metode</label><input v-model="periksa.form.metode" type="text" class="input" placeholder="Transfer, tunai, ..."></div>
+                                        </div>
+                                        <div><label class="label">Catatan Verifikasi</label><textarea v-model="periksa.form.catatan" rows="2" class="input" placeholder="Opsional"></textarea></div>
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
+                                            <button type="button" class="btn-primary" :disabled="periksa.saving" @click="submitValid"><i class="bi bi-check2-circle"></i> {{ periksa.saving ? 'Menyimpan...' : 'Valid' }}</button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div v-else class="space-y-3">
+                                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Koreksi tidak mengirim email. Semua admin Keuangan boleh melakukan koreksi.</div>
+                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        <label class="cursor-pointer rounded-xl border p-3 text-xs" :class="koreksi.mode === 'administratif' ? 'border-brand-400 bg-brand-50' : 'border-slate-200'">
+                                            <input v-model="koreksi.mode" type="radio" value="administratif" class="mr-1">
+                                            <span class="font-semibold text-slate-800">Koreksi administratif</span>
+                                            <div class="mt-1 text-slate-500">Ubah tanggal, metode, atau catatan. Status tetap Valid.</div>
+                                        </label>
+                                        <label class="cursor-pointer rounded-xl border p-3 text-xs" :class="koreksi.mode === 'buka_kembali' ? 'border-brand-400 bg-brand-50' : 'border-slate-200'">
+                                            <input v-model="koreksi.mode" type="radio" value="buka_kembali" class="mr-1">
+                                            <span class="font-semibold text-slate-800">Buka kembali</span>
+                                            <div class="mt-1 text-slate-500">Kembalikan ke antrean verifikasi. Status menjadi Menunggu.</div>
+                                        </label>
+                                    </div>
+                                    <div v-if="koreksi.mode === 'administratif'" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div><label class="label">Tanggal Bayar</label><input v-model="koreksi.tanggal" type="date" class="input"></div>
+                                        <div><label class="label">Metode</label><input v-model="koreksi.metode" type="text" class="input"></div>
+                                    </div>
+                                    <div v-if="koreksi.mode === 'administratif'"><label class="label">Catatan Verifikasi</label><textarea v-model="koreksi.catatan" rows="2" class="input"></textarea></div>
+                                    <div><label class="label">Alasan Koreksi <span class="text-rose-500">*</span></label><textarea v-model="koreksi.alasan" rows="3" class="input" placeholder="Wajib diisi minimal 5 karakter"></textarea></div>
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        <button type="button" class="btn-soft" @click="periksa.mode = 'view'">Batal</button>
+                                        <button type="button" class="btn-primary" :disabled="koreksi.saving" @click="submitKoreksi"><i class="bi bi-save"></i> {{ koreksi.saving ? 'Menyimpan...' : 'Simpan Koreksi' }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 p-3">
+                                    <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Riwayat Verifikasi &amp; Koreksi</div>
+                                    <div v-if="!bayarRevisiFor(periksa.item).length" class="text-xs text-slate-400">Belum ada riwayat.</div>
+                                    <div v-for="rev in bayarRevisiFor(periksa.item)" :key="'rev-' + rev.id" class="border-t border-slate-100 py-2 first:border-0 first:pt-0 text-xs">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <span class="font-semibold text-slate-700">{{ bayarModeLabel(rev.mode) }}</span>
+                                            <span class="text-slate-400">revisi {{ rev.revision }}</span>
+                                            <span class="text-slate-300">|</span>
+                                            <span class="text-slate-500">{{ rev.actor || '-' }}</span>
+                                            <span class="ml-auto text-slate-400">{{ rev.createdAt ? fmtTanggalWaktu(rev.createdAt) : '' }}</span>
+                                        </div>
+                                        <div v-if="rev.alasan" class="mt-1 text-slate-600">Alasan: {{ rev.alasan }}</div>
+                                        <div v-if="rev.nominalBaru !== null && rev.nominalBaru !== rev.nominalLama" class="mt-1 text-slate-500">Nominal: {{ fmtRupiah(rev.nominalLama || 0) }} menjadi {{ fmtRupiah(rev.nominalBaru) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
                     </section>
 
                     <teleport to="body">
@@ -1359,7 +1612,7 @@
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Bukti Bayar</div>
-                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="r.pengajuan['Link Bukti Bayar']" target="_blank" class="link">Lihat</a>
+                            <a v-if="r.pengajuan['Link Bukti Bayar']" :href="r.pengajuan['Link Bukti Bayar']" target="_blank" rel="noopener noreferrer" class="link" @pointerenter="onBuktiEnter($event, r.pengajuan['Link Bukti Bayar'], 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()">Lihat</a>
                             <span v-else class="text-slate-300">-</span>
                         </div>
                         <div><div class="label">Link Final</div>
@@ -1426,12 +1679,17 @@
                         { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
                         { key: 'bagian', label: 'Laporan Bagian', icon: 'bi-diagram-3' },
                         { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
+                        { key: 'daftarba', label: 'Daftar BA', icon: 'bi-table' },
+                        { key: 'jadwal', label: 'Jadwal vs Realisasi', icon: 'bi-calendar2-check' },
                         { key: 'bayar', label: 'Data Pembayaran', icon: 'bi-cash-coin' }
                     ],
                     summary: {},
                     rows: [],
                     beritaAcara: [],
+                    beritaAcaraAdmin: [],
+                    jadwal: [],
                     dosen: [],
+                    dosenOptions: [],
                     blok: [],
                     bagian: { categories: [], labs: [] },
                     filters: { from: '', to: '', blok: '', status: '', jenis: '', search: '', bagian: '' },
@@ -1440,7 +1698,12 @@
                     activeDosenCell: null,
                     bagianFilter: { bagian: '', blok: '', q: '' },
                     baFilter: { bagian: '', blok: '', q: '' },
+                    baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '' },
+                    jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { q: '', status: '', kelengkapan: '' },
+                    pembayaranRevisi: [],
+                    periksa: { open: false, mode: 'view', saving: false, item: null, form: { nominal: '', tanggal: '', metode: '', kesesuaian: '', catatan: '' } },
+                    koreksi: { mode: 'administratif', saving: false, alasan: '', tanggal: '', metode: '', catatan: '' },
                     baMenu: { open: false, type: '', items: [], top: 0, left: 0, hover: false },
                     baMenuTimer: null,
                     baMenuCloseTimer: null,
@@ -1596,14 +1859,27 @@
                         const npm = String(p.NPM || '').trim();
                         if (!npm) return;
                         if (!map[npm]) map[npm] = { npm: npm, nama: String(p['Nama Lengkap'] || '').trim(), items: [] };
+                        const biaya = Number(p.Biaya) || 0;
+                        const linkBukti = String(p['Link Bukti Bayar'] || '').trim();
+                        let statusPembayaran = String(p['Status Pembayaran'] || '').trim();
+                        if (!statusPembayaran) statusPembayaran = biaya <= 0 ? 'gratis' : (linkBukti ? 'menunggu' : 'belum');
                         map[npm].items.push({
                             id: p['ID Pengajuan'] || '',
                             jenis: String(p['Jenis Kegiatan'] || '').trim() || '-',
                             blok: String(p.Blok || '').trim() || '-',
                             tanggal: p['Tanggal Pelaksanaan'] || '',
                             status: String(p.Status || '').trim() || '-',
-                            biaya: Number(p.Biaya) || 0,
-                            linkBukti: String(p['Link Bukti Bayar'] || '').trim(),
+                            statusPembayaran: statusPembayaran,
+                            kesesuaian: String(p['Kesesuaian Pembayaran'] || '').trim(),
+                            nominal: Number(p['Nominal Dibayar']) || 0,
+                            tanggalBayar: String(p['Tanggal Bayar'] || '').trim(),
+                            metode: String(p['Metode Bayar'] || '').trim(),
+                            catatanVerifikasi: String(p['Catatan Verifikasi'] || '').trim(),
+                            verifiedAt: String(p['Verified At'] || '').trim(),
+                            verifiedBy: String(p['Verified By'] || '').trim(),
+                            revision: Number(p['Payment Revision']) || 0,
+                            biaya: biaya,
+                            linkBukti: linkBukti,
                             linkAcc: String(p['Link ACC INHAL'] || '').trim(),
                             baPendukung: Array.isArray(r.baPendukung) ? r.baPendukung : [],
                             baPelaksanaan: Array.isArray(r.baPelaksanaan) ? r.baPelaksanaan : []
@@ -1647,11 +1923,17 @@
                 pembayaranSummary() {
                     const list = this.pembayaranFiltered;
                     const sudah = list.filter(m => m.jumlahBukti > 0).length;
+                    const items = list.reduce((acc, m) => acc.concat(m.items || []), []);
+                    const count = s => items.filter(it => it.statusPembayaran === s).length;
                     return {
                         total: list.length,
                         sudah: sudah,
                         belum: list.length - sudah,
-                        biaya: list.reduce((t, m) => t + m.totalBiaya, 0)
+                        biaya: list.reduce((t, m) => t + m.totalBiaya, 0),
+                        valid: count('valid'),
+                        menunggu: count('menunggu'),
+                        gratis: count('gratis'),
+                        belumBayar: count('belum')
                     };
                 },
                 bagianBlokOptions() {
@@ -1941,6 +2223,189 @@
                     this.bagianDetailRows.forEach(r => r.peserta.forEach(p => { const key = (p.npm || p.namaLengkap || '').toLowerCase(); if (key) seen[key] = 1; }));
                     return Object.keys(seen).length;
                 },
+                daftarBaRows() {
+                    const out = [];
+                    const push = (b, jenis, sumber) => {
+                        const peserta = Array.isArray(b.peserta) ? b.peserta : [];
+                        const fileUrl = String(b['File URL'] || '').trim();
+                        const tanggal = String(b['Tanggal Pelaksanaan'] || '').trim();
+                        out.push({
+                            id: String(b['BA ID'] || '').trim(),
+                            jenis: jenis,
+                            sumber: sumber,
+                            bagian: this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya',
+                            blok: String(b.Blok || '').trim(),
+                            kegiatan: String(b['Nama Kegiatan'] || '').trim(),
+                            label: String(b.Label || '').trim(),
+                            tanggal: tanggal,
+                            tanggalEfektif: tanggal,
+                            jam: String(b.Jam || '').trim(),
+                            dosen: String(b.Dosen || '').trim(),
+                            pesertaCount: peserta.length,
+                            dibuat: String(b.Timestamp || '').trim(),
+                            fileUrl: fileUrl,
+                            baseFileUrl: String(b['Base File URL'] || '').trim(),
+                            berkasAda: !!fileUrl,
+                            lengkap: !!fileUrl && peserta.length > 0
+                        });
+                    };
+                    (this.beritaAcara || []).forEach(b => push(b, 'Pelaksanaan', 'Bagian'));
+                    (this.beritaAcaraAdmin || []).forEach(b => push(b, 'Pendukung', 'Admin'));
+                    return out.sort((a, b) => String(b.dibuat || '').localeCompare(String(a.dibuat || '')) || a.id.localeCompare(b.id));
+                },
+                filteredDaftarBa() {
+                    const f = this.baListFilter;
+                    const blok = String(this.filters.blok || '').trim();
+                    const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
+                    const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    const dosen = f.dosen ? this.normSearch(f.dosen) : '';
+                    const q = this.normSearch(this.filters.search);
+                    return this.daftarBaRows.filter(r => {
+                        if (f.bagian && this.normBagian(r.bagian) !== this.normBagian(f.bagian)) return false;
+                        if (blok && String(r.blok || '').trim() !== blok) return false;
+                        if (f.jenis && r.jenis !== f.jenis) return false;
+                        if (f.sumber && r.sumber !== f.sumber) return false;
+                        if (f.kelengkapan === 'Lengkap' && !r.lengkap) return false;
+                        if (f.kelengkapan === 'Draft' && r.lengkap) return false;
+                        if (dosen && this.normSearch(r.dosen).indexOf(dosen) === -1) return false;
+                        if (fromD || toD) {
+                            const d = this.dateVal(r.tanggalEfektif);
+                            if (!d || (fromD && d < fromD) || (toD && d > toD)) return false;
+                        }
+                        if (q) {
+                            const hay = [r.id, r.kegiatan, r.bagian, r.blok, r.label, r.dosen].map(x => this.normSearch(x)).join(' ');
+                            if (hay.indexOf(q) === -1) return false;
+                        }
+                        return true;
+                    });
+                },
+                daftarBaBagianOptions() {
+                    const set = {};
+                    this.daftarBaRows.forEach(r => { if (r.bagian) set[r.bagian] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                daftarBaJenisOptions() {
+                    return ['Pendukung', 'Pelaksanaan'];
+                },
+                daftarBaSumberOptions() {
+                    const set = {};
+                    this.daftarBaRows.forEach(r => { if (r.sumber) set[r.sumber] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                daftarBaLengkapCount() {
+                    return this.filteredDaftarBa.filter(r => r.lengkap).length;
+                },
+                daftarBaDraftCount() {
+                    return this.filteredDaftarBa.filter(r => !r.lengkap).length;
+                },
+                daftarBaUnitCount() {
+                    const set = {};
+                    this.filteredDaftarBa.forEach(r => { set[this.normBagian(r.bagian) + '::' + (r.blok || '') + '::' + r.kegiatan] = 1; });
+                    return Object.keys(set).length;
+                },
+                baPelaksanaanIndex() {
+                    const map = {};
+                    (this.beritaAcara || []).forEach(b => {
+                        const id = String(b['BA ID'] || '').trim();
+                        if (id) map[id] = b;
+                    });
+                    return map;
+                },
+                jadwalRealisasiRows() {
+                    const idx = this.baPelaksanaanIndex;
+                    return (this.jadwal || []).map(j => {
+                        const b = j.baId ? idx[j.baId] : null;
+                        return {
+                            jenis: 'Jadwal',
+                            key: 'J-' + j.jadwalId,
+                            jadwalId: j.jadwalId || '',
+                            baId: j.baId || '',
+                            bagian: j.bagian || '',
+                            blok: j.blok || '',
+                            kegiatan: j.namaKegiatan || j.label || '',
+                            label: j.label || '',
+                            jadwalTanggal: j.tanggal || '',
+                            jadwalJam: j.jam || '',
+                            jadwalDosen: j.dosen || '',
+                            jadwalPesertaCount: (j.peserta || []).length,
+                            baTanggal: b ? (b['Tanggal Pelaksanaan'] || '') : '',
+                            baJam: b ? (b.Jam || '') : '',
+                            baDosen: b ? (b.Dosen || '') : '',
+                            baPesertaCount: b ? ((b.peserta || []).length || 0) : 0,
+                            status: j.baId ? 'Sesuai' : 'Belum'
+                        };
+                    });
+                },
+                jadwalExtraRows() {
+                    const out = [];
+                    (this.beritaAcara || []).forEach(b => {
+                        if (String(b['Jadwal ID'] || '').trim()) return;
+                        out.push({
+                            jenis: 'Extra',
+                            key: 'E-' + (b['BA ID'] || ''),
+                            jadwalId: '',
+                            baId: b['BA ID'] || '',
+                            bagian: b.Bagian || '',
+                            blok: b.Blok || '',
+                            kegiatan: b['Nama Kegiatan'] || '',
+                            label: b.Label || '',
+                            jadwalTanggal: '', jadwalJam: '', jadwalDosen: '', jadwalPesertaCount: 0,
+                            baTanggal: b['Tanggal Pelaksanaan'] || '',
+                            baJam: b.Jam || '',
+                            baDosen: b.Dosen || '',
+                            baPesertaCount: (b.peserta || []).length,
+                            status: 'Extra'
+                        });
+                    });
+                    return out;
+                },
+                jadwalRealisasiAll() {
+                    return this.jadwalRealisasiRows.concat(this.jadwalExtraRows);
+                },
+                jadwalRealisasiFiltered() {
+                    const f = this.jadwalFilter;
+                    const fromD = f.from ? this.dateVal(f.from) : null;
+                    const toD = f.to ? this.dateVal(f.to) : null;
+                    if (toD) toD.setHours(23, 59, 59, 999);
+                    const q = this.normSearch(f.q);
+                    return this.jadwalRealisasiAll.filter(r => {
+                        if (f.bagian && this.normBagian(r.bagian) !== this.normBagian(f.bagian)) return false;
+                        if (f.blok && String(r.blok || '').trim() !== f.blok) return false;
+                        if (f.status && r.status !== f.status) return false;
+                        const dRef = r.jenis === 'Extra' ? r.baTanggal : r.jadwalTanggal;
+                        if (fromD || toD) {
+                            const d = this.dateVal(dRef);
+                            if (!d || (fromD && d < fromD) || (toD && d > toD)) return false;
+                        }
+                        if (q) {
+                            const hay = [r.jadwalId, r.baId, r.kegiatan, r.bagian, r.blok, r.label, r.jadwalDosen, r.baDosen].map(x => this.normSearch(x)).join(' ');
+                            if (hay.indexOf(q) === -1) return false;
+                        }
+                        return true;
+                    });
+                },
+                jadwalBagianOptions() {
+                    const set = {};
+                    this.jadwalRealisasiAll.forEach(r => { if (r.bagian) set[r.bagian] = 1; });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                jadwalBlokOptions() {
+                    const set = {};
+                    this.jadwalRealisasiAll.forEach(r => {
+                        if (!r.blok) return;
+                        if (this.jadwalFilter.bagian && this.normBagian(r.bagian) !== this.normBagian(this.jadwalFilter.bagian)) return;
+                        set[r.blok] = 1;
+                    });
+                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
+                },
+                jadwalStatusOptions() {
+                    return ['Sesuai', 'Belum', 'Extra'];
+                },
+                jadwalTotalCount() { return this.jadwalRealisasiFiltered.length; },
+                jadwalSesuaiCount() { return this.jadwalRealisasiFiltered.filter(r => r.status === 'Sesuai').length; },
+                jadwalBelumCount() { return this.jadwalRealisasiFiltered.filter(r => r.status === 'Belum').length; },
+                jadwalExtraCount() { return this.jadwalRealisasiFiltered.filter(r => r.status === 'Extra').length; },
                 baBlokOptions() {
                     const set = {};
                     const sel = this.baFilter.bagian;
@@ -2142,6 +2607,166 @@
                 },
                 normSearch(s) {
                     return String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
+                },
+                bayarLabel(status) {
+                    if (status === 'valid') return 'Valid';
+                    if (status === 'menunggu') return 'Menunggu Verifikasi';
+                    if (status === 'gratis') return 'Gratis';
+                    return 'Belum Bayar';
+                },
+                bayarBadgeCls(status) {
+                    if (status === 'valid') return 'bg-emerald-50 text-emerald-700';
+                    if (status === 'menunggu') return 'bg-amber-50 text-amber-700';
+                    if (status === 'belum') return 'bg-rose-50 text-rose-700';
+                    return 'bg-slate-100 text-slate-500';
+                },
+                bayarKesesuaianLabel(value) {
+                    if (value === 'pas') return 'Pas';
+                    if (value === 'kurang') return 'Kurang';
+                    if (value === 'lebih') return 'Lebih';
+                    return '-';
+                },
+                bayarModeLabel(mode) {
+                    if (mode === 'administratif') return 'Koreksi administratif';
+                    if (mode === 'buka_kembali') return 'Buka kembali';
+                    return 'Verifikasi';
+                },
+                bayarRevisiFor(item) {
+                    if (!item) return [];
+                    return this.pembayaranRevisi
+                        .filter(r => r.idPengajuan === item.id)
+                        .slice()
+                        .sort((a, b) => Number(b.revision) - Number(a.revision));
+                },
+                bayarToday() {
+                    const d = new Date();
+                    const p = n => String(n).padStart(2, '0');
+                    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+                },
+                hitungKesesuaian(nominal, tagihan) {
+                    const n = Number(nominal) || 0;
+                    const t = Number(tagihan) || 0;
+                    if (n === t) return 'pas';
+                    return n < t ? 'kurang' : 'lebih';
+                },
+                onNominalInput() {
+                    this.periksa.form.kesesuaian = this.hitungKesesuaian(this.periksa.form.nominal, this.periksa.item ? this.periksa.item.biaya : 0);
+                },
+                openPeriksa(it) {
+                    if (!it) return;
+                    const nominal = it.statusPembayaran === 'valid' ? it.nominal : (it.nominal || it.biaya);
+                    this.periksa.open = true;
+                    this.periksa.mode = 'view';
+                    this.periksa.saving = false;
+                    this.periksa.item = it;
+                    this.periksa.form = {
+                        nominal: nominal ? String(nominal) : '',
+                        tanggal: it.tanggalBayar || this.bayarToday(),
+                        metode: it.metode || '',
+                        kesesuaian: it.kesesuaian || this.hitungKesesuaian(nominal, it.biaya),
+                        catatan: it.catatanVerifikasi || ''
+                    };
+                    this.koreksi = {
+                        mode: 'administratif', saving: false, alasan: '',
+                        tanggal: it.tanggalBayar || '', metode: it.metode || '', catatan: it.catatanVerifikasi || ''
+                    };
+                },
+                closePeriksa() {
+                    this.periksa.open = false;
+                    this.periksa.mode = 'view';
+                    this.periksa.item = null;
+                },
+                openKoreksi() {
+                    const it = this.periksa.item;
+                    if (!it) return;
+                    this.koreksi = {
+                        mode: 'administratif', saving: false, alasan: '',
+                        tanggal: it.tanggalBayar || this.bayarToday(),
+                        metode: it.metode || '', catatan: it.catatanVerifikasi || ''
+                    };
+                    this.periksa.mode = 'koreksi';
+                },
+                async submitValid() {
+                    const it = this.periksa.item;
+                    if (!it) return;
+                    if (!it.linkBukti) {
+                        this.showToast('bi-x-circle', 'Belum ada bukti bayar untuk diverifikasi.');
+                        return;
+                    }
+                    const nominal = Number(this.periksa.form.nominal);
+                    if (!(nominal > 0)) {
+                        this.showToast('bi-x-circle', 'Nominal diterima harus lebih dari nol.');
+                        return;
+                    }
+                    this.periksa.saving = true;
+                    try {
+                        const res = await this.run('verifyPembayaran', {
+                            idPengajuan: it.id,
+                            nominal: nominal,
+                            tanggal: this.periksa.form.tanggal,
+                            metode: this.periksa.form.metode,
+                            kesesuaian: this.periksa.form.kesesuaian,
+                            catatan: this.periksa.form.catatan,
+                            expectedRevision: it.revision
+                        });
+                        if (!res || !res.success) {
+                            this.showToast('bi-x-circle', (res && res.message) || 'Gagal memvalidasi pembayaran.');
+                            return;
+                        }
+                        this.showToast('bi-check-circle', (res && res.message) || 'Pembayaran divalidasi.');
+                        await this.loadData();
+                        const fresh = this._findPembayaranItem(it.id);
+                        if (fresh) this.periksa.item = fresh;
+                        this.periksa.mode = 'view';
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + (e || 'Terjadi kesalahan.'));
+                    } finally {
+                        this.periksa.saving = false;
+                    }
+                },
+                _findPembayaranItem(id) {
+                    for (const m of this.pembayaranRows) {
+                        const found = m.items.find(x => x.id === id);
+                        if (found) return found;
+                    }
+                    return null;
+                },
+                async submitKoreksi() {
+                    const it = this.periksa.item;
+                    if (!it) return;
+                    const alasan = String(this.koreksi.alasan || '').trim();
+                    if (alasan.length < 5) {
+                        this.showToast('bi-x-circle', 'Alasan koreksi wajib diisi minimal 5 karakter.');
+                        return;
+                    }
+                    const payload = {
+                        idPengajuan: it.id,
+                        mode: this.koreksi.mode,
+                        alasan: alasan,
+                        expectedRevision: it.revision
+                    };
+                    if (this.koreksi.mode === 'administratif') {
+                        payload.tanggal = this.koreksi.tanggal;
+                        payload.metode = this.koreksi.metode;
+                        payload.catatan = this.koreksi.catatan;
+                    }
+                    this.koreksi.saving = true;
+                    try {
+                        const res = await this.run('correctPembayaran', payload);
+                        if (!res || !res.success) {
+                            this.showToast('bi-x-circle', (res && res.message) || 'Gagal menyimpan koreksi.');
+                            return;
+                        }
+                        this.showToast('bi-check-circle', (res && res.message) || 'Koreksi disimpan.');
+                        await this.loadData();
+                        const fresh = this._findPembayaranItem(it.id);
+                        if (fresh) this.periksa.item = fresh;
+                        this.periksa.mode = 'view';
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + (e || 'Terjadi kesalahan.'));
+                    } finally {
+                        this.koreksi.saving = false;
+                    }
                 },
                 statusList(m) {
                     const seen = {};
@@ -2442,7 +3067,11 @@
                         this.summary = data.summary || {};
                         this.rows = data.rows || [];
                         this.beritaAcara = data.beritaAcara || [];
+                        this.beritaAcaraAdmin = data.beritaAcaraAdmin || [];
+                        this.jadwal = data.jadwal || [];
+                        this.pembayaranRevisi = data.pembayaranRevisi || [];
                         this.dosen = data.dosen || [];
+                        this.dosenOptions = data.dosenOptions || [];
                         this.blok = data.blok || [];
                         this.bagian = data.bagian || { categories: [], labs: [] };
                         this.expanded = {};
@@ -2455,7 +3084,11 @@
                         this.summary = {};
                         this.rows = [];
                         this.beritaAcara = [];
+                        this.beritaAcaraAdmin = [];
+                        this.jadwal = [];
+                        this.pembayaranRevisi = [];
                         this.dosen = [];
+                        this.dosenOptions = [];
                         this.blok = [];
                         this.bagian = { categories: [], labs: [] };
                         this.showToast('bi-x-circle', 'Gagal memuat data: ' + (e || 'Terjadi kesalahan.'));
@@ -2655,6 +3288,110 @@
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Rekap Dosen');
                             XLSX.writeFile(wb, 'Rekap-Dosen-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export matriks dosen berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                async deleteBaAdmin(baId) {
+                    if (!baId) return;
+                    if (!window.confirm('Hapus BA pendukung ' + baId + '? File di Drive juga akan dipindahkan ke sampah.')) return;
+                    try {
+                        const res = await this.run('deleteBeritaAcaraAdmin', baId);
+                        if (!res || !res.success) {
+                            this.showToast('bi-x-circle', (res && res.message) || 'Gagal menghapus BA.');
+                            return;
+                        }
+                        this.showToast('bi-check-circle', (res && res.message) || 'BA pendukung dihapus.');
+                        await this.loadData();
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + (e || 'Terjadi kesalahan.'));
+                    }
+                },
+                async deleteBaBagian(baId) {
+                    if (!baId) return;
+                    if (!window.confirm('Hapus BA pelaksanaan ' + baId + '? File di Drive juga akan dipindahkan ke sampah.')) return;
+                    try {
+                        const res = await this.run('deleteBeritaAcaraBagian', baId);
+                        if (!res || !res.success) {
+                            this.showToast('bi-x-circle', (res && res.message) || 'Gagal menghapus BA.');
+                            return;
+                        }
+                        this.showToast('bi-check-circle', (res && res.message) || 'BA pelaksanaan dihapus.');
+                        await this.loadData();
+                    } catch (e) {
+                        this.showToast('bi-x-circle', 'Gagal: ' + (e || 'Terjadi kesalahan.'));
+                    }
+                },
+                exportDaftarBa() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const rows = this.filteredDaftarBa.map(r => ({
+                                'BA ID': r.id,
+                                'Jenis': r.jenis,
+                                'Bagian': r.bagian,
+                                'Blok': r.blok || '',
+                                'Kegiatan': r.kegiatan || '',
+                                'Label': r.label || '',
+                                'Tanggal': r.tanggal ? fmtTanggal(r.tanggal) : '',
+                                'Jam': r.jam || '',
+                                'Dosen': r.dosen || '',
+                                'Peserta': r.pesertaCount,
+                                'Sumber': r.sumber,
+                                'Dibuat': r.dibuat ? fmtTanggalWaktu(r.dibuat) : '',
+                                'Kelengkapan': r.lengkap ? 'Lengkap' : 'Draft',
+                                'Berkas': r.berkasAda ? 'Ada' : 'Hilang',
+                                'File URL': r.fileUrl || '',
+                                'Base File URL': r.baseFileUrl || ''
+                            }));
+                            const ws = XLSX.utils.json_to_sheet(rows);
+                            setUrlHyperlinks(ws, 'File URL', 'Buka file berita acara');
+                            setUrlHyperlinks(ws, 'Base File URL', 'Buka file dasar');
+                            XLSX.utils.book_append_sheet(wb, ws, 'Daftar BA');
+                            XLSX.writeFile(wb, 'Daftar-BA-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export daftar BA berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportJadwalRealisasi() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const rows = this.jadwalRealisasiFiltered.map(r => ({
+                                'Kegiatan': r.kegiatan || '',
+                                'Label': r.label || '',
+                                'Bagian': r.bagian || '',
+                                'Blok': r.blok || '',
+                                'Jadwal ID': r.jadwalId || '',
+                                'Tanggal Jadwal': r.jadwalTanggal ? fmtTanggal(r.jadwalTanggal) : '',
+                                'Jam Jadwal': r.jadwalJam || '',
+                                'Dosen Jadwal': r.jadwalDosen || '',
+                                'Peserta Jadwal': r.jenis === 'Extra' ? '' : r.jadwalPesertaCount,
+                                'BA ID': r.baId || '',
+                                'Tanggal BA': r.baTanggal ? fmtTanggal(r.baTanggal) : '',
+                                'Jam BA': r.baJam || '',
+                                'Dosen BA': r.baDosen || '',
+                                'Peserta BA': r.baId ? r.baPesertaCount : '',
+                                'Status': r.status
+                            }));
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Jadwal vs Realisasi');
+                            XLSX.writeFile(wb, 'Jadwal-vs-Realisasi-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export jadwal vs realisasi berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {
