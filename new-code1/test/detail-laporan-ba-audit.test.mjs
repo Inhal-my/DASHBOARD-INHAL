@@ -30,4 +30,15 @@ describe('detail laporan pemeriksaan BA pelaksanaan', () => {
     assert.match(html, /r\.sesiKe/);
     assert.match(html, /Kemungkinan duplikat/);
   });
+
+  it('helper sesi berparameter berada di methods, bukan computed', () => {
+    const computed = html.slice(html.lastIndexOf('computed: {'), html.lastIndexOf('methods: {'));
+    const methods = html.slice(html.lastIndexOf('methods: {'));
+    assert.doesNotMatch(computed, /baAuditGroupFor\(g\)\s*\{/);
+    assert.doesNotMatch(computed, /baAuditSessions\(g\)\s*\{/);
+    assert.doesNotMatch(computed, /baAuditSessionFor\(baId\)\s*\{/);
+    assert.match(methods, /baAuditGroupFor\(g\)\s*\{/);
+    assert.match(methods, /baAuditSessions\(g\)\s*\{/);
+    assert.match(methods, /baAuditSessionFor\(baId\)\s*\{/);
+  });
 });

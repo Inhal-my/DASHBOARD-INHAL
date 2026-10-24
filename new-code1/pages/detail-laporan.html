@@ -2573,29 +2573,6 @@
                     });
                     return out;
                 },
-                baAuditGroupFor(g) {
-                    const norm = v => String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
-                    const nama = norm(g.nama);
-                    const blok = String(g.blok || '').trim();
-                    return (this.baAudit.rows || []).find(a => {
-                        if (this.normBagian(a.bagian) !== this.normBagian(g.bagian)) return false;
-                        if (String(a.blok || '').trim() !== blok) return false;
-                        const an = norm(a.kegiatan);
-                        return an === nama || an.indexOf(nama) !== -1 || nama.indexOf(an) !== -1;
-                    }) || null;
-                },
-                baAuditSessions(g) {
-                    return (g && g.baAudit && g.baAudit.sesi) ? g.baAudit.sesi : [];
-                },
-                baAuditSessionFor(baId) {
-                    const id = String(baId || '').trim();
-                    if (!id) return null;
-                    for (const a of (this.baAudit.rows || [])) {
-                        const x = (a.sesi || []).find(v => String(v.baId || '').trim() === id);
-                        if (x) return Object.assign({}, x, { jumlahSesi: a.jumlahSesi, statusKegiatan: a.status });
-                    }
-                    return null;
-                },
                 filteredBaTab() {
                     const bagian = this.baFilter.bagian;
                     const blok = this.baFilter.blok;
@@ -2699,6 +2676,29 @@
                 statusBadgeCls,
                 statusChipCls,
                 statusColor,
+                baAuditGroupFor(g) {
+                    const norm = v => String(v || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const nama = norm(g.nama);
+                    const blok = String(g.blok || '').trim();
+                    return (this.baAudit.rows || []).find(a => {
+                        if (this.normBagian(a.bagian) !== this.normBagian(g.bagian)) return false;
+                        if (String(a.blok || '').trim() !== blok) return false;
+                        const an = norm(a.kegiatan);
+                        return an === nama || an.indexOf(nama) !== -1 || nama.indexOf(an) !== -1;
+                    }) || null;
+                },
+                baAuditSessions(g) {
+                    return (g && g.baAudit && g.baAudit.sesi) ? g.baAudit.sesi : [];
+                },
+                baAuditSessionFor(baId) {
+                    const id = String(baId || '').trim();
+                    if (!id) return null;
+                    for (const a of (this.baAudit.rows || [])) {
+                        const x = (a.sesi || []).find(v => String(v.baId || '').trim() === id);
+                        if (x) return Object.assign({}, x, { jumlahSesi: a.jumlahSesi, statusKegiatan: a.status });
+                    }
+                    return null;
+                },
                 run(fn, ...args) {
                     if (this.session && this.session.token) args.push(this.session.token);
                     return new Promise((resolve, reject) => {

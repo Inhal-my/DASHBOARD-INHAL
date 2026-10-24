@@ -135,4 +135,15 @@ describe('daftar BA: export xlsx', () => {
     expect(html).toContain("'Rekap per Unit'");
     expect(html).toContain('Export XLSX');
   });
+
+  it('helper sesi berparameter berada di methods, bukan computed', async () => {
+    const res = await env.ASSETS.fetch(new Request('https://example.com/detail-laporan.html'));
+    const html = await res.text();
+    const computed = html.slice(html.lastIndexOf('computed: {'), html.lastIndexOf('methods: {'));
+    const methods = html.slice(html.lastIndexOf('methods: {'));
+    expect(computed).not.toMatch(/baAuditSessions\(r\)\s*\{/);
+    expect(computed).not.toMatch(/baAuditSessionFor\(unit, baId\)\s*\{/);
+    expect(methods).toMatch(/baAuditSessions\(r\)\s*\{/);
+    expect(methods).toMatch(/baAuditSessionFor\(unit, baId\)\s*\{/);
+  });
 });

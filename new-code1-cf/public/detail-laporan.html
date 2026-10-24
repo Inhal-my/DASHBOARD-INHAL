@@ -3558,14 +3558,6 @@
                     });
                     return out;
                 },
-                baAuditSessions(r) {
-                    return (r && r.baAudit && r.baAudit.sesi) ? r.baAudit.sesi : [];
-                },
-                baAuditSessionFor(unit, baId) {
-                    const audit = unit && unit.baAudit;
-                    if (!audit) return null;
-                    return (audit.sesi || []).find((s) => s.baId === String(baId || '').trim()) || null;
-                },
                 baKegiatanPendukungTotal() {
                     return this.baKegiatanRows.reduce((t, r) => t + (r.baPendukung || []).length, 0);
                 },
@@ -3795,6 +3787,14 @@
                 activeTab: function () { this.closeBuktiPreview(); this.closeBaMenu(); this.filterSheetOpen = false; },
             },
             methods: {
+                baAuditSessions(r) {
+                    return (r && r.baAudit && r.baAudit.sesi) ? r.baAudit.sesi : [];
+                },
+                baAuditSessionFor(unit, baId) {
+                    const audit = unit && unit.baAudit;
+                    if (!audit) return null;
+                    return (audit.sesi || []).find((s) => s.baId === String(baId || '').trim()) || null;
+                },
                 toggleSidebar() { this.sidebarCollapsed = !this.sidebarCollapsed; },
                 toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; },
                 switchTab(key) {
