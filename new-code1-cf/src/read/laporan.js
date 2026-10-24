@@ -2,6 +2,7 @@ import { requireAdmin } from '../session.js';
 import { toClientRow } from './columns.js';
 import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, resolveBagian12, kegiatanKey } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
+import { buildBaPelaksanaanAudit } from './baAudit.js';
 
 function baSumber(r) {
   const s = String((r && r.Sumber) || '').trim().toLowerCase();
@@ -209,6 +210,7 @@ export async function getLaporanBootstrap(db, ctx) {
     });
   }
   for (const u of units) u.jadwal = jadwalByKey[u.key] || [];
+  const baAudit = buildBaPelaksanaanAudit(units, jadwalList);
 
   return {
     summary: { totalPendaftar, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
@@ -219,6 +221,7 @@ export async function getLaporanBootstrap(db, ctx) {
     blok,
     kegiatan: units,
     jadwal: jadwalList,
+    baAudit: { summary: baAudit.summary },
     pembayaranRevisi: revisionRows.map((r) => ({
       id: r.id, idPengajuan: r.id_pengajuan, revision: r.revision, mode: r.mode,
       statusLama: r.status_lama || '', statusBaru: r.status_baru || '',

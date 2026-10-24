@@ -7,6 +7,7 @@ import {
   getBagianBaSettings, pushUnique, kegiatanKey, normKegiatan
 } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
+import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { logError } from '../obs/log.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -268,7 +269,9 @@ export async function getBagianAggregation(db, ctx) {
     await collectBa('berita_acara', 'berita_acara_peserta', 'Bagian'),
     await collectBa('berita_acara_admin', 'berita_acara_admin_peserta', 'Admin')
   )) {
-    const dk = [b.sumber, norm(b.bagian), b.blok.toLowerCase(), normKegiatanText(b.namaKegiatan), b.tanggal, b.fileUrl].join('|');
+    const dk = b.baId
+      ? [b.sumber, b.baId].join('|')
+      : [b.sumber, norm(b.bagian), b.blok.toLowerCase(), normKegiatanText(b.namaKegiatan), b.tanggal, b.fileUrl].join('|');
     if (seenBa.has(dk)) continue;
     seenBa.add(dk);
     baList.push(b);
@@ -324,6 +327,13 @@ export async function getBagianAggregation(db, ctx) {
     for (const p of u.peserta) if (p.npm) npmSet.add(p.npm);
   }
 
+  const jadwalAll = (await db.prepare('SELECT * FROM jadwal_pelaksanaan').all()).results || [];
+  const jadwalAudit = jadwalAll.filter((j) => Number(j.active) === 1).map((j) => ({
+    jadwalId: String(j.jadwal_id || '').trim(),
+    kegiatanKey: String(j.kegiatan_key || '').trim() || kegiatanKey(j.bagian, j.blok, j.nama_kegiatan)
+  }));
+  const baAudit = buildBaPelaksanaanAudit(units, jadwalAudit);
+
   const blokSet = [];
   for (const u of units) pushUnique(blokSet, u.blok);
 
@@ -344,6 +354,7 @@ export async function getBagianAggregation(db, ctx) {
     filters: { bagian: getBagianOptions12(labs), blok: blokSet.sort(), sumber: ['Bagian', 'Admin'] },
     summary,
     units,
+    baAudit: { summary: baAudit.summary },
     orphanBa
   };
 }

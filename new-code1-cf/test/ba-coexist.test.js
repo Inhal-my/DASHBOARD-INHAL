@@ -76,4 +76,20 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     expect(unit.pesertaDenganBa).toBe(0);
     expect(unit.jumlahPeserta).toBe(2);
   });
+
+  it('tidak menggabungkan dua sesi BA Pelaksanaan yang file_url-nya sama', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah');
+    await env.DB.prepare(
+      "INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jam,dosen,jumlah_peserta,file_url,catatan,sumber,kegiatan_key) VALUES ('2026-10-21T08:00:00','BA-PEL-2026-0001','SGD','A','SGD 1','2026-10-20','08:00','dr. Andi','1','https://x/sama.pdf','','Bagian','sgd|a|sgd 1')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jam,dosen,jumlah_peserta,file_url,catatan,sumber,kegiatan_key) VALUES ('2026-10-22T08:00:00','BA-PEL-2026-0002','SGD','A','SGD 1','2026-10-21','13:00','dr. Andi','1','https://x/sama.pdf','','Bagian','sgd|a|sgd 1')"
+    ).run();
+
+    const agg = await getBagianAggregation(env.DB, await adminCtx());
+    const unit = (agg.units || []).find((u) => u.blok === 'A');
+    expect(unit.baPelaksanaan.length).toBe(2);
+    expect(unit.baAudit.status).toBe('Multi-sesi');
+    expect(agg.baAudit.summary.multiSesi).toBe(1);
+  });
 });

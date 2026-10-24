@@ -141,7 +141,9 @@ export function attachBaToUnits(units, baList, resolveBagian12) {
   const seen = new Set();
   const orphanBa = [];
   (baList || []).forEach((b) => {
-    const dk = [norm(b.bagian), String(b.blok || '').toLowerCase(), normKegiatan(b.namaKegiatan), b.tanggal || '', b.fileUrl || ''].join('|');
+    const dk = b.baId
+      ? [b.sumber, b.baId].join('|')
+      : [norm(b.bagian), String(b.blok || '').toLowerCase(), normKegiatan(b.namaKegiatan), b.tanggal || '', b.fileUrl || ''].join('|');
     if (seen.has(dk)) return;
     seen.add(dk);
     const direct = b.kegiatanKey ? unitByKey[b.kegiatanKey] : null;

@@ -1388,6 +1388,7 @@
                             <div class="b"><div class="k">BA Pendukung</div><div class="n">{{ baKegiatanPendukungTotal }}</div><div class="p">sebelum keputusan</div></div>
                             <div class="b"><div class="k">BA Pelaksanaan</div><div class="n emerald">{{ baKegiatanPelaksanaanTotal }}</div><div class="p">setelah kegiatan</div></div>
                             <div class="b"><div class="k">Total BA</div><div class="n">{{ baKegiatanBaTotal }}</div><div class="p">pendukung + pelaksanaan</div></div>
+                            <div class="b"><div class="k">Multi-sesi</div><div class="n">{{ baAuditSummary.multiSesi }}</div><div class="p">{{ baAuditSummary.totalSesi }} sesi pelaksanaan</div></div>
                         </div>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
@@ -1403,6 +1404,9 @@
                                 <span class="lap-chip">{{ baKegiatanRows.length }} kegiatan</span>
                                 <span class="lap-chip">{{ baKegiatanBaTotal }} BA total</span>
                                 <span class="lap-chip">{{ baKegiatanPesertaTotal }} mahasiswa</span>
+                                <span class="lap-chip">{{ baAuditSummary.multiSesi }} multi-sesi</span>
+                                <span v-if="baAuditSummary.sesiEkstra" class="lap-chip">{{ baAuditSummary.sesiEkstra }} sesi ekstra</span>
+                                <span v-if="baAuditSummary.sesiDraft" class="lap-chip">{{ baAuditSummary.sesiDraft }} draft</span>
                             </div>
                         </div>
                         <div class="overflow-hidden lap-card">
@@ -1525,17 +1529,29 @@
                                                             </div>
                                                         </div>
                                                         <div class="lg:col-span-2">
-                                                            <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Sesi Pelaksanaan ({{ (r.pelaksanaan || []).length }})</div>
-                                                            <div v-if="!(r.pelaksanaan || []).length" class="text-xs text-slate-400">Belum ada sesi pelaksanaan.</div>
+                                                            <div class="mb-1 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                                                                <span>Sesi Pelaksanaan ({{ baAuditSessions(r).length }})</span>
+                                                                <span v-if="r.baAudit && r.baAudit.status === 'Multi-sesi'" class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold normal-case text-brand-700">Multi-sesi ({{ r.baAudit.jumlahSesi }})</span>
+                                                                <span v-if="r.baAudit && r.baAudit.jadwalBelum" class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold normal-case text-amber-700">{{ r.baAudit.jadwalBelum }} jadwal belum terealisasi</span>
+                                                            </div>
+                                                            <div v-if="!baAuditSessions(r).length" class="text-xs text-slate-400">Belum ada sesi pelaksanaan.</div>
                                                             <div class="space-y-1">
-                                                                <div v-for="(s, si) in (r.pelaksanaan || [])" :key="'sx' + si" class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs">
-                                                                    <span class="font-mono text-[10px] text-slate-400">#{{ si + 1 }}</span>
-                                                                    <span v-if="s.tanggal" class="text-slate-600">{{ fmtTanggal(s.tanggal) }}</span>
-                                                                    <span v-else class="text-slate-400">-</span>
-                                                                    <span v-if="s.jam" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ s.jam }}</span>
-                                                                    <span class="text-slate-600">{{ s.dosen || '-' }}</span>
-                                                                    <a v-if="baPelaksanaanFileUrl(s.baId)" :href="safeUrl(baPelaksanaanFileUrl(s.baId))" target="_blank" rel="noopener noreferrer" class="link ml-auto">{{ s.baId }}</a>
-                                                                    <span v-else class="ml-auto font-mono text-[10px] text-slate-400">{{ s.baId }}</span>
+                                                                <div v-for="(s, si) in baAuditSessions(r)" :key="'sx' + s.baId" class="rounded-lg bg-white px-2.5 py-1.5 text-xs">
+                                                                    <div class="flex flex-wrap items-center gap-2">
+                                                                        <span class="font-mono text-[10px] text-slate-400">#{{ s.index || (si + 1) }}</span>
+                                                                        <span v-if="s.tanggal" class="text-slate-600">{{ fmtTanggal(s.tanggal) }}</span>
+                                                                        <span v-else class="text-slate-400">-</span>
+                                                                        <span v-if="s.jam" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ s.jam }}</span>
+                                                                        <span class="text-slate-600">{{ s.dosen || '-' }}</span>
+                                                                        <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="s.status === 'Draft' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">{{ s.status }}</span>
+                                                                        <span v-for="f in (s.flags || [])" :key="f" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
+                                                                        <a v-if="s.fileUrl" :href="safeUrl(s.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-auto">{{ s.baId }}</a>
+                                                                        <span v-else class="ml-auto font-mono text-[10px] text-slate-400">{{ s.baId }}</span>
+                                                                    </div>
+                                                                    <div v-if="s.peserta && s.peserta.length" class="mt-1 flex flex-wrap gap-1 border-t border-slate-100 pt-1 text-[10.5px] text-slate-500">
+                                                                        <span class="font-semibold text-slate-400">Peserta ({{ s.peserta.length }}):</span>
+                                                                        <span v-for="p in s.peserta" :key="s.baId + '-' + p.npm" class="rounded bg-slate-50 px-1.5 py-0.5">{{ p.namaLengkap || p.npm }}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1588,6 +1604,67 @@
                                 <p class="mt-3 text-sm text-slate-400">Belum ada kegiatan.</p>
                             </div>
                         </div>
+                        <div class="overflow-hidden lap-card">
+                            <div class="lap-card-head">
+                                <div>
+                                    <div class="lap-card-title">Pemeriksaan BA Pelaksanaan</div>
+                                    <div class="lap-card-sub">Deteksi multi-sesi, sesi ekstra, draft, dan kemungkinan duplikat</div>
+                                </div>
+                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportBaAudit"><i class="bi bi-file-earmark-excel"></i> Ekspor Pemeriksaan</button>
+                            </div>
+                            <div class="border-b border-slate-100 bg-slate-50/60 px-4 py-2.5 text-xs text-slate-500">
+                                {{ baAuditSummary.totalSesi }} sesi pada {{ baAuditSummary.kegiatan }} kegiatan.
+                                <span v-if="baAuditSummary.multiSesi" class="font-semibold text-brand-700">{{ baAuditSummary.multiSesi }} kegiatan multi-sesi.</span>
+                                <span v-if="baAuditSummary.sesiEkstra" class="ml-2 text-amber-700">{{ baAuditSummary.sesiEkstra }} sesi ekstra.</span>
+                                <span v-if="baAuditSummary.kemungkinanDuplikat" class="ml-2 text-rose-600">{{ baAuditSummary.kemungkinanDuplikat }} kemungkinan duplikat.</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="in-tbl">
+                                    <thead>
+                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
+                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Sesi</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Status</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Ekstra</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Draft</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Duplikat</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Jadwal Belum</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template v-for="a in baAuditRows" :key="'aud-' + a.key">
+                                            <tr class="border-t border-slate-50">
+                                                <td class="px-3 py-2.5 text-slate-800"><span class="font-semibold">{{ a.kegiatan }}</span><div class="text-[10px] text-slate-400">{{ a.bagian }} / {{ a.blok || '-' }}</div></td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ a.jumlahSesi }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="a.status === 'Multi-sesi' ? 'bg-brand-50 text-brand-700' : (a.status === 'Belum' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700')">{{ a.status }}</span></td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center" :class="a.sesiEkstra ? 'font-semibold text-amber-700' : 'text-slate-400'">{{ a.sesiEkstra }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center" :class="a.sesiDraft ? 'font-semibold text-amber-700' : 'text-slate-400'">{{ a.sesiDraft }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center" :class="a.kemungkinanDuplikat ? 'font-semibold text-rose-600' : 'text-slate-400'">{{ a.kemungkinanDuplikat }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-center" :class="a.jadwalBelum ? 'font-semibold text-amber-700' : 'text-slate-400'">{{ a.jadwalBelum }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right"><button class="btn-soft !px-2 !py-1 text-[11px]" @click="toggleExpand(a.key)">{{ expanded[a.key] ? 'Tutup' : 'Detail' }}</button></td>
+                                            </tr>
+                                            <tr v-if="expanded[a.key]">
+                                                <td colspan="8" class="bg-slate-50/60 px-4 py-3">
+                                                    <div v-if="!a.sesi.length" class="text-xs text-slate-400">Belum ada BA Pelaksanaan.</div>
+                                                    <div v-for="s in a.sesi" :key="'aud-s-' + s.baId" class="mb-1 flex flex-wrap items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs">
+                                                        <span class="font-mono text-[10px] text-slate-400">#{{ s.index }}</span>
+                                                        <span class="font-mono font-semibold text-slate-700">{{ s.baId }}</span>
+                                                        <span class="text-slate-600">{{ s.tanggal || '-' }} {{ s.jam }}</span>
+                                                        <span class="text-slate-600">{{ s.dosen || '-' }}</span>
+                                                        <span class="whitespace-nowrap text-slate-500">{{ s.pesertaCount }} peserta</span>
+                                                        <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="s.status === 'Draft' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">{{ s.status }}</span>
+                                                        <span v-for="f in (s.flags || [])" :key="f" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
+                                                        <a v-if="s.fileUrl" :href="safeUrl(s.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-auto">Berkas</a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                                <div v-if="!baAuditRows.length" class="px-4 py-10 text-center text-sm text-slate-400">Belum ada data untuk diperiksa.</div>
+                            </div>
+                        </div>
                         </template>
                     </section>
 
@@ -1606,6 +1683,7 @@
                                 <div class="md:col-span-3"><label class="label">Sumber</label><select v-model="baListFilter.sumber" class="input"><option value="">Semua Sumber</option><option v-for="o in daftarBaSumberOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Dosen</label><select v-model="baListFilter.dosen" class="input"><option value="">Semua Dosen</option><option v-for="o in dosenOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Kelengkapan</label><select v-model="baListFilter.kelengkapan" class="input"><option value="">Semua</option><option value="Lengkap">Lengkap</option><option value="Draft">Draft</option></select></div>
+                                <div class="md:col-span-3"><label class="label">Status Sesi</label><select v-model="baListFilter.sesi" class="input"><option value="">Semua</option><option value="multi">Multi-sesi</option><option value="ekstra">Sesi ekstra</option><option value="draft">Draft pelaksanaan</option><option value="duplikat">Kemungkinan duplikat</option></select></div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                                 <span class="lap-chip">{{ filteredDaftarBa.length }} BA</span>
@@ -1635,6 +1713,8 @@
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Jam</th>
                                             <th class="px-3 py-2.5 text-left">Dosen</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Sesi</th>
+                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Status Sesi</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Sumber</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Dibuat</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Kelengkapan</th>
@@ -1654,6 +1734,8 @@
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.jam || '-' }}</td>
                                             <td class="px-3 py-2.5 text-slate-600">{{ r.dosen || '-' }}</td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ r.pesertaCount }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5 text-center text-slate-600">{{ r.jenis === 'Pelaksanaan' && r.sesiKe ? ('#' + r.sesiKe + '/' + r.jumlahSesi) : '-' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-2.5"><span v-if="r.jenis === 'Pelaksanaan'" class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.statusSesi === 'Draft' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">{{ r.statusSesi || '-' }}</span><span v-else class="text-slate-300">-</span></td>
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.sumber === 'Admin' ? 'bg-violet-50 text-violet-700' : 'bg-emerald-50 text-emerald-700'">{{ r.sumber }}</span></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.dibuat ? fmtTanggalWaktu(r.dibuat) : '-' }}</td>
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.lengkap ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.lengkap ? 'Lengkap' : 'Draft' }}</span></td>
@@ -1675,7 +1757,7 @@
                             <div class="in-cards">
                                 <article v-for="r in filteredDaftarBa" :key="'m-' + r.jenis + '-' + r.id" class="in-mcard">
                                     <div class="row1"><span class="font-semibold text-slate-800">{{ r.id }}</span><span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.jenis }}</span></div>
-                                    <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Kegiatan</span><b>{{ r.kegiatan || '-' }}</b><span>Label</span><b>{{ r.label || '-' }}</b><span>Jadwal</span><b>{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }} {{ r.jam }}</b><span>Dosen</span><b>{{ r.dosen || '-' }}</b><span>Peserta</span><b>{{ r.pesertaCount }}</b><span>Sumber</span><b>{{ r.sumber }}</b><span>Kelengkapan</span><b>{{ r.lengkap ? 'Lengkap' : 'Draft' }}</b></div>
+                                    <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Kegiatan</span><b>{{ r.kegiatan || '-' }}</b><span>Label</span><b>{{ r.label || '-' }}</b><span>Jadwal</span><b>{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }} {{ r.jam }}</b><span>Dosen</span><b>{{ r.dosen || '-' }}</b><span>Peserta</span><b>{{ r.pesertaCount }}</b><span>Sumber</span><b>{{ r.sumber }}</b><span>Sesi</span><b>{{ r.jenis === 'Pelaksanaan' && r.sesiKe ? ('#' + r.sesiKe + '/' + r.jumlahSesi) : '-' }}</b><span>Status Sesi</span><b>{{ r.statusSesi || '-' }}</b><span>Kelengkapan</span><b>{{ r.lengkap ? 'Lengkap' : 'Draft' }}</b></div>
                                     <div class="actions">
                                         <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.berkasAda ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.berkasAda ? 'Ada' : 'Hilang' }}</span>
                                         <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-file-earmark-pdf"></i> Berkas</a>
@@ -2685,7 +2767,7 @@
                     activeDosenCell: null,
                     bagianFilter: { bagian: '' },
                     baFilter: { bagian: '' },
-                    baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '' },
+                    baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' },
                     jadwal: [],
                     jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { kelengkapan: '' },
@@ -3433,6 +3515,57 @@
                         return this.baUnitMatchesGlobal(r);
                     });
                 },
+                baAuditRows() {
+                    return this.baKegiatanRows.map((r) => r.baAudit).filter(Boolean);
+                },
+                baAuditSummary() {
+                    const out = { kegiatan: 0, totalSesi: 0, multiSesi: 0, sesiEkstra: 0, sesiDraft: 0, kemungkinanDuplikat: 0, jadwalBelum: 0 };
+                    this.baAuditRows.forEach((r) => {
+                        out.kegiatan += 1;
+                        out.totalSesi += Number(r.jumlahSesi || 0);
+                        if (r.status === 'Multi-sesi') out.multiSesi += 1;
+                        out.sesiEkstra += Number(r.sesiEkstra || 0);
+                        out.sesiDraft += Number(r.sesiDraft || 0);
+                        out.kemungkinanDuplikat += Number(r.kemungkinanDuplikat || 0);
+                        out.jadwalBelum += Number(r.jadwalBelum || 0);
+                    });
+                    return out;
+                },
+                baAuditExportRows() {
+                    const out = [];
+                    this.baAuditRows.forEach((r) => {
+                        const sesi = (r.sesi && r.sesi.length) ? r.sesi : [null];
+                        sesi.forEach((s, i) => {
+                            out.push({
+                                'Bagian': r.bagian,
+                                'Blok': r.blok,
+                                'Nama Kegiatan': r.kegiatan,
+                                'Jumlah Sesi': r.jumlahSesi,
+                                'Status Kegiatan': r.status,
+                                'Sesi Ke': s ? (i + 1) : '',
+                                'BA ID': s ? s.baId : '',
+                                'Tanggal': s && s.tanggal ? fmtTanggal(s.tanggal) : '',
+                                'Jam': s ? (s.jam || '') : '',
+                                'Dosen': s ? (s.dosen || '') : '',
+                                'Peserta': s ? (s.pesertaCount || 0) : 0,
+                                'Jadwal ID': s ? (s.jadwalId || '') : '',
+                                'Status Jadwal': s ? (s.jadwalId ? (s.jadwalCocok ? 'Sesuai' : 'Tidak cocok') : (r.jadwalCount ? 'Sesi ekstra' : '-')) : (r.jadwalCount ? 'Belum terealisasi' : '-'),
+                                'Status Sesi': s ? s.status : 'Belum',
+                                'Catatan Pemeriksaan': s ? (s.flags || []).join('; ') : (r.jadwalBelum ? 'Jadwal belum terealisasi' : ''),
+                                'File URL': s ? (s.fileUrl || '') : ''
+                            });
+                        });
+                    });
+                    return out;
+                },
+                baAuditSessions(r) {
+                    return (r && r.baAudit && r.baAudit.sesi) ? r.baAudit.sesi : [];
+                },
+                baAuditSessionFor(unit, baId) {
+                    const audit = unit && unit.baAudit;
+                    if (!audit) return null;
+                    return (audit.sesi || []).find((s) => s.baId === String(baId || '').trim()) || null;
+                },
                 baKegiatanPendukungTotal() {
                     return this.baKegiatanRows.reduce((t, r) => t + (r.baPendukung || []).length, 0);
                 },
@@ -3474,6 +3607,10 @@
                         if (f.sumber && r.sumber !== f.sumber) return false;
                         if (f.kelengkapan === 'Lengkap' && !r.lengkap) return false;
                         if (f.kelengkapan === 'Draft' && r.lengkap) return false;
+                        if (f.sesi === 'multi' && r.jenis === 'Pelaksanaan' && r.jumlahSesi < 2) return false;
+                        if (f.sesi === 'ekstra' && r.flags.indexOf('Sesi ekstra') === -1) return false;
+                        if (f.sesi === 'draft' && r.jenis === 'Pelaksanaan' && r.statusSesi !== 'Draft') return false;
+                        if (f.sesi === 'duplikat' && r.flags.indexOf('Kemungkinan duplikat') === -1) return false;
                         if (dosen && this.normSearch(r.dosen).indexOf(dosen) === -1) return false;
                         if (fromD || toD) {
                             const d = this.dateVal(r.tanggalEfektif);
@@ -4662,6 +4799,8 @@
                     return b['Tanggal Pelaksanaan'] || b.Timestamp || '';
                 },
                 baDaftarItem(b, jenis, unit) {
+                    const audit = unit ? unit.baAudit : null;
+                    const sess = jenis === 'Pelaksanaan' ? this.baAuditSessionFor(unit, b && b['BA ID']) : null;
                     const peserta = (b && b.peserta) || [];
                     const tanggal = (b && b['Tanggal Pelaksanaan']) || '';
                     const jumlahField = Number((b && b['Jumlah Peserta']) || 0) || 0;
@@ -4683,7 +4822,12 @@
                         baseFileUrl: (b && b['Base File URL']) || '',
                         berkasAda: !!String((b && b['File URL']) || '').trim(),
                         catatan: (b && b.Catatan) || '',
-                        tanggalEfektif: this.baTanggalEfektif(b)
+                        tanggalEfektif: this.baTanggalEfektif(b),
+                        sesiKe: sess ? sess.index : 0,
+                        jumlahSesi: audit ? audit.jumlahSesi : 0,
+                        statusKegiatan: audit ? audit.status : '',
+                        statusSesi: sess ? sess.status : (jenis === 'Pelaksanaan' ? 'Draft' : ''),
+                        flags: sess ? (sess.flags || []) : []
                     };
                 },
                 baPelaksanaanFileUrl(baId) {
@@ -4719,6 +4863,14 @@
                             setUrlHyperlinks(wsDetailBa, 'File URL', 'Buka file berita acara');
                             XLSX.utils.book_append_sheet(wb, wsDetailBa, 'Detail BA');
 
+                            const auditRows = this.baAuditExportRows();
+                            const auditHeaders = ['Bagian', 'Blok', 'Nama Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Catatan Pemeriksaan', 'File URL'];
+                            const wsAudit = auditRows.length
+                                ? XLSX.utils.json_to_sheet(auditRows, { header: auditHeaders })
+                                : XLSX.utils.aoa_to_sheet([auditHeaders]);
+                            setUrlHyperlinks(wsAudit, 'File URL', 'Buka file berita acara');
+                            XLSX.utils.book_append_sheet(wb, wsAudit, 'Pemeriksaan BA');
+
                             writeXlsxStyled(wb, 'Rekap-Berita-Acara-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export berita acara berhasil diunduh.');
                         } catch (e) {
@@ -4737,8 +4889,9 @@
                         try {
                             const wb = XLSX.utils.book_new();
                             const headers = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Label',
-                                'Tanggal Pelaksanaan', 'Jam', 'Dosen', 'Jumlah Peserta', 'Sumber', 'Dibuat',
-                                'Kelengkapan', 'Catatan', 'File URL', 'Base File URL'];
+                                'Tanggal Pelaksanaan', 'Jam', 'Dosen', 'Jumlah Peserta', 'Sesi', 'Status Sesi',
+                                'Status Kegiatan', 'Sumber', 'Dibuat', 'Kelengkapan', 'Catatan Pemeriksaan',
+                                'File URL', 'Base File URL'];
                             const rows = this.filteredDaftarBa.map((r) => ({
                                 'BA ID': r.id,
                                 'Jenis BA': r.jenis,
@@ -4750,10 +4903,13 @@
                                 'Jam': r.jam,
                                 'Dosen': r.dosen,
                                 'Jumlah Peserta': r.pesertaCount,
+                                'Sesi': r.jenis === 'Pelaksanaan' && r.sesiKe ? (r.sesiKe + '/' + r.jumlahSesi) : '',
+                                'Status Sesi': r.statusSesi || '',
+                                'Status Kegiatan': r.statusKegiatan || '',
                                 'Sumber': r.sumber,
                                 'Dibuat': r.dibuat ? fmtTanggalWaktu(r.dibuat) : '',
                                 'Kelengkapan': r.lengkap ? 'Lengkap' : 'Draft',
-                                'Catatan': r.catatan,
+                                'Catatan Pemeriksaan': (r.flags || []).join('; '),
                                 'File URL': r.fileUrl,
                                 'Base File URL': r.baseFileUrl
                             }));
@@ -4778,6 +4934,30 @@
 
                             writeXlsxStyled(wb, 'Daftar-BA-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export daftar BA berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch((e) => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportBaAudit() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const wb = XLSX.utils.book_new();
+                            const headers = ['Bagian', 'Blok', 'Nama Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Catatan Pemeriksaan', 'File URL'];
+                            const rows = this.baAuditExportRows();
+                            const ws = rows.length
+                                ? XLSX.utils.json_to_sheet(rows, { header: headers })
+                                : XLSX.utils.aoa_to_sheet([headers]);
+                            setUrlHyperlinks(ws, 'File URL', 'Buka file berita acara');
+                            XLSX.utils.book_append_sheet(wb, ws, 'Pemeriksaan BA');
+                            writeXlsxStyled(wb, 'Pemeriksaan-BA-Pelaksanaan-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Export pemeriksaan BA berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {

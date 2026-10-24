@@ -152,7 +152,9 @@ const SCHEMAS = {
         'Sumber',
         'Jam',
         'Dosen',
-        'Jadwal ID'
+        'Jadwal ID',
+        'Label',
+        'Kegiatan Key'
     ],
     BeritaAcaraPeserta: [
         'Timestamp',

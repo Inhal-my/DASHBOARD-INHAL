@@ -1411,19 +1411,6 @@ function uploadBeritaAcaraBagian(payload, kategori) {
         const jam = _clientTime((payload && payload.jam) || (jadwal && jadwal.Jam) || '');
         const dosen = String((payload && payload.dosen) || (jadwal && jadwal.Dosen) || '').trim();
 
-        const dup = getAllRows('BeritaAcara').find(function(r) {
-            return String(r.Bagian || '').trim() === String((payload && payload.bagian) || kategori || '').trim()
-                && String(r.Blok || '').trim() === String((payload && payload.blok) || '').trim()
-                && String(r['Nama Kegiatan'] || '').trim() === String((payload && payload.namaKegiatan) || '').trim()
-                && _dateOnly(r['Tanggal Pelaksanaan']) === _dateOnly(tanggalPelaksanaan);
-        });
-        if (dup) {
-            return {
-                success: false,
-                message: 'Upload dibatalkan: sudah ada berita acara untuk "' + dup['Nama Kegiatan'] + '" (Bagian ' + dup.Bagian + ', Blok ' + dup.Blok + ') pada ' + dup['Tanggal Pelaksanaan'] + '. Jika ini revisi, hubungi admin untuk menghapus BA lama.'
-            };
-        }
-
         appendRowSafe('BeritaAcara', {
             Timestamp: new Date(),
             'BA ID': baId,
@@ -1438,7 +1425,9 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             'Sumber': 'Bagian',
             'Jam': jam,
             'Dosen': dosen,
-            'Jadwal ID': jadwalId
+            'Jadwal ID': jadwalId,
+            'Label': String((payload && payload.label) || '').trim(),
+            'Kegiatan Key': _kegiatanKey(String((payload && payload.bagian) || kategori || '').trim(), String((payload && payload.blok) || '').trim(), String((payload && payload.namaKegiatan) || '').trim())
         });
 
         peserta.forEach(function(p) {
@@ -2319,10 +2308,11 @@ function getLaporanBootstrap() {
             peserta: pesertaMap[baId] || []
         };
     };
+    let auditUnits = [];
     try {
         const baRefs = ba.map(function(r) { return toBaRef(r, 'Bagian', baPesertaMap); })
             .concat(baAdmin.map(function(r) { return toBaRef(r, 'Admin', baAdminPesertaMap); }));
-        _attachBaToLaporanRows(rows, baRefs, getMasterOptions('Lab'));
+        auditUnits = _attachBaToLaporanRows(rows, baRefs, getMasterOptions('Lab'));
     } catch (baError) {
         rows.forEach(function(row) {
             row.baPendukung = [];
@@ -2330,6 +2320,10 @@ function getLaporanBootstrap() {
         });
         console.error('getLaporanBootstrap BA: ' + ((baError && baError.message) ? baError.message : baError));
     }
+    const auditJadwal = jadwalList.map(function(j) {
+        return { jadwalId: j.JadwalID || '', kegiatanKey: String(j.kegiatan_key || '').trim() || _kegiatanKey(j.Bagian, j.Blok, j.NamaKegiatan) };
+    });
+    const baAudit = _buildBaPelaksanaanAudit(auditUnits, auditJadwal);
 
     const pushUnique = function(list, v) {
         v = String(v || '').replace(/\s+/g, ' ').trim();
@@ -2361,6 +2355,7 @@ function getLaporanBootstrap() {
         beritaAcaraAdmin: beritaAcaraAdmin,
         jadwalList: jadwalList,
         jadwal: jadwal,
+        baAudit: { rows: baAudit.rows, summary: baAudit.summary },
         pembayaranRevisi: pembayaranRevisi,
         dosen: dosen,
         dosenOptions: getMasterOptions('Dosen'),
@@ -2413,6 +2408,108 @@ function _computeUnitProgress(unit) {
     };
 }
 
+function _buildBaPelaksanaanAudit(units, jadwalList) {
+    const str = function(v) { return v == null ? '' : String(v).replace(/\u00a0/g, ' ').trim(); };
+    const first = function(obj, lowerKey, clientKey) {
+        if (!obj) return '';
+        const lower = obj[lowerKey];
+        if (lower !== undefined && lower !== null && lower !== '') return lower;
+        return obj[clientKey];
+    };
+    const rows = [];
+    const summary = { totalKegiatan: 0, totalSesi: 0, multiSesi: 0, satuSesi: 0, belumSesi: 0, sesiEkstra: 0, sesiDraft: 0, kemungkinanDuplikat: 0, jadwalBelum: 0 };
+    const jadwalByKey = {};
+    (jadwalList || []).forEach(function(j) {
+        const key = str(j && (j.kegiatanKey || j.kegiatan_key));
+        if (!key) return;
+        (jadwalByKey[key] = jadwalByKey[key] || []).push(j);
+    });
+
+    (units || []).forEach(function(unit) {
+        const key = str(unit && unit.key);
+        const jadwal = jadwalByKey[key] || [];
+        const jadwalIds = {};
+        jadwal.forEach(function(j) { jadwalIds[str(j.jadwalId || j['Jadwal ID'])] = 1; });
+        const sesi = ((unit && unit.baPelaksanaan) || []).map(function(b) {
+            const peserta = (b && b.peserta) || [];
+            const seen = {};
+            const uniq = [];
+            peserta.forEach(function(p) {
+                const npm = str(p && p.npm);
+                const nama = str((p && p.namaLengkap) || (p && p.nama));
+                const pk = npm || nama;
+                if (!pk || seen[pk]) return;
+                seen[pk] = 1;
+                uniq.push({ npm: npm, namaLengkap: nama, blok: str(p && p.blok) });
+            });
+            const baId = str(first(b, 'baId', 'BA ID'));
+            const tanggal = str(first(b, 'tanggal', 'Tanggal Pelaksanaan'));
+            const jam = str(first(b, 'jam', 'Jam'));
+            const dosen = str(first(b, 'dosen', 'Dosen'));
+            const fileUrl = str(first(b, 'fileUrl', 'File URL'));
+            const jadwalId = str(first(b, 'jadwalId', 'Jadwal ID'));
+            const lengkap = !!(fileUrl && tanggal && jam && dosen && uniq.length);
+            return {
+                index: 0, baId: baId, label: str(first(b, 'label', 'Label')),
+                tanggal: tanggal, jam: jam, dosen: dosen, catatan: str(first(b, 'catatan', 'Catatan')),
+                timestamp: str(first(b, 'timestamp', 'Timestamp')),
+                pesertaCount: uniq.length, peserta: uniq, fileUrl: fileUrl,
+                baseFileUrl: str(first(b, 'baseFileUrl', 'Base File URL')), berkasAda: !!fileUrl,
+                jadwalId: jadwalId, jadwalCocok: jadwalId ? !!jadwalIds[jadwalId] : null,
+                lengkap: lengkap, status: lengkap ? 'Lengkap' : 'Draft', flags: []
+            };
+        }).sort(function(a, b) {
+            if (a.tanggal && !b.tanggal) return -1;
+            if (!a.tanggal && b.tanggal) return 1;
+            return a.tanggal.localeCompare(b.tanggal) || a.jam.localeCompare(b.jam) || a.timestamp.localeCompare(b.timestamp) || a.baId.localeCompare(b.baId);
+        });
+        sesi.forEach(function(s, i) { s.index = i + 1; });
+
+        const dupGroups = {};
+        sesi.forEach(function(s) {
+            const dk = [s.tanggal, s.jam, s.dosen.toLowerCase()].join('|');
+            dupGroups[dk] = (dupGroups[dk] || 0) + 1;
+        });
+        sesi.forEach(function(s) {
+            const dk = [s.tanggal, s.jam, s.dosen.toLowerCase()].join('|');
+            if (dupGroups[dk] > 1) s.flags.push('Kemungkinan duplikat');
+            if (s.status === 'Draft') s.flags.push('Draft');
+            if (jadwal.length && !s.jadwalId) s.flags.push('Sesi ekstra');
+        });
+
+        const covered = {};
+        sesi.forEach(function(s) { if (s.jadwalId) covered[s.jadwalId] = 1; });
+        const jadwalBelum = jadwal.filter(function(j) { return !covered[str(j.jadwalId || j['Jadwal ID'])]; }).length;
+        const sesiDraft = sesi.filter(function(s) { return s.status === 'Draft'; }).length;
+        const sesiEkstra = sesi.filter(function(s) { return s.flags.indexOf('Sesi ekstra') !== -1; }).length;
+        const kemungkinanDuplikat = Object.keys(dupGroups).filter(function(k) { return dupGroups[k] > 1; }).length;
+        const pesertaSeen = {};
+        sesi.forEach(function(s) { s.peserta.forEach(function(p) { const pk = p.npm || p.namaLengkap; if (pk) pesertaSeen[pk] = 1; }); });
+        const row = {
+            key: key, bagian: str(unit && unit.bagian), blok: str(unit && unit.blok),
+            kegiatan: str((unit && (unit.label || unit.namaKegiatan)) || ''),
+            jumlahSesi: sesi.length,
+            status: sesi.length > 1 ? 'Multi-sesi' : (sesi.length === 1 ? 'Satu sesi' : 'Belum'),
+            jadwalCount: jadwal.length, jadwalBelum: jadwalBelum, sesiEkstra: sesiEkstra,
+            sesiDraft: sesiDraft, kemungkinanDuplikat: kemungkinanDuplikat,
+            pesertaUnik: Object.keys(pesertaSeen).length, sesi: sesi
+        };
+        if (unit) unit.baAudit = row;
+        rows.push(row);
+
+        summary.totalKegiatan += 1;
+        summary.totalSesi += row.jumlahSesi;
+        if (row.status === 'Multi-sesi') summary.multiSesi += 1;
+        if (row.status === 'Satu sesi') summary.satuSesi += 1;
+        if (row.status === 'Belum') summary.belumSesi += 1;
+        summary.sesiEkstra += row.sesiEkstra;
+        summary.sesiDraft += row.sesiDraft;
+        summary.kemungkinanDuplikat += row.kemungkinanDuplikat;
+        summary.jadwalBelum += row.jadwalBelum;
+    });
+    return { rows: rows, summary: summary };
+}
+
 function _attachBaToLaporanRows(rows, baList, labs) {
     const units = [];
     const unitIndex = {};
@@ -2453,15 +2550,16 @@ function _attachBaToLaporanRows(rows, baList, labs) {
             list.forEach(function(b) {
                 const entry = { baId: b.baId || '', fileUrl: b.fileUrl || '', tanggal: b.tanggal || '', jam: b.jam || '', label: b.label || '' };
                 const bucket = b.sumber === 'Admin' ? pendukung : pelaksanaan;
-                const token = entry.fileUrl || entry.baId;
+                const token = entry.baId || entry.fileUrl;
                 if (!token) return;
-                if (bucket.some(function(x) { return (x.fileUrl || x.baId) === token; })) return;
+                if (bucket.some(function(x) { return (x.baId || x.fileUrl) === token; })) return;
                 bucket.push(entry);
             });
         });
         row.baPendukung = pendukung;
         row.baPelaksanaan = pelaksanaan;
     });
+    return units;
 }
 
 function _attachBaToUnits(units, baList, resolveBagian12) {
@@ -2479,7 +2577,9 @@ function _attachBaToUnits(units, baList, resolveBagian12) {
     const seen = {};
     const orphanBa = [];
     (baList || []).forEach(function(b) {
-        const dk = [norm(b.bagian), String(b.blok || '').toLowerCase(), _normKegiatan(b.namaKegiatan), b.tanggal || '', b.fileUrl || ''].join('|');
+        const dk = b.baId
+            ? [b.sumber, b.baId].join('|')
+            : [norm(b.bagian), String(b.blok || '').toLowerCase(), _normKegiatan(b.namaKegiatan), b.tanggal || '', b.fileUrl || ''].join('|');
         if (seen[dk]) return;
         seen[dk] = 1;
         const direct = b.kegiatanKey ? unitByKey[b.kegiatanKey] : null;
@@ -2609,6 +2709,11 @@ function _buildBagianAggregation() {
         u.peserta.forEach(function(p) { if (p.npm) npmSet[p.npm] = 1; });
     });
 
+    const auditJadwal = _computeJadwalList('', '').map(function(j) {
+        return { jadwalId: j.JadwalID || '', kegiatanKey: String(j.kegiatan_key || '').trim() || _kegiatanKey(j.Bagian, j.Blok, j.NamaKegiatan) };
+    });
+    const baAudit = _buildBaPelaksanaanAudit(units, auditJadwal);
+
     const blokSet = [];
     units.forEach(function(u) {
         const b = String(u.blok || '').trim();
@@ -2631,6 +2736,7 @@ function _buildBagianAggregation() {
         filters: { bagian: _getBagianOptions12(labs), blok: blokSet.sort(), sumber: ['Bagian', 'Admin'] },
         summary: summary,
         units: units,
+        baAudit: { rows: baAudit.rows, summary: baAudit.summary },
         orphanBa: orphanBa
     };
 }

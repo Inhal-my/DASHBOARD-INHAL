@@ -33,6 +33,6 @@ describe('guard panel BA Pelaksanaan multi', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('bab.ba.label');
     expect(html).toContain('r.baMember');
-    expect(html).toContain('menambah BA baru');
+    expect(html).toContain('sesi tambahan (multi-sesi)');
   });
 });

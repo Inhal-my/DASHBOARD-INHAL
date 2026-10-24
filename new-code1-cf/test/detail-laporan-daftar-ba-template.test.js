@@ -73,14 +73,14 @@ describe('daftar BA: pembersihan dead code', () => {
 describe('daftar BA: lapisan data', () => {
   it('menyediakan state filter', async () => {
     const html = await loadHtml();
-    expect(html).toContain("baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '' }");
+    expect(html).toContain("baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' }");
   });
   it('menyediakan computed dan helper', async () => {
     const html = await loadHtml();
     for (const name of ['daftarBaRows()', 'filteredDaftarBa()', 'daftarBaBagianOptions()',
       'daftarBaJenisOptions()', 'daftarBaSumberOptions()',
       'daftarBaLengkapCount()', 'daftarBaDraftCount()', 'daftarBaUnitCount()', 'daftarBaUnitRows()',
-      'baLengkap(', 'baTanggalEfektif(', 'baDaftarItem(']) {
+      'baLengkap(', 'baTanggalEfektif(', 'baDaftarItem(', 'baAuditRows()', 'baAuditSummary()', 'baAuditExportRows()', 'baAuditSessions(']) {
       expect(html).toContain(name);
     }
   });
