@@ -445,6 +445,11 @@ function uploadBuktiBayar(uploadData, accUrl, buktiUrl) {
 
         const npm = String((uploadData && (uploadData.npm || uploadData.NPM)) || '').trim() || existing.NPM || '';
         const detail = _getPengajuanDetailSummary(idPengajuan);
+        const buktiBaru = String(buktiUrl || '').trim();
+        if (buktiBaru && _paymentStr(existing['Status Pembayaran']) === 'valid') {
+            return { success: false, message: 'Pembayaran sudah valid. Hubungi admin Keuangan untuk koreksi buka kembali.' };
+        }
+        const statusPembayaranBaru = _paymentUploadStatus(existing['Status Pembayaran'], !!buktiBaru);
 
         appendRowSafe('LogUpload', {
             Timestamp: new Date(),
@@ -462,6 +467,7 @@ function uploadBuktiBayar(uploadData, accUrl, buktiUrl) {
         upsertRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan, {
             'Link ACC INHAL': accUrl || existing['Link ACC INHAL'] || '',
             'Link Bukti Bayar': buktiUrl || '',
+            'Status Pembayaran': statusPembayaranBaru,
             'UpdatedAt': new Date()
         });
 
@@ -738,6 +744,9 @@ function uploadBuktiAdmin(idPengajuan, filePayload) {
         if (!id) return { success: false, message: 'ID Pengajuan tidak valid.' };
         const pengajuan = getRowByKey('Pengajuan', 'ID Pengajuan', id);
         if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+        if (_paymentStr(pengajuan['Status Pembayaran']) === 'valid') {
+            return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi buka kembali untuk mengunggah ulang bukti.' };
+        }
 
         const file = filePayload || {};
         if (!file.data) return { success: false, message: 'Berkas bukti bayar tidak valid.' };
@@ -763,6 +772,7 @@ function uploadBuktiAdmin(idPengajuan, filePayload) {
         });
         upsertRowByKey('Pengajuan', 'ID Pengajuan', id, {
             'Link Bukti Bayar': buktiUrl,
+            'Status Pembayaran': _paymentUploadStatus(pengajuan['Status Pembayaran'], true),
             'UpdatedAt': new Date()
         });
         writeAuditLog({
@@ -852,6 +862,9 @@ function resetUploadBukti(idPengajuan, payload) {
             if (String(existing.Status || '').trim() !== 'ACC') {
                 return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus ACC.' };
             }
+            if (_paymentStr(existing['Status Pembayaran']) === 'valid') {
+                return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi buka kembali sebelum mereset unggahan.' };
+            }
             const acc = String(existing['Link ACC INHAL'] || '').trim();
             const bukti = String(existing['Link Bukti Bayar'] || '').trim();
             const final = String(existing['Link Final'] || '').trim();
@@ -864,6 +877,7 @@ function resetUploadBukti(idPengajuan, payload) {
                 'Link ACC INHAL': '',
                 'Link Bukti Bayar': '',
                 'Link Final': '',
+                'Status Pembayaran': (bukti && _paymentStr(existing['Status Pembayaran']) !== 'gratis') ? 'belum' : _paymentStr(existing['Status Pembayaran']),
                 'Upload Reset At': new Date(),
                 'Upload Reset By': getActorName(),
                 'Upload Reset Note': note,
@@ -4954,6 +4968,13 @@ function _paymentAmount(v) {
 
 function _paymentStatus(row) {
     return _paymentStr(row && row['Status Pembayaran']) || 'belum';
+}
+
+function _paymentUploadStatus(currentStatus, hasBukti) {
+    const current = _paymentStr(currentStatus) || 'belum';
+    if (!hasBukti) return current;
+    if (current === 'gratis') return 'gratis';
+    return 'menunggu';
 }
 
 function _paymentRevisionOf(row) {

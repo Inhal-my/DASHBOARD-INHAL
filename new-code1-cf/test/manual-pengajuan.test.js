@@ -125,4 +125,26 @@ describe('admin upload bukti bayar', () => {
     const res = await uploadBuktiAdmin(env.DB, created.idPengajuan, { data: 'aGVsbG8=', mimeType: 'text/plain', name: 'note.txt' }, { token, env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } });
     expect(res.success).toBe(false);
   });
+
+  it('menandai status pembayaran menunggu setelah admin mengunggah bukti', async () => {
+    const created = await registerManualPengajuan(env.DB, { ...manualBody }, {});
+    const token = await adminToken();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BUKTI1234567890ABCDEF/view' }),
+      { status: 200 }
+    )));
+    const res = await uploadBuktiAdmin(env.DB, created.idPengajuan, { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'bukti.pdf' }, { token, env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } });
+    expect(res.success).toBe(true);
+    const p = await env.DB.prepare('SELECT status_pembayaran FROM pengajuan WHERE id_pengajuan = ?1').bind(created.idPengajuan).first();
+    expect(p.status_pembayaran).toBe('menunggu');
+  });
+
+  it('menolak unggah bukti admin saat pembayaran sudah valid', async () => {
+    const created = await registerManualPengajuan(env.DB, { ...manualBody }, {});
+    const token = await adminToken();
+    await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'valid' WHERE id_pengajuan = ?1").bind(created.idPengajuan).run();
+    const res = await uploadBuktiAdmin(env.DB, created.idPengajuan, { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'bukti.pdf' }, { token, env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } });
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/valid/i);
+  });
 });

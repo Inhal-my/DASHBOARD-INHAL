@@ -426,6 +426,10 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
     return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus ACC.' };
   }
 
+  if (str(p.status_pembayaran) === 'valid') {
+    return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi buka kembali sebelum mereset unggahan.' };
+  }
+
   const acc = str(p.link_acc_inhal);
   const bukti = str(p.link_bukti_bayar);
   const final = str(p.link_final);
@@ -438,11 +442,12 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
   const ts = nowIso();
 
   const summary = await getUploadLogDetail(db, id);
+  const nextPaymentStatus = bukti && str(p.status_pembayaran) !== 'gratis' ? 'belum' : str(p.status_pembayaran);
 
   await db.prepare(
-    'UPDATE pengajuan SET link_acc_inhal = ?5, link_bukti_bayar = ?6, link_final = ?7, upload_reset_at = ?1, upload_reset_by = ?2, upload_reset_note = ?3, updated_at = ?4 ' +
+    'UPDATE pengajuan SET link_acc_inhal = ?5, link_bukti_bayar = ?6, link_final = ?7, status_pembayaran = ?12, upload_reset_at = ?1, upload_reset_by = ?2, upload_reset_note = ?3, updated_at = ?4 ' +
     'WHERE id_pengajuan = ?8 AND IFNULL(link_acc_inhal, \'\') = ?9 AND IFNULL(link_bukti_bayar, \'\') = ?10 AND IFNULL(link_final, \'\') = ?11'
-  ).bind(ts, actor, note, ts, '', '', '', id, acc, bukti, final).run();
+  ).bind(ts, actor, note, ts, '', '', '', id, acc, bukti, final, nextPaymentStatus).run();
   const after = await db.prepare(
     'SELECT link_acc_inhal, upload_reset_at FROM pengajuan WHERE id_pengajuan = ?1'
   ).bind(id).first();
@@ -480,12 +485,17 @@ export async function uploadBuktiAdmin(db, idPengajuan, file, ctx) {
   const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
+  if (str(p.status_pembayaran) === 'valid') {
+    return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi buka kembali untuk mengunggah ulang bukti.' };
+  }
+
   const res = await saveDriveFile(ctx.env, file, 'bukti-' + id, { label: 'bukti bayar' });
   if (!res.ok) return { success: false, message: res.message };
 
   const ts = nowIso();
-  await db.prepare('UPDATE pengajuan SET link_bukti_bayar = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
-    .bind(res.url, ts, id).run();
+  const nextPayment = str(p.status_pembayaran) === 'gratis' ? 'gratis' : 'menunggu';
+  await db.prepare('UPDATE pengajuan SET link_bukti_bayar = ?1, status_pembayaran = ?2, updated_at = ?3 WHERE id_pengajuan = ?4')
+    .bind(res.url, nextPayment, ts, id).run();
 
   const actor = actorName(ctx);
   try {

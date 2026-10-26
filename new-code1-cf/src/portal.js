@@ -35,7 +35,7 @@ function startsWithPdf(base64) {
 export async function uploadBuktiFiles(db, payload, env) {
   const idPengajuan = str(payload && payload.idPengajuan);
   if (!idPengajuan) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
-  const existing = await db.prepare('SELECT id, npm, nama_lengkap, blok, jenis_kegiatan, status, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
+  const existing = await db.prepare('SELECT id, npm, nama_lengkap, blok, jenis_kegiatan, status, link_bukti_bayar, status_pembayaran FROM pengajuan WHERE id_pengajuan = ?1').bind(idPengajuan).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
   const ownerNpm = normalizeNpm(existing.npm);
@@ -46,6 +46,10 @@ export async function uploadBuktiFiles(db, payload, env) {
 
   if (str(existing.status) !== 'ACC') {
     return { success: false, message: 'Unggah bukti bayar hanya tersedia setelah pengajuan ACC.' };
+  }
+
+  if (str(existing.status_pembayaran) === 'valid') {
+    return { success: false, message: 'Pembayaran sudah valid. Hubungi admin Keuangan untuk koreksi buka kembali.' };
   }
 
   const hasBukti = !!(payload && payload.buktiFile && payload.buktiFile.data);
@@ -63,9 +67,10 @@ export async function uploadBuktiFiles(db, payload, env) {
   if (!upBukti.ok) return { success: false, message: upBukti.message };
 
   const buktiUrl = upBukti.url || str(existing.link_bukti_bayar);
+  const nextPayment = str(existing.status_pembayaran) === 'gratis' ? 'gratis' : 'menunggu';
 
-  await db.prepare("UPDATE pengajuan SET link_bukti_bayar = ?1, upload_reset_at = '', upload_reset_by = '', upload_reset_note = '', updated_at = ?2 WHERE id_pengajuan = ?3")
-    .bind(buktiUrl, nowIso(), idPengajuan).run();
+  await db.prepare("UPDATE pengajuan SET link_bukti_bayar = ?1, status_pembayaran = ?2, upload_reset_at = '', upload_reset_by = '', upload_reset_note = '', updated_at = ?3 WHERE id_pengajuan = ?4")
+    .bind(buktiUrl, nextPayment, nowIso(), idPengajuan).run();
 
   const summary = await getUploadLogDetail(db, idPengajuan);
   await writeLogUpload(db, {

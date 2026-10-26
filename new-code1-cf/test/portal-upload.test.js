@@ -120,4 +120,37 @@ describe('portal upload bukti-only', () => {
     expect(row.upload_reset_by).toBe('');
     expect(row.upload_reset_note).toBe('');
   });
+
+  it('menandai status pembayaran menjadi menunggu setelah unggah bukti', async () => {
+    await seedPengajuan('ACC');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890/view' }),
+      { status: 200 }
+    )));
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT status_pembayaran FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_pembayaran).toBe('menunggu');
+  });
+
+  it('mempertahankan status gratis saat unggah bukti', async () => {
+    await seedPengajuan('ACC');
+    await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'gratis' WHERE id_pengajuan = 'INHAL-1'").run();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890/view' }),
+      { status: 200 }
+    )));
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT status_pembayaran FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_pembayaran).toBe('gratis');
+  });
+
+  it('menolak unggah saat status pembayaran sudah valid', async () => {
+    await seedPengajuan('ACC', 'https://drive.example/bukti.pdf');
+    await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'valid' WHERE id_pengajuan = 'INHAL-1'").run();
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/valid/i);
+  });
 });

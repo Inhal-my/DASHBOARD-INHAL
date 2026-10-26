@@ -321,4 +321,28 @@ describe('reset upload bukti', () => {
     expect(audit.results).toHaveLength(1);
     expect(audit.results[0].alasan).toBe('File salah');
   });
+
+  it('mengembalikan status pembayaran ke belum saat bukti direset', async () => {
+    await seedWithLinks('ACC');
+    await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'menunggu' WHERE id_pengajuan = 'INHAL-1'").run();
+    const ctx = await adminCtx();
+    const res = await resetUploadBukti(env.DB, 'INHAL-1', { note: 'Bukti salah' }, ctx);
+    expect(res.success).toBe(true);
+
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.link_bukti_bayar).toBe('');
+    expect(row.status_pembayaran).toBe('belum');
+  });
+
+  it('menolak reset unggahan saat pembayaran sudah valid', async () => {
+    await seedWithLinks('ACC');
+    await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'valid' WHERE id_pengajuan = 'INHAL-1'").run();
+    const ctx = await adminCtx();
+    const res = await resetUploadBukti(env.DB, 'INHAL-1', {}, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/valid/i);
+
+    const row = await env.DB.prepare('SELECT link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.link_bukti_bayar).toBe('https://drive/bukti');
+  });
 });
