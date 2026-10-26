@@ -141,3 +141,14 @@ Semua task di atas sudah selesai dan diverifikasi ulang:
   - `.gitattributes` memaksa LF dan menghilangkan kegagalan palsu CSP hash/template akibat CRLF.
   - GAS `pages/dashboard.html`: field `Label` dan payload `label` pada unggah BA Pelaksanaan, plus `babSesiCount` + peringatan sesi berikutnya (paritas dengan CF).
 - GAS UI belum mengirim `jadwalId`/`Jam`/`Dosen` saat unggah BA Pelaksanaan (backend tetap menerima bila dikirim dan menolak duplikat `Jadwal ID`). Bila tautan jadwal ingin lengkap seperti CF, tambahkan pemilih jadwal aktif di sheet sesi Bagian.
+
+## Catatan deploy (2026-10-26)
+
+- Commit `e4058e2` (LF + `.gitattributes`), `766c438` (`test:local`), `7e9feda` (BA multi-sesi CF+GAS), `a038dd4` (dokumen plan), `a53e368` (abaikan rahasia lokal) sudah di-push ke `origin/main`.
+- Produksi CF dideploy dengan konfigurasi **`wrangler.production.toml`** (bukan `wrangler.toml`), karena `wrangler.toml` memuat binding `BACKUP_WORKFLOW`/`BACKUP_BUCKET` yang belum dapat dipakai:
+  - R2 belum diaktifkan di akun `e2efd255f61d2b81c7f54c92eb57b946` (`wrangler deploy` dengan `wrangler.toml` gagal `code 10085`; `wrangler r2 bucket list` gagal `code 10042` — perlu aktivasi R2 di dashboard).
+  - Bindings produksi saat ini memang tanpa R2/Workflow, jadi `wrangler.production.toml` sesuai kondisi nyata.
+- Perintah deploy: `cd new-code1-cf && npx wrangler deploy --config wrangler.production.toml`.
+- Hasil: version `4fbe7f96-dd46-4810-abb8-94f577d31788`, URL `https://inhal-form.prodi.workers.dev`.
+- Verifikasi live: `/api/health` -> `{"ok":true,"db":"ok",...}`; `/dashboard.html` memuat `babSesiCount` dan header CSP menyajikan hash inline script baru (`sha256-YIEjuEDWX4WfCHWGu3/UhRLHUTaH76/NVWf4kcRFGeg=`).
+- Deploy GAS belum otomatis (tidak ada `clasp`/`.clasp.json` di repo): file `new-code1/pages/dashboard.html` (+ `1_business.gs` bila belum) perlu di-paste ke project Apps Script lalu **Deploy > Manage deployments > Edit > New version**.
