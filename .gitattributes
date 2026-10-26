@@ -1,0 +1,21 @@
+# Normalisasi line ending ke LF agar cocok dengan CI (Linux) dan produksi.
+# Test CSP hash dan template membandingkan byte mentah, sehingga CRLF
+# menyebabkan kegagalan palsu saat checkout di Windows.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text=auto eol=lf
+*.pdf binary
+*.zip binary
+*.gz binary
+*.docx binary
+*.xlsx binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
