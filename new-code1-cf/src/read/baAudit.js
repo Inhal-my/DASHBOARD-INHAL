@@ -25,16 +25,32 @@ function sessionPeserta(b) {
   return out;
 }
 
+function jadwalIdsOf(b) {
+  const raw = b && (b.jadwalIds || b.jadwal_ids);
+  const out = [];
+  if (Array.isArray(raw)) {
+    for (const value of raw) {
+      const id = str(value);
+      if (id && out.indexOf(id) === -1) out.push(id);
+    }
+  }
+  const single = str(first(b, 'jadwalId', 'Jadwal ID'));
+  if (single && out.indexOf(single) === -1) out.push(single);
+  return out;
+}
+
 function normalizeSession(b, jadwalIds) {
   const baId = str(first(b, 'baId', 'BA ID'));
   const tanggal = str(first(b, 'tanggal', 'Tanggal Pelaksanaan'));
   const jam = str(first(b, 'jam', 'Jam'));
   const dosen = str(first(b, 'dosen', 'Dosen'));
   const fileUrl = str(first(b, 'fileUrl', 'File URL'));
-  const jadwalId = str(first(b, 'jadwalId', 'Jadwal ID'));
+  const ids = jadwalIdsOf(b);
   const peserta = sessionPeserta(b);
-  const jadwalCocok = jadwalId ? jadwalIds.has(jadwalId) : null;
-  const lengkap = !!(fileUrl && tanggal && jam && dosen && peserta.length);
+  const jadwalCocok = ids.length ? ids.every((id) => jadwalIds.has(id)) : null;
+  // BA multi-sesi menyimpan jam sesi pertama; bila kosong tetap dianggap lengkap
+  // selama sesi jadwalnya tercatat.
+  const lengkap = !!(fileUrl && tanggal && dosen && peserta.length && (jam || ids.length > 1));
   return {
     index: 0,
     baId: baId,
@@ -49,7 +65,9 @@ function normalizeSession(b, jadwalIds) {
     fileUrl: fileUrl,
     baseFileUrl: str(first(b, 'baseFileUrl', 'Base File URL')),
     berkasAda: !!fileUrl,
-    jadwalId: jadwalId,
+    jadwalId: ids[0] || '',
+    jadwalIds: ids,
+    jumlahSesi: ids.length || 1,
     jadwalCocok: jadwalCocok,
     lengkap: lengkap,
     status: lengkap ? 'Lengkap' : 'Draft',
@@ -115,14 +133,17 @@ export function buildBaPelaksanaanAudit(units, jadwalList) {
       const dupKey = [s.tanggal, s.jam, s.dosen.toLowerCase()].join('|');
       if (dupGroups[dupKey] > 1) s.flags.push('Kemungkinan duplikat');
       if (s.status === 'Draft') s.flags.push('Draft');
-      if (jadwal.length && !s.jadwalId) s.flags.push('Sesi ekstra');
+      if (jadwal.length && !s.jadwalIds.length) s.flags.push('Sesi ekstra');
+      if (s.jadwalIds.length && s.jadwalCocok === false) s.flags.push('Sebagian sesi tidak cocok');
     }
 
-    const coveredJadwal = new Set(sesi.map((s) => s.jadwalId).filter(Boolean));
+    const coveredJadwal = new Set();
+    for (const s of sesi) for (const id of s.jadwalIds) if (id) coveredJadwal.add(id);
     const jadwalBelum = jadwal.filter((j) => !coveredJadwal.has(str(j.jadwalId || j['Jadwal ID']))).length;
     const sesiDraft = sesi.filter((s) => s.status === 'Draft').length;
     const sesiEkstra = sesi.filter((s) => s.flags.indexOf('Sesi ekstra') !== -1).length;
     const kemungkinanDuplikat = Object.keys(dupGroups).filter((k) => dupGroups[k] > 1).length;
+    const jumlahSesi = sesi.reduce((total, s) => total + (s.jumlahSesi || 1), 0);
     const pesertaSeen = {};
     for (const s of sesi) {
       for (const p of s.peserta) {
@@ -135,8 +156,9 @@ export function buildBaPelaksanaanAudit(units, jadwalList) {
       bagian: str(unit && unit.bagian),
       blok: str(unit && unit.blok),
       kegiatan: str((unit && (unit.label || unit.namaKegiatan)) || ''),
-      jumlahSesi: sesi.length,
-      status: sesi.length > 1 ? 'Multi-sesi' : (sesi.length === 1 ? 'Satu sesi' : 'Belum'),
+      jumlahSesi: jumlahSesi,
+      jumlahBa: sesi.length,
+      status: jumlahSesi > 1 ? 'Multi-sesi' : (jumlahSesi === 1 ? 'Satu sesi' : 'Belum'),
       jadwalCount: jadwal.length,
       jadwalBelum: jadwalBelum,
       sesiEkstra: sesiEkstra,

@@ -3,6 +3,7 @@ import { toClientRow } from './columns.js';
 import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, resolveBagian12, kegiatanKey } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
+import { loadBaSesiMap, baJadwalIds, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
 
 function baSumber(r) {
   const s = String((r && r.Sumber) || '').trim().toLowerCase();
@@ -47,11 +48,8 @@ export async function getLaporanBootstrap(db, ctx) {
       statusPengajuan: String(p.status_pengajuan || '').trim()
     });
   }
-  const baIdByJadwal = {};
-  for (const b of ba) {
-    const j = String(b.jadwal_id || '').trim();
-    if (j && !baIdByJadwal[j]) baIdByJadwal[j] = String(b.ba_id || '').trim();
-  }
+  const sesiMap = await loadBaSesiMap(db);
+  const baIdByJadwal = buildBaIdByJadwal(ba, sesiMap);
   const jadwalList = [];
   for (const r of jadwalRows) {
     if (Number(r.active) !== 1) continue;
@@ -149,6 +147,8 @@ export async function getLaporanBootstrap(db, ctx) {
     .map((r) => {
       const c = toClientRow('berita_acara', r);
       c.peserta = pesertaMap[String(r.ba_id || '').trim()] || [];
+      c.jadwalIds = baJadwalIds(sesiMap, r.ba_id, r.jadwal_id);
+      c.jumlahSesi = c.jadwalIds.length;
       return c;
     });
 
@@ -193,7 +193,10 @@ export async function getLaporanBootstrap(db, ctx) {
   attach(baAdminClient, 'baPendukung');
   attach(baClientUnits, 'baPelaksanaan');
   for (const u of units) {
-    u.pelaksanaan = u.baPelaksanaan.map((b) => ({ baId: b['BA ID'], tanggal: b['Tanggal Pelaksanaan'], jam: b.Jam || '', dosen: b.Dosen || '' }));
+    u.pelaksanaan = u.baPelaksanaan.map((b) => ({
+      baId: b['BA ID'], tanggal: b['Tanggal Pelaksanaan'], jam: b.Jam || '', dosen: b.Dosen || '',
+      jadwalIds: b.jadwalIds || [], jumlahSesi: b.jumlahSesi || 0
+    }));
     const dosenSet = [];
     for (const b of u.baPelaksanaan) if (b.Dosen && dosenSet.indexOf(b.Dosen) === -1) dosenSet.push(b.Dosen);
     u.dosenList = dosenSet;

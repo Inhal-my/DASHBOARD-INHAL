@@ -234,6 +234,155 @@ async function syncPengajuanPelaksanaan(db, peserta, dosen, tanggal, jam) {
   if (stmts.length) await db.batch(stmts);
 }
 
+const MAX_BA_SESI = 50;
+
+// Satu BA Pelaksanaan boleh mencakup beberapa sesi jadwal. Klien mengirim
+// `jadwalIds` (array); `jadwalId` tunggal tetap diterima untuk kompatibilitas.
+export function normalizeJadwalIds(payload) {
+  const p = payload || {};
+  const raw = Array.isArray(p.jadwalIds) ? p.jadwalIds.slice() : [];
+  if (!raw.length && p.jadwalId) raw.push(p.jadwalId);
+  const out = [];
+  for (const value of raw) {
+    const id = str(value);
+    if (!id || out.indexOf(id) !== -1) continue;
+    out.push(id);
+  }
+  return out;
+}
+
+function sesiTanggal(jd) {
+  return str(jd && jd.tanggal).slice(0, 10);
+}
+
+function compareSesi(a, b) {
+  return sesiTanggal(a).localeCompare(sesiTanggal(b))
+    || str(a && a.jam).localeCompare(str(b && b.jam))
+    || str(a && a.jadwal_id).localeCompare(str(b && b.jadwal_id));
+}
+
+export function sesiLabel(sesi) {
+  return (sesi || []).map((jd) => {
+    const tgl = sesiTanggal(jd) || '(tanpa tanggal)';
+    const jam = str(jd && jd.jam);
+    return jam ? tgl + ' ' + jam : tgl;
+  }).join(', ');
+}
+
+async function findSesiLink(db, jadwalId, excludeBaId) {
+  const excluded = str(excludeBaId);
+  const { results } = await db.prepare(
+    'SELECT ba_id, jadwal_id FROM berita_acara_sesi WHERE jadwal_id = ?1 ' +
+    'UNION ALL SELECT ba_id, jadwal_id FROM berita_acara WHERE jadwal_id = ?1'
+  ).bind(jadwalId).all();
+  for (const row of results || []) {
+    const baId = str(row.ba_id);
+    if (!baId || baId === excluded) continue;
+    return baId;
+  }
+  return '';
+}
+
+async function resolveBaSesi(db, options) {
+  const ids = options.jadwalIds || [];
+  if (!ids.length) return { ok: true, sesi: [] };
+  if (ids.length > MAX_BA_SESI) {
+    return { ok: false, message: 'Sesi maksimal ' + MAX_BA_SESI + ' jadwal per berita acara.' };
+  }
+  const key = str(options.kegiatanKey);
+  const sesi = [];
+  for (const id of ids) {
+    const jd = await db.prepare('SELECT * FROM jadwal_pelaksanaan WHERE jadwal_id = ?1').bind(id).first();
+    if (!jd || Number(jd.active) !== 1) {
+      return { ok: false, message: 'Jadwal pelaksanaan tidak ditemukan atau sudah dibatalkan.' };
+    }
+    const jadwalKey = str(jd.kegiatan_key) || kegiatanKey(str(jd.bagian), str(jd.blok), str(jd.nama_kegiatan));
+    if (jadwalKey !== key) {
+      return { ok: false, message: 'Jadwal pelaksanaan tidak sesuai dengan kegiatan berita acara.' };
+    }
+    const linked = await findSesiLink(db, id, options.excludeBaId);
+    if (linked) {
+      return { ok: false, message: 'Berita acara untuk jadwal ini sudah ada (' + linked + ').' };
+    }
+    sesi.push(jd);
+  }
+  sesi.sort(compareSesi);
+
+  const tanggal = str(options.tanggal).slice(0, 10);
+  const firstTanggal = sesiTanggal(sesi[0]);
+  if (tanggal && firstTanggal && tanggal !== firstTanggal) {
+    return {
+      ok: false,
+      message: 'Tanggal BA harus sama dengan tanggal sesi paling awal (' + sesiLabel(sesi.slice(0, 1)) + ').'
+    };
+  }
+  return { ok: true, sesi: sesi };
+}
+
+function buildBaSesiStmts(db, baId, sesi) {
+  const ts = nowIso();
+  return (sesi || []).map((jd, index) => db.prepare(
+    'INSERT INTO berita_acara_sesi (timestamp, ba_id, jadwal_id, urutan) VALUES (?1, ?2, ?3, ?4)'
+  ).bind(ts, baId, str(jd.jadwal_id), index + 1));
+}
+
+// Sesi tersimpan untuk satu BA; fallback ke kolom lama berita_acara.jadwal_id
+// agar BA yang dibuat sebelum migrasi tetap terbaca.
+async function loadBaSesiRows(db, baId) {
+  const { results } = await db.prepare(
+    'SELECT jadwal_id FROM berita_acara_sesi WHERE ba_id = ?1 ORDER BY urutan, id'
+  ).bind(baId).all();
+  const ids = (results || []).map((r) => str(r.jadwal_id)).filter(Boolean);
+  if (!ids.length) {
+    const ba = await db.prepare('SELECT jadwal_id FROM berita_acara WHERE ba_id = ?1').bind(baId).first();
+    const legacy = str(ba && ba.jadwal_id);
+    if (legacy) ids.push(legacy);
+  }
+  const sesi = [];
+  for (const jadwalId of ids) {
+    const jd = await db.prepare('SELECT * FROM jadwal_pelaksanaan WHERE jadwal_id = ?1').bind(jadwalId).first();
+    if (jd) sesi.push(jd);
+  }
+  sesi.sort(compareSesi);
+  return sesi;
+}
+
+// Sinkronisasi pengajuan memakai nilai sesi masing-masing peserta agar BA
+// multi-sesi tidak menimpa tanggal/jam sesi lain dengan nilai BA.
+async function buildSesiSyncStmts(db, peserta, sesi, fallback) {
+  const list = sesi || [];
+  if (!list.length) {
+    return buildSyncStmts(db, peserta, fallback.dosen, fallback.tanggal, fallback.jam);
+  }
+  const order = {};
+  list.forEach((jd, index) => { order[str(jd.jadwal_id)] = index; });
+  const byJadwal = {};
+  for (const jd of list) byJadwal[str(jd.jadwal_id)] = jd;
+
+  const rows = (await db.prepare('SELECT jadwal_id, id_pengajuan FROM jadwal_peserta').all()).results || [];
+  const sesiOfPeserta = {};
+  for (const row of rows) {
+    const jid = str(row.jadwal_id);
+    const pid = str(row.id_pengajuan);
+    if (!pid || order[jid] === undefined) continue;
+    if (sesiOfPeserta[pid] === undefined || order[jid] < order[sesiOfPeserta[pid]]) {
+      sesiOfPeserta[pid] = jid;
+    }
+  }
+
+  const stmts = [];
+  for (const p of peserta || []) {
+    const pid = str(p.idPengajuan);
+    if (!pid) continue;
+    const jd = byJadwal[sesiOfPeserta[pid]] || null;
+    const dosen = jd ? (str(jd.dosen) || fallback.dosen) : fallback.dosen;
+    const tanggal = jd ? str(jd.tanggal) : fallback.tanggal;
+    const jam = jd ? str(jd.jam) : fallback.jam;
+    stmts.push(...buildSyncStmts(db, [p], dosen, tanggal, jam));
+  }
+  return stmts;
+}
+
 export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const p = payload || {};
@@ -377,6 +526,7 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
 
   await db.batch([
     ...syncs,
+    db.prepare('DELETE FROM berita_acara_sesi WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
   ]);
@@ -417,25 +567,14 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     };
   }
 
-  const jadwalId = str(p.jadwalId);
-  if (jadwalId) {
-    const jd = await db.prepare('SELECT * FROM jadwal_pelaksanaan WHERE jadwal_id = ?1').bind(jadwalId).first();
-    if (!jd || Number(jd.active) !== 1) {
-      return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan atau sudah dibatalkan.' };
-    }
-    const key = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
-    const jadwalKey = str(jd.kegiatan_key) || kegiatanKey(str(jd.bagian), str(jd.blok), str(jd.nama_kegiatan));
-    if (jadwalKey !== key) {
-      return { success: false, message: 'Jadwal pelaksanaan tidak sesuai dengan kegiatan berita acara.' };
-    }
-    const jadwalTanggal = str(jd.tanggal).slice(0, 10);
-    const baTanggal = str(p.tanggalPelaksanaan).slice(0, 10);
-    if (jadwalTanggal && baTanggal && jadwalTanggal !== baTanggal) {
-      return { success: false, message: 'Tanggal BA tidak sesuai dengan tanggal jadwal pelaksanaan.' };
-    }
-    const dup = await db.prepare('SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1').bind(jadwalId).first();
-    if (dup) return { success: false, message: 'Berita acara untuk jadwal ini sudah ada.' };
-  }
+  const baKey = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
+  const sesiResult = await resolveBaSesi(db, {
+    jadwalIds: normalizeJadwalIds(p),
+    kegiatanKey: baKey,
+    tanggal: p.tanggalPelaksanaan
+  });
+  if (!sesiResult.ok) return { success: false, message: sesiResult.message };
+  const sesi = sesiResult.sesi;
 
   const baId = await nextBaId(db, 'berita_acara');
   let fileUrl = '';
@@ -450,16 +589,30 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   p.__peserta = peserta;
   p.__jumlah = peserta.length;
   p.__sumber = 'Bagian';
+  // Kolom jam & dosen BA tetap terisi (dipakai penanda "selesai" dan export);
+  // untuk multi-sesi nilainya diambil dari sesi paling awal.
+  if (sesi.length) {
+    if (!str(p.jam)) p.jam = str(sesi[0].jam);
+    if (!str(p.dosen)) p.dosen = str(sesi[0].dosen);
+    p.jadwalId = str(sesi[0].jadwal_id);
+  }
+  const syncStmts = await buildSesiSyncStmts(db, peserta, sesi, {
+    dosen: str(p.dosen), tanggal: str(p.tanggalPelaksanaan), jam: str(p.jam)
+  });
   await db.batch([
     ...buildPersistBaStmts(db, 'berita_acara', 'berita_acara_peserta', p, {
       baId: baId, bagian: bagian, fileName: fileName, fileUrl: fileUrl,
-      kegiatanKey: kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)), withDosen: true, withLabel: true, allowMultiple: true, withJadwal: true
+      kegiatanKey: baKey, withDosen: true, withLabel: true, allowMultiple: true, withJadwal: true
     }),
-    ...buildSyncStmts(db, peserta, str(p.dosen), str(p.tanggalPelaksanaan), str(p.jam))
+    ...buildBaSesiStmts(db, baId, sesi),
+    ...syncStmts
   ]);
-  await auditBa(db, ctx, 'BA_CREATE', baId, { jenis: 'Pelaksanaan', bagian: bagian, jumlahPeserta: peserta.length });
+  await auditBa(db, ctx, 'BA_CREATE', baId, {
+    jenis: 'Pelaksanaan', bagian: bagian, jumlahPeserta: peserta.length,
+    jumlahSesi: sesi.length, jadwalIds: sesi.map((jd) => str(jd.jadwal_id))
+  });
 
-  return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
+  return { success: true, baId: baId, jumlahSesi: sesi.length, message: 'Berita acara berhasil diunggah.' };
 }
 
 export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
@@ -481,6 +634,20 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
 
   const current = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
   const currentIds = current.map((r) => str(r.id_pengajuan)).filter(Boolean);
+
+  let sesi = await loadBaSesiRows(db, id);
+  let remapSesi = false;
+  if (p.jadwalIds !== undefined || p.jadwalId !== undefined) {
+    const resolvedSesi = await resolveBaSesi(db, {
+      jadwalIds: normalizeJadwalIds(p),
+      kegiatanKey: str(existing.kegiatan_key) || kegiatanKey(existing.bagian, existing.blok, existing.nama_kegiatan),
+      tanggal: tanggal,
+      excludeBaId: id
+    });
+    if (!resolvedSesi.ok) return { success: false, message: resolvedSesi.message };
+    sesi = resolvedSesi.sesi;
+    remapSesi = true;
+  }
 
   let pesertaIds = null;
   let pesertaBaru = [];
@@ -510,6 +677,15 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
       .bind(tanggal, jam, dosen, catatan, label, id)
   ];
 
+  if (remapSesi) {
+    stmts.push(db.prepare('DELETE FROM berita_acara_sesi WHERE ba_id = ?1').bind(id));
+    stmts.push(...buildBaSesiStmts(db, id, sesi));
+    stmts.push(
+      db.prepare('UPDATE berita_acara SET jadwal_id = ?1 WHERE ba_id = ?2')
+        .bind(sesi.length ? str(sesi[0].jadwal_id) : '', id)
+    );
+  }
+
   if (pesertaIds) {
     const baruSet = new Set(pesertaIds);
     const removed = currentIds.filter((pid) => !baruSet.has(pid));
@@ -525,13 +701,17 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
     }
     stmts.push(db.prepare('UPDATE berita_acara SET jumlah_peserta = ?1 WHERE ba_id = ?2').bind(pesertaIds.length, id));
     stmts.push(...await buildRestorePengajuanStmts(db, removed, id));
-    stmts.push(...buildSyncStmts(db, pesertaBaru, dosen, tanggal, jam));
+    stmts.push(...await buildSesiSyncStmts(db, pesertaBaru, sesi, { dosen: dosen, tanggal: tanggal, jam: jam }));
   } else {
-    stmts.push(...buildSyncStmts(db, currentIds.map((pid) => ({ idPengajuan: pid })), dosen, tanggal, jam));
+    stmts.push(...await buildSesiSyncStmts(db, currentIds.map((pid) => ({ idPengajuan: pid })), sesi, { dosen: dosen, tanggal: tanggal, jam: jam }));
   }
 
   await db.batch(stmts);
-  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pelaksanaan', jumlahPeserta: pesertaIds ? pesertaIds.length : currentIds.length });
+  await auditBa(db, ctx, 'BA_UPDATE', id, {
+    jenis: 'Pelaksanaan',
+    jumlahPeserta: pesertaIds ? pesertaIds.length : currentIds.length,
+    jumlahSesi: sesi.length
+  });
   return {
     success: true,
     message: 'Berita acara diperbarui.',
@@ -556,11 +736,18 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
 
   const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const sesi = await loadBaSesiRows(db, id);
+  const syncStmts = await buildSesiSyncStmts(
+    db,
+    peserta.map((r) => ({ idPengajuan: r.id_pengajuan })),
+    sesi,
+    { dosen: dosen, tanggal: tanggal, jam: jam }
+  );
   await db.batch([
     db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan=?1, jam=?2, dosen=?3, catatan=?4, label=?5 WHERE ba_id=?6')
       .bind(tanggal, jam, dosen, catatan, label, id),
-    ...buildSyncStmts(db, peserta.map((r) => ({ idPengajuan: r.id_pengajuan })), dosen, tanggal, jam)
+    ...syncStmts
   ]);
-  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pelaksanaan', lengkapi: true });
+  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pelaksanaan', lengkapi: true, jumlahSesi: sesi.length });
   return { success: true, message: 'Berita acara dilengkapi.' };
 }

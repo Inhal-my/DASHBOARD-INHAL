@@ -130,7 +130,10 @@ async function findActiveJadwal(db, jadwalId) {
 }
 
 async function hasBa(db, jadwalId) {
-  return !!(await db.prepare('SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1').bind(jadwalId).first());
+  const direct = await db.prepare('SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1').bind(jadwalId).first();
+  if (direct) return true;
+  const sesi = await db.prepare('SELECT ba_id FROM berita_acara_sesi WHERE jadwal_id = ?1').bind(jadwalId).first();
+  return !!sesi;
 }
 
 export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, ctx) {

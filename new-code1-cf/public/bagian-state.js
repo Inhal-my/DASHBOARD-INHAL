@@ -104,6 +104,71 @@
     return peserta.every(function (p) { return !!ids[String(p.idPengajuan)]; });
   }
 
+  function sessionsForKegiatan(ref, jadwalList) {
+    var blok = ref && ref.blok;
+    var nama = ref && ref.nama;
+    return (jadwalList || []).filter(function (j) {
+      return sameKegiatan(blok, nama, j.Blok, j.NamaKegiatan);
+    }).sort(function (a, b) {
+      var ka = dateOnly(a.Tanggal) + '|' + String(a.Jam || '');
+      var kb = dateOnly(b.Tanggal) + '|' + String(b.Jam || '');
+      return ka.localeCompare(kb);
+    });
+  }
+
+  function pesertaKey(p) {
+    return String((p && (p.idPengajuan || p.npm)) || '').trim();
+  }
+
+  function unionPeserta(sessions) {
+    var seen = {};
+    var out = [];
+    (sessions || []).forEach(function (j) {
+      (j.peserta || []).forEach(function (p) {
+        var key = pesertaKey(p);
+        if (!key || seen[key]) return;
+        seen[key] = true;
+        out.push({
+          idPengajuan: String((p && p.idPengajuan) || '').trim(),
+          npm: String((p && p.npm) || '').trim(),
+          namaLengkap: String((p && p.namaLengkap) || '').trim(),
+          blok: String((p && p.blok) || '').trim(),
+          statusPengajuan: String((p && (p.statusPengajuan || p.status)) || '').trim()
+        });
+      });
+    });
+    return out;
+  }
+
+  // Toggle satu sesi jadwal pada form BA. Mengembalikan daftar sesi terpilih
+  // beserta union peserta dan peta peserta terpilih.
+  function applySessionToggle(jadwalIds, jadwalId, sessions) {
+    var id = String(jadwalId || '').trim();
+    var list = (jadwalIds || []).map(function (v) { return String(v || '').trim(); }).filter(Boolean);
+    var idx = list.indexOf(id);
+    if (id && idx === -1) list.push(id);
+    else if (idx !== -1) list.splice(idx, 1);
+    var picked = {};
+    list.forEach(function (jid) { picked[jid] = true; });
+    var chosen = (sessions || []).filter(function (j) { return picked[String(j.JadwalID)]; });
+    var peserta = unionPeserta(chosen);
+    var selected = {};
+    peserta.forEach(function (p) { if (p.idPengajuan) selected[p.idPengajuan] = true; });
+    return { jadwalIds: list, sessions: chosen, peserta: peserta, selected: selected };
+  }
+
+  function sesiSummary(sessions) {
+    var list = sessions || [];
+    var tanggal = list.map(function (j) { return dateOnly(j.Tanggal); }).filter(Boolean).sort();
+    return {
+      jumlahSesi: list.length,
+      jumlahPeserta: unionPeserta(list).length,
+      mulai: tanggal[0] || '',
+      selesai: tanggal[tanggal.length - 1] || '',
+      label: list.length ? list.length + ' sesi' : 'Tanpa sesi'
+    };
+  }
+
   function groupRows(rows, options, pendingOnly) {
     var opts = options || {};
     var statuses = opts.statuses || ['ACC'];
@@ -196,6 +261,13 @@
     return items;
   }
 
+  function baSesiCount(b) {
+    if (!b) return 0;
+    var n = Number(b.jumlahSesi || 0);
+    if (n) return n;
+    return (b.sesi || []).length;
+  }
+
   function buildBaWorkItems(kegiatanGroups, draftBaList, jadwalList) {
     var items = [];
     (draftBaList || []).forEach(function (b) {
@@ -211,7 +283,8 @@
         jadwal: jadwalForKegiatan(ref, jadwalList),
         status: 'draft',
         peserta: b.peserta || [],
-        dosen: b.Dosen || ''
+        dosen: b.Dosen || '',
+        jumlahSesi: baSesiCount(b)
       });
     });
     (kegiatanGroups || []).forEach(function (g) {
@@ -257,7 +330,8 @@
         ba: b,
         status: 'selesai',
         peserta: b.peserta || [],
-        dosen: b.Dosen || ''
+        dosen: b.Dosen || '',
+        jumlahSesi: baSesiCount(b)
       };
     });
     return sortByDate(items, 'desc');
@@ -321,6 +395,10 @@
     jadwalForKegiatan: jadwalForKegiatan,
     baForJadwal: baForJadwal,
     statusOf: statusOf,
+    sessionsForKegiatan: sessionsForKegiatan,
+    unionPeserta: unionPeserta,
+    applySessionToggle: applySessionToggle,
+    sesiSummary: sesiSummary,
     unscheduledPeserta: unscheduledPeserta,
     groupFullyScheduled: groupFullyScheduled,
     buildAllGroups: buildAllGroups,

@@ -1,4 +1,5 @@
 import { baginaKey, getMasterOptions, resolveBagian12 } from './common.js';
+import { loadBaSesiMap, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -36,6 +37,7 @@ function mergeJadwal(a, b) {
   if (!merged.punyaBa && other.punyaBa) {
     merged.punyaBa = true;
     merged.baId = other.baId;
+    merged.baJumlahSesi = other.baJumlahSesi;
   }
   if ((other.peserta || []).length > (merged.peserta || []).length) merged.peserta = other.peserta;
   return merged;
@@ -61,10 +63,14 @@ export async function computeJadwalList(db, bagianFilter, kategori) {
   const pesertaRows = (await db.prepare('SELECT * FROM jadwal_peserta').all()).results || [];
   const baRows = (await db.prepare('SELECT ba_id, jadwal_id FROM berita_acara').all()).results || [];
 
-  const baIdByJadwal = {};
+  const sesiMap = await loadBaSesiMap(db);
+  const baIdByJadwal = buildBaIdByJadwal(baRows, sesiMap);
+  const jumlahSesiByBa = {};
+  for (const baId of Object.keys(sesiMap)) jumlahSesiByBa[baId] = sesiMap[baId].length;
   for (const b of baRows) {
+    const baId = str(b.ba_id);
     const j = str(b.jadwal_id);
-    if (j && !baIdByJadwal[j]) baIdByJadwal[j] = str(b.ba_id);
+    if (baId && j && !jumlahSesiByBa[baId]) jumlahSesiByBa[baId] = 1;
   }
   const pesertaByJadwal = {};
   for (const p of pesertaRows) {
@@ -95,6 +101,7 @@ export async function computeJadwalList(db, bagianFilter, kategori) {
       Active: Number(r.active) || 0,
       punyaBa: !!baIdByJadwal[id],
       baId: baIdByJadwal[id] || '',
+      baJumlahSesi: jumlahSesiByBa[baIdByJadwal[id]] || 0,
       peserta: pesertaByJadwal[id] || []
     });
   }

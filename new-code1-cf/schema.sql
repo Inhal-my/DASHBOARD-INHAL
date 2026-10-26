@@ -154,6 +154,10 @@ CREATE TABLE berita_acara_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
   nama_lengkap TEXT, blok TEXT, bagian TEXT, status_pengajuan TEXT
 );
+CREATE TABLE berita_acara_sesi (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT NOT NULL,
+  jadwal_id TEXT NOT NULL, urutan INTEGER DEFAULT 1
+);
 CREATE TABLE jadwal_pelaksanaan (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, jadwal_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, kegiatan_key TEXT, tanggal TEXT, jam TEXT, dosen TEXT, catatan TEXT,
@@ -211,6 +215,8 @@ CREATE INDEX idx_ba_admin_peserta_ba_active ON berita_acara_admin_peserta(ba_id,
 CREATE INDEX idx_ba_admin_peserta_pengajuan_active ON berita_acara_admin_peserta(id_pengajuan, active);
 CREATE INDEX idx_ba_peserta_ba_id ON berita_acara_peserta(ba_id);
 CREATE INDEX idx_ba_peserta_pengajuan ON berita_acara_peserta(id_pengajuan);
+CREATE INDEX idx_ba_sesi_ba_id ON berita_acara_sesi(ba_id);
+CREATE UNIQUE INDEX idx_ba_sesi_jadwal_id ON berita_acara_sesi(jadwal_id);
 CREATE INDEX idx_check_data_pengajuan ON check_data(id_pengajuan);
 CREATE INDEX idx_pengajuan_blok ON pengajuan(blok);
 CREATE INDEX idx_pengajuan_status ON pengajuan(status);

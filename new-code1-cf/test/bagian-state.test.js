@@ -94,6 +94,52 @@ describe('bagian-state helpers', () => {
     expect(items[0].key).toBe('ba1');
   });
 
+  it('membawa jumlah sesi ke item BA', async () => {
+    const S = await loadState();
+    const multi = Object.assign({}, baList[0], { jumlahSesi: 2, sesi: ['j1', 'j9'] });
+    expect(S.buildRiwayatItems([multi])[0].jumlahSesi).toBe(2);
+    const pending = S.buildKegiatanGroups(rows, { statuses: ['ACC'] });
+    const draft = Object.assign({}, baList[1], { sesi: ['j2'] });
+    const items = S.buildBaWorkItems(pending, [draft], jadwalList);
+    expect(items.find((i) => i.kind === 'ba').jumlahSesi).toBe(1);
+  });
+
+  it('menggabungkan sesi jadwal satu kegiatan', async () => {
+    const S = await loadState();
+    const list = [
+      { JadwalID: 'j2', Blok: '1', NamaKegiatan: 'Neurologi - A', Tanggal: '2026-10-22', Jam: '10:00', peserta: [{ idPengajuan: 'p2', npm: '002', namaLengkap: 'Budi' }] },
+      { JadwalID: 'j1', Blok: '1', NamaKegiatan: 'Neurologi - A', Tanggal: '2026-10-20', Jam: '08:00', peserta: [{ idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani' }] },
+      { JadwalID: 'j3', Blok: '2', NamaKegiatan: 'Farmasi', Tanggal: '2026-10-21', Jam: '09:00', peserta: [] }
+    ];
+    const sessions = S.sessionsForKegiatan({ blok: '1', nama: 'Neurologi - A' }, list);
+    expect(sessions.map((j) => j.JadwalID)).toEqual(['j1', 'j2']);
+    expect(S.unionPeserta(sessions).map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+    const sum = S.sesiSummary(sessions);
+    expect(sum.jumlahSesi).toBe(2);
+    expect(sum.jumlahPeserta).toBe(2);
+    expect(sum.mulai).toBe('2026-10-20');
+    expect(sum.selesai).toBe('2026-10-22');
+    expect(sum.label).toBe('2 sesi');
+  });
+
+  it('menyalakan dan mematikan sesi beserta peserta gabungan', async () => {
+    const S = await loadState();
+    const sessions = [
+      { JadwalID: 'j1', Tanggal: '2026-10-20', peserta: [{ idPengajuan: 'p1', namaLengkap: 'Ani', npm: '001' }] },
+      { JadwalID: 'j2', Tanggal: '2026-10-22', peserta: [{ idPengajuan: 'p2', namaLengkap: 'Budi', npm: '002' }] }
+    ];
+    const on = S.applySessionToggle([], 'j1', sessions);
+    expect(on.jadwalIds).toEqual(['j1']);
+    expect(Object.keys(on.selected)).toEqual(['p1']);
+    const both = S.applySessionToggle(on.jadwalIds, 'j2', sessions);
+    expect(both.jadwalIds).toEqual(['j1', 'j2']);
+    expect(Object.keys(both.selected).sort()).toEqual(['p1', 'p2']);
+    const off = S.applySessionToggle(both.jadwalIds, 'j1', sessions);
+    expect(off.jadwalIds).toEqual(['j2']);
+    expect(Object.keys(off.selected)).toEqual(['p2']);
+    expect(S.sesiSummary([]).label).toBe('Tanpa sesi');
+  });
+
   it('menghitung statistik dan progres blok', async () => {
     const S = await loadState();
     const all = S.buildAllGroups(rows, { statuses: ['ACC'] });

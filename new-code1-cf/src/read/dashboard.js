@@ -8,6 +8,7 @@ import {
 } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
+import { loadBaSesiMap, baJadwalIds } from './baSesi.js';
 import { logError } from '../obs/log.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -180,6 +181,7 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
 export async function getBagianAggregation(db, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
+  const sesiMap = await loadBaSesiMap(db);
   const pengajuan = await all('pengajuan');
   const details = await all('detail_kegiatan');
   const labs = await getMasterOptions(db, 'Lab');
@@ -234,6 +236,7 @@ export async function getBagianAggregation(db, ctx) {
     for (const r of rows) {
       const c = toClientRow(table, r);
       const baId = String(c['BA ID'] || '').trim();
+      const jadwalIds = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
       const rec = {
         baId, sumber,
         bagian: String(c.Bagian || '').trim(),
@@ -247,6 +250,9 @@ export async function getBagianAggregation(db, ctx) {
         fileName: String(c['File Name'] || '').trim(),
         catatan: String(c.Catatan || '').trim(),
         timestamp: String(c.Timestamp || '').trim(),
+        jadwalId: jadwalIds[0] || '',
+        jadwalIds: jadwalIds,
+        jumlahSesi: jadwalIds.length,
         peserta: []
       };
       byId[baId] = rec;
@@ -316,7 +322,10 @@ export async function getBagianAggregation(db, ctx) {
     u.jumlahPeserta = u.peserta.length;
     u.statusBa = u.ba.length ? 'ada' : 'belum';
     u.statusFinal = u.linkFinal ? 'ada' : 'belum';
-    u.pelaksanaan = u.baPelaksanaan.map((b) => ({ baId: b.baId, tanggal: b.tanggal, jam: b.jam || '', dosen: b.dosen || '' }));
+    u.pelaksanaan = u.baPelaksanaan.map((b) => ({
+      baId: b.baId, tanggal: b.tanggal, jam: b.jam || '', dosen: b.dosen || '',
+      jadwalIds: b.jadwalIds || [], jumlahSesi: b.jumlahSesi || 0
+    }));
     const dosenSet = [];
     for (const b of u.baPelaksanaan) if (b.dosen && dosenSet.indexOf(b.dosen) === -1) dosenSet.push(b.dosen);
     u.dosenList = dosenSet;

@@ -1,6 +1,7 @@
 import { getSession, requireBagianSession, AUTH_ERROR } from '../session.js';
 import { toClientRow } from './columns.js';
 import { computeJadwalList } from './jadwal.js';
+import { loadBaSesiMap, baJadwalIds } from './baSesi.js';
 import {
   baginaKey, getMasterOptions, getBagianBaSettings, baginaHasAccess,
   getBagianAliasMap, resolveBagian12, kegiatanKey
@@ -140,10 +141,15 @@ async function computeBaList(db, bagianFilter, kategori) {
   const isPraktikum = kat === 'praktikum';
   const labs = isPraktikum ? await getMasterOptions(db, 'Lab') : null;
   const pesertaMap = await getBaPesertaMap(db);
+  const sesiMap = await loadBaSesiMap(db);
   const sanitized = rows.map((c) => {
     const copy = Object.assign({}, c);
-    copy.peserta = pesertaMap[String(c['BA ID'] || '').trim()] || [];
-    copy.selesai = !!(String(c.Dosen || '').trim() && String(c['Tanggal Pelaksanaan'] || '').trim() && String(c.Jam || '').trim());
+    const baId = String(c['BA ID'] || '').trim();
+    copy.peserta = pesertaMap[baId] || [];
+    copy.sesi = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
+    copy.jumlahSesi = copy.sesi.length;
+    copy.selesai = !!(String(c.Dosen || '').trim() && String(c['Tanggal Pelaksanaan'] || '').trim()
+      && (String(c.Jam || '').trim() || copy.jumlahSesi > 1));
     return copy;
   });
   if (filter) {

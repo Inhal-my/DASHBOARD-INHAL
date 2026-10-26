@@ -76,6 +76,8 @@ panggilan ke `POST /api/rpc` dengan body `{ fn, args }`.
 - D1 adalah sumber data utama (baca dan tulis).
 - Aksi tulis (master data, pengajuan, berita acara, email, reset unggahan) aktif dan
   tercatat di `audit_log` / `status_history`.
+- Satu BA Pelaksanaan dapat mencakup beberapa sesi jadwal lewat tabel `berita_acara_sesi`;
+  `berita_acara.jadwal_id` tetap diisi sesi paling awal untuk kompatibilitas.
 - Auth admin/bagian memakai sesi di D1 (token, masa berlaku 4 jam). Sesi tidak valid
   menghasilkan `Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.`
 - Data dapat diimpor ulang dari Google Sheets (idempotent `DELETE` lalu `INSERT`) dan

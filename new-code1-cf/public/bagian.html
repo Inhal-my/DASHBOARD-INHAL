@@ -358,6 +358,7 @@
                                         <span class="flex items-center gap-1"><i class="bi bi-grid"></i>Blok {{ item.blok }}</span>
                                         <span v-if="item.tanggal" class="flex items-center gap-1"><i class="bi bi-calendar3"></i>{{ formatTanggal(item.tanggal) }}</span>
                                         <span class="flex items-center gap-1"><i class="bi bi-people"></i>{{ item.peserta.length }} peserta</span>
+                                        <span v-if="item.jumlahSesi > 1" class="flex items-center gap-1 font-semibold text-brand-600"><i class="bi bi-collection"></i>{{ item.jumlahSesi }} sesi</span>
                                     </div>
                                     <div v-if="item.kind==='ba' && item.jadwal" class="mt-1 text-[11px] text-slate-400">Dari jadwal {{ item.jadwal.JadwalID }}</div>
                                     <div class="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
@@ -416,6 +417,7 @@
                                         <td class="px-4 py-3">
                                             <div class="text-sm font-semibold text-slate-900">{{ item.nama }}</div>
                                             <div v-if="item.ba.Label" class="text-[11px] text-slate-400">{{ item.ba.Label }}</div>
+                                            <div v-if="item.jumlahSesi > 1" class="text-[11px] font-semibold text-brand-600">{{ item.jumlahSesi }} sesi jadwal</div>
                                         </td>
                                         <td class="px-4 py-3 text-xs text-slate-600">Blok {{ item.blok }}</td>
                                         <td class="px-4 py-3 text-xs text-slate-600">{{ formatTanggal(item.tanggal) }}</td>
@@ -437,6 +439,7 @@
                                             <span>Blok {{ item.blok }}</span>
                                             <span>{{ formatTanggal(item.tanggal) }}</span>
                                             <span v-if="item.dosen">{{ item.dosen }}</span>
+                                            <span v-if="item.jumlahSesi > 1" class="font-semibold text-brand-600">{{ item.jumlahSesi }} sesi</span>
                                         </div>
                                         <div class="mt-1 text-[11px] text-slate-400">{{ item.peserta.length }} peserta</div>
                                     </div>
@@ -546,6 +549,7 @@
                                             <div class="font-bold">Draft Berita Acara</div>
                                             <div class="mt-1">Lengkapi dosen, jam, dan tanggal agar BA pindah ke Riwayat.</div>
                                             <div class="mt-1 font-mono text-[10px] text-amber-700">{{ selectedItem.ba['BA ID'] }}</div>
+                                            <div v-if="selectedItem.ba.sesi && selectedItem.ba.sesi.length" class="mt-1 font-mono text-[10px] text-amber-700">{{ selectedItem.ba.sesi.length }} sesi · {{ selectedItem.ba.sesi.join(', ') }}</div>
                                         </div>
                                         <a v-if="selectedItem.ba['File URL']" :href="safeUrl(selectedItem.ba['File URL'])" target="_blank" rel="noopener noreferrer" class="link inline-block text-xs"><i class="bi bi-eye"></i> Lihat file BA</a>
                                         <div class="space-y-4">
@@ -576,6 +580,10 @@
                                                 <div><div class="label">Jam</div><div class="value">{{ selectedItem.ba.Jam || '-' }}</div></div>
                                                 <div class="col-span-2"><div class="label">Dosen</div><div class="value">{{ selectedItem.ba.Dosen || '-' }}</div></div>
                                                 <div v-if="selectedItem.ba.Label" class="col-span-2"><div class="label">Label</div><div class="value">{{ selectedItem.ba.Label }}</div></div>
+                                                <div v-if="selectedItem.ba.sesi && selectedItem.ba.sesi.length" class="col-span-2">
+                                                    <div class="label">Sesi Jadwal ({{ selectedItem.ba.sesi.length }})</div>
+                                                    <div class="value font-mono text-[11px] leading-relaxed">{{ selectedItem.ba.sesi.join(', ') }}</div>
+                                                </div>
                                                 <div v-if="selectedItem.ba.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value">{{ selectedItem.ba.Catatan }}</div></div>
                                             </div>
                                         </div>
@@ -607,6 +615,22 @@
                                                 <span v-else class="font-semibold">{{ selectedPendukung['BA ID'] }} (file belum tersedia)</span>
                                             </div>
                                             <div v-else class="mt-1">Belum diunggah admin dashboard.</div>
+                                        </div>
+                                        <div v-if="baSessionOptions.length" class="rounded-2xl border border-slate-200 p-3">
+                                            <div class="mb-2 flex items-center justify-between">
+                                                <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Sesi Jadwal</span>
+                                                <span class="text-[11px] font-semibold text-brand-600">{{ baSesiSummary.label }}</span>
+                                            </div>
+                                            <div class="space-y-2">
+                                                <label v-for="j in baSessionOptions" :key="j.JadwalID" class="flex items-center gap-3 rounded-xl border p-2.5 transition" :class="(ba.jadwalIds||[]).indexOf(j.JadwalID) !== -1 ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                    <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="(ba.jadwalIds||[]).indexOf(j.JadwalID) !== -1" @change="toggleBaSesi(j.JadwalID)">
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="text-xs font-semibold text-slate-800">{{ formatTanggal(j.Tanggal) }} &middot; {{ j.Jam || '-' }}</div>
+                                                        <div class="truncate text-[11px] text-slate-400">{{ j.Dosen || 'Dosen belum diisi' }} &middot; {{ (j.peserta||[]).length }} peserta</div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <p class="mt-2 text-[11px] text-slate-400">Satu BA boleh mencakup beberapa sesi. Tanggal BA mengikuti sesi paling awal.</p>
                                         </div>
                                         <div>
                                             <div class="mb-2 flex items-center justify-between">
@@ -804,7 +828,7 @@
                     loginError: '',
                     rows: [],
                     fBlok: '',
-                    ba: { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null },
+                    ba: { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalIds: [], jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null },
                     baList: [],
                     baPendukungList: [],
                     jadwalList: [],
@@ -943,13 +967,47 @@
                     });
                 },
                 selectedGroup() {
+                    const S = window.BagianState;
                     if (this.ba.mode === 'jadwal') {
                         if (!this.ba.jadwalInfo) return null;
                         const j = this.ba.jadwalInfo;
-                        return { key: 'jadwal:' + this.ba.jadwalId, blok: j.blok, pilihan: j.namaKegiatan, detail: '', tanggal: j.tanggal, label: j.label, peserta: this.ba.jadwalPeserta };
+                        const sesi = this.baSessionsSelected;
+                        const peserta = sesi.length > 1 ? S.unionPeserta(sesi) : this.ba.jadwalPeserta;
+                        return { key: 'jadwal:' + this.ba.jadwalId, blok: j.blok, pilihan: j.namaKegiatan, detail: '', tanggal: j.tanggal, label: j.label, peserta: peserta };
                     }
                     if (!this.ba.kegiatanKey) return null;
-                    return this.kegiatanGroups.find(function(g) { return g.key === this.ba.kegiatanKey; }.bind(this)) || null;
+                    const g = this.kegiatanGroups.find(function(g) { return g.key === this.ba.kegiatanKey; }.bind(this)) || null;
+                    if (!g) return null;
+                    const sesi = this.baSessionsSelected;
+                    if (!sesi.length) return g;
+                    return Object.assign({}, g, { peserta: S.unionPeserta(sesi) });
+                },
+                baKegiatanRef() {
+                    const S = window.BagianState;
+                    if (this.ba.mode === 'jadwal') {
+                        const j = this.ba.jadwalInfo;
+                        if (!j) return null;
+                        return { blok: j.blok, nama: j.namaKegiatan };
+                    }
+                    if (!this.ba.kegiatanKey) return null;
+                    const g = this.kegiatanGroups.find(function(g) { return g.key === this.ba.kegiatanKey; }.bind(this));
+                    if (!g) return null;
+                    return { blok: g.blok, nama: S.kegiatanName(g) };
+                },
+                baSessionOptions() {
+                    const ref = this.baKegiatanRef;
+                    if (!ref) return [];
+                    const ids = this.ba.jadwalIds || [];
+                    return window.BagianState.sessionsForKegiatan(ref, this.jadwalList).filter(function(j) {
+                        return !j.punyaBa || ids.indexOf(j.JadwalID) !== -1;
+                    });
+                },
+                baSessionsSelected() {
+                    const ids = this.ba.jadwalIds || [];
+                    return this.baSessionOptions.filter(function(j) { return ids.indexOf(j.JadwalID) !== -1; });
+                },
+                baSesiSummary() {
+                    return window.BagianState.sesiSummary(this.baSessionsSelected);
                 },
                 selectedPendukung() {
                     const g = this.selectedGroup;
@@ -1472,7 +1530,7 @@
                 },
                 openBaFromJadwal(j) {
                     this.ba = Object.assign({}, this.ba, {
-                        open: true, mode: 'jadwal', jadwalId: j.JadwalID,
+                        open: true, mode: 'jadwal', jadwalId: j.JadwalID, jadwalIds: [j.JadwalID],
                         jadwalInfo: { label: 'Blok ' + j.Blok + ' · ' + j.NamaKegiatan, blok: j.Blok, namaKegiatan: j.NamaKegiatan, tanggal: this.dateOnly(j.Tanggal), jam: j.Jam, dosen: j.Dosen },
                         jadwalPeserta: (j.peserta || []).map(function(p) { return { idPengajuan: p.idPengajuan, npm: p.npm, namaLengkap: p.namaLengkap, blok: p.blok, statusPengajuan: p.statusPengajuan }; }),
                         kegiatanKey: null, selected: {}, tanggal: this.dateOnly(j.Tanggal), dosen: j.Dosen, jam: j.Jam
@@ -1486,6 +1544,7 @@
                     this.ba.open = true;
                     this.ba.mode = 'manual';
                     this.ba.jadwalId = '';
+                    this.ba.jadwalIds = [];
                     this.ba.jadwalInfo = null;
                     this.ba.jadwalPeserta = [];
                     this.ba.dosen = '';
@@ -1505,6 +1564,7 @@
                     this.clearScanItems();
                     this.ba.open = false;
                     this.ba.kegiatanKey = null;
+                    this.ba.jadwalIds = [];
                     this.ba.selected = {};
                     this.ba.label = '';
                     this.ba.confirm = false;
@@ -1512,6 +1572,21 @@
                 },
                 togglePeserta(idPengajuan) {
                     this.ba.selected[idPengajuan] = !this.ba.selected[idPengajuan];
+                },
+                toggleBaSesi(jadwalId) {
+                    const S = window.BagianState;
+                    const result = S.applySessionToggle(this.ba.jadwalIds || [], jadwalId, this.baSessionOptions);
+                    this.ba.jadwalIds = result.jadwalIds;
+                    this.ba.jadwalId = result.jadwalIds[0] || '';
+                    if (!result.jadwalIds.length) return;
+                    const dates = result.sessions.map(function(j) { return S.dateOnly(j.Tanggal); }).filter(Boolean).sort();
+                    if (dates.length) this.ba.tanggal = dates[0];
+                    const first = result.sessions[0];
+                    if (first && !this.ba.dosen) this.ba.dosen = first.Dosen || '';
+                    if (first && !this.ba.jam) this.ba.jam = first.Jam || '';
+                    result.peserta.forEach(function(p) {
+                        if (p.idPengajuan) this.ba.selected[p.idPengajuan] = true;
+                    }.bind(this));
                 },
                 toggleAllPeserta() {
                     if (!this.selectedGroup) return;
@@ -1652,6 +1727,7 @@
                             jam: this.ba.jam || '',
                             dosen: this.ba.dosen || '',
                             jadwalId: this.ba.jadwalId || '',
+                            jadwalIds: this.ba.jadwalIds || [],
                             label: this.ba.label.trim(),
                             blok: this.selectedGroup.blok,
                             catatan: this.ba.catatan.trim(),
@@ -1695,7 +1771,7 @@
                     this.mobileDetail = false;
                     this.q = '';
                     this.formDirty = false;
-                    this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
+                    this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalIds: [], jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
                 }
             },
             mounted() {

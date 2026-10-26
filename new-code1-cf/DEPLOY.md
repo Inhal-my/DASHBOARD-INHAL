@@ -179,6 +179,20 @@ kosong agar tidak salah pasang. File ini hanya `UPDATE`, **aman dijalankan berul
 CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-15-ba-pendukung-peserta-id-pengajuan-backfill.sql
 ```
 
+### 3.5 Migrasi BA Pelaksanaan multi-sesi (sekali, sebelum deploy Worker baru)
+
+Migrasi `2026-10-27-ba-pelaksanaan-sesi.sql` membuat tabel `berita_acara_sesi`
+(`ba_id`, `jadwal_id`, `urutan`) sehingga satu BA Pelaksanaan bisa mencakup beberapa sesi
+jadwal, lalu membackfill tautan dari BA lama yang masih menyimpan satu `berita_acara.jadwal_id`.
+`berita_acara.jadwal_id` tetap diisi sesi paling awal untuk kompatibilitas. Index unik
+`jadwal_id` membuat satu jadwal hanya boleh tertaut ke satu BA. File ini hanya
+`CREATE TABLE/INDEX IF NOT EXISTS` + `INSERT ... WHERE NOT EXISTS`, **aman dijalankan berulang**,
+tetapi jalankan **sebelum** men-deploy Worker baru karena kode baru membaca tabel tersebut:
+
+```bash
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc --remote --file=./migrations/2026-10-27-ba-pelaksanaan-sesi.sql
+```
+
 ## 4. Deploy Worker + aset
 
 ```bash

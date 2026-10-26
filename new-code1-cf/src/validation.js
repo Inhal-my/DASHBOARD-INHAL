@@ -30,6 +30,17 @@ function checkDate(value, label, required) {
   return { ok: true, value: text };
 }
 
+function checkJadwalIds(value) {
+  if (value === undefined || value === null) return { ok: true };
+  if (!Array.isArray(value)) return fail('daftar jadwal harus berupa array');
+  if (value.length > 50) return fail('sesi maksimal 50 jadwal per berita acara');
+  for (const id of value) {
+    const c = checkText(id, 'ID jadwal', 120, false);
+    if (!c.ok) return c;
+  }
+  return { ok: true };
+}
+
 function checkPeserta(value) {
   if (value === undefined || value === null) return { ok: true };
   if (!Array.isArray(value)) return fail('daftar peserta harus berupa array');
@@ -71,6 +82,8 @@ export function validateBaCreateInput(payload) {
     checkText(p.catatan, 'Catatan', 2000, false),
     checkText(p.label, 'Label', 200, false),
     checkText(p.jam, 'Jam', 40, false),
+    checkText(p.jadwalId, 'ID jadwal', 120, false),
+    checkJadwalIds(p.jadwalIds),
     checkDate(p.tanggalPelaksanaan, 'Tanggal pelaksanaan', true)
   ];
   for (const c of checks) if (!c.ok) return c;
@@ -85,6 +98,8 @@ export function validateBaUpdateInput(payload) {
   if (p.dosen !== undefined) checks.push(checkText(p.dosen, 'Dosen', 200, false));
   if (p.catatan !== undefined) checks.push(checkText(p.catatan, 'Catatan', 2000, false));
   if (p.label !== undefined) checks.push(checkText(p.label, 'Label', 200, false));
+  if (p.jadwalId !== undefined) checks.push(checkText(p.jadwalId, 'ID jadwal', 120, false));
+  checks.push(checkJadwalIds(p.jadwalIds));
   for (const c of checks) if (!c.ok) return c;
   if (p.pesertaIds !== undefined) {
     if (!Array.isArray(p.pesertaIds)) return fail('daftar peserta harus berupa array');
