@@ -1276,9 +1276,14 @@
                                                         <span class="shrink-0 text-[10px]" :class="statusBadge(p.statusPengajuan)">{{ p.statusPengajuan }}</span>
                                                     </label>
                                                 </div>
+                                                <div v-if="babSesiCount" class="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
+                                                    <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
+                                                    <span>Kegiatan ini sudah memiliki {{ babSesiCount }} sesi. Unggahan ini menjadi sesi {{ babSesiCount + 1 }}.</span>
+                                                </div>
                                                 <div class="grid gap-3 sm:grid-cols-2">
+                                                    <div><label class="label">Label <span class="font-normal text-slate-400">(opsional)</span></label><input v-model="bab.ba.label" class="input" placeholder="mis. Sesi 1"></div>
                                                     <div><label class="label">Tanggal Pelaksanaan</label><input v-model="bab.ba.tanggal" type="date" class="input"></div>
-                                                    <div>
+                                                    <div class="sm:col-span-2">
                                                         <label class="label">File BA (PDF / JPG / PNG)</label>
                                                         <div class="flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-3">
                                                             <i class="bi bi-cloud-arrow-up text-xl text-brand-400"></i>
@@ -1374,6 +1379,10 @@
                                             </div>
                                         </div>
                                         <div v-if="bab.ba.fileName" class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700"><i class="bi bi-file-earmark-pdf"></i>{{ bab.ba.fileName }}</div>
+                                        <div v-if="babSesiCount" class="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
+                                            <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
+                                            <span>Kegiatan ini sudah memiliki {{ babSesiCount }} sesi. Unggahan ini menjadi sesi {{ babSesiCount + 1 }}.</span>
+                                        </div>
                                     </div>
                                     <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
                                         <button class="btn-soft" @click="bab.ba.confirm=false">Batal</button>
@@ -2544,7 +2553,7 @@
                         baList: [],
                         fBlok: '',
                         baSettings: { statuses: ['ACC'], finalOnly: true },
-                        ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
+                        ba: { open: false, kegiatanKey: null, tanggal: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
                     },
                     master: {
                         data: {},
@@ -2637,6 +2646,21 @@
                 babSelectedGroup() {
                     if (!this.bab.ba.kegiatanKey) return null;
                     return this.babKegiatanGroups.find(g => g.key === this.bab.ba.kegiatanKey) || null;
+                },
+                babSesiCount() {
+                    const g = this.babSelectedGroup;
+                    if (!g) return 0;
+                    const bagian = String(this.bab.subBagian || this.bab.kategori || '').trim();
+                    const blok = String(g.blok || '').trim();
+                    const nama = g.pilihan + (g.detail ? ' - ' + g.detail : '');
+                    const unit = (this.bagian.units || []).find(u => u.baAudit
+                        && String(u.blok || '').trim() === blok
+                        && this.normBagian(u.label || '') === this.normBagian(nama)
+                        && (!bagian || this.normBagian(u.bagian || '') === this.normBagian(bagian)));
+                    if (unit && unit.baAudit) return Number(unit.baAudit.jumlahSesi || 0);
+                    return (this.bab.baList || []).filter(r => String(r.Bagian || '').trim() === bagian
+                        && String(r.Blok || '').trim() === blok
+                        && String(r['Nama Kegiatan'] || '').trim() === nama).length;
                 },
                 babSelectedCount() {
                     return Object.keys(this.bab.ba.selected).filter(k => this.bab.ba.selected[k]).length;
@@ -2926,7 +2950,7 @@
                             .withFailureHandler(e => {
                                 const msg = (e && e.message) ? e.message : String(e);
                                 if (isAuthError(msg)) {
-                                    Object.assign(this.bab, { token: null, active: false, rows: [], baList: [], fBlok: '', ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                                    Object.assign(this.bab, { token: null, active: false, rows: [], baList: [], fBlok: '', ba: { open: false, kegiatanKey: null, tanggal: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
                                 }
                                 reject(msg);
                             })
@@ -3059,7 +3083,7 @@
                 },
                 babEnd() {
                     if (this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
-                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], fBlok: '', baSettings: { statuses: ['ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], fBlok: '', baSettings: { statuses: ['ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, tanggal: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
                     this.notify('Sesi bagian diakhiri.');
                 },
                 async babLoad() {
@@ -3092,6 +3116,7 @@
                     this.bab.ba.kegiatanKey = null;
                     this.bab.ba.selected = {};
                     this.bab.ba.tanggal = '';
+                    this.bab.ba.label = '';
                     this.bab.ba.catatan = '';
                     this.bab.ba.file = null;
                     this.bab.ba.fileName = '';
@@ -3111,6 +3136,7 @@
                     this.bab.ba.kegiatanKey = key;
                     this.bab.ba.selected = {};
                     this.bab.ba.tanggal = this.dateOnly(g.tanggal);
+                    this.bab.ba.label = '';
                 },
                 babBackToKegiatanPicker() {
                     this.bab.ba.kegiatanKey = null;
@@ -3144,6 +3170,7 @@
                         const payload = {
                             namaKegiatan: this.babSelectedGroup.pilihan + (this.babSelectedGroup.detail ? ' - ' + this.babSelectedGroup.detail : ''),
                             tanggalPelaksanaan: this.bab.ba.tanggal,
+                            label: this.bab.ba.label.trim(),
                             blok: this.babSelectedGroup.blok,
                             catatan: this.bab.ba.catatan.trim(),
                             bagian: this.bab.subBagian || this.bab.kategori,

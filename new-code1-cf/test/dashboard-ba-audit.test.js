@@ -70,4 +70,11 @@ describe('dashboard pemeriksaan BA Pelaksanaan', () => {
     expect(html).toContain('sebagai sesi tambahan (multi-sesi)');
     expect(html).not.toContain('Upload ini akan menambah BA baru.');
   });
+
+  it('menghitung sesi berjalan dan menampilkan peringatan sesi berikutnya', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('babSesiCount() {');
+    expect(html).toContain('Kegiatan ini sudah memiliki {{ babSesiCount }} sesi. Unggahan ini menjadi sesi {{ babSesiCount + 1 }}.');
+    expect(html).toContain('v-if="babSesiCount"');
+  });
 });

@@ -21,4 +21,13 @@ describe('dashboard pemeriksaan BA pelaksanaan', () => {
     assert.match(html, /@click="setBagianChip\('multi'\)"/);
     assert.match(html, /Pemeriksaan BA/);
   });
+  it('memperingatkan unggahan sebagai sesi berikutnya', () => {
+    assert.match(html, /babSesiCount\(\) \{/);
+    assert.match(html, /Kegiatan ini sudah memiliki \{\{ babSesiCount \}\} sesi\. Unggahan ini menjadi sesi \{\{ babSesiCount \+ 1 \}\}\./);
+    assert.match(html, /v-if="babSesiCount"/);
+  });
+  it('mengirim label sesi saat unggah BA pelaksanaan', () => {
+    assert.match(html, /v-model="bab\.ba\.label"/);
+    assert.match(html, /label: this\.bab\.ba\.label\.trim\(\)/);
+  });
 });

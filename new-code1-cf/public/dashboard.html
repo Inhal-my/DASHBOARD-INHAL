@@ -2548,6 +2548,10 @@
                             <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
                             <span>Sudah ada BA untuk kegiatan ini. Sistem akan menghitung unggahan ini sebagai sesi tambahan (multi-sesi). Pastikan tanggal/jam sesi berbeda.</span>
                         </div>
+                        <div v-if="babSesiCount" class="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
+                            <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
+                            <span>Kegiatan ini sudah memiliki {{ babSesiCount }} sesi. Unggahan ini menjadi sesi {{ babSesiCount + 1 }}.</span>
+                        </div>
                     </div>
                     <div class="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
                         <button class="btn-soft" @click="bab.ba.confirm=false">Batal</button>
@@ -2593,6 +2597,10 @@
                                 <div class="text-[11px] text-slate-400">{{ babSelectedGroup.peserta.length }} mahasiswa</div>
                             </div>
                             <button class="shrink-0 text-[11px] font-semibold text-brand-600" @click="baSheetChangeKegiatan"><i class="bi bi-chevron-left"></i> Ganti</button>
+                        </div>
+                        <div v-if="babSesiCount" class="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
+                            <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
+                            <span>Kegiatan ini sudah memiliki {{ babSesiCount }} sesi. Unggahan ini menjadi sesi {{ babSesiCount + 1 }}.</span>
                         </div>
                         <div class="mt-3">
                             <div class="flex items-center justify-between gap-2">
@@ -2983,6 +2991,21 @@
                     return (this.bab.baList || []).find(r => String(r.Bagian || '').trim() === bagian
                         && String(r.Blok || '').trim() === String(g.blok || '').trim()
                         && String(r['Nama Kegiatan'] || '').trim() === nama) || null;
+                },
+                babSesiCount() {
+                    const g = this.babSelectedGroup;
+                    if (!g) return 0;
+                    const bagian = String(this.bab.subBagian || this.bab.kategori || '').trim();
+                    const blok = String(g.blok || '').trim();
+                    const nama = g.pilihan + (g.detail ? ' - ' + g.detail : '');
+                    const unit = (this.bagian.units || []).find(u => u.baAudit
+                        && String(u.blok || '').trim() === blok
+                        && this.normBagian(u.label || '') === this.normBagian(nama)
+                        && (!bagian || this.normBagian(u.bagian || '') === this.normBagian(bagian)));
+                    if (unit && unit.baAudit) return Number(unit.baAudit.jumlahSesi || 0);
+                    return (this.bab.baList || []).filter(r => String(r.Bagian || '').trim() === bagian
+                        && String(r.Blok || '').trim() === blok
+                        && String(r['Nama Kegiatan'] || '').trim() === nama).length;
                 },
                 babSelectedCount() {
                     return Object.keys(this.bab.ba.selected).filter(k => this.bab.ba.selected[k]).length;
