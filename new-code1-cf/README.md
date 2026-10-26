@@ -22,9 +22,20 @@ Buka http://localhost:8787
 ## Menjalankan test
 
 ```bash
-npm test
+npm test          # vitest run (path proyek tidak boleh memuat spasi)
+npm run test:local
 npm run test:scripts
 ```
+
+`npm run test:local` aman dipakai dari path yang memuat spasi (mis.
+`D:\app\inhal dashboard-github\...`). Skrip menyalin proyek ke mirror tanpa spasi
+(default `D:\tmp\inhal-cf`, ubah lewat `INHAL_TEST_MIRROR` / `INHAL_TEST_MIRROR_BASE`),
+memasang dependensi sekali di sana, lalu menjalankan `vitest run`. Ini menghindari
+kegagalan `import()` ber-`%20` pada `@cloudflare/vitest-pool-workers` 0.5.x.
+
+Berkas di repo memakai LF (lihat `.gitattributes`). Jalankan `git config core.autocrlf false`
+lokal agar checkout tidak mengubahnya menjadi CRLF: test CSP hash dan template
+membandingkan byte mentah sehingga CRLF menyebabkan kegagalan palsu.
 
 ## CI/CD dan staging
 
