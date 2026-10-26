@@ -1,3 +1,9 @@
 node_modules/
 .wrangler/
 dist/
+
+# Rahasia lokal untuk `wrangler dev` (jangan pernah di-commit)
+.dev.vars
+.dev.vars.*
+.env
+.env.*

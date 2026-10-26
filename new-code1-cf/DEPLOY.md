@@ -215,6 +215,17 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler secret list
 
 Tanpa secret ini, semua unggahan akan gagal dengan pesan "Penyimpanan Drive belum dikonfigurasi."
 
+Untuk pengembangan lokal, simpan token yang sama di `new-code1-cf/.dev.vars` (sudah
+diabaikan Git) agar `wrangler dev` bisa mengunggah berkas:
+
+```ini
+GAS_DRIVE_TOKEN=<TOKEN_BRIDGE>
+```
+
+API token Cloudflare jangan ditaruh di `.dev.vars` (nilainya akan terbaca Worker).
+Simpan terpisah, mis. di `.cf_token` pada root repo (juga diabaikan Git), lalu pakai
+`CLOUDFLARE_API_TOKEN="$(cat ../../.cf_token)"` atau variabel environment Windows.
+
 ### 4.2 Aksi bridge Apps Script
 
 Web App Apps Script harus menangani aksi berikut (POST JSON, field `token`):

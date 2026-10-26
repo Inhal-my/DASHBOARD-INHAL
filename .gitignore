@@ -1,1 +1,8 @@
 node_modules/
+
+# Rahasia lokal (jangan pernah di-commit)
+.cf_token
+.dev.vars
+.dev.vars.*
+.env
+.env.*
