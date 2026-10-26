@@ -234,3 +234,17 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
   `2026-10-21-poin6-indexes.sql` berstatus diterapkan; health produksi 200.
 - Tidak ada dump ekspor produksi pada rilis ini karena R2 belum aktif dan token
   Cloudflare lokal tidak tersedia. Gunakan Time Travel atau backup R2 setelah aktif.
+
+### 2026-10-26 (produksi)
+
+- Deploy produksi perbaikan status pembayaran: versi Worker
+  `c7ddf806-fea0-45a0-a89a-beb6236ad583`, health produksi 200.
+- Ekspor pra-migrasi `wrangler d1 export`: 450 KB, disimpan di luar repo
+  (`D:\tmp\backup-pre-pembayaran-2026-10-26.sql`).
+- Time Travel bookmark sebelum migrasi (dari URL ekspor):
+  `00000232-00000000-00005110-0b794c0855aedc2f9d22967601df076e`.
+  Bookmark setelah migrasi:
+  `00000232-00000002-00005110-a5ba1b2cd7db89c9375bff0286391c7d`.
+- Migrasi `2026-10-26-pembayaran-backfill-menunggu.sql` berstatus diterapkan.
+  Hasil: `menunggu` 25 baris, `valid` 1 baris, dan 0 baris ber-bukti yang
+  masih `belum`.
