@@ -196,3 +196,37 @@ describe('bagian workspace v2 — guard dan kebersihan', () => {
     expect(html).toContain('Data sudah diperbarui.');
   });
 });
+
+describe('bagian workspace v2 - sumber peserta BA Pendukung', () => {
+  it('menyediakan saklar sumber Dari BA Pendukung di form BA', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Dari BA Pendukung');
+    expect(html).toContain('togglePendukungSource');
+    expect(html).toContain('mergeBaCandidates');
+    expect(html).toContain('baCandidates.peserta');
+  });
+
+  it('menampilkan alasan peserta BA Pendukung dilewati', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('baCandidates.jumlahTambahan');
+    expect(html).toContain('baCandidates.jumlahDitolak');
+    expect(html).toContain('baCandidates.jumlahTidakSesuai');
+  });
+
+  it('menyediakan koreksi peserta dan berkas di panel draft BA', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('lengkapiCandidates');
+    expect(html).toContain('toggleLengkapiPendukung');
+    expect(html).toContain('onLengkapiFile');
+    expect(html).toContain('lengkapiPesertaBerubah');
+  });
+
+  it('menandai BA draft tanpa berkas dan menyediakan hapus draft', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Berkas BA belum ada');
+    expect(html).toContain('Unggah Berkas');
+    expect(html).toContain('deleteDraftBa');
+    expect(html).toContain('deleteDraftBeritaAcaraBagian');
+    expect(html).toContain('Hapus Draft');
+  });
+});

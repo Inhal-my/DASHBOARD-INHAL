@@ -361,6 +361,9 @@
                                         <span v-if="item.jumlahSesi > 1" class="flex items-center gap-1 font-semibold text-brand-600"><i class="bi bi-collection"></i>{{ item.jumlahSesi }} sesi</span>
                                     </div>
                                     <div v-if="item.kind==='ba' && item.jadwal" class="mt-1 text-[11px] text-slate-400">Dari jadwal {{ item.jadwal.JadwalID }}</div>
+                                    <div v-if="item.kind==='ba' && !item.ba['File URL']" class="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                                        <i class="bi bi-exclamation-triangle"></i> Berkas BA belum ada - unggah agar BA bisa Selesai
+                                    </div>
                                     <div class="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
                                         <template v-if="baPendukungFor(item)">
                                             <i class="bi bi-file-earmark-check text-indigo-500"></i>
@@ -375,7 +378,7 @@
                                 </div>
                                 <div class="flex shrink-0 flex-col items-end gap-1">
                                     <span class="chip" :class="statusBadgeClass(item.status)">{{ item.status==='draft' ? 'Draft' : statusLabel(item.status) }}</span>
-                                    <span class="text-[11px] font-semibold text-brand-600">{{ item.kind==='ba' ? 'Lengkapi' : 'Buat BA' }}</span>
+                                    <span class="text-[11px] font-semibold text-brand-600">{{ item.kind==='ba' ? (item.ba['File URL'] ? 'Lengkapi' : 'Unggah Berkas') : 'Buat BA' }}</span>
                                 </div>
                             </button>
                         </div>
@@ -547,11 +550,14 @@
                                     <div v-if="selectedItem.kind==='ba' && !selectedItem.ba.selesai" class="space-y-4">
                                         <div class="rounded-2xl bg-amber-50 p-4 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
                                             <div class="font-bold">Draft Berita Acara</div>
-                                            <div class="mt-1">Lengkapi dosen, jam, dan tanggal agar BA pindah ke Riwayat.</div>
+                                            <div class="mt-1">Lengkapi dosen, jam, tanggal, dan berkas agar BA pindah ke Riwayat.</div>
                                             <div class="mt-1 font-mono text-[10px] text-amber-700">{{ selectedItem.ba['BA ID'] }}</div>
                                             <div v-if="selectedItem.ba.sesi && selectedItem.ba.sesi.length" class="mt-1 font-mono text-[10px] text-amber-700">{{ selectedItem.ba.sesi.length }} sesi · {{ selectedItem.ba.sesi.join(', ') }}</div>
                                         </div>
-                                        <a v-if="selectedItem.ba['File URL']" :href="safeUrl(selectedItem.ba['File URL'])" target="_blank" rel="noopener noreferrer" class="link inline-block text-xs"><i class="bi bi-eye"></i> Lihat file BA</a>
+                                        <div v-if="selectedItem.ba['File URL']" class="space-y-1">
+                                            <a :href="safeUrl(selectedItem.ba['File URL'])" target="_blank" rel="noopener noreferrer" class="link inline-block text-xs"><i class="bi bi-eye"></i> Lihat file BA</a>
+                                            <p class="text-[11px] text-slate-400">Unggah berkas baru di bawah untuk mengganti berkas ini.</p>
+                                        </div>
                                         <div class="space-y-4">
                                             <div class="relative">
                                                 <label class="label">Dosen</label>
@@ -563,12 +569,47 @@
                                             <div><label class="label">Jam</label><input v-model="ba.lengkapi.jam" type="time" class="input"></div>
                                             <div><label class="label">Tanggal</label><input v-model="ba.lengkapi.tanggal" type="date" class="input"></div>
                                         </div>
-                                        <div v-if="selectedItem.peserta.length" class="max-h-56 space-y-1.5 overflow-y-auto pr-1">
-                                            <div v-for="p in selectedItem.peserta" :key="p.npm + p.namaLengkap" class="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 ring-1 ring-slate-100">
-                                                <div class="min-w-0"><div class="truncate text-xs font-semibold text-slate-800">{{ p.namaLengkap }}</div><div class="font-mono text-[10px] text-slate-400">NPM {{ p.npm }}</div></div>
+                                        <div>
+                                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                                <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Peserta ({{ lengkapiSelectedList.length }})</span>
+                                                <div class="flex items-center gap-3">
+                                                    <button v-if="pendukungSumber.ada" type="button" class="text-xs font-semibold" :class="ba.lengkapi.includePendukung ? 'text-indigo-600' : 'text-slate-400'" @click="toggleLengkapiPendukung">
+                                                        <i class="bi" :class="ba.lengkapi.includePendukung ? 'bi-toggle-on' : 'bi-toggle-off'"></i> Dari BA Pendukung
+                                                    </button>
+                                                    <button type="button" class="text-xs font-semibold text-brand-600" @click="toggleAllLengkapiPeserta">{{ lengkapiAllSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                                </div>
+                                            </div>
+                                            <div class="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+                                                <label v-for="p in lengkapiCandidates.peserta" :key="p.idPengajuan || p.npm" class="flex items-center gap-3 rounded-xl border p-2.5 transition" :class="ba.lengkapi.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                    <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!ba.lengkapi.selected[p.idPengajuan]" @change="toggleLengkapiPeserta(p.idPengajuan)">
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="truncate text-xs font-semibold text-slate-800">{{ p.namaLengkap }}</div>
+                                                        <div class="font-mono text-[10px] text-slate-400">NPM {{ p.npm }}</div>
+                                                    </div>
+                                                    <span v-if="p.sumber==='pendukung'" class="chip shrink-0 bg-indigo-50 text-[10px] font-semibold text-indigo-600">Dari BA Pendukung</span>
+                                                </label>
+                                            </div>
+                                            <p v-if="lengkapiPesertaBerubah" class="mt-2 text-[11px] font-semibold text-amber-600"><i class="bi bi-exclamation-triangle"></i> Daftar peserta berubah dan akan disimpan.</p>
+                                            <p v-if="lengkapiCandidates.jumlahTidakSesuai" class="mt-1 text-[11px] text-slate-400">{{ lengkapiCandidates.jumlahTidakSesuai }} peserta BA Pendukung dilewati karena tidak berada di kegiatan ini.</p>
+                                        </div>
+                                        <div>
+                                            <label class="label">Berkas Berita Acara (PDF)</label>
+                                            <div v-if="!selectedItem.ba['File URL']" class="mb-2 rounded-xl bg-amber-50 p-2 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-100">
+                                                BA belum bisa berstatus Selesai sebelum berkas diunggah.
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
+                                                <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
+                                                <div class="min-w-0 flex-1 text-xs text-slate-500">
+                                                    <span v-if="ba.lengkapi.fileName" class="font-semibold text-slate-700">{{ ba.lengkapi.fileName }}</span>
+                                                    <span v-else>{{ selectedItem.ba['File URL'] ? 'Pilih berkas pengganti...' : 'Belum ada berkas. Pilih file PDF...' }}</span>
+                                                </div>
+                                                <button type="button" class="btn-soft h-11 shrink-0 !py-2 text-xs" @click="$refs.lengkapiFile.click()"><i class="bi bi-folder2-open"></i> Pilih File PDF</button>
+                                                <button v-if="ba.lengkapi.fileName" type="button" class="btn-soft h-11 shrink-0 !py-2 text-xs text-rose-600" @click="clearLengkapiFile">Batalkan</button>
+                                                <input ref="lengkapiFile" type="file" accept=".pdf" class="hidden" @change="onLengkapiFile">
                                             </div>
                                         </div>
-                                        <div class="flex gap-3">
+                                        <div class="flex flex-wrap gap-3">
+                                            <button v-if="!selectedItem.ba['File URL']" type="button" class="btn-soft flex-1 text-rose-600" :disabled="loading" @click="deleteDraftBa"><i class="bi bi-trash"></i> Hapus Draft</button>
                                             <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
                                             <button type="button" class="btn-primary flex-1" :disabled="loading" @click="saveDraftBa"><i class="bi bi-check-lg"></i> Simpan &amp; Lengkapi</button>
                                         </div>
@@ -613,8 +654,14 @@
                                             <div v-if="selectedPendukung" class="mt-1">
                                                 <a v-if="selectedPendukung['File URL']" :href="safeUrl(selectedPendukung['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold underline">{{ selectedPendukung['BA ID'] }}</a>
                                                 <span v-else class="font-semibold">{{ selectedPendukung['BA ID'] }} (file belum tersedia)</span>
+                                                <span class="ml-1">- {{ (selectedPendukung.peserta || []).length }} peserta</span>
                                             </div>
                                             <div v-else class="mt-1">Belum diunggah admin dashboard.</div>
+                                            <div v-if="baCandidates.jumlahTambahan || baCandidates.jumlahDitolak || baCandidates.jumlahTidakSesuai" class="mt-2 space-y-0.5 border-t border-indigo-100 pt-2 text-[11px]">
+                                                <div v-if="baCandidates.jumlahTambahan">Dari BA Pendukung: {{ baCandidates.jumlahTambahan }} peserta bisa dipilih.</div>
+                                                <div v-if="baCandidates.jumlahDitolak">Dilewati: {{ baCandidates.jumlahDitolak }} peserta belum berstatus {{ (baConfig.statuses || []).join(' / ') }}.</div>
+                                                <div v-if="baCandidates.jumlahTidakSesuai">Dilewati: {{ baCandidates.jumlahTidakSesuai }} peserta tidak berada di kegiatan ini.</div>
+                                            </div>
                                         </div>
                                         <div v-if="baSessionOptions.length" class="rounded-2xl border border-slate-200 p-3">
                                             <div class="mb-2 flex items-center justify-between">
@@ -633,17 +680,29 @@
                                             <p class="mt-2 text-[11px] text-slate-400">Satu BA boleh mencakup beberapa sesi. Tanggal BA mengikuti sesi paling awal.</p>
                                         </div>
                                         <div>
-                                            <div class="mb-2 flex items-center justify-between">
+                                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                                                 <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
-                                                <button type="button" class="text-xs font-semibold text-brand-600" @click="toggleAllPeserta">{{ allSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                                <div class="flex items-center gap-3">
+                                                    <button v-if="pendukungSumber.ada" type="button" class="text-xs font-semibold" :class="ba.includePendukung ? 'text-indigo-600' : 'text-slate-400'" @click="togglePendukungSource">
+                                                        <i class="bi" :class="ba.includePendukung ? 'bi-toggle-on' : 'bi-toggle-off'"></i> Dari BA Pendukung
+                                                    </button>
+                                                    <button type="button" class="text-xs font-semibold text-brand-600" @click="toggleAllPeserta">{{ allSelected ? 'Hapus Semua' : 'Pilih Semua' }}</button>
+                                                </div>
+                                            </div>
+                                            <div v-if="ba.includePendukung && baCandidates.jumlahTambahan" class="mb-2 rounded-xl bg-indigo-50 p-2 text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                                                {{ baCandidates.jumlahTambahan }} peserta dari BA Pendukung {{ baCandidates.ba ? baCandidates.ba['BA ID'] : '' }} ditambahkan otomatis.
                                             </div>
                                             <div class="space-y-2">
-                                                <label v-for="p in selectedGroup.peserta" :key="p.idPengajuan" class="flex items-center gap-3 rounded-xl border p-3 transition" :class="ba.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
+                                                <label v-for="p in baCandidates.peserta" :key="p.idPengajuan || p.npm" class="flex items-center gap-3 rounded-xl border p-3 transition" :class="ba.selected[p.idPengajuan] ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'">
                                                     <input type="checkbox" class="h-4 w-4 accent-indigo-600" :checked="!!ba.selected[p.idPengajuan]" @change="togglePeserta(p.idPengajuan)">
                                                     <div class="min-w-0 flex-1">
                                                         <div class="truncate text-sm font-semibold text-slate-800">{{ p.namaLengkap }}</div>
                                                         <div class="font-mono text-[11px] text-slate-400">NPM {{ p.npm }}</div>
                                                     </div>
+                                                    <span v-if="p.sumber==='pendukung'" class="chip shrink-0 bg-indigo-50 text-[10px] font-semibold text-indigo-600">
+                                                        Dari BA Pendukung
+                                                        <a v-if="p.pendukungFileUrl" :href="safeUrl(p.pendukungFileUrl)" target="_blank" rel="noopener noreferrer" class="ml-1 underline" @click.stop>berkas</a>
+                                                    </span>
                                                 </label>
                                             </div>
                                             <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ selectedCount }} peserta</p>
@@ -1014,12 +1073,110 @@
                     if (!g) return null;
                     return this.baPendukungFor({ blok: g.blok, nama: window.BagianState.kegiatanName(g), tanggal: g.tanggal });
                 },
+                // Kandidat peserta form BA Pelaksanaan: peserta kegiatan + (bila
+                // sumber "Dari BA Pendukung" dinyalakan) peserta BA Pendukung
+                // untuk kegiatan yang sama.
+                baCandidates() {
+                    const g = this.selectedGroup;
+                    if (!g) {
+                        return {
+                            ba: null, base: [], semua: [], tambahan: [], ditolak: [], tidakSesuai: [],
+                            includePendukung: false, peserta: [], jumlahPendukung: 0,
+                            jumlahTambahan: 0, jumlahDitolak: 0, jumlahTidakSesuai: 0
+                        };
+                    }
+                    return window.BagianState.mergeBaCandidates(
+                        { blok: g.blok, nama: window.BagianState.kegiatanName(g), tanggal: g.tanggal },
+                        g.peserta,
+                        this.baPendukungList,
+                        {
+                            statuses: this.baConfig.statuses,
+                            includePendukung: !!this.ba.includePendukung,
+                            rows: this.rows,
+                            group: g
+                        }
+                    );
+                },
+                pendukungSumber() {
+                    const c = this.baCandidates;
+                    return {
+                        ada: !!c.ba && !!(c.jumlahPendukung || c.jumlahTambahan || c.jumlahDitolak || c.jumlahTidakSesuai),
+                        aktif: !!c.includePendukung,
+                        jumlah: c.jumlahTambahan
+                    };
+                },
+                // Kandidat peserta untuk koreksi peserta BA draft: peserta kegiatan
+                // yang cocok dengan BA + peserta BA saat ini (supaya masih bisa
+                // dibuang walau statusnya bukan lagi "siap BA").
+                lengkapiCandidates() {
+                    const kosong = {
+                        ba: null, base: [], semua: [], tambahan: [], ditolak: [], tidakSesuai: [],
+                        includePendukung: false, peserta: [], jumlahPendukung: 0,
+                        jumlahTambahan: 0, jumlahDitolak: 0, jumlahTidakSesuai: 0
+                    };
+                    const d = this.ba.lengkapi;
+                    if (!d) return kosong;
+                    const B = window.BagianState;
+                    const g = (this.allKegiatanGroups || []).find(function(x) {
+                        return B.sameKegiatan(x.blok, B.kegiatanName(x), d.blok, d.namaKegiatan);
+                    }) || null;
+                    const base = (g ? g.peserta : []).slice();
+                    const seen = {};
+                    base.forEach(function(p) { seen[String((p && p.idPengajuan) || '').trim()] = true; });
+                    const existing = (this.selectedItem && this.selectedItem.ba ? this.selectedItem.ba.peserta : []) || [];
+                    existing.forEach(function(p) {
+                        const id = String((p && p.idPengajuan) || '').trim();
+                        if (!id || seen[id]) return;
+                        seen[id] = true;
+                        base.push({
+                            idPengajuan: id, npm: p.npm, namaLengkap: p.namaLengkap,
+                            blok: p.blok, statusPengajuan: p.statusPengajuan
+                        });
+                    });
+                    return B.mergeBaCandidates(
+                        { blok: d.blok, nama: d.namaKegiatan, tanggal: d.tanggal },
+                        base,
+                        this.baPendukungList,
+                        {
+                            statuses: this.baConfig.statuses,
+                            includePendukung: !!d.includePendukung,
+                            rows: this.rows,
+                            group: g
+                        }
+                    );
+                },
+                lengkapiSelectedList() {
+                    const d = this.ba.lengkapi;
+                    if (!d) return [];
+                    return this.lengkapiCandidates.peserta.filter(function(p) {
+                        return !!d.selected[String((p && p.idPengajuan) || '').trim()];
+                    });
+                },
+                lengkapiAllSelected() {
+                    const d = this.ba.lengkapi;
+                    if (!d) return false;
+                    const list = this.lengkapiCandidates.peserta;
+                    return list.length > 0 && list.every(function(p) {
+                        return !!d.selected[String((p && p.idPengajuan) || '').trim()];
+                    });
+                },
+                lengkapiPesertaBerubah() {
+                    const d = this.ba.lengkapi;
+                    if (!d || !this.selectedItem || !this.selectedItem.ba) return false;
+                    const before = ((this.selectedItem.ba.peserta || []).map(function(p) {
+                        return String((p && (p.idPengajuan || p.npm)) || '').trim();
+                    })).sort().join('|');
+                    const after = this.lengkapiSelectedList.map(function(p) {
+                        return String((p && p.idPengajuan) || '').trim();
+                    }).sort().join('|');
+                    return before !== after;
+                },
                 selectedCount() {
                     return Object.keys(this.ba.selected).filter(function(k) { return this.ba.selected[k]; }.bind(this)).length;
                 },
                 selectedList() {
                     if (!this.selectedGroup) return [];
-                    return this.selectedGroup.peserta.filter(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
+                    return this.baCandidates.peserta.filter(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
                 },
                 baDuplicate() {
                     if (!this.selectedGroup || !this.ba.tanggal) return null;
@@ -1037,7 +1194,7 @@
                 },
                 allSelected() {
                     if (!this.selectedGroup) return false;
-                    const list = this.selectedGroup.peserta;
+                    const list = this.baCandidates.peserta;
                     return list.length > 0 && list.every(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
                 },
                 blokOptions() {
@@ -1330,6 +1487,7 @@
                     this.formDirty = false;
                     this.jadwal.open = false;
                     this.ba.open = false;
+                    this.ba.includePendukung = false;
                     this.ba.lengkapi = null;
                 },
                 openBaForGroup(g) {
@@ -1363,15 +1521,95 @@
                 },
                 editDraftBa(r) {
                     if (!r) return;
+                    const selected = {};
+                    (r.peserta || []).forEach(function(p) {
+                        const id = String((p && p.idPengajuan) || '').trim();
+                        if (id) selected[id] = true;
+                    });
                     this.ba.lengkapi = {
                         id: r['BA ID'],
                         dosen: r.Dosen || '',
                         jam: r.Jam || '',
-                        tanggal: this.dateOnly(r['Tanggal Pelaksanaan'])
+                        tanggal: this.dateOnly(r['Tanggal Pelaksanaan']),
+                        blok: r.Blok || '',
+                        namaKegiatan: r['Nama Kegiatan'] || '',
+                        selected: selected,
+                        includePendukung: false,
+                        file: null,
+                        fileName: ''
                     };
                     this.ba.open = false;
                     this.jadwal.open = false;
                     this.formDirty = false;
+                },
+                toggleLengkapiPeserta(idPengajuan) {
+                    const d = this.ba.lengkapi;
+                    if (!d) return;
+                    const key = String(idPengajuan || '').trim();
+                    if (!key) return;
+                    d.selected[key] = !d.selected[key];
+                },
+                toggleAllLengkapiPeserta() {
+                    const d = this.ba.lengkapi;
+                    if (!d) return;
+                    const target = !this.lengkapiAllSelected;
+                    this.lengkapiCandidates.peserta.forEach(function(p) {
+                        const key = String((p && p.idPengajuan) || '').trim();
+                        if (key) d.selected[key] = target;
+                    });
+                },
+                toggleLengkapiPendukung() {
+                    const d = this.ba.lengkapi;
+                    if (!d) return;
+                    const next = !d.includePendukung;
+                    const result = window.BagianState.applyPendukungToggle(
+                        this.lengkapiCandidates.tambahan, d.selected, next
+                    );
+                    d.selected = result.selected;
+                    d.includePendukung = result.includePendukung;
+                },
+                onLengkapiFile(e) {
+                    const f = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                    const sizeError = window.uploadFileSizeError ? window.uploadFileSizeError(f) : '';
+                    if (sizeError) {
+                        if (this.ba.lengkapi) {
+                            this.ba.lengkapi.file = null;
+                            this.ba.lengkapi.fileName = '';
+                        }
+                        e.target.value = '';
+                        this.showToast(sizeError, 'error');
+                        return;
+                    }
+                    if (!this.ba.lengkapi) return;
+                    this.ba.lengkapi.file = f;
+                    this.ba.lengkapi.fileName = f ? f.name : '';
+                },
+                clearLengkapiFile() {
+                    if (!this.ba.lengkapi) return;
+                    this.ba.lengkapi.file = null;
+                    this.ba.lengkapi.fileName = '';
+                    const el = this.$refs.lengkapiFile;
+                    if (el) el.value = '';
+                },
+                async deleteDraftBa() {
+                    if (this.loading) return;
+                    const d = this.ba.lengkapi;
+                    if (!d) return;
+                    if (!window.confirm('Hapus draft berita acara ini? Peserta akan dikembalikan ke daftar BA.')) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('deleteDraftBeritaAcaraBagian', d.id, this.kategori);
+                        this.showToast(res.message, res.success ? 'success' : 'error');
+                        if (res.success) {
+                            this.formDirty = false;
+                            this.closeDetail();
+                            await this.loadData();
+                        }
+                    } catch (e) {
+                        this.showToast('Gagal: ' + e, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
                 },
                 editDraftBaById(id) {
                     const item = (this.baWorkItems || []).find(function (i) { return i.kind === 'ba' && i.key === id; })
@@ -1386,9 +1624,17 @@
                         this.showToast('Lengkapi dosen, jam, dan tanggal terlebih dahulu.', 'error');
                         return;
                     }
+                    if (!this.lengkapiSelectedList.length) {
+                        this.showToast('Pilih minimal satu peserta.', 'error');
+                        return;
+                    }
                     this.loading = true;
                     try {
                         const payload = { dosen: d.dosen, jam: d.jam, tanggal: d.tanggal };
+                        // Peserta hanya dikirim kalau pilihannya benar-benar berubah,
+                        // supaya penyimpanan biasa tidak tertahan validasi peserta.
+                        if (this.lengkapiPesertaBerubah) payload.peserta = this.lengkapiSelectedList;
+                        if (d.file) payload.file = await this.readFileAsBase64(d.file);
                         const res = await this.run('lengkapiBeritaAcaraBagian', d.id, payload, this.kategori);
                         this.showToast(res.message, res.success ? 'success' : 'error');
                         if (res.success) {
@@ -1407,6 +1653,7 @@
                     this.mobileDetail = false;
                     this.jadwal.open = false;
                     this.ba.open = false;
+                    this.ba.includePendukung = false;
                     this.ba.lengkapi = null;
                     this.formDirty = false;
                 },
@@ -1448,6 +1695,7 @@
                     this.jadwal.open = false;
                     this.ba.open = false;
                     this.ba.lengkapi = null;
+                    this.ba.includePendukung = false;
                     if (t === 'jadwal') this.jadwalFilter = o.filter || 'semua';
                     if (t === 'ba') this.baTabFilter = o.filter || 'semua';
                     if (t === 'riwayat') this.fBlok = o.blok || '';
@@ -1533,7 +1781,7 @@
                         open: true, mode: 'jadwal', jadwalId: j.JadwalID, jadwalIds: [j.JadwalID],
                         jadwalInfo: { label: 'Blok ' + j.Blok + ' · ' + j.NamaKegiatan, blok: j.Blok, namaKegiatan: j.NamaKegiatan, tanggal: this.dateOnly(j.Tanggal), jam: j.Jam, dosen: j.Dosen },
                         jadwalPeserta: (j.peserta || []).map(function(p) { return { idPengajuan: p.idPengajuan, npm: p.npm, namaLengkap: p.namaLengkap, blok: p.blok, statusPengajuan: p.statusPengajuan }; }),
-                        kegiatanKey: null, selected: {}, tanggal: this.dateOnly(j.Tanggal), dosen: j.Dosen, jam: j.Jam
+                        kegiatanKey: null, selected: {}, includePendukung: false, tanggal: this.dateOnly(j.Tanggal), dosen: j.Dosen, jam: j.Jam
                     });
                     (j.peserta || []).forEach(function(p) { this.ba.selected[p.idPengajuan] = true; }.bind(this));
                     this.activeTab = 'ba';
@@ -1551,6 +1799,7 @@
                     this.ba.jam = '';
                     this.ba.kegiatanKey = null;
                     this.ba.selected = {};
+                    this.ba.includePendukung = false;
                     this.ba.tanggal = '';
                     this.ba.label = '';
                     this.ba.catatan = '';
@@ -1566,12 +1815,21 @@
                     this.ba.kegiatanKey = null;
                     this.ba.jadwalIds = [];
                     this.ba.selected = {};
+                    this.ba.includePendukung = false;
                     this.ba.label = '';
                     this.ba.confirm = false;
                     this.ba.scanBusy = false;
                 },
                 togglePeserta(idPengajuan) {
                     this.ba.selected[idPengajuan] = !this.ba.selected[idPengajuan];
+                },
+                togglePendukungSource() {
+                    const next = !this.ba.includePendukung;
+                    const result = window.BagianState.applyPendukungToggle(
+                        this.baCandidates.tambahan, this.ba.selected, next
+                    );
+                    this.ba.selected = result.selected;
+                    this.ba.includePendukung = result.includePendukung;
                 },
                 toggleBaSesi(jadwalId) {
                     const S = window.BagianState;
@@ -1591,7 +1849,7 @@
                 toggleAllPeserta() {
                     if (!this.selectedGroup) return;
                     const target = !this.allSelected;
-                    this.selectedGroup.peserta.forEach(function(p) {
+                    this.baCandidates.peserta.forEach(function(p) {
                         this.ba.selected[p.idPengajuan] = target;
                     }.bind(this));
                 },
@@ -1771,7 +2029,7 @@
                     this.mobileDetail = false;
                     this.q = '';
                     this.formDirty = false;
-                    this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalIds: [], jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
+                    this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalIds: [], jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, includePendukung: false, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
                 }
             },
             mounted() {

@@ -169,6 +169,155 @@
     };
   }
 
+  // --- Sumber pilihan peserta "Dari BA Pendukung" (form BA Pelaksanaan) -----
+
+  function normalizePeserta(p, sumber) {
+    return {
+      idPengajuan: String((p && p.idPengajuan) || '').trim(),
+      npm: String((p && p.npm) || '').trim(),
+      namaLengkap: String((p && p.namaLengkap) || '').trim(),
+      blok: String((p && p.blok) || '').trim(),
+      statusPengajuan: String((p && (p.statusPengajuan || p.status)) || '').trim(),
+      baMember: !!(p && p.baMember),
+      sumber: sumber || 'kegiatan'
+    };
+  }
+
+  function baPendukungFor(ref, baPendukungList) {
+    return baForKegiatan(ref, baPendukungList);
+  }
+
+  // Peserta satu BA Pendukung sebagai kandidat peserta BA Pelaksanaan.
+  function pendukungPesertaList(baPendukung) {
+    var ba = baPendukung || {};
+    var baId = String(ba['BA ID'] || '').trim();
+    var fileUrl = String(ba['File URL'] || '').trim();
+    var fileName = String(ba['File Name'] || '').trim();
+    var seen = {};
+    var out = [];
+    (ba.peserta || []).forEach(function (p) {
+      var key = pesertaKey(p);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      var item = normalizePeserta(p, 'pendukung');
+      item.pendukungBaId = baId;
+      item.pendukungFileUrl = fileUrl;
+      item.pendukungFileName = fileName;
+      out.push(item);
+    });
+    return out;
+  }
+
+  function statusDiterima(status, statuses) {
+    if (!statuses || !statuses.length) return true;
+    return statuses.indexOf(String(status || '').trim()) !== -1;
+  }
+
+  // Baris peserta (satu baris = satu pengajuan pada satu kegiatan) dipakai untuk
+  // dua hal: memastikan peserta BA Pendukung memang berada di kegiatan BA
+  // Pelaksanaan yang sedang dibuat (aturan yang sama dipakai server di
+  // validateBaPesertaKegiatan, yang mencocokkan bagian|blok|nama kegiatan tanpa
+  // tanggal) dan membaca status pengajuan terkini, karena server memvalidasi
+  // status dari tabel pengajuan, bukan snapshot BA Pendukung.
+  //
+  // Pencocokan memakai blok + nama kegiatan (normalisasi yang sama dengan
+  // `baForKegiatan`) supaya form BA dari jadwal - yang tidak membawa
+  // jenis/pilihan/detail - tetap bisa mencocokkan baris peserta.
+  function barisKegiatanCocok(ref, group, r) {
+    if (!r) return false;
+    var g = group;
+    if (g && g.jenis !== undefined && normText(g.jenis) !== normText(r.jenis)) return false;
+    return sameKegiatan(ref.blok, ref.nama, r.blok, kegiatanName(r));
+  }
+
+  // null berarti tanpa penyaringan: pemanggil tidak memberi `rows` atau tidak ada
+  // baris yang cocok (nama kegiatan berbeda). Server tetap sumber kebenaran.
+  function barisPesertaMap(rows, ref, group) {
+    if (!rows || !rows.length) return null;
+    var refKegiatan = {
+      blok: (ref && ref.blok) || (group && group.blok),
+      nama: (ref && ref.nama) || kegiatanName(group)
+    };
+    if (!refKegiatan.blok && !refKegiatan.nama) return null;
+    var map = {};
+    var cocok = false;
+    rows.forEach(function (r) {
+      if (!barisKegiatanCocok(refKegiatan, group, r)) return;
+      cocok = true;
+      var pid = String((r && r.idPengajuan) || '').trim();
+      if (pid) map[pid] = String((r && r.status) || '').trim();
+    });
+    return cocok ? map : null;
+  }
+
+  // Kandidat peserta form BA Pelaksanaan: peserta kegiatan + peserta BA Pendukung
+  // untuk kegiatan yang sama. `includePendukung` menyalakan sumber "Dari BA
+  // Pendukung"; `statuses` menyaring status di luar ketentuan; `rows` + `group`
+  // menyaring peserta yang kegiatannya bukan kegiatan BA ini (server tetap
+  // memvalidasi saat simpan).
+  function mergeBaCandidates(ref, groupPeserta, baPendukungList, options) {
+    var opts = options || {};
+    var ba = baPendukungFor(ref, baPendukungList);
+    var semua = pendukungPesertaList(ba);
+    var byKey = {};
+    semua.forEach(function (p) { byKey[pesertaKey(p)] = p; });
+    var seen = {};
+    var base = [];
+    (groupPeserta || []).forEach(function (p) {
+      var key = pesertaKey(p);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      var match = byKey[key];
+      var item = normalizePeserta(p, 'kegiatan');
+      item.punyaPendukung = !!match;
+      item.pendukungBaId = match ? match.pendukungBaId : '';
+      base.push(item);
+    });
+    var baris = barisPesertaMap(opts.rows, ref, opts.group);
+    var tambahan = [];
+    var ditolak = [];
+    var tidakSesuai = [];
+    semua.forEach(function (p) {
+      var key = pesertaKey(p);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      var pid = String(p.idPengajuan || '').trim();
+      if (baris && !(pid && baris[pid] !== undefined)) { tidakSesuai.push(p); return; }
+      var status = pid && baris && baris[pid] !== undefined ? baris[pid] : String(p.statusPengajuan || '').trim();
+      if (statusDiterima(status, opts.statuses)) tambahan.push(p);
+      else ditolak.push(p);
+    });
+    return {
+      ba: ba || null,
+      base: base,
+      semua: semua,
+      tambahan: tambahan,
+      ditolak: ditolak,
+      tidakSesuai: tidakSesuai,
+      includePendukung: !!opts.includePendukung,
+      peserta: opts.includePendukung ? base.concat(tambahan) : base,
+      jumlahPendukung: semua.length,
+      jumlahTambahan: tambahan.length,
+      jumlahDitolak: ditolak.length,
+      jumlahTidakSesuai: tidakSesuai.length
+    };
+  }
+
+  // Menyalakan/mematikan sumber BA Pendukung pada peta pilihan peserta.
+  // `tambahan` hanya berisi peserta yang belum ada di daftar kegiatan, sehingga
+  // mematikan sumber tidak membuang peserta yang berasal dari kegiatan.
+  function applyPendukungToggle(tambahan, selected, include) {
+    var out = {};
+    Object.keys(selected || {}).forEach(function (k) { if (selected[k]) out[k] = true; });
+    (tambahan || []).forEach(function (p) {
+      var key = String((p && p.idPengajuan) || '').trim();
+      if (!key) return;
+      if (include) out[key] = true;
+      else delete out[key];
+    });
+    return { includePendukung: !!include, selected: out };
+  }
+
   function groupRows(rows, options, pendingOnly) {
     var opts = options || {};
     var statuses = opts.statuses || ['ACC'];
@@ -398,6 +547,10 @@
     sessionsForKegiatan: sessionsForKegiatan,
     unionPeserta: unionPeserta,
     applySessionToggle: applySessionToggle,
+    baPendukungFor: baPendukungFor,
+    pendukungPesertaList: pendukungPesertaList,
+    mergeBaCandidates: mergeBaCandidates,
+    applyPendukungToggle: applyPendukungToggle,
     sesiSummary: sesiSummary,
     unscheduledPeserta: unscheduledPeserta,
     groupFullyScheduled: groupFullyScheduled,

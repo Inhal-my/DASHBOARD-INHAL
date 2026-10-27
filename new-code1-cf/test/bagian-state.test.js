@@ -21,8 +21,21 @@ const jadwalList = [
 ];
 
 const baList = [
-  { 'BA ID': 'ba1', Blok: '1', 'Nama Kegiatan': 'Neurologi - A', 'Tanggal Pelaksanaan': '2026-10-20', Jam: '08:00', Dosen: 'Dr. X', Label: '', Catatan: '', 'File URL': '', selesai: true, peserta: [{ namaLengkap: 'Ani', npm: '001' }] },
+  { 'BA ID': 'ba1', Blok: '1', 'Nama Kegiatan': 'Neurologi - A', 'Tanggal Pelaksanaan': '2026-10-20', Jam: '08:00', Dosen: 'Dr. X', Label: '', Catatan: '', 'File URL': 'https://example.com/ba1.pdf', selesai: true, peserta: [{ namaLengkap: 'Ani', npm: '001' }] },
   { 'BA ID': 'ba2', Blok: '2', 'Nama Kegiatan': 'Farmasi', 'Tanggal Pelaksanaan': '2026-10-21', Jam: '', Dosen: '', Label: 'Sesi 1', Catatan: '', 'File URL': '', selesai: false, peserta: [{ namaLengkap: 'Cici', npm: '003' }] }
+];
+
+const baPendukungList = [
+  {
+    'BA ID': 'BA-PEN-1', 'File URL': 'https://example.com/pen.pdf', 'File Name': 'pen.pdf',
+    Blok: '1', 'Nama Kegiatan': 'Neurologi - A', 'Tanggal Pelaksanaan': '2026-10-20',
+    peserta: [
+      { idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani', blok: '1', statusPengajuan: 'ACC' },
+      { idPengajuan: 'p4', npm: '004', namaLengkap: 'Dedi', blok: '1', statusPengajuan: 'ACC' },
+      { idPengajuan: 'p5', npm: '005', namaLengkap: 'Eka', blok: '1', statusPengajuan: 'Menunggu' },
+      { idPengajuan: 'p4', npm: '004', namaLengkap: 'Dedi', blok: '1', statusPengajuan: 'ACC' }
+    ]
+  }
 ];
 
 describe('bagian-state helpers', () => {
@@ -160,5 +173,134 @@ describe('bagian-state helpers', () => {
     expect(S.matchesQuery(items[0], 'ani')).toBe(true);
     expect(S.matchesQuery(items[0], 'dr x')).toBe(true);
     expect(S.matchesQuery(items[0], 'tidak ada')).toBe(false);
+  });
+
+  it('membaca peserta BA Pendukung sebagai kandidat tanpa duplikat', async () => {
+    const S = await loadState();
+    const list = S.pendukungPesertaList(baPendukungList[0]);
+    expect(list.map((p) => p.idPengajuan)).toEqual(['p1', 'p4', 'p5']);
+    expect(list[1].sumber).toBe('pendukung');
+    expect(list[1].pendukungBaId).toBe('BA-PEN-1');
+    expect(list[1].pendukungFileUrl).toBe('https://example.com/pen.pdf');
+    expect(S.pendukungPesertaList(null)).toEqual([]);
+    expect(S.baPendukungFor({ blok: '1', nama: 'Neurologi - A', tanggal: '2026-10-20' }, baPendukungList)['BA ID']).toBe('BA-PEN-1');
+    expect(S.baPendukungFor({ blok: '2', nama: 'Farmasi', tanggal: '2026-10-21' }, baPendukungList)).toBe(null);
+  });
+
+  it('menggabungkan peserta BA Pendukung ke kandidat form BA', async () => {
+    const S = await loadState();
+    const group = S.buildKegiatanGroups(rows, { statuses: ['ACC'] })[0];
+    const ref = { blok: group.blok, nama: group.nama, tanggal: group.tanggal };
+
+    const off = S.mergeBaCandidates(ref, group.peserta, baPendukungList, { statuses: ['ACC'] });
+    expect(off.peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+    expect(off.tambahan.map((p) => p.idPengajuan)).toEqual(['p4']);
+    expect(off.ditolak.map((p) => p.idPengajuan)).toEqual(['p5']);
+    expect(off.jumlahPendukung).toBe(3);
+    expect(off.includePendukung).toBe(false);
+    expect(off.peserta[0].punyaPendukung).toBe(true);
+    expect(off.peserta[0].pendukungBaId).toBe('BA-PEN-1');
+    expect(off.peserta[1].punyaPendukung).toBe(false);
+    expect(off.peserta[1].pendukungBaId).toBe('');
+
+    const on = S.mergeBaCandidates(ref, group.peserta, baPendukungList, { statuses: ['ACC'], includePendukung: true });
+    expect(on.peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2', 'p4']);
+    expect(on.peserta[2].sumber).toBe('pendukung');
+    expect(on.peserta[2].pendukungFileUrl).toBe('https://example.com/pen.pdf');
+    expect(on.jumlahTambahan).toBe(1);
+    expect(on.jumlahDitolak).toBe(1);
+
+    // Tanpa daftar status, semua peserta BA Pendukung yang belum ada dianggap kandidat.
+    const all = S.mergeBaCandidates(ref, group.peserta, baPendukungList, { includePendukung: true });
+    expect(all.peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2', 'p4', 'p5']);
+
+    // Kegiatan tanpa BA Pendukung tidak menambah kandidat.
+    const kosong = S.mergeBaCandidates({ blok: '2', nama: 'Farmasi', tanggal: '2026-10-21' }, [{ idPengajuan: 'p3', npm: '003', namaLengkap: 'Cici' }], baPendukungList, { includePendukung: true });
+    expect(kosong.peserta.map((p) => p.idPengajuan)).toEqual(['p3']);
+    expect(kosong.ba).toBe(null);
+  });
+
+  it('menyalakan dan mematikan sumber BA Pendukung tanpa membuang pilihan kegiatan', async () => {
+    const S = await loadState();
+    const tambahan = [{ idPengajuan: 'p4' }, { idPengajuan: 'p5' }];
+    const on = S.applyPendukungToggle(tambahan, { p1: true }, true);
+    expect(on.includePendukung).toBe(true);
+    expect(Object.keys(on.selected).sort()).toEqual(['p1', 'p4', 'p5']);
+    const off = S.applyPendukungToggle(tambahan, on.selected, false);
+    expect(off.includePendukung).toBe(false);
+    expect(Object.keys(off.selected)).toEqual(['p1']);
+  });
+
+  it('menolak kandidat pendukung yang kegiatannya bukan kegiatan BA ini', async () => {
+    const S = await loadState();
+    const group = S.buildKegiatanGroups(rows, { statuses: ['ACC'] })[0];
+    const ref = { blok: group.blok, nama: group.nama, tanggal: group.tanggal };
+    const hasil = S.mergeBaCandidates(ref, group.peserta, baPendukungList, {
+      statuses: ['ACC'], includePendukung: true, rows: rows, group: group
+    });
+    // p4 & p5 tidak punya baris pada kegiatan Neurologi - A di `rows`.
+    expect(hasil.peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+    expect(hasil.tambahan).toEqual([]);
+    expect(hasil.tidakSesuai.map((p) => p.idPengajuan)).toEqual(['p4', 'p5']);
+    expect(hasil.jumlahTidakSesuai).toBe(2);
+    expect(hasil.jumlahTambahan).toBe(0);
+  });
+
+  it('memakai status pengajuan terkini dari baris peserta', async () => {
+    const S = await loadState();
+    const group = S.buildKegiatanGroups(rows, { statuses: ['ACC'] })[0];
+    const ref = { blok: group.blok, nama: group.nama, tanggal: group.tanggal };
+    const barisPendukung = rows.concat([
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-10-20', blok: '1', status: 'ACC', idPengajuan: 'p4', npm: '004', namaLengkap: 'Dedi', baMember: false },
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-10-20', blok: '1', status: 'Menunggu', idPengajuan: 'p5', npm: '005', namaLengkap: 'Eka', baMember: false },
+      { jenis: 'KKD', pilihan: 'Farmasi', detail: '', tanggal: '2026-10-21', blok: '2', status: 'ACC', idPengajuan: 'p6', npm: '006', namaLengkap: 'Fani', baMember: false }
+    ]);
+    const hasil = S.mergeBaCandidates(ref, group.peserta, baPendukungList, {
+      statuses: ['ACC'], includePendukung: true, rows: barisPendukung, group: group
+    });
+    expect(hasil.peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2', 'p4']);
+    expect(hasil.tambahan.map((p) => p.idPengajuan)).toEqual(['p4']);
+    expect(hasil.ditolak.map((p) => p.idPengajuan)).toEqual(['p5']);
+    expect(hasil.tidakSesuai).toEqual([]);
+
+    // Snapshot BA Pendukung boleh bilang ACC; baris peserta yang menentukan.
+    const berubah = barisPendukung.map((r) => (r.idPengajuan === 'p4' ? Object.assign({}, r, { status: 'Ditolak' }) : r));
+    const ditolak = S.mergeBaCandidates(ref, group.peserta, baPendukungList, {
+      statuses: ['ACC'], includePendukung: true, rows: berubah, group: group
+    });
+    expect(ditolak.tambahan).toEqual([]);
+    expect(ditolak.ditolak.map((p) => p.idPengajuan)).toEqual(['p4', 'p5']);
+
+    // Tanggal baris berbeda tidak membuat peserta gugur: server mencocokkan kegiatan tanpa tanggal.
+    const tanggalLain = barisPendukung.map((r) => (r.idPengajuan === 'p4' ? Object.assign({}, r, { tanggal: '2026-11-01' }) : r));
+    const ok = S.mergeBaCandidates(ref, group.peserta, baPendukungList, {
+      statuses: ['ACC'], includePendukung: true, rows: tanggalLain, group: group
+    });
+    expect(ok.tambahan.map((p) => p.idPengajuan)).toEqual(['p4']);
+  });
+
+  it('tetap mencocokkan baris peserta saat grup berasal dari jadwal tanpa jenis', async () => {
+    const S = await loadState();
+    // Grup dari jadwal hanya membawa blok + nama kegiatan (tanpa jenis/pilihan/detail).
+    const jadwalGroup = {
+      blok: '1', nama: 'Neurologi - A', pilihan: 'Neurologi - A', detail: '',
+      tanggal: '2026-10-20', peserta: [{ idPengajuan: 'p1' }, { idPengajuan: 'p2' }]
+    };
+    const ref = { blok: jadwalGroup.blok, nama: jadwalGroup.nama, tanggal: jadwalGroup.tanggal };
+    const barisPendukung = rows.concat([
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-10-20', blok: '1', status: 'ACC', idPengajuan: 'p4', npm: '004', namaLengkap: 'Dedi', baMember: false }
+    ]);
+    const hasil = S.mergeBaCandidates(ref, jadwalGroup.peserta, baPendukungList, {
+      statuses: ['ACC'], includePendukung: true, rows: barisPendukung, group: jadwalGroup
+    });
+    expect(hasil.tambahan.map((p) => p.idPengajuan)).toEqual(['p4']);
+    expect(hasil.tidakSesuai.map((p) => p.idPengajuan)).toEqual(['p5']);
+
+    // Tanpa baris peserta sama sekali, penyaringan dilewati (status snapshot dipakai).
+    const tanpaBaris = S.mergeBaCandidates(ref, jadwalGroup.peserta, baPendukungList, {
+      statuses: ['ACC'], includePendukung: true, rows: [], group: jadwalGroup
+    });
+    expect(tanpaBaris.tambahan.map((p) => p.idPengajuan)).toEqual(['p4']);
+    expect(tanpaBaris.ditolak.map((p) => p.idPengajuan)).toEqual(['p5']);
   });
 });

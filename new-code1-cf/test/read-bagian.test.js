@@ -40,6 +40,20 @@ describe('bagian read', () => {
     expect(boot.baPendukungList[0].peserta).toHaveLength(1);
     expect(boot.baList[0]['BA ID']).toBe('BA-2026-0001');
   });
+  it('membawa identitas peserta BA Pendukung sebagai kandidat BA Pelaksanaan', async () => {
+    await seed();
+    await env.DB.prepare("INSERT INTO berita_acara_admin (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jumlah_peserta,file_url,sumber,kegiatan_key) VALUES ('2026-09-12T08:00:00','BA-PEN-2026-0003','Ujian','A','UAS','2026-09-20','2','https://example.com/pen3.pdf','Admin','')").run();
+    await env.DB.prepare("INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,status_pengajuan,urutan,active) VALUES ('2026-09-12T08:00:00','BA-PEN-2026-0003','INHAL-1','2201010001','Aisyah','A','ACC',2,1)").run();
+    await env.DB.prepare("INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,status_pengajuan,urutan,active) VALUES ('2026-09-12T08:00:00','BA-PEN-2026-0003','INHAL-2','2201010002','Budi','A','ACC',1,1)").run();
+    await env.DB.prepare("INSERT INTO berita_acara_admin_peserta (timestamp,ba_id,id_pengajuan,npm,nama_lengkap,blok,status_pengajuan,urutan,active) VALUES ('2026-09-12T08:00:00','BA-PEN-2026-0003','INHAL-3','2201010003','Cici','A','ACC',3,0)").run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    const pend = boot.baPendukungList.find((r) => r['BA ID'] === 'BA-PEN-2026-0003');
+    expect(pend.kegiatanKey).toBe('ujian|a|uas');
+    // urutan 1 tampil lebih dulu dan peserta dengan active=0 tidak ikut.
+    expect(pend.peserta.map((p) => p.idPengajuan)).toEqual(['INHAL-2', 'INHAL-1']);
+    expect(pend.peserta[1].npm).toBe('2201010001');
+    expect(pend.peserta[1].statusPengajuan).toBe('ACC');
+  });
   it('returns bootstrap with ok=false on invalid session', async () => {
     const boot = await getBagianBootstrap(env.DB, 'Ujian', '', { token: 'nope' });
     expect(boot.ok).toBe(false);
