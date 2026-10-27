@@ -42,6 +42,24 @@ Aturan keselamatan:
 - A04 sudah diperbaiki di commit `e165892` dan ter-deploy ke staging (run
   `39564633105`). Status tetap `[!]` sampai retest lulus.
 
+## Catatan Perubahan 2026-10-27
+
+- Sumber peserta BA Pelaksanaan kini punya opsi **Dari BA Pendukung**: peserta
+  BA Pendukung untuk kegiatan yang sama bisa ikut dipilih pada form BA
+  Pelaksanaan. Peserta yang statusnya bukan status siap-BA atau tidak berada di
+  kegiatan tersebut otomatis dilewati, dan alasannya ditampilkan di form.
+- **BA hanya berstatus Selesai bila berkas BA sudah ada.** BA yang dosen, jam,
+  dan tanggalnya lengkap tetapi belum berberkas kembali tampil sebagai Draft
+  (perlu unggah berkas), termasuk pada Ringkasan, Riwayat, dashboard, dan
+  laporan. Peserta BA seperti ini juga belum dihitung sebagai "masuk BA selesai".
+- Bagian boleh **mengunggah atau mengganti berkas** BA Pelaksanaan miliknya
+  sendiri lewat panel Draft BA, dan berkas lama dipindahkan ke trash Drive.
+- Bagian boleh **mengoreksi daftar peserta** BA Pelaksanaan miliknya (menambah
+  atau membuang peserta) pada panel Draft BA. Bila pilihan peserta berubah,
+  pengajuan peserta yang dibuang dikembalikan ke daftar BA.
+- Bagian boleh **menghapus Draft BA yang belum berberkas**. BA yang sudah
+  berberkas hanya bisa dihapus oleh admin dashboard.
+
 ## Matriks UAT
 
 Status: `[ ]` belum, `[x]` lulus, `[!]` gagal. Isi kolom Bukti dengan nama file atau
@@ -69,7 +87,7 @@ tautan tiket.
 | UAT-A04 | ACC/tolak/batal | Proses satu pengajuan sampai ACC, lalu tolak/batalkan pengajuan lain | Status berubah, nomor surat berurutan, audit tercatat | Gagal saat sesi pertama: status peserta BA/jadwal tetap ACC. Diperbaiki di commit `e165892`, sudah deploy staging (run `39564633105`); menunggu retest | [!] |
 | UAT-A05 | Input manual | Tambah pengajuan manual dengan data valid | Pengajuan muncul di daftar dan portal mahasiswa | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-A06 | BA Pendukung | Unggah BA, kelola peserta, regenerate PDF | Berkas dan peserta tersimpan; PDF dapat diunduh | Gagal; perlu detail error. Cek konfigurasi Drive/PDF | [!] |
-| UAT-A07 | BA Pelaksanaan | Unggah BA Pelaksanaan dan pilih peserta | BA tersimpan, label benar, peserta tidak duplikat | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-A07 | BA Pelaksanaan | Unggah BA Pelaksanaan dan pilih peserta | BA tersimpan, label benar, peserta tidak duplikat; BA tanpa berkas tetap Draft (belum Selesai) | Retest 2026-10-27: aturan berkas wajib untuk status Selesai | [ ] |
 | UAT-A08 | Master data | Tambah, ubah, hapus, dan ganti nama blok | Perubahan konsisten; ganti nama blok menandai BA perlu regen | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-A09 | Audit integritas | Buka Master Data > Audit | Ringkasan master dan kualitas data tampil; tombol ulangi berfungsi | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-A10 | Ekspor database | Jalankan ekspor XLSX | File terunduh, sheet dan kolom sesuai, tanpa data sensitif | Sesi UAT staging 2026-10-21 | [x] |
@@ -83,8 +101,12 @@ tautan tiket.
 | UAT-B01 | Login bagian | Pilih kategori (dan lab untuk Praktikum), masukkan password | Workspace bagian tampil sesuai kategori | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-B02 | Data terbatas | Buka ringkasan dan daftar kegiatan | Hanya data bagian sendiri yang tampil | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-B03 | Jadwal | Tambah dan ubah jadwal pada kegiatan tanpa BA | Jadwal tersimpan; duplikat identik tidak ditampilkan dua kali | Sesi UAT staging 2026-10-21 | [x] |
-| UAT-B04 | BA Pelaksanaan | Unggah BA dan pilih peserta yang belum punya BA | BA tersimpan, sisa peserta berkurang, PDF dapat diunduh | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-B04 | BA Pelaksanaan | Unggah BA dan pilih peserta yang belum punya BA | BA tersimpan, sisa peserta berkurang, PDF dapat diunduh; BA tanpa berkas tetap muncul sebagai Draft | Sesi UAT staging 2026-10-21 | [x] |
 | UAT-B05 | Akses lintas bagian | Coba akses ID kegiatan/BA bagian lain melalui permintaan langsung | Ditolak dengan pesan kewenangan, tidak ada data terkirim | Sesi UAT staging 2026-10-21 | [x] |
+| UAT-B06 | Sumber peserta BA Pendukung | Buka tab Berita Acara > pilih kegiatan yang punya BA Pendukung > aktifkan `Dari BA Pendukung` | Peserta BA Pendukung yang statusnya siap BA dan berada di kegiatan ini ikut terpilih; jumlah yang masuk serta alasan peserta lain dilewati tampil di form | | [ ] |
+| UAT-B07 | Unggah/ganti berkas BA | Buka detail Draft BA, pilih berkas PDF, klik `Simpan & Lengkapi` | Berkas tersimpan, BA pindah ke Riwayat sebagai Selesai; mengunggah berkas kedua menggantikan berkas lama (terlihat pada tautan `Lihat file BA`) | | [ ] |
+| UAT-B08 | Koreksi peserta BA | Pada detail Draft BA, tambah/buang peserta lalu `Simpan & Lengkapi` | Daftar peserta BA berubah sesuai pilihan; peserta yang dibuang kembali muncul di antrean BA; peserta di luar kegiatan ditolak dengan pesan jelas | | [ ] |
+| UAT-B09 | Hapus Draft BA | Buka detail Draft BA tanpa berkas > klik `Hapus Draft` > konfirmasi | Draft terhapus, peserta kembali ke antrean BA; tombol `Hapus Draft` tidak tampil pada BA yang sudah berberkas | | [ ] |
 
 ### Operator/IT
 
