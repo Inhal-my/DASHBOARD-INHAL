@@ -101,6 +101,40 @@ describe('verifyPembayaran', () => {
     expect(res.message).toMatch(/kesesuaian/i);
   });
 
+  it('menjelaskan nominal dan pilihan kesesuaian yang benar saat tidak cocok', async () => {
+    await seedPengajuan();
+    const res = await verifyPembayaran(env.DB, verifyPayload({ nominal: 400000, kesesuaian: 'kurang' }), await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('lebih dari');
+    expect(res.message).toContain('Lebih');
+  });
+
+  it('menerima pilihan Lebih dengan nominal manual di atas tagihan', async () => {
+    await seedPengajuan();
+    const res = await verifyPembayaran(env.DB, verifyPayload({ nominal: 400000, kesesuaian: 'lebih' }), await adminCtx());
+    expect(res).toMatchObject({ success: true, status: 'valid', revision: 1 });
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.kesesuaian_pembayaran).toBe('lebih');
+    expect(p.nominal_dibayar).toBe(400000);
+  });
+
+  it('menerima pilihan Pas saat nominal sama dengan tagihan', async () => {
+    await seedPengajuan();
+    const res = await verifyPembayaran(env.DB, verifyPayload({ nominal: 350000, kesesuaian: 'pas' }), await adminCtx());
+    expect(res).toMatchObject({ success: true, status: 'valid', revision: 1 });
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.kesesuaian_pembayaran).toBe('pas');
+    expect(p.nominal_dibayar).toBe(350000);
+  });
+
+  it('menormalkan pilihan Kesesuaian berhuruf besar dari panel admin', async () => {
+    await seedPengajuan();
+    const res = await verifyPembayaran(env.DB, verifyPayload({ kesesuaian: 'Kurang' }), await adminCtx());
+    expect(res.success).toBe(true);
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.kesesuaian_pembayaran).toBe('kurang');
+  });
+
   it('verifies a payment that already has ACC Final', async () => {
     await seedPengajuan({ linkFinal: 'https://drive.example/final.pdf' });
     const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtx());

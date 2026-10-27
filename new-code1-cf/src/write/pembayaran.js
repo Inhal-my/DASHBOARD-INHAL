@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { writeAuditLog } from '../audit.js';
-import { getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan } from '../read/common.js';
+import { formatRupiah, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan } from '../read/common.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -35,6 +35,13 @@ function revisionOf(row) {
 function expectedKesesuaian(nominal, tagihan) {
   if (nominal === tagihan) return 'pas';
   return nominal < tagihan ? 'kurang' : 'lebih';
+}
+
+function kesesuaianLabel(value) {
+  if (value === 'kurang') return 'Kurang';
+  if (value === 'lebih') return 'Lebih';
+  if (value === 'pas') return 'Pas';
+  return '-';
 }
 
 async function resolveTagihan(db, row) {
@@ -89,8 +96,14 @@ export async function verifyPembayaran(db, payload, ctx) {
   if (nominal <= 0) return { success: false, message: 'Nominal diterima harus lebih dari nol.' };
 
   const cocok = expectedKesesuaian(nominal, tagihan);
-  const kesesuaian = str(p.kesesuaian) || cocok;
-  if (kesesuaian !== cocok) return { success: false, message: 'Kesesuaian tidak cocok dengan nominal. Pilih ' + cocok + '.' };
+  const kesesuaian = str(p.kesesuaian).toLowerCase() || cocok;
+  if (kesesuaian !== cocok) {
+    return {
+      success: false,
+      message: 'Nominal ' + formatRupiah(nominal) + ' ' + (nominal < tagihan ? 'kurang dari' : 'lebih dari') +
+        ' tagihan ' + formatRupiah(tagihan) + '. Pilih kesesuaian ' + kesesuaianLabel(cocok) + '.'
+    };
+  }
 
   const tanggal = str(p.tanggal) || nowIso().slice(0, 10);
   const metode = str(p.metode);

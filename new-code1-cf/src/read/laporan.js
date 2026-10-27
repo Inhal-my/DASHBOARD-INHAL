@@ -10,6 +10,14 @@ function baSumber(r) {
   return s === 'admin' ? 'Admin' : 'Bagian';
 }
 
+// Kunci berkas bukti bayar: id file Drive bila ada, jika tidak URL apa adanya.
+function buktiKey(url) {
+  const s = String(url || '').trim();
+  if (!s) return '';
+  const m = s.match(/[=\/]([\w-]{20,})/);
+  return m ? m[1] : s;
+}
+
 export async function getLaporanBootstrap(db, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
@@ -25,6 +33,24 @@ export async function getLaporanBootstrap(db, ctx) {
     revisionRows = (await db.prepare('SELECT * FROM pembayaran_revisi ORDER BY id ASC').all()).results || [];
   } catch (_) {
     revisionRows = [];
+  }
+  let uploadRows = [];
+  try {
+    uploadRows = (await db.prepare(
+      'SELECT id_pengajuan, timestamp, link_acc_inhal, link_bukti_bayar FROM log_upload ORDER BY timestamp ASC, id ASC'
+    ).all()).results || [];
+  } catch (_) {
+    uploadRows = [];
+  }
+  const uploadsByPengajuan = {};
+  for (const r of uploadRows) {
+    const idp = String(r.id_pengajuan || '').trim();
+    if (!idp) continue;
+    if (!uploadsByPengajuan[idp]) uploadsByPengajuan[idp] = [];
+    uploadsByPengajuan[idp].push({
+      timestamp: String(r.timestamp || '').trim(),
+      linkBukti: String(r.link_bukti_bayar || '').trim()
+    });
   }
   const pesertaMap = {};
   for (const r of baPeserta) {
@@ -215,9 +241,31 @@ export async function getLaporanBootstrap(db, ctx) {
   for (const u of units) u.jadwal = jadwalByKey[u.key] || [];
   const baAudit = buildBaPelaksanaanAudit(units, jadwalList);
 
+  // Waktu unggah bukti bayar = unggahan terakhir berkas yang sedang dipakai.
+  const uploadBukti = pengajuan.map((p) => {
+    const idp = String(p.id_pengajuan || '').trim();
+    const current = buktiKey(p.link_bukti_bayar);
+    const resetAt = String(p.upload_reset_at || '').trim();
+    let waktu = '';
+    if (current) {
+      const list = uploadsByPengajuan[idp] || [];
+      for (let i = list.length - 1; i >= 0; i--) {
+        const log = list[i];
+        // Baris penanda reset menyimpan berkas lama, jadi abaikan bersama unggahan sebelum reset.
+        if (resetAt && log.timestamp <= resetAt) continue;
+        if (log.linkBukti && buktiKey(log.linkBukti) === current) {
+          waktu = log.timestamp;
+          break;
+        }
+      }
+    }
+    return { idPengajuan: idp, waktuUploadBukti: waktu, sumberUpload: waktu ? 'Portal Mahasiswa' : '' };
+  });
+
   return {
     summary: { totalPendaftar, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
     rows,
+    uploadBukti,
     beritaAcara,
     dosen,
     dosenOptions: await getMasterOptions(db, 'Dosen'),

@@ -229,6 +229,23 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('buka_kembali');
     expect(html).toContain('Koreksi administratif');
   });
+  it('panel Periksa memakai Kesesuaian tiga pilihan dan tanggal read-only', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('<select v-model="periksa.form.kesesuaian" class="in-input" @change="onKesesuaianChange">');
+    expect(html).toContain('<option value="pas">Pas</option>');
+    expect(html).toContain('<option value="kurang">Kurang</option>');
+    expect(html).toContain('<option value="lebih">Lebih</option>');
+    expect(html).not.toContain('onNominalInput');
+    expect(html).toContain('Tanggal Daftar');
+    expect(html).toContain('Tanggal Upload Bukti Bayar');
+    expect(html).toContain('Tanggal sistem — tidak dapat diubah');
+    expect(html).toContain('Tidak tercatat');
+    expect(html).toContain('periksaKesesuaianInfo.teks');
+    expect(html).toContain('periksaUploadLabel');
+    expect(html).toContain('uploadBukti = data.uploadBukti || []');
+    expect(html).toContain('Berkas direset');
+    expect(html).toContain('periksaTimeline');
+  });
   it('menampilkan riwayat verifikasi dan koreksi per pengajuan', async () => {
     const html = await loadHtml();
     expect(html).toContain('bayarRevisiFor');

@@ -121,3 +121,79 @@ describe('getLaporanBootstrap', () => {
     expect(data.baAudit.summary.totalSesi).toBe(2);
   });
 });
+
+describe('waktu unggah bukti bayar', () => {
+  async function seedBukti(link, extra = {}) {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_bukti_bayar,status_pembayaran,upload_reset_at) " +
+      "VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','SGD','ACC',?1,'menunggu',?2)"
+    ).bind(link, extra.uploadResetAt || '').run();
+  }
+
+  async function seedLog(timestamp, linkBukti, linkAcc = '') {
+    await env.DB.prepare(
+      "INSERT INTO log_upload (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,detail,tanggal,link_acc_inhal,link_bukti_bayar) " +
+      "VALUES (?1,'INHAL-1','2201010001','Aisyah','A','SGD','','',?3,?2)"
+    ).bind(timestamp, linkBukti, linkAcc).run();
+  }
+
+  it('mengambil unggahan terakhir dari berkas yang sedang dipakai', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    const aktif = 'https://drive.example/file/d/AAAAAAAAAAAAAAAAAAAAA/view';
+    const lama = 'https://drive.example/file/d/BBBBBBBBBBBBBBBBBBBBB/view';
+    await seedBukti(aktif);
+    await seedLog('2026-09-11T08:00:00', lama);
+    await seedLog('2026-09-12T09:30:00', aktif);
+    await seedLog('2026-09-13T10:00:00', aktif);
+
+    const data = await getLaporanBootstrap(env.DB, { token });
+    const up = data.uploadBukti.find((u) => u.idPengajuan === 'INHAL-1');
+    expect(up.waktuUploadBukti).toBe('2026-09-13T10:00:00');
+    expect(up.sumberUpload).toBe('Portal Mahasiswa');
+  });
+
+  it('tidak memakai baris log dari berkas lain', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    await seedBukti('https://drive.example/file/d/CCCCCCCCCCCCCCCCCCCCC/view');
+    await seedLog('2026-09-12T09:30:00', 'https://drive.example/file/d/DDDDDDDDDDDDDDDDDDDDD/view');
+
+    const data = await getLaporanBootstrap(env.DB, { token });
+    const up = data.uploadBukti.find((u) => u.idPengajuan === 'INHAL-1');
+    expect(up.waktuUploadBukti).toBe('');
+    expect(up.sumberUpload).toBe('');
+  });
+
+  it('mengabaikan penanda reset dan unggahan sebelum reset', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    const link = 'https://drive.example/file/d/EEEEEEEEEEEEEEEEEEEEE/view';
+    await seedBukti(link, { uploadResetAt: '2026-09-14T11:00:00' });
+    await seedLog('2026-09-12T09:30:00', link);
+    await seedLog('2026-09-14T11:00:00', link);
+    await seedLog('2026-09-15T08:15:00', link);
+
+    const data = await getLaporanBootstrap(env.DB, { token });
+    const up = data.uploadBukti.find((u) => u.idPengajuan === 'INHAL-1');
+    expect(up.waktuUploadBukti).toBe('2026-09-15T08:15:00');
+  });
+
+  it('mengosongkan waktu unggah bila semua log terjadi sebelum reset', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    const link = 'https://drive.example/file/d/GGGGGGGGGGGGGGGGGGGGG/view';
+    await seedBukti(link, { uploadResetAt: '2026-09-14T11:00:00' });
+    await seedLog('2026-09-12T09:30:00', link);
+    await seedLog('2026-09-14T11:00:00', link);
+
+    const data = await getLaporanBootstrap(env.DB, { token });
+    const up = data.uploadBukti.find((u) => u.idPengajuan === 'INHAL-1');
+    expect(up.waktuUploadBukti).toBe('');
+  });
+
+  it('mengosongkan waktu unggah saat belum ada jejak log (data lama)', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    await seedBukti('https://drive.example/file/d/FFFFFFFFFFFFFFFFFFFFF/view');
+
+    const data = await getLaporanBootstrap(env.DB, { token });
+    const up = data.uploadBukti.find((u) => u.idPengajuan === 'INHAL-1');
+    expect(up).toMatchObject({ waktuUploadBukti: '', sumberUpload: '' });
+  });
+});

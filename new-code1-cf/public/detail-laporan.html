@@ -185,6 +185,7 @@
         .in-toolbar { display:flex; align-items:center; gap:.625rem; padding:.75rem .875rem; border-bottom:1px solid var(--line); flex-wrap:wrap; }
         .in-input { width:100%; border-radius:11px; border:0; background:#fff; padding:10px 12px; font-size:13.5px; color:var(--ink-900); outline:none; box-shadow:inset 0 0 0 1px #e2e8f0; transition:box-shadow .15s ease; }
         .in-input:focus { box-shadow:inset 0 0 0 2px var(--brand); }
+        .in-input.is-error { box-shadow: inset 0 0 0 2px #e11d48; }
         .in-progdots { display:inline-flex; gap:4px; align-items:center; }
         .in-progdots i { width:10px; height:10px; border-radius:9999px; display:inline-block; }
         .in-progdots i.all { background:#10b981; }
@@ -2118,7 +2119,9 @@
                                     <div v-if="periksa.mode === 'view' && periksa.item.statusPembayaran === 'valid'" class="space-y-3">
                                         <div class="grid grid-cols-1 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-xs sm:grid-cols-2">
                                             <div><div class="text-slate-400">Nominal Diterima</div><div class="mt-0.5 text-base font-bold text-slate-800">{{ fmtRupiah(periksa.item.nominal) }}</div></div>
-                                            <div><div class="text-slate-400">Kesesuaian</div><div class="mt-0.5 font-semibold" :class="periksa.item.kesesuaian === 'kurang' ? 'text-amber-600' : (periksa.item.kesesuaian === 'lebih' ? 'text-violet-600' : 'text-emerald-700')">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
+                                            <div><div class="text-slate-400">Kesesuaian</div><div class="mt-0.5 font-semibold" :class="periksa.item.kesesuaian === 'kurang' ? 'text-amber-700' : (periksa.item.kesesuaian === 'lebih' ? 'text-violet-700' : 'text-emerald-700')">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
+                                            <div><div class="text-slate-400">Tanggal Daftar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.tanggalDaftar ? fmtTanggalWaktu(periksa.item.tanggalDaftar) : '-' }}</div></div>
+                                            <div><div class="text-slate-400">Tanggal Upload Bukti Bayar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksaUploadLabel(periksa.item) }}</div></div>
                                             <div><div class="text-slate-400">Tanggal Bayar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.tanggalBayar ? fmtTanggal(periksa.item.tanggalBayar) : '-' }}</div></div>
                                             <div><div class="text-slate-400">Metode</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.metode || '-' }}</div></div>
                                             <div><div class="text-slate-400">Diverifikasi Oleh</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.verifiedBy || '-' }}</div></div>
@@ -2136,21 +2139,42 @@
                                         <template v-else>
                                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                 <div>
-                                                    <label class="label">Nominal Diterima</label>
-                                                    <input v-model="periksa.form.nominal" type="number" min="0" class="in-input" @input="onNominalInput">
+                                                    <label class="label">Nominal Diterima <span class="text-rose-500">*</span></label>
+                                                    <input v-model="periksa.form.nominal" type="number" min="0" class="in-input" :class="periksaKesesuaianInfo.cocok ? '' : 'is-error'">
                                                 </div>
                                                 <div>
-                                                    <label class="label">Kesesuaian</label>
-                                                    <input :value="bayarKesesuaianLabel(periksa.form.kesesuaian)" class="in-input bg-slate-50" readonly>
+                                                    <label class="label">Kesesuaian <span class="text-rose-500">*</span></label>
+                                                    <select v-model="periksa.form.kesesuaian" class="in-input" @change="onKesesuaianChange">
+                                                        <option value="pas">Pas</option>
+                                                        <option value="kurang">Kurang</option>
+                                                        <option value="lebih">Lebih</option>
+                                                    </select>
+                                                </div>
+                                                <div class="rounded-lg px-3 py-2 text-[11px] sm:col-span-2" :class="periksaKesesuaianInfo.cocok ? 'bg-slate-50 text-slate-500' : 'bg-rose-50 text-rose-600'">
+                                                    <i class="bi bi-info-circle"></i> {{ periksaKesesuaianInfo.teks }}
                                                 </div>
                                                 <div>
-                                                    <label class="label">Tanggal Bayar</label>
+                                                    <label class="label">Tanggal Daftar</label>
+                                                    <div class="in-input bg-slate-50 text-slate-600">{{ periksa.item.tanggalDaftar ? fmtTanggalWaktu(periksa.item.tanggalDaftar) : '-' }}</div>
+                                                    <div class="mt-1 text-[10px] text-slate-400">Tanggal sistem — tidak dapat diubah</div>
+                                                </div>
+                                                <div>
+                                                    <label class="label">Tanggal Upload Bukti Bayar</label>
+                                                    <div class="in-input bg-slate-50 text-slate-600">{{ periksaUploadLabel(periksa.item) }}</div>
+                                                    <div class="mt-1 text-[10px] text-slate-400">Tanggal sistem — tidak dapat diubah</div>
+                                                </div>
+                                                <div>
+                                                    <label class="label">Tanggal Bayar <span class="text-rose-500">*</span></label>
                                                     <input v-model="periksa.form.tanggal" type="date" class="in-input">
                                                 </div>
                                                 <div>
                                                     <label class="label">Metode</label>
                                                     <input v-model="periksa.form.metode" type="text" class="in-input" placeholder="Transfer, tunai, ...">
                                                 </div>
+                                            </div>
+                                            <div v-if="periksa.item.uploadResetAt" class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Berkas direset {{ fmtTanggalWaktu(periksa.item.uploadResetAt) }} oleh {{ periksa.item.uploadResetBy || 'Admin' }}.
+                                                <span v-if="periksa.item.uploadResetNote"> Catatan: {{ periksa.item.uploadResetNote }}</span>
                                             </div>
                                             <div>
                                                 <label class="label">Catatan Verifikasi</label>
@@ -2202,6 +2226,19 @@
                                             <button type="button" class="btn-primary" :disabled="koreksi.saving" @click="submitKoreksi">
                                                 <i class="bi bi-save"></i> {{ koreksi.saving ? 'Menyimpan...' : 'Simpan Koreksi' }}
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="periksa.item.statusPembayaran !== 'gratis'" class="rounded-xl border border-slate-100 p-3">
+                                        <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Alur Berkas</div>
+                                        <div class="space-y-2 text-xs">
+                                            <div v-for="step in periksaTimeline(periksa.item)" :key="'step-' + step.label" class="flex items-start gap-2">
+                                                <i class="bi text-slate-300" :class="step.icon"></i>
+                                                <div class="flex-1">
+                                                    <div class="font-semibold text-slate-700">{{ step.label }}</div>
+                                                    <div class="text-slate-500">{{ step.value }}</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -2773,6 +2810,7 @@
                     bayarFilter: { kelengkapan: '' },
                     bayarView: 'tabel',
                     pembayaranRevisi: [],
+                    uploadBukti: [],
                     bayarViews: [
                         { key: 'tabel', label: 'Tabel', icon: 'bi-table' },
                         { key: 'antrean', label: 'Antrean', icon: 'bi-inbox' },
@@ -3159,6 +3197,12 @@
                             verifiedAt: String(p['Verified At'] || '').trim(),
                             verifiedBy: String(p['Verified By'] || '').trim(),
                             revision: Number(p['Payment Revision']) || 0,
+                            tanggalDaftar: String(p.Timestamp || '').trim(),
+                            waktuUploadBukti: this.uploadBuktiMap[idp] ? this.uploadBuktiMap[idp].waktuUploadBukti : '',
+                            sumberUpload: this.uploadBuktiMap[idp] ? this.uploadBuktiMap[idp].sumberUpload : '',
+                            uploadResetAt: String(p['Upload Reset At'] || '').trim(),
+                            uploadResetBy: String(p['Upload Reset By'] || '').trim(),
+                            uploadResetNote: String(p['Upload Reset Note'] || '').trim(),
                             biaya: biaya,
                             linkBukti: linkBukti,
                             linkAcc: String(p['Link ACC INHAL'] || '').trim(),
@@ -3168,6 +3212,18 @@
                         });
                     });
                     return out.sort((a, b) => a.nama.localeCompare(b.nama) || a.npm.localeCompare(b.npm) || a.id.localeCompare(b.id));
+                },
+                uploadBuktiMap() {
+                    const map = {};
+                    (this.uploadBukti || []).forEach(u => {
+                        const id = String(u.idPengajuan || '').trim();
+                        if (!id) return;
+                        map[id] = {
+                            waktuUploadBukti: String(u.waktuUploadBukti || '').trim(),
+                            sumberUpload: String(u.sumberUpload || '').trim()
+                        };
+                    });
+                    return map;
                 },
                 pembayaranFilteredAll() {
                     return this.pembayaranItemsAll.filter(it => this.bayarMatches(it));
@@ -3944,8 +4000,63 @@
                     if (n === t) return 'pas';
                     return n < t ? 'kurang' : 'lebih';
                 },
-                onNominalInput() {
-                    this.periksa.form.kesesuaian = this.hitungKesesuaian(this.periksa.form.nominal, this.periksa.item ? this.periksa.item.biaya : 0);
+                periksaKesesuaianInfo() {
+                    const it = this.periksa.item;
+                    const form = this.periksa.form || {};
+                    const tagihan = it ? Number(it.biaya) || 0 : 0;
+                    const nominal = Number(form.nominal) || 0;
+                    const target = this.hitungKesesuaian(nominal, tagihan);
+                    const targetLabel = this.bayarKesesuaianLabel(target);
+                    const selisih = Math.abs(nominal - tagihan);
+                    const cocok = !!form.kesesuaian && form.kesesuaian === target;
+                    let teks;
+                    if (!nominal) {
+                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + '. Isi nominal diterima lalu pilih kesesuaian.';
+                    } else if (target === 'pas') {
+                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + ' · Diterima ' + this.fmtRupiah(nominal) + ' → Pas.';
+                    } else {
+                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + ' · Diterima ' + this.fmtRupiah(nominal) + ' → ' + targetLabel + ' ' + this.fmtRupiah(selisih) + '.';
+                    }
+                    if (nominal && !cocok) {
+                        teks += form.kesesuaian
+                            ? ' Pilihan Kesesuaian harus ' + targetLabel + '.'
+                            : ' Pilih kesesuaian ' + targetLabel + '.';
+                    }
+                    return { tagihan, nominal, selisih, target, targetLabel, cocok, teks };
+                },
+                onKesesuaianChange() {
+                    const it = this.periksa.item;
+                    if (!it) return;
+                    if (this.periksa.form.kesesuaian === 'pas') {
+                        const tagihan = Number(it.biaya) || 0;
+                        if (tagihan > 0) this.periksa.form.nominal = String(tagihan);
+                    }
+                },
+                periksaUploadLabel(it) {
+                    if (!it) return '-';
+                    if (it.waktuUploadBukti) return this.fmtTanggalWaktu(it.waktuUploadBukti);
+                    return it.linkBukti ? 'Tidak tercatat' : 'Belum ada unggahan';
+                },
+                periksaTimeline(it) {
+                    if (!it) return [];
+                    const steps = [
+                        { icon: 'bi-1-circle', label: 'Pendaftaran', value: it.tanggalDaftar ? this.fmtTanggalWaktu(it.tanggalDaftar) : 'Tidak tercatat' },
+                        { icon: 'bi-2-circle', label: 'Unggah bukti bayar', value: this.periksaUploadLabel(it) + (it.sumberUpload ? ' · ' + it.sumberUpload : '') },
+                        {
+                            icon: 'bi-3-circle', label: 'Verifikasi',
+                            value: it.verifiedAt
+                                ? this.fmtTanggalWaktu(it.verifiedAt) + (it.verifiedBy ? ' · ' + it.verifiedBy : '')
+                                : 'Belum diverifikasi'
+                        }
+                    ];
+                    const rev = this.bayarRevisiFor(it)[0];
+                    if (rev) {
+                        steps.push({
+                            icon: 'bi-4-circle', label: 'Koreksi terakhir',
+                            value: this.bayarModeLabel(rev.mode) + ' · ' + (rev.actor || 'Admin') + (rev.createdAt ? ' · ' + this.fmtTanggalWaktu(rev.createdAt) : '')
+                        });
+                    }
+                    return steps;
                 },
                 openPeriksa(it) {
                     if (!it) return;
@@ -3958,7 +4069,7 @@
                         nominal: nominal ? String(nominal) : '',
                         tanggal: it.tanggalBayar || this.bayarToday(),
                         metode: it.metode || '',
-                        kesesuaian: it.kesesuaian || this.hitungKesesuaian(nominal, it.biaya),
+                        kesesuaian: it.kesesuaian || this.hitungKesesuaian(nominal, it.biaya) || 'pas',
                         catatan: it.catatanVerifikasi || ''
                     };
                     this.koreksi = {
@@ -3991,6 +4102,19 @@
                     const nominal = Number(this.periksa.form.nominal);
                     if (!(nominal > 0)) {
                         this.showToast('bi-x-circle', 'Nominal diterima harus lebih dari nol.');
+                        return;
+                    }
+                    const info = this.periksaKesesuaianInfo;
+                    if (!this.periksa.form.kesesuaian) {
+                        this.showToast('bi-x-circle', 'Kesesuaian wajib dipilih.');
+                        return;
+                    }
+                    if (!info.cocok) {
+                        this.showToast('bi-x-circle', info.teks);
+                        return;
+                    }
+                    if (!this.periksa.form.tanggal) {
+                        this.showToast('bi-x-circle', 'Tanggal bayar wajib diisi.');
                         return;
                     }
                     this.periksa.saving = true;
@@ -4542,6 +4666,7 @@
                         this.blok = data.blok || [];
                         this.jadwal = data.jadwal || [];
                         this.pembayaranRevisi = data.pembayaranRevisi || [];
+                        this.uploadBukti = data.uploadBukti || [];
                         this.bagian = data.bagian || { categories: [], labs: [] };
                         this.expanded = {};
                         this.activeDosenCell = null;
@@ -4558,6 +4683,7 @@
                         this.blok = [];
                         this.jadwal = [];
                         this.pembayaranRevisi = [];
+                        this.uploadBukti = [];
                         this.bagian = { categories: [], labs: [] };
                         this.showToast('bi-x-circle', 'Gagal memuat data: ' + (e || 'Terjadi kesalahan.'));
                     } finally {
