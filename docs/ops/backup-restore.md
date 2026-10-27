@@ -248,3 +248,35 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
 - Migrasi `2026-10-26-pembayaran-backfill-menunggu.sql` berstatus diterapkan.
   Hasil: `menunggu` 25 baris, `valid` 1 baris, dan 0 baris ber-bukti yang
   masih `belum`.
+
+### 2026-10-27 (produksi)
+
+- Deploy produksi BA Pelaksanaan multi-sesi (commit `83d6bcb`): versi Worker
+  `00575170-c5a3-4969-9846-3823a3647614`, health produksi 200.
+- Time Travel bookmark sebelum migrasi:
+  `0000023b-00000000-00005110-26708c9d03b7d08b6863d713153a9458`.
+  Bookmark setelah migrasi dan deploy:
+  `0000023e-00000066-00005111-066406c7568943df2d523fd19b713c25`.
+- Migrasi `2026-10-27-ba-pelaksanaan-sesi.sql` berstatus diterapkan.
+  Hasil: tabel `berita_acara_sesi` dibuat, backfill 2 baris dari 8 baris
+  `berita_acara` (2 baris ber-`jadwal_id`), tanpa duplikat `jadwal_id`.
+- Tidak ada dump ekspor produksi pada rilis ini (R2 belum aktif). Untuk
+  pemulihan, gunakan bookmark Time Travel di atas.
+- Smoke test: `/api/health` `{"ok":true,"db":"ok"}`, `/bagian` memuat
+  `baSesiSummary`/`jumlahSesi`, `/bagian-state.js` memuat `applySessionToggle`.
+- Uji fungsional BA 2 sesi (buat BA, badge "N sesi", Jumlah Sesi di dashboard,
+  panel Sesi Pelaksanaan, kunci batal sesi non-pertama) belum dijalankan karena
+  butuh sesi admin; jalankan saat verifikasi manual berikutnya.
+
+### 2026-10-27 (staging)
+
+- Staging tertinggal 2 migrasi sebelum rilis ini; diterapkan manual dengan
+  `wrangler d1 migrations apply inhal-poc-staging --remote --config wrangler.staging.toml`:
+  `2026-10-26-pembayaran-backfill-menunggu.sql` dan
+  `2026-10-27-ba-pelaksanaan-sesi.sql` (keduanya ✅).
+- Ekspor pra-migrasi `wrangler d1 export`: 26.9 KB, disimpan di luar repo
+  (`D:\tmp\backup-pre-ba-sesi-staging-2026-10-27.sql`). Bookmark dari URL ekspor:
+  `0000002b-00000000-00005111-c40937d801e9297b52b511bf6aac8b34`.
+- Deploy staging: versi Worker `6755baaa-2d19-446e-aa1b-763ab6c28a41`,
+  health staging 200, `/bagian` memuat `baSesiSummary`/`jumlahSesi`.
+- `berita_acara_sesi` di staging dibuat dan masih kosong (0 BA), siap untuk UAT.
