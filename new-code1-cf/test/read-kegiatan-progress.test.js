@@ -9,7 +9,7 @@ describe('computeUnitProgress', () => {
         { statusPengajuan: 'Menunggu', masukBa: false }
       ],
       baPendukung: [{ baId: 'BA-2026-0001' }],
-      baPelaksanaan: [{ baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '09:00', dosen: 'dr. Andi' }]
+      baPelaksanaan: [{ baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '09:00', dosen: 'dr. Andi', fileUrl: 'https://drive/ba' }]
     };
     const p = computeUnitProgress(unit);
     expect(p.pendaftaran).toBe('all');
@@ -40,7 +40,7 @@ describe('computeUnitProgress', () => {
     const unit = {
       peserta: [{ statusPengajuan: 'ACC' }],
       baPendukung: [],
-      baPelaksanaan: [{ 'BA ID': 'BA-2026-0001', 'Tanggal Pelaksanaan': '2026-09-02', Jam: '08:00', Dosen: 'dr. Ilham' }]
+      baPelaksanaan: [{ 'BA ID': 'BA-2026-0001', 'Tanggal Pelaksanaan': '2026-09-02', Jam: '08:00', Dosen: 'dr. Ilham', 'File URL': 'https://drive/ba' }]
     };
     const p = computeUnitProgress(unit);
     expect(p.selesai).toBe('all');
@@ -50,10 +50,30 @@ describe('computeUnitProgress', () => {
     const unit = {
       peserta: [{ statusPengajuan: 'ACC' }],
       baPendukung: [],
-      baPelaksanaan: [{ baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '', dosen: 'dr. Andi' }]
+      baPelaksanaan: [{ baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '', dosen: 'dr. Andi', fileUrl: 'https://drive/ba' }]
     };
     const p = computeUnitProgress(unit);
     expect(p.pelaksanaan).toBe('all');
     expect(p.selesai).toBe('none');
+  });
+
+  it('selesai menuntut berkas BA, bukan hanya dosen/tanggal/jam', async () => {
+    const unit = {
+      peserta: [{ statusPengajuan: 'ACC' }],
+      baPendukung: [],
+      baPelaksanaan: [
+        { baId: 'BA-2026-0011', tanggal: '2026-09-20', jam: '09:00', dosen: 'dr. Andi', fileUrl: '' },
+        { 'BA ID': 'BA-2026-0012', 'Tanggal Pelaksanaan': '2026-09-21', Jam: '10:00', Dosen: 'dr. Andi', 'File URL': '' }
+      ]
+    };
+    const p = computeUnitProgress(unit);
+    expect(p.pelaksanaan).toBe('all');
+    expect(p.selesai).toBe('none');
+
+    // Satu BA berberkas sudah cukup menandai tahap selesai.
+    const berberkas = Object.assign({}, unit, {
+      baPelaksanaan: unit.baPelaksanaan.concat([{ baId: 'BA-2026-0013', tanggal: '2026-09-22', jam: '11:00', dosen: 'dr. Andi', fileUrl: 'https://drive/ba' }])
+    });
+    expect(computeUnitProgress(berberkas).selesai).toBe('all');
   });
 });

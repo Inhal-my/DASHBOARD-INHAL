@@ -23,9 +23,9 @@ describe('bagian bootstrap jadwal', () => {
     expect(boot.jadwalList[0].JadwalID).toBe('JDW-2026-0001');
   });
 
-  it('menandai BA selesai bila dosen+tanggal+jam terisi', async () => {
+  it('menandai BA selesai bila dosen+tanggal+jam dan berkas terisi', async () => {
     await seed();
-    await env.DB.prepare("INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jam,dosen,jumlah_peserta,sumber,kegiatan_key,jadwal_id) VALUES ('2026-09-20T09:00:00','BA-PEL-2026-0001','Ujian','A','UAS','2026-09-20','09:00','dr. Andi','1','Bagian','ujian|a|uas','JDW-2026-0001')").run();
+    await env.DB.prepare("INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,jam,dosen,jumlah_peserta,file_url,sumber,kegiatan_key,jadwal_id) VALUES ('2026-09-20T09:00:00','BA-PEL-2026-0001','Ujian','A','UAS','2026-09-20','09:00','dr. Andi','1','https://drive/ba','Bagian','ujian|a|uas','JDW-2026-0001')").run();
     const list = await getBeritaAcaraList(env.DB, 'Ujian', 'Ujian', await bagianCtx());
     expect(list).toHaveLength(1);
     expect(list[0].selesai).toBe(true);
@@ -34,5 +34,10 @@ describe('bagian bootstrap jadwal', () => {
     await env.DB.prepare("UPDATE berita_acara SET jam=''").run();
     const list2 = await getBeritaAcaraList(env.DB, 'Ujian', 'Ujian', await bagianCtx());
     expect(list2[0].selesai).toBe(false);
+
+    // Tanpa berkas BA, BA tetap draft walau dosen/jam/tanggal lengkap.
+    await env.DB.prepare("UPDATE berita_acara SET jam='09:00', file_url=''").run();
+    const list3 = await getBeritaAcaraList(env.DB, 'Ujian', 'Ujian', await bagianCtx());
+    expect(list3[0].selesai).toBe(false);
   });
 });

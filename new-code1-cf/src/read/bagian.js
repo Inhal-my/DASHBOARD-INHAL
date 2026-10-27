@@ -85,6 +85,9 @@ async function computeBagianRows(db, kategori, subBagian) {
   return rows;
 }
 
+// Peserta BA Pelaksanaan. `idPengajuan` + `statusPengajuan` ikut dibawa karena
+// halaman Bagian memakainya untuk mengoreksi peserta BA draft (bukan hanya
+// menampilkan npm/nama).
 async function getBaPesertaMap(db) {
   const rows = (await db.prepare('SELECT * FROM berita_acara_peserta').all()).results || [];
   const map = {};
@@ -92,11 +95,21 @@ async function getBaPesertaMap(db) {
     const id = String(r.ba_id || '').trim();
     if (!id) continue;
     if (!map[id]) map[id] = [];
-    map[id].push({ npm: String(r.npm || '').trim(), namaLengkap: String(r.nama_lengkap || '').trim(), blok: String(r.blok || '').trim() });
+    map[id].push({
+      idPengajuan: String(r.id_pengajuan || '').trim(),
+      npm: String(r.npm || '').trim(),
+      namaLengkap: String(r.nama_lengkap || '').trim(),
+      blok: String(r.blok || '').trim(),
+      statusPengajuan: String(r.status_pengajuan || '').trim()
+    });
   }
   return map;
 }
 
+// Peserta BA Pendukung dipakai dua hal: panel informasi read-only di halaman
+// Bagian, dan sumber pilihan peserta BA Pelaksanaan ("Dari BA Pendukung").
+// Karena itu identitas yang bisa dikirim ulang sebagai peserta BA Pelaksanaan
+// (idPengajuan + statusPengajuan) ikut dibawa, bukan hanya npm/nama.
 async function getBaAdminPesertaMap(db) {
   const rows = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE active = 1').all()).results || [];
   const map = {};
@@ -104,7 +117,17 @@ async function getBaAdminPesertaMap(db) {
     const id = String(r.ba_id || '').trim();
     if (!id) continue;
     if (!map[id]) map[id] = [];
-    map[id].push({ npm: String(r.npm || '').trim(), namaLengkap: String(r.nama_lengkap || '').trim(), blok: String(r.blok || '').trim() });
+    map[id].push({
+      idPengajuan: String(r.id_pengajuan || '').trim(),
+      npm: String(r.npm || '').trim(),
+      namaLengkap: String(r.nama_lengkap || '').trim(),
+      blok: String(r.blok || '').trim(),
+      statusPengajuan: String(r.status_pengajuan || '').trim(),
+      urutan: Number(r.urutan || 0)
+    });
+  }
+  for (const id of Object.keys(map)) {
+    map[id].sort((a, b) => (a.urutan - b.urutan) || a.npm.localeCompare(b.npm));
   }
   return map;
 }
@@ -121,6 +144,10 @@ async function computeBaPendukungList(db, bagianFilter, kategori) {
     .map((r) => {
       const c = toClientRow('berita_acara_admin', r);
       c.peserta = pesertaMap[String(r.ba_id || '').trim()] || [];
+      // Kegiatan Key dipakai agar sumber "Dari BA Pendukung" bisa mencocokkan
+      // BA Pendukung dengan kegiatan BA Pelaksanaan tanpa menebak ulang dari nama.
+      c.kegiatanKey = String(r.kegiatan_key || '').trim()
+        || kegiatanKey(String(c.Bagian || '').trim(), String(c.Blok || '').trim(), String(c['Nama Kegiatan'] || '').trim());
       return c;
     });
   if (!filter) return rows;
@@ -149,7 +176,10 @@ async function computeBaList(db, bagianFilter, kategori) {
     copy.sesi = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
     copy.jumlahSesi = copy.sesi.length;
     copy.selesai = !!(String(c.Dosen || '').trim() && String(c['Tanggal Pelaksanaan'] || '').trim()
-      && (String(c.Jam || '').trim() || copy.jumlahSesi > 1));
+      && (String(c.Jam || '').trim() || copy.jumlahSesi > 1)
+      // "Selesai" berarti BA boleh dipakai sebagai bukti pelaksanaan, jadi
+      // berkas BA wajib ada. BA tanpa berkas tetap tampil sebagai draft.
+      && String(c['File URL'] || '').trim());
     return copy;
   });
   if (filter) {

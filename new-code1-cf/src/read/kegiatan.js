@@ -9,6 +9,15 @@ function field(obj, lowerKey, clientKey) {
   return v == null ? '' : String(v).trim();
 }
 
+// Bentuk baris BA berbeda antar pemanggil: dashboard memakai kunci kecil
+// (file_url/fileUrl), halaman Bagian memakai kunci klien ('File URL').
+function baFile(obj) {
+  if (!obj) return '';
+  if (obj.file_url !== undefined) return String(obj.file_url || '').trim();
+  if (obj.fileUrl !== undefined) return String(obj.fileUrl || '').trim();
+  return String(obj['File URL'] || '').trim();
+}
+
 export function computeUnitProgress(unit) {
   const peserta = (unit && unit.peserta) || [];
   const baPendukung = (unit && unit.baPendukung) || [];
@@ -19,8 +28,11 @@ export function computeUnitProgress(unit) {
     return s === 'ACC' || s === 'Ditolak';
   }).length;
   const finalCount = peserta.filter((p) => p.masukBa).length;
+  // Tahap "selesai" menuntut berkas BA: tanpa berkas, BA hanya menyelesaikan
+  // tahap pelaksanaan.
   const selesai = baPelaksanaan.some((b) =>
     field(b, 'dosen', 'Dosen') && field(b, 'tanggal', 'Tanggal Pelaksanaan') && field(b, 'jam', 'Jam')
+    && baFile(b)
   );
   return {
     pendaftaran: total > 0 ? 'all' : 'none',

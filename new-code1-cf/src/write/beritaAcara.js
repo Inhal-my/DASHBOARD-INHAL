@@ -445,6 +445,35 @@ async function resolveBaPesertaByIds(db, ids) {
   return { peserta, missing };
 }
 
+// Bagian boleh mengoreksi peserta BA Pelaksanaan. Payload boleh berisi daftar
+// peserta lengkap (`peserta`, sama seperti saat upload) atau hanya ID
+// pengajuan (`pesertaIds`); identitas yang kosong dilengkapi dari tabel
+// pengajuan supaya baris peserta BA selalu utuh.
+async function resolveBaPesertaInput(db, payload) {
+  const p = payload || {};
+  const raw = Array.isArray(p.peserta) ? p.peserta : [];
+  if (raw.length) {
+    const list = normalizeBaPeserta({ peserta: raw });
+    if (list.length) {
+      const resolved = await resolveBaPesertaByIds(db, list.map((x) => x.idPengajuan).filter(Boolean));
+      const map = {};
+      for (const x of resolved.peserta) map[x.idPengajuan] = x;
+      return list.map((x) => {
+        const ref = map[x.idPengajuan] || {};
+        return {
+          idPengajuan: x.idPengajuan,
+          npm: x.npm || ref.npm || '',
+          namaLengkap: x.namaLengkap || ref.namaLengkap || '',
+          blok: x.blok || ref.blok || '',
+          statusPengajuan: x.statusPengajuan || ref.statusPengajuan || ''
+        };
+      });
+    }
+  }
+  const ids = Array.isArray(p.pesertaIds) ? p.pesertaIds : [];
+  return (await resolveBaPesertaByIds(db, ids)).peserta;
+}
+
 async function buildRestorePengajuanStmts(db, ids, excludeBaId) {
   const ts = nowIso();
   const stmts = [];
@@ -536,6 +565,36 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
   await auditBa(db, ctx, 'BA_DELETE', id, { jenis: 'Pelaksanaan' });
 
   return { success: true, message: 'Berita acara berhasil dihapus.' };
+}
+
+// Bagian boleh membatalkan BA draft yang belum berberkas (mis. salah kegiatan
+// atau salah peserta). BA yang sudah berberkas hanya admin dashboard yang boleh
+// menghapus, supaya bukti pelaksanaan tidak hilang dari sisi Bagian.
+export async function deleteDraftBeritaAcaraBagian(db, baId, kategori, ctx) {
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  await requireBagianSession(db, kategori, existing.bagian, ctx.token, ctx.session);
+
+  if (str(existing.file_url)) {
+    return { success: false, message: 'BA yang sudah berberkas hanya dapat dihapus oleh admin dashboard.' };
+  }
+
+  const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const ids = Array.from(new Set(peserta.map((r) => str(r.id_pengajuan)).filter(Boolean)));
+  const syncs = await buildRestorePengajuanStmts(db, ids, id);
+
+  await db.batch([
+    ...syncs,
+    db.prepare('DELETE FROM berita_acara_sesi WHERE ba_id = ?1').bind(id),
+    db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
+    db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
+  ]);
+
+  await auditBa(db, ctx, 'BA_DELETE', id, { jenis: 'Pelaksanaan', oleh: 'Bagian', jumlahPeserta: ids.length });
+  return { success: true, message: 'Draft berita acara berhasil dihapus.' };
 }
 
 export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
@@ -735,19 +794,93 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
 
-  const peserta = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const currentRows = (await db.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
+  const currentIds = Array.from(new Set(currentRows.map((r) => str(r.id_pengajuan)).filter(Boolean)));
+
+  // Koreksi peserta memakai aturan yang sama dengan upload pertama supaya BA
+  // tetap konsisten dengan kegiatan (bagian|blok|nama kegiatan) dan status final.
+  const gantiPeserta = p.peserta !== undefined || p.pesertaIds !== undefined;
+  let pesertaBaru = null;
+  if (gantiPeserta) {
+    pesertaBaru = await resolveBaPesertaInput(db, p);
+    if (!pesertaBaru.length) {
+      return { success: false, message: 'Perubahan dibatalkan: tidak ada peserta pada berita acara ini. Pilih minimal satu peserta.' };
+    }
+    const invalid = await validateBaPesertaKegiatan(
+      db, pesertaBaru, str(existing.bagian), str(existing.blok), str(existing.nama_kegiatan)
+    );
+    if (invalid.length) {
+      return {
+        success: false,
+        message: 'Perubahan dibatalkan: peserta tidak sesuai dengan kegiatan BA — ' + invalid.join(', ') + '. Muat ulang data terlebih dahulu.'
+      };
+    }
+    const blocked = await validateBaPesertaStatus(db, pesertaBaru);
+    if (blocked.length) {
+      const allowed = await getBagianBaStatuses(db);
+      return {
+        success: false,
+        message: 'Perubahan dibatalkan: peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '. Muat ulang data terlebih dahulu.'
+      };
+    }
+  }
+
+  const finalPeserta = pesertaBaru || currentIds.map((pid) => ({ idPengajuan: pid }));
+
+  // Berkas BA: Bagian boleh mengunggah berkas pada BA draft maupun mengganti
+  // berkas BA yang sudah ada (berkas lama dipindahkan ke trash).
+  let fileUrl = str(existing.file_url);
+  let fileName = str(existing.file_name);
+  let gantiFile = false;
+  if (p.file && p.file.data) {
+    const up = await saveDriveFile(ctx.env, p.file, 'ba-' + id);
+    if (!up.ok) return { success: false, message: up.message };
+    fileUrl = up.url;
+    fileName = up.name || '';
+    gantiFile = true;
+  }
+
   const sesi = await loadBaSesiRows(db, id);
-  const syncStmts = await buildSesiSyncStmts(
-    db,
-    peserta.map((r) => ({ idPengajuan: r.id_pengajuan })),
-    sesi,
-    { dosen: dosen, tanggal: tanggal, jam: jam }
-  );
-  await db.batch([
-    db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan=?1, jam=?2, dosen=?3, catatan=?4, label=?5 WHERE ba_id=?6')
-      .bind(tanggal, jam, dosen, catatan, label, id),
-    ...syncStmts
-  ]);
-  await auditBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pelaksanaan', lengkapi: true, jumlahSesi: sesi.length });
-  return { success: true, message: 'Berita acara dilengkapi.' };
+  const syncStmts = await buildSesiSyncStmts(db, finalPeserta, sesi, {
+    dosen: dosen, tanggal: tanggal, jam: jam
+  });
+
+  const stmts = [
+    db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan=?1, jam=?2, dosen=?3, catatan=?4, label=?5, file_url=?6, file_name=?7 WHERE ba_id=?8')
+      .bind(tanggal, jam, dosen, catatan, label, fileUrl, fileName, id)
+  ];
+  if (pesertaBaru) {
+    const finalIds = finalPeserta.map((x) => str(x.idPengajuan)).filter(Boolean);
+    const dibuang = currentIds.filter((pid) => finalIds.indexOf(pid) === -1);
+    stmts.push(...await buildRestorePengajuanStmts(db, dibuang, id));
+    stmts.push(db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id));
+    const ts = nowIso();
+    for (const pch of pesertaBaru) {
+      stmts.push(
+        db.prepare(
+          'INSERT INTO berita_acara_peserta (timestamp, ba_id, id_pengajuan, npm, nama_lengkap, blok, bagian, status_pengajuan) ' +
+          'SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 WHERE EXISTS (SELECT 1 FROM berita_acara WHERE ba_id = ?2)'
+        ).bind(ts, id, pch.idPengajuan, pch.npm, pch.namaLengkap, pch.blok, str(existing.bagian), pch.statusPengajuan)
+      );
+    }
+    stmts.push(db.prepare('UPDATE berita_acara SET jumlah_peserta = ?1 WHERE ba_id = ?2').bind(pesertaBaru.length, id));
+  }
+  stmts.push(...syncStmts);
+  await db.batch(stmts);
+
+  if (gantiFile) {
+    const oldFileId = parseDriveFileId(str(existing.file_url));
+    if (oldFileId) await trashDriveFile(ctx.env, oldFileId);
+  }
+
+  await auditBa(db, ctx, 'BA_UPDATE', id, {
+    jenis: 'Pelaksanaan', lengkapi: true, jumlahSesi: sesi.length,
+    jumlahPeserta: finalPeserta.length, gantiPeserta: !!pesertaBaru, gantiFile: gantiFile
+  });
+  return {
+    success: true,
+    message: 'Berita acara dilengkapi.',
+    jumlahPeserta: finalPeserta.length,
+    gantiFile: gantiFile
+  };
 }

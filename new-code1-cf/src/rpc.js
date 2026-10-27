@@ -19,6 +19,7 @@ import { auditMasterIntegrity } from './read/masterAudit.js';
 import { logEvent, logError } from './obs/log.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
+  deleteDraftBeritaAcaraBagian,
   updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
 } from './write/beritaAcara.js';
 import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan } from './write/jadwal.js';
@@ -90,6 +91,7 @@ const HANDLERS = {
   uploadBeritaAcaraAdmin: (db, args, ctx) => saveBeritaAcaraAdmin(db, args[0], ctx),
   deleteBeritaAcaraAdmin: (db, args, ctx) => deleteBeritaAcaraAdmin(db, args[0], ctx),
   deleteBeritaAcaraBagian: (db, args, ctx) => deleteBeritaAcaraBagian(db, args[0], ctx),
+  deleteDraftBeritaAcaraBagian: (db, args, ctx) => deleteDraftBeritaAcaraBagian(db, args[0], args[1], ctx),
   uploadBeritaAcaraBagian: (db, args, ctx) => saveBeritaAcaraBagian(db, args[0], args[1], ctx),
   saveJadwalPelaksanaan: (db, args, ctx) => saveJadwalPelaksanaan(db, args[0], args[1], ctx),
   updateJadwalPelaksanaan: (db, args, ctx) => updateJadwalPelaksanaan(db, args[0], args[1], args[2], ctx),
