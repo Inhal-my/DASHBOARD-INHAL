@@ -407,7 +407,10 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
       groups.push({ peserta: g.peserta, files: files });
     }
     const merged = await mergeBaFilesToPdf({
-      ba: { bagian: str(ba.bagian), blok: str(ba.blok), namaKegiatan: str(ba.nama_kegiatan), tanggal: str(ba.tanggal_pelaksanaan) },
+      ba: {
+        bagian: str(ba.bagian), blok: str(ba.blok), namaKegiatan: str(ba.nama_kegiatan),
+        tanggal: str(ba.tanggal_pelaksanaan), catatan: str(ba.catatan)
+      },
       peserta: pesertaList,
       groups: groups,
       baseFile: baseFile

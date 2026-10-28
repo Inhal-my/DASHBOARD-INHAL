@@ -100,4 +100,43 @@ describe('mergeBaFilesToPdf dengan dokumen dasar', () => {
     expect(res.outputPages).toBe(4); // sampul(1) + dasar(3)
     expect(res.sourcePages).toBe(3);
   });
+
+  it('mencetak catatan BA di sampul tanpa menambah halaman untuk catatan pendek', async () => {
+    const tanpa = await mergeBaFilesToPdf({
+      ba: BA,
+      peserta: [],
+      groups: [{ peserta: { urutan: 1, nama: 'Aisyah', npm: '1001', blok: 'A' }, files: [{ bytes: png(), mime: 'image/png' }] }]
+    });
+    const res = await mergeBaFilesToPdf({
+      ba: Object.assign({}, BA, { catatan: 'Ruang lab 2, dua peserta hadir.' }),
+      peserta: [],
+      groups: [{ peserta: { urutan: 1, nama: 'Aisyah', npm: '1001', blok: 'A' }, files: [{ bytes: png(), mime: 'image/png' }] }]
+    });
+    expect(res.outputPages).toBe(3); // sampul(1) + pembatas(1) + peserta(1)
+    // Sampul berubah karena catatan ikut dicetak.
+    expect(Buffer.compare(Buffer.from(res.bytes), Buffer.from(tanpa.bytes))).not.toBe(0);
+  });
+
+  it('melanjutkan catatan panjang ke halaman sampul berikutnya', async () => {
+    const baris = [];
+    for (let i = 0; i < 90; i += 1) {
+      baris.push('Baris catatan ' + (i + 1) + ' tentang pelaksanaan ujian dan kendala ruang.');
+    }
+    const res = await mergeBaFilesToPdf({
+      ba: Object.assign({}, BA, { catatan: baris.join('\n') }),
+      peserta: [],
+      groups: [{ peserta: { urutan: 1, nama: 'Aisyah', npm: '1001', blok: 'A' }, files: [{ bytes: png(), mime: 'image/png' }] }]
+    });
+    // Tanpa catatan hanya 3 halaman; catatan panjang menambah halaman sampul.
+    expect(res.outputPages).toBeGreaterThan(3);
+  });
+
+  it('tidak gagal saat catatan berisi karakter di luar WinAnsi', async () => {
+    const res = await mergeBaFilesToPdf({
+      ba: Object.assign({}, BA, { catatan: 'Catatan \u201Cpenting\u201D \u2014 tanda \u2713 dan emoji \uD83C\uDF89' }),
+      peserta: [],
+      groups: [{ peserta: { urutan: 1, nama: 'Aisyah', npm: '1001', blok: 'A' }, files: [{ bytes: png(), mime: 'image/png' }] }]
+    });
+    expect(res.outputPages).toBe(3);
+  });
 });

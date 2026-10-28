@@ -57,6 +57,52 @@ function fitText(text, font, size, maxWidth) {
   return str.slice(0, lo) + '\u2026';
 }
 
+// Catatan BA adalah teks bebas (bisa mengandung kutip miring, emoji, dsb).
+// Font standar PDF hanya mendukung WinAnsi, jadi karakter di luar itu diganti
+// agar pembuatan cover tidak gagal.
+function sanitizePdfText(text) {
+  return String(text == null ? '' : text)
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/\t/g, '    ')
+    .replace(/[^\x0A\x0D\x20-\x7E\u00A0-\u00FF]/g, '?');
+}
+
+function wrapText(text, font, size, maxWidth) {
+  const str = sanitizePdfText(text);
+  const lines = [];
+  for (const rawLine of str.split(/\r?\n/)) {
+    const words = rawLine.split(' ');
+    let cur = '';
+    for (const w of words) {
+      const next = cur ? cur + ' ' + w : w;
+      if (font.widthOfTextAtSize(next, size) <= maxWidth) { cur = next; continue; }
+      if (cur) lines.push(cur);
+      cur = '';
+      if (font.widthOfTextAtSize(w, size) <= maxWidth) { cur = w; continue; }
+      // Satu kata lebih panjang dari kolom: potong per karakter.
+      let rest = w;
+      while (rest.length && font.widthOfTextAtSize(rest, size) > maxWidth) {
+        let lo = 0;
+        let hi = rest.length;
+        while (lo < hi) {
+          const mid = Math.ceil((lo + hi) / 2);
+          if (font.widthOfTextAtSize(rest.slice(0, mid), size) <= maxWidth) lo = mid;
+          else hi = mid - 1;
+        }
+        const take = Math.max(1, lo);
+        lines.push(rest.slice(0, take));
+        rest = rest.slice(take);
+      }
+      cur = rest;
+    }
+    lines.push(cur);
+  }
+  return lines;
+}
+
 function addCoverPages(doc, ba, peserta, helv, helvBold) {
   const pw = A4_SHORT;
   const ph = A4_LONG;
@@ -78,7 +124,34 @@ function addCoverPages(doc, ba, peserta, helv, helvBold) {
     page.drawText(fitText(ln, helv, 11, maxW), { x: left, y: y, size: 11, font: helv, color: TEXT_DARK });
     y -= 20;
   }
+  const catatan = String(ba.catatan || '').trim();
+  if (catatan) {
+    y -= 6;
+    if (y < MARGIN + 70) {
+      page = doc.addPage([pw, ph]);
+      pages.push(page);
+      y = ph - 80;
+    }
+    page.drawText('Catatan', { x: left, y: y, size: 11, font: helvBold, color: TEXT_DARK });
+    y -= 18;
+    for (const cl of wrapText(catatan, helv, 10, maxW)) {
+      if (y < MARGIN + 40) {
+        page = doc.addPage([pw, ph]);
+        pages.push(page);
+        y = ph - 80;
+        page.drawText('Catatan (lanjutan)', { x: left, y: y, size: 11, font: helvBold, color: TEXT_DARK });
+        y -= 18;
+      }
+      page.drawText(cl, { x: left, y: y, size: 10, font: helv, color: TEXT_DARK });
+      y -= 14;
+    }
+  }
   y -= 20;
+  if (y < MARGIN + 70) {
+    page = doc.addPage([pw, ph]);
+    pages.push(page);
+    y = ph - 80;
+  }
   page.drawText('Daftar Peserta', { x: left, y: y, size: 12, font: helvBold, color: TEXT_DARK });
   y -= 22;
   let no = 0;

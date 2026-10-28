@@ -3,7 +3,7 @@ import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
-  updateBeritaAcaraBagian, updateBeritaAcaraAdmin
+  updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
 } from '../src/write/beritaAcara.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -393,6 +393,36 @@ describe('berita acara bagian', () => {
     const p2 = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-2').first();
     expect(p2.dosen).toBe('');
     expect(p2.tanggal_pelaksanaan).toBe('');
+  });
+
+  it('menyimpan catatan BA dari form lengkapi dan mempertahankannya bila tidak dikirim', async () => {
+    await seedPengajuan();
+    await seedPengajuanTambahan([{ id: 'INHAL-2', npm: '2201010002', nama: 'Budi' }]);
+    const bagian = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '',
+      peserta: [
+        { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' },
+        { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'ACC' }
+      ]
+    }, 'SGD', bagian);
+
+    const lengkapi = await lengkapiBeritaAcaraBagian(env.DB, res.baId, {
+      dosen: 'dr. Andi', jam: '09:00', tanggal: '2026-09-20',
+      catatan: 'Ruang lab 2, dua peserta hadir.'
+    }, 'SGD', bagian);
+    expect(lengkapi.success).toBe(true);
+
+    const ba = await env.DB.prepare('SELECT catatan, jumlah_peserta FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(ba.catatan).toBe('Ruang lab 2, dua peserta hadir.');
+    expect(Number(ba.jumlah_peserta)).toBe(2);
+
+    // Simpan perubahan berikutnya tanpa field catatan tidak boleh menghapus catatan lama.
+    const kedua = await lengkapiBeritaAcaraBagian(env.DB, res.baId, { jam: '10:00' }, 'SGD', bagian);
+    expect(kedua.success).toBe(true);
+    const after = await env.DB.prepare('SELECT catatan, jam FROM berita_acara WHERE ba_id = ?1').bind(res.baId).first();
+    expect(after.jam).toBe('10:00');
+    expect(after.catatan).toBe('Ruang lab 2, dua peserta hadir.');
   });
 
   it('requires admin to delete and reports missing BA', async () => {

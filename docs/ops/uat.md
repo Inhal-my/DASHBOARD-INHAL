@@ -145,6 +145,22 @@ tautan tiket.
   seluruh modal selain dialog konfirmasi, dan audit kontras otomatis. Catat sebagai
   backlog bila belum diperbaiki.
 
+## Catatan Berita Acara (konsistensi antar peran)
+
+Satu BA menyimpan satu catatan (kolom `catatan`), terpisah dari `jadwal_pelaksanaan.catatan`.
+Catatan jadwal hanya dipakai sebagai isi awal form BA dan tetap bisa diubah Bagian.
+
+| ID | Skenario | Langkah | Hasil yang diharapkan | Catatan | Status |
+|---|---|---|---|---|---|
+| UAT-CN01 | Catatan jadwal → BA | Buat jadwal dengan catatan "Ruang lab 2", lalu klik Buat BA dari jadwal | Catatan jadwal otomatis terisi di form BA, masih bisa diubah, dan data BA lama tidak terbawa | | [ ] |
+| UAT-CN02 | Draft BA 2 peserta | Buat BA untuk kegiatan dengan 2 peserta, isi catatan, simpan draft, buka panel draft | Catatan tampil di ringkasan draft dan di textarea Catatan untuk kedua peserta | | [ ] |
+| UAT-CN03 | Lengkapi BA | Isi dosen/jam/tanggal + catatan, unggah PDF, simpan | Panel BA selesai menampilkan Catatan; kolom Catatan terisi di tabel Riwayat (desktop dan kartu mobile) | | [ ] |
+| UAT-CN04 | Catatan BA Pendukung | Buka tab Berita Acara pada kegiatan yang punya BA Pendukung | Catatan admin tampil dengan label "Catatan admin" | | [ ] |
+| UAT-CN05 | Dashboard admin | Tab Berita Acara: perluas unit, buka Riwayat Proses, lalu pakai chip "Dengan catatan" | Catatan tampil dengan sumber (bagian/admin); chip menyaring unit yang punya catatan | | [ ] |
+| UAT-CN06 | Drawer Detail Pengajuan | Buka Detail Pengajuan → langkah Berkas | Kartu "Berita Acara & Catatan" menampilkan BA Pelaksanaan dan Pendukung beserta catatannya | | [ ] |
+| UAT-CN07 | Laporan dan ekspor | Detail laporan: tab Daftar BA, Ekspor XLSX, dan Ekspor BA | Kolom Catatan tampil; XLSX memuat kolom "Catatan BA"; label audit memakai "Temuan Pemeriksaan" | | [ ] |
+| UAT-CN08 | PDF BA Pendukung | Rakit ulang PDF BA Pendukung yang punya catatan | Halaman sampul memuat bagian "Catatan"; catatan panjang berlanjut ke halaman sampul berikutnya | Regenerasi hanya manual agar jejak audit tetap | [ ] |
+
 ## Kriteria lulus
 
 Rilis dinyatakan lulus bila:

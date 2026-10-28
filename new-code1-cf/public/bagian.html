@@ -412,6 +412,7 @@
                                         <th class="px-4 py-3">Tanggal</th>
                                         <th class="px-4 py-3">Dosen</th>
                                         <th class="px-4 py-3">Peserta</th>
+                                        <th class="px-4 py-3">Catatan</th>
                                         <th class="px-4 py-3">File</th>
                                     </tr>
                                 </thead>
@@ -426,6 +427,10 @@
                                         <td class="px-4 py-3 text-xs text-slate-600">{{ formatTanggal(item.tanggal) }}</td>
                                         <td class="px-4 py-3 text-xs text-slate-600">{{ item.dosen || '-' }}</td>
                                         <td class="px-4 py-3 text-xs text-slate-600">{{ item.peserta.length }}</td>
+                                        <td class="px-4 py-3 text-xs text-slate-600">
+                                            <div v-if="item.ba.Catatan" class="max-w-[16rem] whitespace-pre-line" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" :title="item.ba.Catatan">{{ item.ba.Catatan }}</div>
+                                            <span v-else class="text-slate-300">-</span>
+                                        </td>
                                         <td class="px-4 py-3">
                                             <a v-if="item.ba['File URL']" :href="safeUrl(item.ba['File URL'])" target="_blank" rel="noopener noreferrer" class="link text-xs" @click.stop><i class="bi bi-file-earmark-pdf"></i> File</a>
                                             <span v-else class="text-xs text-slate-400">-</span>
@@ -445,6 +450,7 @@
                                             <span v-if="item.jumlahSesi > 1" class="font-semibold text-brand-600">{{ item.jumlahSesi }} sesi</span>
                                         </div>
                                         <div class="mt-1 text-[11px] text-slate-400">{{ item.peserta.length }} peserta</div>
+                                        <div v-if="item.ba.Catatan" class="mt-1 whitespace-pre-line text-[11px] text-slate-500" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><i class="bi bi-chat-left-text"></i> {{ item.ba.Catatan }}</div>
                                     </div>
                                     <i class="bi bi-chevron-right mt-2 text-slate-300"></i>
                                 </button>
@@ -511,7 +517,7 @@
                                                         <button v-for="d in dosenSuggest(jadwal.dosen)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(jadwal, d)">{{ d }}</button>
                                                     </div>
                                                 </div>
-                                                <div><label class="label">Catatan (Opsional)</label><input v-model="jadwal.catatan" class="input" placeholder="opsional"></div>
+                                                <div><label class="label">Catatan (Opsional)</label><textarea v-model="jadwal.catatan" rows="2" maxlength="2000" class="input" placeholder="Catatan jadwal, mis. ruang atau kendala..."></textarea><p class="mt-1 text-[11px] text-slate-400">Catatan ini otomatis terisi saat Anda membuat BA dari jadwal.</p></div>
                                             </div>
                                             <div class="flex gap-3">
                                                 <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
@@ -525,7 +531,7 @@
                                                 <div><div class="label">Tanggal</div><div class="value">{{ formatTanggal(selectedItem.jadwal.Tanggal) }}</div></div>
                                                 <div><div class="label">Jam</div><div class="value">{{ selectedItem.jadwal.Jam || '-' }}</div></div>
                                                 <div class="col-span-2"><div class="label">Dosen</div><div class="value">{{ selectedItem.jadwal.Dosen || '-' }}</div></div>
-                                                <div v-if="selectedItem.jadwal.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value">{{ selectedItem.jadwal.Catatan }}</div></div>
+                                                <div v-if="selectedItem.jadwal.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value whitespace-pre-line">{{ selectedItem.jadwal.Catatan }}</div></div>
                                             </div>
                                         </div>
                                         <div>
@@ -550,9 +556,10 @@
                                     <div v-if="selectedItem.kind==='ba' && !selectedItem.ba.selesai" class="space-y-4">
                                         <div class="rounded-2xl bg-amber-50 p-4 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
                                             <div class="font-bold">Draft Berita Acara</div>
-                                            <div class="mt-1">Lengkapi dosen, jam, tanggal, dan berkas agar BA pindah ke Riwayat.</div>
+                                            <div class="mt-1">Lengkapi dosen, jam, tanggal, catatan, dan berkas agar BA pindah ke Riwayat.</div>
                                             <div class="mt-1 font-mono text-[10px] text-amber-700">{{ selectedItem.ba['BA ID'] }}</div>
                                             <div v-if="selectedItem.ba.sesi && selectedItem.ba.sesi.length" class="mt-1 font-mono text-[10px] text-amber-700">{{ selectedItem.ba.sesi.length }} sesi · {{ selectedItem.ba.sesi.join(', ') }}</div>
+                                            <div v-if="selectedItem.ba.Catatan" class="mt-2 border-t border-amber-200 pt-2"><span class="font-bold">Catatan:</span> <span class="whitespace-pre-line">{{ selectedItem.ba.Catatan }}</span></div>
                                         </div>
                                         <div v-if="selectedItem.ba['File URL']" class="space-y-1">
                                             <a :href="safeUrl(selectedItem.ba['File URL'])" target="_blank" rel="noopener noreferrer" class="link inline-block text-xs"><i class="bi bi-eye"></i> Lihat file BA</a>
@@ -568,6 +575,11 @@
                                             </div>
                                             <div><label class="label">Jam</label><input v-model="ba.lengkapi.jam" type="time" class="input"></div>
                                             <div><label class="label">Tanggal</label><input v-model="ba.lengkapi.tanggal" type="date" class="input"></div>
+                                            <div>
+                                                <label class="label">Catatan (Opsional)</label>
+                                                <textarea v-model="ba.lengkapi.catatan" rows="2" maxlength="2000" class="input" placeholder="Catatan pelaksanaan, kendala, atau hal yang perlu diketahui admin..."></textarea>
+                                                <p class="mt-1 text-[11px] text-slate-400">Catatan ini tampil di Riwayat, dashboard admin, dan laporan.</p>
+                                            </div>
                                         </div>
                                         <div>
                                             <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -625,7 +637,7 @@
                                                     <div class="label">Sesi Jadwal ({{ selectedItem.ba.sesi.length }})</div>
                                                     <div class="value font-mono text-[11px] leading-relaxed">{{ selectedItem.ba.sesi.join(', ') }}</div>
                                                 </div>
-                                                <div v-if="selectedItem.ba.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value">{{ selectedItem.ba.Catatan }}</div></div>
+                                                <div v-if="selectedItem.ba.Catatan" class="col-span-2"><div class="label">Catatan</div><div class="value whitespace-pre-line">{{ selectedItem.ba.Catatan }}</div></div>
                                             </div>
                                         </div>
                                         <div>
@@ -655,6 +667,7 @@
                                                 <a v-if="selectedPendukung['File URL']" :href="safeUrl(selectedPendukung['File URL'])" target="_blank" rel="noopener noreferrer" class="font-semibold underline">{{ selectedPendukung['BA ID'] }}</a>
                                                 <span v-else class="font-semibold">{{ selectedPendukung['BA ID'] }} (file belum tersedia)</span>
                                                 <span class="ml-1">- {{ (selectedPendukung.peserta || []).length }} peserta</span>
+                                                <div v-if="selectedPendukung.Catatan" class="mt-1 whitespace-pre-line border-t border-indigo-100 pt-1 text-[11px]"><span class="font-bold">Catatan admin:</span> {{ selectedPendukung.Catatan }}</div>
                                             </div>
                                             <div v-else class="mt-1">Belum diunggah admin dashboard.</div>
                                             <div v-if="baCandidates.jumlahTambahan || baCandidates.jumlahDitolak || baCandidates.jumlahTidakSesuai" class="mt-2 space-y-0.5 border-t border-indigo-100 pt-2 text-[11px]">
@@ -750,7 +763,7 @@
                                                 </div>
                                                 <p v-if="ba.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
                                             </div>
-                                            <div><label class="label">Catatan (Opsional)</label><input v-model="ba.catatan" class="input" placeholder="opsional"></div>
+                                            <div><label class="label">Catatan (Opsional)</label><textarea v-model="ba.catatan" rows="2" maxlength="2000" class="input" placeholder="Catatan pelaksanaan, kendala, atau hal yang perlu diketahui admin..."></textarea></div>
                                         </div>
                                         <div class="flex gap-3">
                                             <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
@@ -1533,6 +1546,7 @@
                         tanggal: this.dateOnly(r['Tanggal Pelaksanaan']),
                         blok: r.Blok || '',
                         namaKegiatan: r['Nama Kegiatan'] || '',
+                        catatan: r.Catatan || '',
                         selected: selected,
                         includePendukung: false,
                         file: null,
@@ -1630,7 +1644,7 @@
                     }
                     this.loading = true;
                     try {
-                        const payload = { dosen: d.dosen, jam: d.jam, tanggal: d.tanggal };
+                        const payload = { dosen: d.dosen, jam: d.jam, tanggal: d.tanggal, catatan: String(d.catatan || '').trim() };
                         // Peserta hanya dikirim kalau pilihannya benar-benar berubah,
                         // supaya penyimpanan biasa tidak tertahan validasi peserta.
                         if (this.lengkapiPesertaBerubah) payload.peserta = this.lengkapiSelectedList;
@@ -1781,7 +1795,8 @@
                         open: true, mode: 'jadwal', jadwalId: j.JadwalID, jadwalIds: [j.JadwalID],
                         jadwalInfo: { label: 'Blok ' + j.Blok + ' · ' + j.NamaKegiatan, blok: j.Blok, namaKegiatan: j.NamaKegiatan, tanggal: this.dateOnly(j.Tanggal), jam: j.Jam, dosen: j.Dosen },
                         jadwalPeserta: (j.peserta || []).map(function(p) { return { idPengajuan: p.idPengajuan, npm: p.npm, namaLengkap: p.namaLengkap, blok: p.blok, statusPengajuan: p.statusPengajuan }; }),
-                        kegiatanKey: null, selected: {}, includePendukung: false, tanggal: this.dateOnly(j.Tanggal), dosen: j.Dosen, jam: j.Jam
+                        kegiatanKey: null, selected: {}, includePendukung: false, tanggal: this.dateOnly(j.Tanggal), dosen: j.Dosen, jam: j.Jam,
+                        label: '', catatan: String(j.Catatan || '').trim(), file: null, fileName: '', confirm: false, scanItems: [], scanBusy: false, scanSeq: 0
                     });
                     (j.peserta || []).forEach(function(p) { this.ba.selected[p.idPengajuan] = true; }.bind(this));
                     this.activeTab = 'ba';
