@@ -104,10 +104,13 @@ Saat melaporkan insiden, sertakan: waktu (UTC), `requestId`, `event`, endpoint, 
 
 ## Deploy
 
-Observability baru aktif setelah deploy Worker. Deploy Poin 3 digabung dengan deploy Poin 2 dan menunggu R2 aktif, karena `wrangler.toml` sudah memuat binding R2/Workflow. Setelah R2 aktif:
+Observability aktif sejak deploy 2026-10-18. Produksi memakai
+`wrangler.production.toml` yang **tidak** memuat binding R2/Workflow: R2 tidak
+dipakai dan backup harian dijalankan GitHub Actions (lihat
+`docs/ops/arsitektur-dan-failover.md`). Deploy manual darurat:
 
 ```bash
-CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy --config wrangler.production.toml
 ```
 
 Lalu verifikasi:

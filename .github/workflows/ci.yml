@@ -41,7 +41,7 @@ jobs:
       - name: Unit and integration tests
         run: npm test
 
-      - name: Release tooling tests
+      - name: Release tooling and backup script tests
         run: npm run test:scripts
 
       - name: CSP sync

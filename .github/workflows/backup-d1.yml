@@ -1,0 +1,198 @@
+name: Backup D1
+
+# Cadangan harian D1 yang tidak bergantung pada Cloudflare:
+#   1. dump SQL + snapshot JSON + XLSX + manifest -> artefak GitHub Actions (retensi 3 hari)
+#   2. salinan terenkripsi -> Google Drive lewat Drive Bridge (retensi 3 hari, opsional)
+# Dokumentasi dan prosedur restore: docs/ops/backup-restore.md
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # 01:00 WIB
+  workflow_dispatch:
+    inputs:
+      plan:
+        description: Paket Cloudflare untuk ambang ukuran D1
+        type: choice
+        options:
+          - free
+          - paid
+        default: free
+
+concurrency:
+  group: backup-d1
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: new-code1-cf
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DRIVE_BRIDGE_URL: ${{ secrets.DRIVE_BRIDGE_URL }}
+      DRIVE_BRIDGE_TOKEN: ${{ secrets.DRIVE_BRIDGE_TOKEN }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      BACKUP_DIR: ${{ runner.temp }}/backup
+      BACKUP_RETENTION_DAYS: '3'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: new-code1-cf/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Siapkan direktori dan label
+        run: |
+          mkdir -p "$BACKUP_DIR/out"
+          echo "BACKUP_LABEL=$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_ENV"
+
+      - name: Catat versi Worker dan bookmark Time Travel
+        continue-on-error: true
+        run: |
+          npx wrangler deployments list --json > "$BACKUP_DIR/deployments.json" || true
+          npx wrangler d1 time-travel info inhal-poc --json > "$BACKUP_DIR/time-travel.json" || true
+
+      - name: Ekspor D1 (baca-saja)
+        run: |
+          npx wrangler d1 export inhal-poc --remote \
+            --config wrangler.production.toml \
+            --output="$BACKUP_DIR/inhal-poc.sql"
+
+      - name: Verifikasi dump (invariant bisnis)
+        run: |
+          set -o pipefail
+          node scripts/verify-backup.mjs "$BACKUP_DIR/inhal-poc.sql" | tee "$BACKUP_DIR/out/verify.json"
+
+      - name: Snapshot JSON, XLSX, dan manifest
+        run: |
+          node scripts/backup-snapshot.mjs "$BACKUP_DIR/inhal-poc.sql" \
+            --out="$BACKUP_DIR/out" \
+            --label="$BACKUP_LABEL" \
+            --plan=${{ inputs.plan || 'free' }} \
+            --database=inhal-poc
+
+      - name: Unggah artefak (retensi 3 hari)
+        uses: actions/upload-artifact@v4
+        with:
+          name: d1-backup-${{ env.BACKUP_LABEL }}
+          path: ${{ runner.temp }}/backup
+          retention-days: 3
+          if-no-files-found: error
+
+      - name: Pulihkan indeks Drive (state retensi)
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/drive-index
+          key: drive-backup-index-${{ github.run_id }}
+          restore-keys: drive-backup-index-
+
+      - name: Cermin terenkripsi ke Google Drive
+        if: ${{ env.DRIVE_BRIDGE_URL != '' && env.BACKUP_PASSPHRASE != '' }}
+        continue-on-error: true
+        env:
+          INDEX_DIR: ${{ runner.temp }}/drive-index
+        run: |
+          node scripts/mirror-drive-backup.mjs \
+            --label="$BACKUP_LABEL" \
+            --index-dir="$INDEX_DIR" \
+            --bridge-url="$DRIVE_BRIDGE_URL" \
+            --bridge-token="$DRIVE_BRIDGE_TOKEN" \
+            --passphrase="$BACKUP_PASSPHRASE" \
+            --retention-days="$BACKUP_RETENTION_DAYS" \
+            --dump="$BACKUP_DIR/inhal-poc.sql" \
+            --snapshot="$BACKUP_DIR/out/$BACKUP_LABEL-snapshot.json.gz" \
+            --xlsx="$BACKUP_DIR/out/$BACKUP_LABEL-database.xlsx" \
+            --manifest="$BACKUP_DIR/out/manifest.json"
+
+      - name: Simpan indeks Drive
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/drive-index
+          key: drive-backup-index-${{ github.run_id }}
+
+      - name: Ambang ukuran dan ringkasan
+        run: node scripts/backup-report.mjs "$BACKUP_DIR/out"
+
+      - name: Buka issue saat backup gagal
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const day = new Date().toISOString().slice(0, 10);
+            const title = `Backup D1 gagal ${day}`;
+            const body = [
+              'Workflow **Backup D1** gagal pada ' + new Date().toISOString() + '.',
+              '',
+              '- Run: ' + process.env.RUN_URL,
+              '- Dampak: tidak ada salinan baru di luar Cloudflare untuk hari ini.',
+              '- Tindakan: periksa log langkah yang gagal, lalu jalankan ulang lewat `workflow_dispatch`.',
+              '- Prosedur: `docs/ops/backup-restore.md`.'
+            ].join('\n');
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'backup-failed',
+              per_page: 5
+            });
+            const same = existing.data.find((issue) => issue.title === title);
+            if (same) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: same.number,
+                body: body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['backup-failed']
+              });
+            }
+
+      - name: Tutup issue backup setelah pulih
+        if: success()
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'backup-failed',
+              per_page: 10
+            });
+            for (const issue of open.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: 'Backup berikutnya berhasil: ' + process.env.RUN_URL + '. Issue ditutup otomatis.'
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+            }

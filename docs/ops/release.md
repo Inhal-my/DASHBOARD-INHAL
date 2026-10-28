@@ -27,7 +27,7 @@ Tambahkan di GitHub: **Settings > Secrets and variables > Actions**.
 
 | Secret | Keterangan |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Token dengan izin Workers Scripts, D1, dan Workers R2 (bila nanti dipakai) |
+| `CLOUDFLARE_API_TOKEN` | Token dengan izin Workers Scripts dan D1 (R2 tidak dipakai) |
 | `CLOUDFLARE_ACCOUNT_ID` | `e2efd255f61d2b81c7f54c92eb57b946` |
 | `STAGING_ADMIN_PASSWORD` | Password admin staging untuk seed dan E2E (minimal 12 karakter) |
 
@@ -102,8 +102,9 @@ diterapkan; tidak mengubah skema aplikasi.
 | Konfigurasi | `wrangler.staging.toml` |
 | Data | sintetis dari `schema.sql` |
 
-Staging tidak memiliki binding Workflow/R2 sampai R2 aktif. Unggah berkas ke Drive
-juga tidak dikonfigurasi; jangan gunakan staging untuk menguji unggah ke Drive asli.
+Staging tidak memiliki binding R2/Workflow dan tidak menjalankan backup harian. Unggah
+berkas ke Drive juga tidak dikonfigurasi; jangan gunakan staging untuk menguji unggah
+ke Drive asli.
 
 ### Seed admin staging
 
@@ -142,15 +143,40 @@ Input `apply_migrations`:
 Langkah: test -> CSP check -> tampilkan migrasi tertunda -> (opsional) apply ->
 deploy -> smoke check `/api/health`.
 
-Saat ini deploy produksi memakai `wrangler.production.toml` (tanpa binding
-Workflow/R2) karena R2 belum aktif. Setelah R2 aktif dan bucket backup tersedia,
-ganti langkah deploy ke `npx wrangler deploy` dengan `wrangler.toml`.
+Deploy produksi memakai `wrangler.production.toml`. Kedua konfigurasi tidak memuat
+binding R2/Workflow karena jalur backup R2 dibatalkan; backup harian ditangani
+GitHub Actions (lihat bagian *Backup harian*).
 
 Sebelum menjalankan dengan `apply_migrations=true`:
 
-1. Backup D1 produksi.
+1. Backup D1 produksi (jalankan workflow **Backup D1**, atau `wrangler d1 export`
+   manual; lihat bagian *Backup harian* di bawah).
 2. Pastikan migrasi bersifat aditif dan sudah diuji di staging.
 3. Catat bookmark Time Travel.
+
+## Backup harian
+
+Backup tidak memakai R2 atau Cloudflare Workflows. Workflow
+`.github/workflows/backup-d1.yml` (**Backup D1**) berjalan setiap hari pukul
+`0 18 * * *` UTC (01:00 WIB) dan bisa dijalankan manual:
+
+1. `wrangler d1 export inhal-poc --remote` (baca-saja).
+2. `scripts/verify-backup.mjs` untuk invariant bisnis.
+3. `scripts/backup-snapshot.mjs` untuk snapshot JSON, XLSX, dan `manifest.json`.
+4. Artefak `d1-backup-<label>` (retensi 3 hari).
+5. Bila secret Drive tersedia: arsip terenkripsi AES-256-GCM dicerminkan ke Google
+   Drive lewat Drive Bridge, arsip lebih dari 3 hari dipindahkan ke trash.
+6. `scripts/backup-report.mjs` menulis ringkasan run dan menggagalkan run bila
+   ukuran D1 menyentuh batas paket.
+7. Issue berlabel `backup-failed` dibuka otomatis saat run gagal dan ditutup
+   otomatis pada run berikutnya yang sukses.
+
+Secret tambahan: `DRIVE_BRIDGE_URL`, `DRIVE_BRIDGE_TOKEN`, `BACKUP_PASSPHRASE`
+(minimal 12 karakter). Tanpa ketiganya, langkah Drive dilewati dan hanya artefak
+GitHub yang dibuat.
+
+Prosedur restore dan ambang ukuran: `docs/ops/backup-restore.md`.
+Peta komponen dan skenario kegagalan: `docs/ops/arsitektur-dan-failover.md`.
 
 ## E2E
 
@@ -230,5 +256,5 @@ sebagai bagian dari `npm test` (label formulir, nama dialog, `role="alert"`,
 4. Setelah CI sukses, Deploy Staging berjalan otomatis (migrasi + seed admin + deploy).
 5. E2E Staging berjalan otomatis setelah Deploy Staging; cek hasilnya di tab Actions.
 6. Jika seed perlu diulang, jalankan **Seed Staging Admin** manual.
-7. Setelah R2 aktif: tambahkan binding backup ke staging bila perlu, lalu deploy
-   produksi dengan konfigurasi lengkap.
+7. Verifikasi run **Backup D1** pertama sukses (artefak + arsip Drive) sebelum
+   mengaktifkan jadwal produksi.

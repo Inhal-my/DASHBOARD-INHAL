@@ -1,3 +1,6 @@
+# Konfigurasi lokal/CI. Tidak ada binding R2 atau Cloudflare Workflows: jalur backup
+# R2 dibatalkan dan backup harian dijalankan GitHub Actions
+# (`.github/workflows/backup-d1.yml`). Deploy produksi memakai wrangler.production.toml.
 name = "inhal-form"
 main = "src/index.js"
 compatibility_date = "2024-12-30"
@@ -24,13 +27,3 @@ run_worker_first = ["/api/*", "/", "/index.html"]
 binding = "DB"
 database_name = "inhal-poc"
 database_id = "8f412848-d213-4bb3-aeb7-0aff221f9ee3"
-
-[[workflows]]
-name = "d1-backup"
-binding = "BACKUP_WORKFLOW"
-class_name = "BackupWorkflow"
-schedules = ["0 1 * * *"]
-
-[[r2_buckets]]
-binding = "BACKUP_BUCKET"
-bucket_name = "inhal-poc-backups"

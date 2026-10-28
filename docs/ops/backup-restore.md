@@ -1,197 +1,298 @@
 # SOP Backup dan Restore D1 INHAL
 
-Terakhir diperbarui: 2026-10-17
+Terakhir diperbarui: 2026-10-28
 
 ## Ringkasan
 
-- Database: D1 `inhal-poc`, akun Cloudflare `e2efd255f61d2b81c7f54c92eb57b946`.
-- Time Travel D1: restore point 30 hari (Workers Paid) atau 7 hari (Workers Free), selalu aktif.
-- Arsip R2: ekspor harian pukul 01:00 UTC ke bucket privat `inhal-poc-backups`, retensi 180 hari.
-- Workflow: `d1-backup`, binding `BACKUP_WORKFLOW`.
-- Uji integritas: `scripts/verify-backup.mjs`.
+Cadangan INHAL dibuat oleh **GitHub Actions**, bukan oleh Worker dan bukan lewat
+R2/Workflows Cloudflare. Tujuannya: bila akun Cloudflare bermasalah total
+(suspend, lupa akses, gangguan regional), data tetap bisa dipulihkan.
 
-## Prasyarat
+Tiga lapis pemulihan, dari yang paling cepat:
 
-- Wrangler terpasang dan login ke akun Cloudflare yang memiliki akses D1, R2, dan Workflows.
-- R2 sudah diaktifkan di akun.
-- Token API untuk ekspor D1 tersedia. Token disimpan sebagai secret Worker, bukan di repo.
-- Untuk restore Time Travel, operator harus memahami bahwa operasi ini menimpa database.
+| Lapis | Lokasi | Jendela retensi | Dipakai untuk |
+|---|---|---|---|
+| 1. Time Travel D1 | Cloudflare | 7 hari (Free) / 30 hari (Paid) | salah input, migrasi gagal, hapus data |
+| 2. Artefak `Backup D1` | GitHub Actions | 3 hari | Cloudflare tidak bisa diakses |
+| 3. Arsip Drive terenkripsi | Google Drive (via Drive Bridge) | 3 hari | Cloudflare dan GitHub bermasalah, atau arsip dibutuhkan staf di luar tim teknis |
 
-## Penyiapan awal (sekali)
+Workflow: `.github/workflows/backup-d1.yml` (nama **Backup D1**), jadwal
+`0 18 * * *` UTC = **01:00 WIB**, bisa dijalankan manual lewat `workflow_dispatch`.
 
-### 1. Aktifkan R2 dan buat bucket
+## Status yang berlaku sekarang
 
-Buka Cloudflare Dashboard > R2 Object Storage > Enable R2. Setelah aktif:
+- Paket D1: **Workers Free** — batas 500 MB per database, Time Travel 7 hari,
+  5 GB penyimpanan akun, 100.000 baris ditulis per hari.
+- **R2 dan Cloudflare Workflows tidak dipakai.** Binding `BACKUP_WORKFLOW`/`BACKUP_BUCKET`
+  sudah dihapus dari `wrangler.toml` dan `wrangler.production.toml`; `src/backup/`
+  hanya tersisa sebagai kode mati yang tidak di-import `src/index.js`. Jangan mengikuti
+  instruksi lama yang menyebut bucket `inhal-poc-backups` atau workflow `d1-backup` —
+  keduanya tidak pernah dibuat.
+- Tidak ada cron di dalam Worker. Tidak ada pemangkasan otomatis data di D1.
+- D1 **tidak mendukung `VACUUM`**; mengecilkan database berarti ekspor → database
+  baru → impor → ganti binding (lihat bagian *Ambang ukuran*).
 
-```bash
-# Membuat bucket privat arsip
-npx wrangler r2 bucket create inhal-poc-backups
-```
+## Arsitektur dan skenario kegagalan
 
-### 2. Buat token ekspor D1
+Peta komponen, 7 aksi Drive Bridge yang dibekukan, dan tabel skenario kegagalan
+ada di `docs/ops/arsitektur-dan-failover.md`.
 
-Buat API token dengan izin ekspor D1 untuk database target. Simpan nilainya sebagai secret Worker:
+## Secret yang dipakai workflow
 
-```bash
-# Menyimpan token sebagai secret terenkripsi
-npx wrangler secret put D1_REST_API_TOKEN
-```
+| Secret GitHub | Isi | Status |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | token dengan izin D1 read/export | sudah ada |
+| `CLOUDFLARE_ACCOUNT_ID` | `e2efd255f61d2b81c7f54c92eb57b946` | sudah ada |
+| `DRIVE_BRIDGE_URL` | nilai `GAS_DRIVE_URL` produksi | **perlu ditambahkan** |
+| `DRIVE_BRIDGE_TOKEN` | nilai `GAS_DRIVE_TOKEN` produksi | **perlu ditambahkan** |
+| `BACKUP_PASSPHRASE` | frasa sandi ≥ 12 karakter untuk enkripsi arsip Drive | **perlu ditambahkan** |
 
-Jangan menulis token ke `wrangler.toml`, `.env`, atau file yang di-commit.
+Selama `DRIVE_BRIDGE_URL` atau `BACKUP_PASSPHRASE` kosong, langkah cermin ke
+Drive dilewati dan hanya lapis 1–2 yang aktif. Workflow tetap sukses.
 
-### 3. Deploy Worker
+`BACKUP_PASSPHRASE` **wajib disimpan juga di luar GitHub** (pengelola sandi
+lembaga). Tanpa frasa itu arsip Drive tidak bisa dibuka — tidak ada mekanisme
+pemulihan sandi.
 
-```bash
-# Deploy Worker beserta Workflow dan binding R2
-npx wrangler deploy
-```
+## Kenapa arsip Drive dienkripsi
 
-### 4. Pasang lifecycle 180 hari
+Aksi `saveFile` di Drive Bridge (`new-code1/3_drive_bridge.gs`) selalu membuat
+berkas baru di `DRIVE_FOLDER_ID` dan menandainya
+**Anyone with the link can view**. Dump database memuat data pribadi mahasiswa
+dan hash kata sandi admin, jadi tidak boleh dikirim apa adanya. Karena itu:
 
-```bash
-# Menghapus otomatis objek prefix d1/ setelah 180 hari
-npx wrangler r2 bucket lifecycle add inhal-poc-backups d1-retention-180 d1/ --expire-days 180 --force
-```
+- dump SQL, snapshot JSON, dan XLSX dikirim dalam bentuk terenkripsi
+  (AES-256-GCM, format `INHALBK1`);
+- hanya `manifest.json` (jumlah baris, hash, ukuran — tanpa data pribadi) yang
+  dikirim terbuka;
+- Drive Bridge **tidak diubah**; hanya aksi `saveFile` dan `trashFile` yang dipakai.
 
-Verifikasi:
-
-```bash
-# Melihat aturan lifecycle
-npx wrangler r2 bucket lifecycle list inhal-poc-backups
-```
-
-### 5. Trigger pertama dan verifikasi
-
-```bash
-# Menjalankan backup manual
-npx wrangler workflows trigger d1-backup
-```
-
-```bash
-# Melihat status instance terbaru
-npx wrangler workflows instances list d1-backup --reverse
-```
-
-Setelah instance selesai, buka dashboard R2 dan pastikan ada:
-
-- `d1/<timestamp>.sql`
-- `d1/<timestamp>.json`
-- `status/last-success.json`
-
-## Operasi harian
-
-Tidak ada tindakan manual. Workflow berjalan setiap hari pukul 01:00 UTC (08:00 WIB).
-
-Pemeriksaan mingguan:
-
-1. Buka Workflows > `d1-backup` dan pastikan instance terbaru berstatus `complete`.
-2. Buka R2 > `inhal-poc-backups` dan pastikan ada objek `d1/` baru.
-3. Baca `status/last-failure.json`. Jika objek ini lebih baru dari `status/last-success.json`, selidiki kegagalan.
-
-## Uji restore dari arsip R2
+Alat bantu:
 
 ```bash
-# Mengunduh dump terbaru dari R2 (ganti nama file)
-npx wrangler r2 object get inhal-poc-backups/d1/<timestamp>.sql --file=/tmp/inhal-backup.sql --remote
+# Enkripsi/dekripsi dipakai oleh skrip backup (bukan perintah manual)
+node scripts/mirror-drive-backup.mjs --help   # lihat pemakaian lengkap
+
+# Membuka arsip hasil unduhan Drive
+node scripts/decrypt-backup.mjs inhal-20261028-database.sql.enc \
+  --out=inhal-20261028.sql --passphrase="<BACKUP_PASSPHRASE>"
 ```
+
+## Alur harian
+
+1. `wrangler d1 export inhal-poc --remote` → `inhal-poc.sql` (baca-saja).
+2. `scripts/verify-backup.mjs` memeriksa integritas, tabel inti, duplikat master,
+   referensi blok asing, dan `kegiatan_key`. Gagal di sini = backup dianggap gagal.
+3. `scripts/backup-snapshot.mjs` membuat `snapshot.json.gz`, `database.xlsx`,
+   dan `manifest.json` (SHA-256, jumlah baris per tabel, ukuran, status ambang).
+4. Semua berkas diunggah sebagai artefak `d1-backup-<label>` dengan retensi 3 hari.
+5. Bila secret Drive tersedia: berkas dienkripsi lalu dicerminkan ke Drive
+   (`inhal-<label>-database.sql.enc`, `-snapshot.json.gz.enc`, `-database.xlsx.enc`,
+   serta `-manifest.json` terbuka), arsip lebih tua dari 3 hari dipindah ke trash.
+6. `scripts/backup-report.mjs` menulis ringkasan ke halaman run dan **gagal**
+   bila perkiraan ukuran data mencapai batas paket.
+7. Bila ada langkah yang gagal, issue berlabel `backup-failed` dibuka otomatis;
+   issue ditutup otomatis pada run berikutnya yang sukses.
+
+Kolom besar (mis. `uploads.content` berisi base64) otomatis dikecualikan dari
+snapshot dan XLSX agar berkas tetap wajar, tetapi **tetap utuh di dump SQL**.
+Daftar kolom yang dikecualikan tercatat di `manifest.json`.
+
+## Membaca hasil run
+
+1. Buka Actions → **Backup D1** → run terbaru.
+2. Halaman run memuat tabel jumlah baris, ukuran, integritas, dan status ambang.
+3. Unduh artefak `d1-backup-<label>`; di dalamnya:
+   - `inhal-poc.sql` — dump lengkap (sumber restore utama)
+   - `out/<label>-snapshot.json.gz` — seluruh tabel dalam JSON
+   - `out/<label>-database.xlsx` — rekap untuk dibuka tanpa aplikasi
+   - `out/manifest.json` — hash dan metrik
+   - `out/verify.json` — hasil verifikasi bisnis
+   - `deployments.json`, `time-travel.json` — konteks rilis (bila perintahnya tersedia)
+
+## Ambang ukuran (Fase 1.5)
+
+| Status | Ambang (Free) | Perilaku |
+|---|---|---|
+| `ok` | < 300 MB | normal |
+| `warn` | ≥ 300 MB | anotasi peringatan di run, backup tetap lanjut |
+| `over` | ≥ 500 MB | langkah ringkasan keluar kode 1, issue otomatis dibuka |
+
+Nilai `status` ditulis `scripts/backup-snapshot.mjs` ke `manifest.json`; keputusan
+gagal diambil `scripts/backup-report.mjs`.
+
+Bila mendekati batas, periksa `manifest.json` → `size.byTable`:
+
+1. Tabel log (`audit_log`, `log_upload`, `log_data`) boleh dipangkas manual
+   setelah backup sukses diverifikasi.
+2. `uploads.content` adalah sisa skema lama (`src/uploads.js`). Penulis barunya
+   sudah tidak dipakai — semua unggahan baru lewat Drive — tetapi baris lama
+   masih bisa dilayani `GET /api/files/:id` dan memakan kuota. Setelah dipastikan
+   tidak ada lagi baris yang dibutuhkan, kosongkan kolomnya (`UPDATE uploads SET content = NULL`).
+3. D1 tidak punya `VACUUM`. Untuk benar-benar mengecilkan: ekspor → buat database
+   baru → impor → verifikasi → ganti `database_id` di `wrangler.production.toml`
+   → deploy → simpan database lama sampai validasi selesai.
+
+## Retensi dan pemangkasan
+
+- Artefak GitHub: `retention-days: 3`.
+- Arsip Drive: 3 hari, dipangkas oleh `scripts/mirror-drive-backup.mjs`.
+- Drive Bridge tidak punya aksi listing folder, sehingga retensi memakai indeks
+  (`drive-backup-index.json`) yang menyimpan `fileId` tiap arsip. Indeks disimpan
+  sebagai cache GitHub Actions (`restore-keys: drive-backup-index-`) karena
+  workflow tidak menulis ke repositori.
+- Bila cache indeks hilang, arsip lama tidak terpangkas otomatis. Tindakan:
+  buka Drive, urutkan menurut tanggal, pindahkan arsip lebih dari 3 hari ke trash
+  secara manual; indeks akan terbentuk ulang pada run berikutnya.
+
+## Prosedur restore
+
+### A. Time Travel (insiden masih dalam 7 hari)
 
 ```bash
-# Memeriksa integritas dan referensi
-cd new-code1-cf
-node scripts/verify-backup.mjs /tmp/inhal-backup.sql
-```
-
-Hasil lulus bila keluar dengan kode 0 dan `"ok": true`. Script memeriksa:
-
-- `PRAGMA integrity_check`
-- keberadaan dan jumlah tabel inti
-- duplikat `master_kegiatan`
-- referensi blok yang tidak ada di master
-- `kegiatan_key` yang tidak sinkron
-
-Blok kosong dilaporkan tetapi tidak menggagalkan verifikasi karena dapat merupakan kondisi data yang sudah ada.
-
-Catat hasil di bagian catatan di bawah.
-
-## Latihan restore lokal (tanpa R2)
-
-Dipakai untuk menguji prosedur sebelum R2 aktif atau saat latihan di laptop.
-
-```bash
-# Ekspor D1 lokal
-npx wrangler d1 export inhal-poc --local --output=/tmp/opencode/backups/inhal-local.sql
-
-# Verifikasi dump
-node scripts/verify-backup.mjs /tmp/opencode/backups/inhal-local.sql
-```
-
-Buat konfigurasi sementara di luar repo (jangan commit) yang menunjuk database
-scratch:
-
-```toml
-name = "inhal-form-restore"
-compatibility_date = "2025-01-01"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "inhal-poc-restore"
-database_id = "11111111-2222-4333-8444-555555555555"
-```
-
-```bash
-# Impor dump ke database scratch lokal
-npx wrangler d1 execute inhal-poc-restore --local --config /tmp/opencode/wrangler.restore.toml --file=/tmp/opencode/backups/inhal-local.sql
-
-# Bandingkan jumlah tabel inti
-npx wrangler d1 execute inhal-poc-restore --local --config /tmp/opencode/wrangler.restore.toml --json --command "SELECT (SELECT COUNT(*) FROM mahasiswa) AS mahasiswa, (SELECT COUNT(*) FROM pengajuan) AS pengajuan, (SELECT COUNT(*) FROM master_kegiatan) AS master_kegiatan, (SELECT COUNT(*) FROM berita_acara) AS berita_acara, (SELECT COUNT(*) FROM berita_acara_admin) AS berita_acara_admin"
-```
-
-Ekspor ulang database scratch lalu jalankan `scripts/verify-backup.mjs`; hasil harus
-`"ok": true`.
-
-## Restore Time Travel
-
-Gunakan untuk insiden yang masih dalam jendela retensi Time Travel.
-
-```bash
-# Melihat bookmark saat ini
+# Bookmark sekarang
 npx wrangler d1 time-travel info inhal-poc
-```
 
-```bash
-# Melihat bookmark pada waktu tertentu
-npx wrangler d1 time-travel info inhal-poc --timestamp="2026-10-17T12:00:00Z"
-```
+# Bookmark pada waktu tertentu
+npx wrangler d1 time-travel info inhal-poc --timestamp="2026-10-28T01:00:00Z"
 
-```bash
-# Restore ke bookmark yang dipilih
+# Kembalikan database ke bookmark pilihan
 npx wrangler d1 time-travel restore inhal-poc --bookmark=<bookmark>
 ```
 
-Simpan bookmark undo yang dicetak setelah restore. Setelah restore:
+Simpan bookmark undo yang dicetak setelah restore. Lalu periksa `/api/health`,
+login admin, jumlah pengajuan, dan master kegiatan.
 
-1. Buka `/api/health`.
-2. Login admin.
-3. Periksa jumlah pengajuan dan master kegiatan.
-4. Jalankan audit integritas master.
-5. Catat waktu, penyebab, bookmark, dan hasil.
+### B. Restore dari artefak GitHub (Cloudflare tidak bisa diakses)
 
-## Restore dari arsip R2
+Restore **tidak** dilakukan in-place ke `inhal-poc`; selalu ke database baru agar
+data yang lebih baru tidak hilang.
 
-Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang lebih baru. Langkah yang aman:
+```bash
+# 1. Unduh artefak terbaru (butuh GitHub CLI, login sebagai pemilik repo)
+gh run list --workflow=backup-d1.yml --limit 5
+gh run download <run-id> -n d1-backup-<label> -D ./restore
+cd restore && gunzip -c out/<label>-snapshot.json.gz | head -c 0   # cek berkas utuh
 
-1. Buat database D1 baru.
-2. Impor dump ke database baru.
-3. Jalankan `scripts/verify-backup.mjs` pada dump tersebut.
-4. Validasi aplikasi terhadap database baru.
-5. Arahkan binding `DB` ke database baru melalui perubahan konfigurasi dan deploy.
-6. Simpan database lama sampai validasi selesai.
+# 2. Verifikasi dump sebelum menyentuh database apa pun
+cd new-code1-cf
+node scripts/verify-backup.mjs ../restore/inhal-poc.sql
+
+# 3. Buat database tujuan (akun Cloudflare baru/pulih) lalu impor
+npx wrangler d1 create inhal-poc-restore
+npx wrangler d1 execute inhal-poc-restore --remote --file=../restore/inhal-poc.sql
+
+# 4. Ekspor ulang dari database tujuan dan verifikasi lagi
+npx wrangler d1 export inhal-poc-restore --remote --output=../restore/restored.sql
+node scripts/verify-backup.mjs ../restore/restored.sql
+
+# 5. Bandingkan jumlah tabel inti dengan manifest
+node -e "console.log(JSON.parse(require('fs').readFileSync('../restore/out/manifest.json','utf8')).counts)"
+```
+
+Langkah terakhir: ganti `database_id` pada `wrangler.production.toml`, deploy, lalu
+jalankan smoke test (`/api/health`, `/api/registration-options`, `/portal`).
+Simpan database lama minimal 7 hari sampai validasi selesai.
+
+### C. Restore dari arsip Drive terenkripsi
+
+Dipakai bila GitHub juga tidak dapat diakses, atau bila yang dibutuhkan adalah
+salinan yang disimpan staf di Drive.
+
+1. Unduh `inhal-<label>-database.sql.enc` (dan `-manifest.json` untuk pembanding).
+2. Dekripsi:
+
+```bash
+cd new-code1-cf
+node scripts/decrypt-backup.mjs inhal-<label>-database.sql.enc \
+  --out=inhal-restore.sql --passphrase="<BACKUP_PASSPHRASE>"
+```
+
+3. Lanjutkan dari langkah 2 pada prosedur B.
+
+Jika dekripsi gagal dengan pesan autentikasi, berarti frasa sandi salah atau
+berkas rusak — AES-GCM tidak dapat dipaksa dibuka.
+
+### D. Uji restore lokal (latihan, tanpa menyentuh staging/produksi)
+
+```bash
+cd new-code1-cf
+
+# Ekspor database lokal (atau gunakan dump hasil unduhan)
+npx wrangler d1 export inhal-poc --local \
+  --config wrangler.production.toml --output="$TMPDIR/drill.sql"
+
+node scripts/verify-backup.mjs "$TMPDIR/drill.sql"
+node scripts/backup-snapshot.mjs "$TMPDIR/drill.sql" --out="$TMPDIR/out" --label=DRILL
+
+# Impor ke database lokal scratch (state lokal wrangler, bukan remote)
+npx wrangler d1 execute inhal-poc-restore-drill --local \
+  --config wrangler.production.toml --file="$TMPDIR/drill.sql"
+```
+
+Latihan wajib memakai `--local`. Jangan menjalankan drill terhadap staging atau
+produksi; keduanya memakai folder Drive yang sama dan bisa mengganggu data nyata.
 
 ## Eskalasi
 
-- Backup gagal dua hari berturut-turut: jalankan trigger manual, periksa pesan di `status/last-failure.json`, dan periksa status Workflows.
-- Data rusak: hentikan penulisan, tentukan waktu kejadian, gunakan Time Travel bila masih dalam jendela retensi.
-- Token API bocor: cabut token, buat token baru, perbarui secret, dan deploy ulang bila diperlukan.
+- Backup gagal 1 hari: jalankan **Backup D1** manual (`workflow_dispatch`),
+  periksa langkah yang merah. Issue `backup-failed` menyertakan tautan run.
+- Backup gagal 2 hari berturut-turut: jangan menunggu; buat dump manual dengan
+  `wrangler d1 export inhal-poc --remote --output=...` dari mesin yang punya
+  akses, simpan di luar repo, lalu cari penyebab (token, kuota, ukuran).
+- Data rusak: hentikan penulisan (maintenance), tentukan waktu kejadian, pilih
+  lapis pemulihan tercepat yang masih dalam jendela retensi.
+- Token atau frasa sandi bocor: cabut `CLOUDFLARE_API_TOKEN`, ganti
+  `DRIVE_BRIDGE_TOKEN` di Script Properties Apps Script dan di GitHub, ganti
+  `BACKUP_PASSPHRASE` (arsip lama tetap butuh sandi lama untuk dibuka).
+
+## Uji otomatis
+
+Skrip backup punya unit test yang ikut berjalan di CI (`npm run test:scripts`):
+
+```bash
+cd new-code1-cf
+npm run test:scripts
+```
+
+Cakupan `scripts/__tests__/backup-github-actions.node.mjs`:
+
+- enkripsi/dekripsi AES-256-GCM bolak-balik, salt+IV unik, penolakan frasa sandi
+  salah, header salah, dan frasa sandi < 12 karakter;
+- pemilihan arsip kedaluwarsa (termasuk entri tanpa `uploadedAt` valid) dan
+  retensi indeks saat `trashFile` gagal;
+- status ambang ukuran (`ok`/`warn`/`over`) dan format label `YYYYMMDD-HHmm` UTC;
+- isi ringkasan run (ukuran, hash, integritas, kolom dikecualikan, tabel baris).
+
+Uji end-to-end lokal tanpa Cloudflare:
+
+```bash
+# 1. D1 lokal + data uji, lalu ekspor
+npx wrangler d1 execute inhal-poc --local --file=./schema.sql
+npx wrangler d1 export inhal-poc --local \
+  --config wrangler.production.toml --output=/tmp/drill.sql
+
+# 2. Verifikasi + artefak + ringkasan
+node scripts/verify-backup.mjs /tmp/drill.sql
+node scripts/backup-snapshot.mjs /tmp/drill.sql --out=/tmp/out --label=DRILL --plan=free
+node scripts/backup-report.mjs /tmp/out
+```
+
+## Checklist verifikasi Fase 1
+
+- [ ] Secret `DRIVE_BRIDGE_URL`, `DRIVE_BRIDGE_TOKEN`, `BACKUP_PASSPHRASE` terpasang.
+- [ ] Run manual **Backup D1** sukses dan artefak bisa diunduh.
+- [ ] Arsip muncul di folder Drive (`DRIVE_FOLDER_ID`) dan berupa `.enc`.
+- [ ] `node scripts/decrypt-backup.mjs` berhasil membuka arsip yang diunduh.
+- [ ] `manifest.json` menampilkan `size.status` dan `uploads.contentBytes` sesuai kenyataan.
+- [ ] Run kedua memangkas arsip lebih dari 3 hari (cek jumlah berkas di Drive).
+- [ ] Drill lokal prosedur D selesai dan jumlah tabel inti cocok dengan manifest.
+- [ ] **TODO sebelum 2026-11-04**: artefak `restore-drill-evidence` (drill staging
+  2026-10-21) kedaluwarsa pada tanggal itu. Jalankan drill ulang lewat
+  **Restore Drill Staging** atau prosedur D, lalu catat hasilnya di bagian
+  *Catatan uji* agar bukti tidak ikut kedaluwarsa.
+- [ ] **TODO**: ukur `SELECT COUNT(*), SUM(LENGTH(content)) FROM uploads` di produksi
+  dan catat di log — angka ini menentukan apakah pembersihan kolom lama diperlukan.
 
 ## Catatan uji
 
@@ -199,7 +300,8 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
 
 - Backup pra-Poin 1: `inhal-poc-20261017-pre-poin1.sql`, integritas `ok`, ditemukan 2 duplikat master.
 - Backup pasca-Poin 1: `inhal-poc-20261017-post-poin1.sql`, integritas `ok`, duplikat 0, referensi blok asing 0, `kegiatan_key` drift 0.
-- Uji restore R2 pertama menunggu aktivasi R2 dan backup harian pertama.
+- Uji restore dari arsip R2 tidak pernah dilakukan (jalur R2 batal); penggantinya
+  drill lokal pada 2026-10-28.
 
 ### 2026-10-21 (lokal)
 
@@ -208,7 +310,8 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
   berita_acara_admin 1.
 - Restore ke database scratch lokal berhasil (131 perintah). Ekspor ulang scratch
   juga `ok`, tanpa duplikat/orphan/drift.
-- Latihan ini tidak menggantikan uji restore R2; uji R2 tetap menunggu bucket aktif.
+- Latihan ini tidak menggantikan drill restore GitHub Actions pada 2026-10-28;
+  keduanya sama-sama memakai D1 lokal, bukan arsip produksi.
 
 ### 2026-10-21 (staging restore drill)
 
@@ -306,3 +409,25 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
   perubahan pembayaran) sehingga rilis ini sekaligus membawa perubahan tersebut.
 - Verifikasi visual 1440/1280/390 px pada tab Berita Acara belum dijalankan.
 
+### 2026-10-28 (backup Fase 1: GitHub Actions + Drive terenkripsi)
+
+- Jalur backup R2/Workflows dibatalkan karena R2 belum aktif. Pengganti:
+  `.github/workflows/backup-d1.yml` dengan jadwal `0 18 * * *` (01:00 WIB).
+- Skrip baru: `scripts/backup-snapshot.mjs` (snapshot JSON + XLSX + manifest),
+  `scripts/backup-report.mjs` (ringkasan run + ambang ukuran),
+  `scripts/mirror-drive-backup.mjs` (cermin ke Drive + retensi),
+  `scripts/backup-crypto.mjs` (AES-256-GCM) dan `scripts/decrypt-backup.mjs`.
+- Retensi 3 hari pada artefak GitHub dan arsip Drive. Arsip Drive dienkripsi
+  karena aksi `saveFile` bridge menandai berkas "Anyone with the link can view".
+- Uji lokal: D1 lokal (`schema.sql` + data uji) → dump 41 KB → `verify-backup`
+  `{"ok":true}` → snapshot 1,7 KB dan XLSX 65 KB (31 entri zip, terbaca) →
+  manifest mencatat `uploads.content` 30.000 byte sebagai kolom dikecualikan.
+- Uji retensi memakai bridge tiruan: 6 `fileId` arsip berumur 5 hari dipindahkan
+  ke trash, indeks menyisakan satu label aktif. Dekripsi dengan frasa sandi salah
+  ditolak (AES-GCM), frasa sandi benar berhasil bolak-balik.
+- Unit test skrip: `scripts/__tests__/backup-github-actions.node.mjs` (10 test) untuk
+  kripto, retensi, ambang ukuran, label, dan ringkasan; ikut `npm run test:scripts`
+  yang sudah dipanggil CI.
+- Belum dijalankan terhadap produksi: menunggu secret `DRIVE_BRIDGE_URL`,
+  `DRIVE_BRIDGE_TOKEN`, dan `BACKUP_PASSPHRASE`. Setelah terpasang, jalankan
+  `workflow_dispatch` satu kali lalu centang checklist Fase 1 di atas.

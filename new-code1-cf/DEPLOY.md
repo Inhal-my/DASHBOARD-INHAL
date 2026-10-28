@@ -76,7 +76,8 @@ Buat database (lewati jika sudah ada):
 CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 create inhal-poc
 ```
 
-Salin `database_id` dari output ke `wrangler.toml`, bagian `[[d1_databases]]`:
+Salin `database_id` dari output ke `wrangler.toml` **dan** `wrangler.production.toml`,
+bagian `[[d1_databases]]`:
 
 ```toml
 [[d1_databases]]
@@ -196,7 +197,7 @@ CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler d1 execute inhal-poc 
 ## 4. Deploy Worker + aset
 
 ```bash
-CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy --config wrangler.production.toml
 ```
 
 Output akan menampilkan URL Worker, mis. `https://inhal-form.<subdomain>.workers.dev`.
@@ -275,7 +276,7 @@ Setelah mengubah kode di `src/` atau `public/`:
 
 ```bash
 npm test
-CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy
+CLOUDFLARE_API_TOKEN="$(cat /root/.cf_token)" npx wrangler deploy --config wrangler.production.toml
 ```
 
 Jika skema berubah, jalankan ulang langkah 3 dengan file migrasi yang sesuai.
@@ -285,3 +286,39 @@ Jika skema berubah, jalankan ulang langkah 3 dengan file migrasi yang sesuai.
 - Jangan pernah menaruh API token di `wrangler.toml`, kode, atau commit Git. Gunakan environment variable `CLOUDFLARE_API_TOKEN`.
 - Jika token sempat terekspos (mis. ter-paste di chat atau ter-commit), segera **Roll** token tersebut di dashboard Cloudflare.
 - Data seed di `schema.sql` hanya untuk demo; hapus/ ganti sebelum dipakai produksi.
+
+## 8. Backup D1
+
+Backup harian **tidak** dijalankan oleh Worker, R2, atau Cloudflare Workflows
+(ketiganya belum aktif). Backup dijalankan GitHub Actions:
+
+- Workflow: `.github/workflows/backup-d1.yml` (**Backup D1**), jadwal
+  `0 18 * * *` UTC = 01:00 WIB, bisa dijalankan manual lewat `workflow_dispatch`.
+- Hasil: artefak `d1-backup-<label>` (dump SQL, snapshot JSON, XLSX, manifest)
+  dengan retensi 3 hari, plus salinan terenkripsi di Google Drive bila secret
+  Drive tersedia.
+
+Secret yang dibutuhkan (Settings > Secrets and variables > Actions):
+
+| Secret | Nilai |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | sudah ada; dipakai `d1 export` |
+| `CLOUDFLARE_ACCOUNT_ID` | `e2efd255f61d2b81c7f54c92eb57b946` |
+| `DRIVE_BRIDGE_URL` | sama dengan `GAS_DRIVE_URL` produksi |
+| `DRIVE_BRIDGE_TOKEN` | sama dengan `GAS_DRIVE_TOKEN` produksi |
+| `BACKUP_PASSPHRASE` | frasa sandi ≥ 12 karakter; simpan juga di pengelola sandi |
+
+Menjalankan setara secara manual dari mesin yang punya akses:
+
+```bash
+npx wrangler d1 export inhal-poc --remote --config wrangler.production.toml --output=backup.sql
+node scripts/verify-backup.mjs backup.sql
+node scripts/backup-snapshot.mjs backup.sql --out=out --label=manual --plan=free
+```
+
+Simpan `backup.sql` **di luar repo** dan jangan pernah mengunggahnya ke Drive
+tanpa enkripsi: aksi `saveFile` bridge membuat berkas dapat dibuka siapa pun yang
+memiliki tautan.
+
+Detail prosedur, ambang ukuran, dan langkah restore: `../docs/ops/backup-restore.md`.
+Peta komponen dan skenario kegagalan: `../docs/ops/arsitektur-dan-failover.md`.

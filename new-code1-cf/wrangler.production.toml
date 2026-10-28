@@ -1,6 +1,5 @@
-# Konfigurasi deploy produksi sementara tanpa binding Workflow/R2.
-# Dipakai sampai R2 aktif. Setelah bucket backup tersedia, deploy dengan
-# `wrangler.toml` agar binding BACKUP_WORKFLOW dan BACKUP_BUCKET ikut aktif.
+# Konfigurasi deploy produksi. Tidak memuat binding Workflow/R2 karena jalur backup
+# R2 dibatalkan; backup harian dijalankan GitHub Actions (`.github/workflows/backup-d1.yml`).
 name = "inhal-form"
 main = "src/index.js"
 compatibility_date = "2024-12-30"
