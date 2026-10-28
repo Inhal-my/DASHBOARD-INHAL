@@ -162,6 +162,55 @@ export async function getLabOptions(db, ctx) {
   return getMasterOptions(db, 'Lab');
 }
 
+// BA yang memuat satu pengajuan (Pelaksanaan dari Bagian + Pendukung dari Admin).
+// Dipakai drawer Detail Pengajuan supaya admin bisa membaca catatan BA per
+// mahasiswa tanpa harus membuka tab BA. Dihitung per pengajuan (bukan di
+// bootstrap) agar payload dashboard tetap ringan.
+async function loadPengajuanBa(db, idPengajuan) {
+  const id = String(idPengajuan || '').trim();
+  if (!id) return [];
+  const sources = [
+    { sumber: 'Bagian', headerTable: 'berita_acara', pesertaTable: 'berita_acara_peserta', where: 'id_pengajuan = ?1', memberFilter: '' },
+    { sumber: 'Admin', headerTable: 'berita_acara_admin', pesertaTable: 'berita_acara_admin_peserta', where: 'id_pengajuan = ?1 AND active = 1', memberFilter: ' AND active = 1' }
+  ];
+  const sesiMap = await loadBaSesiMap(db);
+  const out = [];
+  for (const src of sources) {
+    const members = (await db.prepare(`SELECT * FROM ${src.pesertaTable} WHERE ${src.where}`).bind(id).all()).results || [];
+    const baIds = [];
+    for (const m of members) {
+      const baId = String(m.ba_id || '').trim();
+      if (baId && baIds.indexOf(baId) === -1) baIds.push(baId);
+    }
+    for (const baId of baIds) {
+      const raw = await db.prepare(`SELECT * FROM ${src.headerTable} WHERE ba_id = ?1`).bind(baId).first();
+      if (!raw) continue;
+      const c = toClientRow(src.headerTable, raw);
+      // jumlahPeserta = total anggota BA (bukan hanya yang sedang dibuka) agar
+      // admin tahu berapa mahasiswa yang tercakup dalam satu BA.
+      const total = await db.prepare(`SELECT COUNT(*) AS n FROM ${src.pesertaTable} WHERE ba_id = ?1${src.memberFilter}`).bind(baId).first();
+      const jumlah = Number((total && total.n) || 0);
+      out.push({
+        baId: baId,
+        sumber: src.sumber,
+        kegiatan: String(c['Nama Kegiatan'] || '').trim(),
+        bagian: String(c.Bagian || '').trim(),
+        blok: String(c.Blok || '').trim(),
+        tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
+        jam: String(c.Jam || '').trim(),
+        dosen: String(c.Dosen || '').trim(),
+        label: String(c.Label || '').trim(),
+        jumlahPeserta: jumlah,
+        sesi: src.sumber === 'Bagian' ? baJadwalIds(sesiMap, baId, c['Jadwal ID']) : [],
+        fileUrl: String(c['File URL'] || '').trim(),
+        catatan: String(c.Catatan || '').trim(),
+        timestamp: String(c.Timestamp || '').trim()
+      });
+    }
+  }
+  return out.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+}
+
 export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(String(idPengajuan || '').trim()).first();
@@ -175,6 +224,8 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
   const id = String(p.id_pengajuan || '').trim();
   copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
   copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
+  copy.ba = await loadPengajuanBa(db, id);
+  copy.BaCatatanCount = copy.ba.filter((b) => b.catatan).length;
   return copy;
 }
 

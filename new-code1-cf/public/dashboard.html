@@ -1211,6 +1211,7 @@
                                 <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pendukung' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pendukung')">Belum Pendukung</button>
                                 <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='pelaksanaan' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('pelaksanaan')">Belum Pelaksanaan</button>
                                 <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='belum' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('belum')">Belum lengkap</button>
+                                <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='catatan' ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('catatan')">Dengan catatan ({{ bagianCatatanCount }})</button>
                                 <button class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1" :class="bagian.chip==='multi' ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'" @click="setBagianChip('multi')">Multi-sesi ({{ bagianAuditSummary.multiSesi }})</button>
                                 <span class="ml-auto text-xs text-slate-400">Menampilkan {{ bagianPageInfo.start }}–{{ bagianPageInfo.end }} dari {{ bagianPageInfo.n }} kegiatan</span>
                             </div>
@@ -1330,7 +1331,7 @@
                                                                     <button v-if="b.sumber === 'Bagian'" class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b.baId, b.sumber)"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
-                                                                <div v-if="b.catatan" class="mt-1 text-slate-500">{{ b.catatan }}</div>
+                                                                <div v-if="b.catatan" class="mt-1 whitespace-pre-line text-slate-500"><span class="font-semibold text-slate-400">{{ b.sumber === 'Bagian' ? 'Catatan bagian:' : 'Catatan admin:' }}</span> {{ b.catatan }}</div>
                                                                 <div v-if="expandedBa[b.sumber + '|' + b.baId]" class="mt-2 space-y-1 border-t border-dashed border-slate-100">
                                                                     <div v-if="!(b.peserta || []).length" class="text-slate-400">Tidak ada peserta tercatat.</div>
                                                                     <div v-for="(p, pi) in b.peserta" :key="pi" class="flex items-center justify-between rounded-lg bg-slate-50 px-2 py-1">
@@ -2053,6 +2054,25 @@
                                         <input ref="buktiCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" @change="scanOnPhotos($event, 'bukti')">
                                     </div>
                                 </div>
+                                <div class="pd-card" style="margin-top:2px">
+                                    <div class="pd-card-head"><h4><i class="bi bi-journal-text text-brand-600"></i> Berita Acara &amp; Catatan</h4></div>
+                                    <div class="pd-card-body">
+                                        <div v-if="!(detail.p.ba || []).length" class="text-xs text-slate-400">Belum ada BA yang memuat mahasiswa ini.</div>
+                                        <div v-for="b in (detail.p.ba || [])" :key="b.sumber + '-' + b.baId" class="mb-2 rounded-xl border border-slate-100 p-2.5 text-xs">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <a v-if="b.fileUrl" :href="safeUrl(b.fileUrl)" target="_blank" rel="noopener noreferrer" class="font-mono font-bold text-brand-700 underline" title="Buka file BA">{{ b.baId }}</a>
+                                                <span v-else class="font-mono font-bold text-slate-700">{{ b.baId }}</span>
+                                                <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="b.sumber === 'Bagian' ? 'bg-brand-50 text-brand-700' : 'bg-indigo-50 text-indigo-700'">{{ b.sumber === 'Bagian' ? 'Pelaksanaan' : 'Pendukung' }}</span>
+                                                <span v-if="b.label" class="rounded bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ b.label }}</span>
+                                                <span class="text-slate-400">{{ b.tanggal ? formatTanggal(b.tanggal) : '-' }}<template v-if="b.jam"> · {{ b.jam }}</template></span>
+                                            </div>
+                                            <div class="mt-0.5 text-[11px] text-slate-500">{{ b.kegiatan || '-' }}<template v-if="b.dosen"> · {{ b.dosen }}</template> · {{ b.jumlahPeserta }} peserta di BA ini</div>
+                                            <div class="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catatan {{ b.sumber === 'Bagian' ? 'bagian' : 'admin' }}</div>
+                                            <div v-if="b.catatan" class="mt-1 whitespace-pre-line rounded-lg bg-amber-50 px-2 py-1 text-[11px] text-amber-800">{{ b.catatan }}</div>
+                                            <div v-else class="mt-1 text-[11px] text-slate-400">Tanpa catatan.</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </template>
 
                             <!-- STEP 2: KEPUTUSAN -->
@@ -2593,6 +2613,7 @@
                         <div>
                             <div class="text-sm font-semibold text-slate-800">{{ e.label }}</div>
                             <div class="text-xs text-slate-500">{{ e.detail }}</div>
+                            <div v-if="e.note" class="mt-1 whitespace-pre-line border-l-2 border-brand-200 pl-2 text-xs text-slate-600"><span class="font-semibold text-slate-400">Catatan:</span> {{ e.note }}</div>
                             <div v-if="e.time" class="text-[11px] text-slate-400">{{ e.time }}</div>
                         </div>
                     </li>
@@ -3140,6 +3161,9 @@
                 bagianBlokOptions() {
                     return (this.bagian.bloks || []).filter(b => b && b !== '-');
                 },
+                bagianCatatanCount() {
+                    return (this.bagian.units || []).filter(u => this.unitHasCatatanBa(u)).length;
+                },
                 bagianFilteredUnits() {
                     let units = this.bagian.units || [];
                     if (this.bagian.fBagian) units = units.filter(u => u.bagian === this.bagian.fBagian);
@@ -3148,6 +3172,7 @@
                     if (chip === 'pendukung') units = units.filter(u => !this.unitHasPendukung(u));
                     if (chip === 'pelaksanaan') units = units.filter(u => this.unitPelaksanaanEligible(u) && !this.unitHasPelaksanaan(u));
                     if (chip === 'belum') units = units.filter(u => this.unitIncomplete(u));
+                    if (chip === 'catatan') units = units.filter(u => this.unitHasCatatanBa(u));
                     if (chip === 'multi') units = units.filter(u => u.baAudit && u.baAudit.jumlahSesi > 1);
                     const q = this.normBagian(this.bagian.q);
                     if (q) units = units.filter(u => this.unitMatchesQuery(u, q));
@@ -3194,7 +3219,7 @@
                                 'Jadwal ID': s ? (s.jadwalId || '') : '',
                                 'Status Jadwal': s ? (s.jadwalId ? (s.jadwalCocok ? 'Sesuai' : 'Tidak cocok') : (r.baAudit.jadwalCount ? 'Sesi ekstra' : '-')) : (r.baAudit.jadwalCount ? 'Belum terealisasi' : '-'),
                                 'Status Sesi': s ? s.status : 'Belum',
-                                'Catatan Pemeriksaan': s ? (s.flags || []).join('; ') : (r.baAudit.jadwalBelum ? 'Jadwal belum terealisasi' : ''),
+                                'Temuan Pemeriksaan': s ? (s.flags || []).join('; ') : (r.baAudit.jadwalBelum ? 'Jadwal belum terealisasi' : ''),
                                 'File URL': s ? (s.fileUrl || '') : ''
                             });
                         });
@@ -4062,6 +4087,16 @@
                         this.bagian.bloks = (data.filters && data.filters.blok) || [];
                         this.bagian.baAudit = data.baAudit || { summary: {} };
                         this.loaded.bagian = true;
+                        // BA di drawer Detail Pengajuan bisa berubah setelah BA
+                        // diedit/dihapus, jadi cache per pengajuan dibuang agar
+                        // diambil ulang saat drawer dibuka berikutnya.
+                        this.pengajuanRows = this.pengajuanRows.map((r) => {
+                            if (!r.ba) return r;
+                            const copy = Object.assign({}, r);
+                            delete copy.ba;
+                            delete copy.BaCatatanCount;
+                            return copy;
+                        });
                     } catch (e) {
                         this.notify('Gagal memuat laporan bagian: ' + e, false);
                     } finally {
@@ -4392,9 +4427,28 @@
                     const base = this.pengajuanRows.find(r => r['ID Pengajuan'] === id);
                     if (base) {
                         this.applyDetailFromRow(base);
+                        // BA per pengajuan tidak ikut bootstrap (payload besar),
+                        // jadi diambil sekali saat drawer pertama kali dibuka.
+                        if (!base.ba) this.loadDetailBa(id);
                         return;
                     }
                     this.reloadDetail(id, true);
+                },
+                async loadDetailBa(id) {
+                    try {
+                        const p = await this.run('getPengajuanWithDetails', id);
+                        if (!p) return;
+                        const ba = p.ba || [];
+                        const idx = this.pengajuanRows.findIndex(r => r['ID Pengajuan'] === id);
+                        if (idx >= 0) {
+                            this.pengajuanRows[idx] = Object.assign({}, this.pengajuanRows[idx], { ba: ba, BaCatatanCount: p.BaCatatanCount || 0 });
+                        }
+                        if (this.detail.p && this.detail.p['ID Pengajuan'] === id) {
+                            this.detail.p = Object.assign({}, this.detail.p, { ba: ba, BaCatatanCount: p.BaCatatanCount || 0 });
+                        }
+                    } catch (e) {
+                        // Diamkan: kartu BA tidak boleh menghalangi drawer terbuka.
+                    }
                 },
                 async reloadDetail(id, keepOpen) {
                     this.detail.loading = true;
@@ -4863,6 +4917,9 @@
                 unitHasPelaksanaan(u) {
                     return (u.ba || []).some(b => b.sumber === 'Bagian');
                 },
+                unitHasCatatanBa(u) {
+                    return (u.ba || []).some(b => String(b.catatan || '').trim());
+                },
                 progresDots(r) {
                     const p = r.progress || {};
                     return [p.pendaftaran, p.pendukung, p.keputusan, p.final, p.pelaksanaan, p.selesai];
@@ -4936,6 +4993,7 @@
                         out.push({
                             label: isPelaksanaan ? 'BA Pelaksanaan' : 'BA Pendukung',
                             detail: b.baId + (isPelaksanaan && b.dosen ? ' · ' + b.dosen : '') + (isPelaksanaan && b.jam ? ' · ' + b.tanggal + ' ' + b.jam : ''),
+                            note: b.catatan || '',
                             time: b.timestamp || ''
                         });
                     }
@@ -5067,7 +5125,7 @@
                         return;
                     }
                     const rows = this.bagianAuditExportRows();
-                    const headers = ['Bagian', 'Blok', 'Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Catatan Pemeriksaan', 'File URL'];
+                    const headers = ['Bagian', 'Blok', 'Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Temuan Pemeriksaan', 'File URL'];
                     const ws = rows.length
                         ? window.XLSX.utils.json_to_sheet(rows, { header: headers })
                         : window.XLSX.utils.aoa_to_sheet([headers]);
