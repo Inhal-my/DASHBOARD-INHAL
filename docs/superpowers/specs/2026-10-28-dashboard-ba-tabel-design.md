@@ -116,7 +116,7 @@ Catatan teknis: `display` pager **tidak** memakai utility Tailwind (`hidden md:f
 
 Regresi: `test/dashboard-template.test.js` (60), `dashboard-ba-audit.test.js` (4), `dashboard-ba-pendukung.test.js` (2), plus seluruh suite (755 test) dan `test/security-headers.test.js` setelah CSP diregenerasi.
 
-> Catatan lingkungan: suite vitest memakai `@cloudflare/vitest-pool-workers`; bila path repo mengandung spasi, `workerd` gagal me-resolve worker (`No such module ".../vitest/dist/workers/threads.js"`). Solusi sementara saat verifikasi: jalankan suite pada salinan repo di path tanpa spasi.
+> Catatan lingkungan: suite vitest memakai `@cloudflare/vitest-pool-workers`; bila path repo mengandung spasi, `workerd` gagal me-resolve worker (`No such module ".../vitest/dist/workers/threads.js"`). Gunakan `npm run test:local` — script ini menyalin proyek ke mirror tanpa spasi (default `D:\tmp\inhal-cf`, dapat dioverride lewat `INHAL_TEST_MIRROR`) lalu menjalankan seluruh suite. Verifikasi terakhir: 99 file / 755 test lulus.
 
 ## 8. Tindak Lanjut
 
