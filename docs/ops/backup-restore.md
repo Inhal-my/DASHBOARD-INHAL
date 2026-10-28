@@ -280,3 +280,29 @@ Restore in-place dari dump tidak dipakai karena berisiko menghapus data yang leb
 - Deploy staging: versi Worker `6755baaa-2d19-446e-aa1b-763ab6c28a41`,
   health staging 200, `/bagian` memuat `baSesiSummary`/`jumlahSesi`.
 - `berita_acara_sesi` di staging dibuat dan masih kosong (0 BA), siap untuk UAT.
+
+### 2026-10-28 (produksi)
+
+- Deploy produksi tabel "Kelengkapan per Blok" 8 kolom (commit `dbead4f`,
+  docs `375be58`): versi Worker `2bfd9c39-cde8-4801-8053-b04ba73add80`,
+  health produksi 200 (`{"ok":true,"db":"ok"}`).
+- Deploy manual dengan `wrangler deploy --config wrangler.production.toml`
+  karena workflow **Deploy Production** run #17 gagal di langkah
+  "Show pending migrations" (`wrangler d1 migrations list`), bukan di langkah
+  deploy. Secret `CLOUDFLARE_API_TOKEN` di GitHub Actions perlu diganti.
+- Tidak ada migrasi pada rilis ini. `wrangler d1 migrations list inhal-poc
+  --remote` → "No migrations to apply!"; `d1_migrations` berisi 26 baris dan
+  tabel `berita_acara_sesi` sudah ada, jadi `apply_migrations` tidak diperlukan.
+- Time Travel bookmark sebelum deploy:
+  `00000263-00000000-00005112-35298b0450e8700b52082024a875e3ce`. Tidak ada
+  dump ekspor pada rilis ini (R2 belum aktif).
+- Perubahan yang terpasang: 1 aset statis (`/dashboard.html`, 452.546 byte),
+  hash CSP inline script baru `sha256-61aLl/1As0lsVwbwEkWbZTxrbD8eVWLPsrdCGo9ErCg=`.
+- Smoke test: `/api/health` 200, `/dashboard` 200, `/portal` 200, `/` 302.
+  `SHA-256 dashboard.html` produksi identik dengan berkas lokal
+  (`2BF6E9A60B8ED503…`) dan halaman memuat `ba-pager-desk`,
+  `bagianPageInfo`, `bagianPagedRows`, serta `tanggalSesiInfo`.
+- Catatan: produksi sebelumnya tertinggal 15 komit (termasuk BA multi-sesi dan
+  perubahan pembayaran) sehingga rilis ini sekaligus membawa perubahan tersebut.
+- Verifikasi visual 1440/1280/390 px pada tab Berita Acara belum dijalankan.
+
