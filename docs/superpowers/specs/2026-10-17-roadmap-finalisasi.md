@@ -16,11 +16,12 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Hilangkan duplikat master dan tambahkan constraint.
   - Audit referensi blok lama, nilai kosong, dan `kegiatan_key` yang tidak sinkron.
 - [ ] **Poin 2 — Backup dan pemulihan**
-  - Implementasi selesai dan teruji lokal; **deploy produksi ditunda** karena R2 belum aktif.
-  - Detail: `docs/superpowers/specs/2026-10-17-backup-restore-design.md`, `docs/ops/backup-restore.md`.
+  - **Arah berubah 2026-10-28:** R2/Workflows Cloudflare tidak dipakai (R2 belum aktif). Penggantinya GitHub Actions + arsip terenkripsi di Google Drive, retensi 3 hari, plus Time Travel 7 hari.
+  - Workflow, skrip, dokumentasi, dan uji lokal selesai; menunggu 3 secret Drive terpasang lalu run manual pertama.
+  - Detail: `docs/superpowers/specs/2026-10-17-backup-restore-design.md`, `docs/ops/backup-restore.md`, `docs/ops/arsitektur-dan-failover.md`.
 - [x] **Poin 3 — Observability**
   - Error tracking, alert, dan pemantauan kesehatan aplikasi.
-  - Worker sudah di-deploy; binding Workflow/R2 tetap menunggu R2 aktif.
+  - Worker sudah di-deploy; tidak ada binding Workflow/R2 (jalur itu dibatalkan 2026-10-28).
   - Detail: `docs/superpowers/specs/2026-10-17-observability-design.md`, `docs/ops/observability.md`.
 - [x] **Poin 4 — Keamanan**
   - MFA admin, security headers/CSP, dan audit akses berkas sudah di-deploy.
@@ -36,6 +37,11 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Perangkat UAT, perbaikan aksesibilitas, E2E, dan SOP selesai; E2E staging lulus.
   - Restore drill staging lulus; menunggu pelaksanaan UAT dengan pengguna dan sign-off.
   - Detail: bagian "Hasil implementasi Poin 7" di bawah.
+- [ ] **Poin 8 — Materi Praktikum (tertunda, belum diimplementasikan)**
+  - Desain disetujui 2026-10-27 dengan Model B: induk `master_praktikum` (lab, kegiatan_lab, dibuka, urutan) + anak `master_materi` (praktikum_id, materi, urutan, active).
+  - Ruang lingkup: dropdown Materi di portal (di bawah Kegiatan Lab), penyimpanan `detail_kegiatan.materi`, tampilan materi per peserta di Panel Bagian, plus kartu Data Master.
+  - **Belum ada kode/skema/migrasi yang diubah.** Menunggu pemeriksaan lanjutan dan jawaban 5 pertanyaan terbuka.
+  - Detail: `docs/superpowers/specs/2026-10-27-materi-praktikum-design.md`.
 
 ## Temuan awal Poin 1 (audit produksi 2026-10-17)
 
@@ -90,6 +96,7 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - `wrangler deploy --dry-run` berhasil dengan binding Workflow/R2/observability.
 - Deploy tertunda:
   - Menunggu R2 aktif karena `wrangler.toml` memuat binding `BACKUP_BUCKET` dan Workflow Poin 2.
+    **Dibatalkan 2026-10-28**: binding R2/Workflow dihapus dari kedua konfigurasi wrangler.
   - Setelah deploy: aktifkan Issues automation dan monitor uptime, lalu verifikasi log/health di produksi.
 
 ## Hasil implementasi Poin 4 (2026-10-18)
@@ -113,7 +120,7 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - `GET /api/health` -> 200 `{ ok: true, db: "ok" }`, `cache-control: no-store`, `x-request-id` ada.
   - `/portal` dan `/api/*` mengirim CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, dan `Cross-Origin-Opener-Policy`.
   - RPC `mfaStatus` tanpa sesi mengembalikan error autentikasi (handler MFA aktif di produksi).
-- Catatan deploy: Worker di-deploy memakai konfigurasi sementara tanpa binding Workflow/R2 agar Poin 3/4 live lebih dulu. Repo tetap memakai `wrangler.toml` lengkap; setelah R2 aktif, deploy ulang dengan konfigurasi default untuk mengaktifkan Poin 2.
+- Catatan deploy: Worker di-deploy memakai konfigurasi sementara tanpa binding Workflow/R2 agar Poin 3/4 live lebih dulu. Repo tetap memakai `wrangler.toml` lengkap; setelah R2 aktif, deploy ulang dengan konfigurasi default untuk mengaktifkan Poin 2. **Dibatalkan 2026-10-28**: config default kini identik dengan config produksi (tanpa R2/Workflow).
 
 ## Hasil implementasi Poin 5 (2026-10-18)
 
@@ -199,19 +206,26 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
 
 ## Deploy tertunda
 
-### Poin 2 — Backup D1 ke R2
+### Poin 2 — Backup D1 (jalur R2 dibatalkan, diganti GitHub Actions)
 
-- Status: kode selesai dan sudah di-push (`7ef4ea5`), belum di-deploy ke produksi.
-- Blocker: R2 belum diaktifkan pada akun (`code 10042`).
-- Yang belum dijalankan:
-  - Membuat bucket `inhal-poc-backups`.
-  - Menyimpan secret `D1_REST_API_TOKEN`.
-  - Deploy Worker dengan Workflow dan binding R2.
-  - Trigger backup pertama dan verifikasi objek R2.
-  - Memasang lifecycle 180 hari.
-  - Uji restore dari arsip R2 dan mencatat hasilnya.
-- Selama tertunda: Time Travel D1 tetap aktif (30 hari untuk Workers Paid, 7 hari untuk Workers Free), tetapi arsip jangka panjang 180 hari belum tersedia.
-- Lanjutkan Poin 2 segera setelah R2 aktif; jangan deploy konfigurasi Workflow/R2 sebelum bucket tersedia.
+- Status: kode lama R2 (`src/backup/workflow.js`, binding `BACKUP_WORKFLOW`/`BACKUP_BUCKET`)
+  ditinggalkan sebagai kode mati dan tidak dipakai. Pengganti sudah dibuat 2026-10-28:
+  `.github/workflows/backup-d1.yml` + `new-code1-cf/scripts/backup-*.mjs`.
+- Alasan: R2 belum diaktifkan pada akun (`code 10042`) dan backup tidak boleh bergantung
+  pada penyedia yang sama dengan data utama.
+- Yang sudah jalan:
+  - Dump D1 baca-saja lewat `wrangler d1 export`, verifikasi invariant, snapshot JSON,
+    XLSX, dan manifest berisi hash serta ambang ukuran.
+  - Artefak GitHub dengan retensi 3 hari; arsip terenkripsi di Drive lewat bridge yang
+    sudah ada (`saveFile` + `trashFile`), tanpa mengubah Apps Script.
+  - Uji lokal: skrip, retensi (bridge tiruan), enkripsi/dekripsi, dan 10 unit test baru
+    yang ikut `npm run test:scripts`.
+- Yang belum:
+  - Secret `DRIVE_BRIDGE_URL`, `DRIVE_BRIDGE_TOKEN`, `BACKUP_PASSPHRASE` belum terpasang.
+  - Run manual pertama di GitHub Actions dan pengecekan artefak/arsip Drive.
+  - Drill restore lokal untuk skema baru (prosedur D di `docs/ops/backup-restore.md`).
+- Jangan membuat bucket `inhal-poc-backups` atau lifecycle 180 hari; rencana itu batal.
+  Jangan deploy konfigurasi Workflow/R2 ke produksi.
 
 ### Poin 3 — Observability
 
@@ -220,4 +234,4 @@ Status: daftar kerja aktif, dikerjakan satu per satu.
   - Mengaktifkan Issues automation (email/webhook).
   - Memasang monitor uptime eksternal ke `/api/health`.
   - Verifikasi log `http_request_failed`/`health_check_failed` di produksi.
-- Binding Workflow/R2 belum ikut ter-deploy karena R2 belum aktif.
+- Binding Workflow/R2 belum ikut ter-deploy karena R2 belum aktif (jalur ini dibatalkan 2026-10-28).
