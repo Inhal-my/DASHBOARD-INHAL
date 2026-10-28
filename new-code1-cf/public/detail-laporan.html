@@ -245,6 +245,18 @@
         .in-mcard .kv { display:grid; grid-template-columns:92px 1fr; gap:4px 10px; font-size:12.5px; color:var(--ink-500); }
         .in-mcard .kv b { color:var(--ink-700); font-weight:600; }
         .in-mcard .actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        /* Pager tabel (mengikuti pola .ba-pager di dashboard.html) */
+        .in-pager-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; border-top:1px solid var(--line); background:#fff; padding:10px 14px; font-size:12px; color:var(--ink-500); }
+        .in-pager-info { font-weight:600; }
+        .in-pager-size { border:1px solid var(--line); border-radius:8px; background:#fff; padding:4px 6px; font-size:12px; color:var(--ink-700); }
+        .in-pager { display:inline-flex; align-items:center; gap:3px; }
+        .in-pager button { min-width:26px; height:26px; padding:0 6px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink-500); font-size:12px; font-weight:600; cursor:pointer; transition:color .15s, border-color .15s, background .15s; }
+        .in-pager button:hover:not(:disabled) { border-color:var(--brand); color:var(--brand); }
+        .in-pager button.is-active { background:var(--brand); border-color:var(--brand); color:#fff; }
+        .in-pager button:disabled { opacity:.4; cursor:not-allowed; }
+        .in-pager .dots { padding:0 2px; color:var(--ink-400); }
+        @media (max-width:1023px){ .in-pager-bar { padding:10px 12px; } .in-pager button { min-width:24px; height:24px; } }
+        @media print { .in-pager-bar { display:none !important; } }
         .in-proc { display:flex; gap:10px; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow-soft); margin-bottom:18px; }
         .in-proc .p { display:flex; align-items:center; gap:10px; flex:1; min-width:220px; }
         .in-proc .p .n { width:30px; height:30px; border-radius:10px; display:grid; place-items:center; font-weight:800; font-size:13px; flex:0 0 auto; background:var(--brand-soft); color:var(--brand); }
@@ -987,7 +999,7 @@
                                         <tr v-if="!filteredRows.length">
                                             <td colspan="13" class="px-4 py-12 text-center text-sm text-slate-400">Belum ada data.</td>
                                         </tr>
-                                        <template v-for="r in filteredRows" :key="r.pengajuan['ID Pengajuan']">
+                                        <template v-for="r in pagerRows('rekap', filteredRows)" :key="r.pengajuan['ID Pengajuan']">
                                             <tr class="cursor-pointer border-b border-slate-50 transition hover:bg-brand-50/40" role="button" tabindex="0" :aria-expanded="!!expanded[r.pengajuan['ID Pengajuan']]" @keydown.enter.prevent="toggleExpand(r.pengajuan['ID Pengajuan'])" @keydown.space.prevent="toggleExpand(r.pengajuan['ID Pengajuan'])" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
                                                 <td class="px-3 py-3 text-slate-400">
                                                     <i :class="expanded[r.pengajuan['ID Pengajuan']] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
@@ -1032,7 +1044,7 @@
                                 </table>
                             </div>
                             <div class="in-cards">
-                                <article v-for="r in filteredRows" :key="'m-' + r.pengajuan['ID Pengajuan']" class="in-mcard cursor-pointer" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
+                                <article v-for="r in pagerRows('rekap', filteredRows)" :key="'m-' + r.pengajuan['ID Pengajuan']" class="in-mcard cursor-pointer" @click="toggleExpand(r.pengajuan['ID Pengajuan'])">
                                     <div class="row1">
                                         <div class="in-celluser">
                                             <div class="in-avatar" :style="{background: vwAvatarColor(r.pengajuan['Nama Lengkap'])}">{{ vwInitials(r.pengajuan['Nama Lengkap']) }}</div>
@@ -1048,6 +1060,10 @@
                                     </div>
                                 </article>
                             </div>
+                            <pager-bar id="pg-rekap" :state="pagers.rekap" :total="filteredRows.length" unit="pengajuan"
+                                nav-label="Halaman tabel rekap pengajuan"
+                                @go="pagerGo('rekap', $event, filteredRows.length)"
+                                @size="pagerSetPerPage('rekap', $event)"></pager-bar>
                         </div>
                         </template>
                     </section>
@@ -1132,7 +1148,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="(row, ri) in dosenMatrix.rows" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
+                                        <tr v-for="(row, ri) in pagerRows('dosen', dosenMatrix.rows)" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
                                             <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="lab">
                                                 <div class="flex items-center gap-2">
                                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-violet-500 text-white"><i class="bi bi-person-video3 text-sm"></i></div>
@@ -1166,6 +1182,10 @@
                                 <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ kegiatan</span>
                                 <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 kegiatan</span>
                             </div>
+                            <pager-bar id="pg-dosen" :state="pagers.dosen" :total="dosenMatrix.rows.length" unit="dosen"
+                                nav-label="Halaman matriks dosen"
+                                @go="pagerGo('dosen', $event, dosenMatrix.rows.length)"
+                                @size="pagerSetPerPage('dosen', $event)"></pager-bar>
                             <div v-if="!dosenMatrix.rows.length" class="border-t border-slate-100 px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>
                                 <p class="mt-3 text-sm text-slate-400">Tidak ada data BA untuk filter ini.</p>
@@ -1253,7 +1273,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="s in bagianDetailSections" :key="s.type === 'row' ? s.row.uid : ('sub-' + normBagian(s.bagian))">
+                                        <template v-for="s in bagianPagedSections" :key="s.type === 'row' ? s.row.uid : ('sub-' + normBagian(s.bagian))">
                                             <template v-if="s.type === 'subtotal'">
                                                 <tr class="bg-slate-100/80">
                                                     <td class="px-3 py-2"></td>
@@ -1317,6 +1337,10 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <pager-bar id="pg-bagian" :state="pagers.bagian" :total="bagianDetailRows.length" :info="bagianPageInfo" unit="kegiatan"
+                                nav-label="Halaman detail kegiatan per bagian"
+                                @go="pagerGo('bagian', $event, bagianDetailRows.length, bagianPageInfo.pages)"
+                                @size="pagerSetPerPage('bagian', $event)"></pager-bar>
                             <div v-if="!bagianDetailRows.length" class="px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>
                                 <p class="mt-3 text-sm text-slate-400">Tidak ada data kegiatan untuk filter ini.</p>
@@ -1338,7 +1362,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="(row, ri) in bagianMatrixRows" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
+                                        <tr v-for="(row, ri) in pagerRows('bagianMatrix', bagianMatrixRows)" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
                                             <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="sticky left-0 z-10 px-4 py-2 font-semibold text-slate-700">{{ row.label }}</td>
                                             <td v-for="b in bagianAllLabels" :key="b" class="px-1 py-1 text-center">
                                                 <button
@@ -1367,6 +1391,10 @@
                                 <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ kegiatan</span>
                                 <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 kegiatan</span>
                             </div>
+                            <pager-bar id="pg-bagianMatrix" :state="pagers.bagianMatrix" :total="bagianMatrixRows.length" unit="blok"
+                                nav-label="Halaman rekap kegiatan per bagian dan blok"
+                                @go="pagerGo('bagianMatrix', $event, bagianMatrixRows.length)"
+                                @size="pagerSetPerPage('bagianMatrix', $event)"></pager-bar>
                         </div>
                         </template>
                     </section>
@@ -1439,7 +1467,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="r in baKegiatanRows" :key="r.key">
+                                        <template v-for="r in pagerRows('baKegiatan', baKegiatanRows)" :key="r.key">
                                             <tr class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(r.key)">
                                                 <td class="px-3 py-2.5 text-slate-400">
                                                     <i :class="expanded[r.key] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
@@ -1515,6 +1543,7 @@
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Admin')"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaAdmin(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
+                                                                <div v-if="b.Catatan" class="mt-1 whitespace-pre-line text-[11px] text-slate-600"><span class="font-semibold text-slate-400">Catatan admin:</span> {{ b.Catatan }}</div>
                                                             </div>
                                                             <div v-for="b in (r.baPelaksanaan || [])" :key="'dl' + b['BA ID']" class="mb-2 rounded-lg bg-white p-2.5 text-xs">
                                                                 <div class="flex flex-wrap items-center gap-2">
@@ -1526,6 +1555,7 @@
                                                                     <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="openKelolaBa(b['BA ID'], 'Bagian')"><i class="bi bi-pencil text-xs"></i></button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaBagian(b['BA ID'])"><i class="bi bi-trash text-xs"></i></button>
                                                                 </div>
+                                                                <div v-if="b.Catatan" class="mt-1 whitespace-pre-line text-[11px] text-slate-600"><span class="font-semibold text-slate-400">Catatan bagian:</span> {{ b.Catatan }}</div>
                                                                 <a v-if="b['File URL']" :href="safeUrl(b['File URL'])" target="_blank" rel="noopener noreferrer" class="link mt-1 inline-block"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
                                                             </div>
                                                         </div>
@@ -1573,7 +1603,7 @@
                                 </table>
                             </div>
                             <div class="in-cards">
-                                <article v-for="r in baKegiatanRows" :key="'m-' + r.key" class="in-mcard cursor-pointer" @click="toggleExpand(r.key)">
+                                <article v-for="r in pagerRows('baKegiatan', baKegiatanRows)" :key="'m-' + r.key" class="in-mcard cursor-pointer" @click="toggleExpand(r.key)">
                                     <div class="row1">
                                         <span class="font-semibold text-slate-800">{{ r.label }}</span>
                                         <span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.bagian }}</span>
@@ -1600,6 +1630,10 @@
                                     </div>
                                 </article>
                             </div>
+                            <pager-bar id="pg-baKegiatan" :state="pagers.baKegiatan" :total="baKegiatanRows.length" unit="kegiatan"
+                                nav-label="Halaman kegiatan berita acara"
+                                @go="pagerGo('baKegiatan', $event, baKegiatanRows.length)"
+                                @size="pagerSetPerPage('baKegiatan', $event)"></pager-bar>
                             <div v-if="!baKegiatanRows.length" class="px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>
                                 <p class="mt-3 text-sm text-slate-400">Belum ada kegiatan.</p>
@@ -1634,7 +1668,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="a in baAuditRows" :key="'aud-' + a.key">
+                                        <template v-for="a in pagerRows('baAudit', baAuditRows)" :key="'aud-' + a.key">
                                             <tr class="border-t border-slate-50">
                                                 <td class="px-3 py-2.5 text-slate-800"><span class="font-semibold">{{ a.kegiatan }}</span><div class="text-[10px] text-slate-400">{{ a.bagian }} / {{ a.blok || '-' }}</div></td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-center font-semibold text-slate-700">{{ a.jumlahSesi }}</td>
@@ -1663,6 +1697,10 @@
                                         </template>
                                     </tbody>
                                 </table>
+                                <pager-bar id="pg-baAudit" :state="pagers.baAudit" :total="baAuditRows.length" unit="kegiatan"
+                                    nav-label="Halaman pemeriksaan BA pelaksanaan"
+                                    @go="pagerGo('baAudit', $event, baAuditRows.length)"
+                                    @size="pagerSetPerPage('baAudit', $event)"></pager-bar>
                                 <div v-if="!baAuditRows.length" class="px-4 py-10 text-center text-sm text-slate-400">Belum ada data untuk diperiksa.</div>
                             </div>
                         </div>
@@ -1719,12 +1757,13 @@
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Sumber</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Dibuat</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Kelengkapan</th>
+                                            <th class="px-3 py-2.5 text-left">Catatan</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Berkas</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="r in filteredDaftarBa" :key="r.jenis + '-' + r.id" class="border-t border-slate-50">
+                                        <tr v-for="r in pagerRows('daftarba', filteredDaftarBa)" :key="r.jenis + '-' + r.id" class="border-t border-slate-50">
                                             <td class="whitespace-nowrap px-3 py-2.5 font-mono text-xs font-semibold text-slate-700">{{ r.id }}</td>
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.jenis === 'Pendukung' ? 'bg-indigo-50 text-indigo-700' : 'bg-brand-50 text-brand-700'">{{ r.jenis }}</span></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-700">{{ r.bagian }}</td>
@@ -1740,6 +1779,10 @@
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.sumber === 'Admin' ? 'bg-violet-50 text-violet-700' : 'bg-emerald-50 text-emerald-700'">{{ r.sumber }}</span></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">{{ r.dibuat ? fmtTanggalWaktu(r.dibuat) : '-' }}</td>
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.lengkap ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.lengkap ? 'Lengkap' : 'Draft' }}</span></td>
+                                            <td class="px-3 py-2.5 text-slate-600">
+                                                <div v-if="r.catatan" class="max-w-[18rem] whitespace-pre-line" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" :title="r.catatan">{{ r.catatan }}</div>
+                                                <span v-else class="text-slate-300">-</span>
+                                            </td>
                                             <td class="whitespace-nowrap px-3 py-2.5"><span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.berkasAda ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.berkasAda ? 'Ada' : 'Hilang' }}</span> <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="link">Lihat</a> <a v-if="r.jenis === 'Pendukung' && r.baseFileUrl" :href="safeUrl(r.baseFileUrl)" target="_blank" rel="noopener noreferrer" class="link">Base</a></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-right">
                                                 <div class="flex justify-end gap-1">
@@ -1756,9 +1799,9 @@
                                 </div>
                             </div>
                             <div class="in-cards">
-                                <article v-for="r in filteredDaftarBa" :key="'m-' + r.jenis + '-' + r.id" class="in-mcard">
+                                <article v-for="r in pagerRows('daftarba', filteredDaftarBa)" :key="'m-' + r.jenis + '-' + r.id" class="in-mcard">
                                     <div class="row1"><span class="font-semibold text-slate-800">{{ r.id }}</span><span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.jenis }}</span></div>
-                                    <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Kegiatan</span><b>{{ r.kegiatan || '-' }}</b><span>Label</span><b>{{ r.label || '-' }}</b><span>Jadwal</span><b>{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }} {{ r.jam }}</b><span>Dosen</span><b>{{ r.dosen || '-' }}</b><span>Peserta</span><b>{{ r.pesertaCount }}</b><span>Sumber</span><b>{{ r.sumber }}</b><span>Sesi</span><b>{{ r.jenis === 'Pelaksanaan' && r.sesiKe ? ('#' + r.sesiKe + '/' + r.jumlahSesi) : '-' }}</b><span>Status Sesi</span><b>{{ r.statusSesi || '-' }}</b><span>Kelengkapan</span><b>{{ r.lengkap ? 'Lengkap' : 'Draft' }}</b></div>
+                                    <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Kegiatan</span><b>{{ r.kegiatan || '-' }}</b><span>Label</span><b>{{ r.label || '-' }}</b><span>Jadwal</span><b>{{ r.tanggal ? fmtTanggal(r.tanggal) : '-' }} {{ r.jam }}</b><span>Dosen</span><b>{{ r.dosen || '-' }}</b><span>Peserta</span><b>{{ r.pesertaCount }}</b><span>Sumber</span><b>{{ r.sumber }}</b><span>Sesi</span><b>{{ r.jenis === 'Pelaksanaan' && r.sesiKe ? ('#' + r.sesiKe + '/' + r.jumlahSesi) : '-' }}</b><span>Status Sesi</span><b>{{ r.statusSesi || '-' }}</b><span>Kelengkapan</span><b>{{ r.lengkap ? 'Lengkap' : 'Draft' }}</b><span>Catatan</span><b class="whitespace-pre-line">{{ r.catatan || '-' }}</b></div>
                                     <div class="actions">
                                         <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="r.berkasAda ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ r.berkasAda ? 'Ada' : 'Hilang' }}</span>
                                         <a v-if="r.fileUrl" :href="safeUrl(r.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft"><i class="bi bi-file-earmark-pdf"></i> Berkas</a>
@@ -1768,6 +1811,10 @@
                                     </div>
                                 </article>
                             </div>
+                            <pager-bar id="pg-daftarba" :state="pagers.daftarba" :total="filteredDaftarBa.length" unit="BA"
+                                nav-label="Halaman daftar berita acara"
+                                @go="pagerGo('daftarba', $event, filteredDaftarBa.length)"
+                                @size="pagerSetPerPage('daftarba', $event)"></pager-bar>
                         </div>
                     </section>
 
@@ -1824,7 +1871,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="r in jadwalRealisasiFiltered" :key="r.key" class="border-t border-slate-50">
+                                        <tr v-for="r in pagerRows('jadwal', jadwalRealisasiFiltered)" :key="r.key" class="border-t border-slate-50">
                                             <td class="px-3 py-2.5 text-slate-800">{{ r.kegiatan || '-' }}<span v-if="r.label" class="text-slate-400"> · {{ r.label }}</span></td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-700">{{ r.bagian }}</td>
                                             <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
@@ -1844,11 +1891,15 @@
                                 </div>
                             </div>
                             <div class="in-cards">
-                                <article v-for="r in jadwalRealisasiFiltered" :key="'m-' + r.key" class="in-mcard">
+                                <article v-for="r in pagerRows('jadwal', jadwalRealisasiFiltered)" :key="'m-' + r.key" class="in-mcard">
                                     <div class="row1"><span class="font-semibold text-slate-800">{{ r.kegiatan || '-' }}</span><span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="r.status === 'Sesuai' ? 'bg-emerald-50 text-emerald-700' : (r.status === 'Belum' ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-violet-700')">{{ r.status }}</span></div>
                                     <div class="kv"><span>Bagian</span><b>{{ r.bagian }}</b><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Jadwal</span><b>{{ r.jadwalTanggal ? fmtTanggal(r.jadwalTanggal) : '-' }} {{ r.jadwalJam }}</b><span>Dosen Jadwal</span><b>{{ r.jadwalDosen || '-' }}</b><span>Peserta Jadwal</span><b>{{ r.jenis === 'Extra' ? '-' : r.jadwalPesertaCount }}</b><span>Realisasi</span><b>{{ r.baId || '-' }} {{ r.baJam }}</b><span>Dosen Realisasi</span><b>{{ r.baDosen || '-' }}</b><span>Peserta BA</span><b>{{ r.baId ? r.baPesertaCount : '-' }}</b></div>
                                 </article>
                             </div>
+                            <pager-bar id="pg-jadwal" :state="pagers.jadwal" :total="jadwalRealisasiFiltered.length" unit="sesi"
+                                nav-label="Halaman jadwal dan realisasi"
+                                @go="pagerGo('jadwal', $event, jadwalRealisasiFiltered.length)"
+                                @size="pagerSetPerPage('jadwal', $event)"></pager-bar>
                         </div>
                     </section>
 
@@ -1946,7 +1997,7 @@
                                         <tr v-if="!pembayaranFiltered.length">
                                             <td colspan="7" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada data pembayaran untuk filter ini.</td>
                                         </tr>
-                                        <tr v-for="it in pembayaranFiltered" :key="it.id" class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="openPeriksa(it)">
+                                        <tr v-for="it in pagerRows('bayarTabel', pembayaranFiltered)" :key="it.id" class="cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="openPeriksa(it)">
                                             <td class="px-3 py-3">
                                                 <div class="font-semibold text-slate-800">{{ it.nama }}</div>
                                                 <div class="font-mono text-[11px] text-slate-400">{{ it.npm }}</div>
@@ -1973,7 +2024,7 @@
                                 </table>
                             </div>
                             <div class="in-cards">
-                                <article v-for="it in pembayaranFiltered" :key="'m-' + it.id" class="in-mcard cursor-pointer" @click="openPeriksa(it)">
+                                <article v-for="it in pagerRows('bayarTabel', pembayaranFiltered)" :key="'m-' + it.id" class="in-mcard cursor-pointer" @click="openPeriksa(it)">
                                     <div class="row1">
                                         <span class="font-semibold text-slate-800">{{ it.nama }}</span>
                                         <span :class="bayarBadgeCls(it.statusPembayaran)">{{ bayarLabel(it.statusPembayaran) }}</span>
@@ -1986,6 +2037,10 @@
                                 </article>
                                 <p v-if="!pembayaranFiltered.length" class="py-10 text-center text-sm text-slate-400">Tidak ada data pembayaran untuk filter ini.</p>
                             </div>
+                            <pager-bar id="pg-bayarTabel" :state="pagers.bayarTabel" :total="pembayaranFiltered.length" unit="pengajuan"
+                                nav-label="Halaman data pembayaran"
+                                @go="pagerGo('bayarTabel', $event, pembayaranFiltered.length)"
+                                @size="pagerSetPerPage('bayarTabel', $event)"></pager-bar>
                         </div>
 
                         <div v-if="bayarView === 'antrean'" class="overflow-hidden lap-card">
@@ -1997,7 +2052,7 @@
                                 <span class="in-badge wait">{{ pembayaranQueue.length }} antrean</span>
                             </div>
                             <div class="divide-y divide-slate-100">
-                                <div v-for="it in pembayaranQueue" :key="'q-' + it.id" class="flex flex-wrap items-center gap-3 px-4 py-3 transition hover:bg-slate-50/60">
+                                <div v-for="it in pagerRows('bayarAntrean', pembayaranQueue)" :key="'q-' + it.id" class="flex flex-wrap items-center gap-3 px-4 py-3 transition hover:bg-slate-50/60">
                                     <div class="min-w-0 flex-1">
                                         <div class="font-semibold text-slate-800">{{ it.nama }} <span class="font-mono text-[11px] font-normal text-slate-400">{{ it.npm }}</span></div>
                                         <div class="text-xs text-slate-500">{{ it.jenis }} <span v-if="it.detail">- {{ it.detail }}</span> <span class="text-slate-300">|</span> {{ it.blok }}</div>
@@ -2009,6 +2064,10 @@
                                     <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                     <button type="button" class="btn-soft !py-1.5 text-xs" @click="openPeriksa(it)"><i class="bi bi-search"></i> Periksa</button>
                                 </div>
+                                <pager-bar id="pg-bayarAntrean" :state="pagers.bayarAntrean" :total="pembayaranQueue.length" unit="antrean"
+                                nav-label="Halaman antrean verifikasi pembayaran"
+                                @go="pagerGo('bayarAntrean', $event, pembayaranQueue.length)"
+                                @size="pagerSetPerPage('bayarAntrean', $event)"></pager-bar>
                                 <p v-if="!pembayaranQueue.length" class="px-4 py-12 text-center text-sm text-slate-400">Tidak ada pembayaran yang menunggu verifikasi.</p>
                             </div>
                         </div>
@@ -2071,7 +2130,7 @@
                                         </thead>
                                         <tbody>
                                             <tr v-if="!pembayaranSelisih.length"><td colspan="6" class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada selisih nominal.</td></tr>
-                                            <tr v-for="it in pembayaranSelisih" :key="'s-' + it.id" class="border-t border-slate-50">
+                                            <tr v-for="it in pagerRows('bayarSelisih', pembayaranSelisih)" :key="'s-' + it.id" class="border-t border-slate-50">
                                                 <td class="px-3 py-3"><div class="font-semibold text-slate-800">{{ it.nama }}</div><div class="font-mono text-[11px] text-slate-400">{{ it.npm }}</div></td>
                                                 <td class="px-3 py-3 text-slate-600">{{ it.jenis }}<div v-if="it.detail" class="text-[11px] text-slate-400">{{ it.detail }}</div></td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-right text-slate-600">{{ fmtRupiah(it.biaya) }}</td>
@@ -2083,12 +2142,16 @@
                                     </table>
                                 </div>
                                 <div class="in-cards">
-                                    <article v-for="it in pembayaranSelisih" :key="'sm-' + it.id" class="in-mcard">
+                                    <article v-for="it in pagerRows('bayarSelisih', pembayaranSelisih)" :key="'sm-' + it.id" class="in-mcard">
                                         <div class="row1"><span class="font-semibold text-slate-800">{{ it.nama }}</span><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></div>
                                         <div class="kv"><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Tagihan</span><b>{{ fmtRupiah(it.biaya) }}</b><span>Dibayar</span><b>{{ fmtRupiah(it.nominal) }}</b><span>Selisih</span><b>{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</b></div>
                                     </article>
                                     <p v-if="!pembayaranSelisih.length" class="py-8 text-center text-sm text-slate-400">Tidak ada selisih nominal.</p>
                                 </div>
+                                <pager-bar id="pg-bayarSelisih" :state="pagers.bayarSelisih" :total="pembayaranSelisih.length" unit="baris"
+                                    nav-label="Halaman selisih nominal pembayaran"
+                                    @go="pagerGo('bayarSelisih', $event, pembayaranSelisih.length)"
+                                    @size="pagerSetPerPage('bayarSelisih', $event)"></pager-bar>
                             </div>
                         </template>
 
@@ -2529,7 +2592,7 @@
                 if (/^https?:\/\//i.test(url)) XLSX.utils.cell_set_hyperlink(cell, url, tooltip);
             }
         }
-        const BA_EXPORT_HEADERS = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Tanggal Pelaksanaan', 'Jumlah Peserta', 'Biaya', 'File URL'];
+        const BA_EXPORT_HEADERS = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Tanggal Pelaksanaan', 'Jumlah Peserta', 'Biaya', 'Catatan BA', 'File URL'];
         function baExportSheet(rows) {
             if (!rows || !rows.length) return XLSX.utils.aoa_to_sheet([BA_EXPORT_HEADERS]);
             return XLSX.utils.json_to_sheet(rows, { header: BA_EXPORT_HEADERS });
@@ -2761,6 +2824,67 @@
                 </div>`
         };
 
+        const PagerBar = {
+            props: {
+                state: { type: Object, required: true },
+                total: { type: Number, default: 0 },
+                unit: { type: String, default: 'baris' },
+                navLabel: { type: String, default: 'Navigasi halaman tabel' },
+                info: { type: Object, default: null }
+            },
+            emits: ['go', 'size'],
+            computed: {
+                meta() {
+                    if (this.info) return this.info;
+                    const total = Number(this.total) || 0;
+                    const raw = Number(this.state && this.state.perPage);
+                    const perPage = raw > 0 ? raw : 0;
+                    const pages = perPage ? Math.max(1, Math.ceil(total / perPage)) : 1;
+                    const page = Math.min(Math.max(1, Number(this.state && this.state.page) || 1), pages);
+                    const size = perPage || Math.max(total, 1);
+                    return {
+                        total: total,
+                        perPage: raw || 0,
+                        pages: pages,
+                        page: page,
+                        start: total ? (page - 1) * size + 1 : 0,
+                        end: Math.min(page * size, total)
+                    };
+                },
+                items() {
+                    const out = [];
+                    for (let p = 1; p <= this.meta.pages; p += 1) {
+                        if (p === 1 || p === this.meta.pages || Math.abs(p - this.meta.page) <= 2) out.push(p);
+                    }
+                    return out;
+                }
+            },
+            methods: {
+                go(page) { this.$emit('go', page); },
+                setSize(event) { this.$emit('size', event.target.value); }
+            },
+            template: `
+                <div v-if="meta.total > 10" class="in-pager-bar">
+                    <span class="in-pager-info">Menampilkan {{ meta.start }}–{{ meta.end }} dari {{ meta.total }} {{ unit }}</span>
+                    <div class="ml-auto flex flex-wrap items-center gap-2">
+                        <select class="in-pager-size" :value="String(meta.perPage)" aria-label="Jumlah baris per halaman" @change="setSize">
+                            <option value="10">10 / halaman</option>
+                            <option value="25">25 / halaman</option>
+                            <option value="50">50 / halaman</option>
+                            <option value="100">100 / halaman</option>
+                            <option value="0">Semua</option>
+                        </select>
+                        <nav class="in-pager" role="navigation" :aria-label="navLabel">
+                            <button type="button" :disabled="meta.page <= 1" aria-label="Halaman sebelumnya" @click="go(meta.page - 1)">&lsaquo;</button>
+                            <span v-if="items[0] > 1" class="dots">…</span>
+                            <button v-for="p in items" :key="'p' + p" type="button" :class="{ 'is-active': p === meta.page }" :aria-current="p === meta.page ? 'page' : null" :aria-label="'Halaman ' + p" @click="go(p)">{{ p }}</button>
+                            <span v-if="items[items.length - 1] < meta.pages" class="dots">…</span>
+                            <button type="button" :disabled="meta.page >= meta.pages" aria-label="Halaman berikutnya" @click="go(meta.page + 1)">&rsaquo;</button>
+                        </nav>
+                    </div>
+                </div>`
+        };
+
         const { createApp } = Vue;
 
         function initialData() {
@@ -2800,6 +2924,19 @@
                     bagian: { categories: [], labs: [] },
                     filters: { from: '', to: '', blok: '', status: '', jenis: '', search: '', bagian: '' },
                     expanded: {},
+                    pagers: {
+                        rekap: { page: 1, perPage: 10 },
+                        dosen: { page: 1, perPage: 10 },
+                        bagian: { page: 1, perPage: 10 },
+                        bagianMatrix: { page: 1, perPage: 10 },
+                        baKegiatan: { page: 1, perPage: 10 },
+                        baAudit: { page: 1, perPage: 10 },
+                        daftarba: { page: 1, perPage: 10 },
+                        jadwal: { page: 1, perPage: 10 },
+                        bayarTabel: { page: 1, perPage: 10 },
+                        bayarAntrean: { page: 1, perPage: 10 },
+                        bayarSelisih: { page: 1, perPage: 10 }
+                    },
                     dosenFilter: { bagian: '', q: '' },
                     activeDosenCell: null,
                     bagianFilter: { bagian: '' },
@@ -2844,7 +2981,7 @@
 
         const app = createApp({
             mixins: [AppCommon.buktiPreviewMixin],
-            components: { ExpandedDetail },
+            components: { ExpandedDetail, PagerBar },
             data() {
                 return initialData();
             },
@@ -3556,6 +3693,64 @@
                     if (sub) sections.push(sub);
                     return sections;
                 },
+                bagianDetailBlocks() {
+                    const blocks = [];
+                    let current = null;
+                    this.bagianDetailRows.forEach(r => {
+                        if (!current || current.bagian !== r.bagian) {
+                            current = { bagian: r.bagian, rows: [], subtotal: { type: 'subtotal', bagian: r.bagian, pesertaCount: 0, biaya: 0 } };
+                            blocks.push(current);
+                        }
+                        current.rows.push(r);
+                        current.subtotal.pesertaCount += r.jumlahPeserta || 0;
+                        current.subtotal.biaya += r.biaya || 0;
+                    });
+                    return blocks;
+                },
+                bagianPageSlices() {
+                    const per = Number(this.pagers.bagian.perPage) || 0;
+                    const blocks = this.bagianDetailBlocks;
+                    if (!blocks.length) return [];
+                    if (!per) return [blocks];
+                    const pages = [];
+                    let current = [];
+                    let count = 0;
+                    blocks.forEach(b => {
+                        const n = b.rows.length;
+                        if (current.length && count + n > per) {
+                            pages.push(current);
+                            current = [];
+                            count = 0;
+                        }
+                        current.push(b);
+                        count += n;
+                    });
+                    if (current.length) pages.push(current);
+                    return pages;
+                },
+                bagianPageInfo() {
+                    const slices = this.bagianPageSlices;
+                    const pages = Math.max(1, slices.length);
+                    const perPage = Number(this.pagers.bagian.perPage) || 0;
+                    const page = Math.min(Math.max(1, Number(this.pagers.bagian.page) || 1), pages);
+                    const total = this.bagianDetailRows.length;
+                    if (!total) return { total: 0, perPage: perPage, pages: pages, page: page, start: 0, end: 0 };
+                    const countRows = (list) => list.reduce((t, b) => t + b.rows.length, 0);
+                    const before = slices.slice(0, page - 1).reduce((t, s) => t + countRows(s), 0);
+                    const start = before + 1;
+                    const end = before + countRows(slices[page - 1] || []);
+                    return { total: total, perPage: perPage, pages: pages, page: page, start: start, end: end };
+                },
+                bagianPagedSections() {
+                    const page = this.bagianPageInfo.page;
+                    const blocks = this.bagianPageSlices[page - 1] || [];
+                    const sections = [];
+                    blocks.forEach(b => {
+                        b.rows.forEach(r => sections.push({ type: 'row', row: r }));
+                        sections.push(b.subtotal);
+                    });
+                    return sections;
+                },
                 bagianDetailGrandTotal() {
                     return this.bagianDetailRows.reduce((t, r) => t + (r.biaya || 0), 0);
                 },
@@ -3607,7 +3802,7 @@
                                 'Jadwal ID': s ? (s.jadwalId || '') : '',
                                 'Status Jadwal': s ? (s.jadwalId ? (s.jadwalCocok ? 'Sesuai' : 'Tidak cocok') : (r.jadwalCount ? 'Sesi ekstra' : '-')) : (r.jadwalCount ? 'Belum terealisasi' : '-'),
                                 'Status Sesi': s ? s.status : 'Belum',
-                                'Catatan Pemeriksaan': s ? (s.flags || []).join('; ') : (r.jadwalBelum ? 'Jadwal belum terealisasi' : ''),
+                                'Temuan Pemeriksaan': s ? (s.flags || []).join('; ') : (r.jadwalBelum ? 'Jadwal belum terealisasi' : ''),
                                 'File URL': s ? (s.fileUrl || '') : ''
                             });
                         });
@@ -3828,18 +4023,43 @@
                 'filters.blok': function () {
                     this.animateCharts();
                     this.activeDosenCell = null;
+                    this.resetPagers();
                     if (this.activeMatrixCell && this.activeMatrixCell.blok !== this.filters.blok) this.activeMatrixCell = null;
                 },
-                'filters.status': function () { this.animateCharts(); this.activeDosenCell = null; },
-                'filters.jenis': function () { this.animateCharts(); this.activeDosenCell = null; },
-                'filters.from': function () { this.animateCharts(); this.activeDosenCell = null; },
-                'filters.to': function () { this.animateCharts(); this.activeDosenCell = null; },
-                'filters.search': function () { this.activeDosenCell = null; },
+                'filters.status': function () { this.animateCharts(); this.activeDosenCell = null; this.resetPagers(); },
+                'filters.jenis': function () { this.animateCharts(); this.activeDosenCell = null; this.resetPagers(); },
+                'filters.from': function () { this.animateCharts(); this.activeDosenCell = null; this.resetPagers(); },
+                'filters.to': function () { this.animateCharts(); this.activeDosenCell = null; this.resetPagers(); },
+                'filters.search': function () { this.activeDosenCell = null; this.resetPagers(); },
                 'bagianFilter.bagian': function (v) {
+                    this.pagers.bagian.page = 1;
+                    this.pagers.bagianMatrix.page = 1;
                     if (this.activeMatrixCell && v !== this.activeMatrixCell.bagian) this.activeMatrixCell = null;
                 },
-                'dosenFilter.bagian': function () { this.activeDosenCell = null; },
-                'dosenFilter.q': function () { this.activeDosenCell = null; },
+                'dosenFilter.bagian': function () { this.activeDosenCell = null; this.pagers.dosen.page = 1; },
+                'dosenFilter.q': function () { this.activeDosenCell = null; this.pagers.dosen.page = 1; },
+                'baFilter.bagian': function () { this.pagers.baKegiatan.page = 1; this.pagers.baAudit.page = 1; },
+                baListFilter: {
+                    deep: true,
+                    handler() { this.pagers.daftarba.page = 1; }
+                },
+                jadwalFilter: {
+                    deep: true,
+                    handler() { this.pagers.jadwal.page = 1; }
+                },
+                bayarFilter: {
+                    deep: true,
+                    handler() {
+                        this.pagers.bayarTabel.page = 1;
+                        this.pagers.bayarAntrean.page = 1;
+                        this.pagers.bayarSelisih.page = 1;
+                    }
+                },
+                bayarView: function () {
+                    this.pagers.bayarTabel.page = 1;
+                    this.pagers.bayarAntrean.page = 1;
+                    this.pagers.bayarSelisih.page = 1;
+                },
                 activeTab: function () { this.closeBuktiPreview(); this.closeBaMenu(); this.filterSheetOpen = false; },
             },
             methods: {
@@ -4442,6 +4662,62 @@
                     const max = Math.max(1, ...Object.values(counts));
                     return keys.map(k => ({ label: k, value: counts[k], pct: Math.round((counts[k] / max) * 100) }));
                 },
+                pagerState(key) {
+                    if (!this.pagers[key]) this.pagers[key] = { page: 1, perPage: 10 };
+                    return this.pagers[key];
+                },
+                pagerInfo(key, total) {
+                    const state = this.pagerState(key);
+                    const raw = Number(state.perPage);
+                    const perPage = raw > 0 ? raw : 0;
+                    const n = Math.max(0, Number(total) || 0);
+                    const pages = perPage ? Math.max(1, Math.ceil(n / perPage)) : 1;
+                    const page = Math.min(Math.max(1, Number(state.page) || 1), pages);
+                    const size = perPage || Math.max(n, 1);
+                    return {
+                        total: n,
+                        perPage: raw || 0,
+                        pages: pages,
+                        page: page,
+                        start: n ? (page - 1) * size + 1 : 0,
+                        end: Math.min(page * size, n)
+                    };
+                },
+                pagerRows(key, rows) {
+                    const list = Array.isArray(rows) ? rows : [];
+                    const info = this.pagerInfo(key, list.length);
+                    if (!info.perPage) return list;
+                    const from = (info.page - 1) * info.perPage;
+                    return list.slice(from, from + info.perPage);
+                },
+                pagerItems(key, total) {
+                    const info = this.pagerInfo(key, total);
+                    const out = [];
+                    for (let p = 1; p <= info.pages; p += 1) {
+                        if (p === 1 || p === info.pages || Math.abs(p - info.page) <= 2) out.push(p);
+                    }
+                    return out;
+                },
+                pagerGo(key, page, total, pages) {
+                    const info = this.pagerInfo(key, total);
+                    const state = this.pagerState(key);
+                    const max = Number(pages) > 0 ? Number(pages) : info.pages;
+                    state.page = Math.min(Math.max(1, Number(page) || 1), max);
+                    this.$nextTick(() => {
+                        const el = document.getElementById('pg-' + key);
+                        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                },
+                pagerSetPerPage(key, value) {
+                    const allowed = [0, 10, 25, 50, 100];
+                    const n = Number(value);
+                    const state = this.pagerState(key);
+                    state.perPage = allowed.indexOf(n) === -1 ? 10 : n;
+                    state.page = 1;
+                },
+                resetPagers() {
+                    Object.keys(this.pagers || {}).forEach((key) => { this.pagers[key].page = 1; });
+                },
                 toggleExpand(id) {
                     this.expanded[id] = !this.expanded[id];
                 },
@@ -4501,6 +4777,7 @@
                     this.filters.jenis = '';
                     this.filters.search = '';
                     this.filters.bagian = '';
+                    this.resetPagers();
                 },
                 animateNumbers() {
                     const s = this.summary || {};
@@ -4908,6 +5185,7 @@
                             'Tanggal Pelaksanaan': b['Tanggal Pelaksanaan'] ? fmtTanggalWaktu(b['Tanggal Pelaksanaan']) : '',
                             'Jumlah Peserta': (b.peserta || []).length || b['Jumlah Peserta'] || 0,
                             'Biaya': biaya,
+                            'Catatan BA': String(b.Catatan || '').trim(),
                             'File URL': b['File URL'] || ''
                         };
                     });
@@ -4990,7 +5268,7 @@
                             XLSX.utils.book_append_sheet(wb, wsDetailBa, 'Detail BA');
 
                             const auditRows = this.baAuditExportRows();
-                            const auditHeaders = ['Bagian', 'Blok', 'Nama Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Catatan Pemeriksaan', 'File URL'];
+                            const auditHeaders = ['Bagian', 'Blok', 'Nama Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Temuan Pemeriksaan', 'File URL'];
                             const wsAudit = auditRows.length
                                 ? XLSX.utils.json_to_sheet(auditRows, { header: auditHeaders })
                                 : XLSX.utils.aoa_to_sheet([auditHeaders]);
@@ -5016,7 +5294,8 @@
                             const wb = XLSX.utils.book_new();
                             const headers = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Label',
                                 'Tanggal Pelaksanaan', 'Jam', 'Dosen', 'Jumlah Peserta', 'Sesi', 'Status Sesi',
-                                'Status Kegiatan', 'Sumber', 'Dibuat', 'Kelengkapan', 'Catatan Pemeriksaan',
+                                'Status Kegiatan', 'Sumber', 'Dibuat', 'Kelengkapan', 'Temuan Pemeriksaan',
+                                'Catatan BA',
                                 'File URL', 'Base File URL'];
                             const rows = this.filteredDaftarBa.map((r) => ({
                                 'BA ID': r.id,
@@ -5035,7 +5314,8 @@
                                 'Sumber': r.sumber,
                                 'Dibuat': r.dibuat ? fmtTanggalWaktu(r.dibuat) : '',
                                 'Kelengkapan': r.lengkap ? 'Lengkap' : 'Draft',
-                                'Catatan Pemeriksaan': (r.flags || []).join('; '),
+                                'Temuan Pemeriksaan': (r.flags || []).join('; '),
+                                'Catatan BA': r.catatan || '',
                                 'File URL': r.fileUrl,
                                 'Base File URL': r.baseFileUrl
                             }));
@@ -5075,7 +5355,7 @@
                     this._loadXlsx().then(() => {
                         try {
                             const wb = XLSX.utils.book_new();
-                            const headers = ['Bagian', 'Blok', 'Nama Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Catatan Pemeriksaan', 'File URL'];
+                            const headers = ['Bagian', 'Blok', 'Nama Kegiatan', 'Jumlah Sesi', 'Status Kegiatan', 'Sesi Ke', 'BA ID', 'Tanggal', 'Jam', 'Dosen', 'Peserta', 'Jadwal ID', 'Status Jadwal', 'Status Sesi', 'Temuan Pemeriksaan', 'File URL'];
                             const rows = this.baAuditExportRows();
                             const ws = rows.length
                                 ? XLSX.utils.json_to_sheet(rows, { header: headers })
