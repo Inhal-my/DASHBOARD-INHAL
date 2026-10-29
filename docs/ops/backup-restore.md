@@ -43,12 +43,29 @@ ada di `docs/ops/arsitektur-dan-failover.md`.
 |---|---|---|
 | `CLOUDFLARE_API_TOKEN` | token dengan izin D1 read/export | sudah ada |
 | `CLOUDFLARE_ACCOUNT_ID` | `e2efd255f61d2b81c7f54c92eb57b946` | sudah ada |
-| `DRIVE_BRIDGE_URL` | nilai `GAS_DRIVE_URL` produksi | **perlu ditambahkan** |
-| `DRIVE_BRIDGE_TOKEN` | nilai `GAS_DRIVE_TOKEN` produksi | **perlu ditambahkan** |
-| `BACKUP_PASSPHRASE` | frasa sandi ≥ 12 karakter untuk enkripsi arsip Drive | **perlu ditambahkan** |
+| `DRIVE_BRIDGE_URL` | nilai `GAS_DRIVE_URL` produksi | sudah ada |
+| `DRIVE_BRIDGE_TOKEN` | nilai `GAS_DRIVE_TOKEN` produksi | sudah ada |
+| `BACKUP_PASSPHRASE` | frasa sandi ≥ 12 karakter untuk enkripsi arsip Drive | sudah ada |
 
 Selama `DRIVE_BRIDGE_URL` atau `BACKUP_PASSPHRASE` kosong, langkah cermin ke
 Drive dilewati dan hanya lapis 1–2 yang aktif. Workflow tetap sukses.
+
+Langkah cermin **tidak** memakai `continue-on-error`, jadi kegagalan Drive
+membuat job merah dan issue otomatis dibuka. Ini disengaja: sebelumnya
+`continue-on-error` menyembunyikan kegagalan 404 selama berhari-hari.
+
+### Bentuk `DRIVE_BRIDGE_URL` yang diterima
+
+`scripts/mirror-drive-backup.mjs` menormalkan URL sebelum memanggil bridge:
+
+- spasi dan kutip pembungkus (`"`, `'`, `` ` ``) dibuang — nilai yang disalin
+  dari UI sering ikut membawa kutip sehingga Google menjawab `404 Page Not Found`;
+- bentuk domain Workspace `https://script.google.com/a/macros/<domain>/s/<id>/exec`
+  ditulis ulang menjadi bentuk publik `https://script.google.com/macros/s/<id>/exec`.
+
+Bentuk `/a/macros/<domain>/...` menjawab 404 bila dipanggil dari IP datacenter
+(runner GitHub Actions), sedangkan bentuk publik menjawab 200 untuk deployment
+yang sama. Karena itu secret sebaiknya diisi bentuk publik.
 
 `BACKUP_PASSPHRASE` **wajib disimpan juga di luar GitHub** (pengelola sandi
 lembaga). Tanpa frasa itu arsip Drive tidak bisa dibuka — tidak ada mekanisme
@@ -280,19 +297,21 @@ node scripts/backup-report.mjs /tmp/out
 
 ## Checklist verifikasi Fase 1
 
-- [ ] Secret `DRIVE_BRIDGE_URL`, `DRIVE_BRIDGE_TOKEN`, `BACKUP_PASSPHRASE` terpasang.
-- [ ] Run manual **Backup D1** sukses dan artefak bisa diunduh.
-- [ ] Arsip muncul di folder Drive (`DRIVE_FOLDER_ID`) dan berupa `.enc`.
+- [x] Secret `DRIVE_BRIDGE_URL`, `DRIVE_BRIDGE_TOKEN`, `BACKUP_PASSPHRASE` terpasang.
+- [x] Run manual **Backup D1** sukses dan artefak bisa diunduh.
+- [x] Arsip muncul di folder Drive (`DRIVE_FOLDER_ID`) dan berupa `.enc`.
 - [ ] `node scripts/decrypt-backup.mjs` berhasil membuka arsip yang diunduh.
-- [ ] `manifest.json` menampilkan `size.status` dan `uploads.contentBytes` sesuai kenyataan.
+- [x] `manifest.json` menampilkan `size.status` dan `uploads.contentBytes` sesuai kenyataan.
 - [ ] Run kedua memangkas arsip lebih dari 3 hari (cek jumlah berkas di Drive).
 - [ ] Drill lokal prosedur D selesai dan jumlah tabel inti cocok dengan manifest.
 - [ ] **TODO sebelum 2026-11-04**: artefak `restore-drill-evidence` (drill staging
   2026-10-21) kedaluwarsa pada tanggal itu. Jalankan drill ulang lewat
   **Restore Drill Staging** atau prosedur D, lalu catat hasilnya di bagian
   *Catatan uji* agar bukti tidak ikut kedaluwarsa.
-- [ ] **TODO**: ukur `SELECT COUNT(*), SUM(LENGTH(content)) FROM uploads` di produksi
+- [x] **TODO**: ukur `SELECT COUNT(*), SUM(LENGTH(content)) FROM uploads` di produksi
   dan catat di log — angka ini menentukan apakah pembersihan kolom lama diperlukan.
+  Hasil run 2026-10-29: `uploads` **0 baris**, `content` **0.00 MB** → tidak ada
+  data berkas lama yang perlu dibersihkan.
 
 ## Catatan uji
 
@@ -431,6 +450,40 @@ node scripts/backup-report.mjs /tmp/out
 - Belum dijalankan terhadap produksi: menunggu secret `DRIVE_BRIDGE_URL`,
   `DRIVE_BRIDGE_TOKEN`, dan `BACKUP_PASSPHRASE`. Setelah terpasang, jalankan
   `workflow_dispatch` satu kali lalu centang checklist Fase 1 di atas.
+
+### 2026-10-29 (backup Fase 1: workflow akhirnya berjalan + cermin Drive hidup)
+
+- **Workflow tidak pernah berjalan.** `BACKUP_DIR: ${{ runner.temp }}/backup`
+  diletakkan di `env` tingkat job. Konteks `runner` hanya sah di dalam step,
+  sehingga GitHub menolak mem-parse workflow dan menampilkannya sebagai path
+  berkas mentah, bukan "Backup D1". Run tidak pernah tercipta. Diperbaiki dengan
+  memindahkan `BACKUP_DIR` ke `env` step *Siapkan direktori dan label*
+  (komit `181f590`). Setelah itu workflow muncul di API Actions dan 15 step hijau.
+- **Cermin Drive selalu gagal 404, tersembunyi oleh `continue-on-error`.**
+  Tiga percobaan diagnostik dari runner menunjukkan penyebab sebenarnya:
+  - `GET /exec` polos pun 404 → bukan soal method, body, ukuran, atau redirect;
+  - bentuk `/a/macros/umsu.ac.id/s/<id>/exec` → 404 "Page Not Found";
+  - bentuk publik `/macros/s/<id>/exec` → 200, termasuk POST 740 KB;
+  - panjang `DRIVE_BRIDGE_URL` = 126 karakter, padahal URL bersih 125 →
+    nilai secret menyimpan **kutip ganda nyasar di akhir** (`.../exec"`).
+  - Perbaikan: `scripts/mirror-drive-backup.mjs` membuang spasi/kutip pembungkus
+    (`cleanSecretValue`) dan menormalkan URL domain Workspace ke bentuk publik
+    (`normalizeBridgeUrl`). Token juga dibersihkan dengan cara yang sama.
+- `continue-on-error` pada langkah cermin dihapus agar kegagalan Drive membuat
+  job merah dan issue otomatis dibuka, bukan lolos diam-diam.
+- Uji regresi ditambah di `scripts/__tests__/backup-github-actions.node.mjs`
+  (31 test total): normalisasi URL, kutip nyasar pada URL/token, dan pemeriksaan
+  bahwa `env` tingkat job workflow tidak memakai konteks `runner`/`steps`.
+  Uji terakhir sudah diverifikasi gagal bila bug lama dikembalikan.
+- Hasil run `main` #40841596372 (label `20261029-0822`): `{"ok": true}`, empat
+  arsip terunggah ke Drive — dump `569.638` B, snapshot `64.629` B, XLSX
+  `1.569.724` B, manifest `2.773` B — masing-masing dengan `fileId` nyata.
+  Ringkasan: dump 0.54 MB, sha256 `9AC25BBE1BAA3A60…`, integritas `ok`,
+  2.852 baris, verifikasi bisnis LULUS, ukuran 0.17 MB dari batas 500 MB.
+- Catatan: `uploads` 0 baris dan `content` 0.00 MB, jadi TODO pengukuran
+  `uploads` terjawab — tidak ada pembersihan kolom lama yang diperlukan.
+- Belum diverifikasi: `decrypt-backup.mjs` terhadap arsip Drive yang diunduh,
+  dan pemangkasan retensi 3 hari pada run kedua (perlu menunggu arsip menua).
 
 ### 2026-10-29 (produksi: paginasi detail laporan)
 
