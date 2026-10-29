@@ -431,3 +431,31 @@ node scripts/backup-report.mjs /tmp/out
 - Belum dijalankan terhadap produksi: menunggu secret `DRIVE_BRIDGE_URL`,
   `DRIVE_BRIDGE_TOKEN`, dan `BACKUP_PASSPHRASE`. Setelah terpasang, jalankan
   `workflow_dispatch` satu kali lalu centang checklist Fase 1 di atas.
+
+### 2026-10-29 (produksi: paginasi detail laporan)
+
+- Deploy produksi paginasi per tabel di `/detail-laporan.html` (commit
+  `e1bb7a6`): versi Worker `6161ee41-5bd7-4a7b-97cc-82fb547bdf3c`, health
+  produksi 200 (`{"ok":true,"db":"ok","latencyMs":51}`).
+- Deploy lewat workflow **Deploy Production** (`workflow_dispatch`, run
+  `40820292719`) dan seluruh langkah sukses: Tests, Release tooling tests,
+  CSP sync, Show pending migrations, Deploy production, Smoke check.
+- `apply_migrations` = `false`; `wrangler d1 migrations list inhal-poc --remote`
+  → "No migrations to apply!". Langkah "Record Time Travel bookmark" dilewati
+  karena tidak ada migrasi, jadi tidak ada bookmark baru pada rilis ini.
+- Perubahan yang terpasang: paginasi 11 tabel + kartu mobile di
+  `detail-laporan.html` (state `pagers`, komponen `PagerBar`, `bagianPagedSections`
+  agar Subtotal tetap utuh), reset halaman saat filter berubah, dan ekspor
+  tetap memakai data penuh.
+- Aset: `/detail-laporan.html` 433.691 byte, `SHA-256` produksi identik dengan
+  berkas lokal (`6A50A099C150D831…`) dan memuat `pager-bar`. 5 hash inline
+  script pada header CSP produksi identik dengan `public/_headers`.
+- Smoke test: `/api/health` 200, `/detail-laporan.html` 200, `/dashboard` 200,
+  `/bagian` 200, `/portal` 200, `/` 302.
+- Catatan proses: CI sempat gagal di `test/backup-config.test.js` karena masih
+  menuntut binding `[[workflows]]`/`[[r2_buckets]]` yang sudah dihapus; uji
+  disesuaikan pada commit `e1bb7a6`. Deploy dipicu via GitHub API
+  `workflow_dispatch` karena `.cf_token` lokal ditolak Cloudflare
+  (`Invalid access token [code: 9109]`) dan `CLOUDFLARE_API_TOKEN` tidak ada di
+  mesin lokal; secret Actions tetap valid.
+- Verifikasi visual responsif 1440/1280/390 px untuk pager belum dijalankan.
