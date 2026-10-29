@@ -25,6 +25,30 @@ function argOf(argv, name, fallback) {
   return found ? found.slice(prefix.length) : fallback;
 }
 
+/**
+ * Membersihkan nilai yang disalin dari UI/berkas: spasi dan kutip pembungkus
+ * sering ikut tersimpan pada secret. Nilai seperti `"https://.../exec"` atau
+ * `https://.../exec"` akan membuat Google menjawab 404 "Page Not Found".
+ */
+export function cleanSecretValue(raw) {
+  return String(raw === undefined || raw === null ? '' : raw).replace(/^[\s"'`]+|[\s"'`]+$/g, '');
+}
+
+/**
+ * Menormalkan URL Drive Bridge ke bentuk publik `/macros/s/<id>/exec`.
+ *
+ * Deployment Apps Script pada domain Workspace memakai bentuk
+ * `/a/macros/<domain>/s/<id>/exec`. Bentuk itu menjawab 404 "Page Not Found"
+ * bila dipanggil dari IP datacenter (mis. runner GitHub Actions), sedangkan
+ * bentuk publik tetap 200. Keduanya menunjuk deployment yang sama, jadi URL
+ * dinormalkan agar backup tidak bergantung pada bentuk URL yang tersimpan.
+ */
+export function normalizeBridgeUrl(raw) {
+  const url = cleanSecretValue(raw);
+  const cocok = url.match(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/([A-Za-z0-9_-]+)\/exec(\?.*)?$/);
+  return cocok ? 'https://script.google.com/macros/s/' + cocok[1] + '/exec' : url;
+}
+
 function usage(message) {
   console.error(message);
   console.error('Pemakaian: node scripts/mirror-drive-backup.mjs --label=<YYYYMMDD-HHmm> --index-dir=<dir>');
@@ -34,10 +58,10 @@ function usage(message) {
 }
 
 async function callBridge(config, payload) {
-  const res = await fetch(config.url, {
+  const res = await fetch(normalizeBridgeUrl(config.url), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ token: config.token }, payload))
+    body: JSON.stringify(Object.assign({ token: cleanSecretValue(config.token) }, payload))
   });
   let data = {};
   try { data = await res.json(); } catch (err) { data = {}; }

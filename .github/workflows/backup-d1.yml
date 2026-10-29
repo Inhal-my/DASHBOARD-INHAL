@@ -101,7 +101,6 @@ jobs:
 
       - name: Cermin terenkripsi ke Google Drive
         if: ${{ env.DRIVE_BRIDGE_URL != '' && env.BACKUP_PASSPHRASE != '' }}
-        continue-on-error: true
         env:
           INDEX_DIR: ${{ runner.temp }}/drive-index
         run: |

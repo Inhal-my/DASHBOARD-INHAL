@@ -1,12 +1,62 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { encryptBuffer, decryptBuffer } from '../backup-crypto.mjs';
-import { selectExpired, remainingEntries } from '../mirror-drive-backup.mjs';
+import { selectExpired, remainingEntries, normalizeBridgeUrl, cleanSecretValue } from '../mirror-drive-backup.mjs';
 import { PLAN_LIMITS, sizeStatus, stamp } from '../backup-snapshot.mjs';
 import { limitState, buildLines } from '../backup-report.mjs';
 
 const PASSPHRASE = 'passphrase-uji-lokal-123';
+
+test('URL Drive Bridge domain Workspace dinormalkan ke bentuk publik', () => {
+  const id = 'AKfycbxwaFSaFkMiK5OGNNi4yK8eUVKx1l7KG-Dvs8WalYqwBtRAZSoR4ZtmMXvnMu26V8Ri';
+  const publik = 'https://script.google.com/macros/s/' + id + '/exec';
+
+  assert.equal(normalizeBridgeUrl('https://script.google.com/a/macros/umsu.ac.id/s/' + id + '/exec'), publik);
+  assert.equal(normalizeBridgeUrl('  https://script.google.com/a/macros/umsu.ac.id/s/' + id + '/exec  '), publik);
+  assert.equal(normalizeBridgeUrl(publik), publik);
+  assert.equal(normalizeBridgeUrl('https://contoh.test/bridge'), 'https://contoh.test/bridge');
+  assert.equal(normalizeBridgeUrl(''), '');
+  assert.equal(normalizeBridgeUrl(null), '');
+});
+
+test('kutip pembungkus pada nilai secret dibuang sebelum dipakai', () => {
+  const id = 'AKfycbxwaFSaFkMiK5OGNNi4yK8eUVKx1l7KG-Dvs8WalYqwBtRAZSoR4ZtmMXvnMu26V8Ri';
+  const publik = 'https://script.google.com/macros/s/' + id + '/exec';
+  const workspace = 'https://script.google.com/a/macros/umsu.ac.id/s/' + id + '/exec';
+
+  // Kasus nyata: secret tersimpan sebagai `.../exec"` sehingga Google menjawab 404.
+  assert.equal(normalizeBridgeUrl(workspace + '"'), publik);
+  assert.equal(normalizeBridgeUrl('"' + workspace + '"'), publik);
+  assert.equal(normalizeBridgeUrl("'" + workspace + "'"), publik);
+  assert.equal(normalizeBridgeUrl(publik + '"'), publik);
+  assert.equal(normalizeBridgeUrl('  ' + publik + '  '), publik);
+
+  assert.equal(cleanSecretValue('token-rahasia"'), 'token-rahasia');
+  assert.equal(cleanSecretValue('"token-rahasia"'), 'token-rahasia');
+  assert.equal(cleanSecretValue('token-rahasia'), 'token-rahasia');
+  assert.equal(cleanSecretValue(''), '');
+  assert.equal(cleanSecretValue(undefined), '');
+});
+
+test('workflow backup tidak memakai konteks runner di env tingkat job', () => {
+  const workflow = readFileSync(new URL('../../../.github/workflows/backup-d1.yml', import.meta.url), 'utf8');
+  const baris = workflow.split(/\r?\n/);
+
+  // `runner` hanya sah di dalam step, sehingga env tingkat job tidak boleh memakainya.
+  const awalEnvJob = baris.findIndex((b) => /^ {4}env:\s*$/.test(b));
+  assert.notEqual(awalEnvJob, -1, 'blok env tingkat job tidak ditemukan');
+
+  const envJob = [];
+  for (let i = awalEnvJob + 1; i < baris.length; i += 1) {
+    if (/^ {4}\S/.test(baris[i])) break;
+    envJob.push(baris[i]);
+  }
+
+  assert.equal(envJob.some((b) => b.includes('runner.')), false, 'runner tidak boleh dipakai di env tingkat job');
+  assert.equal(envJob.some((b) => b.includes('BACKUP_DIR')), false, 'BACKUP_DIR diatur pada step, bukan env job');
+});
 
 test('enkripsi arsip dapat dibuka kembali dengan frasa sandi yang sama', () => {
   const plain = Buffer.from('dump rahasia ' + 'x'.repeat(120), 'utf8');
