@@ -2,6 +2,7 @@ node_modules/
 
 # Rahasia lokal (jangan pernah di-commit)
 .cf_token
+.cf_account
 .dev.vars
 .dev.vars.*
 .env
