@@ -1,16 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import wrangler from '../wrangler.toml?raw';
+import wranglerProduction from '../wrangler.production.toml?raw';
 import indexSource from '../src/index.js?raw';
+import backupSnapshot from '../scripts/backup-snapshot.mjs?raw';
+import backupReport from '../scripts/backup-report.mjs?raw';
 
 describe('konfigurasi backup', () => {
-  it('mendaftarkan Workflow harian dan binding R2', () => {
-    expect(wrangler).toContain('[[workflows]]');
-    expect(wrangler).toContain('binding = "BACKUP_WORKFLOW"');
-    expect(wrangler).toContain('class_name = "BackupWorkflow"');
-    expect(wrangler).toContain('schedules = ["0 1 * * *"]');
-    expect(wrangler).toContain('[[r2_buckets]]');
-    expect(wrangler).toContain('binding = "BACKUP_BUCKET"');
-    expect(wrangler).toContain('bucket_name = "inhal-poc-backups"');
+  it('tidak lagi memakai Cloudflare Workflow maupun binding R2', () => {
+    const configs = [['wrangler.toml', wrangler], ['wrangler.production.toml', wranglerProduction]];
+    for (const [label, config] of configs) {
+      expect(config, label).not.toContain('[[workflows]]');
+      expect(config, label).not.toContain('BACKUP_WORKFLOW');
+      expect(config, label).not.toContain('[[r2_buckets]]');
+      expect(config, label).not.toContain('BACKUP_BUCKET');
+    }
+  });
+
+  it('menunjuk backup harian ke workflow GitHub Actions', () => {
+    for (const config of [wrangler, wranglerProduction]) {
+      expect(config).toContain('.github/workflows/backup-d1.yml');
+    }
+  });
+
+  it('menyediakan skrip snapshot dan ringkasan backup', () => {
+    expect(backupSnapshot).toContain('manifest.json');
+    expect(backupReport).toContain('backup-report');
   });
 
   it('mengekspor kelas BackupWorkflow dari entry Worker', () => {
@@ -19,7 +33,9 @@ describe('konfigurasi backup', () => {
   });
 
   it('tidak menyimpan token API di konfigurasi', () => {
-    expect(wrangler).not.toContain('D1_REST_API_TOKEN');
-    expect(wrangler).not.toContain('Bearer ');
+    for (const config of [wrangler, wranglerProduction]) {
+      expect(config).not.toContain('D1_REST_API_TOKEN');
+      expect(config).not.toContain('Bearer ');
+    }
   });
 });
