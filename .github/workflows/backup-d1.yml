@@ -38,7 +38,6 @@ jobs:
       DRIVE_BRIDGE_URL: ${{ secrets.DRIVE_BRIDGE_URL }}
       DRIVE_BRIDGE_TOKEN: ${{ secrets.DRIVE_BRIDGE_TOKEN }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
-      BACKUP_DIR: ${{ runner.temp }}/backup
       BACKUP_RETENTION_DAYS: '3'
     steps:
       - uses: actions/checkout@v4
@@ -53,8 +52,11 @@ jobs:
         run: npm ci
 
       - name: Siapkan direktori dan label
+        env:
+          BACKUP_DIR: ${{ runner.temp }}/backup
         run: |
           mkdir -p "$BACKUP_DIR/out"
+          echo "BACKUP_DIR=$BACKUP_DIR" >> "$GITHUB_ENV"
           echo "BACKUP_LABEL=$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_ENV"
 
       - name: Catat versi Worker dan bookmark Time Travel
