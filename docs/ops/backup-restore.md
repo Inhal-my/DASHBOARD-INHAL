@@ -450,8 +450,8 @@ node scripts/backup-report.mjs /tmp/out
 - Aset: `/detail-laporan.html` 433.691 byte, `SHA-256` produksi identik dengan
   berkas lokal (`6A50A099C150D831…`) dan memuat `pager-bar`. 5 hash inline
   script pada header CSP produksi identik dengan `public/_headers`.
-- Smoke test: `/api/health` 200, `/detail-laporan.html` 200, `/dashboard` 200,
-  `/bagian` 200, `/portal` 200, `/` 302.
+- Smoke test: `/api/health` 200, `/detail-laporan.html` 307 → `/detail-laporan`
+  200, `/dashboard` 200, `/bagian` 200, `/portal` 200, `/` 302.
 - Catatan proses: CI sempat gagal di `test/backup-config.test.js` karena masih
   menuntut binding `[[workflows]]`/`[[r2_buckets]]` yang sudah dihapus; uji
   disesuaikan pada commit `e1bb7a6`. Deploy dipicu via GitHub API
