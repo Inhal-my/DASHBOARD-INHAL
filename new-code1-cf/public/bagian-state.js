@@ -535,6 +535,118 @@
     return normText(parts.join(' ')).indexOf(q) !== -1;
   }
 
+  var KALENDER_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+  function pad2(n) {
+    return (Number(n) < 10 ? '0' : '') + Number(n);
+  }
+
+  function kalenderMonthLabel(year, month) {
+    var mo = Number(month);
+    if (!(mo >= 1 && mo <= 12)) return '-';
+    return KALENDER_BULAN[mo - 1] + ' ' + Number(year);
+  }
+
+  function sortKalenderEntries(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var da = dateOnly(a && a.Tanggal);
+      var db = dateOnly(b && b.Tanggal);
+      if (da !== db) return da < db ? -1 : 1;
+      var ja = String((a && a.Jam) || '');
+      var jb = String((b && b.Jam) || '');
+      if (ja !== jb) return ja < jb ? -1 : 1;
+      return String((a && a.Bagian) || '').localeCompare(String((b && b.Bagian) || ''));
+    });
+  }
+
+  function kalenderMonthEntries(entries, year, month) {
+    var prefix = Number(year) + '-' + pad2(month);
+    var out = (entries || []).filter(function (e) {
+      return dateOnly(e && e.Tanggal).slice(0, 7) === prefix;
+    });
+    return sortKalenderEntries(out);
+  }
+
+  function filterKalenderEntries(entries, opts) {
+    var o = opts || {};
+    var bagian = normText(o.bagian);
+    var q = normText(o.query);
+    return (entries || []).filter(function (e) {
+      if (!e) return false;
+      if (bagian && normText(e.Bagian) !== bagian) return false;
+      if (!q) return true;
+      var parts = [e.Bagian, e.Blok, 'blok ' + String(e.Blok || ''), e.NamaKegiatan, e.Dosen, e.Jam];
+      return normText(parts.join(' ')).indexOf(q) !== -1;
+    });
+  }
+
+  function kalenderBagianOptions(entries, options) {
+    var o = options || {};
+    var categories = o.categories || ['SGD', 'KKD', 'Ujian', 'Praktikum'];
+    var labs = o.labs || [];
+    var map = {};
+    var order = [];
+    (entries || []).forEach(function (e) {
+      var label = String((e && e.Bagian) || '').trim();
+      if (!label) return;
+      var key = normText(label);
+      if (!map[key]) {
+        map[key] = { value: label, label: label, count: 0 };
+        order.push(key);
+      }
+      map[key].count += 1;
+    });
+    function rank(label) {
+      var key = normText(label);
+      var i = categories.map(normText).indexOf(key);
+      if (i !== -1) return i;
+      var j = labs.map(normText).indexOf(key);
+      if (j !== -1) return 100 + j;
+      return 500;
+    }
+    return order.map(function (k) { return map[k]; }).sort(function (a, b) {
+      var ra = rank(a.label);
+      var rb = rank(b.label);
+      if (ra !== rb) return ra - rb;
+      return a.label.localeCompare(b.label);
+    });
+  }
+
+  function buildKalenderCells(entries, year, month, today) {
+    var y = Number(year);
+    var mo = Number(month);
+    if (!y || !(mo >= 1 && mo <= 12)) return [];
+    var offset = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7; // Senin = 0
+    var daysInMonth = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+    var total = Math.ceil((offset + daysInMonth) / 7) * 7;
+    var byDate = {};
+    (entries || []).forEach(function (e) {
+      var key = dateOnly(e && e.Tanggal);
+      if (!key) return;
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(e);
+    });
+    var start = Date.UTC(y, mo - 1, 1 - offset);
+    var todayKey = dateOnly(today);
+    var cells = [];
+    for (var i = 0; i < total; i++) {
+      var d = new Date(start + i * 86400000);
+      var iso = d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+      var items = sortKalenderEntries(byDate[iso] || []);
+      cells.push({
+        date: iso,
+        day: d.getUTCDate(),
+        month: d.getUTCMonth() + 1,
+        inMonth: (d.getUTCFullYear() === y) && ((d.getUTCMonth() + 1) === mo),
+        isToday: !!todayKey && iso === todayKey,
+        items: items,
+        count: items.length
+      });
+    }
+    return cells;
+  }
+
   root.BagianState = {
     normText: normText,
     dateOnly: dateOnly,
@@ -562,6 +674,12 @@
     buildStats: buildStats,
     buildBlokProgress: buildBlokProgress,
     sortByDate: sortByDate,
-    matchesQuery: matchesQuery
+    matchesQuery: matchesQuery,
+    kalenderMonthLabel: kalenderMonthLabel,
+    sortKalenderEntries: sortKalenderEntries,
+    kalenderMonthEntries: kalenderMonthEntries,
+    filterKalenderEntries: filterKalenderEntries,
+    kalenderBagianOptions: kalenderBagianOptions,
+    buildKalenderCells: buildKalenderCells
   };
 })(typeof window !== 'undefined' ? window : globalThis);

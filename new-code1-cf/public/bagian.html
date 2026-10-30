@@ -58,6 +58,30 @@
         .detail-back { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .75rem; background: #f8fafc; color: #475569; }
         .riwayat-cards { display: block; }
         .riwayat-table { display: none; }
+        .kal-nav { display: inline-flex; align-items: center; justify-content: center; width: 2.15rem; height: 2.15rem; border-radius: .75rem; background: #f8fafc; color: #475569; box-shadow: inset 0 0 0 1.5px #e2e8f0; }
+        .kal-nav:active { background: #eef2ff; }
+        .kal-month { font-size: .98rem; font-weight: 800; color: #0f172a; }
+        .kal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; }
+        .kal-dow { padding: .35rem 0; text-align: center; font-size: .62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
+        .kal-cell { display: flex; flex-direction: column; gap: .2rem; min-height: 5.25rem; border-radius: .85rem; background: #f8fafc; padding: .35rem; box-shadow: inset 0 0 0 1px #eef2f7; }
+        .kal-cell.is-out { background: #fff; opacity: .45; }
+        .kal-cell.is-today { background: #eef2ff; box-shadow: inset 0 0 0 2px #4f46e5; }
+        .kal-daynum { font-size: .7rem; font-weight: 800; color: #64748b; }
+        .kal-cell.is-today .kal-daynum { color: #4338ca; }
+        .kal-ev { display: flex; width: 100%; align-items: center; gap: .25rem; overflow: hidden; border-radius: .45rem; background: #fff; padding: .15rem .3rem; text-align: left; font-size: .62rem; font-weight: 700; color: #334155; box-shadow: inset 0 0 0 1px #e2e8f0; }
+        .kal-ev:hover { box-shadow: inset 0 0 0 1px #c7d2fe; }
+        .kal-ev-dot { width: .4rem; height: .4rem; flex: none; border-radius: 999px; }
+        .kal-ev-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .kal-more { font-size: .6rem; font-weight: 700; color: #94a3b8; }
+        .kal-legend { display: flex; flex-wrap: wrap; gap: .35rem .75rem; font-size: .68rem; font-weight: 600; color: #64748b; }
+        .kal-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+        .kal-dot { width: .5rem; height: .5rem; border-radius: 999px; }
+        .kal-agenda-row { display: flex; width: 100%; align-items: flex-start; gap: .65rem; border-radius: .9rem; background: #fff; padding: .6rem .7rem; text-align: left; box-shadow: inset 0 0 0 1px #eef2f7; }
+        .kal-agenda-row:hover { box-shadow: inset 0 0 0 1px #c7d2fe; }
+        .kal-agenda-row .kal-dot { margin-top: .35rem; }
+        @media (max-width: 639.98px) {
+            .kal-month-grid { display: none; }
+        }
         @media (min-width: 940px) {
             .app-main { padding-bottom: 2rem; }
             .top-nav { display: flex; }
@@ -275,6 +299,98 @@
                                 </button>
                             </div>
                         </div>
+                    </section>
+
+                    <!-- ===== KALENDER LINTAS BAGIAN (READ-ONLY) ===== -->
+                    <section v-else-if="activeTab==='kalender'" class="space-y-5">
+                        <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100 sm:p-5">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-calendar3"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <h2 class="text-base font-bold text-slate-900">Kalender Pelaksanaan</h2>
+                                    <p class="text-xs text-slate-400">Seluruh bagian: SGD, KKD, Ujian, dan semua Lab · hanya baca</p>
+                                </div>
+                                <span class="chip bg-slate-100 text-slate-500"><i class="bi bi-lock"></i> Read-only</span>
+                            </div>
+                            <div class="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800 ring-1 ring-amber-100">
+                                <i class="bi bi-info-circle mt-0.5"></i>
+                                <span>Kalender ini hanya untuk pemantauan seluruh bagian. Untuk membuat atau mengubah jadwal, buka menu <b>Jadwal</b> pada halaman bagian masing-masing.</span>
+                            </div>
+                            <div class="mt-4 flex flex-wrap items-center gap-2">
+                                <button type="button" class="kal-nav" aria-label="Bulan sebelumnya" @click="kalenderPrev"><i class="bi bi-chevron-left"></i></button>
+                                <div class="kal-month">{{ kalenderMonthLabel }}</div>
+                                <button type="button" class="kal-nav" aria-label="Bulan berikutnya" @click="kalenderNext"><i class="bi bi-chevron-right"></i></button>
+                                <button type="button" class="btn-soft !py-2 text-xs" @click="kalenderToday">Hari ini</button>
+                                <button type="button" class="btn-soft !py-2 text-xs" :disabled="kalender.loading" @click="loadKalender"><i class="bi bi-arrow-clockwise"></i> Muat Ulang</button>
+                                <div class="ml-auto text-xs text-slate-400">{{ kalenderMonthCount }} jadwal bulan ini</div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                <input v-model="q" type="search" class="input !py-2 text-sm" style="max-width: 18rem" placeholder="Cari kegiatan, dosen, blok...">
+                                <button type="button" class="chip" :class="kalenderFilter==='semua' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="setKalenderFilter('semua')">Semua</button>
+                                <button v-for="b in kalenderBagianOptions" :key="'kal-' + b.value" type="button" class="chip" :class="kalenderFilter===b.value ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'" @click="setKalenderFilter(b.value)">
+                                    <span class="kal-dot" :style="{ background: kalenderColor({ Bagian: b.value }) }"></span> {{ b.label }} · {{ b.count }}
+                                </button>
+                            </div>
+                            <div v-if="kalenderLegend.length" class="kal-legend mt-3">
+                                <span v-for="l in kalenderLegend" :key="'leg-' + l.label"><span class="kal-dot" :style="{ background: l.color }"></span>{{ l.label }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="kalender.loading" class="rounded-2xl bg-white p-6 text-center text-sm text-slate-500 shadow-soft ring-1 ring-slate-100">
+                            <i class="bi bi-arrow-repeat"></i> Memuat kalender seluruh bagian...
+                        </div>
+                        <div v-else-if="kalender.error" class="rounded-2xl bg-rose-50 p-5 text-sm text-rose-700 ring-1 ring-rose-100">
+                            <div class="font-semibold">Gagal memuat kalender.</div>
+                            <div class="mt-1 text-xs">{{ kalender.error }}</div>
+                            <button type="button" class="btn-soft mt-3 !py-2 text-xs" @click="loadKalender"><i class="bi bi-arrow-clockwise"></i> Coba lagi</button>
+                        </div>
+                        <template v-else>
+<div class="kal-month-grid rounded-2xl bg-white p-3 shadow-soft ring-1 ring-slate-100 sm:p-4">
+                                <div class="kal-grid">
+                                    <div v-for="d in kalenderDow" :key="'dow-' + d" class="kal-dow">{{ d }}</div>
+                                </div>
+                                <div class="kal-grid mt-1">
+                                    <div v-for="c in kalenderCells" :key="'cell-' + c.date" class="kal-cell" :class="{ 'is-out': !c.inMonth, 'is-today': c.isToday }">
+                                        <div class="kal-daynum">{{ c.day }}</div>
+                                        <button v-for="ev in c.items.slice(0, 2)" :key="'ev-' + c.date + '-' + ev.JadwalID + '-' + ev.Bagian" type="button" class="kal-ev" :title="ev.Bagian + ' · ' + ev.NamaKegiatan" @click="openKalenderEvent(ev)">
+                                            <span class="kal-ev-dot" :style="{ background: kalenderColor(ev) }"></span>
+                                            <span class="kal-ev-text">{{ ev.Jam ? ev.Jam + ' ' : '' }}{{ ev.NamaKegiatan }}</span>
+                                        </button>
+                                        <div v-if="c.count > 2" class="kal-more">+{{ c.count - 2 }} kegiatan lain</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="section-title !mb-0"><i class="bi bi-list-check"></i> Agenda {{ kalenderMonthLabel }}</div>
+                                    <span class="ml-auto text-xs text-slate-400">{{ kalenderMonthCount }} kegiatan</span>
+                                </div>
+                                <div v-if="!kalenderAgenda.length" class="mt-3 rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
+                                    Belum ada jadwal pada filter ini.
+                                </div>
+                                <div v-else class="mt-3 space-y-4">
+                                    <div v-for="g in kalenderAgenda" :key="'ag-' + g.date">
+                                        <div class="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                            <span>{{ kalenderWeekday(g.date) }}, {{ formatTanggal(g.date) }}</span>
+                                            <span v-if="g.date === kalenderTodayIso" class="chip bg-brand-50 text-brand-700">Hari ini</span>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <button v-for="ev in g.items" :key="'agr-' + g.date + '-' + ev.JadwalID + '-' + ev.Bagian" type="button" class="kal-agenda-row" @click="openKalenderEvent(ev)">
+                                                <span class="kal-dot" :style="{ background: kalenderColor(ev) }"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="truncate text-sm font-semibold text-slate-900">{{ ev.NamaKegiatan }}</div>
+                                                    <div class="text-[11px] text-slate-400">
+                                                        <span class="font-semibold text-slate-500">{{ ev.Bagian }}</span> · Blok {{ ev.Blok }}<template v-if="ev.Jam"> · {{ ev.Jam }}</template><template v-if="ev.Dosen"> · {{ ev.Dosen }}</template>
+                                                    </div>
+                                                </div>
+                                                <span v-if="ev.punyaBa" class="chip bg-emerald-50 text-emerald-700">BA</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </section>
 
                     <!-- ===== WORKSPACE ===== -->
@@ -792,6 +908,39 @@
             </div>
         </div>
 
+        <!-- ===== DETAIL KALENDER (READ-ONLY) ===== -->
+        <transition name="fade">
+            <div v-if="kalender.selected" class="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+                <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" @click="closeKalenderEvent"></div>
+                <div class="safe-b relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-lift sm:rounded-3xl">
+                    <div class="flex items-start gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-calendar3"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <div class="truncate text-base font-bold text-slate-900">{{ kalender.selected.NamaKegiatan }}</div>
+                            <div class="text-xs text-slate-400">{{ kalender.selected.Bagian }} · Blok {{ kalender.selected.Blok }}</div>
+                        </div>
+                        <button type="button" class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500" aria-label="Tutup detail kalender" @click="closeKalenderEvent"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <div><div class="label">Tanggal</div><div class="value">{{ formatTanggal(kalender.selected.Tanggal) }}</div></div>
+                        <div><div class="label">Jam</div><div class="value">{{ kalender.selected.Jam || '-' }}</div></div>
+                        <div><div class="label">Dosen</div><div class="value">{{ kalender.selected.Dosen || '-' }}</div></div>
+                        <div><div class="label">Peserta</div><div class="value">{{ kalender.selected.jumlahPeserta }} orang</div></div>
+                        <div><div class="label">Bagian</div><div class="value">{{ kalender.selected.Bagian }}</div></div>
+                        <div><div class="label">Berita Acara</div><div class="value">{{ kalender.selected.punyaBa ? 'Sudah ada' : 'Belum ada' }}</div></div>
+                    </div>
+                    <div class="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-500 ring-1 ring-slate-100">
+                        <i class="bi bi-lock mt-0.5"></i>
+                        <span>Kalender bersifat hanya baca. Perubahan jadwal dilakukan lewat menu <b>Jadwal</b> pada halaman bagian {{ kalender.selected.Bagian }}.</span>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2">
+                        <button v-if="kalenderOwnEvent(kalender.selected) && kalenderEventInJadwal(kalender.selected)" type="button" class="btn-primary flex-1" @click="openKalenderEventInJadwal(kalender.selected)"><i class="bi bi-pencil-square"></i> Kelola di menu Jadwal</button>
+                        <button type="button" class="btn-soft flex-1" @click="closeKalenderEvent">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
         <!-- ===== KONFIRMASI BERITA ACARA ===== -->
         <transition name="slide">
             <div v-if="ba.confirm" class="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -914,10 +1063,16 @@
                     navItems: [
                         { id: 'ringkasan', label: 'Ringkasan', icon: 'bi-house' },
                         { id: 'jadwal', label: 'Jadwal', icon: 'bi-calendar-plus' },
+                        { id: 'kalender', label: 'Kalender', icon: 'bi-calendar3' },
                         { id: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
                         { id: 'riwayat', label: 'Riwayat', icon: 'bi-clock-history' }
                     ],
                     jadwal: { open: false, editingId: null, kegiatanKey: null, tanggal: '', jam: '', dosen: '', catatan: '', selected: {} },
+                    kalender: { loaded: false, loading: false, error: '', entries: [], selected: null },
+                    kalenderYear: new Date().getFullYear(),
+                    kalenderMonth: new Date().getMonth() + 1,
+                    kalenderFilter: 'semua',
+                    kalenderDow: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
                     dosenPick: { jadwal: false, ba: false, lengkapi: false },
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
@@ -960,6 +1115,55 @@
                         .filter(function (j) { return B.dateOnly(j.Tanggal) >= today; })
                         .sort(function (a, b) { return String(a.Tanggal).localeCompare(String(b.Tanggal)); })
                         .slice(0, 5);
+                },
+                kalenderTodayIso() {
+                    return window.BagianState.dateOnly(new Date().toISOString());
+                },
+                kalenderMonthLabel() {
+                    return window.BagianState.kalenderMonthLabel(this.kalenderYear, this.kalenderMonth);
+                },
+                kalenderFilteredEntries() {
+                    const B = window.BagianState;
+                    return B.filterKalenderEntries(this.kalender.entries, {
+                        bagian: this.kalenderFilter === 'semua' ? '' : this.kalenderFilter,
+                        query: this.q
+                    });
+                },
+                kalenderBagianOptions() {
+                    return window.BagianState.kalenderBagianOptions(this.kalender.entries, {
+                        categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'],
+                        labs: this.config.labOptions || []
+                    });
+                },
+                kalenderLegend() {
+                    return this.kalenderBagianOptions.map(function (b) {
+                        return { label: b.label, count: b.count, color: this.kalenderColor({ Bagian: b.label }) };
+                    }.bind(this));
+                },
+                kalenderCells() {
+                    return window.BagianState.buildKalenderCells(
+                        this.kalenderFilteredEntries, this.kalenderYear, this.kalenderMonth, this.kalenderTodayIso
+                    );
+                },
+                kalenderMonthCount() {
+                    return window.BagianState.kalenderMonthEntries(
+                        this.kalenderFilteredEntries, this.kalenderYear, this.kalenderMonth
+                    ).length;
+                },
+                kalenderAgenda() {
+                    const B = window.BagianState;
+                    const list = B.kalenderMonthEntries(this.kalenderFilteredEntries, this.kalenderYear, this.kalenderMonth);
+                    const groups = [];
+                    for (const e of list) {
+                        const date = B.dateOnly(e.Tanggal);
+                        let g = groups.length ? groups[groups.length - 1] : null;
+                        if (!g || g.date !== date) {
+                            g = { date: date, items: [] };
+                            groups.push(g);
+                        }
+                        g.items.push(e);
+                    }
+                    return groups;
                 },
                 selectedItem() {
                     const kind = this.sel && this.sel.kind;
@@ -1380,6 +1584,7 @@
                     this.writeCache();
                     this.loadBaConfig();
                     this.$nextTick(function () { this.ensureSelection(); }.bind(this));
+                    if (this.kalender.loaded && !this.kalender.loading) this.loadKalender();
                 },
                 loadBaConfig() {
                     this.run('getBaginaConfig')
@@ -1714,7 +1919,95 @@
                     if (t === 'ba') this.baTabFilter = o.filter || 'semua';
                     if (t === 'riwayat') this.fBlok = o.blok || '';
                     if (o.blok && t === 'ba') this.fBlok = o.blok;
+                    if (t === 'kalender') this.ensureKalender();
                     window.scrollTo(0, 0);
+                },
+                ensureKalender() {
+                    if (this.kalender.loading || this.kalender.loaded) return;
+                    this.loadKalender();
+                },
+                async loadKalender() {
+                    if (this.kalender.loading) return;
+                    this.kalender.loading = true;
+                    this.kalender.error = '';
+                    try {
+                        const res = await this.run('getKalenderBagianPelaksanaan');
+                        if (!res || !res.ok) {
+                            this.kalender.error = (res && res.message) || 'Gagal memuat kalender.';
+                            return;
+                        }
+                        this.kalender.entries = Array.isArray(res.entries) ? res.entries : [];
+                        this.kalender.loaded = true;
+                    } catch (e) {
+                        this.kalender.error = (e && e.message) ? e.message : String(e);
+                    } finally {
+                        this.kalender.loading = false;
+                    }
+                },
+                kalenderShift(delta) {
+                    let month = this.kalenderMonth + Number(delta || 0);
+                    let year = this.kalenderYear;
+                    while (month < 1) { month += 12; year -= 1; }
+                    while (month > 12) { month -= 12; year += 1; }
+                    this.kalenderMonth = month;
+                    this.kalenderYear = year;
+                },
+                kalenderPrev() { this.kalenderShift(-1); },
+                kalenderNext() { this.kalenderShift(1); },
+                kalenderToday() {
+                    const d = new Date();
+                    this.kalenderYear = d.getFullYear();
+                    this.kalenderMonth = d.getMonth() + 1;
+                },
+                setKalenderFilter(value) {
+                    this.kalenderFilter = value || 'semua';
+                },
+                kalenderColor(ev) {
+                    const key = window.BagianState.normText(ev && ev.Bagian);
+                    const fixed = {
+                        sgd: '#4f46e5', kkd: '#0891b2', ujian: '#e11d48', praktikum: '#059669'
+                    };
+                    if (fixed[key]) return fixed[key];
+                    const palette = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#db2777', '#7c3aed', '#0ea5e9', '#65a30d'];
+                    let hash = 0;
+                    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 9973;
+                    return palette[hash % palette.length];
+                },
+                kalenderWeekday(v) {
+                    const iso = window.BagianState.dateOnly(v);
+                    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    if (!m) return '';
+                    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+                    return ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][d.getUTCDay()] || '';
+                },
+                openKalenderEvent(ev) {
+                    if (!ev) return;
+                    this.kalender.selected = ev;
+                },
+                closeKalenderEvent() {
+                    this.kalender.selected = null;
+                },
+                kalenderOwnEvent(ev) {
+                    if (!ev) return false;
+                    const B = window.BagianState;
+                    if (B.normText(this.kategori) === 'praktikum') {
+                        const sub = B.normText(this.subBagian);
+                        return !sub || B.normText(ev.Bagian) === sub;
+                    }
+                    return B.normText(ev.Bagian) === B.normText(this.kategori);
+                },
+                kalenderEventInJadwal(ev) {
+                    if (!ev) return null;
+                    return this.jadwalItems.find(function (i) {
+                        return i.kind === 'jadwal' && i.key === ev.JadwalID;
+                    }) || null;
+                },
+                openKalenderEventInJadwal(ev) {
+                    if (!ev || !this.kalenderOwnEvent(ev)) return;
+                    const target = this.kalenderEventInJadwal(ev);
+                    this.closeKalenderEvent();
+                    this.setTab('jadwal');
+                    if (target) this.selectItem('jadwal', target.key);
                 },
                 toggleJadwalPeserta(idPengajuan) {
                     this.jadwal.selected[idPengajuan] = !this.jadwal.selected[idPengajuan];
@@ -2044,6 +2337,8 @@
                     this.mobileDetail = false;
                     this.q = '';
                     this.formDirty = false;
+                    this.kalender = { loaded: false, loading: false, error: '', entries: [], selected: null };
+                    this.kalenderFilter = 'semua';
                     this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalIds: [], jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', label: '', catatan: '', file: null, fileName: '', selected: {}, includePendukung: false, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
                 }
             },

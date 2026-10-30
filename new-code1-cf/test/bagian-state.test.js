@@ -304,3 +304,72 @@ describe('bagian-state helpers', () => {
     expect(tanpaBaris.ditolak.map((p) => p.idPengajuan)).toEqual(['p5']);
   });
 });
+const kalenderEntries = [
+  { JadwalID: 'k2', Bagian: 'SGD', Blok: '1', NamaKegiatan: 'SGD Neurologi', Tanggal: '2026-10-20', Jam: '08:00', Dosen: 'Dr. A', readOnly: true },
+  { JadwalID: 'k1', Bagian: 'KKD', Blok: '2', NamaKegiatan: 'KKD Farmasi', Tanggal: '2026-10-20', Jam: '09:00', Dosen: 'Dr. B', readOnly: true },
+  { JadwalID: 'k3', Bagian: 'Lab Farmasi', Blok: '3', NamaKegiatan: 'Praktikum Farmasi', Tanggal: '2026-10-05', Jam: '13:00', Dosen: 'Dr. C', readOnly: true },
+  { JadwalID: 'k4', Bagian: 'Ujian', Blok: '1', NamaKegiatan: 'UAS', Tanggal: '2026-11-02', Jam: '10:00', Dosen: '', readOnly: true }
+];
+
+describe('bagian-state kalender helpers', () => {
+  it('memberi label bulan dan mengurutkan entri lintas bagian', async () => {
+    const S = await loadState();
+    expect(S.kalenderMonthLabel(2026, 10)).toBe('Oktober 2026');
+    expect(S.kalenderMonthLabel(2026, 1)).toBe('Januari 2026');
+    expect(S.kalenderMonthLabel(2026, 0)).toBe('-');
+    expect(S.sortKalenderEntries(kalenderEntries).map((e) => e.JadwalID)).toEqual(['k3', 'k2', 'k1', 'k4']);
+    expect(S.sortKalenderEntries(null)).toEqual([]);
+  });
+
+  it('menyaring entri per bulan', async () => {
+    const S = await loadState();
+    expect(S.kalenderMonthEntries(kalenderEntries, 2026, 10).map((e) => e.JadwalID)).toEqual(['k3', 'k2', 'k1']);
+    expect(S.kalenderMonthEntries(kalenderEntries, 2026, 11).map((e) => e.JadwalID)).toEqual(['k4']);
+    expect(S.kalenderMonthEntries(kalenderEntries, 2026, 9)).toEqual([]);
+  });
+
+  it('memfilter entri per bagian dan kata kunci', async () => {
+    const S = await loadState();
+    expect(S.filterKalenderEntries(kalenderEntries, { bagian: 'KKD' }).map((e) => e.JadwalID)).toEqual(['k1']);
+    expect(S.filterKalenderEntries(kalenderEntries, { query: 'farmasi' }).map((e) => e.JadwalID)).toEqual(['k1', 'k3']);
+    expect(S.filterKalenderEntries(kalenderEntries, { query: 'dr. a' }).map((e) => e.JadwalID)).toEqual(['k2']);
+    expect(S.filterKalenderEntries(kalenderEntries, { bagian: 'SGD', query: 'farmasi' })).toEqual([]);
+    expect(S.filterKalenderEntries(kalenderEntries, {})).toHaveLength(4);
+  });
+
+  it('menyusun opsi filter bagian (kategori dulu, lalu lab)', async () => {
+    const S = await loadState();
+    const opts = S.kalenderBagianOptions(kalenderEntries, { labs: ['Lab Farmasi'] });
+    expect(opts.map((o) => o.value)).toEqual(['SGD', 'KKD', 'Ujian', 'Lab Farmasi']);
+    expect(opts.map((o) => o.count)).toEqual([1, 1, 1, 1]);
+    const tanpaLab = S.kalenderBagianOptions(kalenderEntries);
+    expect(tanpaLab.map((o) => o.value)).toEqual(['SGD', 'KKD', 'Ujian', 'Lab Farmasi']);
+  });
+
+  it('membangun sel grid bulanan Senin-pertama', async () => {
+    const S = await loadState();
+    const cells = S.buildKalenderCells(kalenderEntries, 2026, 10, '2026-10-05');
+    // 1 Oktober 2026 = Kamis -> offset 3 hari (Senin = 0), 31 hari -> 5 baris (35 sel)
+    expect(cells).toHaveLength(35);
+    expect(cells[0].date).toBe('2026-09-28');
+    expect(cells[0].inMonth).toBe(false);
+    expect(cells[3].date).toBe('2026-10-01');
+    expect(cells[3].day).toBe(1);
+    expect(cells[3].inMonth).toBe(true);
+
+    const hariKosong = S.buildKalenderCells([], 2026, 10, '2026-10-05');
+    expect(hariKosong).toHaveLength(35);
+    expect(hariKosong.every((c) => c.count === 0)).toBe(true);
+
+    const tanggal5 = cells.find((c) => c.date === '2026-10-05');
+    expect(tanggal5.isToday).toBe(true);
+    expect(tanggal5.items.map((e) => e.JadwalID)).toEqual(['k3']);
+
+    const tanggal20 = cells.find((c) => c.date === '2026-10-20');
+    expect(tanggal20.count).toBe(2);
+    expect(tanggal20.items.map((e) => e.JadwalID)).toEqual(['k2', 'k1']);
+
+    expect(S.buildKalenderCells(kalenderEntries, 0, 10, '')).toEqual([]);
+    expect(S.buildKalenderCells(kalenderEntries, 2026, 13, '')).toEqual([]);
+  });
+});

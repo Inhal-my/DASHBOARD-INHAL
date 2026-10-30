@@ -1,6 +1,7 @@
 import { getSession, authenticateAdmin, authenticateBagian, logoutSession, adminBagianBypass, requireAdmin, AUTH_ERROR } from './session.js';
 import { mfaStatus, mfaSetup, mfaEnable, mfaDisable } from './mfa/service.js';
 import { getBaginaConfig, getBagianBootstrap, getBeritaAcaraList } from './read/bagian.js';
+import { getKalenderBagianPelaksanaan } from './read/kalender.js';
 import { getLaporanBootstrap } from './read/laporan.js';
 import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList, getMasterOptions } from './repo.js';
 import { registerManualPengajuan } from './pengajuan.js';
@@ -50,6 +51,7 @@ const HANDLERS = {
   getBagianBaSettings: (db, args, ctx) => getBagianBaSettingsHandler(db, ctx),
   getBagianBootstrap: (db, args, ctx) => getBagianBootstrap(db, args[0], args[1], ctx),
   getBeritaAcaraList: (db, args, ctx) => getBeritaAcaraList(db, args[0], args[1], ctx),
+  getKalenderBagianPelaksanaan: (db, args, ctx) => getKalenderBagianPelaksanaan(db, ctx),
   getLaporanBootstrap: (db, args, ctx) => getLaporanBootstrap(db, ctx),
   getDashboardBootstrap: (db, args, ctx) => getDashboardBootstrap(db, ctx),
   getDashboardStats: (db, args, ctx) => getDashboardStats(db, ctx),
