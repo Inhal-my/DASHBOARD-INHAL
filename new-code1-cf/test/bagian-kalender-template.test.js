@@ -81,6 +81,20 @@ describe('bagian template kalender', () => {
     expect(section).toContain('buka menu');
   });
 
+  it('menampilkan nama peserta hanya untuk jadwal bagian sendiri', async () => {
+    const html = await loadBagianHtml();
+    const modal = kalenderModal(html);
+    // Peserta dirender dari jadwalList klien, dijaga oleh kalenderOwnEvent.
+    expect(modal).toContain('kalenderPeserta(kalender.selected)');
+    expect(modal).toContain('kalenderOwnEvent(kalender.selected)');
+    expect(modal).toContain('Rincian nama hanya tersedia di halaman bagian');
+    expect(html).toContain('kalenderPeserta(ev) {');
+    expect(html).toContain('sortKalenderPeserta');
+    // Tetap tanpa aksi edit di dalam modal kalender.
+    expect(modal).not.toContain('saveJadwalPelaksanaan');
+    expect(modal).not.toContain('toggleJadwalPeserta');
+  });
+
   it('membuka detail event lewat modal read-only', async () => {
     const html = await loadBagianHtml();
     const modal = kalenderModal(html);

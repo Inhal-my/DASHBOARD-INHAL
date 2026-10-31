@@ -79,6 +79,7 @@
         .kal-agenda-row { display: flex; width: 100%; align-items: flex-start; gap: .65rem; border-radius: .9rem; background: #fff; padding: .6rem .7rem; text-align: left; box-shadow: inset 0 0 0 1px #eef2f7; }
         .kal-agenda-row:hover { box-shadow: inset 0 0 0 1px #c7d2fe; }
         .kal-agenda-row .kal-dot { margin-top: .35rem; }
+        .kal-blok { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; border-radius: .4rem; background: #eef2ff; color: #4338ca; font-size: .62rem; font-weight: 800; padding: .1rem .3rem; }
         @media (max-width: 639.98px) {
             .kal-month-grid { display: none; }
         }
@@ -384,6 +385,7 @@
                                                         <span class="font-semibold text-slate-500">{{ ev.Bagian }}</span> · Blok {{ ev.Blok }}<template v-if="ev.Jam"> · {{ ev.Jam }}</template><template v-if="ev.Dosen"> · {{ ev.Dosen }}</template>
                                                     </div>
                                                 </div>
+                                                <span v-if="ev.jumlahPeserta" class="chip bg-slate-100 text-slate-500">{{ ev.jumlahPeserta }} peserta</span>
                                                 <span v-if="ev.punyaBa" class="chip bg-emerald-50 text-emerald-700">BA</span>
                                             </button>
                                         </div>
@@ -928,6 +930,23 @@
                         <div><div class="label">Peserta</div><div class="value">{{ kalender.selected.jumlahPeserta }} orang</div></div>
                         <div><div class="label">Bagian</div><div class="value">{{ kalender.selected.Bagian }}</div></div>
                         <div><div class="label">Berita Acara</div><div class="value">{{ kalender.selected.punyaBa ? 'Sudah ada' : 'Belum ada' }}</div></div>
+                    </div>
+                    <div v-if="kalenderPeserta(kalender.selected).length" class="mt-4">
+                        <div class="mb-1 flex flex-wrap items-center justify-between gap-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Peserta ({{ kalenderPeserta(kalender.selected).length }})</span>
+                            <span class="text-[11px] text-slate-400">Blok · Nama · NPM</span>
+                        </div>
+                        <div class="max-h-56 space-y-1.5 overflow-y-auto rounded-xl bg-slate-50 p-2 ring-1 ring-slate-100">
+                            <div v-for="p in kalenderPeserta(kalender.selected)" :key="'kp-' + (p.idPengajuan || '') + '-' + (p.npm || '')" class="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs shadow-sm">
+                                <span class="kal-blok">{{ p.blok || '-' }}</span>
+                                <span class="min-w-0 flex-1 truncate font-semibold text-slate-800">{{ p.namaLengkap }}</span>
+                                <span class="font-mono text-[11px] text-slate-400">{{ p.npm }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else-if="!kalenderOwnEvent(kalender.selected) && kalender.selected.jumlahPeserta > 0" class="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-500 ring-1 ring-slate-100">
+                        <i class="bi bi-people mt-0.5"></i>
+                        <span>{{ kalender.selected.jumlahPeserta }} peserta terdaftar. Rincian nama hanya tersedia di halaman bagian <b>{{ kalender.selected.Bagian }}</b>.</span>
                     </div>
                     <div class="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-500 ring-1 ring-slate-100">
                         <i class="bi bi-lock mt-0.5"></i>
@@ -1995,6 +2014,17 @@
                         return !sub || B.normText(ev.Bagian) === sub;
                     }
                     return B.normText(ev.Bagian) === B.normText(this.kategori);
+                },
+                /**
+                 * Peserta untuk modal kalender. Hanya tersedia untuk jadwal milik
+                 * bagian halaman ini (sumber: `jadwalList` dari bootstrap). Entri
+                 * bagian lain tetap read-only dan hanya menampilkan jumlah.
+                 */
+                kalenderPeserta(ev) {
+                    if (!ev || !this.kalenderOwnEvent(ev)) return [];
+                    const id = String(ev.JadwalID || '');
+                    const j = this.jadwalList.find(function (x) { return String(x.JadwalID) === id; });
+                    return window.BagianState.sortKalenderPeserta((j && j.peserta) || []);
                 },
                 kalenderEventInJadwal(ev) {
                     if (!ev) return null;

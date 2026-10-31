@@ -467,6 +467,23 @@
     });
   }
 
+  /**
+   * Daftar peserta kalender: urut blok lalu nama, entri tanpa nama dibuang.
+   * Dipakai modal detail kalender untuk menampilkan nama peserta jadwal milik
+   * bagian sendiri (data berasal dari `jadwalList` klien, bukan dari kalender).
+   */
+  function sortKalenderPeserta(list) {
+    return (list || [])
+      .filter(function (p) { return !!String((p && p.namaLengkap) || '').trim(); })
+      .slice()
+      .sort(function (a, b) {
+        var ba = normText(a && a.blok);
+        var bb = normText(b && b.blok);
+        if (ba !== bb) return ba < bb ? -1 : 1;
+        return String(a.namaLengkap).localeCompare(String(b.namaLengkap));
+      });
+  }
+
   function buildRiwayatItems(baList) {
     var items = (baList || []).filter(function (b) { return !!b.selesai; }).map(function (b) {
       return {
@@ -674,6 +691,7 @@
     buildStats: buildStats,
     buildBlokProgress: buildBlokProgress,
     sortByDate: sortByDate,
+    sortKalenderPeserta: sortKalenderPeserta,
     matchesQuery: matchesQuery,
     kalenderMonthLabel: kalenderMonthLabel,
     sortKalenderEntries: sortKalenderEntries,

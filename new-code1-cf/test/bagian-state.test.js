@@ -372,4 +372,18 @@ describe('bagian-state kalender helpers', () => {
     expect(S.buildKalenderCells(kalenderEntries, 0, 10, '')).toEqual([]);
     expect(S.buildKalenderCells(kalenderEntries, 2026, 13, '')).toEqual([]);
   });
+
+  it('mengurutkan peserta kalender per blok lalu nama', async () => {
+    const S = await loadState();
+    const list = S.sortKalenderPeserta([
+      { npm: '3', namaLengkap: 'Cici', blok: 'B' },
+      { npm: '1', namaLengkap: 'Ani', blok: 'A' },
+      { npm: '2', namaLengkap: 'Budi', blok: 'A' },
+      { npm: '4', namaLengkap: '   ', blok: 'A' },
+      { npm: '5', blok: 'C' }
+    ]);
+    expect(list.map((p) => p.npm)).toEqual(['1', '2', '3']);
+    expect(S.sortKalenderPeserta(null)).toEqual([]);
+    expect(S.sortKalenderPeserta([])).toEqual([]);
+  });
 });
