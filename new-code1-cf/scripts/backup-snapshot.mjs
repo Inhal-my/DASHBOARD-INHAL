@@ -5,6 +5,9 @@ import { pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { DatabaseSync } from 'node:sqlite';
 import { buildXlsx } from '../src/xlsxExport.js';
+import {
+  CSV_MANIFEST_FILE, buildCsvBlock, buildCsvManifest, csvDirName, csvFileName, toCsv
+} from './lib/backup-csv.mjs';
 
 /**
  * Membuat artefak pendamping dari dump D1:
@@ -139,6 +142,9 @@ function main() {
 
   const label = argOf(argv, 'label', stamp(new Date()));
   mkdirSync(outDir, { recursive: true });
+  const csvDir = join(outDir, csvDirName(label));
+  mkdirSync(csvDir, { recursive: true });
+  const csvEntries = [];
 
   const counts = {};
   const byTableBytes = {};
@@ -166,6 +172,19 @@ function main() {
     if (!SKIP_XLSX_TABLES.has(table) && kept.length) {
       xlsxTables.push({ name: table, columns: kept, rows: projected });
     }
+    if (kept.length) {
+      const csvBuffer = Buffer.from(toCsv(kept, projected), 'utf8');
+      const csvName = csvFileName(table);
+      writeFileSync(join(csvDir, csvName), csvBuffer);
+      csvEntries.push({
+        table: table,
+        file: csvName,
+        rows: projected.length,
+        columns: kept.length,
+        bytes: csvBuffer.length,
+        sha256: sha256(csvBuffer)
+      });
+    }
   }
 
   const totalBytes = Object.keys(byTableBytes).reduce((sum, key) => sum + byTableBytes[key], 0);
@@ -189,6 +208,12 @@ function main() {
   const xlsxName = label + '-database.xlsx';
   writeFileSync(join(outDir, xlsxName), xlsxBuffer);
 
+  const csvManifestBuffer = Buffer.from(buildCsvManifest(csvEntries), 'utf8');
+  writeFileSync(join(csvDir, CSV_MANIFEST_FILE), csvManifestBuffer);
+  const csvBlock = buildCsvBlock(label, csvEntries);
+  csvBlock.manifestBytes = csvManifestBuffer.length;
+  csvBlock.manifestSha256 = sha256(csvManifestBuffer);
+
   const manifest = {
     schemaVersion: 1,
     database: database,
@@ -209,6 +234,7 @@ function main() {
     counts: counts,
     totalRows: Object.keys(counts).reduce((sum, key) => sum + counts[key], 0),
     uploads: readUploads(db),
+    csv: csvBlock,
     excludedColumns: excludedColumns,
     size: {
       estimatedBytes: totalBytes,
@@ -233,6 +259,12 @@ function main() {
     counts: counts,
     uploads: manifest.uploads,
     size: { estimated: manifest.size.estimatedHuman, status: manifest.size.status, plan: limits.label },
+    csv: {
+      dir: csvBlock.dir,
+      tables: csvBlock.tables.length,
+      rows: csvBlock.totalRows,
+      bytes: csvBlock.totalBytes
+    },
     artifacts: manifest.artifacts
   }, null, 2));
 

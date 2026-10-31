@@ -123,9 +123,30 @@ Daftar kolom yang dikecualikan tercatat di `manifest.json`.
    - `inhal-poc.sql` — dump lengkap (sumber restore utama)
    - `out/<label>-snapshot.json.gz` — seluruh tabel dalam JSON
    - `out/<label>-database.xlsx` — rekap untuk dibuka tanpa aplikasi
-   - `out/manifest.json` — hash dan metrik
+   - `out/<label>-csv/` — satu CSV per tabel + `manifest.csv` (tabel, baris, kolom, byte, sha256).
+     Bentuk ini bisa dibaca tanpa parser SQL: `Utilities.parseCsv` (Apps Script),
+     `fgetcsv` (PHP), atau Excel. Kolom besar tetap dikecualikan seperti snapshot.
+   - `out/manifest.json` — hash dan metrik (memuat blok `csv`)
    - `out/verify.json` — hasil verifikasi bisnis
    - `deployments.json`, `time-travel.json` — konteks rilis (bila perintahnya tersedia)
+
+## Cold reader GAS (tahap 1)
+
+Bila Cloudflare/Worker tidak bisa diakses, arsip bisa diperiksa lewat Google
+Sheets tanpa aplikasi: `new-code1-cf/tools/gas-backup-reader/`
+(lihat `README.md` di folder itu untuk pemasangan).
+
+- **Cakupan tahap 1: hanya `manifest.json`** — jumlah baris per tabel, hash,
+  ukuran, status ambang. Tidak ada data pribadi yang dibaca atau disimpan.
+- Menu: Ringkasan Backup, Bandingkan Dua Backup, Runbook Restore (checklist
+  prosedur A–D), Catat Drill, Tentang & Akses.
+- Akses dibatasi `ALLOWLIST` di Script Properties (mendukung `*@domain`).
+- **GAS bukan pelaksana restore**: tidak ada jalur tulis ke D1 dan tidak ada
+  dekripsi arsip `.enc`. Restore tetap memakai `wrangler` di mesin operator.
+- Tahap 2 (membaca CSV, menelusuri data, menyusun paket SQL restore) menunggu
+  aksi bridge `saveFilePrivate` agar berkas berisi PII bisa disimpan privat di
+  Drive, bukan "anyone with the link".
+
 
 ## Ambang ukuran (Fase 1.5)
 

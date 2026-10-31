@@ -109,10 +109,17 @@ pengganti dan mengimpor dump.
 ## Yang belum dibangun (sengaja ditunda)
 
 1. **GAS cold reader** - pembaca darurat berbasis Apps Script yang menyajikan data
-   dari arsip Drive bila Worker mati. Ditunda sampai arsip harian terbukti jalan
-   minimal 3 hari berturut-turut dan drill lokal lulus. Syarat bila nanti
-   dibangun: hanya membaca (tanpa tulis), terpisah dari bridge produksi, dan tidak
-   menyimpan kredensial admin.
+   dari arsip Drive bila Worker mati.
+   - **Tahap 1 (tersedia):** `new-code1-cf/tools/gas-backup-reader/` membaca
+     `manifest.json` saja — ringkasan, perbandingan dua backup, runbook restore,
+     catatan drill. Tanpa data pribadi, tanpa tulis ke D1.
+   - **Tahap 2 (belum):** membaca CSV per tabel, menelusuri data, dan menyusun
+     paket SQL restore. Menunggu aksi bridge `saveFilePrivate` supaya berkas
+     berisi PII tersimpan privat di Drive (bukan "anyone with the link"), sebab
+     Apps Script tidak bisa mendekripsi arsip `.enc` (AES-GCM + scrypt).
+   - Syarat yang tetap berlaku: hanya membaca, terpisah dari bridge produksi, dan
+     tidak menyimpan kredensial admin.
+
 2. **Pembersihan `uploads.content`** - kolom base64 warisan skema lama. Penulis
    barunya (`saveUpload`) sudah tidak dipakai, tetapi baris lama masih dilayani
    `GET /api/files/:id`. Perlu pengukuran di produksi dulu sebelum dihapus.

@@ -84,6 +84,10 @@ jobs:
             --plan=${{ inputs.plan || 'free' }} \
             --database=inhal-poc
 
+      - name: Catat artefak CSV
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync(process.env.BACKUP_DIR+'/out/manifest.json','utf8'));console.log('CSV: '+m.csv.tables.length+' tabel, '+m.csv.totalRows+' baris, '+m.csv.totalBytes+' byte');"
+
       - name: Unggah artefak (retensi 3 hari)
         uses: actions/upload-artifact@v4
         with:
