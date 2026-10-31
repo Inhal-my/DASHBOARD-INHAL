@@ -10,6 +10,7 @@
     "import:sheets": "node scripts/import-sheets.mjs",
     "test": "vitest run",
     "test:local": "node scripts/test-local.mjs",
+    "app:local": "node scripts/local-app.mjs",
     "test:scripts": "node --test scripts/__tests__/*.node.mjs",
     "csp:generate": "node scripts/generate-csp.mjs",
     "csp:check": "node scripts/generate-csp.mjs --check",

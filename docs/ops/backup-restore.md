@@ -148,6 +148,46 @@ Sheets tanpa aplikasi: `new-code1-cf/tools/gas-backup-reader/`
   Drive, bukan "anyone with the link".
 
 
+## Membuka arsip di komputer lokal
+
+Ada dua cara, sesuai kebutuhan:
+
+| Cara | Perintah | Hasil |
+|---|---|---|
+| **Viewer CSV** (tanpa Node) | `php -S 127.0.0.1:8080 -t new-code1-cf/tools/backup-viewer` atau XAMPP | Membaca `out/<label>-csv/` di browser: daftar tabel, paginasi, pencarian, unduh CSV |
+| **Aplikasi asli** (UI identik produksi) | `npm run app:local -- --dump=<dump.sql>` | Worker lokal + D1 lokal berisi data dump; buka `http://127.0.0.1:8787` |
+
+### Viewer CSV (`tools/backup-viewer/`)
+
+1. Salin folder viewer ke `htdocs` XAMPP (atau jalankan `php -S`).
+2. Salin `out/<label>-csv/` hasil backup ke `tools/backup-viewer/data/<label>/`
+   (harus berisi `manifest.csv`).
+3. Buka `http://localhost/backup-viewer/`.
+
+Baca-saja: tidak ada penulisan, SQL, atau unggah. Akses dibatasi loopback
+(`127.0.0.0/8`, `::1`), `data/` diblok `.htaccess`, dan nama tabel divalidasi
+sebelum dipakai sebagai path. Rincian: `tools/backup-viewer/README.md`.
+
+### Aplikasi asli lokal (`npm run app:local`)
+
+Menjalankan kode Worker yang sama dengan produksi di atas D1 lokal, sehingga
+tampilan dan alurnya 100% sama tanpa menyentuh Cloudflare.
+
+```bash
+cd new-code1-cf
+npm run app:local -- --dump=~/restore/inhal-poc.sql   # impor dump lalu jalankan
+# opsi: --port=8787  --reset  --no-open  --no-import  --persist-to=<dir>
+```
+
+- Data lokal disimpan di `new-code1-cf/local-data/` (sudah masuk `.gitignore`).
+- Skrip **selalu** memakai `--local` dan menolak `--remote`.
+- Dump `wrangler d1 export` sudah memuat skema, jadi bootstrap `schema.sql`
+  dilewati saat impor dump (mencegah `table ... already exists`).
+- Tanpa `--dump`, skrip memakai berkas `.sql` terbaru di `local-data/backups/`.
+- Bila admin produksi memakai MFA, login lokal bisa terhalang. Pada **salinan
+  lokal** saja: `UPDATE admin_mfa SET enabled = 0;` (jangan pernah di produksi).
+- macOS: klik dua kali `Backup-INHAL.command` di akar repositori.
+
 ## Ambang ukuran (Fase 1.5)
 
 | Status | Ambang (Free) | Perilaku |

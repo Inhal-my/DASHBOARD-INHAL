@@ -2,6 +2,17 @@ node_modules/
 .wrangler/
 dist/
 
+# Data lokal hasil restore D1 (berisi data produksi, jangan pernah di-commit)
+/local-data/
+*.sqlite
+*.sqlite3
+*.enc
+
+# Arsip backup untuk viewer lokal (berisi data pribadi)
+/tools/backup-viewer/data/*
+!/tools/backup-viewer/data/.htaccess
+!/tools/backup-viewer/data/README.txt
+
 # Rahasia lokal untuk `wrangler dev` (jangan pernah di-commit)
 .dev.vars
 .dev.vars.*
