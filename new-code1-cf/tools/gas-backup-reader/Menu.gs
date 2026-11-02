@@ -10,6 +10,13 @@ function menuSpec() {
     { name: 'Ringkasan Backup…', fn: 'showSummary' },
     { name: 'Bandingkan Dua Backup…', fn: 'showCompare' },
     { separator: true },
+    { name: 'Impor CSV…', fn: 'showImportCsv' },
+    { name: 'Lanjutkan Impor', fn: 'showResumeImport' },
+    { name: 'Telusuri Data…', fn: 'showSearch' },
+    { name: 'Cek Berkas (sha256)…', fn: 'showChecksum' },
+    { name: 'Siapkan Paket Restore', fn: 'showRestorePackage' },
+    { name: 'Bersihkan Hasil Impor…', fn: 'clearImportedSheets' },
+    { separator: true },
     { name: 'Runbook Restore (Checklist)', fn: 'ensureChecklist' },
     { name: 'Catat Drill…', fn: 'recordDrill' },
     { separator: true },
@@ -26,7 +33,7 @@ function installMenu(ui) {
   menu.addToUi();
 }
 
-/** Daftar nama fungsi yang dipanggil menu — dipakai uji agar tidak ada salah ketik. */
+/** Daftar nama fungsi yang dipanggil menu — dipakai uji agar tidak salah ketik. */
 function menuFunctionNames() {
   return menuSpec()
     .filter(function (item) { return !item.separator; })

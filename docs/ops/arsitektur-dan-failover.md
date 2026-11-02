@@ -113,9 +113,11 @@ pengganti dan mengimpor dump.
    - **Tahap 1 (tersedia):** `new-code1-cf/tools/gas-backup-reader/` membaca
      `manifest.json` saja — ringkasan, perbandingan dua backup, runbook restore,
      catatan drill. Tanpa data pribadi, tanpa tulis ke D1.
-   - **Tahap 2 (belum):** membaca CSV per tabel, menelusuri data, dan menyusun
-     paket SQL restore. Menunggu aksi bridge `saveFilePrivate` supaya berkas
-     berisi PII tersimpan privat di Drive (bukan "anyone with the link"), sebab
+   - **Tahap 2 (tersedia, mode folder privat):** membaca CSV per tabel dari
+     folder privat (subfolder per label) lewat Script Property
+     `CSV_ROOT_FOLDER_ID`; impor bertahap, telusuri data, cek sha256, dan
+     susun paket SQL restore ke sheet. Unggah manual karena `saveFile` menandai
+     berkas "anyone with the link"; otomasi menunggu aksi `saveFilePrivate`.
      Apps Script tidak bisa mendekripsi arsip `.enc` (AES-GCM + scrypt).
    - Syarat yang tetap berlaku: hanya membaca, terpisah dari bridge produksi, dan
      tidak menyimpan kredensial admin.

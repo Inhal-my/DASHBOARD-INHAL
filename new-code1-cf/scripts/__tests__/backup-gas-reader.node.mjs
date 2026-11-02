@@ -196,9 +196,9 @@ test('drillRow menormalkan bukti drill dan menolak hasil kosong', () => {
 test('setiap fungsi pada menu benar-benar ada', () => {
   const g = loadReader();
   const names = g.menuFunctionNames();
-  assert.deepEqual(plain(names), ['showSummary', 'showCompare', 'ensureChecklist', 'recordDrill', 'showAbout']);
+  assert.deepEqual(plain(names), ['showSummary', 'showCompare', 'showImportCsv', 'showResumeImport', 'showSearch', 'showChecksum', 'showRestorePackage', 'clearImportedSheets', 'ensureChecklist', 'recordDrill', 'showAbout']);
   names.forEach((fn) => assert.equal(typeof g[fn], 'function', 'fungsi menu tidak ditemukan: ' + fn));
-  assert.equal(g.menuSpec().filter((i) => i.separator).length, 2);
+  assert.equal(g.menuSpec().filter((i) => i.separator).length, 3);
   assert.equal(g.READER_VERSION, '1.0.0');
 });
 

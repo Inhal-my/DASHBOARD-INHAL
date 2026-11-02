@@ -143,9 +143,12 @@ Sheets tanpa aplikasi: `new-code1-cf/tools/gas-backup-reader/`
 - Akses dibatasi `ALLOWLIST` di Script Properties (mendukung `*@domain`).
 - **GAS bukan pelaksana restore**: tidak ada jalur tulis ke D1 dan tidak ada
   dekripsi arsip `.enc`. Restore tetap memakai `wrangler` di mesin operator.
-- Tahap 2 (membaca CSV, menelusuri data, menyusun paket SQL restore) menunggu
-  aksi bridge `saveFilePrivate` agar berkas berisi PII bisa disimpan privat di
-  Drive, bukan "anyone with the link".
+- **Tahap 2 (tersedia, mode folder privat):** CSV diunggah manual ke folder
+  privat (shared drive) berisi subfolder per label; reader membacanya lewat
+  Script Property `CSV_ROOT_FOLDER_ID`. Rincian:
+  `new-code1-cf/tools/gas-backup-reader/README.md`.
+- Otomasi unggah menunggu aksi bridge `saveFilePrivate` karena `saveFile`
+  menandai berkas "anyone with the link".
 
 
 ## Membuka arsip di komputer lokal
