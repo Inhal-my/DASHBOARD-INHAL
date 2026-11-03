@@ -208,6 +208,12 @@
         .in-tab { display:flex; flex:1 1 0%; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; padding:.7rem 1rem; border-bottom:2.5px solid transparent; color:var(--ink-400); font-size:.8125rem; font-weight:700; transition:.15s ease; }
         .in-tab:hover { color:var(--ink-700); }
         .in-tab.is-active { color:var(--brand); border-bottom-color:var(--brand); }
+        .in-seg { display:inline-flex; gap:2px; padding:3px; border-radius:11px; background:#f1f5f9; }
+        .in-seg-btn { display:inline-flex; align-items:center; gap:6px; padding:.45rem .8rem; border-radius:9px; font-size:.75rem; font-weight:700; color:var(--ink-400); white-space:nowrap; transition:.15s ease; }
+        .in-seg-btn:hover { color:var(--ink-700); }
+        .in-seg-btn.is-active { background:#fff; color:var(--brand); box-shadow:var(--shadow-soft); }
+        .in-seg-n { border-radius:9999px; padding:0 .35rem; font-size:.625rem; font-weight:800; background:#e2e8f0; color:var(--ink-500); }
+        .in-seg-btn.is-active .in-seg-n { background:var(--brand-soft); color:var(--brand); }
         .in-statrow { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:15px; box-shadow:var(--shadow-soft); transition:.15s ease; }
         .in-statrow:hover { border-color:#cbd5e1; }
         .in-statrow .ic { width:42px; height:42px; border-radius:13px; display:grid; place-items:center; font-size:18px; flex:0 0 auto; }
@@ -265,6 +271,7 @@
         .in-proc .p .s { font-size:11px; color:var(--ink-400); }
         .in-proc .arrow { color:#cbd5e1; display:grid; place-items:center; font-size:16px; }
         .in-basum { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+        .in-basum.is-6 { grid-template-columns:repeat(6,minmax(0,1fr)); }
         .in-basum .b { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow-soft); text-align:left; transition:.15s; }
         .in-basum .b:hover { border-color:#cbd5e1; }
         .in-basum .k { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-400); }
@@ -272,7 +279,7 @@
         .in-basum .p { font-size:11px; font-weight:600; color:var(--ink-400); }
         .in-basum .n.rose { color:var(--rose); }
         .in-basum .n.emerald { color:var(--emerald); }
-        @media (max-width:1100px){ .in-basum { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media (max-width:1100px){ .in-basum { grid-template-columns:repeat(2,minmax(0,1fr)); } .in-basum.is-6 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         .in-heat-legend { display:flex; gap:12px; font-size:11px; color:var(--ink-500); margin-top:10px; }
         .in-heat-legend .dot { width:9px; height:9px; border-radius:99px; display:inline-block; margin-right:4px; }
         .panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
@@ -1411,34 +1418,65 @@
                             </div>
                         </div>
                         <template v-else>
-                        <div class="in-basum">
+                        <div class="in-basum is-6">
                             <div class="b"><div class="k">Kegiatan</div><div class="n">{{ baKegiatanRows.length }}</div><div class="p">baris kegiatan</div></div>
                             <div class="b"><div class="k">Peserta</div><div class="n">{{ baKegiatanPesertaTotal }}</div><div class="p">mahasiswa</div></div>
                             <div class="b"><div class="k">BA Pendukung</div><div class="n">{{ baKegiatanPendukungTotal }}</div><div class="p">sebelum keputusan</div></div>
                             <div class="b"><div class="k">BA Pelaksanaan</div><div class="n emerald">{{ baKegiatanPelaksanaanTotal }}</div><div class="p">setelah kegiatan</div></div>
                             <div class="b"><div class="k">Total BA</div><div class="n">{{ baKegiatanBaTotal }}</div><div class="p">pendukung + pelaksanaan</div></div>
-                            <div class="b"><div class="k">Multi-sesi</div><div class="n">{{ baAuditSummary.multiSesi }}</div><div class="p">{{ baAuditSummary.totalSesi }} sesi pelaksanaan</div></div>
+                            <div class="b"><div class="k">Multi-sesi</div><div class="n rose">{{ baAuditSummary.multiSesi }}</div><div class="p">{{ baAuditSummary.totalSesi }} sesi pelaksanaan</div></div>
+                        </div>
+                        <div v-if="baAntreanRows.length" class="lap-card p-4">
+                            <div class="mb-2 flex items-center gap-2">
+                                <i class="bi bi-exclamation-triangle-fill text-amber-500"></i>
+                                <h3 class="lap-card-title">Antrean Tindakan</h3>
+                                <span class="ml-auto text-[11px] font-semibold text-slate-400">{{ baAntreanRows.length }} kegiatan perlu ditindaklanjuti</span>
+                            </div>
+                            <div class="grid gap-3 md:grid-cols-3">
+                                <div v-for="u in baAntreanRows.slice(0, 3)" :key="'ant-' + u.key" class="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                                    <div class="text-[10.5px] font-bold uppercase tracking-wide" :class="!(u.baPendukung || []).length || !(u.baPelaksanaan || []).length ? 'text-rose-600' : 'text-amber-600'">{{ !(u.baPendukung || []).length || !(u.baPelaksanaan || []).length ? 'BA belum lengkap' : 'Perlu pemeriksaan' }}</div>
+                                    <div class="mt-1 text-xs font-bold text-slate-800">{{ u.label }}</div>
+                                    <div class="mt-0.5 text-[11px] text-slate-400">{{ u.bagian }} · Blok {{ u.blok || '-' }} · {{ (u.peserta || []).length }} peserta</div>
+                                    <div class="mt-2 flex flex-wrap gap-1">
+                                        <span class="lap-chip">Pendukung {{ (u.baPendukung || []).length }}</span>
+                                        <span class="lap-chip">Pelaksanaan {{ (u.baPelaksanaan || []).length }}</span>
+                                    </div>
+                                    <button type="button" class="mt-2 text-[11px] font-bold text-brand-700" @click="openBaKegiatan(u.key)">
+                                        <i class="bi bi-arrow-right-short"></i> Buka detail kegiatan
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-6">
+                                <div class="md:col-span-4">
                                     <label class="label">Bagian</label>
                                     <select v-model="baFilter.bagian" class="input">
                                         <option value="">Semua Bagian</option>
                                         <option v-for="o in bagianOptions" :key="o" :value="o">{{ o }}</option>
                                     </select>
                                 </div>
+                                <div class="flex items-end md:col-span-8 md:justify-end">
+                                    <div class="in-seg" role="tablist" aria-label="Lapis data berita acara">
+                                        <button type="button" role="tab" :aria-selected="baLayer === 'kegiatan' ? 'true' : 'false'" :class="baLayer === 'kegiatan' ? 'in-seg-btn is-active' : 'in-seg-btn'" @click="baLayer = 'kegiatan'">
+                                            <i class="bi bi-diagram-3"></i> Kegiatan <span class="in-seg-n">{{ baKegiatanRows.length }}</span>
+                                        </button>
+                                        <button type="button" role="tab" :aria-selected="baLayer === 'berkas' ? 'true' : 'false'" :class="baLayer === 'berkas' ? 'in-seg-btn is-active' : 'in-seg-btn'" @click="baLayer = 'berkas'">
+                                            <i class="bi bi-file-earmark-text"></i> Berkas BA <span class="in-seg-n">{{ filteredDaftarBa.length }}</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                                 <span class="lap-chip">{{ baKegiatanRows.length }} kegiatan</span>
                                 <span class="lap-chip">{{ baKegiatanBaTotal }} BA total</span>
                                 <span class="lap-chip">{{ baKegiatanPesertaTotal }} mahasiswa</span>
-                                <span class="lap-chip">{{ baAuditSummary.multiSesi }} multi-sesi</span>
+                                <span class="lap-chip">{{ filteredDaftarBa.length }} berkas BA</span>
                                 <span v-if="baAuditSummary.sesiEkstra" class="lap-chip">{{ baAuditSummary.sesiEkstra }} sesi ekstra</span>
                                 <span v-if="baAuditSummary.sesiDraft" class="lap-chip">{{ baAuditSummary.sesiDraft }} draft</span>
                             </div>
                         </div>
-                        <div class="overflow-hidden lap-card">
+                        <div class="overflow-hidden lap-card" v-show="baLayer === 'kegiatan'">
                             <div class="lap-card-head">
                                 <div>
                                     <div class="lap-card-title">Rekap Kegiatan, Realisasi &amp; Berita Acara</div>
@@ -1453,7 +1491,6 @@
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="w-8 px-3 py-2.5"></th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
                                             <th class="px-3 py-2.5 text-left">Kegiatan</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-left">Progres</th>
@@ -1462,7 +1499,6 @@
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Pendukung</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-center">Pelaksanaan</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-right">Biaya</th>
                                             <th class="whitespace-nowrap px-3 py-2.5 text-right">Aksi</th>
                                         </tr>
                                     </thead>
@@ -1472,7 +1508,6 @@
                                                 <td class="px-3 py-2.5 text-slate-400">
                                                     <i :class="expanded[r.key] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                                                 </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ r.bagian }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ r.blok || '-' }}</td>
                                                 <td class="px-3 py-2.5 font-semibold text-slate-800">{{ r.label }}</td>
                                                 <td class="px-3 py-2.5">
@@ -1490,7 +1525,6 @@
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.peserta || []).length }}</td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.baPendukung || []).length }}</td>
                                                 <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ (r.baPelaksanaan || []).length }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-slate-700">{{ fmtRupiah(baKegiatanBiaya(r)) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5">
                                                     <div class="flex flex-wrap justify-end gap-1">
                                                         <template v-for="(b, bi) in (r.baPendukung || [])" :key="'kp' + bi">
@@ -1513,7 +1547,7 @@
                                                 </td>
                                             </tr>
                                             <tr v-if="expanded[r.key]">
-                                                <td colspan="12" class="bg-slate-50/60 px-6 py-4">
+                                                <td colspan="10" class="bg-slate-50/60 px-6 py-4">
                                                     <div class="grid gap-4 lg:grid-cols-2">
                                                         <div>
                                                             <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (r.peserta || []).length }})</div>
@@ -1592,11 +1626,10 @@
                                         </template>
                                         <tr v-if="baKegiatanRows.length" class="bg-slate-200/70 font-extrabold">
                                             <td class="px-3 py-2.5"></td>
-                                            <td colspan="6" class="px-3 py-2.5 text-right text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
+                                            <td colspan="5" class="px-3 py-2.5 text-right text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
                                             <td class="px-3 py-2.5 text-center text-slate-700">{{ baKegiatanPesertaTotal }}</td>
                                             <td class="px-3 py-2.5 text-center text-slate-700">{{ baKegiatanPendukungTotal }}</td>
                                             <td class="px-3 py-2.5 text-center text-slate-700">{{ baKegiatanPelaksanaanTotal }}</td>
-                                            <td class="px-3 py-2.5 text-right text-teal-800">{{ fmtRupiah(baKegiatanGrandTotal) }}</td>
                                             <td class="px-3 py-2.5"></td>
                                         </tr>
                                     </tbody>
@@ -1608,7 +1641,7 @@
                                         <span class="font-semibold text-slate-800">{{ r.label }}</span>
                                         <span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{{ r.bagian }}</span>
                                     </div>
-                                    <div class="kv"><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Peserta</span><b>{{ (r.peserta || []).length }} mahasiswa</b><span>Masuk BA</span><b>{{ (r.counts && r.counts.final) || 0 }}/{{ (r.peserta || []).length }}</b><span>Biaya</span><b class="text-brand-700">{{ fmtRupiah(baKegiatanBiaya(r)) }}</b></div>
+                                    <div class="kv"><span>Blok</span><b>{{ r.blok || '-' }}</b><span>Peserta</span><b>{{ (r.peserta || []).length }} mahasiswa</b><span>Masuk BA</span><b>{{ (r.counts && r.counts.final) || 0 }}/{{ (r.peserta || []).length }}</b><span>BA</span><b class="text-brand-700">{{ (r.baPendukung || []).length }} pendukung · {{ (r.baPelaksanaan || []).length }} pelaksanaan</b></div>
                                     <div v-if="expanded[r.key]" class="mt-2 border-t border-slate-100 pt-2 text-xs">
                                         <div class="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (r.peserta || []).length }})</div>
                                         <div v-for="(p, pi) in r.peserta" :key="pi" class="flex flex-wrap items-center gap-2 py-0.5">
@@ -1639,7 +1672,7 @@
                                 <p class="mt-3 text-sm text-slate-400">Belum ada kegiatan.</p>
                             </div>
                         </div>
-                        <div class="overflow-hidden lap-card">
+                        <div class="overflow-hidden lap-card" v-show="baLayer === 'kegiatan'">
                             <div class="lap-card-head">
                                 <div>
                                     <div class="lap-card-title">Pemeriksaan BA Pelaksanaan</div>
@@ -1707,17 +1740,10 @@
                         </template>
                     </section>
 
-                    <!-- ===================== TAB: DAFTAR BA ===================== -->
-                    <section v-if="activeTab === 'daftarba'" class="space-y-4">
-                        <div class="in-basum">
-                            <div class="b"><div class="k">BA Terfilter</div><div class="n">{{ filteredDaftarBa.length }}</div><div class="p">pendukung + pelaksanaan</div></div>
-                            <div class="b"><div class="k">Lengkap</div><div class="n emerald">{{ daftarBaLengkapCount }}</div><div class="p">siap</div></div>
-                            <div class="b"><div class="k">Draft</div><div class="n">{{ daftarBaDraftCount }}</div><div class="p">belum lengkap</div></div>
-                            <div class="b"><div class="k">Unit Kegiatan</div><div class="n">{{ daftarBaUnitCount }}</div><div class="p">terkait</div></div>
-                        </div>
+                    <!-- ===================== LAPIS: BERKAS BA (dalam tab Berita Acara) ===================== -->
+                    <div v-if="!loading && activeTab === 'ba' && baLayer === 'berkas'" class="space-y-4">
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-3"><label class="label">Bagian</label><select v-model="baListFilter.bagian" class="input"><option value="">Semua Bagian</option><option v-for="o in daftarBaBagianOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Jenis BA</label><select v-model="baListFilter.jenis" class="input"><option value="">Semua Jenis</option><option v-for="o in daftarBaJenisOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Sumber</label><select v-model="baListFilter.sumber" class="input"><option value="">Semua Sumber</option><option v-for="o in daftarBaSumberOptions" :key="o" :value="o">{{ o }}</option></select></div>
                                 <div class="md:col-span-3"><label class="label">Dosen</label><select v-model="baListFilter.dosen" class="input"><option value="">Semua Dosen</option><option v-for="o in dosenOptions" :key="o" :value="o">{{ o }}</option></select></div>
@@ -1728,6 +1754,7 @@
                                 <span class="lap-chip">{{ filteredDaftarBa.length }} BA</span>
                                 <span class="lap-chip">{{ daftarBaLengkapCount }} lengkap</span>
                                 <span class="lap-chip">{{ daftarBaDraftCount }} draft</span>
+                                <span class="lap-chip">{{ daftarBaUnitCount }} unit kegiatan</span>
                             </div>
                         </div>
                         <div class="overflow-hidden lap-card">
@@ -1816,7 +1843,7 @@
                                 @go="pagerGo('daftarba', $event, filteredDaftarBa.length)"
                                 @size="pagerSetPerPage('daftarba', $event)"></pager-bar>
                         </div>
-                    </section>
+                    </div>
 
                     <!-- ===================== TAB: JADWAL VS REALISASI ===================== -->
                     <section v-if="activeTab === 'jadwal'" class="space-y-4">
@@ -2910,7 +2937,6 @@
                         { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
                         { key: 'bagian', label: 'Laporan Bagian', icon: 'bi-diagram-3' },
                         { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
-                        { key: 'daftarba', label: 'Daftar BA', icon: 'bi-list-check' },
                         { key: 'jadwal', label: 'Jadwal vs Realisasi', icon: 'bi-calendar2-check' },
                         { key: 'bayar', label: 'Data Pembayaran', icon: 'bi-cash-coin' }
                     ],
@@ -2941,7 +2967,8 @@
                     activeDosenCell: null,
                     bagianFilter: { bagian: '' },
                     baFilter: { bagian: '' },
-                    baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' },
+                    baLayer: 'kegiatan',
+                    baListFilter: { jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' },
                     jadwal: [],
                     jadwalFilter: { bagian: '', blok: '', from: '', to: '', status: '', q: '' },
                     bayarFilter: { kelengkapan: '' },
@@ -3818,6 +3845,17 @@
                 baKegiatanBaTotal() {
                     return this.baKegiatanPendukungTotal + this.baKegiatanPelaksanaanTotal;
                 },
+                baAntreanRows() {
+                    return this.baKegiatanRows.filter((u) => {
+                        if (!(u.baPendukung || []).length) return true;
+                        if (!(u.baPelaksanaan || []).length) return true;
+                        const a = u.baAudit;
+                        return !!(a && (a.sesiDraft || a.sesiEkstra || a.kemungkinanDuplikat || a.jadwalBelum));
+                    }).sort((a, b) => {
+                        const score = (u) => ((u.baAudit && (u.baAudit.sesiDraft + u.baAudit.sesiEkstra + u.baAudit.kemungkinanDuplikat + u.baAudit.jadwalBelum)) || 0) + ((u.baPendukung || []).length ? 0 : 2) + ((u.baPelaksanaan || []).length ? 0 : 2);
+                        return score(b) - score(a);
+                    });
+                },
                 baKegiatanPesertaTotal() {
                     const seen = {};
                     this.baKegiatanRows.forEach(r => (r.peserta || []).forEach(p => { const k = String(p.npm || '').trim(); if (k) seen[k] = 1; }));
@@ -3836,7 +3874,7 @@
                 },
                 filteredDaftarBa() {
                     const f = this.baListFilter;
-                    const bagian = f.bagian;
+                    const bagian = this.baFilter.bagian;
                     const blok = String(this.filters.blok || '').trim();
                     const fromD = this.filters.from ? this.dateVal(this.filters.from) : null;
                     const toD = this.filters.to ? this.dateVal(this.filters.to) : null;
@@ -3867,11 +3905,6 @@
                         return true;
                     });
                 },
-                daftarBaBagianOptions() {
-                    const set = {};
-                    this.daftarBaRows.forEach((r) => { if (r.bagian) set[r.bagian] = 1; });
-                    return Object.keys(set).sort((a, b) => a.localeCompare(b));
-                },
                 daftarBaJenisOptions() {
                     return ['Pendukung', 'Pelaksanaan'];
                 },
@@ -3894,7 +3927,7 @@
                     return Object.keys(set).length;
                 },
                 daftarBaUnitRows() {
-                    const bagian = this.baListFilter.bagian;
+                    const bagian = this.baFilter.bagian;
                     return (this.kegiatan || []).filter((u) => {
                         if (bagian && this.normBagian(u.bagian) !== this.normBagian(bagian)) return false;
                         return this.baUnitMatchesGlobal(u);
@@ -4038,7 +4071,11 @@
                 },
                 'dosenFilter.bagian': function () { this.activeDosenCell = null; this.pagers.dosen.page = 1; },
                 'dosenFilter.q': function () { this.activeDosenCell = null; this.pagers.dosen.page = 1; },
-                'baFilter.bagian': function () { this.pagers.baKegiatan.page = 1; this.pagers.baAudit.page = 1; },
+                'baFilter.bagian': function () { this.pagers.baKegiatan.page = 1; this.pagers.baAudit.page = 1; this.pagers.daftarba.page = 1; },
+                baLayer: function (v) {
+                    if (v === 'berkas') this.pagers.daftarba.page = 1;
+                    else { this.pagers.baKegiatan.page = 1; this.pagers.baAudit.page = 1; }
+                },
                 baListFilter: {
                     deep: true,
                     handler() { this.pagers.daftarba.page = 1; }
@@ -4720,6 +4757,10 @@
                 },
                 toggleExpand(id) {
                     this.expanded[id] = !this.expanded[id];
+                },
+                openBaKegiatan(key) {
+                    this.baLayer = 'kegiatan';
+                    this.expanded[key] = true;
                 },
                 matrixColTotal(bagianLabel) {
                     let t = 0;

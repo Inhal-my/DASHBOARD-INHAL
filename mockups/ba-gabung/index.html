@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup Gabungan Berita Acara — Galeri Konsep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="_mock.css">
+<style>
+  body{padding:28px 20px 70px;background:#eef1f6}
+  .wrap{max-width:1160px;margin:0 auto}
+  .hero{background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;border-radius:18px;padding:24px 26px}
+  .hero .k{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.16);padding:5px 11px;border-radius:999px}
+  .hero h1{font-size:25px;margin:13px 0 8px;letter-spacing:-.02em}
+  .hero p{margin:0;font-size:13.5px;line-height:1.65;opacity:.94;max-width:860px}
+  .problem{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .prob{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;padding:13px 15px}
+  .prob b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;opacity:.8}
+  .prob span{font-size:12.5px;line-height:1.6;opacity:.95}
+  .group{margin-top:30px}
+  .group h2{font-size:15px;margin-bottom:4px}
+  .group .gsub{font-size:12.5px;color:var(--slate-500);margin-bottom:14px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
+  .mcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
+  .thumb{height:210px;background:linear-gradient(160deg,#eef2ff,#f7f8fc);border-bottom:1px solid var(--line);overflow:hidden;position:relative}
+  .thumb .frame{position:absolute;top:10px;left:50%;transform:translateX(-50%) scale(.28);transform-origin:top center;width:1180px;height:760px;border:1px solid #0b1220;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 12px 30px -12px rgba(15,23,42,.4)}
+  .thumb iframe{width:100%;height:100%;border:0;display:block}
+  .mcard .body{padding:13px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .mcard .no{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+  .mcard h3{margin:0;font-size:15px}
+  .mcard p{margin:0;font-size:12.5px;color:var(--slate-500);line-height:1.55;flex:1}
+  .tagrow{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+  .tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--slate-100);color:var(--slate-600)}
+  .tag.p{background:var(--brand-50);color:var(--brand)}
+  .tag.g{background:var(--emerald-50);color:var(--emerald)}
+  .tag.a{background:var(--amber-50);color:var(--amber)}
+  .tag.r{background:var(--rose-50);color:var(--rose)}
+  .compare{margin-top:30px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .compare h2{font-size:15px;padding:15px 18px;border-bottom:1px solid var(--line)}
+  table.ct{width:100%;border-collapse:collapse}
+  table.ct th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--slate-400);padding:10px 14px;border-bottom:1px solid var(--line)}
+  table.ct td{padding:11px 14px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top;line-height:1.55}
+  table.ct tr:last-child td{border-bottom:0}
+  table.ct td:first-child{font-weight:800;white-space:nowrap}
+  table.ct tr.rec td{background:var(--brand-50)}
+  .checklist{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .cbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow)}
+  .cbox h4{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400);margin-bottom:8px}
+  .cbox ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--slate-600);line-height:1.75}
+  .fin{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow)}
+  .fin h2{font-size:15px;margin-bottom:8px}
+  .fin p{font-size:13px;color:var(--slate-600);line-height:1.7}
+  .footnote{margin-top:18px;text-align:center;font-size:12px;color:var(--slate-400)}
+  @media (max-width:860px){.problem{grid-template-columns:1fr}.checklist{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <span class="k">Mockup · data dummy</span>
+    <h1>Gabungan Tab Berita Acara &amp; Daftar BA</h1>
+    <p>Tiga arah desain untuk menyatukan tab <b>Berita Acara</b> dan <b>Daftar BA</b> menjadi satu tab yang melayani prinsip administrasi: jelas apa yang harus dikerjakan, jelas dokumen apa yang sudah ada, dan bisa diaudit.</p>
+    <div class="problem">
+      <div class="prob"><b>Masalah saat ini</b><span>Dua tab memakai filter yang sama, sehingga filter harus disetel ulang. Tab BA fokus ke kegiatan, tab Daftar BA fokus ke dokumen. Pengguna berpindah-pindah untuk satu keputusan.</span></div>
+      <div class="prob"><b>Target</b><span>Satu tab dengan filter tunggal. Pekerjaan harian (mengejar kelengkapan) menjadi tampilan utama; katalog dokumen tetap tersedia tanpa menjadi layar utama.</span></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>Empat konsep</h2>
+    <p class="gsub">Klik kartu untuk membuka versi layar penuh. Semua memakai data dummy yang sama: 9 kegiatan, 8 kegiatan dengan BA, 1 kegiatan belum mulai, plus 1 BA tanpa pengajuan. Konsep 04 adalah revisi dari diskusi: kolom Bagian/Blok/Biaya disembunyikan dan panel konteks Konsep 02 dipadukan.</p>
+    <div class="cards">
+      <a class="mcard" href="04-gabungan-kolom-ringkas.html">
+        <div class="thumb"><div class="frame"><iframe src="04-gabungan-kolom-ringkas.html?embed=1" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body">
+          <span class="no">Konsep 04 · revisi</span>
+          <h3>Gabungan: kolom ringkas + konteks</h3>
+          <p>Daftar kegiatan tanpa kolom Bagian, Blok, dan Biaya. Ketiganya pindah ke panel konteks kanan bersama peserta, syarat administrasi, dan daftar BA. Kolom tambahan bisa dinyalakan lewat menu <b>Kolom</b>.</p>
+          <div class="tagrow"><span class="tag p">Revisi terbaru</span><span class="tag g">Tabel ringkas</span><span class="tag">Konteks on demand</span></div>
+        </div>
+      </a>
+
+      <a class="mcard" href="01-satu-tab-dua-lapis.html">
+        <div class="thumb"><div class="frame"><iframe src="01-satu-tab-dua-lapis.html?embed=1" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body">
+          <span class="no">Konsep 01</span>
+          <h3>Satu tab, dua lapis</h3>
+          <p>Lapis <b>Kegiatan</b> dan lapis <b>Berkas BA</b> berbagi filter, pencarian, dan ekspor. Antrean tindakan di atas menandai kegiatan yang menghambat administrasi.</p>
+          <div class="tagrow"><span class="tag p">Rekomendasi</span><span class="tag g">Filter tunggal</span><span class="tag">Register ikut</span></div>
+        </div>
+      </a>
+
+      <a class="mcard" href="02-register-panel-konteks.html">
+        <div class="thumb"><div class="frame"><iframe src="02-register-panel-konteks.html?embed=1" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body">
+          <span class="no">Konsep 02</span>
+          <h3>Register + panel konteks</h3>
+          <p>Dokumen BA menjadi daftar utama. Klik baris untuk membuka panel kanan berisi kegiatan, peserta, dan berkas lain dalam kegiatan yang sama.</p>
+          <div class="tagrow"><span class="tag">Register-first</span><span class="tag">Konteks on demand</span><span class="tag a">Kegiatan tidak terlihat</span></div>
+        </div>
+      </a>
+
+      <a class="mcard" href="03-papan-alur.html">
+        <div class="thumb"><div class="frame"><iframe src="03-papan-alur.html?embed=1" loading="lazy" scrolling="no"></iframe></div></div>
+        <div class="body">
+          <span class="no">Konsep 03</span>
+          <h3>Papan alur administrasi</h3>
+          <p>Kegiatan dikelompokkan per tahap: belum pendukung, perlu pelaksanaan, perlu perbaikan, selesai. Klik kartu untuk melihat syarat administrasi yang belum terpenuhi.</p>
+          <div class="tagrow"><span class="tag g">Beban per tahap</span><span class="tag">Rapat mingguan</span><span class="tag r">Rincian tersembunyi</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="compare">
+    <h2>Perbandingan cepat</h2>
+    <table class="ct">
+      <thead><tr><th>Konsep</th><th>Kekuatan</th><th>Yang dikorbankan</th><th>Paling cocok untuk</th></tr></thead>
+      <tbody>
+        <tr class="rec"><td>04 Gabungan: kolom ringkas + konteks</td><td>Tabel ringkas tanpa Bagian/Blok/Biaya, konteks lengkap di panel kanan, kolom tambahan bisa dinyalakan</td><td>Panel konteks memakan ruang horizontal saat dibuka; di layar kecil menutupi tabel</td><td>Admin harian yang ingin daftar bersih tapi tetap butuh detail cepat</td></tr>
+        <tr><td>01 Satu tab, dua lapis</td><td>Filter &amp; pencarian tunggal, pekerjaan harian langsung terlihat, register dokumen tetap terjangkau satu klik</td><td>Perlu disiplin agar lapis Berkas BA tidak jadi duplikat rekap Kegiatan</td><td>Admin harian yang mengejar kelengkapan sekaligus mengelola dokumen</td></tr>
+        <tr><td>02 Register + panel konteks</td><td>Fokus dokumen, audit per berkas cepat, konteks muncul saat dibutuhkan</td><td>Kegiatan tanpa BA tidak tampil di daftar utama sehingga sulit dikejar</td><td>Operator arsip / verifikator dokumen</td></tr>
+        <tr><td>03 Papan alur</td><td>Beban kerja per tahap terlihat, memudahkan pembagian tugas dan rapat</td><td>Kurang cocok untuk pencarian dokumen spesifik dan ekspor rinci</td><td>Koordinator yang mengatur antrean kerja tim</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="checklist">
+    <div class="cbox">
+      <h4>Data yang wajib dipertahankan</h4>
+      <ul>
+        <li>BA Pendukung (Admin) dan Pelaksanaan (Bagian)</li>
+        <li>Relasi BA ke kegiatan, blok, peserta</li>
+        <li>BA tanpa pengajuan tetap terlihat</li>
+        <li>Status sesi, temuan pemeriksaan, catatan</li>
+      </ul>
+    </div>
+    <div class="cbox">
+      <h4>Aksi yang harus tetap ada</h4>
+      <ul>
+        <li>Kelola dan hapus BA</li>
+        <li>Buka berkas dan base file</li>
+        <li>Riwayat kegiatan</li>
+        <li>Ekspor XLSX sesuai filter</li>
+      </ul>
+    </div>
+    <div class="cbox">
+      <h4>Filter yang disatukan</h4>
+      <ul>
+        <li>Bagian, blok, rentang tanggal</li>
+        <li>Jenis BA dan sumber</li>
+        <li>Kelengkapan dan status sesi</li>
+        <li>Pencarian ID, kegiatan, dosen, peserta</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="fin">
+    <h2>Rekomendasi</h2>
+    <p><b>Konsep 04</b> adalah arah yang saya sarankan sekarang: tabel ringkas tanpa kolom Bagian, Blok, dan Biaya, tetapi ketiganya tetap tersedia di panel konteks. Struktur ini mempertahankan kekuatan Konsep 01 (pekerjaan harian jelas, filter tunggal, register dokumen satu klik) sekaligus mengambil panel konteks dari Konsep 02. Konsep 01 dan 02 tetap saya pertahankan sebagai pembanding agar Anda bisa menilai dampak penyembunyian kolom.</p>
+  </div>
+
+  <p class="footnote">Semua angka dan nama pada mockup ini fiktif dan hanya untuk diskusi desain. Tidak ada perubahan pada aplikasi produksi.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup BA 02 — Register Berkas + Panel Konteks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="_mock.css">
+<style>
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .strip .s{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 13px;box-shadow:var(--shadow)}
+  .strip .s .k{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--slate-400)}
+  .strip .s .v{font-size:19px;font-weight:800;margin-top:4px}
+  .strip .s .p{font-size:11px;color:var(--slate-400);margin-top:3px}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:14px;align-items:start}
+  .drawer{position:sticky;top:14px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  .drawer .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#4f46e5,#4338ca);color:#fff}
+  .drawer .dh .k{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+  .drawer .dh h3{font-size:14.5px;margin-top:3px}
+  .drawer .dh .s{font-size:11.5px;opacity:.85;margin-top:3px}
+  .drawer .db{padding:14px 16px;max-height:600px;overflow:auto}
+  .kv{display:grid;grid-template-columns:88px 1fr;gap:6px 10px;font-size:12px}
+  .kv .k{color:var(--slate-400);font-weight:700;font-size:11px}
+  .kv .v{color:var(--slate-700);font-weight:600}
+  .ba-item{border:1px solid var(--line);border-radius:10px;background:var(--slate-50);padding:9px 10px;margin-bottom:7px}
+  .ba-item .l1{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .ba-item .l2{font-size:11px;color:var(--slate-500);margin-top:4px;line-height:1.5}
+  .tbl-scroll{overflow:auto;max-height:660px}
+  .table th{top:0}
+  .who{display:flex;align-items:center;gap:8px;min-width:0}
+  .who .nm{font-weight:700;font-size:12px}
+  .who .np{font-size:10px;color:var(--slate-400);font-family:ui-monospace,monospace}
+  .p-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12px}
+  .p-item:last-child{border-bottom:0}
+  tr.sel{background:var(--brand-50)!important;box-shadow:inset 3px 0 0 var(--brand)}
+  .chiprow{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .x{font-size:11px;font-weight:700;color:var(--slate-500);background:var(--slate-100);border-radius:999px;padding:2px 8px}
+  .x.r{background:var(--rose-50);color:var(--rose)}
+  .x.a{background:var(--amber-50);color:var(--amber)}
+  .x.g{background:var(--emerald-50);color:var(--emerald)}
+  @media (max-width:1100px){.split{grid-template-columns:1fr}.drawer{position:static}.strip{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="banner">MOCKUP 02 — data dummy 9 kegiatan · bukan tampilan produksi</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark"><i class="bi bi-layers-half"></i></div><div><div class="nm">Dashboard INHAL</div><div class="sb">Praktikum · Admin</div></div></div>
+    <div class="sec">Menu</div>
+    <nav>
+      <a href="#" data-demo="Menu Ringkasan"><i class="bi bi-grid-1x2"></i> Ringkasan</a>
+      <a href="#" data-demo="Menu Pengajuan"><i class="bi bi-inbox"></i> Pengajuan</a>
+      <a class="on" href="#"><i class="bi bi-file-earmark-text"></i> Berita Acara</a>
+      <a href="#" data-demo="Menu Laporan Detail"><i class="bi bi-bar-chart-line"></i> Laporan Detail</a>
+      <a href="#" data-demo="Menu Master Data"><i class="bi bi-sliders"></i> Master Data</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb">Berita Acara / <b>Register</b></div><div class="title">Register Berita Acara</div></div>
+      <div class="grow"></div>
+      <div class="search"><i class="bi bi-search muted"></i><input id="q" placeholder="Cari BA ID / kegiatan / dosen"></div>
+      <button class="iconbtn" data-demo="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
+      <div class="avatar">AD</div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <span class="kicker">Konsep 02 · register-first</span>
+        <h1>Register Berita Acara</h1>
+        <p class="lede">Berkas BA sebagai objek utama. Klik satu baris untuk melihat konteks kegiatannya di panel kanan: peserta, jadwal, dan BA lain dalam kegiatan yang sama. Cocok bila pekerjaan utama adalah mengelola dokumen, bukan mengejar kegiatan.</p>
+      </div>
+
+      <div class="strip" id="strip"></div>
+
+      <div class="split">
+        <section class="panel">
+          <div class="p-head">
+            <div class="ic"><i class="bi bi-journal-text"></i></div>
+            <div><h3>Daftar Berkas</h3><div class="sub">Pendukung (Admin) dan Pelaksanaan (Bagian) dalam satu register</div></div>
+            <div class="grow"></div>
+            <button class="btn btn-soft btn-sm" data-demo="Ekspor register BA"><i class="bi bi-file-earmark-excel"></i> Ekspor</button>
+          </div>
+          <div class="toolbar">
+            <select class="input" id="fJenis"><option value="">Semua Jenis</option><option>Pendukung</option><option>Pelaksanaan</option></select>
+            <select class="input" id="fBagian"><option value="">Semua Bagian</option></select>
+            <select class="input" id="fKel"><option value="">Semua Kelengkapan</option><option value="ok">Lengkap</option><option value="bad">Perlu tindakan</option></select>
+            <div class="grow"></div>
+            <span class="hint" id="info"></span>
+          </div>
+          <div class="tbl-scroll">
+            <table class="table">
+              <thead><tr>
+                <th>BA ID</th><th>Jenis</th><th>Kegiatan</th><th>Jadwal</th>
+                <th style="text-align:center">Peserta</th><th>Sesi</th><th>Kelengkapan</th><th style="text-align:right">Aksi</th>
+              </tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="drawer" id="drawer"></aside>
+      </div>
+
+      <div class="notes">
+        <div class="note good"><b>Kekuatan</b>Satu baris = satu dokumen, sehingga cocok untuk audit "apakah berkas ini ada". Panel konteks menjaga pengguna tidak kehilangan hubungan dokumen dengan kegiatan dan pesertanya.</div>
+        <div class="note bad"><b>Risiko</b>Admin yang bertugas mengejar kelengkapan per kegiatan harus menyusun ulang informasi dari beberapa baris. Karena itu daftar kegiatan tetap disediakan sebagai konsep 01.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="_data.js"></script>
+<script src="_app.js"></script>
+<script>
+(function () {
+  var A = window.BA;
+  var state = { jenis: '', bagian: '', kel: '', q: '', sel: null };
+  var $ = function (id) { return document.getElementById(id); };
+
+  function list() {
+    var rows = A.baRows();
+    if (state.jenis) rows = rows.filter(function (b) { return b.jenis === state.jenis; });
+    if (state.bagian) rows = rows.filter(function (b) { return b.bagian === state.bagian; });
+    if (state.kel === 'ok') rows = rows.filter(function (b) { return b.status === 'Lengkap' && b.file; });
+    if (state.kel === 'bad') rows = rows.filter(function (b) { return !(b.status === 'Lengkap' && b.file); });
+    if (state.q) {
+      var q = state.q.toLowerCase();
+      rows = rows.filter(function (b) { return [b.id, b.kegiatan, b.dosen, b.bagian, b.blok].join(' ').toLowerCase().indexOf(q) !== -1; });
+    }
+    return rows;
+  }
+
+  function renderStrip() {
+    var t = A.totals();
+    var totalBa = t.pendukung + t.pelaksanaan;
+    var cells = [
+      { k: 'Total Berkas', v: totalBa, p: t.pendukung + ' pendukung · ' + t.pelaksanaan + ' pelaksanaan' },
+      { k: 'Berkas Hilang', v: A.baRows().filter(function (b) { return !b.file; }).length, p: 'perlu diunggah ulang' },
+      { k: 'Draft / Belum Lengkap', v: A.baRows().filter(function (b) { return b.status !== 'Lengkap'; }).length, p: 'menunggu tanda tangan / data' },
+      { k: 'Temuan Sesi', v: t.temuan, p: 'duplikat, sesi ekstra, draft' }
+    ];
+    $('strip').innerHTML = cells.map(function (c) {
+      return '<div class="s"><div class="k">' + c.k + '</div><div class="v">' + c.v + '</div><div class="p">' + c.p + '</div></div>';
+    }).join('');
+  }
+
+  function renderTable() {
+    var rows = list();
+    $('info').textContent = rows.length + ' berkas';
+    $('tbody').innerHTML = rows.map(function (b) {
+      var sel = state.sel === b.jenis + '|' + b.id ? ' class="sel"' : '';
+      var okAll = b.status === 'Lengkap' && b.file;
+      return '<tr class="clickable' + (sel ? ' sel' : '') + '" data-row="' + b.jenis + '|' + b.id + '">' +
+        '<td class="mono" style="font-weight:800">' + b.id + '</td>' +
+        '<td><span class="badge ' + (b.jenis === 'Pendukung' ? 'b-violet' : 'b-brand') + '">' + b.jenis + '</span></td>' +
+        '<td><div style="font-weight:700">' + b.kegiatan + '</div><div class="hint">' + b.bagian + ' · Blok ' + b.blok + '</div></td>' +
+        '<td style="white-space:nowrap">' + A.fmtTanggal(b.tanggal) + (b.jam ? '<div class="hint">' + b.jam + '</div>' : '') + '</td>' +
+        '<td style="text-align:center;font-weight:700">' + b.pesertaCount + '</td>' +
+        '<td>' + (b.jenis === 'Pelaksanaan' ? '#' + b.sesiKe + '/' + b.jumlahSesi : '—') + '</td>' +
+        '<td><span class="badge ' + (okAll ? 'b-green' : 'b-amber') + '">' + (okAll ? 'Lengkap' : 'Perlu tindakan') + '</span></td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn btn-sm btn-soft" data-demo="Kelola ' + b.id + '"><i class="bi bi-pencil"></i></button> ' +
+          '<button class="btn btn-sm btn-soft" data-demo="Hapus ' + b.id + '"><i class="bi bi-trash"></i></button>' +
+        '</td></tr>';
+    }).join('') || '<tr><td colspan="8"><div class="empty">Tidak ada berkas sesuai filter.</div></td></tr>';
+  }
+
+  function renderDrawer() {
+    if (!state.sel) {
+      $('drawer').innerHTML = '<div class="dh"><div class="k">Panel Konteks</div><h3>Pilih satu berkas</h3><div class="s">Klik baris di daftar untuk melihat kegiatan, peserta, dan berkas lain</div></div>' +
+        '<div class="db"><div class="empty"><i class="bi bi-file-earmark-text" style="font-size:26px"></i><div class="mt8">Belum ada berkas dipilih.</div></div>' +
+        '<div class="hint mt12">Panel ini menggantikan tab kedua: konteks kegiatan muncul hanya saat dibutuhkan, bukan sebagai tabel terpisah.</div></div>';
+      return;
+    }
+    var parts = state.sel.split('|');
+    var b = A.baRows().filter(function (x) { return x.jenis === parts[0] && x.id === parts[1]; })[0];
+    if (!b) { state.sel = null; return renderDrawer(); }
+    var u = b.unit;
+    var s = A.unitStats(u);
+    var siblings = [].concat(u.pendukung || [], u.pelaksanaan || []);
+    $('drawer').innerHTML =
+      '<div class="dh"><div class="k">' + b.jenis + '</div><h3 class="mono">' + b.id + '</h3><div class="s">' + u.bagian + ' · Blok ' + u.blok + ' · ' + s.status + '</div></div>' +
+      '<div class="db">' +
+        '<div class="kv">' +
+          '<div class="k">Kegiatan</div><div class="v">' + u.kegiatan + '</div>' +
+          '<div class="k">Jadwal</div><div class="v">' + A.fmtTanggal(b.tanggal) + (b.jam ? ' · ' + b.jam : '') + '</div>' +
+          '<div class="k">Dosen</div><div class="v">' + b.dosen + '</div>' +
+          '<div class="k">Peserta</div><div class="v">' + b.pesertaCount + ' mahasiswa</div>' +
+          (b.jenis === 'Pelaksanaan' ? '<div class="k">Sesi</div><div class="v">Sesi ' + b.sesiKe + ' dari ' + b.jumlahSesi + '</div>' : '') +
+          '<div class="k">Sumber</div><div class="v">' + b.sumber + '</div>' +
+          '<div class="k">Berkas</div><div class="v">' + (b.file ? '<a href="#" data-demo="Buka berkas ' + b.id + '">Lihat berkas</a>' : '<span style="color:var(--rose)">Belum ada berkas</span>') + '</div>' +
+        '</div>' +
+        '<div class="chiprow">' + (b.flags || []).map(function (f) { return '<span class="x r">' + f + '</span>'; }).join('') +
+          '<span class="x ' + (b.status === 'Lengkap' ? 'g' : 'a') + '">' + b.status + '</span>' +
+          '<span class="x">' + u.peserta.length + ' peserta kegiatan</span>' +
+        '</div>' +
+        (b.catatan ? '<div class="note mt12"><b>Catatan</b>' + b.catatan + '</div>' : '') +
+        '<div class="section-title mt14">Berkas lain dalam kegiatan ini (' + siblings.length + ')</div>' +
+        siblings.map(function (x) {
+          var same = x.id === b.id;
+          return '<div class="ba-item" style="' + (same ? 'border-color:var(--brand);background:var(--brand-50)' : '') + '">' +
+            '<div class="l1"><b class="mono">' + x.id + '</b>' +
+              '<span class="badge ' + (Object.prototype.hasOwnProperty.call(x, 'dosen') ? 'b-brand' : 'b-violet') + '">' + (Object.prototype.hasOwnProperty.call(x, 'dosen') ? 'Pelaksanaan' : 'Pendukung') + '</span>' +
+              '<span class="badge ' + ((x.file && (x.status === 'Lengkap')) ? 'b-green' : 'b-amber') + '">' + (x.file ? 'Berkas ada' : 'Berkas hilang') + '</span>' +
+              (same ? '<span class="badge b-brand">Dipilih</span>' : '') +
+            '</div><div class="l2">' + A.fmtTanggal(x.tanggal) + (x.dosen ? ' · ' + x.dosen : '') + '</div></div>';
+        }).join('') +
+        '<div class="section-title mt14">Peserta kegiatan (' + u.peserta.length + ')</div>' +
+        u.peserta.map(function (p) {
+          return '<div class="p-item"><div class="who"><span class="np">' + p.npm + '</span><span class="nm">' + p.nama + '</span></div>' +
+            '<span class="badge ' + (p.final ? 'b-teal' : (p.status === 'ACC' || p.status === 'Diterima' ? 'b-green' : 'b-amber')) + '">' + (p.final ? 'ACC Final' : p.status) + '</span></div>';
+        }).join('') +
+        '<div class="mt12 row" style="gap:6px;flex-wrap:wrap">' +
+          '<button class="btn btn-primary btn-sm" data-demo="Kelola ' + b.id + '"><i class="bi bi-pencil"></i> Kelola BA</button>' +
+          '<button class="btn btn-soft btn-sm" data-demo="Buka kegiatan ' + u.kegiatan + '"><i class="bi bi-box-arrow-up-right"></i> Buka kegiatan</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function render() { renderStrip(); renderTable(); renderDrawer(); }
+
+  document.addEventListener('click', function (e) {
+    var r = e.target.closest('[data-row]');
+    if (r) { state.sel = r.getAttribute('data-row'); renderTable(); renderDrawer(); }
+  });
+
+  ['fJenis', 'fBagian', 'fKel'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      state.jenis = $('fJenis').value; state.bagian = $('fBagian').value; state.kel = $('fKel').value; render();
+    });
+  });
+  $('q').addEventListener('input', function () { state.q = this.value.trim(); render(); });
+
+  var bag = {};
+  A.units().forEach(function (u) { bag[u.bagian] = true; });
+  Object.keys(bag).sort().forEach(function (b) { var o = document.createElement('option'); o.value = b; o.textContent = b; $('fBagian').appendChild(o); });
+
+  state.sel = 'Pelaksanaan|BA-2026-0141';
+  render();
+})();
+</script>
+</body>
+</html>

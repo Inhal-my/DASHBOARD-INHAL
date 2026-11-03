@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup BA 01 — Satu Tab, Dua Lapis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="_mock.css">
+<style>
+  .seg{display:inline-flex;background:var(--slate-100);border-radius:11px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;font-size:12px;font-weight:700;color:var(--slate-500);padding:7px 13px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .seg button.on{background:#fff;color:var(--brand);box-shadow:var(--shadow)}
+  .seg button .n{font-size:10px;font-weight:800;background:var(--slate-100);color:var(--slate-500);border-radius:999px;padding:1px 6px}
+  .seg button.on .n{background:var(--brand-50);color:var(--brand)}
+  .queue{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .qcard{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--slate-50)}
+  .qcard .qtop{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+  .qcard .qtop.r{color:var(--rose)}
+  .qcard .qtop.a{color:var(--amber)}
+  .qcard .qt{font-size:12.5px;font-weight:800;margin-top:6px}
+  .qcard .qs{font-size:11px;color:var(--slate-400);margin-top:2px}
+  .qcard .qacts{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .mini{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid transparent;background:var(--slate-100);color:var(--slate-500)}
+  .mini.b{background:var(--brand-50);color:var(--brand);border-color:var(--brand-100)}
+  .mini.g{background:var(--emerald-50);color:var(--emerald)}
+  .mini.a{background:var(--amber-50);color:var(--amber)}
+  .mini.r{background:var(--rose-50);color:var(--rose)}
+  .who{display:flex;align-items:center;gap:8px;min-width:0}
+  .who .nm{font-weight:700;color:var(--ink);font-size:12px}
+  .who .np{font-size:10px;color:var(--slate-400);font-family:ui-monospace,monospace}
+  .expand td{background:var(--slate-50);padding:0}
+  .expand-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;padding:14px 16px}
+  .ba-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 11px;margin-bottom:8px}
+  .ba-item:last-child{margin-bottom:0}
+  .ba-item .l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .ba-item .l2{font-size:11px;color:var(--slate-500);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+  .p-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12px}
+  .p-item:last-child{border-bottom:0}
+  .bar-row{display:grid;grid-template-columns:90px 1fr 46px;gap:8px;align-items:center;margin-bottom:7px;font-size:11.5px}
+  .bar-row .nm{font-weight:700;color:var(--slate-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-row .vl{text-align:right;font-weight:700;color:var(--slate-500)}
+</style>
+</head>
+<body>
+<div class="banner">MOCKUP 01 — data dummy 9 kegiatan · bukan tampilan produksi</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark"><i class="bi bi-layers-half"></i></div><div><div class="nm">Dashboard INHAL</div><div class="sb">Praktikum · Admin</div></div></div>
+    <div class="sec">Menu</div>
+    <nav>
+      <a href="#" data-demo="Menu Ringkasan"><i class="bi bi-grid-1x2"></i> Ringkasan</a>
+      <a href="#" data-demo="Menu Pengajuan"><i class="bi bi-inbox"></i> Pengajuan</a>
+      <a class="on" href="#"><i class="bi bi-file-earmark-text"></i> Berita Acara</a>
+      <a href="#" data-demo="Menu Laporan Detail"><i class="bi bi-bar-chart-line"></i> Laporan Detail</a>
+      <a href="#" data-demo="Menu Master Data"><i class="bi bi-sliders"></i> Master Data</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb">Berita Acara / <b>Gabungan</b></div><div class="title">Berita Acara</div></div>
+      <div class="grow"></div>
+      <div class="search"><i class="bi bi-search muted"></i><input id="q" placeholder="Cari BA ID / kegiatan / dosen / peserta"></div>
+      <button class="iconbtn" data-demo="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
+      <button class="iconbtn" data-demo="Notifikasi"><i class="bi bi-bell"></i></button>
+      <div class="avatar">AD</div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <span class="kicker">Konsep 01 · direkomendasikan</span>
+        <h1>Berita Acara</h1>
+        <p class="lede">Satu tab, dua lapis informasi. Lapis <b>Kegiatan</b> menjawab "apa yang harus saya kerjakan"; lapis <b>Berkas BA</b> menjawab "dokumen apa yang sudah ada". Filter, pencarian, dan ekspor berlaku untuk keduanya.</p>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <section class="panel">
+        <div class="p-head">
+          <div class="ic" style="background:var(--rose-50);color:var(--rose)"><i class="bi bi-exclamation-triangle"></i></div>
+          <div><h3>Antrean Tindakan</h3><div class="sub">Kegiatan yang menghambat penyelesaian administrasi, diurutkan dari paling mendesak</div></div>
+          <div class="grow"></div>
+          <span class="badge b-rose" id="queueCount"></span>
+        </div>
+        <div class="p-body"><div class="queue" id="queue"></div></div>
+      </section>
+
+      <section class="panel">
+        <div class="p-head">
+          <div class="ic"><i class="bi bi-folder2-open"></i></div>
+          <div><h3>Ruang Kerja Berita Acara</h3><div class="sub">Telusuri per kegiatan atau per berkas</div></div>
+          <div class="grow"></div>
+          <div class="seg" id="seg">
+            <button class="on" data-view="kegiatan"><i class="bi bi-diagram-3"></i> Kegiatan <span class="n" id="nKeg"></span></button>
+            <button data-view="berkas"><i class="bi bi-file-earmark-text"></i> Berkas BA <span class="n" id="nBa"></span></button>
+          </div>
+          <button class="btn btn-soft btn-sm" data-demo="Ekspor XLSX sesuai filter aktif"><i class="bi bi-file-earmark-excel"></i> Ekspor</button>
+        </div>
+
+        <div class="toolbar">
+          <select class="input" id="fBagian"><option value="">Semua Bagian</option></select>
+          <select class="input" id="fJenis"><option value="">Semua Jenis BA</option><option>Pendukung</option><option>Pelaksanaan</option></select>
+          <select class="input" id="fStatus"><option value="">Semua Kelengkapan</option><option>Lengkap</option><option>Perlu tindakan</option><option>Belum mulai</option></select>
+          <select class="input" id="fSesi"><option value="">Semua Kondisi Sesi</option><option value="multi">Multi-sesi</option><option value="draft">Draft pelaksanaan</option><option value="ekstra">Sesi ekstra</option><option value="duplikat">Kemungkinan duplikat</option></select>
+          <div class="grow"></div>
+          <span class="hint" id="resultInfo"></span>
+        </div>
+
+        <div id="viewKegiatan">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width:30px"></th>
+                  <th>Bagian</th><th>Blok</th><th>Kegiatan</th>
+                  <th>Progres</th><th>Status</th><th style="text-align:center">Peserta</th>
+                  <th style="text-align:center">BA</th><th style="text-align:right">Biaya</th>
+                  <th style="text-align:right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyKegiatan"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="viewBerkas" hidden>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>BA ID</th><th>Jenis</th><th>Bagian / Blok</th><th>Kegiatan</th>
+                  <th>Jadwal</th><th>Dosen</th><th style="text-align:center">Peserta</th>
+                  <th>Sesi</th><th>Kelengkapan</th><th>Berkas</th><th>Catatan</th><th style="text-align:right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyBerkas"></tbody>
+            </table>
+          </div>
+          <div class="p-body" id="orphanBox"></div>
+        </div>
+      </section>
+
+      <div class="notes">
+        <div class="note good"><b>Kenapa digabung</b>Tab BA lama menampilkan rekap per kegiatan; tab Daftar BA menampilkan register dokumen. Keduanya memakai filter yang sama, jadi pengguna harus menyetel filter dua kali. Di sini keduanya satu kerangka: filter di atas, lapis di bawah.</div>
+        <div class="note bad"><b>Yang dihindari</b>Tidak menumpuk dua tabel panjang sekaligus dalam satu layar. Register berkas tetap tersedia satu klik, tetapi bukan tampilan default karena pekerjaan harian admin adalah mengejar kelengkapan, bukan membaca katalog.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="_data.js"></script>
+<script src="_app.js"></script>
+<script>
+(function () {
+  var A = window.BA;
+  var state = { view: 'kegiatan', bagian: '', jenis: '', status: '', sesi: '', q: '', kpi: '', expanded: {} };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function unitList() {
+    var rows = A.units().slice();
+    if (state.bagian) rows = rows.filter(function (u) { return u.bagian === state.bagian; });
+    if (state.status) rows = rows.filter(function (u) { return A.unitStats(u).status === state.status; });
+    if (state.jenis) rows = rows.filter(function (u) { return (state.jenis === 'Pendukung' ? u.pendukung : u.pelaksanaan).length > 0; });
+    if (state.sesi) {
+      rows = rows.filter(function (u) {
+        var pel = u.pelaksanaan || [];
+        if (state.sesi === 'multi') return pel.some(function (b) { return (b.jumlahSesi || 1) > 1; });
+        if (state.sesi === 'draft') return pel.some(function (b) { return b.status === 'Draft'; });
+        return pel.some(function (b) { return (b.flags || []).some(function (f) { return f.toLowerCase().indexOf(state.sesi === 'ekstra' ? 'ekstra' : 'duplikat') !== -1; }); });
+      });
+    }
+    if (state.kpi === 'perlu') rows = rows.filter(function (u) { return A.unitStats(u).status !== 'Lengkap'; });
+    if (state.kpi === 'lengkap') rows = rows.filter(function (u) { return A.unitStats(u).status === 'Lengkap'; });
+    if (state.q) {
+      var q = state.q.toLowerCase();
+      rows = rows.filter(function (u) {
+        var hay = [u.bagian, u.blok, u.kegiatan]
+          .concat((u.pendukung || []).map(function (b) { return b.id; }))
+          .concat((u.pelaksanaan || []).map(function (b) { return b.id + ' ' + b.dosen; }))
+          .concat((u.peserta || []).map(function (p) { return p.npm + ' ' + p.nama; }))
+          .join(' ').toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+    }
+    return rows;
+  }
+
+  function baList() {
+    var ids = {};
+    unitList().forEach(function (u) { ids[u.key] = true; });
+    var rows = A.baRows().filter(function (b) { return ids[b.unit.key]; });
+    if (state.jenis) rows = rows.filter(function (b) { return b.jenis === state.jenis; });
+    if (state.kpi === 'perlu') rows = rows.filter(function (b) { return b.status !== 'Lengkap' || !b.file; });
+    if (state.kpi === 'lengkap') rows = rows.filter(function (b) { return b.status === 'Lengkap' && b.file; });
+    if (state.q) {
+      var q = state.q.toLowerCase();
+      rows = rows.filter(function (b) {
+        return [b.id, b.jenis, b.bagian, b.blok, b.kegiatan, b.dosen, b.catatan].join(' ').toLowerCase().indexOf(q) !== -1;
+      });
+    }
+    return rows;
+  }
+
+  function renderKpis() {
+    var t = A.totals();
+    var cards = [
+      { k: '', lb: 'Kegiatan', big: t.kegiatan, sub: t.peserta + ' mahasiswa unik' },
+      { k: '', lb: 'Sudah ACC Final', big: t.final, sub: A.pct(t.final, t.peserta) + '% dari peserta', cls: 'g', static: true },
+      { k: '', lb: 'BA Pendukung', big: t.pendukung, sub: 'sebelum keputusan', static: true },
+      { k: '', lb: 'BA Pelaksanaan', big: t.pelaksanaan, sub: t.sesi + ' sesi tercatat', cls: 'g', static: true },
+      { k: 'lengkap', lb: 'Lengkap', big: t.lengkap, sub: 'pendukung + pelaksanaan', cls: 'g' },
+      { k: 'perlu', lb: 'Perlu Tindakan', big: t.perlu + t.belum, sub: t.temuan + ' temuan pemeriksaan', cls: 'r' }
+    ];
+    $('kpis').innerHTML = cards.map(function (c) {
+      var on = state.kpi === c.k && c.k ? ' on' : '';
+      return '<button class="kpi' + (c.static ? ' static' : '') + on + '" ' + (c.k ? 'data-kpi="' + c.k + '"' : '') + '>' +
+        '<div class="lb">' + c.lb + '</div>' +
+        '<div class="big ' + (c.cls || '') + '">' + c.big + '</div>' +
+        '<div class="sub">' + c.sub + '</div></button>';
+    }).join('');
+  }
+
+  function renderQueue() {
+    var need = A.units().filter(function (u) { return A.unitStats(u).status !== 'Lengkap'; });
+    need.sort(function (a, b) { return A.unitStats(b).temuan - A.unitStats(a).temuan; });
+    $('queueCount').textContent = need.length + ' kegiatan';
+    $('queue').innerHTML = need.slice(0, 3).map(function (u) {
+      var s = A.unitStats(u);
+      var acts = A.actionsFor(u);
+      return '<div class="qcard">' +
+        '<div class="qtop ' + (s.status === 'Belum mulai' ? 'r' : 'a') + '"><i class="bi bi-' + (s.status === 'Belum mulai' ? 'circle-slash' : 'exclamation-circle') + '"></i> ' + s.status + '</div>' +
+        '<div class="qt">' + u.kegiatan + '</div>' +
+        '<div class="qs">' + u.bagian + ' · Blok ' + u.blok + ' · ' + s.peserta + ' peserta</div>' +
+        '<div class="qacts">' + acts.map(function (a) { return '<span class="mini ' + (a.tone === 'rose' ? 'r' : 'a') + '">' + a.label + '</span>'; }).join('') + '</div>' +
+      '</div>';
+    }).join('') || '<div class="empty">Semua kegiatan lengkap.</div>';
+  }
+
+  function dots(u) {
+    var s = A.unitStats(u);
+    function cls(ok, any) { return ok ? 'all' : (any ? 'partial' : 'none'); }
+    var p = cls(s.lengkapPendukung, s.pendukung);
+    var l = cls(s.lengkapPelaksanaan, s.pelaksanaan);
+    return '<span class="progdots" title="Pendukung · Pelaksanaan"><i class="' + p + '"></i><i class="' + l + '"></i></span>';
+  }
+
+  function kegiatanRow(u) {
+    var s = A.unitStats(u);
+    var open = !!state.expanded[u.key];
+    var statusCls = s.status === 'Lengkap' ? 'b-green' : (s.status === 'Belum mulai' ? 'b-rose' : 'b-amber');
+    var chips = [];
+    (u.pendukung || []).forEach(function (b) {
+      chips.push('<span class="mini ' + (b.file && b.status === 'Lengkap' ? 'b' : 'a') + '" title="BA Pendukung ' + b.id + '">' + b.id.replace('BAP-2026-', 'P-') + '</span>');
+    });
+    (u.pelaksanaan || []).forEach(function (b) {
+      chips.push('<span class="mini ' + (b.file && b.status === 'Lengkap' ? 'g' : 'a') + '" title="BA Pelaksanaan ' + b.id + '">' + b.id.replace('BA-2026-', 'L-') + '</span>');
+    });
+    var acts = A.actionsFor(u);
+    return '<tr class="clickable" data-unit="' + u.key + '">' +
+      '<td><i class="bi ' + (open ? 'bi-chevron-up' : 'bi-chevron-down') + ' muted"></i></td>' +
+      '<td><span class="badge b-brand">' + u.bagian + '</span></td>' +
+      '<td>' + u.blok + '</td>' +
+      '<td><div style="font-weight:800">' + u.kegiatan + '</div><div class="hint">' + u.jadwalCount + ' jadwal · ' + s.sesi + ' sesi BA</div></td>' +
+      '<td>' + dots(u) + '</td>' +
+      '<td><span class="badge ' + statusCls + '"><i class="b-dot"></i>' + s.status + '</span></td>' +
+      '<td style="text-align:center;font-weight:700">' + s.peserta + '<span class="hint"> · ' + s.final + ' final</span></td>' +
+      '<td style="text-align:center">' + chips.join(' ') + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:var(--brand)">' + A.rupiah(u.biaya) + '</td>' +
+      '<td style="text-align:right;white-space:nowrap">' +
+        acts.slice(0, 1).map(function (a) { return '<button class="btn btn-soft btn-sm" data-demo="' + a.label + ' — ' + u.kegiatan + '"><i class="bi bi-plus-lg"></i> ' + (a.key === 'pendukung' ? 'Pendukung' : 'Pelaksanaan') + '</button>'; }).join('') +
+        ' <button class="btn btn-sm btn-ghost" data-demo="Riwayat ' + u.kegiatan + '">Riwayat</button>' +
+      '</td></tr>' +
+      (open ? '<tr class="expand"><td colspan="10"><div class="expand-inner">' + expandLeft(u) + expandRight(u) + '</div></td></tr>' : '');
+  }
+
+  function expandLeft(u) {
+    return '<div><div class="section-title">Peserta (' + u.peserta.length + ')</div>' +
+      u.peserta.map(function (p) {
+        return '<div class="p-item"><div class="who"><span class="np">' + p.npm + '</span><span class="nm">' + p.nama + '</span></div>' +
+          '<div class="row" style="gap:5px">' +
+          '<span class="badge ' + (p.status === 'ACC' || p.status === 'Diterima' ? 'b-green' : 'b-amber') + '">' + p.status + '</span>' +
+          (p.final ? '<span class="badge b-teal">ACC Final</span>' : '') +
+          '</div></div>';
+      }).join('') + '</div>';
+  }
+
+  function expandRight(u) {
+    var items = [];
+    (u.pendukung || []).forEach(function (b) {
+      items.push('<div class="ba-item"><div class="l1"><b class="mono">' + b.id + '</b><span class="badge b-violet">Pendukung</span>' +
+        '<span class="badge ' + (b.file && b.status === 'Lengkap' ? 'b-green' : 'b-amber') + '">' + (b.file ? 'Berkas: Ada' : 'Berkas: Hilang') + '</span>' +
+        '<span class="badge ' + (b.status === 'Lengkap' ? 'b-green' : 'b-amber') + '">' + b.status + '</span>' +
+        '<span class="grow"></span>' +
+        '<button class="btn btn-sm btn-soft" data-demo="Kelola ' + b.id + '"><i class="bi bi-pencil"></i></button>' +
+        '<button class="btn btn-sm btn-soft" data-demo="Hapus ' + b.id + '"><i class="bi bi-trash"></i></button></div>' +
+        '<div class="l2"><span><i class="bi bi-calendar3"></i> ' + A.fmtTanggal(b.tanggal) + '</span>' + (b.catatan ? '<span><i class="bi bi-chat-left-text"></i> ' + b.catatan + '</span>' : '') + '</div></div>');
+    });
+    (u.pelaksanaan || []).forEach(function (b) {
+      items.push('<div class="ba-item"><div class="l1"><b class="mono">' + b.id + '</b><span class="badge b-brand">Pelaksanaan</span>' +
+        '<span class="badge ' + (b.status === 'Lengkap' ? 'b-green' : 'b-amber') + '">' + b.status + '</span>' +
+        '<span class="badge b-slate">Sesi ' + b.sesiKe + '/' + b.jumlahSesi + '</span>' +
+        (b.flags || []).map(function (f) { return '<span class="badge b-rose">' + f + '</span>'; }).join('') +
+        '<span class="grow"></span>' +
+        '<button class="btn btn-sm btn-soft" data-demo="Kelola ' + b.id + '"><i class="bi bi-pencil"></i></button>' +
+        '<button class="btn btn-sm btn-soft" data-demo="Hapus ' + b.id + '"><i class="bi bi-trash"></i></button></div>' +
+        '<div class="l2"><span><i class="bi bi-calendar3"></i> ' + A.fmtTanggal(b.tanggal) + (b.jam ? ' · ' + b.jam : '') + '</span>' +
+        '<span><i class="bi bi-person-badge"></i> ' + b.dosen + '</span><span><i class="bi bi-people"></i> ' + b.pesertaCount + ' peserta</span>' +
+        (b.file ? '<a href="#" data-demo="Buka berkas ' + b.id + '">Lihat berkas</a>' : '<span style="color:var(--rose)">Berkas belum diunggah</span>') + '</div></div>');
+    });
+    return '<div><div class="section-title">Berita Acara (' + (items.length) + ')</div>' + (items.join('') || '<div class="empty" style="padding:18px 0">Belum ada BA.</div>') + '</div>';
+  }
+
+  function renderKegiatan() {
+    var rows = unitList();
+    $('tbodyKegiatan').innerHTML = rows.map(kegiatanRow).join('') ||
+      '<tr><td colspan="10"><div class="empty">Tidak ada kegiatan sesuai filter.</div></td></tr>';
+  }
+
+  function renderBerkas() {
+    var rows = baList();
+    $('tbodyBerkas').innerHTML = rows.map(function (b) {
+      var jenisCls = b.jenis === 'Pendukung' ? 'b-violet' : 'b-brand';
+      var lenCls = b.status === 'Lengkap' && b.file ? 'b-green' : 'b-amber';
+      var sesiTxt = b.jenis === 'Pelaksanaan' ? ('#' + b.sesiKe + '/' + b.jumlahSesi) : '—';
+      return '<tr>' +
+        '<td class="mono" style="font-weight:800">' + b.id + '</td>' +
+        '<td><span class="badge ' + jenisCls + '">' + b.jenis + '</span></td>' +
+        '<td>' + b.bagian + ' <span class="muted">/ ' + b.blok + '</span></td>' +
+        '<td class="ellip" title="' + b.kegiatan + '">' + b.kegiatan + '</td>' +
+        '<td style="white-space:nowrap">' + A.fmtTanggal(b.tanggal) + (b.jam ? '<div class="hint">' + b.jam + '</div>' : '') + '</td>' +
+        '<td class="ellip" title="' + b.dosen + '">' + b.dosen + '</td>' +
+        '<td style="text-align:center;font-weight:700">' + b.pesertaCount + '</td>' +
+        '<td style="white-space:nowrap">' + sesiTxt + '</td>' +
+        '<td><span class="badge ' + lenCls + '">' + (b.status === 'Lengkap' && b.file ? 'Lengkap' : 'Perlu tindakan') + '</span></td>' +
+        '<td>' + (b.file ? '<a href="#" data-demo="Buka ' + b.id + '" class="badge b-green"><i class="bi bi-file-earmark-pdf"></i> Ada</a>' : '<span class="badge b-rose">Hilang</span>') + '</td>' +
+        '<td class="ellip" title="' + b.catatan + '">' + (b.catatan || '<span class="muted">—</span>') + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn btn-sm btn-soft" data-demo="Kelola ' + b.id + '"><i class="bi bi-pencil"></i></button> ' +
+          '<button class="btn btn-sm btn-soft" data-demo="Hapus ' + b.id + '"><i class="bi bi-trash"></i></button>' +
+        '</td></tr>';
+    }).join('') || '<tr><td colspan="12"><div class="empty">Tidak ada berkas sesuai filter.</div></td></tr>';
+
+    var orphans = A.D.orphan || [];
+    $('orphanBox').innerHTML = orphans.length
+      ? '<div class="note" style="background:var(--amber-50);border-color:#fde68a"><b style="color:var(--amber)">Perlu perhatian · ' + orphans.length + ' BA tanpa pengajuan</b>' +
+        orphans.map(function (o) { return o.id + ' · ' + o.bagian + ' Blok ' + o.blok + ' · ' + o.kegiatan + ' · ' + A.fmtTanggal(o.tanggal); }).join('<br>') +
+        '<div class="hint mt6">BA ini tidak masuk hitungan kartu karena tidak terhubung ke pengajuan mana pun.</div></div>'
+      : '';
+  }
+
+  function renderCounts() {
+    $('nKeg').textContent = unitList().length;
+    $('nBa').textContent = baList().length;
+    $('resultInfo').textContent = state.view === 'kegiatan'
+      ? unitList().length + ' kegiatan ditampilkan'
+      : baList().length + ' berkas BA ditampilkan';
+  }
+
+  function render() { renderKpis(); renderQueue(); renderKegiatan(); renderBerkas(); renderCounts(); }
+
+  function initSelects() {
+    var bag = {};
+    A.units().forEach(function (u) { bag[u.bagian] = true; });
+    Object.keys(bag).sort().forEach(function (b) {
+      var o = document.createElement('option'); o.value = b; o.textContent = b; $('fBagian').appendChild(o);
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var kpi = e.target.closest('[data-kpi]');
+    if (kpi) { state.kpi = state.kpi === kpi.getAttribute('data-kpi') ? '' : kpi.getAttribute('data-kpi'); render(); return; }
+
+    var seg = e.target.closest('[data-view]');
+    if (seg) {
+      state.view = seg.getAttribute('data-view');
+      document.querySelectorAll('#seg button').forEach(function (b) { b.classList.toggle('on', b === seg); });
+      $('viewKegiatan').hidden = state.view !== 'kegiatan';
+      $('viewBerkas').hidden = state.view !== 'berkas';
+      renderCounts();
+      return;
+    }
+
+    var row = e.target.closest('[data-unit]');
+    if (row) {
+      var key = row.getAttribute('data-unit');
+      state.expanded[key] = !state.expanded[key];
+      renderKegiatan();
+    }
+  });
+
+  ['fBagian', 'fJenis', 'fStatus', 'fSesi'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      state.bagian = $('fBagian').value;
+      state.jenis = $('fJenis').value;
+      state.status = $('fStatus').value;
+      state.sesi = $('fSesi').value;
+      render();
+    });
+  });
+  $('q').addEventListener('input', function () { state.q = this.value.trim(); render(); });
+
+  initSelects();
+  render();
+})();
+</script>
+</body>
+</html>

@@ -586,7 +586,7 @@ describe('detail laporan tiga halaman (ringkas / analitis / cetak)', () => {
 
   it('tab analitis lama tetap tersedia', async () => {
     const html = await loadHtml();
-    for (const s of ["key: 'rekap'", "key: 'dosen'", "key: 'bagian'", "key: 'ba'", "key: 'daftarba'", "key: 'jadwal'", "key: 'bayar'"]) {
+    for (const s of ["key: 'rekap'", "key: 'dosen'", "key: 'bagian'", "key: 'ba'", "key: 'jadwal'", "key: 'bayar'"]) {
       expect(html).toContain(s);
     }
     expect(html).toContain("laporanMode === 'analitis'");

@@ -73,11 +73,11 @@ describe('daftar BA: pembersihan dead code', () => {
 describe('daftar BA: lapisan data', () => {
   it('menyediakan state filter', async () => {
     const html = await loadHtml();
-    expect(html).toContain("baListFilter: { bagian: '', jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' }");
+    expect(html).toContain("baListFilter: { jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' }");
   });
   it('menyediakan computed dan helper', async () => {
     const html = await loadHtml();
-    for (const name of ['daftarBaRows()', 'filteredDaftarBa()', 'daftarBaBagianOptions()',
+    for (const name of ['daftarBaRows()', 'filteredDaftarBa()',
       'daftarBaJenisOptions()', 'daftarBaSumberOptions()',
       'daftarBaLengkapCount()', 'daftarBaDraftCount()', 'daftarBaUnitCount()', 'daftarBaUnitRows()',
       'baLengkap(', 'baTanggalEfektif(', 'baDaftarItem(', 'baAuditRows()', 'baAuditSummary()', 'baAuditExportRows()', 'baAuditSessions(']) {
@@ -87,10 +87,13 @@ describe('daftar BA: lapisan data', () => {
 });
 
 describe('daftar BA: tab & UI', () => {
-  it('mendaftarkan tab dan section', async () => {
+  it('menyatukan Daftar BA sebagai lapis dalam tab Berita Acara', async () => {
     const html = await loadHtml();
-    expect(html).toContain("key: 'daftarba', label: 'Daftar BA'");
-    expect(html).toContain("activeTab === 'daftarba'");
+    expect(html).not.toContain("key: 'daftarba'");
+    expect(html).not.toContain("activeTab === 'daftarba'");
+    expect(html).toContain("baLayer: 'kegiatan'");
+    expect(html).toContain("activeTab === 'ba' && baLayer === 'berkas'");
+    expect(html).toContain("baLayer = 'berkas'");
   });
   it('memuat kolom dan filter wajib', async () => {
     const html = await loadHtml();
@@ -98,17 +101,17 @@ describe('daftar BA: tab & UI', () => {
       '>Kelengkapan</th>', '>Berkas</th>', '>Sumber</th>', '>Peserta</th>']) {
       expect(html).toContain(s);
     }
-    for (const s of ['baListFilter.bagian', 'baListFilter.jenis',
+    for (const s of ['baListFilter.jenis',
       'baListFilter.dosen', 'baListFilter.sumber', 'baListFilter.kelengkapan']) {
       expect(html).toContain(s);
     }
-    for (const s of ['baListFilter.blok', 'baListFilter.from', 'baListFilter.to', 'baListFilter.q']) {
+    for (const s of ['baListFilter.bagian', 'baListFilter.blok', 'baListFilter.from', 'baListFilter.to', 'baListFilter.q']) {
       expect(html).not.toContain(s);
     }
     const start = html.indexOf('filteredDaftarBa()');
-    const end = html.indexOf('daftarBaBagianOptions()', start);
+    const end = html.indexOf('daftarBaJenisOptions()', start);
     const block = html.slice(start, end);
-    for (const s of ['this.filters.from', 'this.filters.to', 'this.filters.blok', 'this.filters.search']) {
+    for (const s of ['this.filters.from', 'this.filters.to', 'this.filters.blok', 'this.filters.search', 'this.baFilter.bagian']) {
       expect(block).toContain(s);
     }
   });

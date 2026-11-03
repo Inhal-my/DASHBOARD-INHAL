@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup BA 03 — Papan Alur Administrasi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="_mock.css">
+<style>
+  .flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+  .lane{background:var(--slate-100);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:220px}
+  .lane.rose{background:#fff1f2;border-color:#fecdd3}
+  .lane.amber{background:#fffbeb;border-color:#fde68a}
+  .lane.emerald{background:#ecfdf5;border-color:#a7f3d0}
+  .lane .lh{display:flex;align-items:center;gap:7px;padding:2px 4px 9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500)}
+  .lane .lh .c{margin-left:auto;font-size:10px;background:rgba(255,255,255,.8);border-radius:999px;padding:1px 7px;color:var(--slate-500)}
+  .lane .lh i{font-size:12px}
+  .lane.rose .lh{color:var(--rose)}
+  .lane.amber .lh{color:var(--amber)}
+  .lane.emerald .lh{color:var(--emerald)}
+  .kcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 11px;box-shadow:var(--shadow);margin-bottom:8px;cursor:pointer}
+  .kcard:hover{box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+  .kcard .t{font-size:12.5px;font-weight:800;line-height:1.35}
+  .kcard .s{font-size:10.5px;color:var(--slate-400);margin-top:2px}
+  .kcard .metarow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .kcard .foot{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:10.5px;color:var(--slate-400)}
+  .stagebar{display:flex;gap:3px;margin-top:8px}
+  .stagebar i{height:5px;flex:1;border-radius:999px;background:var(--slate-200)}
+  .stagebar i.ok{background:var(--emerald)}
+  .stagebar i.warn{background:var(--amber-500)}
+  .stagebar i.bad{background:var(--rose)}
+  .lane-empty{border:1px dashed var(--slate-300);border-radius:10px;padding:14px;text-align:center;font-size:11px;color:var(--slate-400);background:rgba(255,255,255,.5)}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
+  .modal-bg.on{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:86vh;overflow:auto;box-shadow:var(--shadow-lift)}
+  .modal .mh{display:flex;align-items:center;gap:10px;padding:15px 17px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+  .modal .mh h3{font-size:14.5px}
+  .modal .mh .s{font-size:11px;color:var(--slate-400);margin-top:2px}
+  .modal .mb{padding:15px 17px}
+  .check{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .check:last-child{border-bottom:0}
+  .check .ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+  .check .ic.ok{background:var(--emerald-50);color:var(--emerald)}
+  .check .ic.no{background:var(--rose-50);color:var(--rose)}
+  .check .ic.wa{background:var(--amber-50);color:var(--amber)}
+  .check .tt{font-size:12px;font-weight:800}
+  .check .ss{font-size:11px;color:var(--slate-400);margin-top:1px;line-height:1.45}
+  .kv{display:grid;grid-template-columns:92px 1fr;gap:6px 10px;font-size:12px}
+  .kv .k{color:var(--slate-400);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+  .kv .v{color:var(--slate-700);font-weight:600}
+  @media (max-width:1100px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){.flow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="banner">MOCKUP 03 — data dummy 9 kegiatan · bukan tampilan produksi</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark"><i class="bi bi-layers-half"></i></div><div><div class="nm">Dashboard INHAL</div><div class="sb">Praktikum · Admin</div></div></div>
+    <div class="sec">Menu</div>
+    <nav>
+      <a href="#" data-demo="Menu Ringkasan"><i class="bi bi-grid-1x2"></i> Ringkasan</a>
+      <a href="#" data-demo="Menu Pengajuan"><i class="bi bi-inbox"></i> Pengajuan</a>
+      <a class="on" href="#"><i class="bi bi-file-earmark-text"></i> Berita Acara</a>
+      <a href="#" data-demo="Menu Laporan Detail"><i class="bi bi-bar-chart-line"></i> Laporan Detail</a>
+      <a href="#" data-demo="Menu Master Data"><i class="bi bi-sliders"></i> Master Data</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb">Berita Acara / <b>Alur</b></div><div class="title">Alur Administrasi BA</div></div>
+      <div class="grow"></div>
+      <div class="search"><i class="bi bi-search muted"></i><input id="q" placeholder="Cari kegiatan / BA ID / peserta"></div>
+      <button class="iconbtn" data-demo="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
+      <div class="avatar">AD</div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <span class="kicker">Konsep 03 · alur kerja</span>
+        <h1>Alur Administrasi Berita Acara</h1>
+        <p class="lede">Setiap kegiatan bergerak melalui empat tahap administrasi. Papan ini menunjukkan di mana setiap kegiatan tertahan, sehingga tindak lanjut bisa diambil per tahap, bukan per dokumen.</p>
+      </div>
+
+      <div class="kpis" style="grid-template-columns:repeat(4,1fr)" id="kpis"></div>
+
+      <section class="panel">
+        <div class="p-head">
+          <div class="ic"><i class="bi bi-kanban"></i></div>
+          <div><h3>Papan Tahapan</h3><div class="sub">Klik kartu untuk melihat rincian syarat administrasi</div></div>
+          <div class="grow"></div>
+          <button class="btn btn-soft btn-sm" data-demo="Ekspor status alur"><i class="bi bi-file-earmark-excel"></i> Ekspor</button>
+        </div>
+        <div class="p-body">
+          <div class="flow" id="flow"></div>
+          <div class="hint mt10">Tahap ditentukan dari kelengkapan data, bukan dari input manual: <b>Belum Pendukung</b> &rarr; <b>Perlu Pelaksanaan</b> &rarr; <b>Perlu Perbaikan</b> (temuan pemeriksaan) &rarr; <b>Selesai</b>.</div>
+        </div>
+      </section>
+
+      <div class="notes">
+        <div class="note good"><b>Kekuatan</b>Membuat beban kerja per tahap terlihat langsung. Cocok untuk rapat mingguan dan pembagian tugas antar staf.</div>
+        <div class="note bad"><b>Risiko</b>Kurang nyaman untuk mencari satu dokumen spesifik atau melakukan ekspor rinci. Karena itu konsep 01 tetap memuat register berkas di lapis kedua.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="mh">
+      <div class="avatar" id="mAvatar">KK</div>
+      <div class="grow"><h3 id="mTitle">Kegiatan</h3><div class="s" id="mSub"></div></div>
+      <button class="iconbtn" id="mClose" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="mb" id="mBody"></div>
+  </div>
+</div>
+
+<script src="_data.js"></script>
+<script src="_app.js"></script>
+<script>
+(function () {
+  var A = window.BA;
+  var state = { q: '', sel: null };
+  var $ = function (id) { return document.getElementById(id); };
+
+  var STAGES = [
+    { key: 'pendukung', label: 'Belum Pendukung', icon: 'bi-1-circle', cls: 'rose' },
+    { key: 'pelaksanaan', label: 'Perlu Pelaksanaan', icon: 'bi-2-circle', cls: 'amber' },
+    { key: 'perbaikan', label: 'Perlu Perbaikan', icon: 'bi-3-circle', cls: 'amber' },
+    { key: 'selesai', label: 'Selesai', icon: 'bi-check2-circle', cls: 'emerald' }
+  ];
+
+  function stageOf(u) {
+    var s = A.unitStats(u);
+    if (!s.pendukung) return 'pendukung';
+    if (!u.pelaksanaan.length) return 'pelaksanaan';
+    if (!s.lengkapPendukung || !s.lengkapPelaksanaan || s.temuan > 0) return 'perbaikan';
+    return 'selesai';
+  }
+
+  function filtered() {
+    var rows = A.units().slice();
+    if (state.q) {
+      var q = state.q.toLowerCase();
+      rows = rows.filter(function (u) {
+        var hay = [u.bagian, u.blok, u.kegiatan]
+          .concat((u.pendukung || []).map(function (b) { return b.id; }))
+          .concat((u.pelaksanaan || []).map(function (b) { return b.id + ' ' + b.dosen; }))
+          .concat((u.peserta || []).map(function (p) { return p.npm + ' ' + p.nama; }))
+          .join(' ').toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+    }
+    return rows;
+  }
+
+  function renderKpis() {
+    var t = A.totals();
+    var cards = [
+      { lb: 'Kegiatan', big: t.kegiatan, sub: 'dalam periode' },
+      { lb: 'Perlu Tindakan', big: t.perlu + t.belum, sub: 'di tiga tahap awal', cls: 'r' },
+      { lb: 'Temuan Pemeriksaan', big: t.temuan, sub: 'duplikat · sesi ekstra · draft', cls: 'a' },
+      { lb: 'Selesai', big: t.lengkap, sub: 'pendukung + pelaksanaan lengkap', cls: 'g' }
+    ];
+    $('kpis').innerHTML = cards.map(function (c) {
+      return '<div class="kpi static"><div class="lb">' + c.lb + '</div><div class="big ' + (c.cls || '') + '">' + c.big + '</div><div class="sub">' + c.sub + '</div></div>';
+    }).join('');
+  }
+
+  function stagebar(u) {
+    var s = A.unitStats(u);
+    function cls(ok, any) { return ok ? 'ok' : (any ? 'warn' : 'bad'); }
+    return '<div class="stagebar"><i class="' + cls(!!s.pendukung, s.pendukung) + '"></i>' +
+      '<i class="' + cls(!!s.pelaksanaan.length, s.pelaksanaan) + '"></i>' +
+      '<i class="' + (s.temuan ? 'bad' : (s.lengkapPendukung && s.lengkapPelaksanaan ? 'ok' : 'warn')) + '"></i></div>';
+  }
+
+  function card(u) {
+    var s = A.unitStats(u);
+    var flags = [];
+    (u.pelaksanaan || []).forEach(function (b) { (b.flags || []).forEach(function (f) { if (flags.indexOf(f) === -1) flags.push(f); }); });
+    (u.pendukung || []).forEach(function (b) { if (!b.file) flags.push('Berkas pendukung hilang'); });
+    return '<article class="kcard" data-unit="' + u.key + '" tabindex="0">' +
+      '<div class="t">' + u.kegiatan + '</div>' +
+      '<div class="s">' + u.bagian + ' · Blok ' + u.blok + '</div>' +
+      stagebar(u) +
+      '<div class="metarow">' +
+        '<span class="badge b-slate">' + u.peserta.length + ' peserta</span>' +
+        '<span class="badge b-slate">' + s.pendukung + ' pendukung</span>' +
+        '<span class="badge b-slate">' + s.pelaksanaan + ' pelaksanaan</span>' +
+        (flags.length ? '<span class="badge b-rose">' + flags.length + ' temuan</span>' : '') +
+      '</div>' +
+      '<div class="foot"><span>' + A.rupiah(u.biaya) + '</span><span><i class="bi bi-arrow-right-short"></i> rincian</span></div>' +
+    '</article>';
+  }
+
+  function renderFlow() {
+    var rows = filtered();
+    $('flow').innerHTML = STAGES.map(function (st) {
+      var items = rows.filter(function (u) { return stageOf(u) === st.key; });
+      return '<div class="lane ' + st.cls + '">' +
+        '<div class="lh"><i class="bi ' + st.icon + '"></i>' + st.label + '<span class="c">' + items.length + '</span></div>' +
+        (items.map(card).join('') || '<div class="lane-empty">Tidak ada kegiatan</div>') +
+      '</div>';
+    }).join('');
+  }
+
+  function renderModal() {
+    if (!state.sel) { $('modalBg').classList.remove('on'); return; }
+    var u = A.units().filter(function (x) { return x.key === state.sel; })[0];
+    if (!u) { state.sel = null; return renderModal(); }
+    var s = A.unitStats(u);
+    var flags = [];
+    (u.pelaksanaan || []).forEach(function (b) { (b.flags || []).forEach(function (f) { flags.push({ t: f, ba: b.id }); }); });
+    (u.pendukung || []).forEach(function (b) { if (!b.file) flags.push({ t: 'Berkas pendukung belum diunggah', ba: b.id }); });
+
+    var checks = [];
+    checks.push({ ok: s.pendukung > 0, t: 'BA Pendukung tersedia', s: s.pendukung ? s.pendukung + ' berkas tercatat' : 'Wajib sebelum keputusan' });
+    checks.push({ ok: s.lengkapPendukung, t: 'BA Pendukung lengkap', s: s.lengkapPendukung ? 'Semua berkas ada' : 'Ada berkas atau catatan yang belum lengkap' });
+    checks.push({ ok: s.pelaksanaan > 0, t: 'BA Pelaksanaan tersedia', s: s.pelaksanaan ? s.sesi + ' sesi tercatat' : 'Diunggah setelah kegiatan oleh Bagian' });
+    checks.push({ ok: s.lengkapPelaksanaan, t: 'BA Pelaksanaan lengkap', s: s.lengkapPelaksanaan ? 'Tanggal, jam, dosen, peserta, berkas terisi' : 'Masih ada sesi draft atau tanpa berkas' });
+    checks.push({ ok: s.temuan === 0, t: 'Pemeriksaan sesi bersih', s: s.temuan ? 'Temuan: ' + flags.map(function (f) { return f.t; }).join(', ') : 'Tidak ada duplikat, sesi ekstra, atau ketidakcocokan jadwal' });
+
+    $('mTitle').textContent = u.kegiatan;
+    $('mSub').textContent = u.bagian + ' · Blok ' + u.blok + ' · ' + s.status;
+    $('mAvatar').textContent = u.bagian.slice(0, 2).toUpperCase();
+    $('mBody').innerHTML =
+      '<div class="kv mb12" style="margin-bottom:14px">' +
+        '<div class="k">Peserta</div><div class="v">' + u.peserta.length + ' mahasiswa · ' + u.peserta.filter(function (p) { return p.final; }).length + ' ACC Final</div>' +
+        '<div class="k">Sesi jadwal</div><div class="v">' + u.jadwalCount + ' jadwal · ' + s.sesi + ' sesi BA</div>' +
+        '<div class="k">Berkas</div><div class="v">' + s.pendukung + ' pendukung · ' + s.pelaksanaan + ' pelaksanaan</div>' +
+        '<div class="k">Biaya</div><div class="v">' + A.rupiah(u.biaya) + '</div>' +
+      '</div>' +
+      '<div class="section-title">Syarat Administrasi</div>' +
+      checks.map(function (c) {
+        return '<div class="check"><div class="ic ' + (c.ok ? 'ok' : (c.t.indexOf('Pemeriksaan') === 0 ? 'wa' : 'no')) + '"><i class="bi ' + (c.ok ? 'bi-check-lg' : 'bi-x-lg') + '"></i></div>' +
+          '<div><div class="tt">' + c.t + '</div><div class="ss">' + c.s + '</div></div></div>';
+      }).join('') +
+      '<div class="row mt14" style="gap:7px;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" data-demo="Unggah / kelola BA — ' + u.kegiatan + '"><i class="bi bi-upload"></i> Kelola BA</button>' +
+        '<button class="btn btn-soft btn-sm" data-demo="Riwayat ' + u.kegiatan + '"><i class="bi bi-clock-history"></i> Riwayat</button>' +
+        '<button class="btn btn-soft btn-sm" data-demo="Buka pengajuan terkait"><i class="bi bi-people"></i> Peserta</button>' +
+      '</div>';
+    $('modalBg').classList.add('on');
+  }
+
+  function render() { renderKpis(); renderFlow(); renderModal(); }
+
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-unit]');
+    if (c) { state.sel = c.getAttribute('data-unit'); renderModal(); return; }
+    if (e.target === $('modalBg') || e.target.closest('#mClose')) { state.sel = null; renderModal(); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && state.sel) { state.sel = null; renderModal(); }
+  });
+  $('q').addEventListener('input', function () { state.q = this.value.trim(); renderFlow(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
