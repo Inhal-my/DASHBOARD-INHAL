@@ -71,6 +71,17 @@ describe('bagian template kalender', () => {
     expect(section).toContain('kalenderMonthCount');
   });
 
+  it('menandai jadwal bentrok dan menampilkan seksi ringkasan peserta bentrok', async () => {
+    const html = await loadBagianHtml();
+    const section = kalenderSection(html);
+    expect(section).toContain('is-bentrok');
+    expect(section).toContain('ev.bentrok');
+    expect(section).toContain('kalenderBentrok');
+    expect(section).toContain('Bentrok Jadwal');
+    expect(section).toContain('kalenderBentrokPesertaCount');
+    expect(section).toContain('ev.pesertaBentrok');
+  });
+
   it('tidak menyediakan aksi edit di dalam kalender', async () => {
     const html = await loadBagianHtml();
     const section = kalenderSection(html);

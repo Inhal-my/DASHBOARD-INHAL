@@ -585,6 +585,71 @@
     return sortKalenderEntries(out);
   }
 
+  function kalenderTimeKey(v) {
+    var m = String(v || '').match(/(\d{1,2})[.:](\d{2})/);
+    if (!m) return String(v || '').trim();
+    var h = Number(m[1]);
+    return (h < 10 ? '0' : '') + h + ':' + m[2];
+  }
+
+  /**
+   * Kelompok bentrok untuk seksi ringkasan: satu grup per tanggal+jam, berisi
+   * hanya peserta yang bentrok (npm sama pada jadwal berbeda di slot itu).
+   * Sumber data: field `bentrok`/`pesertaBentrok` dari kalender backend.
+   */
+  function buildKalenderBentrok(entries) {
+    var groups = {};
+    var order = [];
+    (entries || []).forEach(function (e) {
+      if (!e || !e.bentrok) return;
+      var date = dateOnly(e.Tanggal);
+      if (!date) return;
+      var key = date + '|' + kalenderTimeKey(e.Jam);
+      if (!groups[key]) {
+        groups[key] = { key: key, date: date, jam: String(e.Jam || ''), peserta: [] };
+        order.push(key);
+      }
+      var g = groups[key];
+      (e.pesertaBentrok || []).forEach(function (p) {
+        var npm = String((p && p.npm) || '');
+        if (!npm) return;
+        var found = null;
+        for (var i = 0; i < g.peserta.length; i++) {
+          if (g.peserta[i].npm === npm) { found = g.peserta[i]; break; }
+        }
+        if (!found) {
+          found = {
+            npm: npm,
+            namaLengkap: String((p && p.namaLengkap) || ''),
+            blok: String((p && p.blok) || ''),
+            jadwal: []
+          };
+          g.peserta.push(found);
+        }
+        (p.jadwal || []).forEach(function (j) {
+          if (!j) return;
+          var jid = String(j.JadwalID || '');
+          var ada = false;
+          for (var k = 0; k < found.jadwal.length; k++) {
+            if (String(found.jadwal[k].JadwalID || '') === jid) { ada = true; break; }
+          }
+          if (!ada) found.jadwal.push(j);
+        });
+      });
+    });
+
+    return order.map(function (k) { return groups[k]; })
+      .filter(function (g) { return g.peserta.length > 0; })
+      .map(function (g) {
+        g.peserta.sort(function (a, b) {
+          return String(a.namaLengkap || '').localeCompare(String(b.namaLengkap || ''));
+        });
+        g.jumlah = g.peserta.length;
+        return g;
+      })
+      .sort(function (a, b) { return a.key.localeCompare(b.key); });
+  }
+
   function filterKalenderEntries(entries, opts) {
     var o = opts || {};
     var bagian = normText(o.bagian);
@@ -594,6 +659,9 @@
       if (bagian && normText(e.Bagian) !== bagian) return false;
       if (!q) return true;
       var parts = [e.Bagian, e.Blok, 'blok ' + String(e.Blok || ''), e.NamaKegiatan, e.Dosen, e.Jam];
+      (e.pesertaBentrok || []).forEach(function (p) {
+        parts.push(p && p.namaLengkap, p && p.npm);
+      });
       return normText(parts.join(' ')).indexOf(q) !== -1;
     });
   }
@@ -698,6 +766,7 @@
     kalenderMonthEntries: kalenderMonthEntries,
     filterKalenderEntries: filterKalenderEntries,
     kalenderBagianOptions: kalenderBagianOptions,
+    buildKalenderBentrok: buildKalenderBentrok,
     buildKalenderCells: buildKalenderCells
   };
 })(typeof window !== 'undefined' ? window : globalThis);

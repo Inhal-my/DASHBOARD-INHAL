@@ -78,6 +78,11 @@
         .kal-dot { width: .5rem; height: .5rem; border-radius: 999px; }
         .kal-agenda-row { display: flex; width: 100%; align-items: flex-start; gap: .65rem; border-radius: .9rem; background: #fff; padding: .6rem .7rem; text-align: left; box-shadow: inset 0 0 0 1px #eef2f7; }
         .kal-agenda-row:hover { box-shadow: inset 0 0 0 1px #c7d2fe; }
+        .kal-ev.is-bentrok { background: #fff7ed; box-shadow: inset 0 0 0 1.5px #fb923c; color: #9a3412; }
+        .kal-agenda-row.is-bentrok { background: #fff7ed; box-shadow: inset 0 0 0 1.5px #fdba74; }
+        .kal-bentrok-flag { flex: none; color: #ea580c; }
+        .kal-bentrok-card { border-radius: 1rem; background: #fff7ed; padding: .7rem .8rem; box-shadow: inset 0 0 0 1px #fed7aa; }
+        .kal-bentrok-badge { display: inline-flex; align-items: center; gap: .25rem; border-radius: 999px; background: #ffedd5; color: #c2410c; font-size: .62rem; font-weight: 800; padding: .1rem .45rem; }
         .kal-agenda-row .kal-dot { margin-top: .35rem; }
         .kal-blok { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; border-radius: .4rem; background: #eef2ff; color: #4338ca; font-size: .62rem; font-weight: 800; padding: .1rem .3rem; }
         @media (max-width: 639.98px) {
@@ -353,8 +358,9 @@
                                 <div class="kal-grid mt-1">
                                     <div v-for="c in kalenderCells" :key="'cell-' + c.date" class="kal-cell" :class="{ 'is-out': !c.inMonth, 'is-today': c.isToday }">
                                         <div class="kal-daynum">{{ c.day }}</div>
-                                        <button v-for="ev in c.items.slice(0, 2)" :key="'ev-' + c.date + '-' + ev.JadwalID + '-' + ev.Bagian" type="button" class="kal-ev" :title="ev.Bagian + ' · ' + ev.NamaKegiatan" @click="openKalenderEvent(ev)">
+                                        <button v-for="ev in c.items.slice(0, 2)" :key="'ev-' + c.date + '-' + ev.JadwalID + '-' + ev.Bagian" type="button" class="kal-ev" :class="{ 'is-bentrok': ev.bentrok }" :title="ev.Bagian + ' · ' + ev.NamaKegiatan + (ev.bentrok ? ' · bentrok jadwal' : '')" @click="openKalenderEvent(ev)">
                                             <span class="kal-ev-dot" :style="{ background: kalenderColor(ev) }"></span>
+                                            <i v-if="ev.bentrok" class="bi bi-exclamation-triangle kal-bentrok-flag" aria-hidden="true"></i>
                                             <span class="kal-ev-text">{{ ev.Jam ? ev.Jam + ' ' : '' }}{{ ev.NamaKegiatan }}</span>
                                         </button>
                                         <div v-if="c.count > 2" class="kal-more">+{{ c.count - 2 }} kegiatan lain</div>
@@ -377,17 +383,51 @@
                                             <span v-if="g.date === kalenderTodayIso" class="chip bg-brand-50 text-brand-700">Hari ini</span>
                                         </div>
                                         <div class="space-y-2">
-                                            <button v-for="ev in g.items" :key="'agr-' + g.date + '-' + ev.JadwalID + '-' + ev.Bagian" type="button" class="kal-agenda-row" @click="openKalenderEvent(ev)">
+                                            <button v-for="ev in g.items" :key="'agr-' + g.date + '-' + ev.JadwalID + '-' + ev.Bagian" type="button" class="kal-agenda-row" :class="{ 'is-bentrok': ev.bentrok }" @click="openKalenderEvent(ev)">
                                                 <span class="kal-dot" :style="{ background: kalenderColor(ev) }"></span>
                                                 <div class="min-w-0 flex-1">
-                                                    <div class="truncate text-sm font-semibold text-slate-900">{{ ev.NamaKegiatan }}</div>
+                                                    <div class="flex items-center gap-1.5">
+                                                        <i v-if="ev.bentrok" class="bi bi-exclamation-triangle kal-bentrok-flag" aria-hidden="true"></i>
+                                                        <span class="truncate text-sm font-semibold text-slate-900">{{ ev.NamaKegiatan }}</span>
+                                                    </div>
                                                     <div class="text-[11px] text-slate-400">
                                                         <span class="font-semibold text-slate-500">{{ ev.Bagian }}</span> · Blok {{ ev.Blok }}<template v-if="ev.Jam"> · {{ ev.Jam }}</template><template v-if="ev.Dosen"> · {{ ev.Dosen }}</template>
                                                     </div>
                                                 </div>
+                                                <span v-if="ev.pesertaBentrok && ev.pesertaBentrok.length" class="kal-bentrok-badge"><i class="bi bi-exclamation-triangle"></i> Bentrok</span>
                                                 <span v-if="ev.jumlahPeserta" class="chip bg-slate-100 text-slate-500">{{ ev.jumlahPeserta }} peserta</span>
                                                 <span v-if="ev.punyaBa" class="chip bg-emerald-50 text-emerald-700">BA</span>
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="kalenderBentrok.length" class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-100">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="section-title !mb-0 text-orange-600"><i class="bi bi-exclamation-triangle"></i> Bentrok Jadwal</div>
+                                    <span class="ml-auto kal-bentrok-badge">{{ kalenderBentrokPesertaCount }} peserta bentrok</span>
+                                </div>
+                                <p class="mt-1 text-[11px] leading-relaxed text-slate-400">Peserta yang sama terdaftar pada dua jadwal berbeda di tanggal dan jam yang sama. Nama hanya ditampilkan untuk peserta yang terindikasi bentrok.</p>
+                                <div class="mt-3 space-y-3">
+                                    <div v-for="grp in kalenderBentrok" :key="'bentrok-' + grp.key" class="kal-bentrok-card">
+                                        <div class="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-orange-700">
+                                            <span>{{ kalenderWeekday(grp.date) }}, {{ formatTanggal(grp.date) }}</span>
+                                            <span v-if="grp.jam">· {{ grp.jam }}</span>
+                                            <span class="ml-auto text-orange-500">{{ grp.jumlah }} peserta</span>
+                                        </div>
+                                        <div class="space-y-1.5">
+                                            <div v-for="p in grp.peserta" :key="'bp-' + grp.key + '-' + p.npm" class="rounded-lg bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-orange-100">
+                                                <div class="flex items-center gap-2 text-xs">
+                                                    <span class="kal-blok">{{ p.blok || '-' }}</span>
+                                                    <span class="min-w-0 flex-1 truncate font-semibold text-slate-800">{{ p.namaLengkap || '(tanpa nama)' }}</span>
+                                                    <span class="font-mono text-[11px] text-slate-400">{{ p.npm }}</span>
+                                                </div>
+                                                <ul class="mt-1 space-y-0.5 pl-1 text-[11px] text-slate-500">
+                                                    <li v-for="j in p.jadwal" :key="'bpj-' + grp.key + '-' + p.npm + '-' + j.JadwalID">
+                                                        <span class="font-semibold text-slate-600">{{ j.Bagian }}</span> · Blok {{ j.Blok }} · {{ j.NamaKegiatan }}
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -948,6 +988,27 @@
                         <i class="bi bi-people mt-0.5"></i>
                         <span>{{ kalender.selected.jumlahPeserta }} peserta terdaftar. Rincian nama hanya tersedia di halaman bagian <b>{{ kalender.selected.Bagian }}</b>.</span>
                     </div>
+                    <div v-if="kalender.selected.pesertaBentrok && kalender.selected.pesertaBentrok.length" class="mt-4">
+                        <div class="mb-1 flex flex-wrap items-center justify-between gap-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wide text-orange-600"><i class="bi bi-exclamation-triangle"></i> Peserta bentrok ({{ kalender.selected.pesertaBentrok.length }})</span>
+                            <span class="text-[11px] text-slate-400">Blok · Nama · NPM</span>
+                        </div>
+                        <div class="space-y-1.5 rounded-xl bg-orange-50 p-2 ring-1 ring-orange-100">
+                            <div v-for="p in kalender.selected.pesertaBentrok" :key="'kb-' + (kalender.selected.JadwalID || '') + '-' + (p.npm || '')" class="rounded-lg bg-white px-2.5 py-1.5 text-xs shadow-sm">
+                                <div class="flex items-center gap-2">
+                                    <span class="kal-blok">{{ p.blok || '-' }}</span>
+                                    <span class="min-w-0 flex-1 truncate font-semibold text-slate-800">{{ p.namaLengkap || '(tanpa nama)' }}</span>
+                                    <span class="font-mono text-[11px] text-slate-400">{{ p.npm }}</span>
+                                </div>
+                                <ul class="mt-1 space-y-0.5 pl-1 text-[11px] text-slate-500">
+                                    <li v-for="j in p.jadwal" :key="'kbj-' + (kalender.selected.JadwalID || '') + '-' + (p.npm || '') + '-' + j.JadwalID">
+                                        <span class="font-semibold text-slate-600">{{ j.Bagian }}</span> · Blok {{ j.Blok }} · {{ j.NamaKegiatan }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-[11px] leading-relaxed text-slate-400">Ditampilkan karena peserta ini terdaftar pada lebih dari satu jadwal di tanggal dan jam yang sama.</p>
+                    </div>
                     <div class="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-500 ring-1 ring-slate-100">
                         <i class="bi bi-lock mt-0.5"></i>
                         <span>Kalender bersifat hanya baca. Perubahan jadwal dilakukan lewat menu <b>Jadwal</b> pada halaman bagian {{ kalender.selected.Bagian }}.</span>
@@ -1183,6 +1244,12 @@
                         g.items.push(e);
                     }
                     return groups;
+                },
+                kalenderBentrok() {
+                    return window.BagianState.buildKalenderBentrok(this.kalenderFilteredEntries);
+                },
+                kalenderBentrokPesertaCount() {
+                    return this.kalenderBentrok.reduce(function (n, g) { return n + g.jumlah; }, 0);
                 },
                 selectedItem() {
                     const kind = this.sel && this.sel.kind;

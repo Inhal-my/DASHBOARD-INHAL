@@ -97,6 +97,30 @@ describe('kalender pelaksanaan lintas bagian', () => {
     expect(list.some((e) => Object.prototype.hasOwnProperty.call(e, 'peserta'))).toBe(false);
   });
 
+  it('menandai peserta bentrok tanpa membocorkan peserta lain', async () => {
+    await seed();
+    await jadwal(['2026-09-10T08:00:00', 'JDW-KAL-G', 'KKD', 'B', 'KKD Bentrok', 'kkd|b|bentrok', '2026-10-20', '08.00', 'dr. Budi', 1]);
+    await peserta('JDW-KAL-G', '2201010001', 'Aisyah');
+
+    const list = await computeKalenderJadwal(env.DB);
+    const a = list.find((e) => e.JadwalID === 'JDW-KAL-A');
+    const g = list.find((e) => e.JadwalID === 'JDW-KAL-G');
+    const b = list.find((e) => e.JadwalID === 'JDW-KAL-B');
+
+    expect(a.bentrok).toBe(true);
+    expect(g.bentrok).toBe(true);
+    expect(b.bentrok).toBe(false);
+    expect(a.pesertaBentrok).toHaveLength(1);
+    expect(a.pesertaBentrok[0].npm).toBe('2201010001');
+    expect(a.pesertaBentrok[0].namaLengkap).toBe('Aisyah');
+    expect(a.pesertaBentrok[0].jadwal.map((j) => j.JadwalID).sort()).toEqual(['JDW-KAL-A', 'JDW-KAL-G']);
+
+    expect(JSON.stringify(b)).not.toContain('2201010002');
+    expect(JSON.stringify(b)).not.toContain('Cici');
+    expect(b.pesertaBentrok).toEqual([]);
+    expect(JSON.stringify(list.filter((e) => !e.bentrok))).not.toContain('Aisyah');
+  });
+
   it('terdaftar pada dispatchRpc dan tetap menolak tanpa token', async () => {
     await seed();
     const token = await bagianToken();

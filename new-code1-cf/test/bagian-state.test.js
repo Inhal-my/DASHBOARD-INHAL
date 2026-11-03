@@ -386,4 +386,35 @@ describe('bagian-state kalender helpers', () => {
     expect(S.sortKalenderPeserta(null)).toEqual([]);
     expect(S.sortKalenderPeserta([])).toEqual([]);
   });
+
+  it('mengelompokkan peserta bentrok per tanggal dan jam', async () => {
+    const S = await loadState();
+    const entries = [
+      { JadwalID: 'x1', Bagian: 'SGD', Blok: '1', NamaKegiatan: 'SGD A', Tanggal: '2026-10-20', Jam: '08:00', bentrok: true,
+        pesertaBentrok: [{ npm: '11', namaLengkap: 'Ani', blok: 'A', jadwal: [{ JadwalID: 'x1', Bagian: 'SGD', Blok: '1', NamaKegiatan: 'SGD A' }, { JadwalID: 'x2', Bagian: 'KKD', Blok: '2', NamaKegiatan: 'KKD B' }] }] },
+      { JadwalID: 'x2', Bagian: 'KKD', Blok: '2', NamaKegiatan: 'KKD B', Tanggal: '2026-10-20', Jam: '08.00', bentrok: true,
+        pesertaBentrok: [{ npm: '11', namaLengkap: 'Ani', blok: 'A', jadwal: [{ JadwalID: 'x1', Bagian: 'SGD', Blok: '1', NamaKegiatan: 'SGD A' }, { JadwalID: 'x2', Bagian: 'KKD', Blok: '2', NamaKegiatan: 'KKD B' }] }] },
+      { JadwalID: 'x3', Bagian: 'Ujian', Blok: '1', NamaKegiatan: 'UAS', Tanggal: '2026-10-21', Jam: '09:00', bentrok: false, pesertaBentrok: [] }
+    ];
+    const groups = S.buildKalenderBentrok(entries);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].date).toBe('2026-10-20');
+    expect(groups[0].jumlah).toBe(1);
+    expect(groups[0].peserta.map((p) => p.npm)).toEqual(['11']);
+    expect(groups[0].peserta[0].jadwal.map((j) => j.JadwalID)).toEqual(['x1', 'x2']);
+    expect(S.buildKalenderBentrok([])).toEqual([]);
+    expect(S.buildKalenderBentrok(null)).toEqual([]);
+  });
+
+  it('pencarian ikut menjangkau peserta bentrok', async () => {
+    const S = await loadState();
+    const entries = [
+      { JadwalID: 'y1', Bagian: 'SGD', Blok: '1', NamaKegiatan: 'SGD A', Tanggal: '2026-10-20', Jam: '08:00', bentrok: true,
+        pesertaBentrok: [{ npm: '999', namaLengkap: 'Zulaikha', blok: 'A', jadwal: [] }] },
+      { JadwalID: 'y2', Bagian: 'KKD', Blok: '2', NamaKegiatan: 'KKD B', Tanggal: '2026-10-21', Jam: '09:00', bentrok: false }
+    ];
+    expect(S.filterKalenderEntries(entries, { query: 'zulaikha' }).map((e) => e.JadwalID)).toEqual(['y1']);
+    expect(S.filterKalenderEntries(entries, { query: '999' }).map((e) => e.JadwalID)).toEqual(['y1']);
+    expect(S.filterKalenderEntries(entries, { query: 'kkd b' }).map((e) => e.JadwalID)).toEqual(['y2']);
+  });
 });
