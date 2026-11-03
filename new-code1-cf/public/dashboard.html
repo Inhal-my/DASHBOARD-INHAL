@@ -481,6 +481,7 @@
         .in-mcard .kv { display:grid; grid-template-columns:92px 1fr; gap:4px 10px; font-size:12.5px; color:var(--ink-500); }
         .in-mcard .kv b { color:var(--ink-700); font-weight:600; }
         .in-mcard .actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        .keg-text { display:block; max-width:16rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .in-proc { display:flex; gap:10px; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow-soft); margin-bottom:18px; }
         .in-proc .p { display:flex; align-items:center; gap:10px; flex:1; min-width:220px; }
         .in-proc .p .n { width:30px; height:30px; border-radius:10px; display:grid; place-items:center; font-weight:800; font-size:13px; flex:0 0 auto; background:var(--brand-soft); color:var(--brand); }
@@ -816,7 +817,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-2.5"><div class="font-semibold text-slate-700">{{ r['Jenis Kegiatan'] }}</div><div class="text-xs text-slate-400">{{ r.Blok }}</div></td>
+                                        <td class="px-4 py-2.5"><div class="font-semibold text-slate-700 keg-text" :title="kegiatanLabel(r)">{{ kegiatanLabel(r) }}</div><div class="text-xs text-slate-400 keg-text" :title="r.Blok">{{ r.Blok }}</div></td>
                                         <td class="px-4 py-2.5 text-slate-500">{{ formatTanggal(r.Timestamp) }}</td>
                                         <td class="px-4 py-2.5"><span :class="statusBadge(r.Status)">{{ r.Status }}</span></td>
                                         <td class="px-4 py-2.5">
@@ -845,7 +846,7 @@
                                     </div>
                                     <span :class="statusBadge(r.Status)">{{ r.Status }}</span>
                                 </div>
-                                <div class="kv"><span>NPM</span><b class="font-mono">{{ r.NPM }}</b><span>Kegiatan</span><b>{{ r['Jenis Kegiatan'] }} - {{ r.Blok }}</b><span>Terdaftar</span><b>{{ formatTanggal(r.Timestamp) }}</b></div>
+                                <div class="kv"><span>NPM</span><b class="font-mono">{{ r.NPM }}</b><span>Kegiatan</span><b :title="kegiatanLabel(r)" class="truncate">{{ kegiatanLabel(r) }}</b><span>Blok</span><b>{{ r.Blok }}</b><span>Terdaftar</span><b>{{ formatTanggal(r.Timestamp) }}</b></div>
                                 <div class="flex gap-[5px] mb-2">
                                     <a v-if="r['Link Bukti Bayar']" :href="safeUrl(r['Link Bukti Bayar'])" target="_blank" rel="noopener noreferrer" class="in-docdot on bukti" title="Bukti Bayar" @click.stop><i class="bi bi-cash-coin"></i></a>
                                     <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" rel="noopener noreferrer" class="in-docdot on surat" title="Berkas Final" @click.stop><i class="bi bi-file-earmark-text"></i></a>
@@ -3471,6 +3472,19 @@
                     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
                     return colors[h % colors.length];
                 },
+                // Label kolom Kegiatan: detail kegiatan (Pilihan - Detail) milik
+                // pengajuan, dengan fallback ke Jenis Kegiatan bila detail kosong.
+                kegiatanLabel(r) {
+                    if (!r) return '';
+                    const id = String(r['ID Pengajuan'] || '').trim();
+                    const detail = (this.detailMap[id] || [])[0] || null;
+                    const pilihan = String((detail && detail.Pilihan) || '').trim();
+                    const detailText = String((detail && detail.Detail) || '').trim();
+                    let label = '';
+                    if (pilihan && detailText) label = pilihan + ' - ' + detailText;
+                    else label = pilihan || detailText;
+                    return label || String(r['Jenis Kegiatan'] || '').trim() || '-';
+                },
                 // ---------- helpers ----------
                 run(fn, ...args) {
                     if (this.session && this.session.token) args.push(this.session.token);
@@ -4020,6 +4034,7 @@
                         this.filters = { search: '', jenis: '', blok: '', status: '' };
                         this.loaded.pengajuan = false;
                         await Promise.all([this.loadStats(), this.loadPengajuan()]);
+                        await this.loadDetailMapFor(res.idPengajuan);
                         this.manualHighlightId = res.idPengajuan || '';
                         this.switchTab('pengajuan');
                         setTimeout(() => { this.manualHighlightId = ''; }, 4000);
@@ -4421,6 +4436,20 @@
                         this.notify('Gagal: ' + e, false);
                     } finally {
                         this.loading = false;
+                    }
+                },
+                // Melengkapi detailMap untuk satu pengajuan tanpa menyentuh state
+                // drawer. Dipakai setelah pengajuan manual dibuat agar kolom
+                // Kegiatan langsung menampilkan detailnya tanpa reload halaman.
+                async loadDetailMapFor(id) {
+                    const key = String(id || '').trim();
+                    if (!key) return;
+                    try {
+                        const p = await this.run('getPengajuanWithDetails', key);
+                        if (!p) return;
+                        this.detailMap[key] = p.details || [];
+                    } catch (e) {
+                        // Diamkan: kolom Kegiatan memakai fallback Jenis Kegiatan.
                     }
                 },
                 openDetail(id) {

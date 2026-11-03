@@ -293,6 +293,21 @@ describe('dashboard template', () => {
     expect(cards).toContain('in-docdot on bukti');
     expect(cards).toContain('in-docdot on surat');
     expect(cards).toContain('isManual(r)');
+    expect(cards).toContain('kegiatanLabel(r)');
+  });
+
+  it('kolom Kegiatan menampilkan detail kegiatan dari detailMap', async () => {
+    const html = await loadDashboardHtml();
+    const start = html.indexOf('class="master-table-scroll overflow-x-auto in-desktop-only"');
+    const end = html.indexOf('class="in-cards"', start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const table = html.slice(start, end);
+    expect(table).toContain('kegiatanLabel(r)');
+    expect(table).toContain('r.Blok');
+    expect(table).not.toContain("{{ r['Jenis Kegiatan'] }}");
+    expect(html).toContain('kegiatanLabel(r) {');
+    expect(html).toContain('loadDetailMapFor(');
   });
 
   it('manual memakai panel terpisah dan catatan email', async () => {
