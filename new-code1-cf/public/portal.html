@@ -457,8 +457,8 @@
                                 <div class="section-title"><i class="bi bi-file-earmark-text"></i> Keterangan & Berkas</div>
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="label" for="regKeterangan">Keterangan (Opsional)</label>
-                                        <textarea id="regKeterangan" v-model="regForm.keterangan" rows="2" class="input" placeholder="Catatan tambahan jika diperlukan"></textarea>
+                                        <label class="label" for="regKeterangan">Keterangan <span class="text-rose-500">*</span></label>
+                                        <textarea id="regKeterangan" v-model="regForm.keterangan" rows="2" class="input" placeholder="Jelaskan keperluan pengajuan ini" required></textarea>
                                     </div>
                                     <div>
                                         <label class="label" for="regSurat">Upload Surat Keterangan (PDF / JPG / PNG)</label>
@@ -781,6 +781,10 @@
                     }
                     if (!noHp || !/^[0-9+\-\s().]{8,20}$/.test(noHp)) {
                         this.showToast('No. HP/WhatsApp wajib diisi dengan format yang benar.', 'error');
+                        return;
+                    }
+                    if (!this.regForm.keterangan.trim()) {
+                        this.showToast('Keterangan wajib diisi.', 'error');
                         return;
                     }
                     this.loading = true;

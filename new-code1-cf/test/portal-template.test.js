@@ -18,4 +18,12 @@ describe('guard template portal', () => {
     expect(html).toContain('buktiFile: await this.readFileAsBase64');
     expect(html).toContain("detailItem.statusCode === 'approved' && !detailItem.hasUpload");
   });
+
+  it('field keterangan wajib diisi pada form pendaftaran', async () => {
+    const html = await loadPortalHtml();
+    expect(html).toContain('for="regKeterangan">Keterangan <span class="text-rose-500">*</span>');
+    expect(html).toContain('id="regKeterangan" v-model="regForm.keterangan"');
+    expect(html).toContain('placeholder="Jelaskan keperluan pengajuan ini" required');
+    expect(html).toContain("this.showToast('Keterangan wajib diisi.', 'error')");
+  });
 });

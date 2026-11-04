@@ -38,6 +38,9 @@ export async function createPengajuan(db, formData, env, opts) {
     if (!noHp || !isValidPhone(noHp)) {
       return { success: false, message: 'No. HP/WhatsApp wajib diisi dengan format yang benar.' };
     }
+    if (!normalizeFormText(formData.keterangan)) {
+      return { success: false, message: 'Keterangan wajib diisi.' };
+    }
   }
 
   const formKey = buildPengajuanKey(formData);

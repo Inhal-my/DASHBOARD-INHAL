@@ -15,7 +15,8 @@ async function post(body) {
 const validBody = {
   npm: '2201010001', namaLengkap: 'Aisyah Putri', email: 'aisyah@contoh.com',
   noHp: '08123456789', blok: 'A', jenisKegiatan: 'Ujian',
-  detailKegiatan: 'UAS', tanggalKegiatan: '2026-09-20'
+  detailKegiatan: 'UAS', tanggalKegiatan: '2026-09-20',
+  keterangan: 'Pengajuan untuk keperluan ujian susulan.'
 };
 
 describe('POST /api/pengajuan', () => {
@@ -29,6 +30,14 @@ describe('POST /api/pengajuan', () => {
     const res = await post({ ...validBody, email: 'bukan-email' });
     expect(res.status).toBe(400);
     expect((await res.json()).message).toBe('Email aktif wajib diisi dengan format yang benar.');
+  });
+
+  it('rejects an empty keterangan from the portal', async () => {
+    const res = await post({ ...validBody, keterangan: '   ' });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Keterangan wajib diisi.');
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM pengajuan WHERE npm = ?1').bind('2201010001').first();
+    expect(n.n).toBe(0);
   });
 
   it('stores pengajuan, detail, and status history', async () => {

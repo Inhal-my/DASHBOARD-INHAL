@@ -116,6 +116,7 @@ describe('surat keterangan upload', () => {
     npm: '2201010002', namaLengkap: 'Budi Santoso', email: 'budi@contoh.com',
     noHp: '08123456789', blok: 'B', jenisKegiatan: 'Ujian',
     detailKegiatan: 'UAS', tanggalKegiatan: '2026-09-21',
+    keterangan: 'Keperluan ujian susulan.',
     fileSurat: { data: 'aGVsbG8=', mimeType: 'application/pdf', name: 'surat.pdf' }
   };
 
