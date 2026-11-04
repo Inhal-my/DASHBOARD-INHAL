@@ -535,6 +535,18 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('Jumlah Berita Acara per Dosen');
     expect(html).toContain('in-heat-legend');
   });
+
+  it('matriks dosen menghitung jumlah BA per bagian, bukan jumlah peserta', async () => {
+    const html = await loadHtml();
+    const start = html.indexOf('dosenMatrixRows() {');
+    expect(start).toBeGreaterThan(-1);
+    const end = html.indexOf('dosenGrandTotal() {', start);
+    const body = html.slice(start, end);
+    expect(body).toContain('map[dk].counts[bk] = (map[dk].counts[bk] || 0) + 1;');
+    expect(body).toContain('map[dk].total += 1;');
+    expect(body).not.toContain('(b.peserta || []).length');
+    expect(html).toContain('{{ b.value }} BA');
+  });
 });
 
 describe('detail laporan tab bagian (mockup)', () => {

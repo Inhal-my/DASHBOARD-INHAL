@@ -1129,13 +1129,13 @@
                                     <i class="bi bi-bar-chart-steps text-brand-500"></i>
                                     <h2 class="lap-card-title">Jumlah Berita Acara per Dosen</h2>
                                 </div>
-                                <span class="in-badge cancel">{{ dosenMatrix.grandTotal }} BA total</span>
+                                <span class="in-badge cancel">{{ dosenMatrix.grandTotal }} BA-dosen</span>
                             </div>
                             <div class="space-y-3">
                                 <div v-for="b in dosenBaBars" :key="b.label">
                                     <div class="mb-1 flex items-center justify-between text-xs">
                                         <span class="text-slate-600">{{ b.label }}</span>
-                                        <span class="font-bold text-slate-800">{{ b.value }} kegiatan</span>
+                                        <span class="font-bold text-slate-800">{{ b.value }} BA</span>
                                     </div>
                                     <div class="in-bar-track"><div class="in-bar-fill brand transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div></div>
                                 </div>
@@ -1194,8 +1194,8 @@
                                 </table>
                             </div>
                             <div class="in-heat-legend px-3 pb-3">
-                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ kegiatan</span>
-                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 kegiatan</span>
+                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ BA</span>
+                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 BA</span>
                             </div>
                             <pager-bar id="pg-dosen" :state="pagers.dosen" :total="dosenMatrix.rows.length" unit="dosen"
                                 nav-label="Halaman matriks dosen"
@@ -3651,7 +3651,6 @@
                         const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
                         const bk = this.normBagian(bagianLabel);
                         if (colKeys.indexOf(bk) === -1) return;
-                        const jumlah = (b.peserta || []).length;
                         const seenDosen = {};
                         this.baDosenList(b).forEach(dosen => {
                             const dk = this.normSearch(dosen);
@@ -3661,8 +3660,8 @@
                                 map[dk] = { key: dk, label: dosen, counts: {}, total: 0 };
                                 colKeys.forEach(k => { map[dk].counts[k] = 0; });
                             }
-                            map[dk].counts[bk] = (map[dk].counts[bk] || 0) + jumlah;
-                            map[dk].total += jumlah;
+                            map[dk].counts[bk] = (map[dk].counts[bk] || 0) + 1;
+                            map[dk].total += 1;
                         });
                     });
                     let arr = Object.values(map);
