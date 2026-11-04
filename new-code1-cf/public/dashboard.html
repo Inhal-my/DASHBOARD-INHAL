@@ -1481,7 +1481,7 @@
                                                             <span class="font-mono text-[10px] text-slate-400">#{{ s.index }}</span>
                                                             <span class="font-mono font-semibold text-slate-700">{{ s.baId }}</span>
                                                             <span class="text-slate-600">{{ s.tanggal || '-' }} {{ s.jam }}</span>
-                                                            <span class="text-slate-600">{{ s.dosen || '-' }}</span>
+                                                            <span class="text-slate-600">{{ baDosenText(s) || '-' }}</span>
                                                             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ s.pesertaCount }} peserta</span>
                                                             <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="s.status === 'Draft' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">{{ s.status }}</span>
                                                             <span v-for="f in (s.flags || [])" :key="f" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
@@ -2067,7 +2067,7 @@
                                                 <span v-if="b.label" class="rounded bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ b.label }}</span>
                                                 <span class="text-slate-400">{{ b.tanggal ? formatTanggal(b.tanggal) : '-' }}<template v-if="b.jam"> · {{ b.jam }}</template></span>
                                             </div>
-                                            <div class="mt-0.5 text-[11px] text-slate-500">{{ b.kegiatan || '-' }}<template v-if="b.dosen"> · {{ b.dosen }}</template> · {{ b.jumlahPeserta }} peserta di BA ini</div>
+                                            <div class="mt-0.5 text-[11px] text-slate-500">{{ b.kegiatan || '-' }}<template v-if="baDosenText(b)"> · {{ baDosenText(b) }}</template> · {{ b.jumlahPeserta }} peserta di BA ini</div>
                                             <div class="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catatan {{ b.sumber === 'Bagian' ? 'bagian' : 'admin' }}</div>
                                             <div v-if="b.catatan" class="mt-1 whitespace-pre-line rounded-lg bg-amber-50 px-2 py-1 text-[11px] text-amber-800">{{ b.catatan }}</div>
                                             <div v-else class="mt-1 text-[11px] text-slate-400">Tanpa catatan.</div>
@@ -3215,7 +3215,7 @@
                                 'BA ID': s ? s.baId : '',
                                 Tanggal: s ? (s.tanggal || '') : '',
                                 Jam: s ? (s.jam || '') : '',
-                                Dosen: s ? (s.dosen || '') : '',
+                                Dosen: s ? ((s.dosenList && s.dosenList.length ? s.dosenList.join(', ') : (s.dosen || ''))) : '',
                                 Peserta: s ? (s.pesertaCount || 0) : 0,
                                 'Jadwal ID': s ? (s.jadwalId || '') : '',
                                 'Status Jadwal': s ? (s.jadwalId ? (s.jadwalCocok ? 'Sesuai' : 'Tidak cocok') : (r.baAudit.jadwalCount ? 'Sesi ekstra' : '-')) : (r.baAudit.jadwalCount ? 'Belum terealisasi' : '-'),
@@ -3650,7 +3650,8 @@
                             namaKegiatan: this.babSelectedGroup.pilihan + (this.babSelectedGroup.detail ? ' - ' + this.babSelectedGroup.detail : ''),
                             tanggalPelaksanaan: this.bab.ba.tanggal,
                             jam: jadwal.Jam || '',
-                            dosen: jadwal.Dosen || '',
+                            dosenList: (Array.isArray(jadwal.DosenList) ? jadwal.DosenList : []).filter(Boolean),
+                            dosen: (Array.isArray(jadwal.DosenList) && jadwal.DosenList.length ? jadwal.DosenList[0] : (jadwal.Dosen || '')),
                             jadwalId: jadwal.JadwalID || '',
                             label: this.bab.ba.label.trim(),
                             blok: this.babSelectedGroup.blok,
@@ -5021,7 +5022,7 @@
                         const isPelaksanaan = b.sumber === 'Bagian';
                         out.push({
                             label: isPelaksanaan ? 'BA Pelaksanaan' : 'BA Pendukung',
-                            detail: b.baId + (isPelaksanaan && b.dosen ? ' · ' + b.dosen : '') + (isPelaksanaan && b.jam ? ' · ' + b.tanggal + ' ' + b.jam : ''),
+                            detail: b.baId + (isPelaksanaan && baDosenText(b) ? ' · ' + baDosenText(b) : '') + (isPelaksanaan && b.jam ? ' · ' + b.tanggal + ' ' + b.jam : ''),
                             note: b.catatan || '',
                             time: b.timestamp || ''
                         });
@@ -5088,6 +5089,12 @@
                         ekstra: ekstraKeys.map(t => byTanggal[t]),
                         total: auditSesi || Math.max(planned.length, uniqReal)
                     };
+                },
+                baDosenText(b) {
+                    if (!b) return '';
+                    const list = Array.isArray(b.dosenList) ? b.dosenList.filter(Boolean) : [];
+                    if (list.length) return list.join(', ');
+                    return String(b.dosen || '').trim();
                 },
                 dosenRingkas(r) {
                     const list = ((r && r.dosenList) || []).filter(Boolean);

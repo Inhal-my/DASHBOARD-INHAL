@@ -52,6 +52,45 @@ describe('jadwal write', () => {
     expect(res.message).toContain('belum berstatus');
   });
 
+  it('menyimpan multi-dosen ke jadwal_dosen dan dosen utama ke kolom lama', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveJadwalPelaksanaan(env.DB, { ...payload, dosenList: ['dr. Andi', 'dr. Budi', 'Dr. Citra'] }, 'SGD', ctx);
+    expect(res.success).toBe(true);
+    const rows = await env.DB.prepare('SELECT nama, urutan FROM jadwal_dosen WHERE jadwal_id=?1 ORDER BY urutan, id').bind(res.jadwalId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Andi', 'dr. Budi', 'Dr. Citra']);
+    const j = await env.DB.prepare('SELECT dosen FROM jadwal_pelaksanaan WHERE jadwal_id=?1').bind(res.jadwalId).first();
+    expect(j.dosen).toBe('dr. Andi');
+  });
+
+  it('menolak dosen duplikat (case-insensitive) pada jadwal', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveJadwalPelaksanaan(env.DB, { ...payload, dosenList: ['dr. Andi', 'DR.  ANDI'] }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message.toLowerCase()).toContain('duplikat');
+  });
+
+  it('menolak lebih dari lima dosen', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveJadwalPelaksanaan(env.DB, { ...payload, dosenList: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'] }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('maksimal');
+  });
+
+  it('mengganti seluruh daftar dosen saat jadwal diubah', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveJadwalPelaksanaan(env.DB, { ...payload, dosenList: ['dr. Andi', 'dr. Budi'] }, 'SGD', ctx);
+    const up = await updateJadwalPelaksanaan(env.DB, res.jadwalId, { ...payload, dosenList: ['dr. Citra'] }, 'SGD', ctx);
+    expect(up.success).toBe(true);
+    const rows = await env.DB.prepare('SELECT nama FROM jadwal_dosen WHERE jadwal_id=?1 ORDER BY urutan, id').bind(res.jadwalId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Citra']);
+    const j = await env.DB.prepare('SELECT dosen FROM jadwal_pelaksanaan WHERE jadwal_id=?1').bind(res.jadwalId).first();
+    expect(j.dosen).toBe('dr. Citra');
+  });
+
   it('mengubah jadwal selama belum ada BA', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx(['SGD']);

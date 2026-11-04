@@ -26,6 +26,27 @@ describe('BA merujuk jadwal', () => {
     expect(ba.jadwal_id).toBe(j.jadwalId);
   });
 
+  it('menyimpan multi-dosen jadwal ke ba_dosen saat BA dibuat dari jadwal', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const j = await saveJadwalPelaksanaan(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggal: '2026-09-20', jam: '09:00', dosenList: ['dr. Andi', 'dr. Budi'], catatan: '', peserta }, 'SGD', ctx);
+    const res = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', jam: '09:00', jadwalId: j.jadwalId, catatan: '', peserta }, 'SGD', ctx);
+    expect(res.success).toBe(true);
+    const rows = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id=?1 ORDER BY urutan, id').bind(res.baId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Andi', 'dr. Budi']);
+    const ba = await env.DB.prepare('SELECT dosen FROM berita_acara WHERE ba_id=?1').bind(res.baId).first();
+    expect(ba.dosen).toBe('dr. Andi');
+  });
+
+  it('BA manual memakai dosenList payload bila tanpa sesi jadwal', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const res = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', jam: '09:00', dosenList: ['dr. Ani', 'dr. Budi'], catatan: '', peserta }, 'SGD', ctx);
+    expect(res.success).toBe(true);
+    const rows = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id=?1 ORDER BY urutan, id').bind(res.baId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Ani', 'dr. Budi']);
+  });
+
   it('menolak BA kedua untuk jadwal yang sama', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx();
@@ -43,6 +64,20 @@ describe('BA merujuk jadwal', () => {
     await env.DB.prepare('UPDATE jadwal_pelaksanaan SET active=0').run();
     const res = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', jadwalId: j.jadwalId, catatan: '', peserta }, 'SGD', ctx);
     expect(res.success).toBe(false);
+  });
+
+  it('lengkapi menerima dosenList dan menyinkron pengajuan dengan dosen utama', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const draft = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '', peserta }, 'SGD', ctx);
+    const filled = await lengkapiBeritaAcaraBagian(env.DB, draft.baId, { jam: '13:30', dosenList: ['dr. Budi', 'dr. Citra'] }, 'SGD', ctx);
+    expect(filled.success).toBe(true);
+    const ba = await env.DB.prepare('SELECT dosen FROM berita_acara WHERE ba_id=?1').bind(draft.baId).first();
+    expect(ba.dosen).toBe('dr. Budi');
+    const rows = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id=?1 ORDER BY urutan, id').bind(draft.baId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Budi', 'dr. Citra']);
+    const p = await env.DB.prepare('SELECT dosen FROM pengajuan WHERE id_pengajuan=?1').bind('INHAL-1').first();
+    expect(p.dosen).toBe('dr. Budi');
   });
 
   it('lengkapi mengisi dosen/jam dan menyinkron pengajuan', async () => {

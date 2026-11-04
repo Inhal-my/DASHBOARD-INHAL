@@ -110,6 +110,7 @@ export async function computeKalenderJadwal(db) {
         Tanggal: dateOnly(j.Tanggal),
         Jam: str(j.Jam),
         Dosen: str(j.Dosen),
+        DosenList: j.DosenList || [],
         jumlahPeserta: (j.peserta || []).length,
         punyaBa: !!j.punyaBa,
         baId: str(j.baId),

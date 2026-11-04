@@ -1,5 +1,7 @@
 import { baginaKey, getMasterOptions, resolveBagian12 } from './common.js';
 import { loadBaSesiMap, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
+import { loadJadwalDosenMap, dosenListFor } from './dosen.js';
+import { dosenJoin } from '../dosen.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -23,9 +25,10 @@ export function jadwalIdentity(r) {
     .map((p) => str(p.npm) || str(p.idPengajuan))
     .filter(Boolean)
     .sort();
+  const dosen = Array.isArray(r.DosenList) && r.DosenList.length ? dosenJoin(r.DosenList) : r.Dosen;
   return [
     normKey(r.Bagian), normKey(r.Blok), normKey(r.NamaKegiatan),
-    str(r.Tanggal).slice(0, 10), timeKey(r.Jam), normKey(r.Dosen), peserta.join(',')
+    str(r.Tanggal).slice(0, 10), timeKey(r.Jam), normKey(dosen), peserta.join(',')
   ].join('|');
 }
 
@@ -64,6 +67,7 @@ export async function computeJadwalList(db, bagianFilter, kategori) {
   const baRows = (await db.prepare('SELECT ba_id, jadwal_id FROM berita_acara').all()).results || [];
 
   const sesiMap = await loadBaSesiMap(db);
+  const dosenMap = await loadJadwalDosenMap(db);
   const baIdByJadwal = buildBaIdByJadwal(baRows, sesiMap);
   const jumlahSesiByBa = {};
   for (const baId of Object.keys(sesiMap)) jumlahSesiByBa[baId] = sesiMap[baId].length;
@@ -88,6 +92,7 @@ export async function computeJadwalList(db, bagianFilter, kategori) {
   for (const r of jadwal) {
     if (Number(r.active) !== 1) continue;
     const id = str(r.jadwal_id);
+    const dosenList = dosenListFor(dosenMap, id, r.dosen);
     rows.push({
       JadwalID: id,
       Bagian: str(r.bagian),
@@ -96,7 +101,8 @@ export async function computeJadwalList(db, bagianFilter, kategori) {
       kegiatan_key: str(r.kegiatan_key),
       Tanggal: str(r.tanggal),
       Jam: str(r.jam),
-      Dosen: str(r.dosen),
+      Dosen: dosenList[0] || str(r.dosen),
+      DosenList: dosenList,
       Catatan: str(r.catatan),
       Active: Number(r.active) || 0,
       punyaBa: !!baIdByJadwal[id],

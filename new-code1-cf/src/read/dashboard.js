@@ -9,6 +9,7 @@ import {
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds } from './baSesi.js';
+import { loadBaDosenMap, dosenListFor } from './dosen.js';
 import { logError } from '../obs/log.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -174,6 +175,7 @@ async function loadPengajuanBa(db, idPengajuan) {
     { sumber: 'Admin', headerTable: 'berita_acara_admin', pesertaTable: 'berita_acara_admin_peserta', where: 'id_pengajuan = ?1 AND active = 1', memberFilter: ' AND active = 1' }
   ];
   const sesiMap = await loadBaSesiMap(db);
+  const dosenMap = await loadBaDosenMap(db);
   const out = [];
   for (const src of sources) {
     const members = (await db.prepare(`SELECT * FROM ${src.pesertaTable} WHERE ${src.where}`).bind(id).all()).results || [];
@@ -190,6 +192,7 @@ async function loadPengajuanBa(db, idPengajuan) {
       // admin tahu berapa mahasiswa yang tercakup dalam satu BA.
       const total = await db.prepare(`SELECT COUNT(*) AS n FROM ${src.pesertaTable} WHERE ba_id = ?1${src.memberFilter}`).bind(baId).first();
       const jumlah = Number((total && total.n) || 0);
+      const dosenList = dosenListFor(dosenMap, baId, c.Dosen);
       out.push({
         baId: baId,
         sumber: src.sumber,
@@ -198,7 +201,8 @@ async function loadPengajuanBa(db, idPengajuan) {
         blok: String(c.Blok || '').trim(),
         tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
         jam: String(c.Jam || '').trim(),
-        dosen: String(c.Dosen || '').trim(),
+        dosen: dosenList[0] || String(c.Dosen || '').trim(),
+        dosenList: dosenList,
         label: String(c.Label || '').trim(),
         jumlahPeserta: jumlah,
         sesi: src.sumber === 'Bagian' ? baJadwalIds(sesiMap, baId, c['Jadwal ID']) : [],
@@ -233,6 +237,7 @@ export async function getBagianAggregation(db, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
   const sesiMap = await loadBaSesiMap(db);
+  const dosenMap = await loadBaDosenMap(db);
   const pengajuan = await all('pengajuan');
   const details = await all('detail_kegiatan');
   const labs = await getMasterOptions(db, 'Lab');
@@ -288,6 +293,7 @@ export async function getBagianAggregation(db, ctx) {
       const c = toClientRow(table, r);
       const baId = String(c['BA ID'] || '').trim();
       const jadwalIds = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
+      const dosenList = dosenListFor(dosenMap, baId, c.Dosen);
       const rec = {
         baId, sumber,
         bagian: String(c.Bagian || '').trim(),
@@ -295,7 +301,8 @@ export async function getBagianAggregation(db, ctx) {
         namaKegiatan: String(c['Nama Kegiatan'] || '').replace(/\s+/g, ' ').trim(),
         tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
         jam: String(c.Jam || '').trim(),
-        dosen: String(c.Dosen || '').trim(),
+        dosen: dosenList[0] || String(c.Dosen || '').trim(),
+        dosenList: dosenList,
         kegiatanKey: String(c['Kegiatan Key'] || '').trim(),
         fileUrl: String(c['File URL'] || '').trim(),
         fileName: String(c['File Name'] || '').trim(),
@@ -375,10 +382,14 @@ export async function getBagianAggregation(db, ctx) {
     u.statusFinal = u.linkFinal ? 'ada' : 'belum';
     u.pelaksanaan = u.baPelaksanaan.map((b) => ({
       baId: b.baId, tanggal: b.tanggal, jam: b.jam || '', dosen: b.dosen || '',
+      dosenList: b.dosenList || [],
       jadwalIds: b.jadwalIds || [], jumlahSesi: b.jumlahSesi || 0
     }));
     const dosenSet = [];
-    for (const b of u.baPelaksanaan) if (b.dosen && dosenSet.indexOf(b.dosen) === -1) dosenSet.push(b.dosen);
+    for (const b of u.baPelaksanaan) {
+      const list = (b.dosenList && b.dosenList.length) ? b.dosenList : (b.dosen ? [b.dosen] : []);
+      for (const d of list) if (d && dosenSet.indexOf(d) === -1) dosenSet.push(d);
+    }
     u.dosenList = dosenSet;
     u.progress = computeUnitProgress(u);
     u.counts = u.progress.counts;

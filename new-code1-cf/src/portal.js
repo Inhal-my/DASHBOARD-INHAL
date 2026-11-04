@@ -107,11 +107,22 @@ export async function getStudentPortalData(db, npm) {
 
   const { results: jadwalPeserta } = await db.prepare('SELECT id_pengajuan, jadwal_id FROM jadwal_peserta').all();
   const { results: jadwalRows } = await db.prepare('SELECT jadwal_id, tanggal, jam, dosen, active FROM jadwal_pelaksanaan').all();
+  const { results: jadwalDosenRows } = await db.prepare('SELECT jadwal_id, nama FROM jadwal_dosen ORDER BY urutan, id').all();
+  const jadwalDosenMap = {};
+  for (const d of jadwalDosenRows || []) {
+    const jid = str(d.jadwal_id);
+    const nama = str(d.nama);
+    if (!jid || !nama) continue;
+    if (!jadwalDosenMap[jid]) jadwalDosenMap[jid] = [];
+    if (jadwalDosenMap[jid].indexOf(nama) === -1) jadwalDosenMap[jid].push(nama);
+  }
   const jadwalById = {};
   for (const j of jadwalRows || []) {
     if (Number(j.active) !== 1) continue;
+    const list = jadwalDosenMap[str(j.jadwal_id)] || [];
     jadwalById[str(j.jadwal_id)] = {
-      JadwalID: str(j.jadwal_id), Tanggal: str(j.tanggal), Jam: str(j.jam), Dosen: str(j.dosen)
+      JadwalID: str(j.jadwal_id), Tanggal: str(j.tanggal), Jam: str(j.jam),
+      Dosen: list[0] || str(j.dosen), DosenList: list
     };
   }
   const jadwalByPengajuan = {};

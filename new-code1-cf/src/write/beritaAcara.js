@@ -3,6 +3,7 @@ import { getBagianBaStatuses, kegiatanKey, getMasterOptions, resolveBagian12 } f
 import { nextIdNumber } from '../sequence.js';
 import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
 import { validateBaCreateInput, validateBaUpdateInput } from '../validation.js';
+import { normalizeDosenList, dosenKey } from '../dosen.js';
 import { writeAuditLog } from '../audit.js';
 
 function str(v) {
@@ -326,6 +327,47 @@ function buildBaSesiStmts(db, baId, sesi) {
   ).bind(ts, baId, str(jd.jadwal_id), index + 1));
 }
 
+function buildBaDosenStmts(db, baId, list, ts) {
+  const stamp = ts || nowIso();
+  const stmts = [db.prepare('DELETE FROM ba_dosen WHERE ba_id = ?1').bind(baId)];
+  (list || []).forEach((nama, index) => {
+    stmts.push(
+      db.prepare(
+        'INSERT INTO ba_dosen (timestamp, ba_id, nama, nama_key, urutan) VALUES (?1,?2,?3,?4,?5)'
+      ).bind(stamp, baId, nama, dosenKey(nama), index + 1)
+    );
+  });
+  return stmts;
+}
+
+async function loadJadwalDosenList(db, jadwalIds) {
+  const ids = (jadwalIds || []).map(str).filter(Boolean);
+  if (!ids.length) return [];
+  const placeholders = ids.map((_, i) => '?' + (i + 1)).join(', ');
+  const { results } = await db.prepare(
+    'SELECT jadwal_id, nama FROM jadwal_dosen WHERE jadwal_id IN (' + placeholders + ') ORDER BY urutan, id'
+  ).bind(...ids).all();
+  return normalizeDosenList((results || []).map((r) => r.nama));
+}
+
+// Daftar dosen BA: gabungan unik dosen semua sesi jadwal; bila BA tidak punya
+// sesi, pakai dosen yang dikirim klien.
+async function resolveBaDosenList(db, payloadDosenList, sesi) {
+  const fromSesi = await loadJadwalDosenList(db, (sesi || []).map((jd) => jd.jadwal_id));
+  if (fromSesi.length) return fromSesi;
+  return normalizeDosenList(payloadDosenList);
+}
+
+// Daftar dosen BA yang tersimpan; fallback ke kolom dosen tunggal lama.
+async function loadBaDosenList(db, baId, fallbackDosen) {
+  const { results } = await db.prepare(
+    'SELECT nama FROM ba_dosen WHERE ba_id = ?1 ORDER BY urutan, id'
+  ).bind(str(baId)).all();
+  const list = normalizeDosenList((results || []).map((r) => r.nama));
+  if (list.length) return list;
+  return normalizeDosenList(fallbackDosen);
+}
+
 // Sesi tersimpan untuk satu BA; fallback ke kolom lama berita_acara.jadwal_id
 // agar BA yang dibuat sebelum migrasi tetap terbaca.
 async function loadBaSesiRows(db, baId) {
@@ -555,6 +597,7 @@ export async function deleteBeritaAcaraBagian(db, baId, ctx) {
 
   await db.batch([
     ...syncs,
+    db.prepare('DELETE FROM ba_dosen WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_sesi WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
@@ -588,6 +631,7 @@ export async function deleteDraftBeritaAcaraBagian(db, baId, kategori, ctx) {
 
   await db.batch([
     ...syncs,
+    db.prepare('DELETE FROM ba_dosen WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_sesi WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id),
     db.prepare('DELETE FROM berita_acara WHERE ba_id = ?1').bind(id)
@@ -648,15 +692,18 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   p.__peserta = peserta;
   p.__jumlah = peserta.length;
   p.__sumber = 'Bagian';
+  // Daftar dosen BA: gabungan sesi jadwal (sumber kebenaran), fallback input klien.
+  const dosenList = await resolveBaDosenList(db, p.dosenList, sesi);
   // Kolom jam & dosen BA tetap terisi (dipakai penanda "selesai" dan export);
-  // untuk multi-sesi nilainya diambil dari sesi paling awal.
+  // untuk multi-sesi nilainya diambil dari sesi paling awal. Kolom dosen hanya
+  // menyimpan dosen utama; daftar lengkap ada di ba_dosen.
   if (sesi.length) {
     if (!str(p.jam)) p.jam = str(sesi[0].jam);
-    if (!str(p.dosen)) p.dosen = str(sesi[0].dosen);
     p.jadwalId = str(sesi[0].jadwal_id);
   }
+  p.dosen = dosenList[0] || str(p.dosen);
   const syncStmts = await buildSesiSyncStmts(db, peserta, sesi, {
-    dosen: str(p.dosen), tanggal: str(p.tanggalPelaksanaan), jam: str(p.jam)
+    dosen: p.dosen, tanggal: str(p.tanggalPelaksanaan), jam: str(p.jam)
   });
   await db.batch([
     ...buildPersistBaStmts(db, 'berita_acara', 'berita_acara_peserta', p, {
@@ -664,6 +711,7 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
       kegiatanKey: baKey, withDosen: true, withLabel: true, allowMultiple: true, withJadwal: true
     }),
     ...buildBaSesiStmts(db, baId, sesi),
+    ...buildBaDosenStmts(db, baId, dosenList),
     ...syncStmts
   ]);
   await auditBa(db, ctx, 'BA_CREATE', baId, {
@@ -687,7 +735,10 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
   const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
-  const dosen = p.dosen !== undefined ? str(p.dosen) : str(existing.dosen);
+  const dosenList = p.dosenList !== undefined
+    ? normalizeDosenList(p.dosenList)
+    : await loadBaDosenList(db, id, p.dosen !== undefined ? p.dosen : existing.dosen);
+  const dosen = dosenList[0] || (p.dosen !== undefined ? str(p.dosen) : str(existing.dosen));
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
 
@@ -733,7 +784,8 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
 
   const stmts = [
     db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan = ?1, jam = ?2, dosen = ?3, catatan = ?4, label = ?5 WHERE ba_id = ?6')
-      .bind(tanggal, jam, dosen, catatan, label, id)
+      .bind(tanggal, jam, dosen, catatan, label, id),
+    ...buildBaDosenStmts(db, id, dosenList)
   ];
 
   if (remapSesi) {
@@ -790,7 +842,10 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   if (!input.ok) return { success: false, message: input.message };
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
-  const dosen = p.dosen !== undefined ? str(p.dosen) : str(existing.dosen);
+  const dosenList = p.dosenList !== undefined
+    ? normalizeDosenList(p.dosenList)
+    : await loadBaDosenList(db, id, p.dosen !== undefined ? p.dosen : existing.dosen);
+  const dosen = dosenList[0] || (p.dosen !== undefined ? str(p.dosen) : str(existing.dosen));
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
 
@@ -847,7 +902,8 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
 
   const stmts = [
     db.prepare('UPDATE berita_acara SET tanggal_pelaksanaan=?1, jam=?2, dosen=?3, catatan=?4, label=?5, file_url=?6, file_name=?7 WHERE ba_id=?8')
-      .bind(tanggal, jam, dosen, catatan, label, fileUrl, fileName, id)
+      .bind(tanggal, jam, dosen, catatan, label, fileUrl, fileName, id),
+    ...buildBaDosenStmts(db, id, dosenList)
   ];
   if (pesertaBaru) {
     const finalIds = finalPeserta.map((x) => str(x.idPengajuan)).filter(Boolean);

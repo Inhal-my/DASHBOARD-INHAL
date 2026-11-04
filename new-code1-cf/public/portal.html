@@ -272,7 +272,7 @@
                                         <div v-if="detailItem.jadwal" class="mt-1.5 space-y-0.5 text-xs text-slate-600">
                                             <div><i class="bi bi-calendar3 mr-1 text-slate-400"></i>{{ formatTanggal(detailItem.jadwal.Tanggal) }}</div>
                                             <div v-if="detailItem.jadwal.Jam"><i class="bi bi-clock mr-1 text-slate-400"></i>{{ detailItem.jadwal.Jam }}</div>
-                                            <div v-if="detailItem.jadwal.Dosen"><i class="bi bi-person-badge mr-1 text-slate-400"></i>{{ detailItem.jadwal.Dosen }}</div>
+                                            <div v-if="dosenJadwalText(detailItem.jadwal)"><i class="bi bi-person-badge mr-1 text-slate-400"></i>{{ dosenJadwalText(detailItem.jadwal) }}</div>
                                         </div>
                                         <p v-else class="mt-1 text-xs text-slate-400">Belum dijadwalkan.</p>
                                     </div>
@@ -686,6 +686,12 @@
                 },
                 formatTanggal(v) {
                     return AppCommon.formatTanggal(v);
+                },
+                dosenJadwalText(j) {
+                    if (!j) return '';
+                    const list = Array.isArray(j.DosenList) ? j.DosenList.filter(Boolean) : [];
+                    if (list.length) return list.join(', ');
+                    return String(j.Dosen || '').trim();
                 },
                 formatDateTime(v) {
                     return AppCommon.formatTanggalWaktu(v);

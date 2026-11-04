@@ -368,6 +368,23 @@
     return groupRows(rows, options, true);
   }
 
+  function dosenListOf(row) {
+    if (!row) return [];
+    var list = Array.isArray(row.DosenList) ? row.DosenList : [];
+    list = list.map(function (v) { return String(v || '').replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    if (list.length) return list;
+    var single = String(row.Dosen || '').replace(/\s+/g, ' ').trim();
+    return single ? [single] : [];
+  }
+
+  function dosenJoin(list, fallback) {
+    var clean = (Array.isArray(list) ? list : []).map(function (v) {
+      return String(v || '').replace(/\s+/g, ' ').trim();
+    }).filter(Boolean);
+    if (!clean.length && fallback) clean.push(String(fallback).trim());
+    return clean.join(' ');
+  }
+
   function buildJadwalItems(kegiatanGroups, jadwalList, baList) {
     var items = (jadwalList || []).map(function (j) {
       var ba = baForJadwal(j, baList);
@@ -382,7 +399,8 @@
         ba: ba,
         status: statusOf(ba, j),
         peserta: j.peserta || [],
-        dosen: j.Dosen || ''
+        dosen: j.Dosen || '',
+        dosenList: dosenListOf(j)
       };
     });
     (kegiatanGroups || []).forEach(function (g) {
@@ -433,6 +451,7 @@
         status: 'draft',
         peserta: b.peserta || [],
         dosen: b.Dosen || '',
+        dosenList: dosenListOf(b),
         jumlahSesi: baSesiCount(b)
       });
     });
@@ -451,7 +470,8 @@
         status: jadwal ? 'terjadwal' : 'acc',
         peserta: g.peserta,
         group: g,
-        dosen: ''
+        dosen: '',
+        dosenList: []
       });
     });
     return items;
@@ -497,6 +517,7 @@
         status: 'selesai',
         peserta: b.peserta || [],
         dosen: b.Dosen || '',
+        dosenList: dosenListOf(b),
         jumlahSesi: baSesiCount(b)
       };
     });
@@ -545,8 +566,9 @@
     var q = normText(query);
     if (!q) return true;
     var parts = [item.nama, item.blok, item.dosen];
-    if (item.jadwal) parts.push(item.jadwal.Dosen, item.jadwal.Catatan);
-    if (item.ba) parts.push(item.ba.Dosen, item.ba.Label, item.ba.Catatan);
+    (item.dosenList || []).forEach(function (d) { parts.push(d); });
+    if (item.jadwal) parts.push(dosenJoin(item.jadwal.DosenList, item.jadwal.Dosen), item.jadwal.Catatan);
+    if (item.ba) parts.push(dosenJoin(item.ba.DosenList, item.ba.Dosen), item.ba.Label, item.ba.Catatan);
     (item.peserta || []).forEach(function (p) { parts.push(p.namaLengkap, p.npm); });
     ((item.ba && item.ba.peserta) || []).forEach(function (p) { parts.push(p.namaLengkap, p.npm); });
     return normText(parts.join(' ')).indexOf(q) !== -1;

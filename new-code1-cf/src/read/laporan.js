@@ -4,6 +4,7 @@ import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resol
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
+import { loadBaDosenMap, loadJadwalDosenMap, dosenListFor } from './dosen.js';
 
 function baSumber(r) {
   const s = String((r && r.Sumber) || '').trim().toLowerCase();
@@ -75,6 +76,8 @@ export async function getLaporanBootstrap(db, ctx) {
     });
   }
   const sesiMap = await loadBaSesiMap(db);
+  const baDosenMap = await loadBaDosenMap(db);
+  const jadwalDosenMap = await loadJadwalDosenMap(db);
   const baIdByJadwal = buildBaIdByJadwal(ba, sesiMap);
   const jadwalList = [];
   for (const r of jadwalRows) {
@@ -84,11 +87,14 @@ export async function getLaporanBootstrap(db, ctx) {
     const jBlok = String(r.blok || '').trim();
     const jNama = String(r.nama_kegiatan || '').trim();
     const jKey = String(r.kegiatan_key || '').trim() || kegiatanKey(jBagian, jBlok, jNama);
+    const jDosenList = dosenListFor(jadwalDosenMap, jid, r.dosen);
     jadwalList.push({
       jadwalId: jid, kegiatanKey: jKey, bagian: jBagian, blok: jBlok,
       namaKegiatan: jNama, label: jNama,
       tanggal: String(r.tanggal || '').trim(), jam: String(r.jam || '').trim(),
-      dosen: String(r.dosen || '').trim(), catatan: String(r.catatan || '').trim(),
+      dosen: jDosenList[0] || String(r.dosen || '').trim(),
+      dosenList: jDosenList,
+      catatan: String(r.catatan || '').trim(),
       peserta: jadwalPesertaByJadwal[jid] || [], baId: baIdByJadwal[jid] || ''
     });
   }
@@ -149,7 +155,11 @@ export async function getLaporanBootstrap(db, ctx) {
   const sortedBa = ba.slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
   const beritaAcara = sortedBa.filter((r) => baSumber(toClientRow('berita_acara', r)) === 'Bagian').map((r) => {
     const c = toClientRow('berita_acara', r);
-    c.peserta = pesertaMap[String(r.ba_id || '').trim()] || [];
+    const baId = String(r.ba_id || '').trim();
+    c.peserta = pesertaMap[baId] || [];
+    const list = dosenListFor(baDosenMap, baId, c.Dosen);
+    c.DosenList = list;
+    if (list.length) c.Dosen = list[0];
     return c;
   });
 
@@ -159,6 +169,10 @@ export async function getLaporanBootstrap(db, ctx) {
   };
   const dosen = [];
   pengajuan.forEach((p) => pushUnique(dosen, toClientRow('pengajuan', p).Dosen));
+  beritaAcara.forEach((c) => {
+    const list = Array.isArray(c.DosenList) && c.DosenList.length ? c.DosenList : (c.Dosen ? [c.Dosen] : []);
+    list.forEach((d) => pushUnique(dosen, d));
+  });
   dosen.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   const blok = [];
   pengajuan.forEach((p) => pushUnique(blok, toClientRow('pengajuan', p).Blok));
@@ -172,9 +186,13 @@ export async function getLaporanBootstrap(db, ctx) {
     .filter((r) => baSumber(toClientRow('berita_acara', r)) === 'Bagian')
     .map((r) => {
       const c = toClientRow('berita_acara', r);
-      c.peserta = pesertaMap[String(r.ba_id || '').trim()] || [];
+      const baId = String(r.ba_id || '').trim();
+      c.peserta = pesertaMap[baId] || [];
       c.jadwalIds = baJadwalIds(sesiMap, r.ba_id, r.jadwal_id);
       c.jumlahSesi = c.jadwalIds.length;
+      const list = dosenListFor(baDosenMap, baId, c.Dosen);
+      c.DosenList = list;
+      if (list.length) c.Dosen = list[0];
       return c;
     });
 
@@ -221,10 +239,13 @@ export async function getLaporanBootstrap(db, ctx) {
   for (const u of units) {
     u.pelaksanaan = u.baPelaksanaan.map((b) => ({
       baId: b['BA ID'], tanggal: b['Tanggal Pelaksanaan'], jam: b.Jam || '', dosen: b.Dosen || '',
+      dosenList: Array.isArray(b.DosenList) && b.DosenList.length ? b.DosenList : (b.Dosen ? [b.Dosen] : []),
       jadwalIds: b.jadwalIds || [], jumlahSesi: b.jumlahSesi || 0
     }));
     const dosenSet = [];
-    for (const b of u.baPelaksanaan) if (b.Dosen && dosenSet.indexOf(b.Dosen) === -1) dosenSet.push(b.Dosen);
+    for (const b of u.pelaksanaan) {
+      for (const d of b.dosenList) if (d && dosenSet.indexOf(d) === -1) dosenSet.push(d);
+    }
     u.dosenList = dosenSet;
     u.progress = computeUnitProgress(u);
     u.counts = u.progress.counts;
@@ -235,6 +256,7 @@ export async function getLaporanBootstrap(db, ctx) {
     if (!jadwalByKey[j.kegiatanKey]) jadwalByKey[j.kegiatanKey] = [];
     jadwalByKey[j.kegiatanKey].push({
       jadwalId: j.jadwalId, tanggal: j.tanggal, jam: j.jam, dosen: j.dosen,
+      dosenList: j.dosenList || [],
       catatan: j.catatan, peserta: j.peserta, baId: j.baId
     });
   }

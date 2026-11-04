@@ -48,6 +48,7 @@ describe('bagian template jadwal', () => {
     expect(html).toContain('saveJadwalPelaksanaan');
     expect(html).toContain('cancelJadwalPelaksanaan');
     expect(html).toContain('jadwal.dosen');
+    expect(html).toContain('jadwal.dosenList');
     expect(html).toContain('jadwal.jam');
   });
 
@@ -80,7 +81,10 @@ describe('bagian template jadwal', () => {
     const html = await loadBagianHtml();
     expect(html).toContain('dosenOptions');
     expect(html).toContain('dosenSuggest(');
-    expect(html).toContain('pickDosen(');
+    expect(html).toContain('pickDosenAt(');
+    expect(html).toContain('addDosenRow(');
+    expect(html).toContain('removeDosenRow(');
+    expect(html).toContain('dosenList');
     expect(html).toContain('dosenPick.jadwal');
     expect(html).toContain('dosenPick.ba');
     expect(html).toContain('dosenPick.lengkapi');

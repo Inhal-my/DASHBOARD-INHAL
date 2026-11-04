@@ -3,6 +3,7 @@ import { nextIdNumber } from '../sequence.js';
 import { kegiatanKey, getBagianBaStatuses } from '../read/common.js';
 import { validateBaPesertaStatus } from './beritaAcara.js';
 import { validateJadwalInput } from '../validation.js';
+import { normalizeDosenList, dosenKey } from '../dosen.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -47,14 +48,28 @@ export async function nextJadwalId(db) {
   return prefix + String(n).padStart(4, '0');
 }
 
+function buildDosenStmts(db, jadwalId, list, ts) {
+  const stmts = [db.prepare('DELETE FROM jadwal_dosen WHERE jadwal_id = ?1').bind(jadwalId)];
+  (list || []).forEach((nama, index) => {
+    stmts.push(
+      db.prepare(
+        'INSERT INTO jadwal_dosen (timestamp, jadwal_id, nama, nama_key, urutan) VALUES (?1,?2,?3,?4,?5)'
+      ).bind(ts, jadwalId, nama, dosenKey(nama), index + 1)
+    );
+  });
+  return stmts;
+}
+
 function buildInsertStmts(db, jadwalId, payload, meta) {
   const ts = nowIso();
+  const dosenList = normalizeDosenList(payload.dosenList, payload.dosen);
   const stmts = [
     db.prepare(
       'INSERT INTO jadwal_pelaksanaan (timestamp, jadwal_id, bagian, blok, nama_kegiatan, kegiatan_key, tanggal, jam, dosen, catatan, active, created_by, updated_at) ' +
       'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,1,?11,?1)'
     ).bind(ts, jadwalId, meta.bagian, str(payload.blok), str(payload.namaKegiatan), meta.kegiatanKey,
-      str(payload.tanggal), str(payload.jam), str(payload.dosen), str(payload.catatan), meta.createdBy)
+      str(payload.tanggal), str(payload.jam), dosenList[0] || '', str(payload.catatan), meta.createdBy),
+    ...buildDosenStmts(db, jadwalId, dosenList, ts)
   ];
   for (const p of payload.__peserta) {
     stmts.push(
@@ -152,11 +167,13 @@ export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, c
 
   const ts = nowIso();
   const bagian = str(p.bagian) || str(existing.bagian) || str(kategori);
+  const dosenList = normalizeDosenList(p.dosenList, p.dosen !== undefined ? p.dosen : existing.dosen);
   await db.batch([
     db.prepare(
       'UPDATE jadwal_pelaksanaan SET bagian=?1, blok=?2, nama_kegiatan=?3, kegiatan_key=?4, tanggal=?5, jam=?6, dosen=?7, catatan=?8, updated_at=?9 WHERE jadwal_id=?10'
     ).bind(bagian, str(p.blok), str(p.namaKegiatan), kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)),
-      str(p.tanggal), str(p.jam), str(p.dosen), str(p.catatan), ts, id),
+      str(p.tanggal), str(p.jam), dosenList[0] || '', str(p.catatan), ts, id),
+    ...buildDosenStmts(db, id, dosenList, ts),
     db.prepare('DELETE FROM jadwal_peserta WHERE jadwal_id=?1').bind(id),
     ...peserta.map((pp) => db.prepare(
       'INSERT INTO jadwal_peserta (timestamp, jadwal_id, id_pengajuan, npm, nama_lengkap, blok, status_pengajuan) VALUES (?1,?2,?3,?4,?5,?6,?7)'

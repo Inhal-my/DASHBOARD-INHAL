@@ -25,6 +25,27 @@ function sessionPeserta(b) {
   return out;
 }
 
+function dosenListOf(b) {
+  const raw = b && (b.dosenList || b.DosenList);
+  const out = [];
+  const seen = {};
+  if (Array.isArray(raw)) {
+    for (const value of raw) {
+      const nama = str(value).replace(/\s+/g, ' ');
+      if (!nama) continue;
+      const key = nama.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = 1;
+      out.push(nama);
+    }
+  }
+  if (!out.length) {
+    const single = str(first(b, 'dosen', 'Dosen')).replace(/\s+/g, ' ');
+    if (single) out.push(single);
+  }
+  return out;
+}
+
 function jadwalIdsOf(b) {
   const raw = b && (b.jadwalIds || b.jadwal_ids);
   const out = [];
@@ -43,7 +64,8 @@ function normalizeSession(b, jadwalIds) {
   const baId = str(first(b, 'baId', 'BA ID'));
   const tanggal = str(first(b, 'tanggal', 'Tanggal Pelaksanaan'));
   const jam = str(first(b, 'jam', 'Jam'));
-  const dosen = str(first(b, 'dosen', 'Dosen'));
+  const dosenList = dosenListOf(b);
+  const dosen = dosenList[0] || str(first(b, 'dosen', 'Dosen'));
   const fileUrl = str(first(b, 'fileUrl', 'File URL'));
   const ids = jadwalIdsOf(b);
   const peserta = sessionPeserta(b);
@@ -58,6 +80,7 @@ function normalizeSession(b, jadwalIds) {
     tanggal: tanggal,
     jam: jam,
     dosen: dosen,
+    dosenList: dosenList,
     catatan: str(first(b, 'catatan', 'Catatan')),
     timestamp: str(first(b, 'timestamp', 'Timestamp')),
     pesertaCount: peserta.length,
@@ -125,12 +148,12 @@ export function buildBaPelaksanaanAudit(units, jadwalList) {
 
     const dupGroups = {};
     for (const s of sesi) {
-      const dupKey = [s.tanggal, s.jam, s.dosen.toLowerCase()].join('|');
+      const dupKey = [s.tanggal, s.jam, (s.dosenList || []).join(' ').toLowerCase()].join('|');
       if (!dupGroups[dupKey]) dupGroups[dupKey] = 0;
       dupGroups[dupKey] += 1;
     }
     for (const s of sesi) {
-      const dupKey = [s.tanggal, s.jam, s.dosen.toLowerCase()].join('|');
+      const dupKey = [s.tanggal, s.jam, (s.dosenList || []).join(' ').toLowerCase()].join('|');
       if (dupGroups[dupKey] > 1) s.flags.push('Kemungkinan duplikat');
       if (s.status === 'Draft') s.flags.push('Draft');
       if (jadwal.length && !s.jadwalIds.length) s.flags.push('Sesi ekstra');

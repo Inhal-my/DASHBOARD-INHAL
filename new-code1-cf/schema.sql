@@ -100,6 +100,8 @@ DROP TABLE IF EXISTS berita_acara_admin_peserta;
 DROP TABLE IF EXISTS berita_acara_admin;
 DROP TABLE IF EXISTS berita_acara_peserta;
 DROP TABLE IF EXISTS berita_acara_sesi;
+DROP TABLE IF EXISTS ba_dosen;
+DROP TABLE IF EXISTS jadwal_dosen;
 DROP TABLE IF EXISTS jadwal_peserta;
 DROP TABLE IF EXISTS jadwal_pelaksanaan;
 DROP TABLE IF EXISTS berita_acara;
@@ -172,6 +174,18 @@ CREATE TABLE jadwal_peserta (
 CREATE INDEX idx_jadwal_kegiatan_key ON jadwal_pelaksanaan(kegiatan_key);
 CREATE INDEX idx_jadwal_peserta_jadwal_id ON jadwal_peserta(jadwal_id);
 CREATE INDEX idx_jadwal_peserta_pengajuan ON jadwal_peserta(id_pengajuan);
+CREATE TABLE jadwal_dosen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, jadwal_id TEXT NOT NULL,
+  nama TEXT NOT NULL, nama_key TEXT NOT NULL, urutan INTEGER DEFAULT 1
+);
+CREATE INDEX idx_jadwal_dosen_jadwal_id ON jadwal_dosen(jadwal_id, urutan);
+CREATE UNIQUE INDEX idx_jadwal_dosen_unique ON jadwal_dosen(jadwal_id, nama_key);
+CREATE TABLE ba_dosen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT NOT NULL,
+  nama TEXT NOT NULL, nama_key TEXT NOT NULL, urutan INTEGER DEFAULT 1
+);
+CREATE INDEX idx_ba_dosen_ba_id ON ba_dosen(ba_id, urutan);
+CREATE UNIQUE INDEX idx_ba_dosen_unique ON ba_dosen(ba_id, nama_key);
 CREATE TABLE berita_acara_admin (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, jumlah_peserta TEXT, file_name TEXT,

@@ -457,10 +457,18 @@
                         </div>
                     </div>
                     <div v-if="kelola.sumber !== 'Admin'" class="relative sm:col-span-2">
-                        <label class="label">Dosen</label>
-                        <input v-model="kelola.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @focus="dosenPick.open = true" @input="dosenPick.open = true" @blur="dosenPick.open = false">
-                        <div v-if="dosenPick.open && dosenSuggestionsList.length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                            <button v-for="d in dosenSuggestionsList" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(d)">{{ d }}</button>
+                        <div class="mb-1 flex items-center justify-between">
+                            <label class="label !mb-0">Dosen</label>
+                            <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="kelola.dosenList.length >= 5" @click="addKelolaDosenRow"><i class="bi bi-plus-lg"></i> Tambah Dosen</button>
+                        </div>
+                        <div v-for="(d, i) in kelola.dosenList" :key="'kdosen'+i" class="relative mb-2">
+                            <div class="flex items-center gap-2">
+                                <input v-model="kelola.dosenList[i]" class="input" :placeholder="'Nama dosen ' + (i+1)" autocomplete="off" @focus="dosenPick.open = true; dosenPick.index = i" @input="dosenPick.open = true; dosenPick.index = i" @blur="dosenPick.open = false">
+                                <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="kelola.dosenList.length <= 1" title="Hapus dosen" @click="removeKelolaDosenRow(i)"><i class="bi bi-dash-lg"></i></button>
+                            </div>
+                            <div v-if="dosenPick.open && dosenPick.index === i && dosenSuggestionsList.length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                                <button v-for="d2 in dosenSuggestionsList" :key="d2" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosenAt(i, d2)">{{ d2 }}</button>
+                            </div>
                         </div>
                     </div>
                     <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
@@ -1607,7 +1615,7 @@
                                                                         <span v-if="s.tanggal" class="text-slate-600">{{ fmtTanggal(s.tanggal) }}</span>
                                                                         <span v-else class="text-slate-400">-</span>
                                                                         <span v-if="s.jam" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ s.jam }}</span>
-                                                                        <span class="text-slate-600">{{ s.dosen || '-' }}</span>
+                                                                        <span class="text-slate-600">{{ baDosenText(s) || '-' }}</span>
                                                                         <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="s.status === 'Draft' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">{{ s.status }}</span>
                                                                         <span v-for="f in (s.flags || [])" :key="f" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
                                                                         <a v-if="s.fileUrl" :href="safeUrl(s.fileUrl)" target="_blank" rel="noopener noreferrer" class="link ml-auto">{{ s.baId }}</a>
@@ -1719,7 +1727,7 @@
                                                         <span class="font-mono text-[10px] text-slate-400">#{{ s.index }}</span>
                                                         <span class="font-mono font-semibold text-slate-700">{{ s.baId }}</span>
                                                         <span class="text-slate-600">{{ s.tanggal || '-' }} {{ s.jam }}</span>
-                                                        <span class="text-slate-600">{{ s.dosen || '-' }}</span>
+                                                        <span class="text-slate-600">{{ baDosenText(s) || '-' }}</span>
                                                         <span class="whitespace-nowrap text-slate-500">{{ s.pesertaCount }} peserta</span>
                                                         <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="s.status === 'Draft' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">{{ s.status }}</span>
                                                         <span v-for="f in (s.flags || [])" :key="f" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
@@ -2997,7 +3005,7 @@
                     donutProgress: 0,
                     barProgress: 0,
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
-                    dosenPick: { open: false },
+                    dosenPick: { open: false, index: 0 },
                     riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' },
                     toastTimer: null,
@@ -3427,6 +3435,20 @@
                     const matched = q ? arr.filter(d => this.normSearch(d).indexOf(q) !== -1) : arr;
                     return matched.slice(0, 50);
                 },
+                addKelolaDosenRow() {
+                    if (!Array.isArray(this.kelola.dosenList)) this.kelola.dosenList = [''];
+                    if (this.kelola.dosenList.length >= 5) return;
+                    this.kelola.dosenList.push('');
+                },
+                removeKelolaDosenRow(index) {
+                    if (!Array.isArray(this.kelola.dosenList)) return;
+                    if (this.kelola.dosenList.length <= 1) {
+                        this.kelola.dosenList.splice(0, this.kelola.dosenList.length, '');
+                    } else {
+                        this.kelola.dosenList.splice(index, 1);
+                    }
+                    this.kelola.dosen = this.kelola.dosenList[0] || '';
+                },
                 riwayatEventList() {
                     const r = this.riwayat.unit;
                     if (!r) return [];
@@ -3629,19 +3651,18 @@
                         const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
                         const bk = this.normBagian(bagianLabel);
                         if (colKeys.indexOf(bk) === -1) return;
+                        const jumlah = (b.peserta || []).length;
                         const seenDosen = {};
-                        (b.peserta || []).forEach(p => {
-                            const dosen = this.resolveDosenForNpm(String(p.npm || '').trim(), b.Blok);
-                            if (!dosen) return;
+                        this.baDosenList(b).forEach(dosen => {
                             const dk = this.normSearch(dosen);
-                            if (seenDosen[dk]) return;
+                            if (!dk || seenDosen[dk]) return;
                             seenDosen[dk] = 1;
                             if (!map[dk]) {
                                 map[dk] = { key: dk, label: dosen, counts: {}, total: 0 };
                                 colKeys.forEach(k => { map[dk].counts[k] = 0; });
                             }
-                            map[dk].counts[bk] = (map[dk].counts[bk] || 0) + 1;
-                            map[dk].total++;
+                            map[dk].counts[bk] = (map[dk].counts[bk] || 0) + jumlah;
+                            map[dk].total += jumlah;
                         });
                     });
                     let arr = Object.values(map);
@@ -3671,10 +3692,7 @@
                     this.dosenFilteredBa.forEach(b => {
                         const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
                         if (this.normBagian(bagianLabel) !== bk) return;
-                        const found = (b.peserta || []).some(p => {
-                            const d = this.resolveDosenForNpm(String(p.npm || '').trim(), b.Blok);
-                            return d && this.normSearch(d) === dk;
-                        });
+                        const found = this.baDosenList(b).some(d => this.normSearch(d) === dk);
                         if (!found) return;
                         out.push({
                             nama: b['Nama Kegiatan'] || '-',
@@ -3824,7 +3842,7 @@
                                 'BA ID': s ? s.baId : '',
                                 'Tanggal': s && s.tanggal ? fmtTanggal(s.tanggal) : '',
                                 'Jam': s ? (s.jam || '') : '',
-                                'Dosen': s ? (s.dosen || '') : '',
+                                'Dosen': s ? this.baDosenText(s) : '',
                                 'Peserta': s ? (s.pesertaCount || 0) : 0,
                                 'Jadwal ID': s ? (s.jadwalId || '') : '',
                                 'Status Jadwal': s ? (s.jadwalId ? (s.jadwalCocok ? 'Sesuai' : 'Tidak cocok') : (r.jadwalCount ? 'Sesi ekstra' : '-')) : (r.jadwalCount ? 'Belum terealisasi' : '-'),
@@ -4561,6 +4579,26 @@
                         labs: this.bagian.labs
                     });
                 },
+                baDosenList(b) {
+                    if (!b) return [];
+                    const list = Array.isArray(b.DosenList) ? b.DosenList : [];
+                    const out = [];
+                    const seen = {};
+                    list.concat(b.Dosen ? [b.Dosen] : []).forEach(v => {
+                        const nama = String(v || '').replace(/\s+/g, ' ').trim();
+                        if (!nama) return;
+                        const key = this.normSearch(nama);
+                        if (seen[key]) return;
+                        seen[key] = 1;
+                        out.push(nama);
+                    });
+                    return out;
+                },
+                baDosenText(b) {
+                    const list = this.baDosenList(b);
+                    if (list.length) return list.join(', ');
+                    return String((b && b.Dosen) || '').trim();
+                },
                 npmInfoFor(npm, baBlok) {
                     const list = this.dosenNpmMap[String(npm || '').trim()] || [];
                     if (!list.length) return null;
@@ -4921,9 +4959,25 @@
                         ' · Pelaksanaan: ' + (p.pelaksanaan === 'all' ? 'ada' : 'belum') +
                         ' · Selesai: ' + (p.selesai === 'all' ? 'ya' : 'belum');
                 },
-                pickDosen(name) {
-                    this.kelola.dosen = name;
+                pickDosenAt(index, name) {
+                    if (!Array.isArray(this.kelola.dosenList)) this.kelola.dosenList = [''];
+                    if (index < 0) index = 0;
+                    this.kelola.dosenList[index] = name;
+                    this.kelola.dosen = this.kelola.dosenList[0] || '';
                     this.dosenPick.open = false;
+                },
+                cleanKelolaDosenList() {
+                    const out = [];
+                    const seen = {};
+                    (Array.isArray(this.kelola.dosenList) ? this.kelola.dosenList : []).forEach(v => {
+                        const nama = String(v || '').replace(/\s+/g, ' ').trim();
+                        if (!nama) return;
+                        const key = this.normSearch(nama);
+                        if (seen[key]) return;
+                        seen[key] = 1;
+                        if (out.length < 5) out.push(nama);
+                    });
+                    return out;
                 },
                 openKelolaBa(baId, sumber) {
                     const units = this.kegiatan || [];
@@ -4936,18 +4990,24 @@
                     const opsi = ((unit && unit.peserta) || []).slice();
                     const npmSet = new Set((found.peserta || []).map((p) => p.npm));
                     const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan);
+                    const dosenList = this.baDosenList(found);
                     this.kelola = {
                         open: true, baId: baId, sumber: sumber || found.Sumber || 'Bagian',
-                        tanggal: found['Tanggal Pelaksanaan'] || '', jam: found.Jam || '', dosen: found.Dosen || '', catatan: found.Catatan || '',
+                        tanggal: found['Tanggal Pelaksanaan'] || '', jam: found.Jam || '',
+                        dosen: dosenList[0] || found.Dosen || '',
+                        dosenList: dosenList.length ? dosenList.slice() : [''],
+                        catatan: found.Catatan || '',
                         pesertaIds: pesertaIds, pesertaOpsi: opsi
                     };
+                    this.dosenPick = { open: false, index: 0 };
                 },
                 async submitKelolaBa() {
                     const k = this.kelola;
                     this.loading = true;
                     try {
                         const fn = k.sumber === 'Admin' ? 'updateBeritaAcaraAdmin' : 'updateBeritaAcaraBagian';
-                        const payload = { tanggal: k.tanggal, jam: k.jam, dosen: k.dosen, catatan: k.catatan };
+                        const dosenList = this.cleanKelolaDosenList();
+                        const payload = { tanggal: k.tanggal, jam: k.jam, dosenList: dosenList, dosen: dosenList[0] || '', catatan: k.catatan };
                         if (k.sumber !== 'Admin' && k.pesertaOpsi.length) payload.pesertaIds = k.pesertaIds.slice();
                         const res = await this.run(fn, k.baId, payload);
                         this.showToast('bi-check-circle', (res && res.message) || 'BA diperbarui.');
@@ -5258,7 +5318,7 @@
                         label: (b && b.Label) || '',
                         tanggal: tanggal,
                         jam: (b && b.Jam) || '',
-                        dosen: (b && b.Dosen) || '',
+                        dosen: this.baDosenText(b),
                         pesertaCount: jenis === 'Pelaksanaan' ? peserta.length : (jumlahField || peserta.length),
                         sumber: (b && b.Sumber) || (jenis === 'Pendukung' ? 'Admin' : 'Bagian'),
                         dibuat: (b && b.Timestamp) || '',

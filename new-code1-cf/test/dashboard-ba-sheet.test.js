@@ -119,7 +119,8 @@ describe('dashboard BA sheet template', () => {
     expect(html).toContain('const jadwal = this.babSelectedJadwal || {}');
     expect(html).toContain('jadwalId: jadwal.JadwalID ||');
     expect(html).toContain('jam: jadwal.Jam ||');
-    expect(html).toContain('dosen: jadwal.Dosen ||');
+    expect(html).toContain('dosenList: (Array.isArray(jadwal.DosenList)');
+    expect(html).toContain('dosen: (Array.isArray(jadwal.DosenList)');
   });
 
   it('menampilkan nama blok tanpa awalan "Blok"', async () => {

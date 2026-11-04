@@ -23,6 +23,15 @@ describe('computeJadwalList', () => {
     expect(list[0].peserta[0].namaLengkap).toBe('Aisyah');
   });
 
+  it('mengembalikan DosenList dari jadwal_dosen', async () => {
+    await seedJadwal();
+    await env.DB.prepare("INSERT INTO jadwal_dosen (timestamp,jadwal_id,nama,nama_key,urutan) VALUES ('2026-10-01T08:00:00','JDW-2026-0001','dr. Andi','dr. andi',1)").run();
+    await env.DB.prepare("INSERT INTO jadwal_dosen (timestamp,jadwal_id,nama,nama_key,urutan) VALUES ('2026-10-01T08:00:00','JDW-2026-0001','dr. Budi','dr. budi',2)").run();
+    const list = await computeJadwalList(env.DB, '', '');
+    expect(list[0].DosenList).toEqual(['dr. Andi', 'dr. Budi']);
+    expect(list[0].Dosen).toBe('dr. Andi');
+  });
+
   it('menandai punyaBa bila ada BA merujuk jadwal', async () => {
     await seedJadwal();
     await env.DB.prepare("INSERT INTO berita_acara (timestamp,ba_id,bagian,blok,nama_kegiatan,tanggal_pelaksanaan,sumber,kegiatan_key,jadwal_id) VALUES ('2026-10-02T09:00:00','BA-PEL-2026-0001','SGD','A','SGD 1','2026-10-02','Bagian','sgd|a|sgd 1','JDW-2026-0001')").run();

@@ -1,3 +1,5 @@
+import { MAX_DOSEN } from './dosen.js';
+
 function cleanText(value) {
   if (value === undefined || value === null) return '';
   return String(value).replace(/\u00a0/g, ' ').trim();
@@ -28,6 +30,25 @@ function checkDate(value, label, required) {
     return fail(label + ' bukan tanggal yang valid');
   }
   return { ok: true, value: text };
+}
+
+function checkDosenList(value) {
+  if (value === undefined || value === null) return { ok: true };
+  if (!Array.isArray(value)) return fail('daftar dosen harus berupa array');
+  if (value.length > MAX_DOSEN) return fail('dosen maksimal ' + MAX_DOSEN + ' orang');
+  const seen = {};
+  for (const item of value) {
+    if (typeof item !== 'string' && typeof item !== 'number') {
+      return fail('setiap dosen harus berupa teks');
+    }
+    const c = checkText(item, 'Dosen', 200, false);
+    if (!c.ok) return c;
+    const key = c.value.replace(/\s+/g, ' ').toLowerCase();
+    if (!key) continue;
+    if (seen[key]) return fail('dosen tidak boleh duplikat: ' + c.value);
+    seen[key] = true;
+  }
+  return { ok: true };
 }
 
 function checkJadwalIds(value) {
@@ -64,6 +85,7 @@ export function validateJadwalInput(payload) {
     checkText(p.blok, 'Blok', 120, false),
     checkText(p.namaKegiatan, 'Nama kegiatan', 200, true),
     checkText(p.dosen, 'Dosen', 200, false),
+    checkDosenList(p.dosenList),
     checkText(p.catatan, 'Catatan', 2000, false),
     checkText(p.jam, 'Jam', 40, false),
     checkDate(p.tanggal, 'Tanggal pelaksanaan', true)
@@ -79,6 +101,7 @@ export function validateBaCreateInput(payload) {
     checkText(p.blok, 'Blok', 120, false),
     checkText(p.namaKegiatan, 'Nama kegiatan', 200, true),
     checkText(p.dosen, 'Dosen', 200, false),
+    checkDosenList(p.dosenList),
     checkText(p.catatan, 'Catatan', 2000, false),
     checkText(p.label, 'Label', 200, false),
     checkText(p.jam, 'Jam', 40, false),
@@ -96,6 +119,7 @@ export function validateBaUpdateInput(payload) {
   if (p.tanggal !== undefined) checks.push(checkDate(p.tanggal, 'Tanggal pelaksanaan', true));
   if (p.jam !== undefined) checks.push(checkText(p.jam, 'Jam', 40, false));
   if (p.dosen !== undefined) checks.push(checkText(p.dosen, 'Dosen', 200, false));
+  if (p.dosenList !== undefined) checks.push(checkDosenList(p.dosenList));
   if (p.catatan !== undefined) checks.push(checkText(p.catatan, 'Catatan', 2000, false));
   if (p.label !== undefined) checks.push(checkText(p.label, 'Label', 200, false));
   if (p.jadwalId !== undefined) checks.push(checkText(p.jadwalId, 'ID jadwal', 120, false));
