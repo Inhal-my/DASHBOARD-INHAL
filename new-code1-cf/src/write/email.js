@@ -271,6 +271,56 @@ export async function sendAccFinalToBagian(db, idPengajuan, ctx) {
   }
 }
 
+async function markStatusNotification(db, idPengajuan, status, message, lampiranUrl) {
+  const sets = [
+    'status_notifikasi_email = ?1',
+    'notifikasi_terkirim_pada = ?2',
+    'error_notifikasi_email = ?3'
+  ];
+  const vals = [str(status), status === 'Berhasil' ? nowIso() : '', str(message)];
+  if (lampiranUrl !== undefined) {
+    sets.push('lampiran_email = ?' + (vals.length + 1));
+    vals.push(str(lampiranUrl));
+  }
+  await db.prepare(
+    'UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1)
+  ).bind(...vals, str(idPengajuan)).run();
+}
+
+export async function sendRejectionPdfEmail(db, idPengajuan, status, env) {
+  const pengajuan = await getPengajuan(db, idPengajuan);
+  if (!pengajuan) return { ok: false, sent: false, notes: ['Pengajuan tidak ditemukan.'] };
+
+  const recipient = str(pengajuan.email);
+  if (!recipient) {
+    await markStatusNotification(db, idPengajuan, 'Gagal', 'Email mahasiswa tidak ditemukan.');
+    return { ok: false, sent: false, notes: ['Email mahasiswa tidak ditemukan.'] };
+  }
+
+  const details = await getDetailRows(db, idPengajuan);
+  const enhanced = buildEnhanced(pengajuan, details, status);
+  if (status === 'Ditolak' || status === 'Dibatalkan') enhanced.AlasanPenolakan = str(pengajuan.catatan_admin);
+
+  const templateStatus = status === 'Dibatalkan' ? 'Ditolak' : status;
+  const bridge = await callDriveBridge(env, {
+    action: 'sendStatusEmail',
+    data: enhanced,
+    status: templateStatus,
+    recipient: recipient,
+    idPengajuan: str(idPengajuan)
+  });
+
+  if (!bridge.ok) {
+    const message = bridge.message || 'Gagal mengirim email pemberitahuan status.';
+    await markStatusNotification(db, idPengajuan, 'Gagal', message);
+    return { ok: false, sent: false, configured: bridge.configured !== false, notes: [message] };
+  }
+
+  const lampiranUrl = str(bridge.data && bridge.data.attachmentUrl);
+  await markStatusNotification(db, idPengajuan, 'Berhasil', '', lampiranUrl);
+  return { ok: true, sent: true, lampiranUrl: lampiranUrl, notes: [] };
+}
+
 export async function sendReceiptEmail(db, idPengajuan, accUrl, buktiUrl, env) {
   try {
     const pengajuan = await getPengajuan(db, idPengajuan);

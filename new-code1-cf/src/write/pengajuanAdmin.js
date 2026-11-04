@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { resolveBagianFor } from '../read/common.js';
-import { sendFinalPdfEmails } from './email.js';
+import { sendFinalPdfEmails, sendRejectionPdfEmail } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
 import { logError } from '../obs/log.js';
@@ -278,21 +278,43 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     try {
       const final = await sendFinalPdfEmails(db, id, ctx.env, actor);
       notification = final.ok
-        ? { ok: true, pdfUrl: final.pdfUrl }
-        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.' };
+        ? { ok: true, pdfUrl: final.pdfUrl, kind: 'acc' }
+        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.', kind: 'acc' };
     } catch (e) {
-      notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e), kind: 'acc' };
+    }
+  }
+
+  const isRejection = status === 'Ditolak' || status === 'Dibatalkan';
+  const wasRejection = prevStatus === 'Ditolak' || prevStatus === 'Dibatalkan';
+  const transitionToRejection = isRejection && !wasRejection && str(existing.sumber) !== 'Manual';
+  if (transitionToRejection) {
+    try {
+      const rejection = await sendRejectionPdfEmail(db, id, status, ctx.env);
+      notification = rejection.ok
+        ? { ok: true, kind: 'rejection', status: status }
+        : { ok: false, error: (rejection.notes && rejection.notes.join(' ')) || 'Gagal mengirim email pemberitahuan status.', kind: 'rejection', status: status };
+    } catch (e) {
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e), kind: 'rejection', status: status };
     }
   }
 
   const baseMessage = 'Status diperbarui menjadi ' + status + '.';
   if (notification) {
+    let suffix;
+    if (notification.kind === 'rejection') {
+      suffix = notification.ok
+        ? ' Email pemberitahuan ' + notification.status + ' terkirim ke mahasiswa.'
+        : ' Pengiriman email pemberitahuan ' + notification.status + ' gagal: ' + notification.error;
+    } else {
+      suffix = notification.ok ? ' Surat ACC final terkirim.' : ' Pengiriman surat ACC final gagal: ' + notification.error;
+    }
     return {
       success: true,
       idPengajuan: id,
       nomorSurat: nomorSurat,
       notification: notification,
-      message: baseMessage + (notification.ok ? ' Surat ACC final terkirim.' : ' Pengiriman surat ACC final gagal: ' + notification.error)
+      message: baseMessage + suffix
     };
   }
   return { success: true, idPengajuan: id, nomorSurat: nomorSurat, message: baseMessage };

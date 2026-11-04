@@ -188,3 +188,56 @@ describe('sendBulkFinalEmail', () => {
     expect(res.details[0].idPengajuan).toBe('INHAL-1');
   });
 });
+
+describe('sendRejectionPdfEmail', () => {
+  it('renders the rejection template with the admin note and records success', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    await env.DB.prepare("UPDATE pengajuan SET catatan_admin = 'Berkas kurang' WHERE id_pengajuan = 'INHAL-1'").run();
+    const calls = stubBridge(() => ({ success: true, attachmentUrl: 'https://drive.google.com/file/d/REJ1234567890/view' }));
+    const { sendRejectionPdfEmail } = await import('../src/write/email.js');
+    const res = await sendRejectionPdfEmail(env.DB, 'INHAL-1', 'Ditolak', driveEnv);
+    expect(res.ok).toBe(true);
+    expect(calls[0].action).toBe('sendStatusEmail');
+    expect(calls[0].recipient).toBe('aisyah@contoh.com');
+    expect(calls[0].data.AlasanPenolakan).toBe('Berkas kurang');
+    expect(calls[0].data.Status).toBe('Ditolak');
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_notifikasi_email).toBe('Berhasil');
+    expect(row.lampiran_email).toContain('REJ1234567890');
+  });
+
+  it('uses the Ditolak template for Dibatalkan but keeps the real status in data', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, attachmentUrl: '' }));
+    const { sendRejectionPdfEmail } = await import('../src/write/email.js');
+    await sendRejectionPdfEmail(env.DB, 'INHAL-1', 'Dibatalkan', driveEnv);
+    expect(calls[0].status).toBe('Ditolak');
+    expect(calls[0].data.Status).toBe('Dibatalkan');
+  });
+
+  it('marks the notification as failed when the bridge rejects the action', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    stubBridge(() => ({ success: false, message: 'Aksi tidak dikenal: sendStatusEmail' }));
+    const { sendRejectionPdfEmail } = await import('../src/write/email.js');
+    const res = await sendRejectionPdfEmail(env.DB, 'INHAL-1', 'Ditolak', driveEnv);
+    expect(res.ok).toBe(false);
+    expect(String(res.notes.join(' '))).toContain('Aksi tidak dikenal');
+    const row = await env.DB.prepare('SELECT status_notifikasi_email, error_notifikasi_email FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_notifikasi_email).toBe('Gagal');
+    expect(row.error_notifikasi_email).toContain('Aksi tidak dikenal');
+  });
+
+  it('fails fast when the student email is missing', async () => {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010002','Tanpa Email','','SGD','Menunggu')"
+    ).run();
+    const calls = stubBridge(() => ({ success: true }));
+    const { sendRejectionPdfEmail } = await import('../src/write/email.js');
+    const res = await sendRejectionPdfEmail(env.DB, 'INHAL-2', 'Ditolak', driveEnv);
+    expect(res.ok).toBe(false);
+    expect(calls).toHaveLength(0);
+  });
+});

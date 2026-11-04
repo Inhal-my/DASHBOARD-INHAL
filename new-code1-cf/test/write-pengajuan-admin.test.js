@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import {
@@ -6,14 +6,33 @@ import {
   updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti
 } from '../src/write/pengajuanAdmin.js';
 
+afterEach(() => { vi.unstubAllGlobals(); });
+
 async function adminCtx() {
   return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: {} };
 }
 
-async function seedPengajuan({ status = 'Menunggu', nomorSurat = '' } = {}) {
+const driveEnv = { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' };
+
+async function adminCtxWithDrive() {
+  return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: driveEnv };
+}
+
+function stubBridge(handler) {
+  const calls = [];
+  const f = vi.fn(async (_url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push(body);
+    return new Response(JSON.stringify(handler(body)), { status: 200 });
+  });
+  vi.stubGlobal('fetch', f);
+  return calls;
+}
+
+async function seedPengajuan({ status = 'Menunggu', nomorSurat = '', sumber = 'Portal' } = {}) {
   await env.DB.prepare(
-    "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,no_hp_wa,blok,jenis_kegiatan,status,nomor_surat) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','aisyah@contoh.com','0812','A','SGD',?1,?2)"
-  ).bind(status, nomorSurat).run();
+    "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,no_hp_wa,blok,jenis_kegiatan,status,nomor_surat,sumber) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','aisyah@contoh.com','0812','A','SGD',?1,?2,?3)"
+  ).bind(status, nomorSurat, sumber).run();
 }
 
 async function seedDetail(jenis = 'SGD', pilihan = 'SGD 1', detail = '') {
@@ -187,6 +206,78 @@ describe('pengajuan admin status and delete', () => {
     const row = await env.DB.prepare('SELECT status, catatan_admin FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
     expect(row.status).toBe('Ditolak');
     expect(row.catatan_admin).toBe('Berkas tidak lengkap');
+  });
+
+  it('mengirim email penolakan ber-PDF ke mahasiswa saat transisi ke Ditolak', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, attachmentUrl: 'https://drive.google.com/file/d/REJ1234567890/view' }));
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Berkas tidak lengkap', '', ctx);
+    expect(res.success).toBe(true);
+    expect(res.message).toContain('Email pemberitahuan Ditolak terkirim');
+    expect(calls).toHaveLength(1);
+    expect(calls[0].action).toBe('sendStatusEmail');
+    expect(calls[0].status).toBe('Ditolak');
+    expect(calls[0].recipient).toBe('aisyah@contoh.com');
+    expect(calls[0].data['Catatan Admin']).toBe('Berkas tidak lengkap');
+    expect(calls[0].data.AlasanPenolakan).toBe('Berkas tidak lengkap');
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_notifikasi_email).toBe('Berhasil');
+    expect(row.lampiran_email).toContain('REJ1234567890');
+    expect(row.notifikasi_terkirim_pada).toBeTruthy();
+    expect(row.status).toBe('Ditolak');
+  });
+
+  it('mengirim email pemberitahuan saat transisi ke Dibatalkan', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, attachmentUrl: 'https://drive.google.com/file/d/CAN1234567890/view' }));
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Dibatalkan', 'Mahasiswa mengundurkan diri', '', ctx);
+    expect(res.success).toBe(true);
+    expect(res.message).toContain('Email pemberitahuan Dibatalkan terkirim');
+    expect(calls[0].action).toBe('sendStatusEmail');
+    expect(calls[0].status).toBe('Ditolak');
+    expect(calls[0].data.Status).toBe('Dibatalkan');
+    const row = await env.DB.prepare('SELECT status_notifikasi_email FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_notifikasi_email).toBe('Berhasil');
+  });
+
+  it('tidak mengirim email ulang saat status penolakan tidak berubah', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, attachmentUrl: 'https://drive.google.com/file/d/REJ1234567890/view' }));
+    const ctx = await adminCtxWithDrive();
+    await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Berkas tidak lengkap', '', ctx);
+    const second = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Catatan diperbarui', '', ctx);
+    expect(second.success).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('tetap memperbarui status saat email penolakan gagal dikirim', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    stubBridge(() => ({ success: false, message: 'Aksi tidak dikenal: sendStatusEmail' }));
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Berkas tidak lengkap', '', ctx);
+    expect(res.success).toBe(true);
+    expect(res.message).toContain('gagal');
+    const row = await env.DB.prepare('SELECT status, status_notifikasi_email, error_notifikasi_email FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Ditolak');
+    expect(row.status_notifikasi_email).toBe('Gagal');
+    expect(row.error_notifikasi_email).toContain('Aksi tidak dikenal');
+  });
+
+  it('tidak mengirim email penolakan untuk pengajuan manual', async () => {
+    await seedPengajuan({ sumber: 'Manual' });
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, attachmentUrl: '' }));
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Ditolak', 'Berkas tidak lengkap', '', ctx);
+    expect(res.success).toBe(true);
+    expect(calls).toHaveLength(0);
+    expect(res.message).not.toContain('Email pemberitahuan');
   });
 
   it('menyinkronkan status peserta BA dan jadwal saat status berubah', async () => {
