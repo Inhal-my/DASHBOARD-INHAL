@@ -246,6 +246,20 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('Berkas direset');
     expect(html).toContain('periksaTimeline');
   });
+  it('periksaKesesuaianInfo adalah computed, bukan method', async () => {
+    const html = await loadHtml();
+    const start = html.indexOf('const app = createApp({');
+    const end = html.indexOf('app.mount(', start);
+    const options = html.slice(start, end);
+    const target = options.indexOf('periksaKesesuaianInfo()');
+    expect(target).toBeGreaterThan(-1);
+    const sections = ['computed', 'watch', 'methods']
+      .map((name) => ({ name, index: options.indexOf('\n            ' + name + ': {') }))
+      .filter((s) => s.index !== -1 && s.index < target)
+      .sort((a, b) => b.index - a.index);
+    expect(sections.length).toBeGreaterThan(0);
+    expect(sections[0].name).toBe('computed');
+  });
   it('menampilkan riwayat verifikasi dan koreksi per pengajuan', async () => {
     const html = await loadHtml();
     expect(html).toContain('bayarRevisiFor');

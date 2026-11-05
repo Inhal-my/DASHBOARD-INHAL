@@ -4067,7 +4067,31 @@
                 },
                 jadwalExtraCount() {
                     return this.jadwalRealisasiFiltered.filter((r) => r.status === 'Extra').length;
-                }
+                },
+                periksaKesesuaianInfo() {
+                    const it = this.periksa.item;
+                    const form = this.periksa.form || {};
+                    const tagihan = it ? Number(it.biaya) || 0 : 0;
+                    const nominal = Number(form.nominal) || 0;
+                    const target = this.hitungKesesuaian(nominal, tagihan);
+                    const targetLabel = this.bayarKesesuaianLabel(target);
+                    const selisih = Math.abs(nominal - tagihan);
+                    const cocok = !!form.kesesuaian && form.kesesuaian === target;
+                    let teks;
+                    if (!nominal) {
+                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + '. Isi nominal diterima lalu pilih kesesuaian.';
+                    } else if (target === 'pas') {
+                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + ' · Diterima ' + this.fmtRupiah(nominal) + ' → Pas.';
+                    } else {
+                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + ' · Diterima ' + this.fmtRupiah(nominal) + ' → ' + targetLabel + ' ' + this.fmtRupiah(selisih) + '.';
+                    }
+                    if (nominal && !cocok) {
+                        teks += form.kesesuaian
+                            ? ' Pilihan Kesesuaian harus ' + targetLabel + '.'
+                            : ' Pilih kesesuaian ' + targetLabel + '.';
+                    }
+                    return { tagihan, nominal, selisih, target, targetLabel, cocok, teks };
+                },
             },
             watch: {
                 'filters.blok': function () {
@@ -4273,30 +4297,6 @@
                     const t = Number(tagihan) || 0;
                     if (n === t) return 'pas';
                     return n < t ? 'kurang' : 'lebih';
-                },
-                periksaKesesuaianInfo() {
-                    const it = this.periksa.item;
-                    const form = this.periksa.form || {};
-                    const tagihan = it ? Number(it.biaya) || 0 : 0;
-                    const nominal = Number(form.nominal) || 0;
-                    const target = this.hitungKesesuaian(nominal, tagihan);
-                    const targetLabel = this.bayarKesesuaianLabel(target);
-                    const selisih = Math.abs(nominal - tagihan);
-                    const cocok = !!form.kesesuaian && form.kesesuaian === target;
-                    let teks;
-                    if (!nominal) {
-                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + '. Isi nominal diterima lalu pilih kesesuaian.';
-                    } else if (target === 'pas') {
-                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + ' · Diterima ' + this.fmtRupiah(nominal) + ' → Pas.';
-                    } else {
-                        teks = 'Tagihan ' + this.fmtRupiah(tagihan) + ' · Diterima ' + this.fmtRupiah(nominal) + ' → ' + targetLabel + ' ' + this.fmtRupiah(selisih) + '.';
-                    }
-                    if (nominal && !cocok) {
-                        teks += form.kesesuaian
-                            ? ' Pilihan Kesesuaian harus ' + targetLabel + '.'
-                            : ' Pilih kesesuaian ' + targetLabel + '.';
-                    }
-                    return { tagihan, nominal, selisih, target, targetLabel, cocok, teks };
                 },
                 onKesesuaianChange() {
                     const it = this.periksa.item;
