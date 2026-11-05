@@ -156,7 +156,8 @@ describe('detail laporan tab pembayaran', () => {
     const html = await loadHtml();
     expect(html).toContain("key: 'bayar', label: 'Data Pembayaran'");
     expect(html).toContain("activeTab === 'bayar'");
-    expect(html).toContain("bayarFilter: { kelengkapan: '' }");
+    expect(html).toContain("bayarFilter: { kelengkapan: '', status: '' }");
+    expect(html).toContain("bayarSort: { key: 'upload', dir: 'desc' }");
     expect(html).toContain("bayarView: 'tabel'");
     expect(html).toContain("label: 'Antrean'");
     expect(html).toContain("label: 'Papan'");
@@ -171,6 +172,30 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('pembayaranSelisih()');
     expect(html).toContain('it.statusPembayaran');
     expect(html).toContain("p['Status Pembayaran']");
+  });
+  it('mengurutkan pembayaran berdasarkan waktu unggah bukti terbaru', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("const dir = this.bayarSort && this.bayarSort.dir === 'asc' ? 1 : -1;");
+    expect(html).toContain("const ta = String(a.waktuUploadBukti || '').trim();");
+    expect(html).toContain("if (ta && tb) return ta.localeCompare(tb) * dir || byName(a, b);");
+    expect(html).not.toContain('return out.sort((a, b) => a.nama.localeCompare(b.nama) || a.npm.localeCompare(b.npm) || a.id.localeCompare(b.id));');
+    expect(html).toContain('@click="sortBayar(\'upload\')"');
+    expect(html).toContain('sortBayarIcon(key)');
+  });
+  it('menyediakan filter status pembayaran dan reset mengembalikan sort', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('<option value="belum">Belum Bayar</option>');
+    expect(html).toContain('<option value="menunggu">Menunggu Verifikasi</option>');
+    expect(html).toContain("if (bayarStatus && it.statusPembayaran !== bayarStatus) return false;");
+    expect(html).toContain('@click="resetBayarFilter()"');
+    expect(html).toContain("this.bayarSort = { key: 'upload', dir: 'desc' };");
+  });
+  it('menampilkan waktu unggah di tabel, kartu, antrean, dan papan', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('Diunggah <i class="bi" :class="sortBayarIcon(\'upload\')"></i>');
+    expect(html).toContain("{{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : (it.linkBukti ? 'Tidak tercatat' : '-') }}");
+    expect(html).toContain("Diunggah: {{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : 'Tidak tercatat' }}");
+    expect(html).toContain("const ta = String(a.waktuUploadBukti || a.timestamp || '').trim();");
   });
   it('menampilkan semua baris tanpa penanda final/BA', async () => {
     const html = await loadHtml();
@@ -188,6 +213,7 @@ describe('detail laporan tab pembayaran', () => {
   });
   it('export memuat status pembayaran dan kolom baru', async () => {
     const html = await loadHtml();
+    expect(html).toContain("'Diunggah': it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : '',");
     expect(html).toContain("'Status Pembayaran': this.bayarLabel(it.statusPembayaran)");
     expect(html).toContain("'Nominal Dibayar': it.nominal || 0");
     expect(html).toContain("'Kesesuaian': this.bayarKesesuaianLabel(it.kesesuaian)");
@@ -312,9 +338,11 @@ describe('detail laporan kejelasan tampilan', () => {
       'bagianFilter.blok', 'bagianFilter.q', 'baFilter.blok', 'baFilter.q',
       'baListFilter.blok', 'baListFilter.from', 'baListFilter.to', 'baListFilter.q',
       'bayarFilter.q', 'bayarFilter.status']) {
-      expect(html).not.toContain(s);
+      expect(desktop).not.toContain(s);
+      expect(sheet).not.toContain(s);
     }
     expect(html).toContain('bayarFilter.kelengkapan');
+    expect(html).toContain('v-model="bayarFilter.status"');
     expect(html).toContain('showGlobalFilters');
     expect(html).toContain('Filter jadwal terpisah dari filter laporan.');
     expect(html).toContain("['from', 'to', 'blok', 'status', 'jenis', 'search']");
