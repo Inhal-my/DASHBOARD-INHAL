@@ -66,6 +66,7 @@ async function computeBagianRows(db, kategori, subBagian) {
       const namaKegiatan = String(d.Pilihan || '').trim() + (String(d.Detail || '').trim() ? ' - ' + String(d.Detail || '').trim() : '');
       const kk = kegiatanKey(bagianForKey, String(prow.Blok || '').trim(), namaKegiatan);
       const memberSet = baMemberByKey[kk];
+      const statusP = String(prow.Status || '').trim();
       rows.push({
         idPengajuan: id,
         npm: String(prow.NPM || '').trim(),
@@ -76,9 +77,9 @@ async function computeBagianRows(db, kategori, subBagian) {
         detail: String(d.Detail || '').trim(),
         tanggal: String(d['Tanggal Pelaksanaan'] || ''),
         bagian: String(d.Bagian || '').trim(),
-        status: String(prow.Status || '').trim(),
+        status: statusP,
         linkSurat: String(prow['Link Surat Keterangan'] || '').trim(),
-        linkFinal: String(prow['Link Final'] || '').trim(),
+        linkFinal: statusP === 'ACC' ? String(prow['Link Final'] || '').trim() : '',
         baMember: !!(memberSet && memberSet.has(id))
       });
     }

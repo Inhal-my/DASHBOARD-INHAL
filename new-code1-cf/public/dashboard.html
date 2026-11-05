@@ -2085,9 +2085,9 @@
                                     <div class="pd-card-body">
                                         <div class="pd-statuspick">
                                             <button type="button" data-s="Menunggu" :class="{ on: detail.status==='Menunggu' }" @click="detail.status='Menunggu'"><div class="ic"><i class="bi bi-hourglass-split"></i></div><div><div class="t">Menunggu</div><div class="s">tahan untuk ditinjau ulang</div></div></button>
-                                            <button type="button" data-s="ACC" :class="{ on: detail.status==='ACC' }" @click="detail.status='ACC'"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="t">Jadikan ACC</div><div class="s">berkas dinyatakan lengkap</div></div></button>
-                                            <button type="button" data-s="Ditolak" :class="{ on: detail.status==='Ditolak' }" @click="detail.status='Ditolak'"><div class="ic"><i class="bi bi-x-lg"></i></div><div><div class="t">Tolak</div><div class="s">perlu catatan alasan</div></div></button>
-                                            <button type="button" data-s="Dibatalkan" :class="{ on: detail.status==='Dibatalkan' }" @click="detail.status='Dibatalkan'"><div class="ic"><i class="bi bi-slash-circle"></i></div><div><div class="t">Batalkan</div><div class="s">oleh admin/mahasiswa</div></div></button>
+                                            <button v-if="canVerify" type="button" data-s="ACC" :class="{ on: detail.status==='ACC' }" @click="detail.status='ACC'"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="t">Jadikan ACC</div><div class="s">berkas dinyatakan lengkap</div></div></button>
+                                            <button v-if="canVerify" type="button" data-s="Ditolak" :class="{ on: detail.status==='Ditolak' }" @click="detail.status='Ditolak'"><div class="ic"><i class="bi bi-x-lg"></i></div><div><div class="t">Tolak</div><div class="s">perlu catatan alasan</div></div></button>
+                                            <button v-if="canVerify" type="button" data-s="Dibatalkan" :class="{ on: detail.status==='Dibatalkan' }" @click="detail.status='Dibatalkan'"><div class="ic"><i class="bi bi-slash-circle"></i></div><div><div class="t">Batalkan</div><div class="s">oleh admin/mahasiswa</div></div></button>
                                         </div>
                                         <div class="mt-4">
                                             <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak' || detail.status==='Dibatalkan'">(wajib)</span></label>
@@ -2096,7 +2096,7 @@
                                         <div class="mt-3 flex flex-wrap gap-2">
                                             <button class="btn-primary" :disabled="loading" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
                                         </div>
-                                        <div class="mt-4 border-t border-slate-100 pt-3">
+                                        <div class="mt-4 border-t border-slate-100 pt-3" v-if="canVerify">
                                             <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Aksi cepat</div>
                                             <div class="mt-2 flex flex-wrap gap-2">
                                                 <button class="btn-soft" :disabled="loading" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
@@ -3001,6 +3001,13 @@
                 loggedIn() {
                     return !!(this.session && this.session.token);
                 },
+                canVerify() {
+                    const s = this.session || {};
+                    if (s.canVerify) return true;
+                    const norm = (v) => String(v || '').toLowerCase().normalize('NFKD')
+                        .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+                    return norm(s.nama) === norm('dr. Desi Isnayanti,M.Pd.Ked');
+                },
                 pageTitle() {
                     return { pengajuan: 'Verifikasi Pengajuan', manual: 'Input Manual', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
                 },
@@ -3689,7 +3696,7 @@
                             this.loginMfaRequired = true;
                             this.loginError = res.message || 'Masukkan kode autentikator.';
                         } else if (res && res.ok && res.token) {
-                            const s = { token: res.token, nama: res.nama || 'Admin', role: 'admin' };
+                            const s = { token: res.token, nama: res.nama || 'Admin', role: 'admin', canVerify: !!res.canVerify };
                             saveSession(s);
                             this.session = s;
                             this.loginPwd = '';
@@ -4223,7 +4230,8 @@
                         const res = await this.run('sendBulkFinalEmail', sel);
                         this.notify((res && res.message) || 'Selesai.');
                         if (res && res.details) {
-                            const failed = res.details.filter(d => !d.ok);
+                            const failed = res.details.filter(d => !d.ok && !d.skipped);
+                            const skipped = res.details.filter(d => d.skipped);
                             if (failed.length) {
                                 await this.showInfo({
                                     title: 'Sebagian Email Gagal',
@@ -4231,6 +4239,15 @@
                                     icon: 'bi-exclamation-triangle',
                                     message: failed.length + ' dari ' + res.details.length + ' email gagal dikirim:',
                                     details: failed.map(f => f.nama + ' (' + f.npm + '): ' + ((f.notes || []).join(' ') || 'gagal')),
+                                    confirmLabel: 'Tutup'
+                                });
+                            } else if (skipped.length) {
+                                await this.showInfo({
+                                    title: 'Sebagian Dilewati',
+                                    tone: 'info',
+                                    icon: 'bi-info-circle',
+                                    message: skipped.length + ' pengajuan dilewati karena belum berstatus ACC:',
+                                    details: skipped.map(s => s.nama + ' (' + s.npm + ')'),
                                     confirmLabel: 'Tutup'
                                 });
                             }
@@ -4769,6 +4786,13 @@
                 async updateStatus() {
                     const status = this.detail.status;
                     const catatan = this.detail.catatan.trim();
+                    const decision = status === 'ACC' || status === 'Ditolak' || status === 'Dibatalkan';
+                    const prev = this.detail.p.Status || 'Menunggu';
+                    const leavesDecision = status === 'Menunggu' && (prev === 'ACC' || prev === 'Ditolak' || prev === 'Dibatalkan');
+                    if ((decision || leavesDecision) && status !== prev && !this.canVerify) {
+                        this.notify('Hanya verifikator yang dapat mengubah keputusan pengajuan.', false);
+                        return;
+                    }
                     if ((status === 'Ditolak' || status === 'Dibatalkan') && !catatan) {
                         this.notify('Catatan wajib diisi untuk status ' + status + '.', false);
                         return;

@@ -1,4 +1,5 @@
 import { requireAdmin } from '../session.js';
+import { isVerifikator, VERIFIKATOR_DENIED } from '../policy.js';
 import { resolveBagianFor } from '../read/common.js';
 import { sendFinalPdfEmails, sendRejectionPdfEmail } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
@@ -214,7 +215,7 @@ export async function deleteDetailKegiatan(db, idPengajuan, index, ctx) {
 }
 
 export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan, actorEmail, ctx) {
-  await requireAdmin(db, ctx.token, ctx.session);
+  const session = await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
   const status = str(newStatus);
   if (STATUS_VALID.indexOf(status) === -1) {
@@ -231,6 +232,23 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   }
 
   const prevStatus = str(existing.status);
+  // Keputusan baru (ACC/Ditolak/Dibatalkan) dan meninggalkan status keputusan
+  // menuju Menunggu hanya boleh dilakukan verifikator. Admin lain tetap bisa
+  // memperbarui catatan tanpa mengubah status.
+  const DECIDED = ['ACC', 'Ditolak', 'Dibatalkan'];
+  const changesStatus = status !== prevStatus;
+  const enteringDecision = changesStatus && DECIDED.indexOf(status) !== -1;
+  const leavingDecision = changesStatus && status === 'Menunggu' && DECIDED.indexOf(prevStatus) !== -1;
+  if ((enteringDecision || leavingDecision) && !isVerifikator(session)) {
+    await writeAuditLog(db, {
+      actor: actorName(ctx),
+      action: 'DENY',
+      target: 'Pengajuan',
+      detail: JSON.stringify({ idPengajuan: id, dari: prevStatus, ke: status }),
+      alasan: VERIFIKATOR_DENIED
+    });
+    return { success: false, message: VERIFIKATOR_DENIED };
+  }
   const ts = nowIso();
   let nomorSurat = str(existing.nomor_surat);
   const sets = ['status = ?1', 'updated_at = ?2'];
@@ -242,7 +260,7 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     sets.push('nomor_surat = ?' + (vals.length + 1));
     vals.push(nomorSurat);
   }
-  const actor = str(actorEmail) || str(ctx.session && ctx.session.nama) || 'Admin';
+  const actor = str(actorEmail) || str(session && session.nama) || 'Admin';
   const updateSql = 'UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1)
     + (claimNumber ? " AND (nomor_surat IS NULL OR nomor_surat = '')" : '');
   const historyStmt = claimNumber

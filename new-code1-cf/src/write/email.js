@@ -121,19 +121,22 @@ export async function sendFinalPdfEmails(db, idPengajuan, env, actor) {
   const pengajuan = await getPengajuan(db, idPengajuan);
   if (!pengajuan) return { ok: false, pdfUrl: '', studentEmailSent: false, bagianEmailSent: false, bagianEmail: '', bagianName: '', notes: ['Pengajuan tidak ditemukan.'] };
 
+  // Email final hanya untuk pengajuan yang sudah berstatus ACC. Fungsi ini
+  // tidak boleh mengubah status: transisi ACC dilakukan lebih dulu oleh
+  // updatePengajuanStatus. Ini mencegah email massal menaikkan status.
+  if (str(pengajuan.status) !== 'ACC') {
+    return {
+      ok: false, pdfUrl: '', studentEmailSent: false, bagianEmailSent: false,
+      bagianEmail: '', bagianName: '',
+      notes: ['Pengajuan belum berstatus ACC. Setujui (ACC) pengajuan terlebih dahulu.']
+    };
+  }
+
   const details = await getDetailRows(db, idPengajuan);
   const bagian = await resolveBagianEmail(db, pengajuan, details);
   const nama = str(pengajuan.nama_lengkap);
   const npm = str(pengajuan.npm);
   const studentEmail = str(pengajuan.email);
-
-  if (str(pengajuan.status) !== 'ACC') {
-    await db.prepare('UPDATE pengajuan SET status = ?1, updated_at = ?2 WHERE id_pengajuan = ?3')
-      .bind('ACC', nowIso(), str(idPengajuan)).run();
-    await db.prepare('INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)')
-      .bind(nowIso(), str(idPengajuan), 'ACC', '', str(actor) || str(env && env.actor) || 'Admin').run();
-    pengajuan.status = 'ACC';
-  }
 
   const enhanced = buildEnhanced(pengajuan, details, 'Final');
   const bridge = await callDriveBridge(env, {
@@ -204,11 +207,21 @@ export async function sendBulkFinalEmail(db, ids, ctx) {
     targets = (await db.prepare("SELECT * FROM pengajuan WHERE status = 'ACC' ORDER BY id").all()).results || [];
   }
 
-  const results = { total: 0, sent: 0, failed: 0, details: [] };
+  const results = { total: 0, sent: 0, failed: 0, skipped: 0, details: [] };
   for (const p of targets) {
     const id = str(p.id_pengajuan);
     if (!id) continue;
     results.total++;
+    // Email final tidak boleh mengubah status. Pengajuan yang belum ACC
+    // dilewati (bukan dipaksa ACC) agar pemilihan massal aman.
+    if (str(p.status) !== 'ACC') {
+      results.skipped++;
+      results.details.push({
+        idPengajuan: id, npm: str(p.npm), nama: str(p.nama_lengkap), ok: false, skipped: true,
+        notes: ['Dilewati: pengajuan belum berstatus ACC.']
+      });
+      continue;
+    }
     try {
       const r = await sendFinalPdfEmails(db, id, ctx.env, ctx.session && ctx.session.nama);
       const notes = (r && r.notes) || [];
@@ -225,13 +238,15 @@ export async function sendBulkFinalEmail(db, ids, ctx) {
     }
   }
 
+  const skippedText = results.skipped ? ', ' + results.skipped + ' dilewati (belum ACC)' : '';
   return {
     success: true,
     total: results.total,
     sent: results.sent,
     failed: results.failed,
+    skipped: results.skipped,
     details: results.details,
-    message: 'Email final diproses untuk ' + results.total + ' pengajuan: ' + results.sent + ' terkirim, ' + results.failed + ' gagal.'
+    message: 'Email final diproses untuk ' + results.total + ' pengajuan: ' + results.sent + ' terkirim, ' + results.failed + ' gagal' + skippedText + '.'
   };
 }
 

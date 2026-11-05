@@ -1,4 +1,5 @@
 import { baginaHasAccess, getBagianAliasMap } from './read/common.js';
+import { isVerifikator } from './policy.js';
 import { throttleKey, getThrottleState, recordFailure, clearFailures, lockoutMessage } from './throttle.js';
 import { verifyPassword, hashPassword, isHashed } from './password.js';
 import { getAdminMfa, verifyAdminMfa } from './mfa/store.js';
@@ -96,7 +97,8 @@ export async function authenticateAdmin(db, password, ip, code) {
       }
       await clearFailures(db, key);
       const nama = String(row.nama || '').trim() || 'Admin';
-      return { ok: true, token: await createSession(db, { role: 'admin', nama, adminId: row.id }), nama };
+      const session = { role: 'admin', nama, adminId: row.id };
+      return { ok: true, token: await createSession(db, session), nama, canVerify: isVerifikator(session) };
     }
   }
   await recordFailure(db, key);

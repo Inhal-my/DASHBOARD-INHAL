@@ -158,7 +158,7 @@ export async function getStudentPortalData(db, npm) {
       status: p.status || 'Menunggu',
       reason: p.catatan_admin || '',
       hasUpload: hasUpload,
-      linkFinal: p.link_final || '',
+      linkFinal: String(p.status || '').trim() === 'ACC' ? (p.link_final || '') : '',
       uploadResetAt: str(p.upload_reset_at),
       uploadResetBy: str(p.upload_reset_by),
       uploadResetNote: str(p.upload_reset_note),

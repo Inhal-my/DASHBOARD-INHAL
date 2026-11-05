@@ -17,8 +17,8 @@ async function adminCtx() {
 async function seedPengajuan(extra = {}) {
   await env.DB.prepare(
     "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,no_hp_wa,blok,jenis_kegiatan,status,link_acc_inhal) " +
-    "VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','aisyah@contoh.com','0812','A','Praktikum','Diterima',?1)"
-  ).bind(extra.linkAcc || '').run();
+    "VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','aisyah@contoh.com','0812','A','Praktikum',?2,?1)"
+  ).bind(extra.linkAcc || '', extra.status || 'ACC').run();
 }
 
 async function seedDetail() {
@@ -122,8 +122,20 @@ describe('sendFinalEmail', () => {
     expect(row.link_final).toContain('FINAL1234567890');
     expect(row.status_info_bagian).toBe('Terkirim');
     expect(row.email_bagian).toBe('anatomi@contoh.com');
-    const hist = await env.DB.prepare("SELECT * FROM status_history WHERE id_pengajuan = 'INHAL-1' AND status = 'ACC'").all();
-    expect(hist.results).toHaveLength(1);
+  });
+
+  it('menolak pengiriman email final untuk pengajuan yang belum ACC tanpa mengubah status', async () => {
+    await seedPengajuan({ status: 'Menunggu' });
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
+    const ctx = await adminCtx();
+    const res = await sendFinalEmail(env.DB, 'INHAL-1', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('ACC');
+    expect(calls).toHaveLength(0);
+    const row = await env.DB.prepare('SELECT status, link_final FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Menunggu');
+    expect(row.link_final || '').toBe('');
   });
 });
 
@@ -161,7 +173,7 @@ describe('sendBulkFinalEmail', () => {
     await seedDetail();
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,jenis_kegiatan,status,link_acc_inhal) " +
-      "VALUES ('2026-09-10T08:00:00','INHAL-3','2201010003','Citra','citra@contoh.com','Ujian','Diterima','')"
+      "VALUES ('2026-09-10T08:00:00','INHAL-3','2201010003','Citra','citra@contoh.com','Ujian','ACC','')"
     ).run();
     const calls = stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
     const ctx = await adminCtx();
@@ -172,6 +184,25 @@ describe('sendBulkFinalEmail', () => {
     expect(res.failed).toBe(0);
     expect(res.message).toContain('2 pengajuan');
     expect(calls.filter((c) => c.action === 'sendFinalEmail')).toHaveLength(2);
+  });
+
+  it('melewati pengajuan yang belum ACC dan tidak mengubah statusnya', async () => {
+    await seedPengajuan({ linkAcc: 'https://drive.google.com/file/d/ACC1234567890/view' });
+    await seedDetail();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,jenis_kegiatan,status) " +
+      "VALUES ('2026-09-10T08:00:00','INHAL-5','2201010005','Eka','eka@contoh.com','Ujian','Menunggu')"
+    ).run();
+    const calls = stubBridge(() => ({ success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: true }));
+    const ctx = await adminCtx();
+    const res = await sendBulkFinalEmail(env.DB, ['INHAL-1', 'INHAL-5'], ctx);
+    expect(res.total).toBe(2);
+    expect(res.sent).toBe(1);
+    expect(res.skipped).toBe(1);
+    expect(calls.filter((c) => c.action === 'sendFinalEmail')).toHaveLength(1);
+    const row = await env.DB.prepare('SELECT status, link_final FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-5').first();
+    expect(row.status).toBe('Menunggu');
+    expect(row.link_final || '').toBe('');
   });
 
   it('defaults to every ACC pengajuan when no ids are given', async () => {

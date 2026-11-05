@@ -22,6 +22,9 @@ function baSumber(r) {
 function buildPengajuanClientRows(rows, biayaMap, overrideMap) {
   return rows.map((r) => {
     const copy = toClientRow('pengajuan', r);
+    // Link final hanya bermakna selama status masih ACC. Saat ACC ditarik ke
+    // Menunggu, berkas tetap disimpan tetapi tidak ditampilkan lagi.
+    if (String(copy.Status || '').trim() !== 'ACC') copy['Link Final'] = '';
     copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
     copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
     const id = String(r.id_pengajuan || '').trim();
@@ -220,6 +223,7 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
   const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(String(idPengajuan || '').trim()).first();
   if (!p) return null;
   const copy = toClientRow('pengajuan', p);
+  if (String(copy.Status || '').trim() !== 'ACC') copy['Link Final'] = '';
   const details = (await db.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(String(idPengajuan || '').trim()).all()).results || [];
   copy.details = toClientRows('detail_kegiatan', details);
   const biayaMap = await getBiayaMap(db);
@@ -268,18 +272,19 @@ export async function getBagianAggregation(db, ctx) {
       units.push({ key, bagian, blok, pilihan, detail: detailText, label, tanggal: '', tanggalList: [], peserta: [], ba: [], linkFinal: '' });
     }
     const unit = units[unitIndex[key]];
+    const statusP = String(p.Status || '').trim();
+    const linkFinalP = statusP === 'ACC' ? String(p['Link Final'] || '').trim() : '';
     addPeserta(unit, {
       npm: String(p.NPM || '').trim(),
       namaLengkap: String(p['Nama Lengkap'] || '').trim(),
       blok: String(p.Blok || '').trim(),
-      statusPengajuan: String(p.Status || '').trim(),
-      linkFinal: String(p['Link Final'] || '').trim(),
+      statusPengajuan: statusP,
+      linkFinal: linkFinalP,
       idPengajuan: idp
     });
     const tgl = String(row['Tanggal Pelaksanaan'] || '').trim();
     if (tgl && unit.tanggalList.indexOf(tgl) === -1) unit.tanggalList.push(tgl);
-    const lf = String(p['Link Final'] || '').trim();
-    if (lf && !unit.linkFinal) unit.linkFinal = lf;
+    if (linkFinalP && !unit.linkFinal) unit.linkFinal = linkFinalP;
   }
 
   const normKegiatanText = normKegiatan;

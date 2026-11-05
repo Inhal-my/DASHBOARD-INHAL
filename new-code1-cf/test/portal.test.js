@@ -53,6 +53,18 @@ describe('getStudentPortalData', () => {
     expect(data.error).toBe('NPM tidak boleh kosong');
   });
 
+  it('menampilkan link final hanya saat status ACC', async () => {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-f','2201010001','Aisyah Putri','ACC','https://drive/final.pdf')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-g','2201010001','Aisyah Putri','Menunggu','https://drive/final.pdf')"
+    ).run();
+    const data = await getStudentPortalData(env.DB, '2201010001');
+    expect(data.history.find((x) => x.idPengajuan === 'INHAL-f').linkFinal).toBe('https://drive/final.pdf');
+    expect(data.history.find((x) => x.idPengajuan === 'INHAL-g').linkFinal).toBe('');
+  });
+
   it('exposes upload reset info for the portal banner', async () => {
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,upload_reset_at,upload_reset_by,upload_reset_note) VALUES ('2026-09-10T08:00:00','INHAL-r','2201010001','Aisyah Putri','Diterima','2026-10-01T10:00:00','Admin','File ACC salah')"

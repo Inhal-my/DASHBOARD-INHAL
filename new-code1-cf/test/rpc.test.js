@@ -32,6 +32,13 @@ describe('dispatchRpc', () => {
     await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','Admin')").run();
     const res = await dispatchRpc(env.DB, 'authenticateAdmin', ['rahasia']);
     expect(res.ok).toBe(true);
+    expect(res.canVerify).toBe(false);
+  });
+  it('menandai sesi verifikator dengan canVerify', async () => {
+    await env.DB.prepare("INSERT INTO admin (password, nama) VALUES ('rahasia','dr. Desi Isnayanti,M.Pd.Ked')").run();
+    const res = await dispatchRpc(env.DB, 'authenticateAdmin', ['rahasia']);
+    expect(res.ok).toBe(true);
+    expect(res.canVerify).toBe(true);
   });
   it('dispatches admin repo reads and protects them without a token', async () => {
     const deniedRead = await dispatchRpc(env.DB, 'getMahasiswaByNpm', ['2201010001']);

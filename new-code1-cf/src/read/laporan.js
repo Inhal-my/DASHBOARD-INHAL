@@ -146,6 +146,8 @@ export async function getLaporanBootstrap(db, ctx) {
     perBlok[blok] = (perBlok[blok] || 0) + 1;
     row.Biaya = resolveBiayaForPengajuan(row, biayaMap, overrideMap);
     row['Biaya Rupiah'] = formatRupiah(row.Biaya);
+    // Link final hanya berlaku selama status ACC.
+    if (status !== 'ACC') row['Link Final'] = '';
     row['Masuk BA'] = baPengajuanIds.has(id);
     row['Pembayaran Final'] = !!String(row['Link Final'] || '').trim() || row['Masuk BA'];
     totalBiaya += row.Biaya;
@@ -215,12 +217,13 @@ export async function getLaporanBootstrap(db, ctx) {
       const u = units[unitIndex[key]];
       if (!u.peserta.some((x) => x.idPengajuan === idp)) {
         const memberSet = baMemberByKey[key];
+        const statusP = String(p.Status || '').trim();
         u.peserta.push({
           idPengajuan: idp,
           npm: String(p.NPM || '').trim(),
           namaLengkap: String(p['Nama Lengkap'] || '').trim(),
-          statusPengajuan: String(p.Status || '').trim(),
-          linkFinal: String(p['Link Final'] || '').trim(),
+          statusPengajuan: statusP,
+          linkFinal: statusP === 'ACC' ? String(p['Link Final'] || '').trim() : '',
           masukBa: !!(memberSet && memberSet.has(idp))
         });
       }

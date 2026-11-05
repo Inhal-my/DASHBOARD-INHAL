@@ -8,14 +8,23 @@ import {
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
+const VERIFIKATOR = 'dr. Desi Isnayanti,M.Pd.Ked';
+
 async function adminCtx() {
-  return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: {} };
+  const session = { role: 'admin', nama: VERIFIKATOR };
+  return { token: await createSession(env.DB, session), session, env: {} };
 }
 
 const driveEnv = { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' };
 
 async function adminCtxWithDrive() {
-  return { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: driveEnv };
+  const session = { role: 'admin', nama: VERIFIKATOR };
+  return { token: await createSession(env.DB, session), session, env: driveEnv };
+}
+
+async function otherAdminCtx() {
+  const session = { role: 'admin', nama: 'Admin Lain' };
+  return { token: await createSession(env.DB, session), session, env: {} };
 }
 
 function stubBridge(handler) {
@@ -155,6 +164,57 @@ describe('pengajuan admin status and delete', () => {
     const ctx = await adminCtx();
     const bad = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Diterima', '', '', ctx);
     expect(bad.success).toBe(false);
+  });
+
+  it('menolak ACC/Tolak/Batalkan dari admin yang bukan verifikator', async () => {
+    await seedPengajuan();
+    const ctx = await otherAdminCtx();
+    for (const status of ['ACC', 'Ditolak', 'Dibatalkan']) {
+      const res = await updatePengajuanStatus(env.DB, 'INHAL-1', status, 'Catatan uji', '', ctx);
+      expect(res.success).toBe(false);
+      expect(res.message).toContain('verifikator');
+    }
+    const row = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Menunggu');
+    const audit = await env.DB.prepare("SELECT * FROM audit_log WHERE aksi = 'DENY'").all();
+    expect(audit.results.length).toBe(3);
+  });
+
+  it('menolak penarikan ACC ke Menunggu oleh admin yang bukan verifikator', async () => {
+    await seedPengajuan({ status: 'ACC' });
+    const ctx = await otherAdminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Menunggu', 'Uji revert', '', ctx);
+    expect(res.success).toBe(false);
+    const row = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('ACC');
+  });
+
+  it('menolak pengembalian Ditolak/Dibatalkan ke Menunggu oleh admin lain', async () => {
+    await seedPengajuan({ status: 'Ditolak' });
+    const ctx = await otherAdminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Menunggu', 'Uji revert', '', ctx);
+    expect(res.success).toBe(false);
+    const row = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Ditolak');
+  });
+
+  it('admin lain tetap boleh memperbarui catatan tanpa mengubah status', async () => {
+    await seedPengajuan({ status: 'Menunggu' });
+    const ctx = await otherAdminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Menunggu', 'Catatan tambahan', '', ctx);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT status, catatan_admin FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Menunggu');
+    expect(row.catatan_admin).toBe('Catatan tambahan');
+  });
+
+  it('verifikator boleh menarik ACC kembali ke Menunggu', async () => {
+    await seedPengajuan({ status: 'ACC' });
+    const ctx = await adminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Menunggu', 'Ditinjau ulang', '', ctx);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Menunggu');
   });
 
   it('ACC issues a nomor surat and records history', async () => {
@@ -399,7 +459,7 @@ describe('reset upload bukti', () => {
     expect(row.link_bukti_bayar).toBe('');
     expect(row.link_final).toBe('');
     expect(row.upload_reset_at).toBeTruthy();
-    expect(row.upload_reset_by).toBe('Admin');
+    expect(row.upload_reset_by).toBe(VERIFIKATOR);
     expect(row.upload_reset_note).toBe('File salah');
     expect(row.status).toBe('ACC');
 
