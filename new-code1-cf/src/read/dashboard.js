@@ -106,8 +106,10 @@ export async function getDashboardBootstrap(db, ctx) {
 
   const baPendukungRows = (await db.prepare(
     'SELECT DISTINCT p.id_pengajuan FROM berita_acara_admin_peserta p ' +
-    'JOIN berita_acara_admin_berkas b ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan AND b.active = 1 ' +
-    'WHERE p.active = 1'
+    'WHERE p.active = 1 AND (' +
+    "  EXISTS (SELECT 1 FROM berita_acara_admin_berkas b WHERE b.ba_id = p.ba_id AND b.id_pengajuan = p.id_pengajuan AND b.active = 1 AND b.scope = 'peserta')" +
+    "  OR EXISTS (SELECT 1 FROM berita_acara_admin_berkas s WHERE s.ba_id = p.ba_id AND s.active = 1 AND s.scope = 'shared')" +
+    ')'
   ).all()).results || [];
   const baPendukungIds = Array.from(new Set(baPendukungRows.map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean)));
   const baPendukungLinkRows = (await db.prepare(
@@ -116,6 +118,23 @@ export async function getDashboardBootstrap(db, ctx) {
     'ORDER BY a.timestamp DESC, a.ba_id DESC'
   ).all()).results || [];
   const baPendukungByPengajuan = {};
+
+  const sharedBaRows = (await db.prepare(
+    'SELECT a.ba_id, a.file_url, a.base_file_url FROM berita_acara_admin a ' +
+    "WHERE EXISTS (SELECT 1 FROM berita_acara_admin_berkas s WHERE s.ba_id = a.ba_id AND s.active = 1 AND s.scope = 'shared') " +
+    'ORDER BY a.timestamp DESC, a.ba_id DESC'
+  ).all()).results || [];
+  for (const ba of sharedBaRows) {
+    const fileUrl = String(ba.file_url || '').trim() || String(ba.base_file_url || '').trim();
+    if (!fileUrl) continue;
+    const anggota = (await db.prepare('SELECT id_pengajuan FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(ba.ba_id).all()).results || [];
+    for (const m of anggota) {
+      const pid = String(m.id_pengajuan || '').trim();
+      if (!pid || baPendukungByPengajuan[pid]) continue;
+      baPendukungByPengajuan[pid] = { baId: String(ba.ba_id || '').trim(), fileUrl: fileUrl };
+    }
+  }
+
   for (const r of baPendukungLinkRows) {
     const pid = String(r.id_pengajuan || '').trim();
     if (!pid || baPendukungByPengajuan[pid]) continue;

@@ -29,6 +29,23 @@ describe('skema ba pendukung berkas', () => {
     expect(Number(row.active)).toBe(1);
   });
 
+  it('default scope peserta untuk baris berkas lama', async () => {
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,active) VALUES ('2026-10-12T00:00:00','BA-PEN-2026-0001','INHAL-1','2201010001',1,0,'p1.jpg','https://drive/x',1)"
+    ).run();
+    const row = await env.DB.prepare('SELECT scope FROM berita_acara_admin_berkas WHERE ba_id = ?1').bind('BA-PEN-2026-0001').first();
+    expect(row.scope).toBe('peserta');
+  });
+
+  it('menyimpan baris berkas shared milik BA', async () => {
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,active,scope) VALUES ('2026-10-12T00:00:00','BA-PEN-2026-0001','','',0,0,'shared.pdf','https://drive/sh',2,1,'shared')"
+    ).run();
+    const row = await env.DB.prepare("SELECT id_pengajuan, scope FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND scope='shared'").bind('BA-PEN-2026-0001').first();
+    expect(row.scope).toBe('shared');
+    expect(String(row.id_pengajuan)).toBe('');
+  });
+
   it('menyimpan jumlah halaman berkas (page_count)', async () => {
     await env.DB.prepare(
       "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,active) VALUES ('2026-10-12T00:00:00','BA-PEN-2026-0001','INHAL-1','2201010001',1,0,'scan.pdf','https://drive/y',4,1)"

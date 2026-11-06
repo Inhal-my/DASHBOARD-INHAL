@@ -5,6 +5,7 @@ import { saveDriveFile, trashDriveFile, getDriveFileBase64, parseDriveFileId } f
 import { decodeBase64Size, resolveMime, base64ToBytes } from '../uploads.js';
 import { mergeBaFilesToPdf } from '../baMerge.js';
 import { PDFDocument } from 'pdf-lib';
+import { writeAuditLog } from '../audit.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -70,6 +71,7 @@ export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
 
   const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
   if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+  const beforeCount = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
 
   const existing = (await db.prepare('SELECT id_pengajuan, urutan, active FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(id).all()).results || [];
   const have = {};
@@ -107,11 +109,22 @@ export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
     added += 1;
   }
   if (stmts.length) await db.batch(stmts);
+  const result = { success: true, added, skipped };
   if (added) {
     const count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
     await db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id).run();
+
+    const shared = (await db.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'shared'").bind(id).first()).n || 0;
+    if (shared) {
+      const regen = await regenerateBaAdminPdf(db, id, ctx);
+      result.fileUrl = (regen && regen.fileUrl) || '';
+      result.needsRegen = !(regen && regen.success);
+    }
   }
-  return { success: true, added, skipped };
+  if (added || skipped) {
+    await auditAdminBa(db, ctx, beforeCount === 0 ? 'BA_CREATE' : 'BA_UPDATE', id, { jenis: 'Pendukung', aksi: 'peserta', added, skipped });
+  }
+  return result;
 }
 
 async function listCandidates(db, kegiatan) {
@@ -145,7 +158,7 @@ export const BA_ADMIN_MAX_PAGES = 50;
 export const BA_ADMIN_MAX_BYTES = 20 * 1024 * 1024;
 
 async function countActivePages(db, baId, exceptIdPengajuan) {
-  const rows = (await db.prepare('SELECT id_pengajuan, page_count FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1').bind(baId).all()).results || [];
+  const rows = (await db.prepare("SELECT id_pengajuan, page_count FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'peserta'").bind(baId).all()).results || [];
   let n = 0;
   for (const r of rows) {
     if (exceptIdPengajuan && str(r.id_pengajuan) === str(exceptIdPengajuan)) continue;
@@ -155,13 +168,39 @@ async function countActivePages(db, baId, exceptIdPengajuan) {
 }
 
 async function countActiveBytes(db, baId, exceptIdPengajuan) {
-  const rows = (await db.prepare('SELECT id_pengajuan, byte_size FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1').bind(baId).all()).results || [];
+  const rows = (await db.prepare("SELECT id_pengajuan, byte_size FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'peserta'").bind(baId).all()).results || [];
   let n = 0;
   for (const r of rows) {
     if (exceptIdPengajuan && str(r.id_pengajuan) === str(exceptIdPengajuan)) continue;
     n += Number(r.byte_size) || 0;
   }
   return n;
+}
+
+async function countActiveSharedPages(db, baId) {
+  const rows = (await db.prepare("SELECT page_count FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'shared'").bind(baId).all()).results || [];
+  let n = 0;
+  for (const r of rows) n += Number(r.page_count) || 1;
+  return n;
+}
+
+async function countActiveSharedBytes(db, baId) {
+  const rows = (await db.prepare("SELECT byte_size FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'shared'").bind(baId).all()).results || [];
+  let n = 0;
+  for (const r of rows) n += Number(r.byte_size) || 0;
+  return n;
+}
+
+async function auditAdminBa(db, ctx, action, baId, detail) {
+  try {
+    await writeAuditLog(db, {
+      actor: str(ctx && ctx.session && ctx.session.nama) || 'Sistem',
+      action: action,
+      target: str(baId),
+      detail: JSON.stringify(detail || {}),
+      alasan: ''
+    });
+  } catch (e) {}
 }
 
 export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx) {
@@ -240,12 +279,12 @@ export async function setBaAdminPesertaBerkas(db, baId, idPengajuan, images, ctx
       ).bind(ts, id, pid, npm, str(p && p.nama_lengkap), str(p && p.blok), str(ba.bagian), str(p && p.status), urutanPeserta)
     );
   }
-  stmts.push(db.prepare('UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1').bind(ts, id, pid));
+  stmts.push(db.prepare("UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1 AND scope = 'peserta'").bind(ts, id, pid));
   for (const u of uploaded) {
     stmts.push(
       db.prepare(
-        'INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, page_count, byte_size, active) ' +
-        'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,1)'
+        "INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, page_count, byte_size, active, scope) " +
+        "VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,1,'peserta')" 
       ).bind(ts, id, pid, npm, urutanPeserta, u.page, u.name, u.url, u.pageCount, u.byteSize)
     );
   }
@@ -268,11 +307,17 @@ export async function removeBaAdminPeserta(db, baId, idPengajuan, ctx) {
   const ts = nowIso();
   await db.batch([
     db.prepare('UPDATE berita_acara_admin_peserta SET active = 0 WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(id, pid),
-    db.prepare('UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1').bind(ts, id, pid)
+    db.prepare("UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND id_pengajuan = ?3 AND active = 1 AND scope = 'peserta'").bind(ts, id, pid)
   ]);
   const count = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
   await db.prepare('UPDATE berita_acara_admin SET jumlah_peserta = ?1, updated_at = ?2 WHERE ba_id = ?3').bind(String(count), ts, id).run();
-  return { success: true };
+
+  const regen = await regenerateBaAdminPdf(db, id, ctx);
+  await auditAdminBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pendukung', aksi: 'peserta_hapus' });
+  if (!regen.success) {
+    return { success: true, needsRegen: true, fileUrl: '', message: regen.message || 'Peserta dihapus, PDF gagal dirakit.' };
+  }
+  return { success: true, needsRegen: false, fileUrl: regen.fileUrl || '' };
 }
 
 export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
@@ -302,8 +347,15 @@ export async function getBaAdminForPengajuan(db, idPengajuan, ctx) {
   if (baRow) {
     ba = { baId: str(baRow.ba_id), bagian: str(baRow.bagian), blok: str(baRow.blok), namaKegiatan: str(baRow.nama_kegiatan), tanggal: str(baRow.tanggal_pelaksanaan), jam: str(baRow.jam), catatan: str(baRow.catatan), fileUrl: str(baRow.file_url), baseFileUrl: str(baRow.base_file_url), baseFileName: str(baRow.base_file_name), jumlahPeserta: Number(baRow.jumlah_peserta) || 0, needsRegen: Number(baRow.needs_regen) === 1 };
     const rows = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1 ORDER BY urutan').bind(ba.baId).all()).results || [];
-    const berkas = (await db.prepare('SELECT * FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 ORDER BY page_index').bind(ba.baId).all()).results || [];
-    ba.legacyFileOnly = !berkas.length && !!ba.fileUrl;
+    const berkas = (await db.prepare("SELECT * FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'peserta' ORDER BY page_index").bind(ba.baId).all()).results || [];
+    const sharedRow = await db.prepare("SELECT * FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'shared' ORDER BY timestamp DESC, id DESC").bind(ba.baId).first();
+    ba.shared = sharedRow ? {
+      pages: Number(sharedRow.page_count) || 1,
+      pageCount: Number(sharedRow.page_count) || 1,
+      fileUrl: str(sharedRow.file_url),
+      fileName: str(sharedRow.file_name)
+    } : null;
+    ba.legacyFileOnly = !berkas.length && !sharedRow && !!ba.fileUrl;
     const filesByPid = {};
     for (const b of berkas) {
       const k = str(b.id_pengajuan);
@@ -339,14 +391,19 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
     const rows = (await db.prepare(
       'SELECT b.*, p.nama_lengkap AS p_nama, p.blok AS p_blok, p.urutan AS p_urutan FROM berita_acara_admin_berkas b ' +
       'JOIN berita_acara_admin_peserta p ON p.ba_id = b.ba_id AND p.id_pengajuan = b.id_pengajuan ' +
-      'WHERE b.ba_id = ?1 AND b.active = 1 AND p.active = 1 ' +
+      "WHERE b.ba_id = ?1 AND b.active = 1 AND p.active = 1 AND b.scope = 'peserta' " +
       'ORDER BY p.urutan, b.page_index'
+    ).bind(id).all()).results || [];
+
+    const sharedRows = (await db.prepare(
+      "SELECT * FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'shared' ORDER BY page_index"
     ).bind(id).all()).results || [];
 
     const allPeserta = (await db.prepare('SELECT * FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1 ORDER BY urutan').bind(id).all()).results || [];
 
     const baseUrl = str(ba.base_file_url);
-    if (!rows.length && !baseUrl) {
+    const hasShared = sharedRows.length > 0;
+    if (!rows.length && !sharedRows.length && !baseUrl) {
       await db.prepare("UPDATE berita_acara_admin SET file_url = '', file_name = '', needs_regen = 0 WHERE ba_id = ?1").bind(id).run();
       return { success: true, fileUrl: '', pages: 0 };
     }
@@ -366,7 +423,9 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
       }
     }
 
-    const totalSourcePages = rows.reduce((s, r) => s + (Number(r.page_count) || 1), 0) + basePages;
+    const totalSourcePages = rows.reduce((s, r) => s + (Number(r.page_count) || 1), 0)
+      + sharedRows.reduce((s, r) => s + (Number(r.page_count) || 1), 0)
+      + basePages;
     if (totalSourcePages > BA_ADMIN_MAX_PAGES) {
       await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
       return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman terlampaui.' };
@@ -379,7 +438,7 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
     }
     const pesertaList = allPeserta.map((r) => ({
       urutan: Number(r.urutan) || 0, nama: str(r.nama_lengkap), npm: str(r.npm),
-      halaman: pagesByPid[str(r.id_pengajuan)] || 0
+      halaman: pagesByPid[str(r.id_pengajuan)] || 0, shared: hasShared
     }));
 
     const groupMap = new Map();
@@ -391,6 +450,18 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
 
     const groups = [];
     let totalBytes = 0;
+    const sharedFiles = [];
+    for (const r of sharedRows) {
+      const fileId = parseDriveFileId(r.file_url);
+      const got = await getDriveFileBase64(ctx.env, fileId);
+      if (!got.ok) throw new Error(got.message || 'Gagal mengambil berkas bersama.');
+      totalBytes += decodeBase64Size(got.base64);
+      if (totalBytes > BA_ADMIN_MAX_BYTES) {
+        await db.prepare('UPDATE berita_acara_admin SET needs_regen = 1 WHERE ba_id = ?1').bind(id).run();
+        return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+      }
+      sharedFiles.push({ bytes: base64ToBytes(got.base64), mime: got.mime });
+    }
     for (const g of groupMap.values()) {
       const files = [];
       for (const r of g.rows) {
@@ -413,7 +484,8 @@ async function runRegenerateBaAdminPdf(db, baId, ctx) {
       },
       peserta: pesertaList,
       groups: groups,
-      baseFile: baseFile
+      baseFile: baseFile,
+      sharedFiles: sharedFiles
     });
     const up = await saveDriveFile(ctx.env, { data: bytesToBase64(merged.bytes), mimeType: 'application/pdf', name: 'ba-' + id + '.pdf' }, 'ba-admin-' + id + '-pdf', { allowedMime: ['application/pdf'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA' });
     if (!up.ok) throw new Error(up.message || 'Gagal mengunggah PDF BA.');
@@ -520,4 +592,87 @@ export async function removeBaAdminBaseFile(db, baId, ctx) {
   if (fileId) { try { await trashDriveFile(ctx.env, fileId); } catch (e) {} }
   const regen = await regenerateBaAdminPdf(db, id, ctx);
   return { success: true, message: (regen && regen.success) ? 'Dokumen dasar dihapus.' : ((regen && regen.message) || 'Dokumen dasar dihapus.') };
+}
+
+export async function setBaAdminSharedBerkas(db, baId, file, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID kosong.' };
+  const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+  const aktif = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
+  if (!aktif) return { success: false, message: 'Tambahkan peserta terlebih dahulu.' };
+  if (!(file && file.data)) return { success: false, message: 'Tidak ada berkas yang diunggah.' };
+
+  const mime = resolveMime(file.mimeType, file.data);
+  if (mime !== 'application/pdf' && mime !== 'image/jpeg' && mime !== 'image/jpg' && mime !== 'image/png') {
+    return { success: false, message: 'Format berkas harus PDF, JPG, atau PNG.' };
+  }
+  const byteSize = decodeBase64Size(file.data);
+  let pageCount = 1;
+  if (mime === 'application/pdf') {
+    try {
+      const src = await PDFDocument.load(base64ToBytes(String(file.data)), { ignoreEncryption: true });
+      pageCount = src.getPageCount();
+    } catch (e) {
+      return { success: false, message: 'PDF tidak dapat dibaca.' };
+    }
+    if (!pageCount) return { success: false, message: 'PDF tidak memiliki halaman.' };
+  }
+
+  const pesertaPages = await countActivePages(db, id, '');
+  const pesertaBytes = await countActiveBytes(db, id, '');
+  const sharedPages = await countActiveSharedPages(db, id);
+  const sharedBytes = await countActiveSharedBytes(db, id);
+  if (pesertaPages + sharedPages + pageCount > BA_ADMIN_MAX_PAGES) {
+    return { success: false, message: 'Batas ' + BA_ADMIN_MAX_PAGES + ' halaman per BA terlampaui.' };
+  }
+  if (pesertaBytes + sharedBytes + byteSize > BA_ADMIN_MAX_BYTES) {
+    return { success: false, message: 'Total ukuran halaman melebihi 20 MB.' };
+  }
+
+  const up = await saveDriveFile(
+    ctx.env,
+    { data: String(file.data), mimeType: mime, name: String(file.name || 'ba-shared.pdf') },
+    'ba-admin-' + id + '-shared',
+    { allowedMime: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'], maxBytes: BA_ADMIN_MAX_BYTES, label: 'PDF BA bersama' }
+  );
+  if (!up.ok) return { success: false, message: up.message };
+
+  const ts = nowIso();
+  await db.batch([
+    db.prepare("UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND scope = 'shared' AND active = 1").bind(ts, id),
+    db.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp, ba_id, id_pengajuan, npm, urutan, page_index, file_name, file_url, page_count, byte_size, active, scope) " +
+      "VALUES (?1,?2,'','',0,0,?3,?4,?5,?6,1,'shared')"
+    ).bind(ts, id, String(up.name || ''), up.url, pageCount, byteSize)
+  ]);
+
+  const regen = await regenerateBaAdminPdf(db, id, ctx);
+  await auditAdminBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pendukung', aksi: 'shared_upload', pages: pageCount });
+  return {
+    success: true,
+    pages: pageCount,
+    fileUrl: up.url,
+    needsRegen: !regen.success,
+    message: regen.success ? 'PDF BA bersama disimpan.' : (regen.message || 'Berkas tersimpan, PDF gagal dirakit.')
+  };
+}
+
+export async function removeBaAdminSharedBerkas(db, baId, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID kosong.' };
+  const ba = await db.prepare('SELECT ba_id FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
+  if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+  const ts = nowIso();
+  const res = await db.prepare("UPDATE berita_acara_admin_berkas SET active = 0, superseded_at = ?1 WHERE ba_id = ?2 AND scope = 'shared' AND active = 1").bind(ts, id).run();
+  const changes = Number((res && res.meta && res.meta.changes) || 0);
+  const regen = await regenerateBaAdminPdf(db, id, ctx);
+  if (changes) await auditAdminBa(db, ctx, 'BA_UPDATE', id, { jenis: 'Pendukung', aksi: 'shared_remove' });
+  return {
+    success: true,
+    needsRegen: !regen.success,
+    message: regen.success ? 'PDF BA bersama dihapus.' : (regen.message || 'PDF bersama dihapus, PDF gagal dirakit.')
+  };
 }

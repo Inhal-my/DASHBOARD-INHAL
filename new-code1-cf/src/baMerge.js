@@ -164,7 +164,7 @@ function addCoverPages(doc, ba, peserta, helv, helvBold) {
       y -= 22;
     }
     no += 1;
-    const halaman = pe.halaman ? (pe.halaman + ' hal.') : 'belum ada berkas';
+    const halaman = pe.halaman ? (pe.halaman + ' hal.') : (pe.shared ? 'dokumen BA bersama' : 'belum ada berkas');
     const row = no + '. ' + (pe.nama || pe.npm || '-') + ' (' + (pe.npm || '-') + ') - ' + halaman;
     page.drawText(fitText(row, helv, 10, maxW), { x: left, y: y, size: 10, font: helv, color: TEXT_DARK });
     y -= 16;
@@ -210,6 +210,18 @@ export async function mergeBaFilesToPdf(input) {
       else { await addImagePage(doc, baseBytes, String(base.mime || '')); sourcePages += 1; }
     } catch (e) {
       // dokumen dasar rusak diabaikan; berkas peserta tetap diproses
+    }
+  }
+
+  const shared = Array.isArray(cfg.sharedFiles) ? cfg.sharedFiles : [];
+  for (const f of shared) {
+    const bytes = toBytes(f && f.bytes);
+    if (!bytes || !bytes.length) continue;
+    try {
+      if (isPdfFile(f)) sourcePages += await copyPdfPages(doc, bytes);
+      else { await addImagePage(doc, bytes, String((f && f.mime) || '')); sourcePages += 1; }
+    } catch (e) {
+      continue;
     }
   }
 

@@ -171,7 +171,9 @@ describe('dashboard tabel Kelengkapan per Blok', () => {
     const html = await loadHtml();
     expect(html).toContain('<div v-for="r in bagianPagedRows" :key="\'m\' + r.key" class="p-4">');
     expect(html).toContain('class="ba-date-grid mt-2"');
-    expect(html).toContain("{{ unitHasPendukung(r) ? 'BA Pendukung ada' : 'BA Pendukung belum' }}");
+    expect(html).toContain("'BA Pendukung belum'");
+    expect(html).toContain("'BA Pendukung ada'");
+    expect(html).toContain("'PDF belum ada'");
     expect(html).toContain("{{ unitHasPelaksanaan(r) ? 'BA Pelaksanaan ada' : 'BA Pelaksanaan belum' }}");
   });
 });

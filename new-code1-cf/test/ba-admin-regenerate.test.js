@@ -180,6 +180,64 @@ describe('regenerateBaAdminPdf', () => {
     expect(doc.getPageCount()).toBe(5);
   });
 
+  it('menggabungkan PDF bersama setelah dokumen dasar dan sebelum berkas peserta', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    await seedBerkas(baId);
+    await env.DB.prepare("UPDATE berita_acara_admin SET base_file_url='https://drive.google.com/file/d/BASEFILE0000000000000BASE/view' WHERE ba_id=?1").bind(baId).run();
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,byte_size,active,scope) " +
+      "VALUES ('2026-10-12T00:00:00',?1,'','',0,0,'shared.pdf','https://drive.google.com/file/d/SHAREDFILE00000000000SH/view',2,100,1,'shared')"
+    ).bind(baId).run();
+
+    const base = await pdfB64(1);
+    const shared = await pdfB64(2);
+    const member = await pdfB64(1);
+    let saved = '';
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') {
+        const id = String(body.fileId || '');
+        const b64 = id.indexOf('BASE') === 0 ? base : (id.indexOf('SHARED') === 0 ? shared : member);
+        return new Response(JSON.stringify({ success: true, base64: b64, mimeType: 'application/pdf' }), { status: 200 });
+      }
+      saved = body.base64;
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/NEWNEWNEWNEWNEWNEWNEWNEWNEW1/view', fileId: 'NEWNEWNEWNEWNEWNEWNEWNEW1' }), { status: 200 });
+    }));
+    const res = await regenerateBaAdminPdf(env.DB, baId, ctx);
+    expect(res.success).toBe(true);
+    const bytes = Uint8Array.from(atob(saved), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bytes);
+    // sampul(1) + dasar(1) + shared(2) + pembatas(1) + peserta(1) = 6
+    expect(doc.getPageCount()).toBe(6);
+  });
+
+  it('sampul menulis "dokumen BA bersama" untuk peserta tanpa berkas saat shared ada', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    await env.DB.prepare(
+      "INSERT INTO berita_acara_admin_berkas (timestamp,ba_id,id_pengajuan,npm,urutan,page_index,file_name,file_url,page_count,byte_size,active,scope) " +
+      "VALUES ('2026-10-12T00:00:00',?1,'','',0,0,'shared.pdf','https://drive.google.com/file/d/SHAREDFILE00000000000SH/view',1,100,1,'shared')"
+    ).bind(baId).run();
+    let saved = '';
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') return new Response(JSON.stringify({ success: true, base64: PNG, mimeType: 'image/png' }), { status: 200 });
+      saved = body.base64;
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/NEWNEWNEWNEWNEWNEWNEWNEWNEW1/view', fileId: 'NEWNEWNEWNEWNEWNEWNEWNEW1' }), { status: 200 });
+    }));
+    const res = await regenerateBaAdminPdf(env.DB, baId, ctx);
+    expect(res.success).toBe(true);
+    const bytes = Uint8Array.from(atob(saved), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bytes);
+    // sampul(1) + shared image(1) = 2 (tidak ada halaman per peserta)
+    expect(doc.getPageCount()).toBe(2);
+  });
+
   it('setBaAdminBaseFile menyimpan dokumen dasar & regenerate', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
     const ctx = await adminCtx();

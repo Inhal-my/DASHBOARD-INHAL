@@ -19,6 +19,14 @@ describe('rpc baAdmin', () => {
     expect(get1.data.ba.baId).toBe(created.baId);
   });
 
+  it('baAdminSetSharedFile & baAdminRemoveSharedFile terdaftar', async () => {
+    const token = await createSession(env.DB, { role: 'admin', nama: 'Admin' });
+    const noBa = await dispatchRpc(env.DB, 'baAdminSetSharedFile', ['BA-X', { data: 'x', mimeType: 'application/pdf' }, token], '', env);
+    expect(noBa.success).toBe(false);
+    const rm = await dispatchRpc(env.DB, 'baAdminRemoveSharedFile', ['BA-X', token], '', env);
+    expect(rm.success).toBe(false);
+  });
+
   it('menolak tanpa token (tanpa bocor detail)', async () => {
     const res = await dispatchRpc(env.DB, 'baAdminGet', ['INHAL-1'], '', env);
     expect(res.success).toBeFalsy();

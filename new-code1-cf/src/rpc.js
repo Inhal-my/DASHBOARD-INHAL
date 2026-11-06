@@ -35,7 +35,8 @@ import {
 import {
   getOrCreateBaAdmin, addBaAdminPesertaBulk, getBaAdminForPengajuan,
   setBaAdminPesertaBerkas, removeBaAdminPeserta, regenerateBaAdminPdf,
-  addBaAdminPesertaWithBerkas, setBaAdminBaseFile, removeBaAdminBaseFile
+  addBaAdminPesertaWithBerkas, setBaAdminBaseFile, removeBaAdminBaseFile,
+  setBaAdminSharedBerkas, removeBaAdminSharedBerkas
 } from './write/baAdmin.js';
 
 const HANDLERS = {
@@ -135,15 +136,12 @@ const HANDLERS = {
     const regen = await regenerateBaAdminPdf(db, args[0], ctx);
     return { success: true, pages: set.pages, fileUrl: regen.fileUrl || '', needsRegen: !regen.success, message: regen.success ? 'Berkas disimpan.' : (regen.message || 'Berkas tersimpan, PDF gagal dirakit.') };
   },
-  baAdminRemovePeserta: async (db, args, ctx) => {
-    const rm = await removeBaAdminPeserta(db, args[0], args[1], ctx);
-    if (!rm.success) return rm;
-    const regen = await regenerateBaAdminPdf(db, args[0], ctx);
-    return { success: true, needsRegen: !regen.success };
-  },
+  baAdminRemovePeserta: (db, args, ctx) => removeBaAdminPeserta(db, args[0], args[1], ctx),
   baAdminRegenerate: (db, args, ctx) => regenerateBaAdminPdf(db, args[0], ctx),
   baAdminSetBaseFile: (db, args, ctx) => setBaAdminBaseFile(db, args[0], args[1], ctx),
-  baAdminRemoveBaseFile: (db, args, ctx) => removeBaAdminBaseFile(db, args[0], ctx)
+  baAdminRemoveBaseFile: (db, args, ctx) => removeBaAdminBaseFile(db, args[0], ctx),
+  baAdminSetSharedFile: (db, args, ctx) => setBaAdminSharedBerkas(db, args[0], args[1], ctx),
+  baAdminRemoveSharedFile: (db, args, ctx) => removeBaAdminSharedBerkas(db, args[0], ctx)
 };
 
 export async function extractToken(db, args) {

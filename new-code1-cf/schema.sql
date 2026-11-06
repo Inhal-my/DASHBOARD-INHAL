@@ -201,7 +201,8 @@ CREATE TABLE berita_acara_admin_peserta (
 CREATE TABLE berita_acara_admin_berkas (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
   urutan INTEGER, page_index INTEGER, file_name TEXT, file_url TEXT,
-  page_count INTEGER DEFAULT 1, byte_size INTEGER DEFAULT 0, active INTEGER DEFAULT 1, superseded_at TEXT
+  page_count INTEGER DEFAULT 1, byte_size INTEGER DEFAULT 0, active INTEGER DEFAULT 1, superseded_at TEXT,
+  scope TEXT DEFAULT 'peserta'
 );
 CREATE TABLE master_biaya (
   id INTEGER PRIMARY KEY AUTOINCREMENT, kegiatan TEXT, biaya TEXT
@@ -229,6 +230,7 @@ CREATE INDEX idx_ba_admin_berkas_ba_id ON berita_acara_admin_berkas(ba_id);
 CREATE INDEX idx_ba_admin_berkas_pengajuan_active ON berita_acara_admin_berkas(id_pengajuan, active);
 CREATE INDEX idx_ba_admin_peserta_ba_active ON berita_acara_admin_peserta(ba_id, active);
 CREATE INDEX idx_ba_admin_peserta_pengajuan_active ON berita_acara_admin_peserta(id_pengajuan, active);
+CREATE INDEX idx_ba_admin_berkas_ba_scope_active ON berita_acara_admin_berkas(ba_id, scope, active);
 CREATE INDEX idx_ba_peserta_ba_id ON berita_acara_peserta(ba_id);
 CREATE INDEX idx_ba_peserta_pengajuan ON berita_acara_peserta(id_pengajuan);
 CREATE INDEX idx_ba_sesi_ba_id ON berita_acara_sesi(ba_id);

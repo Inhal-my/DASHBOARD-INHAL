@@ -133,3 +133,65 @@ describe('dashboard BA sheet template', () => {
     expect(html).not.toContain('>Blok {{ g.blok }}<');
   });
 });
+
+describe('sheet Pendukung: pilih banyak peserta', () => {
+  it('menyediakan level peserta dengan checkbox default kosong', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("baSheet.level==='peserta'");
+    expect(html).toContain('v-model="baSheet.pesertaIds"');
+    expect(html).toContain('baSheetToggleAllPeserta');
+    expect(html).toContain('baSheetAllSelected');
+    expect(html).toContain('baSheetCreateBa');
+  });
+
+  it('membuat BA lewat RPC bulk yang sudah ada', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("this.run('baAdminCreate', kegiatan)");
+    expect(html).toContain("this.run('baAdminAddPeserta', created.baId, ids)");
+    expect(html).toContain("this.run('baAdminGet', first)");
+  });
+
+  it('menawarkan Kelola BA bila kegiatan sudah punya BA', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('baSheet.baAda');
+    expect(html).toContain('baSheetKelolaExisting');
+  });
+
+  it('default peserta kosong saat sheet dibuka', async () => {
+    const html = await loadDashboardHtml();
+    const load = html.slice(html.indexOf('async baSheetLoadPeserta(u)'));
+    const body = load.slice(0, load.indexOf('baSheetToggleAllPeserta()'));
+    expect(body).toContain('this.baSheet.pesertaIds = [];');
+    expect(body).not.toContain('pesertaOpsi || []).map(');
+  });
+});
+
+describe('status PDF BA Pendukung', () => {
+  it('membedakan BA ada tetapi PDF belum ada', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('unitPendukungPdfSiap(u)');
+    expect(html).toContain('unitPendukungLabel(u)');
+    expect(html).toContain("'PDF belum ada'");
+    expect(html).toContain("'BA Pendukung': u.__orphan ? '-' : this.unitPendukungLabel(u)");
+  });
+});
+
+describe('modal Kelola: PDF BA bersama (Tahap 2)', () => {
+  it('menyediakan seksi unggah PDF untuk semua peserta', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('PDF BA untuk semua peserta');
+    expect(html).toContain('kbPickShared()');
+    expect(html).toContain('onKbSharedFile($event)');
+    expect(html).toContain('kbRemoveShared()');
+    expect(html).toContain("this.run('baAdminSetSharedFile'");
+    expect(html).toContain("this.run('baAdminRemoveSharedFile'");
+  });
+
+  it('memakai konfirmasi saat mengganti PDF bersama dan tetap mempertahankan unggah per peserta', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('Ganti PDF BA bersama? PDF lama tetap tersimpan sebagai riwayat.');
+    expect(html).toContain("kbStartBerkas('change-scan', pe)");
+    expect(html).toContain("kbStartBerkas('change-pdf', pe)");
+    expect(html).toContain('Mengikuti PDF bersama');
+  });
+});

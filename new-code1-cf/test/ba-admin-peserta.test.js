@@ -2,7 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { kegiatanKey } from '../src/read/common.js';
-import { getOrCreateBaAdmin, addBaAdminPesertaBulk, getBaAdminForPengajuan, removeBaAdminPeserta } from '../src/write/baAdmin.js';
+import { PDFDocument } from 'pdf-lib';
+import { getOrCreateBaAdmin, addBaAdminPesertaBulk, getBaAdminForPengajuan, removeBaAdminPeserta, setBaAdminSharedBerkas } from '../src/write/baAdmin.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 async function adminCtx() {
@@ -115,6 +116,48 @@ describe('baAdmin create & peserta', () => {
     expect(created.success).toBe(true);
     expect(created.created).toBe(false);
     expect(created.baId).toBe('BA-PEN-LEGACY');
+  });
+
+  it('bulk add saat shared ada memicu regenerate dan mengembalikan fileUrl', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
+    const ctx = { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } };
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+
+    const d = await PDFDocument.create();
+    d.addPage([200, 300]);
+    const bytes = await d.save();
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+    const pdf = btoa(bin);
+
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') return new Response(JSON.stringify({ success: true, base64: pdf, mimeType: 'application/pdf' }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/SHAREDGEN000000000000000/view', fileId: 'SHAREDGEN000000000000000' }), { status: 200 });
+    }));
+
+    const set = await setBaAdminSharedBerkas(env.DB, baId, { data: pdf, mimeType: 'application/pdf', name: 's.pdf' }, ctx);
+    expect(set.success).toBe(true);
+
+    const r = await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-2'], ctx);
+    expect(r.added).toBe(1);
+    expect(r.fileUrl).toContain('SHAREDGEN');
+    expect(r.needsRegen).toBe(false);
+  });
+
+  it('bulk add tanpa shared tidak memanggil regenerate', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    const f = vi.fn();
+    vi.stubGlobal('fetch', f);
+    const r = await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    expect(r.added).toBe(1);
+    expect(f).not.toHaveBeenCalled();
+    expect(r.fileUrl).toBeUndefined();
   });
 
   it('requires admin', async () => {
