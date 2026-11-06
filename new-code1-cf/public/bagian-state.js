@@ -466,7 +466,10 @@
         nama: g.nama,
         tanggal: g.tanggal,
         jadwal: jadwal,
-        ba: baForKegiatan(ref, jadwalList),
+        // Item group adalah sisa peserta yang belum punya BA. BA (draft maupun
+        // selesai) sudah menjadi item tersendiri lewat `draftBaList`, jadi di
+        // sini selalu `null` agar CTA tetap "Buat BA".
+        ba: null,
         status: jadwal ? 'terjadwal' : 'acc',
         peserta: g.peserta,
         group: g,

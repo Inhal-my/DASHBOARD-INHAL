@@ -100,6 +100,15 @@ describe('bagian-state helpers', () => {
     expect(items.some((i) => i.kind === 'group')).toBe(true);
   });
 
+  it('item group antrean BA tidak membawa BA milik jadwal', async () => {
+    const S = await loadState();
+    const pending = S.buildKegiatanGroups(rows, { statuses: ['ACC'] });
+    const items = S.buildBaWorkItems(pending, [baList[1]], jadwalList);
+    const groups = items.filter((i) => i.kind === 'group');
+    expect(groups.length).toBeGreaterThan(0);
+    groups.forEach((i) => expect(i.ba).toBe(null));
+  });
+
   it('membangun riwayat hanya BA selesai dan mengurutkan terbaru', async () => {
     const S = await loadState();
     const items = S.buildRiwayatItems(baList);
