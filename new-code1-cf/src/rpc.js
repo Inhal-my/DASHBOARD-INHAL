@@ -17,6 +17,7 @@ import {
   previewMasterRename, renameMasterValue
 } from './write/master.js';
 import { auditMasterIntegrity } from './read/masterAudit.js';
+import { getActivityLog } from './read/activity.js';
 import { logEvent, logError } from './obs/log.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
@@ -81,6 +82,7 @@ const HANDLERS = {
   previewMasterRename: (db, args, ctx) => previewMasterRename(db, args[0], ctx),
   renameMasterValue: (db, args, ctx) => renameMasterValue(db, args[0], ctx),
   auditMasterIntegrity: (db, args, ctx) => auditMasterIntegrity(db, ctx),
+  getActivityLog: (db, args, ctx) => getActivityLog(db, args[0], ctx),
   updatePengajuanFields: (db, args, ctx) => updatePengajuanFields(db, args[0], args[1], ctx),
   updateDetailKegiatan: (db, args, ctx) => updateDetailKegiatan(db, args[0], args[1], args[2], ctx),
   deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),

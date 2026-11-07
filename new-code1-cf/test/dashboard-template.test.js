@@ -383,7 +383,7 @@ describe('dashboard master chip picker', () => {
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain("const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'master']");
+    expect(html).toContain("const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'master', 'riwayat']");
     expect(html).toContain('hashTab()');
     expect(html).toContain("history.replaceState(null, '', h)");
     expect(html).toContain('this.tab = this.hashTab()');

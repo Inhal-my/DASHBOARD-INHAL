@@ -71,6 +71,7 @@ CREATE INDEX idx_pengajuan_npm ON pengajuan(npm);
 CREATE UNIQUE INDEX idx_pengajuan_form_key ON pengajuan(form_key);
 CREATE INDEX idx_detail_pengajuan ON detail_kegiatan(id_pengajuan);
 CREATE INDEX idx_history_pengajuan ON status_history(id_pengajuan);
+CREATE INDEX idx_history_timestamp ON status_history(timestamp);
 
 INSERT INTO mahasiswa (npm, nama_lengkap, email, blok, keterangan) VALUES
 ('2201010001','Aisyah Putri','aisyah@contoh.com','A',''),
@@ -144,10 +145,12 @@ CREATE TABLE log_upload (
   link_acc_inhal TEXT, link_bukti_bayar TEXT
 );
 CREATE INDEX idx_log_upload_pengajuan ON log_upload(id_pengajuan);
+CREATE INDEX idx_log_upload_timestamp ON log_upload(timestamp);
 CREATE TABLE audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, actor_email TEXT,
   aksi TEXT, target TEXT, detail TEXT, alasan TEXT
 );
+CREATE INDEX idx_audit_log_timestamp ON audit_log(timestamp);
 CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, dosen TEXT, jumlah_peserta TEXT,

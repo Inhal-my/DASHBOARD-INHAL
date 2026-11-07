@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 03 — Ringkasan Auditor · Log Aktivitas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css?v=1">
+<style>
+  .grid-2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; align-items: start; }
+  .grid-2b { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-top: 16px; }
+  .heat-months { position: relative; height: 14px; margin-left: 26px; font-size: 9.5px; color: var(--muted); font-weight: 700; }
+  .heat-months span { position: absolute; top: 0; white-space: nowrap; }
+  .heat-flip { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: start; }
+  .heat-days { display: grid; grid-template-rows: repeat(7, 21px); gap: 4px; font-size: 8.5px; color: var(--muted-2); font-weight: 800; }
+  .heat-days span { line-height: 21px; }
+  .heat-body { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
+  .busy-h { font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted-2); font-weight: 800; margin-bottom: 8px; }
+  .busy-list { display: grid; gap: 7px; }
+  .busy-row { display: grid; grid-template-columns: 88px 1fr 24px; gap: 8px; align-items: center; }
+  .busy-row .d { font-size: 10.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  .busy-row .tr { height: 7px; border-radius: 999px; background: #eef1f7; overflow: hidden; }
+  .busy-row .fl { height: 100%; border-radius: 999px; background: var(--brand); }
+  .busy-row .n { font-size: 10.5px; font-weight: 800; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .crit-item { cursor: pointer; }
+  .crit-item:hover { border-color: #c7d2fe; box-shadow: var(--shadow); }
+  .who-bars .bar-row { grid-template-columns: 165px 1fr 46px; }
+  .action-bars .bar-row { grid-template-columns: 150px 1fr 46px; }
+  .kpi-mini { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .kpi { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fbfcfe; }
+  .kpi .k { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 800; }
+  .kpi .v { font-size: 18px; font-weight: 800; letter-spacing: -.02em; margin-top: 2px; }
+  .kpi .s { font-size: 10px; color: var(--muted); }
+  .kpi.warnk { border-color: #fde68a; background: var(--amber-soft); }
+  .kpi.warnk .v { color: var(--amber); }
+  @media (max-width: 1000px) { .grid-2, .grid-2b { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">IN</div>
+      <div>
+        <div class="brand-name">INHAL Dashboard</div>
+        <div class="brand-sub">Dummy data · mockup riwayat v1</div>
+      </div>
+    </div>
+    <nav class="topnav" aria-label="Navigasi utama">
+      <a href="index.html">Galeri</a>
+      <a href="01-tabel-drawer.html">Riwayat (Tabel)</a>
+      <a href="02-feed-timeline.html">Riwayat (Timeline)</a>
+      <a href="03-ringkasan.html" class="active">Ringkasan Auditor</a>
+    </nav>
+    <div class="topbar-right">
+      <button class="btn sm" onclick="toast('Mockup: ekspor XLSX belum aktif')">Ekspor XLSX</button>
+      <div class="userbox">
+        <div class="avatar">DV</div>
+        <div><div class="name">Devi</div><div class="role">Admin</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+  <nav class="mobinav" aria-label="Navigasi mockup">
+    <a href="index.html">Galeri</a>
+    <a href="01-tabel-drawer.html" class="">Tabel</a>
+    <a href="02-feed-timeline.html" class="">Timeline</a>
+    <a href="03-ringkasan.html" class="active">Ringkasan</a>
+  </nav>
+
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">Audit · Ringkasan</span>
+        <h1>Ringkasan Auditor</h1>
+        <p class="lede">Pandangan menyeluruh untuk evaluasi: siapa paling aktif, aksi apa yang paling sering, kapan aktivitas menumpuk, dan kejadian apa yang perlu ditinjau ulang.</p>
+      </div>
+      <div class="actions">
+        <select class="btn sm" style="padding-right:26px">
+          <option>7 hari terakhir</option>
+          <option>30 hari terakhir</option>
+          <option>Kuartal ini</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="warn">
+      <span class="warn-ic">!</span>
+      <div><b>Mockup dummy.</b> Angka pada halaman ini adalah ilustrasi dari data contoh, bukan hitungan produksi. Volume produksi saat ini: <span class="mono">audit_log</span> 268 · <span class="mono">status_history</span> 241 · <span class="mono">log_upload</span> 82.</div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="stat card"><div class="stat-ic indigo">TA</div><div><div class="k">Total aktivitas 7 hari</div><div class="v">31</div><div class="s">dari 3 sumber data</div></div></div>
+      <div class="stat card"><div class="stat-ic green">ACC</div><div><div class="k">Keputusan</div><div class="v">7</div><div class="s good">3 ACC · 1 tolak · 1 batal</div></div></div>
+      <div class="stat card"><div class="stat-ic teal">BY</div><div><div class="k">Transaksi bayar diperiksa</div><div class="v">5</div><div class="s">3 verifikasi · 2 koreksi</div></div></div>
+      <div class="stat card"><div class="stat-ic rose">!</div><div><div class="k">Kejadian kritis</div><div class="v">7</div><div class="s warn">2 butuh konfirmasi</div></div></div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-title">Aktivitas per aktor</div><div class="card-sub">Siapa melakukan apa dalam 7 hari</div></div>
+        </div>
+        <div class="card-body bars who-bars" id="actorBars"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-title">Sebaran jenis aksi</div><div class="card-sub">Kelompok aksi</div></div>
+        </div>
+        <div class="card-body bars action-bars" id="kindBars"></div>
+      </section>
+    </div>
+
+    <div class="grid-2b">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-title">Peta aktivitas</div><div class="card-sub">6 minggu terakhir (28 Sep – 8 Nov 2026)</div></div>
+          <div class="actions"><span class="badge indigo">dummy</span></div>
+        </div>
+        <div class="card-body">
+          <div class="heat-body">
+            <div class="heat-wrap">
+              <div class="heat-months" id="heatMonths"></div>
+              <div class="heat-flip" style="margin-top:5px">
+                <div class="heat-days"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div>
+                <div class="heat" id="heat"></div>
+              </div>
+            </div>
+            <div>
+              <div class="busy-h">Hari terpadat</div>
+              <div class="busy-list" id="busyList"></div>
+            </div>
+          </div>
+          <div class="heat-legend">
+            <span>Sedikit</span>
+            <span class="sw" style="background:#eef2f7"></span>
+            <span class="sw" style="background:#e0e7ff"></span>
+            <span class="sw" style="background:#c7d2fe"></span>
+            <span class="sw" style="background:#818cf8"></span>
+            <span class="sw" style="background:#4f46e5"></span>
+            <span>Banyak</span>
+            <span style="margin-left:auto">5 Nov 2026 · 7 aktivitas</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-title">Kejadian kritis</div><div class="card-sub">Perlu ditinjau</div></div>
+        </div>
+        <div class="card-body">
+          <div class="crit-list" id="critList"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid-2b">
+      <section class="card">
+        <div class="card-head"><div><div class="card-title">Cakupan data</div><div class="card-sub">Sesuai keputusan: 3 tabel saja</div></div></div>
+        <div class="card-body">
+          <div class="list">
+            <div class="list-item"><div class="ic file-ic" style="flex:0 0 auto">MD</div><div class="li-main"><div class="li-title">Perubahan Master Data</div><div class="li-sub">Tidak dicatatkan pada modul ini sesuai keputusan review (3 tabel saja).</div></div><span class="tag">Dikecualikan</span></div>
+            <div class="list-item"><div class="ic file-ic" style="flex:0 0 auto">MH</div><div class="li-main"><div class="li-title">Impor / hapus mahasiswa</div><div class="li-sub">Tidak dicatatkan pada modul ini sesuai keputusan review.</div></div><span class="tag">Dikecualikan</span></div>
+            <div class="list-item"><div class="ic file-ic" style="flex:0 0 auto">AU</div><div class="li-main"><div class="li-title">Login / logout</div><div class="li-sub">Tersimpan di tabel <span class="mono">sessions</span>; tidak dibaca modul ini.</div></div><span class="tag">Dikecualikan</span></div>
+            <div class="list-item"><div class="ic file-ic" style="flex:0 0 auto">ST</div><div class="li-main"><div class="li-title">Perubahan status pengajuan</div><div class="li-sub">Dibaca dari <span class="mono">status_history</span> dan digabung ke feed.</div></div><span class="tag g">Termasuk</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><div class="card-title">Kesiapan data</div><div class="card-sub">Catatan teknis untuk implementasi</div></div></div>
+        <div class="card-body">
+          <div class="kpi-mini">
+            <div class="kpi"><div class="k">audit_log</div><div class="v">268</div><div class="s">tanpa index</div></div>
+            <div class="kpi"><div class="k">status_history</div><div class="v">241</div><div class="s">ber-index</div></div>
+            <div class="kpi"><div class="k">log_upload</div><div class="v">82</div><div class="s">ber-index</div></div>
+            <div class="kpi warnk"><div class="k">Index waktu</div><div class="v">3</div><div class="s">audit_log, status_history, log_upload</div></div>
+          </div>
+          <div class="note-box" style="margin-top:10px">
+            Rekomendasi: satukan ketiga sumber di server (<span class="mono">src/read/activity.js</span> + RPC <span class="mono">getActivityLog</span>), normalisasi ke bentuk seragam, urutkan menurun, dan tambahkan index pada <span class="mono">audit_log(timestamp)</span> sebelum dipakai luas.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="footnote">
+      <b>Catatan desain:</b> halaman ini untuk rapat evaluasi, bukan kerja harian. Tiga kartu pertama cukup untuk membaca kondisi; daftar kritis menyorot akses ditolak, penghapusan, dan koreksi pembayaran karena itu yang paling sering ditanyakan saat audit.
+    </p>
+  </main>
+</div>
+
+<script src="_data.js"></script>
+<script src="_shared.js"></script>
+<script>
+(function () {
+  function actorBars() {
+    const by = {};
+    window.ACT.events.forEach(function (e) { by[e.aktor] = (by[e.aktor] || 0) + 1; });
+    const rows = Object.keys(by).map(function (k) { return { label: k, n: by[k] }; }).sort(function (a, b) { return b.n - a.n; });
+    const max = Math.max.apply(null, rows.map(function (r) { return r.n; }));
+    document.getElementById('actorBars').innerHTML = rows.map(function (r) {
+      const pct = Math.round((r.n / max) * 100);
+      const cls = r.label === 'Sistem' ? 'slate' : 'green';
+      return `<div class="bar-row"><div class="lbl" title="${window.MOCK.esc(r.label)}">${window.MOCK.esc(r.label)}</div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div><div class="n">${r.n}</div></div>`;
+    }).join('');
+  }
+
+  function kindBars() {
+    const by = {};
+    window.ACT.events.forEach(function (e) {
+      const g = window.MOCK.kind(e.jenis).grup;
+      by[g] = (by[g] || 0) + 1;
+    });
+    const colorMap = { 'Keputusan': 'green', 'Pembayaran': 'teal', 'Berkas': 'slate', 'Berita Acara': 'brand', 'Data': '', 'Master Data': 'amber', 'Keamanan': 'rose', 'Lainnya': 'slate' };
+    const rows = Object.keys(by).map(function (k) { return { label: k, n: by[k] }; }).sort(function (a, b) { return b.n - a.n; });
+    const max = Math.max.apply(null, rows.map(function (r) { return r.n; }));
+    document.getElementById('kindBars').innerHTML = rows.map(function (r) {
+      const pct = Math.round((r.n / max) * 100);
+      return `<div class="bar-row"><div class="lbl">${r.label}</div><div class="bar-track"><div class="bar-fill ${colorMap[r.label] || ''}" style="width:${pct}%"></div></div><div class="n">${r.n}</div></div>`;
+    }).join('');
+  }
+
+  function heat() {
+    const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const counts = {};
+    window.ACT.events.forEach(function (e) { const d = e.waktu.slice(0, 10); counts[d] = (counts[d] || 0) + 1; });
+    const key = function (d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+
+    const end = new Date(2026, 10, 8);
+    const start = new Date(end.getTime() - 41 * 86400000);
+    const dates = [];
+    for (let i = 0; i < 42; i++) dates.push(new Date(start.getTime() + i * 86400000));
+
+    document.getElementById('heat').innerHTML = dates.map(function (d) {
+      const n = counts[key(d)] || 0;
+      let lvl = '';
+      if (n >= 7) lvl = 'l4'; else if (n >= 5) lvl = 'l3'; else if (n >= 3) lvl = 'l2'; else if (n >= 1) lvl = 'l1';
+      const future = d > new Date(2026, 10, 5) ? ' opacity:.45' : '';
+      return `<div class="heat-cell ${lvl}" style="${future}" title="${key(d)}: ${n} aktivitas"></div>`;
+    }).join('');
+
+    let labels = '';
+    let prevMonth = null;
+    for (let w = 0; w < 6; w++) {
+      const d = new Date(start.getTime() + w * 7 * 86400000);
+      const m = d.getMonth();
+      if (m !== prevMonth) {
+        const partialTail = d.getDate() > 21;
+        if (!partialTail) labels += `<span style="left:${w * 25}px">${BULAN[m]}</span>`;
+        prevMonth = m;
+      }
+    }
+    document.getElementById('heatMonths').innerHTML = labels;
+
+    const busy = Object.keys(counts).map(function (k) { return { d: k, n: counts[k] }; })
+      .sort(function (a, b) { return b.n - a.n || b.d.localeCompare(a.d); }).slice(0, 5);
+    const maxBusy = Math.max.apply(null, busy.map(function (x) { return x.n; }));
+    document.getElementById('busyList').innerHTML = busy.map(function (x) {
+      return `<div class="busy-row">
+        <div class="d">${window.MOCK.fmtTanggal(x.d + 'T00:00:00')}</div>
+        <div class="tr"><div class="fl" style="width:${Math.round((x.n / maxBusy) * 100)}%"></div></div>
+        <div class="n">${x.n}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function crit() {
+    const items = [
+      { ic: 'rose', title: 'Percobaan mengubah keputusan ditolak', sub: 'Yudha (Admin IT) · INHAL-8c9d0e1f · Menunggu &rarr; Ditolak', tm: '2 Nov 16:48' },
+      { ic: 'rose', title: 'Pengajuan dihapus', sub: 'Yudha · INHAL-be000bdb · 5 baris data terkait, 1 BA diperiksa', tm: '5 Nov 03:41' },
+      { ic: 'amber', title: 'Koreksi nominal pembayaran', sub: 'Devi · INHAL-5ab01c77 · Rp200.000 &rarr; Rp250.000', tm: '4 Nov 09:28' },
+      { ic: 'amber', title: 'Unggahan direset', sub: 'Yudha · INHAL-2d9e44f1 · link ACC, bukti, final dihapus', tm: '4 Nov 08:15' },
+      { ic: 'indigo', title: 'Nama master blok diubah', sub: 'Yudha · "Gastrointestinal, hepatobilier, and pancreas" &rarr; "Gastro"', tm: '2 Nov 08:05' }
+    ];
+    document.getElementById('critList').innerHTML = items.map(function (x) {
+      return `<div class="crit-item">
+        <div class="ic ${x.ic}">!</div>
+        <div class="main"><div class="t1">${x.title}</div><div class="t2">${x.sub}</div></div>
+        <div class="tm">${x.tm}</div>
+      </div>`;
+    }).join('');
+    document.querySelectorAll('.crit-item').forEach(function (el, i) {
+      el.addEventListener('click', function () {
+        toast('Mockup: buka detail kejadian kritis #' + (i + 1));
+      });
+    });
+  }
+
+  actorBars(); kindBars(); heat(); crit();
+})();
+</script>
+</body>
+</html>

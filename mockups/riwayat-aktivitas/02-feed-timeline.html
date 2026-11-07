@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 02 — Feed Timeline · Log Aktivitas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css?v=1">
+<style>
+  .two-col { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; align-items: start; }
+  .feed-card { overflow: hidden; }
+  .feed-scroll { max-height: none; }
+  .day-group { margin: 0; }
+  .day-head { padding: 14px 16px 9px; background: #fbfcfe; border-bottom: 1px solid var(--line-2); position: sticky; top: 86px; z-index: 5; }
+  .feed-item { cursor: pointer; }
+  .feed-item .tid { font-family: var(--mono); font-size: 10px; color: var(--muted); background: var(--slate-soft); border-radius: 6px; padding: 1px 5px; }
+  .side-stack { display: grid; gap: 14px; position: sticky; top: 84px; }
+  .legend { display: grid; gap: 7px; }
+  .legend .lg { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-2); font-weight: 700; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 auto; }
+  .legend .sw.acc { background: var(--green); } .legend .sw.reject { background: var(--rose); }
+  .legend .sw.pay { background: var(--teal); } .legend .sw.ba { background: #8b5cf6; }
+  .legend .sw.master { background: #f59e0b; } .legend .sw.file { background: #94a3b8; }
+  .legend .sw.act { background: var(--brand); }
+  .legend .n { margin-left: auto; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .daynav { display: grid; gap: 4px; }
+  .daynav a { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 9px; font-size: 11.5px; font-weight: 700; color: var(--ink-2); }
+  .daynav a:hover { background: var(--slate-soft); }
+  .daynav a .c { font-size: 10px; color: var(--muted); font-weight: 800; }
+  .jumpbar { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--line-2); }
+  @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } .side-stack { position: static; grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 620px) { .side-stack { grid-template-columns: 1fr; } .feed-item { grid-template-columns: 48px 22px 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">IN</div>
+      <div>
+        <div class="brand-name">INHAL Dashboard</div>
+        <div class="brand-sub">Dummy data · mockup riwayat v1</div>
+      </div>
+    </div>
+    <nav class="topnav" aria-label="Navigasi utama">
+      <a href="index.html">Galeri</a>
+      <a href="01-tabel-drawer.html">Riwayat (Tabel)</a>
+      <a href="02-feed-timeline.html" class="active">Riwayat (Timeline)</a>
+      <a href="03-ringkasan.html">Ringkasan Auditor</a>
+    </nav>
+    <div class="topbar-right">
+      <div class="userbox">
+        <div class="avatar">DV</div>
+        <div><div class="name">Devi</div><div class="role">Admin</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+  <nav class="mobinav" aria-label="Navigasi mockup">
+    <a href="index.html">Galeri</a>
+    <a href="01-tabel-drawer.html" class="">Tabel</a>
+    <a href="02-feed-timeline.html" class="active">Timeline</a>
+    <a href="03-ringkasan.html" class="">Ringkasan</a>
+  </nav>
+
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">Audit · Riwayat</span>
+        <h1>Feed Aktivitas</h1>
+        <p class="lede">Bacaan kronologis: apa yang terjadi hari ini, kemarin, dan seterusnya. Titik berwarna menandai jenis aksi; klik entri untuk melihat rincian lengkap.</p>
+      </div>
+      <div class="actions">
+        <button class="btn sm" onclick="toast('Mockup: ekspor XLSX belum aktif')">Ekspor XLSX</button>
+      </div>
+    </div>
+
+    <div class="warn">
+      <span class="warn-ic">!</span>
+      <div><b>Mockup dummy · konsep dipilih.</b> Data di bawah adalah contoh. Sesuai keputusan review, modul hanya membaca 3 tabel: <span class="mono">audit_log</span>, <span class="mono">status_history</span>, dan <span class="mono">log_upload</span>.</div>
+    </div>
+
+    <div class="two-col">
+      <section class="card feed-card" aria-label="Feed aktivitas">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Linimasa</div>
+            <div class="card-sub" id="feedMeta">—</div>
+          </div>
+          <div class="actions">
+            <select id="fAktor" class="btn sm" style="padding-right:26px">
+              <option value="">Semua aktor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="jumpbar" id="chips"></div>
+        <div id="feed" class="feed-scroll"></div>
+      </section>
+
+      <aside class="side-stack">
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Hari</div><div class="card-sub">Lompat ke tanggal</div></div></div>
+          <div class="card-body" style="padding:10px 12px"><nav class="daynav" id="daynav"></nav></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Legenda</div><div class="card-sub">Warna titik per jenis aksi</div></div></div>
+          <div class="card-body"><div class="legend" id="legend"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Sorotan</div><div class="card-sub">Perlu perhatian</div></div></div>
+          <div class="card-body" style="display:grid;gap:9px" id="highlights"></div>
+        </div>
+      </aside>
+    </div>
+
+    <p class="footnote">
+      <b>Catatan desain:</b> feed ini paling berguna saat admin menerima laporan "kok pengajuan saya berubah?". Dengan menggulir kronologi, urutan unggah &rarr; verifikasi &rarr; keputusan &rarr; BA terlihat sebagai satu cerita. Tetap bisa dipersempit lewat chip dan filter aktor.
+    </p>
+  </main>
+</div>
+
+<script src="_data.js"></script>
+<script src="_shared.js"></script>
+<script>
+(function () {
+  const state = { jenis: '', aktor: '' };
+  const GROUP_ORDER = [
+    { grup: 'Keputusan', 'sw': 'acc' },
+    { grup: 'Pembayaran', 'sw': 'pay' },
+    { grup: 'Berkas', 'sw': 'file' },
+    { grup: 'Berita Acara', 'sw': 'ba' },
+    { grup: 'Data', 'sw': 'act' },
+    { grup: 'Master Data', 'sw': 'master' },
+    { grup: 'Keamanan', 'sw': 'reject' },
+    { grup: 'Lainnya', 'sw': 'act' }
+  ];
+
+  const CHIPS = [
+    { key: '', label: 'Semua' },
+    { key: 'ACC', label: 'ACC' },
+    { key: 'Tolak', label: 'Ditolak' },
+    { key: 'UploadMahasiswa', label: 'Unggahan' },
+    { key: 'VerifyBayar', label: 'Verifikasi Bayar' },
+    { key: 'BaCreate', label: 'Berita Acara' },
+    { key: 'Deny', label: 'Akses Ditolak' }
+  ];
+
+  function events() {
+    const list = window.MOCK.filterEvents(window.ACT.events, state);
+    return list.sort(function (a, b) { return b.waktu.localeCompare(a.waktu); });
+  }
+
+  function renderChips() {
+    document.getElementById('chips').innerHTML = CHIPS.map(function (c) {
+      const n = window.ACT.events.filter(function (e) { return !c.key || e.jenis === c.key; }).length;
+      return `<button type="button" class="chip ${state.jenis === c.key ? 'active' : ''}" data-jenis="${c.key}">${c.label}<span class="n">${n}</span></button>`;
+    }).join('');
+    document.querySelectorAll('#chips .chip').forEach(function (b) {
+      b.addEventListener('click', function () { state.jenis = b.getAttribute('data-jenis'); renderChips(); renderFeed(); });
+    });
+  }
+
+  function renderFeed() {
+    const list = events();
+    document.getElementById('feedMeta').textContent = list.length + ' entri · dummy';
+
+    const groups = [];
+    list.forEach(function (e) {
+      const d = e.waktu.slice(0, 10);
+      let g = groups[groups.length - 1];
+      if (!g || g.tanggal !== d) { g = { tanggal: d, items: [] }; groups.push(g); }
+      g.items.push(e);
+    });
+
+    if (!groups.length) {
+      document.getElementById('feed').innerHTML = `<div class="empty-state" style="margin:20px">Tidak ada aktivitas pada filter ini.</div>`;
+    } else {
+      document.getElementById('feed').innerHTML = groups.map(function (g) {
+        return `<section class="day-group" id="day-${g.tanggal}">
+          <div class="day-head">
+            <span class="d">${window.MOCK.fmtHari(g.tanggal + 'T00:00:00')}, ${window.MOCK.fmtTanggal(g.tanggal + 'T00:00:00')}</span>
+            <span class="n">${g.items.length} aktivitas</span>
+          </div>
+          <div class="timeline-feed">
+            ${g.items.map(function (e) {
+              const k = window.MOCK.kind(e.jenis);
+              return `<article class="feed-item" data-id="${e.id}">
+                <div class="t">${window.MOCK.fmtJam(e.waktu)}</div>
+                <div class="dotwrap"><span class="dot ${k.dot}"></span></div>
+                <div class="body">
+                  <div class="line1">
+                    <span class="who">${window.MOCK.esc(e.aktor)}</span>
+                    <span class="what">${window.MOCK.esc(e.ringkasan)}</span>
+                  </div>
+                  <div class="meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                    ${window.MOCK.badge(e.jenis)}
+                    <span class="tid">${window.MOCK.esc(e.targetId)}</span>
+                    <span>${window.MOCK.esc(e.targetJenis)}</span>
+                    <span>· sumber ${window.MOCK.esc(e.sumber)}</span>
+                  </div>
+                  ${e.alasan ? `<div class="why">&ldquo;${window.MOCK.esc(e.alasan)}&rdquo;</div>` : ''}
+                </div>
+              </article>`;
+            }).join('')}
+          </div>
+        </section>`;
+      }).join('');
+    }
+
+    document.querySelectorAll('.feed-item').forEach(function (it) {
+      it.addEventListener('click', function () {
+        const e = window.ACT.events.find(function (x) { return x.id === it.getAttribute('data-id'); });
+        if (e) window.MOCK.openDrawer(window.MOCK.renderDetail(e));
+      });
+    });
+
+    document.getElementById('daynav').innerHTML = groups.map(function (g) {
+      return `<a href="#day-${g.tanggal}"><span>${window.MOCK.fmtHari(g.tanggal + 'T00:00:00')}, ${window.MOCK.fmtTanggal(g.tanggal + 'T00:00:00')}</span><span class="c">${g.items.length}</span></a>`;
+    }).join('');
+  }
+
+  function renderLegend() {
+    const counts = {};
+    window.ACT.events.forEach(function (e) { const g = window.MOCK.kind(e.jenis).grup; counts[g] = (counts[g] || 0) + 1; });
+    document.getElementById('legend').innerHTML = GROUP_ORDER.map(function (x) {
+      return `<div class="lg"><span class="sw ${x.sw}"></span>${x.grup}<span class="n">${counts[x.grup] || 0}</span></div>`;
+    }).join('');
+  }
+
+  function renderHighlights() {
+    const items = [
+      { ic: 'rose', title: 'Akses ditolak sistem', sub: 'Yudha mencoba mengubah keputusan (2 Nov 16:48)' },
+      { ic: 'amber', title: 'Koreksi pembayaran', sub: 'Devi mengoreksi nominal Rp200.000 &rarr; Rp250.000' },
+      { ic: 'indigo', title: 'Reset unggahan', sub: 'Yudha mereset berkas INHAL-2d9e44f1' },
+      { ic: 'green', title: 'Keputusan tercatat', sub: '7 keputusan 7 hari terakhir tersimpan' }
+    ];
+    document.getElementById('highlights').innerHTML = items.map(function (x) {
+      return `<div class="crit-item">
+        <div class="ic ${x.ic}">!</div>
+        <div class="main"><div class="t1">${x.title}</div><div class="t2">${x.sub}</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  const a = document.getElementById('fAktor');
+  window.ACT_FILTER_AKTOR.forEach(function (n) {
+    const o = document.createElement('option'); o.textContent = n; a.appendChild(o);
+  });
+  a.addEventListener('change', function () { state.aktor = a.value; renderFeed(); });
+
+  renderChips(); renderLegend(); renderHighlights(); renderFeed();
+})();
+</script>
+</body>
+</html>
