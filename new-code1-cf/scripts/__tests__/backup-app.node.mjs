@@ -180,3 +180,25 @@ test('dump contoh tidak memuat kredensial nyata dan konsisten dengan schema', as
   assert.equal(/8f412848-d213-4bb3-aeb7-0aff221f9ee3/.test(sql), false, 'tidak boleh memuat id database produksi');
   assert.doesNotMatch(sql, /BEGIN TRANSACTION|COMMIT;/, 'harus bisa dieksekusi ulang oleh D1 lokal');
 });
+
+test('fetch-backup: argumen ekspor selalu --remote baca-saja dan nama berkas berpola tanggal', async () => {
+  const { exportArgs, dumpPath, fileStamp, isLoggedIn, nextCommand } = await import('../../tools/backup-app/fetch-backup.mjs');
+  const args = exportArgs({ database: 'inhal-poc', config: 'wrangler.production.toml', output: '/tmp/x.sql' });
+  assert.deepEqual(args, [
+    'd1', 'export', 'inhal-poc', '--remote',
+    '--config', 'wrangler.production.toml', '--output', '/tmp/x.sql', '--skip-confirmation'
+  ]);
+  assert.equal(args.includes('--local'), false, 'ekspor harus dari database remote');
+
+  const now = new Date(2026, 10, 8, 9, 5, 7);
+  assert.equal(fileStamp(now), '20261108-090507');
+  assert.match(dumpPath('/tmp/out', now), /inhal-20261108-090507\.sql$/);
+
+  assert.equal(isLoggedIn({ status: 0, stdout: 'You are not authenticated. Please run `wrangler login`.' }), false);
+  assert.equal(isLoggedIn({ status: 1, stdout: '' }), false);
+  assert.equal(isLoggedIn({ status: 0, stdout: 'Getting User settings...\nAccount Name: Inhal\nUser: a@b.c' }), true);
+
+  const cmd = nextCommand('/tmp/a b.sql', { port: '8791' });
+  assert.match(cmd, /start\.mjs --dump=\/tmp\/a b\.sql --port=8791$/);
+  assert.equal(nextCommand('/tmp/a.sql', { port: '8790' }).includes('--port'), false);
+});

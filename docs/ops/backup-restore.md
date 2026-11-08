@@ -159,6 +159,8 @@ Ada dua cara, sesuai kebutuhan:
 |---|---|---|
 | **Viewer CSV** (tanpa Node) | `php -S 127.0.0.1:8080 -t new-code1-cf/tools/backup-viewer` atau XAMPP | Membaca `out/<label>-csv/` di browser: daftar tabel, paginasi, pencarian, unduh CSV |
 | **Aplikasi asli** (UI identik produksi) | `npm run app:local -- --dump=<dump.sql>` | Worker lokal + D1 lokal berisi data dump; buka `http://127.0.0.1:8787` |
+| **Backup App** (baca-saja + unduh dump) | `node tools/backup-app/fetch-backup.mjs --open` | Unduh dump terbaru dari Cloudflare lalu buka `http://127.0.0.1:8790` |
+
 
 ### Viewer CSV (`tools/backup-viewer/`)
 
@@ -170,6 +172,26 @@ Ada dua cara, sesuai kebutuhan:
 Baca-saja: tidak ada penulisan, SQL, atau unggah. Akses dibatasi loopback
 (`127.0.0.0/8`, `::1`), `data/` diblok `.htaccess`, dan nama tabel divalidasi
 sebelum dipakai sebagai path. Rincian: `tools/backup-viewer/README.md`.
+
+### Backup App baca-saja (`tools/backup-app/`)
+
+Untuk admin yang ingin membuka hasil backup dengan UI asli tanpa risiko menulis.
+Menolak seluruh RPC tulis dan unggahan (HTTP 403), akses hanya loopback.
+
+```bash
+cd new-code1-cf
+node tools/backup-app/fetch-backup.mjs --open   # unduh dump terbaru lalu buka
+# atau bila dump sudah ada:
+node tools/backup-app/start.mjs --dump=local-data/backups/inhal-20261108-095453.sql
+```
+
+- `fetch-backup.mjs` memakai `wrangler login` (browser) atau `CLOUDFLARE_API_TOKEN`,
+  mengekspor dengan `--remote` (baca-saja) ke `local-data/backups/`, lalu
+  memverifikasi dengan `scripts/verify-backup.mjs`.
+- `start.mjs` menyalin dump ke folder sesi baru di `local-data/backup-app/`,
+  mengimpor ke D1 lokal, dan menjalankan `tools/backup-app/worker.js` (pembungkus
+  `src/index.js`). Skrip tidak pernah menghapus berkas.
+- Rincian, opsi, dan troubleshooting: `new-code1-cf/tools/backup-app/README.md`.
 
 ### Aplikasi asli lokal (`npm run app:local`)
 

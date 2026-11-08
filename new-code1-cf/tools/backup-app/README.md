@@ -7,6 +7,7 @@ dependensi terpasang.
 ```
 tools/backup-app/
   start.mjs        peluncur: impor dump -> jalankan worker lokal -> buka browser
+  fetch-backup.mjs unduh dump terbaru dari Cloudflare (login sekali, baca-saja)
   sample-dump.mjs  pembuat dump contoh (skema + data uji) tanpa Cloudflare
   lib.mjs          helper murni (path, port, perintah wrangler, mode baca-saja)
   guard.mjs        daftar RPC baca-saja + penolakan endpoint tulis
@@ -75,6 +76,42 @@ Opsi:
 Hentikan dengan `Ctrl+C`. Skrip tidak pernah menghapus berkas; setiap
 peluncuran membuat folder sesi baru.
 
+### Mengunduh dump dari Cloudflare (`fetch-backup.mjs`)
+
+Cara tercepat bila Anda punya akses ke akun Cloudflare:
+
+```bash
+node tools/backup-app/fetch-backup.mjs
+```
+
+Yang dilakukan skrip ini:
+
+1. Memeriksa login `wrangler`; bila belum, menjalankan `wrangler login`
+   (browser terbuka, tidak perlu menyalin token).
+2. Menjalankan `wrangler d1 export inhal-poc --remote` (baca-saja) ke
+   `local-data/backups/inhal-<tanggal>-<jam>.sql`.
+3. Memverifikasi dump dengan `scripts/verify-backup.mjs`.
+4. Mencetak perintah `start.mjs` yang sudah terisi path dump.
+
+Opsi:
+
+| Opsi | Arti |
+|---|---|
+| `--open` | Langsung jalankan `start.mjs` setelah unduhan selesai |
+| `--out=<dir>` | Folder tujuan, default `local-data/backups` |
+| `--database=<nama>` | Nama database, default `inhal-poc` |
+| `--config=<file>` | Konfigurasi wrangler, default `wrangler.production.toml` |
+| `--port=<n>` | Port untuk `--open`, default `8790` |
+| `--no-verify` | Lewati verifikasi (tidak disarankan) |
+| `--latest` | Jangan unduh; pakai `.sql` terbaru yang sudah ada di `--out` |
+
+Bila memakai token, set lebih dulu (butuh izin **D1 Edit**):
+
+```bash
+export CLOUDFLARE_API_TOKEN=<token>
+node tools/backup-app/fetch-backup.mjs
+```
+
 ## Mode baca-saja (default)
 
 | Yang diblokir | Respons |
@@ -97,7 +134,8 @@ memperbarui hash password pada dump — bukan pada database produksi.
 
 | Sumber | Cara |
 |---|---|
-| Cloudflare langsung | `npx wrangler d1 export inhal-poc --remote --output=inhal-poc.sql` |
+| Cloudflare langsung (otomatis) | `node tools/backup-app/fetch-backup.mjs` lalu ikuti perintah yang dicetak; tambah `--open` untuk langsung membuka |
+| Cloudflare manual | `npx wrangler d1 export inhal-poc --remote --output=inhal-poc.sql` |
 | Artefak GitHub (bila Cloudflare mati) | Actions -> **Backup D1** -> unduh `d1-backup-<label>` -> `inhal-poc.sql` |
 | Arsip Drive terenkripsi | `node scripts/decrypt-backup.mjs inhal-<label>-database.sql.enc --out=inhal.sql --passphrase="..."` |
 
@@ -132,6 +170,9 @@ Berkas `.enc` ditolak oleh peluncur; dekripsi lebih dulu.
 | Gejala | Penyebab / solusi |
 |---|---|
 | `Berkas dump tidak ditemukan` | Periksa path. Boleh relatif (dihitung dari folder saat perintah dijalankan) atau absolut. |
+| `zsh: no such file or directory: label` | `<label>` hanya contoh; jangan diketik apa adanya. Pakai nama berkas nyata atau `fetch-backup.mjs`. |
+| `gh: command not found` | Artefak GitHub butuh `gh`. Tanpa itu, pakai `fetch-backup.mjs`. |
+| `Ekspor gagal` / `CLOUDFLARE_API_TOKEN tidak diterima` | Jalankan `npx wrangler login`, atau buat token dengan izin D1 Edit. |
 | `Berkas .enc harus didekripsi dulu` | Jalankan `scripts/decrypt-backup.mjs`. |
 | `Address already in use` | Port dipakai proses lain; jalankan `--port=8791`. |
 | Halaman login menolak password | Password mengikuti isi dump; akun belum ada/ganti password sejak backup. Periksa baris `admin` pada dump. |
@@ -146,5 +187,6 @@ node --test scripts/__tests__/backup-app.node.mjs
 ```
 
 Menguji penolakan `--remote`, validasi path/port, folder sesi unik tanpa
-penghapusan, perintah wrangler selalu `--local`, serta daftar izin/penolakan
-mode baca-saja.
+penghapusan, perintah wrangler selalu `--local`, daftar izin/penolakan mode
+baca-saja, serta `fetch-backup` (argumen ekspor selalu `--remote`, deteksi
+login, penamaan berkas bertanggal).
