@@ -1,0 +1,23 @@
+# Konfigurasi aplikasi pembuka backup D1 (lokal saja).
+# Jalankan lewat `node tools/backup-app/start.mjs --dump=<berkas.sql>`; jangan
+# dipakai untuk deploy. Binding D1 sengaja memakai nama yang sama dengan
+# wrangler.toml agar `d1 execute --local` dan `wrangler dev` menunjuk database
+# yang sama di dalam folder sesi.
+name = "inhal-backup-viewer"
+main = "worker.js"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ACCOUNT_ID = "lokal"
+DATABASE_ID = "lokal"
+GAS_DRIVE_URL = ""
+
+[assets]
+directory = "../../public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inhal-poc"
+database_id = "8f412848-d213-4bb3-aeb7-0aff221f9ee3"
