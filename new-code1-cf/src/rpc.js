@@ -139,6 +139,7 @@ const HANDLERS = {
   baAdminGet: (db, args, ctx) => getBaAdminForPengajuan(db, args[0], ctx),
   baAdminCreate: (db, args, ctx) => getOrCreateBaAdmin(db, args[0], ctx),
   baAdminAddPeserta: (db, args, ctx) => addBaAdminPesertaBulk(db, args[0], args[1], ctx),
+  baAdminAddPesertaMassal: (db, args, ctx) => addBaAdminPesertaBulk(db, args[0], args[1], ctx, { requireShared: true }),
   baAdminAddPesertaBerkas: (db, args, ctx) => addBaAdminPesertaWithBerkas(db, args[0], args[1], args[2], ctx),
   baAdminUploadBerkas: async (db, args, ctx) => {
     const set = await setBaAdminPesertaBerkas(db, args[0], args[1], args[2], ctx);

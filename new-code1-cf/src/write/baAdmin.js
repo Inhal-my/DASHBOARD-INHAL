@@ -63,7 +63,7 @@ async function pengajuanMatchesBa(db, p, ba, labs) {
   return false;
 }
 
-export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
+export async function addBaAdminPesertaBulk(db, baId, ids, ctx, opts) {
   await requireAdmin(db, ctx.token, ctx.session);
   const id = str(baId);
   const list = Array.isArray(ids) ? ids.map((x) => str(x)).filter(Boolean) : [];
@@ -71,6 +71,11 @@ export async function addBaAdminPesertaBulk(db, baId, ids, ctx) {
 
   const ba = await db.prepare('SELECT * FROM berita_acara_admin WHERE ba_id = ?1').bind(id).first();
   if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
+
+  if (opts && opts.requireShared) {
+    const shared = await db.prepare("SELECT COUNT(*) AS n FROM berita_acara_admin_berkas WHERE ba_id = ?1 AND active = 1 AND scope = 'shared'").bind(id).first();
+    if (!(Number(shared && shared.n) || 0)) return { success: false, message: 'Unggah dulu PDF-nya ya...!' };
+  }
   const beforeCount = (await db.prepare('SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE ba_id = ?1 AND active = 1').bind(id).first()).n || 0;
 
   const existing = (await db.prepare('SELECT id_pengajuan, urutan, active FROM berita_acara_admin_peserta WHERE ba_id = ?1').bind(id).all()).results || [];

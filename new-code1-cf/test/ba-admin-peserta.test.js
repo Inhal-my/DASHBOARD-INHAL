@@ -163,4 +163,39 @@ describe('baAdmin create & peserta', () => {
   it('requires admin', async () => {
     await expect(getOrCreateBaAdmin(env.DB, keg, {})).rejects.toThrow();
   });
+
+  it('bulk dengan requireShared menolak bila PDF bersama belum ada', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    const ctx = await adminCtx();
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    const r = await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx, { requireShared: true });
+    expect(r.success).toBe(false);
+    expect(r.message).toContain('Unggah dulu PDF-nya');
+    const got = await getBaAdminForPengajuan(env.DB, 'INHAL-1', ctx);
+    expect((got.data.peserta || []).length).toBe(0);
+  });
+
+  it('bulk dengan requireShared menerima bila PDF bersama sudah ada', async () => {
+    await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
+    await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
+    const ctx = { token: await createSession(env.DB, { role: 'admin', nama: 'Admin' }), env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' } };
+    const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
+    await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], ctx);
+    const d = await PDFDocument.create();
+    d.addPage([200, 300]);
+    const bytes = await d.save();
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+    const pdf = btoa(bin);
+    vi.stubGlobal('fetch', vi.fn(async (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.action === 'getFile') return new Response(JSON.stringify({ success: true, base64: pdf, mimeType: 'application/pdf' }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/REQSHARED0000000000000/view', fileId: 'REQSHARED0000000000000' }), { status: 200 });
+    }));
+    const set = await setBaAdminSharedBerkas(env.DB, baId, { data: pdf, mimeType: 'application/pdf', name: 's.pdf' }, ctx);
+    expect(set.success).toBe(true);
+    const r = await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-2'], ctx, { requireShared: true });
+    expect(r.success).toBe(true);
+    expect(r.added).toBe(1);
+  });
 });

@@ -25,6 +25,13 @@ describe('dashboard modal Kelola BA Pendukung', () => {
     expect(html).toContain('refreshBaPendukungIndicators()');
     expect(html).toContain('Berkas lama (PDF gabungan)');
     expect(html).toContain('kb.data.ba.legacyFileOnly');
+    expect(html).toContain('baAdminAddPesertaMassal');
+    expect(html).toContain('kbAddBulk()');
+    expect(html).toContain('kbToggleAllCandidates');
+    expect(html).toContain('kbAllCandidatesSelected');
+    expect(html).toContain('Unggah dulu PDF-nya ya...!');
+    expect(html).toContain('v-model="kb.addPicks"');
+    expect(html).not.toContain('name="kbAdd"');
   });
 });
 

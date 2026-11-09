@@ -2898,17 +2898,29 @@
                                 </div>
 
                                 <div class="mt-4">
-                                    <button class="btn-soft !py-1.5 text-xs" @click="kb.pick = !kb.pick"><i class="bi bi-person-plus"></i> Tambah peserta + berkas</button>
+                                    <button class="btn-soft !py-1.5 text-xs" @click="kb.pick = !kb.pick"><i class="bi bi-person-plus"></i> Tambah peserta</button>
                                     <div v-if="kb.pick" class="mt-2 rounded-xl ring-1 ring-slate-200">
                                         <div v-if="!(kb.data.candidates || []).length" class="p-3 text-[11px] text-slate-400">Tidak ada kandidat (mahasiswa sekegiatan yang belum masuk BA).</div>
-                                        <label v-for="c in kb.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
-                                            <input type="radio" name="kbAdd" class="h-4 w-4 accent-brand-600" :checked="kb.addPick === c.idPengajuan" @change="kbTogglePick(c.idPengajuan)">
-                                            <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
-                                        </label>
-                                        <div class="flex flex-wrap justify-end gap-2 p-2">
-                                            <button class="btn-soft !py-1.5 text-xs" :disabled="kb.uploadBusy || !kb.addPick" @click="kbStartBerkas('add-scan', null)"><i class="bi bi-camera"></i> Scan kamera</button>
-                                            <button class="btn-primary !py-1.5 text-xs" :disabled="kb.uploadBusy || !kb.addPick" @click="kbStartBerkas('add-pdf', null)"><i class="bi bi-file-earmark-pdf"></i> Unggah PDF</button>
-                                        </div>
+                                        <template v-else>
+                                            <div class="flex items-center justify-between gap-2 border-b border-slate-100 p-2">
+                                                <span class="text-[11px] text-slate-400">{{ (kb.addPicks || []).length }} dipilih</span>
+                                                <button type="button" class="text-[11px] font-semibold text-brand-600" @click="kbToggleAllCandidates">{{ kbAllCandidatesSelected ? 'Batal Semua' : 'Pilih Semua' }}</button>
+                                            </div>
+                                            <div v-for="c in kb.data.candidates" :key="c.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 p-2 last:border-0">
+                                                <label class="flex flex-1 cursor-pointer items-center gap-2">
+                                                    <input type="checkbox" class="h-4 w-4 accent-brand-600" :value="c.idPengajuan" v-model="kb.addPicks">
+                                                    <span class="text-xs text-slate-700">{{ c.npm }} — {{ c.namaLengkap }} <span class="text-slate-400">({{ c.blok }})</span></span>
+                                                </label>
+                                                <span class="flex gap-1">
+                                                    <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="kb.uploadBusy" title="Tambah peserta ini dengan scan/berkas sendiri" @click="kbStartBerkas('add-scan', c)"><i class="bi bi-camera"></i></button>
+                                                    <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="kb.uploadBusy" title="Tambah peserta ini dengan PDF sendiri" @click="kbStartBerkas('add-pdf', c)"><i class="bi bi-file-earmark-pdf"></i></button>
+                                                </span>
+                                            </div>
+                                            <div class="flex flex-wrap items-center justify-end gap-2 p-2">
+                                                <span class="mr-auto text-[10px] text-slate-400">Massal memakai PDF bersama.</span>
+                                                <button class="btn-primary !py-1.5 text-xs" :disabled="kb.uploadBusy || !(kb.addPicks || []).length" @click="kbAddBulk()"><i class="bi bi-check2"></i> Tambah {{ (kb.addPicks || []).length || '' }} peserta</button>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                                 <p v-if="kb.uploadBusy" class="mt-2 text-[11px] text-brand-600">Mengunggah & merakit PDF…</p>
@@ -3346,7 +3358,7 @@
                     masterBiaya: [],
                      detail: { open: false, step: 0, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', page: 1, perPage: 10, expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
-                    kb: { open: false, loading: false, data: null, pick: false, addPick: '', kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
+                    kb: { open: false, loading: false, data: null, pick: false, addPicks: [], kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
                     dosenPick: { open: false },
@@ -3749,6 +3761,10 @@
                 baSheetAllSelected() {
                     const list = this.baSheet.pesertaOpsi || [];
                     return list.length > 0 && list.every(p => this.baSheet.pesertaIds.indexOf(p.idPengajuan) !== -1);
+                },
+                kbAllCandidatesSelected() {
+                    const list = (this.kb.data && this.kb.data.candidates) || [];
+                    return list.length > 0 && list.every(c => (this.kb.addPicks || []).indexOf(c.idPengajuan) !== -1);
                 },
                 baPendukungSet() {
                     const set = {};
@@ -5203,7 +5219,7 @@
                     this.kb.open = true;
                     this.kb.data = null;
                     this.kb.pick = false;
-                    this.kb.addPick = '';
+                    this.kb.addPicks = [];
                     this.kb.kind = '';
                     this.kb.targetPid = '';
                     this.kb.uploadItems = [];
@@ -5245,16 +5261,43 @@
                         }
                     } catch (e) {}
                 },
-                kbTogglePick(id) {
-                    const k = String(id || '');
-                    this.kb.addPick = this.kb.addPick === k ? '' : k;
+                kbToggleAllCandidates() {
+                    if (this.kbAllCandidatesSelected) {
+                        this.kb.addPicks = [];
+                    } else {
+                        this.kb.addPicks = (this.kb.data && this.kb.data.candidates ? this.kb.data.candidates : []).map((c) => c.idPengajuan);
+                    }
+                },
+                async kbAddBulk() {
+                    const kb = this.kb;
+                    const data = kb.data;
+                    const ids = (kb.addPicks || []).slice();
+                    if (!ids.length) { this.notify('Pilih minimal satu peserta.', false); return; }
+                    if (!data || !data.ba) { this.notify('Unggah dulu PDF-nya ya...!', false); return; }
+                    if (!data.ba.shared || !data.ba.shared.fileUrl) { this.notify('Unggah dulu PDF-nya ya...!', false); return; }
+                    kb.uploadBusy = true;
+                    try {
+                        const res = await this.run('baAdminAddPesertaMassal', data.ba.baId, ids);
+                        if (!res || !res.success) { this.notify((res && res.message) || 'Gagal menambah peserta.', false); return; }
+                        const added = Number(res.added) || 0;
+                        const skipped = Number(res.skipped) || 0;
+                        this.notify(added + ' peserta ditambahkan' + (skipped ? ', ' + skipped + ' dilewati' : '') + '.', true);
+                        kb.addPicks = [];
+                        await this.loadKelolaBa(kb.lastId);
+                        await this.refreshBaPendukungIndicators();
+                    } catch (e) {
+                        this.notify('Gagal menambah peserta: ' + e, false);
+                    } finally {
+                        kb.uploadBusy = false;
+                    }
                 },
                 kbStartBerkas(kind, pe) {
                     const isAdd = String(kind || '').indexOf('add') === 0;
                     if (isAdd) {
-                        if (!this.kb.addPick) { this.notify('Pilih peserta yang akan ditambahkan terlebih dahulu.', false); return; }
+                        const pid = String((pe && pe.idPengajuan) || '');
+                        if (!pid) { this.notify('Pilih peserta yang akan ditambahkan terlebih dahulu.', false); return; }
                         this.kb.kind = 'add';
-                        this.kb.targetPid = this.kb.addPick;
+                        this.kb.targetPid = pid;
                     } else {
                         if (!pe) return;
                         this.kb.kind = 'change';
@@ -5312,7 +5355,10 @@
                             res = await this.run('baAdminUploadBerkas', data.ba.baId, kb.targetPid, images);
                         }
                         this.notify((res && res.message) || 'Berkas disimpan.', !!(res && res.success));
-                        kb.uploadItems = []; kb.targetPid = ''; kb.kind = ''; kb.addPick = '';
+                        const donePid = String(kb.targetPid || '');
+                        const doneKind = String(kb.kind || '');
+                        kb.uploadItems = []; kb.targetPid = ''; kb.kind = '';
+                        if (res && res.success && doneKind === 'add') kb.addPicks = (kb.addPicks || []).filter((x) => String(x) !== donePid);
                         if (res && res.success) await this.loadKelolaBa(kb.lastId);
                         if (res && res.success) await this.refreshBaPendukungIndicators();
                     } catch (e) {
