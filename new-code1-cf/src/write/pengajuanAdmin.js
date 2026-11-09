@@ -532,6 +532,10 @@ export async function uploadBuktiAdmin(db, idPengajuan, file, ctx) {
   const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
+  if (str(p.status) !== 'ACC') {
+    return { success: false, message: 'Unggah bukti bayar hanya untuk pengajuan berstatus ACC.' };
+  }
+
   if (str(p.status_pembayaran) === 'valid') {
     return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi buka kembali untuk mengunggah ulang bukti.' };
   }

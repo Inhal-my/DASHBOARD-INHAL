@@ -1963,7 +1963,7 @@
                         <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                             <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:4px">
                                 <div class="top"><div class="ic indigo"><i class="bi bi-cash-stack"></i></div></div>
-                                <div><div class="num text-sm">{{ fmtRupiah(pembayaranSummary.biaya) }}</div><div class="lbl uppercase tracking-wider">Total Tagihan</div></div>
+                                <div><div class="num text-sm">{{ fmtRupiah(pembayaranSummary.biaya) }}</div><div class="lbl uppercase tracking-wider">Total Tagihan (ACC)</div></div>
                             </div>
                             <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:4px">
                                 <div class="top"><div class="ic emerald"><i class="bi bi-check2-circle"></i></div></div>
@@ -1975,7 +1975,7 @@
                             </div>
                             <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:4px">
                                 <div class="top"><div class="ic rose"><i class="bi bi-x-circle"></i></div></div>
-                                <div><div class="num">{{ pembayaranSummary.belum }}</div><div class="lbl uppercase tracking-wider">Belum Bayar</div></div>
+                                <div><div class="num">{{ pembayaranSummary.belum }}</div><div class="lbl uppercase tracking-wider">ACC Belum Bayar</div></div>
                             </div>
                         </div>
 
@@ -1994,7 +1994,7 @@
                                         <label class="label">Status Pembayaran</label>
                                         <select v-model="bayarFilter.status" class="in-input">
                                             <option value="">Semua status</option>
-                                            <option value="belum">Belum Bayar</option>
+                                            <option value="belum">ACC Belum Bayar</option>
                                             <option value="menunggu">Menunggu Verifikasi</option>
                                             <option value="valid">Valid</option>
                                             <option value="gratis">Gratis</option>
@@ -2008,7 +2008,7 @@
                                 </div>
                             </div>
                             <div class="flex flex-wrap items-center gap-1.5 px-4 pb-4 text-xs text-slate-400">
-                                <span class="lap-chip">{{ pembayaranSummary.total }} pengajuan</span>
+                                <span class="lap-chip">{{ pembayaranSummary.total }} pengajuan ACC</span>
                                 <span class="lap-chip is-emerald">{{ pembayaranSummary.valid }} valid</span>
                                 <span class="lap-chip is-amber">{{ pembayaranSummary.menunggu }} menunggu</span>
                                 <span class="lap-chip">{{ pembayaranSummary.gratis }} gratis</span>
@@ -2019,7 +2019,7 @@
                             <div class="lap-card-head">
                                 <div>
                                     <div class="lap-card-title">Data Pembayaran per Pengajuan</div>
-                                    <div class="lap-card-sub">Arahkan kursor ke tombol Bukti untuk pratinjau file; klik Periksa untuk melihat detail dan memvalidasi. Semua baris dapat diperiksa.</div>
+                                    <div class="lap-card-sub">Hanya pengajuan ACC yang ditampilkan. Arahkan kursor ke tombol Bukti untuk pratinjau file; klik Periksa untuk melihat detail dan memvalidasi.</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" type="button" :disabled="exporting" @click="exportExcel()">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -2151,12 +2151,12 @@
                         <template v-if="bayarView === 'ringkasan'">
                             <div class="lap-card p-4">
                                 <div class="lap-card-title">Ringkasan Pembayaran</div>
-                                <div class="lap-card-sub">Total tagihan menghitung semua pengajuan.</div>
+                                <div class="lap-card-sub">Total tagihan hanya menghitung pengajuan berstatus ACC.</div>
                                 <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-                                    <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total Tagihan</div><div class="mt-1 font-semibold text-slate-800">{{ fmtRupiah(pembayaranSummary.biaya) }}</div></div>
+                                    <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total Tagihan (ACC)</div><div class="mt-1 font-semibold text-slate-800">{{ fmtRupiah(pembayaranSummary.biaya) }}</div></div>
                                     <div class="rounded-xl bg-emerald-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-emerald-600">Valid</div><div class="mt-1 font-semibold text-emerald-800">{{ pembayaranSummary.valid }} <span class="text-xs font-normal">- {{ fmtRupiah(pembayaranSummary.validBiaya) }}</span></div></div>
                                     <div class="rounded-xl bg-amber-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-amber-600">Menunggu</div><div class="mt-1 font-semibold text-amber-800">{{ pembayaranSummary.menunggu }}</div></div>
-                                    <div class="rounded-xl bg-rose-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-rose-600">Belum Bayar</div><div class="mt-1 font-semibold text-rose-800">{{ pembayaranSummary.belum }}</div></div>
+                                    <div class="rounded-xl bg-rose-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-rose-600">ACC Belum Bayar</div><div class="mt-1 font-semibold text-rose-800">{{ pembayaranSummary.belum }}</div></div>
                                 </div>
                             </div>
 
@@ -3008,7 +3008,7 @@
                         { key: 'ringkasan', label: 'Ringkasan', icon: 'bi-bar-chart' }
                     ],
                     bayarColumns: [
-                        { key: 'belum', label: 'Belum Bayar', icon: 'bi-circle', text: 'text-rose-600' },
+                        { key: 'belum', label: 'ACC Belum Bayar', icon: 'bi-circle', text: 'text-rose-600' },
                         { key: 'menunggu', label: 'Menunggu', icon: 'bi-hourglass-split', text: 'text-amber-600' },
                         { key: 'valid', label: 'Valid', icon: 'bi-check2-circle', text: 'text-emerald-600' },
                         { key: 'gratis', label: 'Gratis', icon: 'bi-gift', text: 'text-slate-500' }
@@ -3358,6 +3358,7 @@
                     const out = [];
                     this.filteredRows.forEach(r => {
                         const p = r.pengajuan;
+                        if (String(p.Status || '').trim() !== 'ACC') return;
                         const id = String(p['ID Pengajuan'] || '').trim();
                         const biaya = Number(p.Biaya) || 0;
                         const linkBukti = String(p['Link Bukti Bayar'] || '').trim();

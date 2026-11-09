@@ -27,6 +27,10 @@ function status(row) {
   return str(row && row.status_pembayaran) || 'belum';
 }
 
+function pengajuanStatus(row) {
+  return str(row && row.status);
+}
+
 function revisionOf(row) {
   const n = Number(row && row.payment_revision);
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -86,6 +90,9 @@ export async function verifyPembayaran(db, payload, ctx) {
 
   const row = await loadRow(db, id);
   if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+  if (pengajuanStatus(row) !== 'ACC') {
+    return { success: false, message: 'Pembayaran hanya dapat diverifikasi untuk pengajuan berstatus ACC.' };
+  }
   if (status(row) === 'valid') return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi.' };
   if (status(row) === 'gratis') return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
   if (!str(row.link_bukti_bayar)) return { success: false, message: 'Belum ada bukti bayar untuk diverifikasi.' };
@@ -152,6 +159,9 @@ export async function correctPembayaran(db, payload, ctx) {
 
   const row = await loadRow(db, id);
   if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+  if (pengajuanStatus(row) !== 'ACC') {
+    return { success: false, message: 'Pembayaran hanya dapat dikoreksi untuk pengajuan berstatus ACC.' };
+  }
   if (status(row) !== 'valid') return { success: false, message: 'Hanya pembayaran valid yang bisa dikoreksi.' };
   if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 

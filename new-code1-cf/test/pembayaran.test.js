@@ -176,6 +176,15 @@ describe('verifyPembayaran', () => {
     expect(res.success).toBe(false);
     expect(res.message).toMatch(/valid|diubah/i);
   });
+
+  it('menolak verifikasi saat pengajuan belum ACC', async () => {
+    await seedPengajuan({ status: 'Menunggu' });
+    const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/ACC/);
+    const p = await env.DB.prepare("SELECT status_pembayaran FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status_pembayaran).toBe('menunggu');
+  });
 });
 
 describe('correctPembayaran', () => {
@@ -277,5 +286,19 @@ describe('correctPembayaran', () => {
     }, ctx);
     expect(res.success).toBe(false);
     expect(res.message).toMatch(/diubah/i);
+  });
+
+  it('menolak koreksi saat pengajuan tidak lagi ACC', async () => {
+    const ctx = await verified();
+    await env.DB.prepare("UPDATE pengajuan SET status = 'Dibatalkan' WHERE id_pengajuan = 'INHAL-1'").run();
+    const res = await correctPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      mode: 'administratif',
+      metode: 'Transfer BNI',
+      alasan: 'Salah metode',
+      expectedRevision: 1
+    }, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/ACC/);
   });
 });
