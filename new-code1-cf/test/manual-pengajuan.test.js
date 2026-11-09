@@ -97,6 +97,7 @@ describe('manual RPCs', () => {
     expect(Array.isArray(res.blok)).toBe(true);
     expect(res.blok).toContain('A');
     expect(res.ujian).toContain('UAS');
+    expect(res.detailUjian).toEqual(res.detailKkd);
   });
 });
 

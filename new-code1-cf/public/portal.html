@@ -365,8 +365,15 @@
                                             </select>
                                         </div>
                                         <div>
+                                            <label class="label" for="regUjianDetail">Detail Ujian <span class="text-rose-500">*</span></label>
+                                            <select id="regUjianDetail" v-model="regUjian.detail" class="input">
+                                                <option value="">-- Pilih Detail --</option>
+                                                <option v-for="o in regOptions.detailUjian" :key="o" :value="o">{{ o }}</option>
+                                            </select>
+                                        </div>
+                                        <div>
                                             <label class="label" for="regUjianTanggal">Tanggal Ujian <span class="text-rose-500">*</span></label>
-                                            <input id="regUjianTanggal" v-model="regUjian.tanggal" type="date" class="input">
+                                            <input id="regUjianTanggal" v-model="regUjian.tanggal" type="date" class="input" required>
                                         </div>
                                     </div>
                                 </div>
@@ -383,7 +390,7 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="label" for="regSgdDetail">Detail SGD</label>
+                                            <label class="label" for="regSgdDetail">Detail SGD <span class="text-rose-500">*</span></label>
                                             <select id="regSgdDetail" v-model="regSgd.detail" class="input">
                                                 <option value="">-- Pilih Detail --</option>
                                                 <option v-for="o in regOptions.detailSgd" :key="o" :value="o">{{ o }}</option>
@@ -391,7 +398,7 @@
                                         </div>
                                         <div>
                                             <label class="label" for="regSgdTanggal">Tanggal SGD <span class="text-rose-500">*</span></label>
-                                            <input id="regSgdTanggal" v-model="regSgd.tanggal" type="date" class="input">
+                                            <input id="regSgdTanggal" v-model="regSgd.tanggal" type="date" class="input" required>
                                         </div>
                                     </div>
                                 </div>
@@ -408,7 +415,7 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="label" for="regKkdDetail">Detail KKD</label>
+                                            <label class="label" for="regKkdDetail">Detail KKD <span class="text-rose-500">*</span></label>
                                             <select id="regKkdDetail" v-model="regKkd.detail" class="input">
                                                 <option value="">-- Pilih Detail --</option>
                                                 <option v-for="o in regOptions.detailKkd" :key="o" :value="o">{{ o }}</option>
@@ -416,7 +423,7 @@
                                         </div>
                                         <div>
                                             <label class="label" for="regKkdTanggal">Tanggal KKD <span class="text-rose-500">*</span></label>
-                                            <input id="regKkdTanggal" v-model="regKkd.tanggal" type="date" class="input">
+                                            <input id="regKkdTanggal" v-model="regKkd.tanggal" type="date" class="input" required>
                                         </div>
                                     </div>
                                 </div>
@@ -430,22 +437,22 @@
                                         <div v-for="(lab, i) in regLabs" :key="i" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
                                             <div class="space-y-3">
                                                 <div>
-                                                    <label class="label" :for="'regLabPilihan-' + i">Pilihan Lab</label>
+                                                    <label class="label" :for="'regLabPilihan-' + i">Pilihan Lab <span class="text-rose-500">*</span></label>
                                                     <select :id="'regLabPilihan-' + i" v-model="lab.lab" class="input !py-2 text-sm">
                                                         <option value="">-- Lab --</option>
                                                         <option v-for="o in regOptions.lab" :key="o" :value="o">{{ o }}</option>
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label class="label" :for="'regLabKegiatan-' + i">Kegiatan Lab</label>
+                                                    <label class="label" :for="'regLabKegiatan-' + i">Kegiatan Lab <span class="text-rose-500">*</span></label>
                                                     <select :id="'regLabKegiatan-' + i" v-model="lab.kegiatanLab" class="input !py-2 text-sm">
                                                         <option value="">-- Kegiatan --</option>
                                                         <option v-for="o in regOptions.kegiatanLab" :key="o" :value="o">{{ o }}</option>
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label class="label" :for="'regLabTanggal-' + i">Tanggal Praktikum</label>
-                                                    <input :id="'regLabTanggal-' + i" v-model="lab.tanggal" type="date" class="input !py-2 text-sm">
+                                                    <label class="label" :for="'regLabTanggal-' + i">Tanggal Praktikum <span class="text-rose-500">*</span></label>
+                                                    <input :id="'regLabTanggal-' + i" v-model="lab.tanggal" type="date" class="input !py-2 text-sm" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -581,11 +588,11 @@
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
                     regForm: { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', keterangan: '' },
-                    regUjian: { pilihan: '', tanggal: '' },
+                    regUjian: { pilihan: '', detail: '', tanggal: '' },
                     regSgd: { pilihan: '', detail: '', tanggal: '' },
                     regKkd: { pilihan: '', detail: '', tanggal: '' },
                     regLabs: [{ lab: '', kegiatanLab: '', tanggal: '' }],
-                    regOptions: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], lab: [], kegiatanLab: [] },
+                    regOptions: { blok: [], ujian: [], sgd: [], detailSgd: [], kkd: [], detailKkd: [], detailUjian: [], lab: [], kegiatanLab: [] },
                     regFileSurat: null
                 };
             },
@@ -758,8 +765,10 @@
                         this.regOptions.detailSgd = res.detailSgd || [];
                         this.regOptions.kkd = res.kkd || [];
                         this.regOptions.detailKkd = res.detailKkd || [];
+                        this.regOptions.detailUjian = res.detailUjian || res.detailKkd || [];
                         this.regOptions.lab = res.lab || [];
                         this.regOptions.kegiatanLab = res.kegiatanLab || [];
+                        if (!this.regUjian.detail) this.regUjian.detail = this.defaultDetail(this.regOptions.detailUjian);
                         if (!this.regSgd.detail) this.regSgd.detail = this.defaultDetail(this.regOptions.detailSgd);
                         if (!this.regKkd.detail) this.regKkd.detail = this.defaultDetail(this.regOptions.detailKkd);
                     } catch (e) { /* non-blokir */ }
@@ -778,6 +787,44 @@
                 },
                 onFileSurat(e) {
                     this.regFileSurat = e.target.files && e.target.files.length ? e.target.files[0] : null;
+                },
+                validDate(v) {
+                    const s = String(v || '').trim();
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+                    const parts = s.split('-').map(Number);
+                    const month = parts[1];
+                    const day = parts[2];
+                    if (month < 1 || month > 12 || day < 1) return false;
+                    const daysInMonth = new Date(Date.UTC(parts[0], month, 0)).getUTCDate();
+                    return day <= daysInMonth;
+                },
+                validateRegDetail(jenis) {
+                    if (jenis === 'Ujian') {
+                        if (!this.regUjian.pilihan.trim()) return 'Pilih Ujian terlebih dahulu.';
+                        if (!this.regUjian.detail.trim()) return 'Pilih Detail Ujian terlebih dahulu.';
+                        if (!this.validDate(this.regUjian.tanggal)) return 'Tanggal Ujian wajib diisi dengan tanggal yang valid.';
+                    } else if (jenis === 'SGD') {
+                        if (!this.regSgd.pilihan.trim()) return 'Pilih SGD terlebih dahulu.';
+                        if (!this.regSgd.detail.trim()) return 'Pilih Detail SGD terlebih dahulu.';
+                        if (!this.validDate(this.regSgd.tanggal)) return 'Tanggal SGD wajib diisi dengan tanggal yang valid.';
+                    } else if (jenis === 'KKD') {
+                        if (!this.regKkd.pilihan.trim()) return 'Pilih KKD terlebih dahulu.';
+                        if (!this.regKkd.detail.trim()) return 'Pilih Detail KKD terlebih dahulu.';
+                        if (!this.validDate(this.regKkd.tanggal)) return 'Tanggal KKD wajib diisi dengan tanggal yang valid.';
+                    } else if (jenis === 'Praktikum') {
+                        const rows = this.regLabs.filter(l => String(l.lab || '').trim() || String(l.kegiatanLab || '').trim() || String(l.tanggal || '').trim());
+                        if (!rows.length) return 'Tambahkan minimal satu detail praktikum.';
+                        const seen = {};
+                        for (const lab of rows) {
+                            if (!String(lab.lab || '').trim()) return 'Pilih Lab pada setiap baris praktikum.';
+                            if (!String(lab.kegiatanLab || '').trim()) return 'Pilih Kegiatan Lab pada setiap baris praktikum.';
+                            if (!this.validDate(lab.tanggal)) return 'Tanggal Praktikum wajib diisi dengan tanggal yang valid pada setiap baris.';
+                            const key = [lab.lab, lab.kegiatanLab, lab.tanggal].map(v => String(v || '').trim().toLowerCase()).join('|');
+                            if (seen[key]) return 'Baris praktikum identik tidak boleh diulang.';
+                            seen[key] = true;
+                        }
+                    }
+                    return '';
                 },
                 async submitForm() {
                     const jenis = this.regForm.jenisKegiatan;
@@ -799,6 +846,11 @@
                         this.showToast('Keterangan wajib diisi.', 'error');
                         return;
                     }
+                    const detailError = this.validateRegDetail(jenis);
+                    if (detailError) {
+                        this.showToast(detailError, 'error');
+                        return;
+                    }
                     this.loading = true;
                     try {
                         const formData = {
@@ -813,6 +865,7 @@
 
                         if (jenis === 'Ujian') {
                             formData.detailKegiatan = this.regUjian.pilihan;
+                            formData.detailUjian = this.regUjian.detail;
                             formData.tanggalKegiatan = this.regUjian.tanggal;
                         } else if (jenis === 'SGD') {
                             formData.pilihanSgd = this.regSgd.pilihan;
@@ -823,13 +876,9 @@
                             formData.detailKkd = this.regKkd.detail;
                             formData.tanggalKegiatan = this.regKkd.tanggal;
                         } else if (jenis === 'Praktikum') {
-                            const labs = this.regLabs.filter(l => l.lab || l.kegiatanLab);
-                            if (labs.length === 0) {
-                                this.showToast('Tambahkan minimal satu detail praktikum.', 'error');
-                                this.loading = false;
-                                return;
-                            }
-                            formData.praktikum = labs;
+                            formData.praktikum = this.regLabs
+                                .filter(l => String(l.lab || '').trim() || String(l.kegiatanLab || '').trim() || String(l.tanggal || '').trim())
+                                .map(l => ({ lab: String(l.lab || '').trim(), kegiatanLab: String(l.kegiatanLab || '').trim(), tanggal: String(l.tanggal || '').trim() }));
                         }
 
                         if (this.regFileSurat) {
@@ -860,7 +909,7 @@
                 },
                 resetRegForm() {
                     this.regForm = { npm: '', namaLengkap: '', email: '', noHp: '', blok: '', jenisKegiatan: '', keterangan: '' };
-                    this.regUjian = { pilihan: '', tanggal: '' };
+                    this.regUjian = { pilihan: '', detail: '', tanggal: '' };
                     this.regSgd = { pilihan: '', detail: '', tanggal: '' };
                     this.regKkd = { pilihan: '', detail: '', tanggal: '' };
                     this.regLabs = [{ lab: '', kegiatanLab: '', tanggal: '' }];

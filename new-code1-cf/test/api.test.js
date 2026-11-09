@@ -67,6 +67,8 @@ describe('read endpoints', () => {
     expect(body.buktiMode).toBe('strict');
     expect(body).toHaveProperty('detailSgd');
     expect(body).toHaveProperty('detailKkd');
+    expect(body).toHaveProperty('detailUjian');
+    expect(body.detailUjian).toEqual(body.detailKkd);
     expect(body).toHaveProperty('dosen');
   });
 

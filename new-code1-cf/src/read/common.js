@@ -112,11 +112,10 @@ export async function getBiayaOverrideMap(db) {
   }
 }
 
-// Detail efektif untuk perhitungan biaya. Ujian selalu dianggap "Inhal" tanpa
-// perlu menulis ke tabel detail_kegiatan; KKD/SGD tanpa detail juga "Inhal".
+// Detail efektif untuk perhitungan biaya. Ujian memakai Detail eksplisit bila
+// ada, selain itu dianggap "Inhal"; KKD/SGD tanpa detail juga "Inhal".
 export function effectiveDetailFor(pengajuan, detailRows) {
   const jenis = String((pengajuan && pengajuan['Jenis Kegiatan']) || '').trim();
-  if (jenis === 'Ujian') return 'Inhal';
   let detail = '';
   for (const d of detailRows || []) {
     const v = String((d && (d.Detail !== undefined ? d.Detail : d.detail)) || '').trim();
@@ -125,7 +124,7 @@ export function effectiveDetailFor(pengajuan, detailRows) {
   if (!detail && pengajuan && pengajuan.Detail !== undefined) {
     detail = String(pengajuan.Detail || '').trim();
   }
-  if (!detail && (jenis === 'KKD' || jenis === 'SGD')) return 'Inhal';
+  if (!detail && (jenis === 'KKD' || jenis === 'SGD' || jenis === 'Ujian')) return 'Inhal';
   return detail;
 }
 

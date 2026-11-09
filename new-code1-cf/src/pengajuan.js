@@ -1,9 +1,57 @@
 import {
   buildPengajuanKey, buildDetailKegiatanRows, normalizeFormText,
-  isValidEmail, isValidPhone, nowLocalIso, newIdPengajuan
+  isValidEmail, isValidPhone, isValidDateOnly, nowLocalIso, newIdPengajuan
 } from './lib.js';
 import { getBagianMap, findDuplicatePengajuan } from './repo.js';
 import { saveDriveFile } from './drive.js';
+
+const JENIS_VALID = ['Ujian', 'SGD', 'KKD', 'Praktikum'];
+
+function validatePortalDetail(jenis, formData) {
+  const tanggal = normalizeFormText(formData.tanggalKegiatan);
+  if (jenis === 'Ujian') {
+    if (!normalizeFormText(formData.detailKegiatan)) return 'Pilihan Ujian wajib dipilih.';
+    if (!isValidDateOnly(tanggal)) return 'Tanggal Ujian wajib diisi dengan tanggal yang valid.';
+    if (normalizeFormText(formData.detailUjian).toLowerCase() === 'remediasi') {
+      return 'Detail Remediasi tidak tersedia untuk Ujian. Pilih Inhal.';
+    }
+    return '';
+  }
+  if (jenis === 'SGD') {
+    if (!normalizeFormText(formData.pilihanSgd)) return 'Pilihan SGD wajib dipilih.';
+    if (!isValidDateOnly(tanggal)) return 'Tanggal SGD wajib diisi dengan tanggal yang valid.';
+    if (normalizeFormText(formData.detailSgd).toLowerCase() === 'remediasi') {
+      return 'Detail Remediasi tidak tersedia untuk SGD. Pilih Inhal.';
+    }
+    return '';
+  }
+  if (jenis === 'KKD') {
+    if (!normalizeFormText(formData.pilihanKkd)) return 'Pilihan KKD wajib dipilih.';
+    if (!isValidDateOnly(tanggal)) return 'Tanggal KKD wajib diisi dengan tanggal yang valid.';
+    if (normalizeFormText(formData.detailKkd).toLowerCase() === 'remediasi') {
+      return 'Detail Remediasi tidak tersedia untuk KKD. Pilih Inhal.';
+    }
+    return '';
+  }
+  if (jenis === 'Praktikum') {
+    const rows = Array.isArray(formData.praktikum) ? formData.praktikum : [];
+    const filled = rows.filter((p) => p && (normalizeFormText(p.lab) || normalizeFormText(p.kegiatanLab) || normalizeFormText(p.tanggal)));
+    if (filled.length === 0) return 'Tambahkan minimal satu detail praktikum.';
+    const seen = new Set();
+    for (const p of filled) {
+      const lab = normalizeFormText(p.lab);
+      const kegiatanLab = normalizeFormText(p.kegiatanLab);
+      const tgl = normalizeFormText(p.tanggal);
+      if (!lab) return 'Pilihan Lab wajib dipilih pada setiap baris praktikum.';
+      if (!kegiatanLab) return 'Kegiatan Lab wajib dipilih pada setiap baris praktikum.';
+      if (!isValidDateOnly(tgl)) return 'Tanggal Praktikum wajib diisi dengan tanggal yang valid pada setiap baris.';
+      const key = [lab, kegiatanLab, tgl].map((v) => v.toLowerCase()).join('|');
+      if (seen.has(key)) return 'Baris praktikum identik tidak boleh diulang.';
+      seen.add(key);
+    }
+  }
+  return '';
+}
 
 const PENGAJUAN_COLUMNS = [
   'timestamp', 'id_pengajuan', 'form_key', 'npm', 'nama_lengkap', 'email', 'no_hp_wa', 'blok',
@@ -28,10 +76,17 @@ export async function createPengajuan(db, formData, env, opts) {
   const nama = normalizeFormText(formData.namaLengkap);
   const email = normalizeFormText(formData.email);
   const noHp = normalizeFormText(formData.noHp);
+  const jenis = normalizeFormText(formData.jenisKegiatan);
   if (!npm || !nama) {
     return { success: false, message: 'NPM dan Nama Lengkap wajib diisi.' };
   }
   if (!manual) {
+    if (!normalizeFormText(formData.blok)) {
+      return { success: false, message: 'Blok wajib dipilih.' };
+    }
+    if (JENIS_VALID.indexOf(jenis) === -1) {
+      return { success: false, message: 'Jenis Kegiatan wajib dipilih.' };
+    }
     if (!email || !isValidEmail(email)) {
       return { success: false, message: 'Email aktif wajib diisi dengan format yang benar.' };
     }
@@ -40,6 +95,10 @@ export async function createPengajuan(db, formData, env, opts) {
     }
     if (!normalizeFormText(formData.keterangan)) {
       return { success: false, message: 'Keterangan wajib diisi.' };
+    }
+    const detailError = validatePortalDetail(jenis, formData);
+    if (detailError) {
+      return { success: false, message: detailError };
     }
   }
 
@@ -55,9 +114,8 @@ export async function createPengajuan(db, formData, env, opts) {
   if (detailRows.length === 0) {
     return { success: false, message: 'Detail kegiatan tidak valid.' };
   }
-  // Remediasi hanya untuk Praktikum; KKD/SGD cukup memakai Detail Inhal.
-  const jenis = normalizeFormText(formData.jenisKegiatan);
-  if ((jenis === 'KKD' || jenis === 'SGD') &&
+  // Remediasi hanya untuk Praktikum; KKD/SGD/Ujian cukup memakai Detail Inhal.
+  if ((jenis === 'KKD' || jenis === 'SGD' || jenis === 'Ujian') &&
       detailRows.some((d) => String(d.detail || '').trim().toLowerCase() === 'remediasi')) {
     return { success: false, message: 'Detail Remediasi tidak tersedia untuk ' + jenis + '. Pilih Inhal.' };
   }

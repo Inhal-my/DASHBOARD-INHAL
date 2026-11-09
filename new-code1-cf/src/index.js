@@ -83,10 +83,11 @@ app.get('/api/registration-options', async (c) => {
     getMasterOptions(db, 'Dosen'),
     getBuktiMode(db)
   ]);
+  const detailUjian = filterKkdSgdDetailOptions(detailKkd);
   return c.json({
     blok, ujian, sgd, detailSgd: filterKkdSgdDetailOptions(detailSgd),
     kkd, detailKkd: filterKkdSgdDetailOptions(detailKkd),
-    lab, kegiatanLab, dosen, buktiMode
+    detailUjian, lab, kegiatanLab, dosen, buktiMode
   });
 });
 

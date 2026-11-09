@@ -49,7 +49,9 @@ describe('biaya berdasarkan Detail', () => {
   it('memakai Detail Inhal untuk KKD/SGD/Ujian yang kosong', () => {
     expect(effectiveDetailFor({ 'Jenis Kegiatan': 'KKD' }, [])).toBe('Inhal');
     expect(effectiveDetailFor({ 'Jenis Kegiatan': 'SGD' }, [])).toBe('Inhal');
-    expect(effectiveDetailFor({ 'Jenis Kegiatan': 'Ujian' }, [{ Detail: 'UAS' }])).toBe('Inhal');
+    expect(effectiveDetailFor({ 'Jenis Kegiatan': 'Ujian' }, [{ Detail: 'Inhal' }])).toBe('Inhal');
+    expect(effectiveDetailFor({ 'Jenis Kegiatan': 'Ujian' }, [{ Detail: '' }])).toBe('Inhal');
+    expect(effectiveDetailFor({ 'Jenis Kegiatan': 'Ujian' }, [])).toBe('Inhal');
   });
 
   it('mengambil biaya dari Detail, bukan Jenis', () => {

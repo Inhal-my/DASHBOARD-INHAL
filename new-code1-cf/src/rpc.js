@@ -125,6 +125,7 @@ const HANDLERS = {
       detailSgd: filterKkdSgdDetailOptions(detailSgd),
       kkd,
       detailKkd: filterKkdSgdDetailOptions(detailKkd),
+      detailUjian: filterKkdSgdDetailOptions(detailKkd),
       lab, kegiatanLab
     };
   },

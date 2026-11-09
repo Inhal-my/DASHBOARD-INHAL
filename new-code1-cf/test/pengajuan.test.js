@@ -89,6 +89,110 @@ describe('POST /api/pengajuan', () => {
     expect((await res.json()).message).toMatch(/Remediasi/);
   });
 
+  it('menyimpan Detail Ujian pada baris detail', async () => {
+    const res = await post({ ...validBody, detailUjian: 'Inhal' });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const d = await env.DB.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(body.idPengajuan).first();
+    expect(d.detail).toBe('Inhal');
+  });
+
+  it('menolak Ujian tanpa Pilihan Ujian', async () => {
+    const res = await post({ ...validBody, detailKegiatan: '' });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Pilihan Ujian wajib dipilih.');
+  });
+
+  it('menolak Ujian dengan tanggal tidak valid', async () => {
+    const res = await post({ ...validBody, tanggalKegiatan: '2026-02-30' });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Tanggal Ujian wajib diisi dengan tanggal yang valid.');
+  });
+
+  it('menolak SGD tanpa Pilihan SGD', async () => {
+    const res = await post({
+      npm: '2201010004', namaLengkap: 'Dewi', email: 'dewi@contoh.com', noHp: '08123456782',
+      blok: 'A', jenisKegiatan: 'SGD', pilihanSgd: '', detailSgd: 'Inhal',
+      tanggalKegiatan: '2026-09-20', keterangan: 'Keperluan SGD.'
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Pilihan SGD wajib dipilih.');
+  });
+
+  it('menolak KKD tanpa tanggal', async () => {
+    const res = await post({
+      npm: '2201010005', namaLengkap: 'Eka', email: 'eka@contoh.com', noHp: '08123456783',
+      blok: 'A', jenisKegiatan: 'KKD', pilihanKkd: 'KKD 1', detailKkd: 'Inhal',
+      tanggalKegiatan: '', keterangan: 'Keperluan KKD.'
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Tanggal KKD wajib diisi dengan tanggal yang valid.');
+  });
+
+  it('menolak Blok kosong', async () => {
+    const res = await post({ ...validBody, blok: '' });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Blok wajib dipilih.');
+  });
+
+  it('menolak Jenis Kegiatan kosong atau tidak dikenal', async () => {
+    const res = await post({ ...validBody, jenisKegiatan: '' });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Jenis Kegiatan wajib dipilih.');
+    const res2 = await post({ ...validBody, jenisKegiatan: 'Lainnya' });
+    expect(res2.status).toBe(400);
+    expect((await res2.json()).message).toBe('Jenis Kegiatan wajib dipilih.');
+  });
+
+  it('menyimpan semua baris Praktikum yang lengkap', async () => {
+    const res = await post({
+      npm: '2201010006', namaLengkap: 'Fajar', email: 'fajar@contoh.com', noHp: '08123456784',
+      blok: 'A', jenisKegiatan: 'Praktikum',
+      praktikum: [
+        { lab: 'Lab Anatomi', kegiatanLab: 'Praktikum 1', tanggal: '2026-09-20' },
+        { lab: 'Lab Anatomi', kegiatanLab: 'PostTest', tanggal: '2026-09-21' }
+      ],
+      keterangan: 'Keperluan praktikum.'
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const rows = await env.DB.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1 ORDER BY id').bind(body.idPengajuan).all();
+    expect(rows.results).toHaveLength(2);
+  });
+
+  it('menolak baris Praktikum yang parsial', async () => {
+    const res = await post({
+      npm: '2201010007', namaLengkap: 'Gita', email: 'gita@contoh.com', noHp: '08123456785',
+      blok: 'A', jenisKegiatan: 'Praktikum',
+      praktikum: [{ lab: 'Lab Anatomi', kegiatanLab: '', tanggal: '2026-09-20' }],
+      keterangan: 'Keperluan praktikum.'
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Kegiatan Lab wajib dipilih pada setiap baris praktikum.');
+  });
+
+  it('menolak Praktikum tanpa tanggal', async () => {
+    const res = await post({
+      npm: '2201010008', namaLengkap: 'Hana', email: 'hana@contoh.com', noHp: '08123456786',
+      blok: 'A', jenisKegiatan: 'Praktikum',
+      praktikum: [{ lab: 'Lab Anatomi', kegiatanLab: 'Praktikum 1', tanggal: '' }],
+      keterangan: 'Keperluan praktikum.'
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Tanggal Praktikum wajib diisi dengan tanggal yang valid pada setiap baris.');
+  });
+
+  it('menolak baris Praktikum identik', async () => {
+    const row = { lab: 'Lab Anatomi', kegiatanLab: 'Praktikum 1', tanggal: '2026-09-20' };
+    const res = await post({
+      npm: '2201010009', namaLengkap: 'Indah', email: 'indah@contoh.com', noHp: '08123456787',
+      blok: 'A', jenisKegiatan: 'Praktikum', praktikum: [row, { ...row }],
+      keterangan: 'Keperluan praktikum.'
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toBe('Baris praktikum identik tidak boleh diulang.');
+  });
+
   it('enforces the unique form_key atomically when the pre-check misses', async () => {
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,form_key,npm,nama_lengkap,jenis_kegiatan,status) " +
