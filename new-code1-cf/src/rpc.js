@@ -4,6 +4,7 @@ import { getBaginaConfig, getBagianBootstrap, getBeritaAcaraList } from './read/
 import { getKalenderBagianPelaksanaan } from './read/kalender.js';
 import { getLaporanBootstrap } from './read/laporan.js';
 import { getMahasiswaByNpm, getDosenOptions, getBagianStaffList, getMasterOptions } from './repo.js';
+import { filterKkdSgdDetailOptions } from './read/common.js';
 import { registerManualPengajuan } from './pengajuan.js';
 import {
   getDashboardBootstrap, getDashboardStats, getPengajuanList, getBagianAggregation,
@@ -119,7 +120,13 @@ const HANDLERS = {
       getMasterOptions(db, 'Lab'),
       getMasterOptions(db, 'Kegiatan Lab')
     ]);
-    return { blok, ujian, sgd, detailSgd, kkd, detailKkd, lab, kegiatanLab };
+    return {
+      blok, ujian, sgd,
+      detailSgd: filterKkdSgdDetailOptions(detailSgd),
+      kkd,
+      detailKkd: filterKkdSgdDetailOptions(detailKkd),
+      lab, kegiatanLab
+    };
   },
   registerManualPengajuan: async (db, args, ctx) => {
     await requireAdmin(db, ctx.token, ctx.session);

@@ -67,6 +67,28 @@ describe('POST /api/pengajuan', () => {
     expect((await res.json()).message).toBe('Data identik sudah pernah diajukan. Silakan cek status pengajuan Anda.');
   });
 
+  it('mengisi Detail KKD/SGD kosong dengan Inhal', async () => {
+    const res = await post({
+      npm: '2201010002', namaLengkap: 'Budi', email: 'budi@contoh.com', noHp: '08123456780',
+      blok: 'A', jenisKegiatan: 'KKD', pilihanKkd: 'KKD 1', detailKkd: '',
+      tanggalKegiatan: '2026-09-20', keterangan: 'Keperluan KKD.'
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const d = await env.DB.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(body.idPengajuan).first();
+    expect(d.detail).toBe('Inhal');
+  });
+
+  it('menolak Detail Remediasi untuk SGD', async () => {
+    const res = await post({
+      npm: '2201010003', namaLengkap: 'Citra', email: 'citra@contoh.com', noHp: '08123456781',
+      blok: 'A', jenisKegiatan: 'SGD', pilihanSgd: 'SGD 1', detailSgd: 'Remediasi',
+      tanggalKegiatan: '2026-09-20', keterangan: 'Keperluan SGD.'
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toMatch(/Remediasi/);
+  });
+
   it('enforces the unique form_key atomically when the pre-check misses', async () => {
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,form_key,npm,nama_lengkap,jenis_kegiatan,status) " +

@@ -32,10 +32,10 @@ export function buildPengajuanKey(formData) {
     detail = norm(formData.detailKegiatan);
     tanggal = norm(formData.tanggalKegiatan);
   } else if (jenis === 'sgd') {
-    detail = [norm(formData.pilihanSgd), norm(formData.detailSgd)].filter(Boolean).join(' | ');
+    detail = [norm(formData.pilihanSgd), norm(formData.detailSgd) || 'inhal'].filter(Boolean).join(' | ');
     tanggal = norm(formData.tanggalKegiatan);
   } else if (jenis === 'kkd') {
-    detail = [norm(formData.pilihanKkd), norm(formData.detailKkd)].filter(Boolean).join(' | ');
+    detail = [norm(formData.pilihanKkd), norm(formData.detailKkd) || 'inhal'].filter(Boolean).join(' | ');
     tanggal = norm(formData.tanggalKegiatan);
   } else if (jenis === 'praktikum' && Array.isArray(formData.praktikum) && formData.praktikum.length > 0) {
     const first = formData.praktikum.find((p) => p && (norm(p.lab) || norm(p.kegiatanLab)));
@@ -50,10 +50,11 @@ export function buildPengajuanKey(formData) {
 export function storedKeyFromDetails(pengajuan, details) {
   const npm = norm(pengajuan.npm);
   const jenis = norm(pengajuan.jenis_kegiatan);
+  const defaultDetail = (jenis === 'kkd' || jenis === 'sgd') ? 'inhal' : '';
   const detailParts = [];
   let tanggal = '';
   (details || []).forEach((d) => {
-    detailParts.push([norm(d.pilihan), norm(d.detail)].filter(Boolean).join(' | '));
+    detailParts.push([norm(d.pilihan), norm(d.detail) || defaultDetail].filter(Boolean).join(' | '));
     if (!tanggal) tanggal = norm(d.tanggal_pelaksanaan);
   });
   const detail = detailParts.filter(Boolean).sort().join(' && ');
@@ -77,9 +78,9 @@ export function buildDetailKegiatanRows(formData, idPengajuan, bagianMap, nowIso
   if (jenis === 'Ujian') {
     addRow(normalizeFormText(formData.detailKegiatan), '', normalizeFormText(formData.tanggalKegiatan));
   } else if (jenis === 'SGD') {
-    addRow(normalizeFormText(formData.pilihanSgd), normalizeFormText(formData.detailSgd), normalizeFormText(formData.tanggalKegiatan));
+    addRow(normalizeFormText(formData.pilihanSgd), normalizeFormText(formData.detailSgd) || 'Inhal', normalizeFormText(formData.tanggalKegiatan));
   } else if (jenis === 'KKD') {
-    addRow(normalizeFormText(formData.pilihanKkd), normalizeFormText(formData.detailKkd), normalizeFormText(formData.tanggalKegiatan));
+    addRow(normalizeFormText(formData.pilihanKkd), normalizeFormText(formData.detailKkd) || 'Inhal', normalizeFormText(formData.tanggalKegiatan));
   } else if (jenis === 'Praktikum' && Array.isArray(formData.praktikum)) {
     const first = formData.praktikum.find((p) => p && (normalizeFormText(p.lab) || normalizeFormText(p.kegiatanLab)));
     if (first) {

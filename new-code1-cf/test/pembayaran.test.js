@@ -76,6 +76,21 @@ describe('verifyPembayaran', () => {
     await expect(verifyPembayaran(env.DB, verifyPayload(), {})).rejects.toThrow();
   });
 
+  it('memakai biaya dari Detail bila tanpa override', async () => {
+    await seedPengajuan();
+    await env.DB.prepare("DELETE FROM check_data WHERE id_pengajuan = 'INHAL-1'").run();
+    await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('Inhal','Rp. 250.000')").run();
+    await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('SGD','Rp. 100.000')").run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan) VALUES ('2026-10-01T08:00:00','INHAL-1','SGD','SGD 1','Inhal','2026-10-02')"
+    ).run();
+    const res = await verifyPembayaran(env.DB, verifyPayload({ nominal: 250000, kesesuaian: 'pas' }), await adminCtx());
+    expect(res).toMatchObject({ success: true, status: 'valid' });
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.kesesuaian_pembayaran).toBe('pas');
+    expect(p.nominal_dibayar).toBe(250000);
+  });
+
   it('marks a payment valid and records a revision', async () => {
     await seedPengajuan();
     const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtx());

@@ -760,7 +760,13 @@
                         this.regOptions.detailKkd = res.detailKkd || [];
                         this.regOptions.lab = res.lab || [];
                         this.regOptions.kegiatanLab = res.kegiatanLab || [];
+                        if (!this.regSgd.detail) this.regSgd.detail = this.defaultDetail(this.regOptions.detailSgd);
+                        if (!this.regKkd.detail) this.regKkd.detail = this.defaultDetail(this.regOptions.detailKkd);
                     } catch (e) { /* non-blokir */ }
+                },
+                defaultDetail(list) {
+                    const found = (list || []).find((o) => String(o).toLowerCase() === 'inhal');
+                    return found || '';
                 },
                 async onNpmBlur() {
                     const npm = this.regForm.npm.trim();

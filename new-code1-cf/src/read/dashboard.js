@@ -3,7 +3,8 @@ import { toClientRow, toClientRows } from './columns.js';
 import { saveDriveFile } from '../drive.js';
 import {
   norm, parseCurrency, formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
-  resolveBiayaForPengajuan, normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
+  resolveBiayaForPengajuan, buildDetailRowsByPengajuan,
+  normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
   getBagianBaSettings, pushUnique, kegiatanKey, normKegiatan
 } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
@@ -19,15 +20,15 @@ function baSumber(r) {
   return s === 'admin' ? 'Admin' : 'Bagian';
 }
 
-function buildPengajuanClientRows(rows, biayaMap, overrideMap) {
+function buildPengajuanClientRows(rows, biayaMap, overrideMap, detailsById) {
   return rows.map((r) => {
     const copy = toClientRow('pengajuan', r);
     // Link final hanya bermakna selama status masih ACC. Saat ACC ditarik ke
     // Menunggu, berkas tetap disimpan tetapi tidak ditampilkan lagi.
     if (String(copy.Status || '').trim() !== 'ACC') copy['Link Final'] = '';
-    copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
-    copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
     const id = String(r.id_pengajuan || '').trim();
+    copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap, (detailsById || {})[id]);
+    copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
     copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
     return copy;
   });
@@ -40,6 +41,7 @@ export async function getDashboardStats(db, ctx) {
 
 function computeDashboardStatsFromRows(pengajuan, details, ba, biayaMap, overrideMap, labs) {
   const perStatus = {}, perJenis = {}, perBlok = {}, trend = {}, perBagian = {};
+  const detailsById = buildDetailRowsByPengajuan(details);
   let totalBiaya = 0;
   for (const p of pengajuan) {
     const row = toClientRow('pengajuan', p);
@@ -49,7 +51,8 @@ function computeDashboardStatsFromRows(pengajuan, details, ba, biayaMap, overrid
     perJenis[jenis] = (perJenis[jenis] || 0) + 1;
     const blok = String(row.Blok || '-').trim();
     perBlok[blok] = (perBlok[blok] || 0) + 1;
-    totalBiaya += resolveBiayaForPengajuan(row, biayaMap, overrideMap);
+    const id = String(p.id_pengajuan || '').trim();
+    totalBiaya += resolveBiayaForPengajuan(row, biayaMap, overrideMap, detailsById[id]);
     const ts = row.Timestamp;
     if (ts) {
       const d = new Date(ts);
@@ -145,7 +148,7 @@ export async function getDashboardBootstrap(db, ctx) {
 
   return {
     stats,
-    pengajuan: buildPengajuanClientRows(sorted, biayaMap, overrideMap),
+    pengajuan: buildPengajuanClientRows(sorted, biayaMap, overrideMap, buildDetailRowsByPengajuan(details)),
     detailMap,
     masterBiaya,
     dosen: await getMasterOptions(db, 'Dosen'),
@@ -177,7 +180,8 @@ export async function getPengajuanList(db, filters, ctx) {
   selected.sort((a, b) => String(b.row.Timestamp || '').localeCompare(String(a.row.Timestamp || '')));
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
-  return buildPengajuanClientRows(selected.map((r) => r.raw), biayaMap, overrideMap);
+  const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
+  return buildPengajuanClientRows(selected.map((r) => r.raw), biayaMap, overrideMap, buildDetailRowsByPengajuan(details));
 }
 
 export async function getLabOptions(db, ctx) {
@@ -247,7 +251,7 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
   copy.details = toClientRows('detail_kegiatan', details);
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
-  copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap);
+  copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap, details);
   const id = String(p.id_pengajuan || '').trim();
   copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
   copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);

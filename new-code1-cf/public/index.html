@@ -315,6 +315,10 @@
                         return data;
                     });
                 },
+                defaultDetail(list) {
+                    const found = (list || []).find((o) => String(o).toLowerCase() === 'inhal');
+                    return found || '';
+                },
                 async loadOptions() {
                     try {
                         const res = await this.run('getRegistrationOptions');
@@ -326,6 +330,8 @@
                         this.options.detailKkd = res.detailKkd || [];
                         this.options.lab = res.lab || [];
                         this.options.kegiatanLab = res.kegiatanLab || [];
+                        if (!this.sgd.detail) this.sgd.detail = this.defaultDetail(this.options.detailSgd);
+                        if (!this.kkd.detail) this.kkd.detail = this.defaultDetail(this.options.detailKkd);
                     } catch (e) { /* non-blokir */ }
                 },
                 async onNpmBlur() {

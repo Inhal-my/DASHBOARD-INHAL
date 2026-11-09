@@ -156,6 +156,17 @@ describe('pengajuan admin writes', () => {
     const row = await env.DB.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
     expect(row.bagian).toBe('Anatomi');
   });
+
+  it('menolak Detail Remediasi untuk KKD/SGD', async () => {
+    await seedPengajuan();
+    await seedDetail('SGD', 'SGD 1', '');
+    const ctx = await adminCtx();
+    const res = await updateDetailKegiatan(env.DB, 'INHAL-1', 0, { detail: 'Remediasi' }, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/Remediasi/);
+    const row = await env.DB.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.detail).toBe('');
+  });
 });
 
 describe('pengajuan admin status and delete', () => {

@@ -163,6 +163,13 @@ export async function updateDetailKegiatan(db, idPengajuan, index, payload, ctx)
   if (rowId === null) return { success: false, message: 'Detail kegiatan tidak ditemukan.' };
 
   const p = payload || {};
+  const existingDetail = await db.prepare('SELECT jenis_kegiatan, detail FROM detail_kegiatan WHERE id = ?1').bind(rowId).first();
+  const nextJenis = p.jenisKegiatan !== undefined ? str(p.jenisKegiatan) : str(existingDetail && existingDetail.jenis_kegiatan);
+  const nextDetail = p.detail !== undefined ? str(p.detail) : str(existingDetail && existingDetail.detail);
+  if ((nextJenis === 'KKD' || nextJenis === 'SGD') && nextDetail.toLowerCase() === 'remediasi') {
+    return { success: false, message: 'Detail Remediasi tidak tersedia untuk ' + nextJenis + '. Pilih Inhal.' };
+  }
+
   const cols = [];
   const vals = [];
   const add = (col, raw) => {

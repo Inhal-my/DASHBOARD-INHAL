@@ -52,6 +52,12 @@ export function pushUnique(list, v) {
   if (s && list.indexOf(s) === -1) list.push(s);
 }
 
+// Opsi Detail untuk KKD/SGD. "Remediasi" tetap ada di master untuk kebutuhan
+// Praktikum, tetapi tidak boleh dipilih pada KKD/SGD.
+export function filterKkdSgdDetailOptions(options) {
+  return (options || []).filter((v) => norm(v) !== 'remediasi');
+}
+
 export async function getMasterOptions(db, kategori) {
   const { results } = await db.prepare('SELECT kategori, nilai FROM master_kegiatan').all();
   const target = norm(kategori);
@@ -106,19 +112,59 @@ export async function getBiayaOverrideMap(db) {
   }
 }
 
-export function resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap) {
+// Detail efektif untuk perhitungan biaya. Ujian selalu dianggap "Inhal" tanpa
+// perlu menulis ke tabel detail_kegiatan; KKD/SGD tanpa detail juga "Inhal".
+export function effectiveDetailFor(pengajuan, detailRows) {
+  const jenis = String((pengajuan && pengajuan['Jenis Kegiatan']) || '').trim();
+  if (jenis === 'Ujian') return 'Inhal';
+  let detail = '';
+  for (const d of detailRows || []) {
+    const v = String((d && (d.Detail !== undefined ? d.Detail : d.detail)) || '').trim();
+    if (v) { detail = v; break; }
+  }
+  if (!detail && pengajuan && pengajuan.Detail !== undefined) {
+    detail = String(pengajuan.Detail || '').trim();
+  }
+  if (!detail && (jenis === 'KKD' || jenis === 'SGD')) return 'Inhal';
+  return detail;
+}
+
+// Peta detail per ID Pengajuan dari baris detail_kegiatan mentah maupun
+// baris yang sudah dipetakan ke kolom klien.
+export function buildDetailRowsByPengajuan(detailRows) {
+  const map = {};
+  for (const d of detailRows || []) {
+    const id = String((d && (d.id_pengajuan !== undefined ? d.id_pengajuan : d['ID Pengajuan'])) || '').trim();
+    if (!id) continue;
+    if (!map[id]) map[id] = [];
+    map[id].push(d);
+  }
+  return map;
+}
+
+export function resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap, detailRows) {
   const id = String((pengajuan && pengajuan['ID Pengajuan']) || '').trim();
   overrideMap = overrideMap || {};
   if (id && overrideMap[id] !== undefined && overrideMap[id] !== null && String(overrideMap[id]).trim() !== '') {
     return overrideMap[id];
   }
   biayaMap = biayaMap || {};
+  // Kunci biaya adalah nama Detail (Inhal/Remediasi/Praktikum/PostTest).
+  // Tidak ada pencocokan sebagian.
+  const detail = effectiveDetailFor(pengajuan, detailRows);
   const jenis = String((pengajuan && pengajuan['Jenis Kegiatan']) || '').trim();
-  if (jenis && biayaMap[jenis] !== undefined) return biayaMap[jenis];
-  const jNorm = norm(jenis);
-  for (const k of Object.keys(biayaMap)) {
-    const kNorm = norm(k);
-    if (kNorm && jNorm && (jNorm.indexOf(kNorm) !== -1 || kNorm.indexOf(jNorm) !== -1)) return biayaMap[k];
+  const target = norm(detail);
+  if (target) {
+    for (const k of Object.keys(biayaMap)) {
+      if (norm(k) === target) return biayaMap[k];
+    }
+    return 0;
+  }
+  // Cadangan hanya saat Detail benar-benar kosong (mis. data lama).
+  if (norm(jenis)) {
+    for (const k of Object.keys(biayaMap)) {
+      if (norm(k) === norm(jenis)) return biayaMap[k];
+    }
   }
   return 0;
 }

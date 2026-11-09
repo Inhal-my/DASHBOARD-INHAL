@@ -11,7 +11,7 @@ async function adminCtx() {
 async function seed() {
   await env.DB.prepare("INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status,link_final) VALUES ('2026-09-10T08:00:00','INHAL-1','2201010001','Aisyah','A','Ujian','ACC','')").run();
   await env.DB.prepare("INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-1','Ujian','UAS','','2026-09-20','')").run();
-  await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('Ujian','Rp. 300.000')").run();
+  await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('Inhal','Rp. 300.000')").run();
 }
 
 describe('dashboard read', () => {
@@ -82,6 +82,30 @@ describe('dashboard read', () => {
     expect(rows).toHaveLength(1);
     const none = await getPengajuanList(env.DB, { status: 'Ditolak' }, ctx);
     expect(none).toHaveLength(0);
+  });
+
+  it('menghitung biaya KKD/SGD dari Detail Inhal, bukan dari jenis', async () => {
+    const ctx = await adminCtx();
+    await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('Inhal','Rp. 250.000')").run();
+    await env.DB.prepare("INSERT INTO master_biaya (kegiatan,biaya) VALUES ('Remediasi','Rp. 300.000')").run();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-KKD','2201010001','Aisyah','A','KKD','ACC')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan) VALUES ('2026-09-10T08:00:00','INHAL-KKD','KKD','KKD 1','','2026-09-20')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-11T08:00:00','INHAL-PRK','2201010002','Budi','A','Praktikum','ACC')"
+    ).run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan) VALUES ('2026-09-11T08:00:00','INHAL-PRK','Praktikum','Lab A','Remediasi','2026-09-21')"
+    ).run();
+    const boot = await getDashboardBootstrap(env.DB, ctx);
+    const kkd = boot.pengajuan.find((r) => r['ID Pengajuan'] === 'INHAL-KKD');
+    const prk = boot.pengajuan.find((r) => r['ID Pengajuan'] === 'INHAL-PRK');
+    expect(kkd.Biaya).toBe(250000);
+    expect(prk.Biaya).toBe(300000);
+    expect(boot.stats.totalBiaya).toBe(550000);
   });
   it('requires admin for lab options', async () => {
     await expect(getLabOptions(env.DB, {})).rejects.toThrow();

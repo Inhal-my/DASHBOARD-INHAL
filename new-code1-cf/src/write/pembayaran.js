@@ -46,10 +46,11 @@ function kesesuaianLabel(value) {
 
 async function resolveTagihan(db, row) {
   const [biayaMap, overrideMap] = await Promise.all([getBiayaMap(db), getBiayaOverrideMap(db)]);
+  const details = (await db.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(str(row.id_pengajuan)).all()).results || [];
   return resolveBiayaForPengajuan({
     'ID Pengajuan': row.id_pengajuan,
     'Jenis Kegiatan': row.jenis_kegiatan
-  }, biayaMap, overrideMap);
+  }, biayaMap, overrideMap, details);
 }
 
 function sameRevision(expected, row) {

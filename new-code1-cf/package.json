@@ -18,6 +18,7 @@
     "migrations:baseline": "node scripts/migrations-baseline.mjs",
     "seed:staging": "node scripts/seed-staging.mjs",
     "audit:jadwal": "node scripts/audit-jadwal-duplikat.mjs",
+    "audit:biaya": "node scripts/audit-biaya-detail.mjs",
     "e2e": "node e2e/smoke.cjs"
   },
   "dependencies": {

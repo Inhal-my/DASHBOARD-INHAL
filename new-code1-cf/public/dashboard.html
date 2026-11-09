@@ -4380,6 +4380,10 @@
                 isManual(r) {
                     return String((r && r.Sumber) || '').trim() === 'Manual';
                 },
+                defaultDetail(list) {
+                    const found = (list || []).find((o) => String(o).toLowerCase() === 'inhal');
+                    return found || '';
+                },
                 async loadManualOptions() {
                     try {
                         const res = await this.run('getRegistrationOptions');
@@ -4393,6 +4397,8 @@
                             lab: res.lab || [],
                             kegiatanLab: res.kegiatanLab || []
                         };
+                        if (!this.manual.sgd.detail) this.manual.sgd.detail = this.defaultDetail(this.manual.options.detailSgd);
+                        if (!this.manual.kkd.detail) this.manual.kkd.detail = this.defaultDetail(this.manual.options.detailKkd);
                         this.manual.loadedOptions = true;
                     } catch (e) {
                         this.notify('Gagal memuat opsi kegiatan: ' + e, false);
@@ -4413,8 +4419,8 @@
                 resetManualForm() {
                     this.manual.form = { npm: '', namaLengkap: '', blok: '', jenisKegiatan: '', keterangan: '', status: 'Menunggu' };
                     this.manual.ujian = { pilihan: '', tanggal: '' };
-                    this.manual.sgd = { pilihan: '', detail: '', tanggal: '' };
-                    this.manual.kkd = { pilihan: '', detail: '', tanggal: '' };
+                    this.manual.sgd = { pilihan: '', detail: this.defaultDetail(this.manual.options.detailSgd), tanggal: '' };
+                    this.manual.kkd = { pilihan: '', detail: this.defaultDetail(this.manual.options.detailKkd), tanggal: '' };
                     this.manual.labs = [{ lab: '', kegiatanLab: '', tanggal: '' }];
                     this.manual.fileSurat = null;
                 },

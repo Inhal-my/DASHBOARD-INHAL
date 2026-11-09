@@ -55,6 +55,12 @@ export async function createPengajuan(db, formData, env, opts) {
   if (detailRows.length === 0) {
     return { success: false, message: 'Detail kegiatan tidak valid.' };
   }
+  // Remediasi hanya untuk Praktikum; KKD/SGD cukup memakai Detail Inhal.
+  const jenis = normalizeFormText(formData.jenisKegiatan);
+  if ((jenis === 'KKD' || jenis === 'SGD') &&
+      detailRows.some((d) => String(d.detail || '').trim().toLowerCase() === 'remediasi')) {
+    return { success: false, message: 'Detail Remediasi tidak tersedia untuk ' + jenis + '. Pilih Inhal.' };
+  }
 
   let suratUrl = '';
   if (formData.fileSurat && formData.fileSurat.data) {

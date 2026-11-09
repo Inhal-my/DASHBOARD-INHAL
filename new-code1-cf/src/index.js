@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getMasterOptions, getBuktiMode, getStudentNameByNpm } from './repo.js';
+import { filterKkdSgdDetailOptions } from './read/common.js';
 import { registerPengajuan } from './pengajuan.js';
 import { getStudentPortalData, uploadBuktiFiles } from './portal.js';
 import { dispatchRpc } from './rpc.js';
@@ -82,7 +83,11 @@ app.get('/api/registration-options', async (c) => {
     getMasterOptions(db, 'Dosen'),
     getBuktiMode(db)
   ]);
-  return c.json({ blok, ujian, sgd, detailSgd, kkd, detailKkd, lab, kegiatanLab, dosen, buktiMode });
+  return c.json({
+    blok, ujian, sgd, detailSgd: filterKkdSgdDetailOptions(detailSgd),
+    kkd, detailKkd: filterKkdSgdDetailOptions(detailKkd),
+    lab, kegiatanLab, dosen, buktiMode
+  });
 });
 
 app.get('/api/mahasiswa/:npm', async (c) => {

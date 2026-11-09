@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { toClientRow } from './columns.js';
-import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, resolveBagian12, kegiatanKey } from './common.js';
+import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, buildDetailRowsByPengajuan, resolveBagian12, kegiatanKey } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
@@ -128,6 +128,7 @@ export async function getLaporanBootstrap(db, ctx) {
     if (!historyById[k]) historyById[k] = [];
     historyById[k].push(toClientRow('status_history', h));
   }
+  const rawDetailsById = buildDetailRowsByPengajuan(details);
 
   let totalPendaftar = 0, totalDitolak = 0, totalMenunggu = 0, totalAcc = 0, totalBiaya = 0;
   const perJenis = {}, perBlok = {}, perStatus = {};
@@ -144,7 +145,7 @@ export async function getLaporanBootstrap(db, ctx) {
     perJenis[jenis] = (perJenis[jenis] || 0) + 1;
     const blok = String(row.Blok || '-').trim();
     perBlok[blok] = (perBlok[blok] || 0) + 1;
-    row.Biaya = resolveBiayaForPengajuan(row, biayaMap, overrideMap);
+    row.Biaya = resolveBiayaForPengajuan(row, biayaMap, overrideMap, rawDetailsById[id]);
     row['Biaya Rupiah'] = formatRupiah(row.Biaya);
     // Link final hanya berlaku selama status ACC.
     if (status !== 'ACC') row['Link Final'] = '';
