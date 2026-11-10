@@ -159,7 +159,7 @@ async function listCandidates(db, kegiatan) {
   return out;
 }
 
-export const BA_ADMIN_MAX_PAGES = 50;
+export const BA_ADMIN_MAX_PAGES = 100;
 export const BA_ADMIN_MAX_BYTES = 20 * 1024 * 1024;
 
 async function countActivePages(db, baId, exceptIdPengajuan) {

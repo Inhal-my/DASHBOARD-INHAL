@@ -138,16 +138,16 @@ describe('baAdmin berkas', () => {
     expect(res.message).toContain('halaman');
   });
 
-  it('batas 50 halaman menghitung page_count peserta lain', async () => {
+  it('batas halaman menghitung page_count peserta lain', async () => {
     await seed('INHAL-1', '2201010001', 'Aisyah', 'ACC', 'SGD 1');
     await seed('INHAL-2', '2201010002', 'Budi', 'ACC', 'SGD 1');
     const ctx = await adminCtx();
     const { baId } = await getOrCreateBaAdmin(env.DB, keg, ctx);
     await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1', 'INHAL-2'], ctx);
     stubSave();
-    const r1 = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [{ data: await pdfB64(50), mimeType: 'application/pdf', name: 'a.pdf' }], ctx);
+    const r1 = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-1', [{ data: await pdfB64(BA_ADMIN_MAX_PAGES), mimeType: 'application/pdf', name: 'a.pdf' }], ctx);
     expect(r1.success).toBe(true);
-    expect(r1.pages).toBe(50);
+    expect(r1.pages).toBe(BA_ADMIN_MAX_PAGES);
     const r2 = await setBaAdminPesertaBerkas(env.DB, baId, 'INHAL-2', [{ data: btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xd9)), mimeType: 'image/jpeg' }], ctx);
     expect(r2.success).toBe(false);
     expect(r2.message).toContain('halaman');
