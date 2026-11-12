@@ -121,6 +121,26 @@ describe('detail laporan tab bagian: satu baris per kegiatan', () => {
     expect(baLoop).not.toContain("const fullKey = kName + '::'");
     expect(baLoop).toContain('const existing = g.byName[fullKey];');
   });
+
+  it('menormalkan tanggal jadi kunci baris agar variasi jam tidak menggandakan', async () => {
+    const html = await loadHtml();
+    const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
+    expect(all).toContain("const normTgl = s => {");
+    expect(all).toContain("const iso = v.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);");
+    const pengajuanLoop = block(all, 'this.rows.forEach(r => {', 'const out = [];');
+    expect(pengajuanLoop).toContain('const tanggalKey = normTgl(tanggal);');
+    expect(pengajuanLoop).toContain("const fullKey = normName(nama) + '::' + tanggalKey;");
+    expect(pengajuanLoop).not.toContain("normName(nama) + '::' + String(tanggal");
+  });
+
+  it('merge unit hanya menambah peserta yang tanggalnya sama dengan baris', async () => {
+    const html = await loadHtml();
+    const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
+    expect(all).toContain('const unitDateMap = {};');
+    const merge = block(all, 'const unit = unitIndex[key];', 'const statusOf = st =>');
+    expect(merge).toContain('const tanggalKey = normTgl(k.tanggal);');
+    expect(merge).toContain('if (!Object.prototype.hasOwnProperty.call(dates, tanggalKey)) return;');
+  });
 });
 
 describe('paginasi tabel detail laporan: export & ringkasan utuh', () => {

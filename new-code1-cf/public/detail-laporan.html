@@ -3735,6 +3735,17 @@
                 bagianKegiatanAll() {
                     const normBlok = s => String(s || '').trim() || 'Tanpa Blok';
                     const normName = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    const normTgl = s => {
+                        const v = String(s || '').trim();
+                        if (!v) return '';
+                        const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                        if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3];
+                        const dmy = v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+                        if (dmy) return dmy[3] + '-' + dmy[2].padStart(2, '0') + '-' + dmy[1].padStart(2, '0');
+                        return v;
+                    };
+                    const looseKey = v => this.normBagian(v).replace(/[^a-z0-9]+/g, '');
+                    const unitDateMap = {};
                     const pLink = {};
                     this.rows.forEach(r => {
                         const p = r.pengajuan;
@@ -3802,7 +3813,12 @@
                             const bKey = this.normBagian(bagianLabel) + '::' + blokLabel;
                             if ((baNames[bKey] || []).indexOf(normName(nama)) !== -1) return;
                             const tanggal = d['Tanggal Pelaksanaan'] || p['Tanggal Pelaksanaan'] || '';
-                            const fullKey = normName(nama) + '::' + String(tanggal || '');
+                            const tanggalKey = normTgl(tanggal);
+                            const unitKey = looseKey(bagianLabel) + '::' + looseKey(blokLabel) + '::' + looseKey(nama);
+                            if (!unitDateMap[unitKey]) unitDateMap[unitKey] = {};
+                            if (!unitDateMap[unitKey][npm]) unitDateMap[unitKey][npm] = {};
+                            unitDateMap[unitKey][npm][tanggalKey] = 1;
+                            const fullKey = normName(nama) + '::' + tanggalKey;
                             let keg = g.byName[fullKey];
                             if (!keg) {
                                 keg = { sumber: 'Pengajuan', nama: nama, tanggal: tanggal, jumlahPeserta: 0, fileUrl: '', peserta: [] };
@@ -3882,11 +3898,17 @@
                         });
                         const unit = unitIndex[key];
                         if (unit && (unit.peserta || []).length) {
+                            const tanggalKey = normTgl(k.tanggal);
+                            const tanggalPerNpm = unitDateMap[key] || {};
                             const byNpm = {};
                             k.peserta.forEach(p => { byNpm[String(p.npm || '').trim()] = p; });
                             const merged = [];
                             unit.peserta.forEach(p => {
                                 const npm = String(p.npm || '').trim();
+                                if (!byNpm[npm]) {
+                                    const dates = tanggalPerNpm[npm] || {};
+                                    if (!Object.prototype.hasOwnProperty.call(dates, tanggalKey)) return;
+                                }
                                 const base = byNpm[npm] || {};
                                 const info = pLink[npm] || {};
                                 merged.push({
