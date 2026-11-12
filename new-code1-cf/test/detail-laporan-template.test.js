@@ -236,6 +236,27 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain("'Link BA Pendukung'");
     expect(html).toContain("'Link BA Pelaksanaan'");
   });
+  it('laporan bagian menyediakan tombol Laporan dan ekspor 12 sheet per bagian', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('@click="exportBagianSheets"');
+    expect(html).toContain('{{ exporting ? \'Menyiapkan...\' : \'Laporan\' }}');
+    expect(html).toContain('const BAGIAN_EXPORT_HEADERS = [');
+    for (const h of ['Tanggal Daftar/Tanggal Pengajuan', 'NPM', 'Nama Lengkap', 'Blok', 'Kegiatan', 'Detail Kegiatan',
+      'Biaya/Tagihan', 'Kesesuaian', 'Dosen', 'Tanggal Pelaksanaan', 'Link Bukti Bayar', 'Link BA Pelaksanaan',
+      'Total Pembayaran (Nominal dibayar)', 'Keterangan (dari portal)']) {
+      expect(html).toContain("'" + h + "'");
+    }
+    const start = html.indexOf('exportBagianSheets() {');
+    const end = html.indexOf('exportDaftarBa() {', start);
+    const body = html.slice(start, end);
+    expect(body).toContain('this.bagianAllLabels.slice()');
+    expect(body).toContain('xlsxSheetName(label)');
+    expect(body).toContain('XLSX.utils.aoa_to_sheet([BAGIAN_EXPORT_HEADERS])');
+    expect(body).toContain("setUrlHyperlinks(ws, 'Link Bukti Bayar'");
+    expect(body).toContain("setUrlHyperlinks(ws, 'Link BA Pelaksanaan'");
+    expect(body).toContain("'Laporan-Bagian-'");
+    expect(html).toContain('function xlsxSheetName(name)');
+  });
   it('pembayaran memakai band kartu statistik dan kartu mobile', async () => {
     const html = await loadHtml();
     expect(html).toContain('>Total Tagihan (ACC)</div>');

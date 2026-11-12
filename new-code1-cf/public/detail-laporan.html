@@ -1296,9 +1296,12 @@
                                         <option value="bagian">Bagian &rsaquo; Blok</option>
                                     </select>
                                 </div>
-                                <div class="flex items-end md:col-span-4">
-                                    <button class="btn-soft w-full" @click="resetBagianMatrix">
+                                <div class="flex items-end gap-2 md:col-span-4">
+                                    <button class="btn-soft flex-1" @click="resetBagianMatrix">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
+                                    </button>
+                                    <button class="btn-soft flex-1" :disabled="exporting" @click="exportBagianSheets">
+                                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i> {{ exporting ? 'Menyiapkan...' : 'Laporan' }}
                                     </button>
                                 </div>
                             </div>
@@ -2825,6 +2828,18 @@
             }
         }
         const BA_EXPORT_HEADERS = ['BA ID', 'Jenis BA', 'Bagian', 'Blok', 'Nama Kegiatan', 'Tanggal Pelaksanaan', 'Jumlah Peserta', 'Biaya', 'Catatan BA', 'File URL'];
+        const BAGIAN_EXPORT_HEADERS = [
+            'Tanggal Daftar/Tanggal Pengajuan', 'NPM', 'Nama Lengkap', 'Blok', 'Kegiatan', 'Detail Kegiatan',
+            'Biaya/Tagihan', 'Kesesuaian', 'Dosen', 'Tanggal Pelaksanaan', 'Link Bukti Bayar',
+            'Link BA Pelaksanaan', 'Total Pembayaran (Nominal dibayar)', 'Keterangan (dari portal)'
+        ];
+        function xlsxSheetName(name) {
+            const cleaned = String(name || '')
+                .replace(/[\\/*?:[\]]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim() || 'Bagian';
+            return cleaned.slice(0, 31);
+        }
         function baExportSheet(rows) {
             if (!rows || !rows.length) return XLSX.utils.aoa_to_sheet([BA_EXPORT_HEADERS]);
             return XLSX.utils.json_to_sheet(rows, { header: BA_EXPORT_HEADERS });
@@ -5785,6 +5800,96 @@
 
                             writeXlsxStyled(wb, 'Rekap-Berita-Acara-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Export berita acara berhasil diunduh.');
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                        } finally {
+                            this.exporting = false;
+                        }
+                    }).catch(e => {
+                        this.exporting = false;
+                        this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
+                    });
+                },
+                exportBagianSheets() {
+                    this.exporting = true;
+                    this._loadXlsx().then(() => {
+                        try {
+                            const labels = this.bagianAllLabels.slice();
+                            this.bagianDetailRows.forEach(r => {
+                                const label = String(r.bagian || '').trim();
+                                if (label && !labels.some(l => this.normBagian(l) === this.normBagian(label))) labels.push(label);
+                            });
+                            const rowsByKey = {};
+                            labels.forEach(label => { rowsByKey[this.normBagian(label)] = []; });
+                            const detailTextFor = (row, namaKegiatan) => {
+                                const details = (row && row.details) || [];
+                                const texts = details.map(d => {
+                                    const pilihan = String(d.Pilihan || '').trim();
+                                    const detailText = String(d.Detail || '').trim();
+                                    return detailText ? (pilihan + ' - ' + detailText) : pilihan;
+                                }).filter(Boolean);
+                                const norm = s => this.normSearch(String(s || ''));
+                                const target = norm(namaKegiatan);
+                                const matched = texts.filter(t => norm(t) === target || target.indexOf(norm(t)) !== -1);
+                                if (matched.length) return matched.join('; ');
+                                return String(namaKegiatan || texts.join('; '));
+                            };
+                            const baLinksFor = (r) => {
+                                const links = [];
+                                const push = v => { const s = String(v || '').trim(); if (s && links.indexOf(s) === -1) links.push(s); };
+                                push(r.fileUrl);
+                                (r.baPel || []).forEach(b => push(b.fileUrl));
+                                return links.join('\n');
+                            };
+                            this.bagianDetailRows.forEach(r => {
+                                const bk = this.normBagian(r.bagian);
+                                if (!rowsByKey[bk]) rowsByKey[bk] = [];
+                                const baLinks = baLinksFor(r);
+                                (r.peserta || []).forEach(p => {
+                                    const row = this.rowForUnitPeserta(p);
+                                    const peng = row ? row.pengajuan : null;
+                                    const npm = String(p.npm || '').trim();
+                                    rowsByKey[bk].push({
+                                        'Tanggal Daftar/Tanggal Pengajuan': peng ? fmtTanggalWaktu(peng.Timestamp || '') : '',
+                                        'NPM': npm,
+                                        'Nama Lengkap': String(p.namaLengkap || (peng && peng['Nama Lengkap']) || '').trim(),
+                                        'Blok': String((peng && peng.Blok) || r.blok || '').trim(),
+                                        'Kegiatan': String((peng && peng['Jenis Kegiatan']) || '').trim() || r.bagian || '',
+                                        'Detail Kegiatan': detailTextFor(row, r.nama),
+                                        'Biaya/Tagihan': this.biayaForNpm(npm, r.blok),
+                                        'Kesesuaian': peng ? this.bayarKesesuaianLabel(String(peng['Kesesuaian Pembayaran'] || '').trim()) : '-',
+                                        'Dosen': String((peng && peng.Dosen) || this.resolveDosenForNpm(npm, r.blok) || (r.dosenList || []).join(', ') || '').trim(),
+                                        'Tanggal Pelaksanaan': r.tanggal ? fmtTanggalWaktu(r.tanggal) : '',
+                                        'Link Bukti Bayar': String(p.linkBukti || '').trim(),
+                                        'Link BA Pelaksanaan': baLinks,
+                                        'Total Pembayaran (Nominal dibayar)': peng ? (Number(peng['Nominal Dibayar']) || 0) : 0,
+                                        'Keterangan (dari portal)': String((peng && peng.Keterangan) || '').trim()
+                                    });
+                                });
+                            });
+                            const wb = XLSX.utils.book_new();
+                            const usedNames = {};
+                            labels.forEach(label => {
+                                const rows = rowsByKey[this.normBagian(label)] || [];
+                                const ws = rows.length
+                                    ? XLSX.utils.json_to_sheet(rows, { header: BAGIAN_EXPORT_HEADERS })
+                                    : XLSX.utils.aoa_to_sheet([BAGIAN_EXPORT_HEADERS]);
+                                if (rows.length) {
+                                    setUrlHyperlinks(ws, 'Link Bukti Bayar', 'Buka link bukti bayar');
+                                    setUrlHyperlinks(ws, 'Link BA Pelaksanaan', 'Buka BA pelaksanaan');
+                                }
+                                let name = xlsxSheetName(label);
+                                let n = 2;
+                                while (usedNames[name.toLowerCase()]) {
+                                    const suffix = ' (' + n + ')';
+                                    name = xlsxSheetName(label).slice(0, 31 - suffix.length) + suffix;
+                                    n++;
+                                }
+                                usedNames[name.toLowerCase()] = 1;
+                                XLSX.utils.book_append_sheet(wb, ws, name);
+                            });
+                            writeXlsxStyled(wb, 'Laporan-Bagian-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Laporan per bagian berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {
