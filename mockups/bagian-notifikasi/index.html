@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — Notifikasi Peserta ACC di Panel Bagian (Varian A)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+
+<div class="page-head">
+  <span class="kicker">Mockup revisi 2 &middot; Varian A &middot; data dummy &middot; belum diterapkan</span>
+  <h1>Notifikasi peserta yang disetujui admin</h1>
+  <p>Ikon lonceng diletakkan di app bar, tepat di kiri tombol <b>Keluar</b>. Isinya baris informasi peserta yang telah disetujui admin dashboard. Revisi ini memakai <b>Varian A (Ringkas)</b> dengan tiga perubahan sesuai arahan: teks &ldquo;di-ACC&rdquo; dihapus, waktu memakai <b>format tanggal dan jam WIB</b>, dan &ldquo;oleh Admin Dashboard&rdquo; diganti <b>nama admin yang menyetujui</b>.</p>
+  <div class="notes">
+    <div class="note good"><b>Perubahan pada revisi ini</b>
+      <ul>
+        <li>Frasa <b>di-ACC</b> dihilangkan sepenuhnya dari baris maupun judul panel. Judul panel kini <b>Peserta disetujui</b>, dan baris hanya memuat nama, NPM, kegiatan, nama penyetuju, serta waktu.</li>
+        <li>Waktu memakai format Indonesia: <b>12 Nov 2026, 09.12 WIB</b> (bukan lagi &ldquo;Hari ini&rdquo; / &ldquo;Kemarin&rdquo;).</li>
+        <li>&ldquo;oleh Admin Dashboard&rdquo; diganti <b>nama admin penyetuju</b>, misalnya &ldquo;oleh dr. Rina Nurhaliza&rdquo;. Bila nama admin tidak tercatat, tampil &ldquo;oleh Admin&rdquo;.</li>
+      </ul>
+    </div>
+    <div class="note bad"><b>Yang perlu Anda periksa</b>
+      <ul>
+        <li>Apakah tanpa frasa &ldquo;di-ACC&rdquo; baris tetap jelas dibaca?</li>
+        <li>Format waktu: <b>12 Nov 2026, 09.12 WIB</b> &mdash; atau Anda lebih suka nama bulan penuh (12 November 2026) / gaya lain?</li>
+        <li>Panjang nama admin: dipotong satu baris dengan elipsis bila terlalu panjang &mdash; cukup?</li>
+        <li>Perlu badge angka belum dibaca dan tombol &ldquo;Tandai semua dibaca&rdquo; tetap dipertahankan?</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>1. Panel notifikasi (desktop)</h2>
+  <p class="sub">Lonceng di kiri tombol Keluar. Panel turun dari app bar; tutup lewat silang, klik di luar, atau Esc.</p>
+
+  <div class="stage">
+    <div class="browser"><i></i><i></i><i></i><span class="url">inhal-form &middot; /bagian.html</span></div>
+    <div class="appbar">
+      <div class="inner">
+        <a class="brandlink" href="#">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+          <span><span class="b1">Panel Bagian</span><br><span class="b2">Praktikum / Lab Anatomi</span></span>
+        </a>
+        <nav class="top-nav" aria-label="Navigasi panel bagian">
+          <button aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Ringkasan</button>
+          <button aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Jadwal</button>
+          <button aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Kalender</button>
+          <button aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Berita Acara</button>
+          <button aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</button>
+        </nav>
+        <div class="right">
+          <input class="top-search" type="search" placeholder="Cari kegiatan, peserta...">
+          <button class="bell ring" id="bell" aria-label="Notifikasi, 5 ACC baru" aria-expanded="true" aria-controls="notifPanel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="count" id="bellCount">5</span>
+          </button>
+          <button class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg> Keluar</button>
+
+          <div class="notif open" id="notifPanel" data-density="ringkas" role="dialog" aria-label="Notifikasi peserta ACC">
+            <div class="notif-head">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div>
+                <div class="ttl">Peserta disetujui</div>
+                <div class="meta"><b id="notifUnread">5 belum dibaca</b> &middot; 8 ACC dalam 7 hari terakhir</div>
+              </div>
+              <button class="close" aria-label="Tutup panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+
+            <div class="notif-tabs" role="tablist">
+              <button role="tab" aria-selected="true">Semua <span class="n">8</span></button>
+              <button role="tab" aria-selected="false">Belum dibaca <span class="n">5</span></button>
+              <button role="tab" aria-selected="false">Hari ini <span class="n">3</span></button>
+            </div>
+
+            <div class="notif-list" id="notifList" data-render="ringkas"><!-- diisi JS --></div>
+
+            <div class="notif-foot">
+              <button class="muted" id="markAll">Tandai semua dibaca</button>
+              <button id="openPeserta">Buka daftar peserta &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stub" style="min-height:560px">
+      <div class="title">Berita Acara</div>
+      <div class="caption">Halaman di belakang panel. Lonceng cukup menumpang di app bar, tidak mengubah tata letak konten.</div>
+      <div class="cards">
+        <div class="kpi"><div class="lb">Total Peserta</div><div class="big">128</div></div>
+        <div class="kpi"><div class="lb">Siap Dijadwalkan</div><div class="big">9</div></div>
+        <div class="kpi"><div class="lb">Draft BA</div><div class="big">3</div></div>
+        <div class="kpi"><div class="lb">BA Selesai</div><div class="big">86%</div></div>
+      </div>
+      <div class="phantoms"><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+    </div>
+
+    <div class="controls">
+      <span class="lbl">Keadaan</span>
+      <div class="segmented" id="stateSeg">
+        <button data-s="ada" aria-pressed="true">Ada ACC baru</button>
+        <button data-s="kosong" aria-pressed="false">Kosong</button>
+      </div>
+      <button class="ghost" id="togglePanel">Tutup / buka panel</button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>2. Contoh baris dan format tanggal</h2>
+  <p class="sub">Baris ringkas: nama, NPM, kegiatan, nama penyetuju, dan waktu WIB. Tanpa frasa &ldquo;di-ACC&rdquo;.</p>
+
+  <div class="stage">
+    <div class="browser"><i></i><i></i><i></i><span class="url">Varian A &middot; Ringkas</span></div>
+    <div class="stub" style="min-height:0;padding:24px 24px 28px">
+      <div style="max-width:404px;margin:0 auto;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 10px 26px -16px rgba(15,23,42,.4)">
+        <div class="notif" style="position:static;width:auto;max-width:none;border:0;border-radius:0;box-shadow:none">
+          <div class="notif-head">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div><div class="ttl">Peserta disetujui</div><div class="meta"><b>5 belum dibaca</b> &middot; 8 ACC dalam 7 hari terakhir</div></div>
+            <button class="close" aria-label="Tutup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="notif-list" data-render="ringkas"></div>
+          <div class="notif-foot"><button class="muted">Tandai semua dibaca</button><button>Buka daftar peserta &rarr;</button></div>
+        </div>
+      </div>
+      <div class="format-demo">
+        <div class="fd-row"><span class="fd-k">Format waktu</span><span class="fd-v">12 Nov 2026, 09.12 WIB</span></div>
+        <div class="fd-row"><span class="fd-k">Zona waktu</span><span class="fd-v">Asia/Jakarta (WIB, UTC+7)</span></div>
+        <div class="fd-row"><span class="fd-k">Nama admin kosong</span><span class="fd-v">oleh Admin</span></div>
+        <div class="fd-row"><span class="fd-k">Nama admin panjang</span><span class="fd-v">dipotong satu baris dengan elipsis (&hellip;)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>3. Di ponsel (bottom sheet)</h2>
+  <p class="sub">Di layar kecil panel berubah menjadi sheet dari bawah agar mudah dijangkau jempol.</p>
+
+  <div class="mobile-row">
+    <div class="phone">
+      <div class="appbar">
+        <div class="inner">
+          <a class="brandlink" href="#">
+            <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+            <span><span class="b1">Panel Bagian</span><br><span class="b2">Praktikum</span></span>
+          </a>
+          <div class="right">
+            <button class="bell ring" aria-label="Notifikasi, 5 ACC baru">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+              <span class="count">5</span>
+            </button>
+            <button class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="stub">
+        <div class="title" style="font-size:16px">Ringkasan</div>
+        <div class="caption">Konten di belakang sheet.</div>
+        <div class="cards">
+          <div class="kpi"><div class="lb">Peserta</div><div class="big" style="font-size:20px">128</div></div>
+          <div class="kpi"><div class="lb">ACC baru</div><div class="big" style="font-size:20px">5</div></div>
+          <div class="kpi"><div class="lb">Draft BA</div><div class="big" style="font-size:20px">3</div></div>
+          <div class="kpi"><div class="lb">Selesai</div><div class="big" style="font-size:20px">86%</div></div>
+        </div>
+        <div class="phantoms"><div class="ph"></div><div class="ph"></div></div>
+      </div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="notif" data-density="ringkas">
+          <div class="notif-head">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div><div class="ttl">Peserta disetujui</div><div class="meta"><b>5 belum dibaca</b> &middot; 8 ACC dalam 7 hari terakhir</div></div>
+            <button class="close" aria-label="Tutup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="notif-tabs"><button aria-selected="true">Semua <span class="n">8</span></button><button>Belum dibaca <span class="n">5</span></button></div>
+          <div class="notif-list" data-render="ringkas"></div>
+          <div class="notif-foot"><button class="muted">Tandai semua dibaca</button><button>Buka peserta &rarr;</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-note">
+      <h3>Catatan untuk versi ponsel</h3>
+      <p>App bar ponsel sempit, jadi tombol Keluar cukup ikon (tanpa teks) dan lonceng tetap tampil. Panel memakai sheet dari bawah dengan tinggi maksimum sekitar 70% layar, daftar tetap bisa digulir, dan tutup lewat tombol silang.</p>
+      <ul>
+        <li>Badge angka tetap muncul di lonceng saat ada ACC yang belum dibaca.</li>
+        <li>Nama admin panjang dipotong dengan elipsis, tidak membuat baris melebar.</li>
+        <li>Tap baris membuka tab Peserta dengan pencarian NPM terisi otomatis (usulan).</li>
+        <li>Tanpa ACC baru: lonceng tanpa badge, sheet menampilkan keadaan kosong.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>4. Keadaan kosong</h2>
+  <p class="sub">Belum ada ACC baru atau semua sudah dibaca.</p>
+  <div class="stage">
+    <div class="stub" style="min-height:0;padding:26px 24px 30px">
+      <div style="max-width:404px;margin:0 auto;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 10px 26px -16px rgba(15,23,42,.4)">
+        <div class="notif" style="position:static;width:auto;max-width:none;border:0;border-radius:0;box-shadow:none">
+          <div class="notif-head">
+            <div class="ic" style="background:var(--slate-100);color:var(--slate-400)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+            <div><div class="ttl">Notifikasi</div><div class="meta">Tidak ada ACC baru</div></div>
+            <button class="close" aria-label="Tutup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="notif-empty">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="t">Semua sudah dibaca</div>
+            <div class="s">ACC baru dari admin dashboard akan muncul di sini otomatis.</div>
+          </div>
+          <div class="notif-foot"><button class="muted">Tandai semua dibaca</button><button>Buka daftar peserta &rarr;</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="footnote">
+  Mockup ini hanya untuk pemeriksaan tampilan dan alur. Tidak ada perubahan pada <code>bagian.html</code> maupun backend.
+  Sumber data yang diusulkan: transisi status ke ACC pada <code>status_history</code> (kolom <code>actor_email</code> saat ini sudah menyimpan nama admin penyetuju),
+  difilter ke kegiatan Bagian yang login; status &ldquo;sudah dibaca&rdquo; disimpan di browser agar tidak perlu skema baru.
+</p>
+
+<script>
+(function(){
+  var DATA = [
+    { npm:'2201010017', nama:'Aisyah Putri Ramadhani', blok:'A', keg:'SGD Kelompok 1',        oleh:'dr. Rina Nurhaliza', iso:'2026-11-12T02:12:00Z', unread:true  },
+    { npm:'2201010042', nama:'Budi Santoso',           blok:'A', keg:'Ujian Teori',            oleh:'Admin INHAL',        iso:'2026-11-12T01:47:00Z', unread:true  },
+    { npm:'2201010056', nama:'Citra Dewi Lestari',     blok:'B', keg:'KKD Posyandu',           oleh:'Sari Wulandari, S.Ked', iso:'2026-11-12T01:05:00Z', unread:true },
+    { npm:'2201010063', nama:'Dimas Aryo Nugroho',     blok:'B', keg:'KKD Posyandu',           oleh:'dr. Rina Nurhaliza', iso:'2026-11-11T09:31:00Z', unread:true  },
+    { npm:'2201010071', nama:'Eka Nur Fadilah',        blok:'B', keg:'KKD Posyandu',           oleh:'',                   iso:'2026-11-11T08:58:00Z', unread:true  },
+    { npm:'2201010088', nama:'Fajar Hidayat',          blok:'C', keg:'Laboratorium Lanjutan',  oleh:'Sari Wulandari, S.Ked', iso:'2026-11-11T04:20:00Z', unread:false },
+    { npm:'2201010095', nama:'Gita Maharani',          blok:'C', keg:'Laboratorium Lanjutan',  oleh:'Admin INHAL',        iso:'2026-11-10T07:02:00Z', unread:false },
+    { npm:'2201010102', nama:'Hendra Wijaya',          blok:'A', keg:'SGD Kelompok 1',         oleh:'Dr. Muhammad Fadhil Ramadhan, Sp.A', iso:'2026-11-09T03:44:00Z', unread:false }
+  ];
+
+  var fmtTgl = new Intl.DateTimeFormat('id-ID', {
+    timeZone:'Asia/Jakarta', day:'2-digit', month:'short', year:'numeric'
+  });
+  var fmtJam = new Intl.DateTimeFormat('id-ID', {
+    timeZone:'Asia/Jakarta', hour:'2-digit', minute:'2-digit', hour12:false
+  });
+
+  function waktuWib(iso){
+    var d = new Date(iso);
+    var tgl = fmtTgl.format(d).replace(/\./g, '');
+    var jam = fmtJam.format(d).replace(':', '.');
+    return tgl + ', ' + jam + ' WIB';
+  }
+
+  function initials(n){
+    return n.split(/\s+/).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase();
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; });
+  }
+
+  function rowRingkas(d){
+    var oleh = d.oleh ? esc(d.oleh) : 'Admin';
+    return ''+
+      '<button class="nrow'+(d.unread?'':' read')+'" data-npm="'+d.npm+'" title="'+esc(d.nama)+' &middot; '+esc(d.keg)+'">'+
+        '<span class="dot"></span>'+
+        '<span class="ava">'+initials(d.nama)+'</span>'+
+        '<span class="mid">'+
+          '<span class="name">'+esc(d.nama)+'</span>'+
+          '<span class="npm">'+d.npm+'</span>'+
+          '<span class="keg"><b>'+esc(d.keg)+'</b></span>'+
+          '<span class="foot"><span class="who">oleh <span class="actor">'+oleh+'</span></span><span class="time">'+waktuWib(d.iso)+'</span></span>'+
+        '</span>'+
+      '</button>';
+  }
+
+  function render(container){
+    container.innerHTML = DATA.map(rowRingkas).join('');
+  }
+
+  document.querySelectorAll('[data-render="ringkas"]').forEach(render);
+
+  function applyState(s){
+    var list = document.getElementById('notifList');
+    if (s === 'kosong') {
+      list.innerHTML = ''+
+        '<div class="notif-empty">'+
+          '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>'+
+          '<div class="t">Semua sudah dibaca</div>'+
+          '<div class="s">ACC baru dari admin dashboard akan muncul di sini otomatis.</div>'+
+        '</div>';
+      document.getElementById('bellCount').classList.add('is-zero');
+      document.getElementById('bell').classList.remove('ring');
+      document.getElementById('notifUnread').textContent = 'Tidak ada ACC baru';
+    } else {
+      render(list);
+      document.getElementById('bellCount').classList.remove('is-zero');
+      document.getElementById('bell').classList.add('ring');
+      document.getElementById('notifUnread').textContent = '5 belum dibaca';
+    }
+    document.querySelectorAll('#stateSeg button').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.s === s));
+    });
+  }
+
+  document.getElementById('stateSeg').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-s]');
+    if (b) applyState(b.dataset.s);
+  });
+
+  var panel = document.getElementById('notifPanel');
+  var bell = document.getElementById('bell');
+  function setOpen(open){
+    panel.hidden = !open;
+    panel.classList.toggle('open', open);
+    bell.setAttribute('aria-expanded', String(open));
+  }
+  bell.addEventListener('click', function(){ setOpen(panel.hidden); });
+  panel.querySelector('.close').addEventListener('click', function(){ setOpen(false); });
+  document.getElementById('togglePanel').addEventListener('click', function(){ setOpen(panel.hidden); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') setOpen(false); });
+
+  document.getElementById('markAll').addEventListener('click', function(){
+    document.querySelectorAll('#notifList .nrow').forEach(function(r){ r.classList.add('read'); });
+    document.getElementById('bellCount').classList.add('is-zero');
+    document.getElementById('bell').classList.remove('ring');
+    document.getElementById('notifUnread').textContent = 'Tidak ada ACC baru';
+  });
+
+  document.addEventListener('click', function(e){
+    var row = e.target.closest('.nrow[data-npm]');
+    if (row) row.classList.add('read');
+  });
+})();
+</script>
+</body>
+</html>

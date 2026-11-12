@@ -85,4 +85,59 @@ describe('bagian read', () => {
     const boot2 = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
     expect(boot2.rows[0].baMember).toBe(false);
   });
+
+  it('mengirim notifikasi peserta yang disetujui admin dashboard', async () => {
+    await seed();
+    const accAt = new Date(Date.now() - 60 * 60 * 1000).toISOString().slice(0, 19);
+    await env.DB.prepare("UPDATE pengajuan SET status='ACC' WHERE id_pengajuan='INHAL-1'").run();
+    await env.DB.prepare("INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('2026-09-12T02:12:00','INHAL-1','Menunggu','Menunggu verifikasi','')").run();
+    await env.DB.prepare(`INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('${accAt}','INHAL-1','ACC','Disetujui','dr. Rina Nurhaliza')`).run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot.notifikasiList).toHaveLength(1);
+    const n = boot.notifikasiList[0];
+    expect(n.idPengajuan).toBe('INHAL-1');
+    expect(n.npm).toBe('2201010001');
+    expect(n.nama).toBe('Aisyah');
+    expect(n.blok).toBe('A');
+    expect(n.kegiatan).toBe('UAS');
+    expect(n.aktor).toBe('dr. Rina Nurhaliza');
+    // Waktu ISO UTC tanpa sufiks Z diberi "Z" agar bisa dikonversi ke WIB.
+    expect(n.waktu).toBe(accAt + 'Z');
+  });
+
+  it('memakai ACC terakhir dan melewati pengajuan yang bukan ACC lagi', async () => {
+    await seed();
+    await env.DB.prepare("UPDATE pengajuan SET status='Ditolak' WHERE id_pengajuan='INHAL-1'").run();
+    await env.DB.prepare("INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('2026-09-12T03:30:00','INHAL-1','ACC','Disetujui','Admin A')").run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot.notifikasiList).toHaveLength(0);
+  });
+
+  it('menggabungkan beberapa kegiatan dalam satu baris notifikasi', async () => {
+    await seed();
+    await env.DB.prepare("UPDATE pengajuan SET status='ACC' WHERE id_pengajuan='INHAL-1'").run();
+    await env.DB.prepare("INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00','INHAL-1','Ujian','Ujian Susulan','','2026-09-21','')").run();
+    const now = new Date().toISOString().slice(0, 19);
+    await env.DB.prepare(`INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('${now}','INHAL-1','ACC','Disetujui','Admin C')`).run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot.notifikasiList).toHaveLength(1);
+    expect(boot.notifikasiList[0].kegiatan).toBe('UAS, Ujian Susulan');
+  });
+
+  it('mengabaikan ACC di luar cakupan Bagian dan di luar 30 hari', async () => {
+    await seed();
+    await env.DB.prepare("UPDATE pengajuan SET status='ACC' WHERE id_pengajuan='INHAL-1'").run();
+    await env.DB.prepare("INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('2026-09-12T03:30:00','INHAL-LAIN','ACC','Disetujui','Admin A')").run();
+    await env.DB.prepare("INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('2020-01-01T00:00:00','INHAL-1','ACC','Lama','Admin B')").run();
+    const boot = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot.notifikasiList).toHaveLength(0);
+
+    await env.DB.prepare("DELETE FROM status_history WHERE id_pengajuan='INHAL-1'").run();
+    const now = new Date().toISOString().slice(0, 19);
+    await env.DB.prepare(`INSERT INTO status_history (timestamp,id_pengajuan,status,catatan,actor_email) VALUES ('${now}','INHAL-1','ACC','Baru','Admin C')`).run();
+    const boot2 = await getBagianBootstrap(env.DB, 'Ujian', '', await bagianCtx());
+    expect(boot2.notifikasiList).toHaveLength(1);
+    expect(boot2.notifikasiList[0].aktor).toBe('Admin C');
+    expect(boot2.notifikasiList[0].waktu.endsWith('Z')).toBe(true);
+  });
 });

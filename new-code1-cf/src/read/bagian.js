@@ -200,12 +200,74 @@ async function computeBaList(db, bagianFilter, kategori) {
   return sanitized;
 }
 
+// Cek format timestamp dari status_history: sekarang ditulis sebagai ISO UTC
+// tanpa sufiks "Z" (lihat nowIso di write/pengajuanAdmin.js). Agar browser bisa
+// mengonversinya ke WIB dengan benar, sufiks "Z" ditambahkan saat dikirim.
+function isoUtc(v) {
+  const s = String(v || '').trim();
+  if (!s) return '';
+  if (/[Zz]$/.test(s) || /[+-]\d{2}:?\d{2}$/.test(s)) return s;
+  return s + 'Z';
+}
+
+// Notifikasi peserta yang disetujui: satu baris per pengajuan, memakai
+// transisi ACC terakhir di status_history. Hanya pengajuan yang masih ACC dan
+// masih berada dalam cakupan Bagian ini yang ditampilkan.
+async function computeBagianNotifikasi(db, rows, days) {
+  // Satu pengajuan bisa punya beberapa detail kegiatan; notifikasi tetap satu
+  // baris per pengajuan, dengan nama kegiatan digabung agar tidak hilang.
+  const scope = {};
+  for (const r of rows) {
+    const id = String(r.idPengajuan || '').trim();
+    if (!id) continue;
+    if (!scope[id]) scope[id] = { row: r, kegiatan: [] };
+    const namaKegiatan = String(r.pilihan || '').trim()
+      + (String(r.detail || '').trim() ? ' - ' + String(r.detail || '').trim() : '');
+    if (namaKegiatan && scope[id].kegiatan.indexOf(namaKegiatan) === -1) scope[id].kegiatan.push(namaKegiatan);
+  }
+  const ids = Object.keys(scope);
+  if (!ids.length) return [];
+  const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000)).toISOString().slice(0, 19);
+  // Batasi di SQL supaya baris ACC lama tidak ikut terbaca, dan tetap bisa
+  // memakai indeks idx_history_timestamp.
+  const hist = (await db.prepare(
+    "SELECT * FROM status_history WHERE status = 'ACC' AND timestamp >= ?1 ORDER BY timestamp DESC, id DESC LIMIT 500"
+  ).bind(cutoff).all()).results || [];
+  const latest = {};
+  for (const h of hist) {
+    const id = String(h.id_pengajuan || '').trim();
+    if (!scope[id]) continue;
+    if (latest[id]) continue;
+    latest[id] = h;
+  }
+  const out = [];
+  for (const id of Object.keys(latest)) {
+    const h = latest[id];
+    const entry = scope[id];
+    const r = entry.row;
+    if (String(r.status || '').trim() !== 'ACC') continue;
+    out.push({
+      id: String(h.id || id),
+      idPengajuan: id,
+      npm: String(r.npm || '').trim(),
+      nama: String(r.namaLengkap || '').trim(),
+      blok: String(r.blok || '').trim(),
+      jenis: String(r.jenis || '').trim(),
+      kegiatan: entry.kegiatan.join(', '),
+      aktor: String(h.actor_email || '').trim(),
+      waktu: isoUtc(h.timestamp)
+    });
+  }
+  out.sort((a, b) => String(b.waktu || '').localeCompare(String(a.waktu || '')) || String(b.id).localeCompare(String(a.id)));
+  return out.slice(0, 40);
+}
+
 export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
   const out = {
     ok: false, message: '', nama: '',
     kategori: String(kategori || '').trim(), subBagian: String(subBagian || '').trim(),
     config: { categories: ['SGD', 'KKD', 'Ujian', 'Praktikum'], labOptions: [], kegiatanLabOptions: [] },
-    rows: [], baList: [], baPendukungList: [], jadwalList: []
+    rows: [], baList: [], baPendukungList: [], jadwalList: [], notifikasiList: []
   };
   try {
     const s = ctx.session ? ctx.session : await getSession(db, ctx.token);
@@ -223,6 +285,7 @@ export async function getBagianBootstrap(db, kategori, subBagian, ctx) {
     out.config.labOptions = await getMasterOptions(db, 'Lab');
     out.config.kegiatanLabOptions = await getMasterOptions(db, 'Kegiatan Lab');
     out.rows = await computeBagianRows(db, kat, subBagian);
+    out.notifikasiList = await computeBagianNotifikasi(db, out.rows, 30);
     out.baList = await computeBaList(db, subBagian || out.kategori, out.kategori);
     out.baPendukungList = await computeBaPendukungList(db, subBagian || out.kategori, out.kategori);
     out.jadwalList = await computeJadwalList(db, subBagian || out.kategori, out.kategori);

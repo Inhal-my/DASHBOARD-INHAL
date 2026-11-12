@@ -111,6 +111,47 @@ describe('bagian template', () => {
   });
 });
 
+describe('notifikasi peserta disetujui', () => {
+  it('menempatkan lonceng sebelum tombol Keluar tanpa kata di-ACC', async () => {
+    const html = await loadBagianHtml();
+    const bell = html.indexOf('class="ntf-bell"');
+    const logout = html.indexOf('> Keluar');
+    expect(bell).toBeGreaterThan(-1);
+    expect(logout).toBeGreaterThan(bell);
+    expect(html).toContain('aria-label="Notifikasi peserta disetujui');
+    expect(html).toContain('Peserta disetujui');
+    expect(html).not.toContain('di-ACC');
+  });
+
+  it('menyediakan tab, badge, dan aksi tandai semua dibaca', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('notifTabs');
+    expect(html).toContain('Belum dibaca');
+    expect(html).toContain('Tandai semua dibaca');
+    expect(html).toContain('markAllNotifRead');
+    expect(html).toContain('ntf-badge');
+  });
+
+  it('memakai format tanggal dan jam WIB, bukan label relatif', async () => {
+    const html = await loadBagianHtml();
+    const start = html.indexOf('function notifTime(v)');
+    expect(start).toBeGreaterThan(-1);
+    const body = html.slice(start, start + 900);
+    expect(html).toContain('const WIB_OFFSET_MS = 7 * 60 * 60 * 1000');
+    expect(body).toContain('WIB');
+    expect(body).toContain('BULAN_SINGKAT');
+    expect(html).not.toContain('Kemarin');
+  });
+
+  it('menyimpan status dibaca di localStorage dan memuat dari bootstrap', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('inhal_bagian_notif_read');
+    expect(html).toContain('loadNotifRead');
+    expect(html).toContain('res.notifikasiList');
+    expect(html).toContain('notifikasiList: this.notifikasiList');
+  });
+});
+
 describe('guard BA Pelaksanaan multi', () => {
   it('menyediakan input label dan menyaring baMember', async () => {
     const html = await loadBagianHtml();
