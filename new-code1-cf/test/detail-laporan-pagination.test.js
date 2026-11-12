@@ -94,7 +94,7 @@ describe('paginasi tabel detail laporan: pengelompokan bagian', () => {
 
   it('tetap menampilkan subtotal dan grand total', async () => {
     const html = await loadHtml();
-    const table = block(html, '<template v-for="s in bagianPagedSections"', '</table>');
+    const table = block(html, '<template v-for="s in bagianPagedSections"', '<pager-bar id="pg-bagian"');
     expect(table).toContain('bagianDetailGrandTotal');
     expect(table).toContain('bagianDetailPesertaTotal');
     expect(block(html, 'bagianDetailBlocks() {', 'bagianPageSlices() {')).toContain("type: 'subtotal'");
@@ -109,6 +109,17 @@ describe('paginasi tabel detail laporan: baris total matriks', () => {
     expect(dosen).toContain('dosenMatrix.grandTotal');
     const matrix = block(html, "pagerRows('bagianMatrix', bagianMatrixRows)", '</table>');
     expect(matrix).toContain('matrixGrandTotal');
+  });
+});
+
+describe('detail laporan tab bagian: satu baris per kegiatan', () => {
+  it('menggabungkan beberapa BA PEL satu kegiatan ke baris yang sama', async () => {
+    const html = await loadHtml();
+    const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
+    const baLoop = block(all, 'this.beritaAcara.forEach(b => {', 'this.rows.forEach(r => {');
+    expect(baLoop).toContain('const fullKey = kName;');
+    expect(baLoop).not.toContain("const fullKey = kName + '::'");
+    expect(baLoop).toContain('const existing = g.byName[fullKey];');
   });
 });
 
@@ -141,9 +152,21 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
   it('watcher filter global mereset halaman', async () => {
     const html = await loadHtml();
     const watch = block(html, 'watch: {', 'methods: {');
-    expect(watch).toContain("'filters.search': function () { this.activeDosenCell = null; this.resetPagers(); }");
+    expect(watch).toContain("'filters.search': function () { this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); }");
     expect(watch).toContain("'filters.blok': function () {");
     expect((watch.match(/this\.resetPagers\(\);/g) || []).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('watcher filter global mengosongkan sel matriks yang tersisa', async () => {
+    const html = await loadHtml();
+    const watch = block(html, 'watch: {', 'methods: {');
+    for (const key of ['blok', 'status', 'jenis', 'from', 'to', 'search']) {
+      const start = watch.indexOf(`'filters.${key}':`);
+      expect(start, key).toBeGreaterThan(-1);
+      const nextEntry = watch.indexOf("\n                '", start + 30);
+      const body = watch.slice(start, nextEntry === -1 ? undefined : nextEntry);
+      expect(body, key).toContain('this.activeMatrixCell = null;');
+    }
   });
 
   it('watcher filter per tab mereset pager terkait', async () => {
@@ -154,6 +177,15 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
       expect(watch, key).toContain(`this.pagers.${key}.page = 1;`);
     }
     expect(watch).toContain('deep: true');
+  });
+
+  it('filter bagian memakai label penuh dan membandingkan sel secara ternormalisasi', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('v-model="bagianFilter.bagian" class="input">\n                                        <option value="">Semua Bagian</option>\n                                        <option v-for="o in bagianAllLabels"');
+    const watch = block(html, 'watch: {', 'methods: {');
+    const start = watch.indexOf("'bagianFilter.bagian':");
+    const body = watch.slice(start, watch.indexOf("\n                '", start + 30));
+    expect(body).toContain('this.normBagian(v) !== this.normBagian(this.activeMatrixCell.bagian)');
   });
 
   it('reset filter global juga mereset semua pager', async () => {

@@ -1,0 +1,8 @@
+# Hasil build preview (dibuat ulang oleh `node build-preview.cjs`)
+index.html
+app-common.js
+bukti-preview.css
+gs-shim.js
+
+# Aset vendor disalin dari `new-code1-cf/public/vendor`
+vendor/

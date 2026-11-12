@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup — Laporan Bagian (matriks + detail kegiatan)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css?v=11">
+<link rel="stylesheet" href="style.css?v=11">
+<script src="_shell.js?v=11" defer></script>
+<script src="_app.js?v=11" defer></script>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Mockup revisi 8 &middot; data dummy &middot; satu halaman</div>
+  <h1>Laporan Bagian: matriks hitungan + detail kegiatan</h1>
+  <p>Matriks dengan <b>Bagian pada kolom</b> dan <b>Blok pada baris</b>, ditambah tabel <b>Detail Kegiatan per Bagian &amp; Blok</b> di bawahnya. Satu <b>BA PEL</b> (Berita Acara Pelaksanaan) dihitung satu kali, sehingga kegiatan dengan dua BA PEL menyumbang angka dua pada selnya. Kegiatan yang belum punya BA PEL <b>tidak dihitung</b> di matriks, tetapi tetap didaftar supaya terlihat sebagai pekerjaan tertunda.</p>
+  <div class="notes">
+    <div class="note good"><b>Keputusan yang sudah diterapkan</b>
+      Filter Bagian tetap menyempitkan kolom matriks ke satu Bagian. Sel bernilai 0 yang masih punya kegiatan diberi <b>latar merah muda</b>, dibedakan dari 0 tanpa kegiatan yang berlatar putih. BA PEN tetap menempel di kolom BA PEL sebagai baris keterangan, bukan kolom terpisah.</div>
+    <div class="note bad"><b>Yang perlu Anda periksa</b>
+      (1) Warna latar merah muda pada sel 0 yang ada kegiatannya &mdash; cukup jelas dan tidak mengganggu? (2) Legenda kini punya empat keadaan: 2+ BA PEL, 1 BA PEL, 0 tanpa kegiatan, 0 dengan kegiatan &mdash; apakah terbaca? (3) Susunan KPI: Kegiatan, BA PEL, BA PEN, Total hitungan &mdash; perlu diubah?</div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar" data-sidebar data-active="laporan"></aside>
+  <div class="main">
+    <div class="topbar" data-topbar data-title="Laporan Bagian" data-crumb="Laporan / <b>Bagian</b>"></div>
+    <div class="content">
+
+      <div class="between wrap mb14">
+        <div class="headline">
+          <div class="ib"><svg class="i lg"><use href="icons.svg#table"></use></svg></div>
+          <div>
+            <h2>Jumlah BA PEL per blok dan bagian</h2>
+            <div class="sub">Semester Ganjil 2026/2027 &middot; per 11 Nov 2026, 09.20</div>
+          </div>
+        </div>
+        <div class="row gap6 no-print">
+          <button class="btn btn-soft btn-sm"><svg class="i xs"><use href="icons.svg#download"></use></svg>.xlsx</button>
+          <button class="btn btn-soft btn-sm" data-print><svg class="i xs"><use href="icons.svg#print"></use></svg>Cetak</button>
+        </div>
+      </div>
+
+      <div class="filterbar mb12 no-print">
+        <div class="field f3">
+          <label>Bagian</label>
+          <select class="select" id="fbagian"></select>
+        </div>
+        <div class="field f4">
+          <label>Kelompokkan detail menurut</label>
+          <select class="select" id="fgroup">
+            <option value="blok">Blok &rsaquo; Bagian</option>
+            <option value="bagian">Bagian &rsaquo; Blok</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-soft btn-sm" id="freset"><svg class="i xs"><use href="icons.svg#refresh"></use></svg>Reset</button>
+        </div>
+      </div>
+
+      <div class="kpis mb14" id="stats"></div>
+
+      <div class="card mb14">
+        <div class="head">
+          <div class="ic"><svg><use href="icons.svg#table"></use></svg></div>
+          <div class="grow">
+            <h3>Matriks Blok &times; Bagian</h3>
+            <div class="sub">Baris = Blok &middot; Kolom = Bagian &middot; Angka = jumlah BA PEL &middot; kegiatan tanpa BA PEL tidak dihitung</div>
+          </div>
+        </div>
+        <div id="matrix" class="mtx-wrap"></div>
+      </div>
+
+      <div class="card mb14" id="detail">
+        <div class="head">
+          <div class="ic"><svg><use href="icons.svg#book"></use></svg></div>
+          <div class="grow">
+            <h3>Detail Kegiatan per Bagian &amp; Blok</h3>
+            <div class="sub">Klik baris untuk melihat peserta dan rincian setiap BA PEL</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="dtab">
+            <thead>
+              <tr>
+                <th style="width:32px"></th>
+                <th>Bagian</th>
+                <th>Blok</th>
+                <th style="min-width:250px">Kegiatan</th>
+                <th>Tanggal</th>
+                <th class="c" style="min-width:130px">Peserta</th>
+                <th style="min-width:170px">BA PEL &middot; BA PEN</th>
+                <th class="c" style="width:88px" title="Jumlah hitungan yang disumbangkan ke matriks">Hitungan</th>
+              </tr>
+            </thead>
+            <tbody id="detailbody"></tbody>
+          </table>
+        </div>
+        <div class="tblfoot">
+          <div class="caption" id="detailinfo"></div>
+          <div class="pager no-print">
+            <button disabled>&lsaquo;</button>
+            <button class="on">1</button>
+            <button disabled>&rsaquo;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid g2 mb14">
+        <div class="card">
+          <div class="head">
+            <div class="ic"><svg><use href="icons.svg#target"></use></svg></div>
+            <div class="grow">
+              <h3>Cara menghitung</h3>
+              <div class="sub">Aturan yang dipakai matriks dan tabel detail</div>
+            </div>
+          </div>
+          <div class="body">
+            <ul class="readlist">
+              <li><span class="k">Satuan hitung</span><span>Satu <b>BA PEL</b> = satu hitungan. Kegiatan dengan dua BA PEL menyumbang 2 pada selnya dan muncul sebagai <b>2&times;</b> di kolom Hitungan.</span></li>
+              <li><span class="k">Tanpa BA PEL</span><span>Kegiatan yang belum punya BA PEL <b>tidak dihitung</b> di matriks. Tetap didaftar di tabel detail dengan <b>0&times;</b> agar pekerjaan tertunda tetap terlihat.</span></li>
+              <li><span class="k">BA PEN</span><span>Berita Acara Pendukung. Dihitung sebagai berkas pendukung; jumlahnya tampil di kolom BA PEL &middot; BA PEN dan di panel rincian.</span></li>
+              <li><span class="k">Total baris</span><span>Jumlah hitungan pada satu Blok di semua Bagian.</span></li>
+              <li><span class="k">Total kolom</span><span>Jumlah hitungan pada satu Bagian di semua Blok.</span></li>
+              <li><span class="k">Tanpa biaya</span><span>Rekapitulasi biaya ada di tab lain, sehingga nominal rupiah tidak muncul di halaman ini.</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div class="ic"><svg><use href="icons.svg#info"></use></svg></div>
+            <div class="grow">
+              <h3>Cakupan data</h3>
+              <div class="sub">Apa yang masuk dan bagaimana ditandai</div>
+            </div>
+          </div>
+          <div class="body">
+            <ul class="readlist">
+              <li><span class="k">Tanpa peserta ACC</span><span>Tetap ditampilkan, bukan disembunyikan. Diberi badge <b>Tanpa ACC</b> di tabel detail.</span></li>
+              <li><span class="k">Tanpa pendaftar</span><span>Juga tetap tampil dengan keterangan &ldquo;tanpa pendaftar&rdquo; dan badge Tanpa ACC, supaya kegiatan terjadwal tidak luput dari pemeriksaan.</span></li>
+              <li><span class="k">Peserta BA PEL</span><span>Jumlah peserta yang tercatat di seluruh BA PEL kegiatan. Bila lebih kecil dari jumlah ACC, ditulis merah sebagai informasi.</span></li>
+              <li><span class="k">Dosen</span><span>Diambil dari seluruh BA PEL kegiatan; bila belum ada BA PEL, kolom dosen dikosongkan.</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-note no-print">
+        <svg class="i xs"><use href="icons.svg#info"></use></svg>
+        <div><b>Catatan mockup:</b> seluruh angka dan nama adalah data dummy. Klik sel matriks untuk menyaring tabel detail, klik baris untuk membuka peserta dan rincian BA PEL. Belum ada perubahan pada kode produksi.</div>
+      </div>
+
+      <div class="footnote" id="footnote"></div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
