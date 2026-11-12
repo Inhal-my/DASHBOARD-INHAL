@@ -2,6 +2,15 @@
 
 Tanggal: 2026-11-12
 Status: **DIIMPLEMENTASI, DI-COMMIT, DI-PUSH, DAN DI-DEPLOY** (production `inhal-form`).
+
+| Item | Nilai |
+| --- | --- |
+| Commit | `fe660e6` — `feat(laporan-bagian): matriks frekuensi BA PEL + detail kegiatan` |
+| Branch | `main` (`https://github.com/Inhal-my/DASHBOARD-INHAL`) |
+| Deploy | `npx wrangler deploy --config wrangler.production.toml` |
+| Worker | `inhal-form` — versi `be2e3824-2c15-4fa4-8d06-5769f20221e8` |
+| URL | `https://inhal-form.prodi.workers.dev/detail-laporan` |
+| Waktu deploy | 2026-11-12 sekitar 09:20 UTC |
 Desain: `docs/superpowers/specs/2026-11-11-laporan-bagian-matriks-ba-design.md`
 Rencana: `docs/superpowers/plans/2026-11-11-laporan-bagian-matriks-ba.md`
 Mockup disetujui: `mockups/laporan-bagian-audit/` (revisi 8)

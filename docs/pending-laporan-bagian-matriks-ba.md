@@ -1,7 +1,8 @@
 # Pending: Tab Laporan Bagian sebagai Matriks Frekuensi BA PEL
 
 Tanggal dicatat: 2026-11-11
-Status: **SELESAI DIIMPLEMENTASI (2026-11-11) di `new-code1-cf/public/detail-laporan.html`, belum di-commit / belum deploy.**
+Status: **SELESAI DIIMPLEMENTASI, DI-COMMIT, DI-PUSH, DAN DI-DEPLOY (2026-11-12).**
+Catatan rilis & hasil deploy: `docs/release-2026-11-12-laporan-bagian-matriks-ba.md`.
 Rencana lengkap: `docs/superpowers/plans/2026-11-11-laporan-bagian-matriks-ba.md`
 Desain: `docs/superpowers/specs/2026-11-11-laporan-bagian-matriks-ba-design.md`
 Mockup referensi: `mockups/laporan-bagian-audit/` (revisi 8, disetujui)
@@ -20,7 +21,7 @@ Mockup referensi: `mockups/laporan-bagian-audit/` (revisi 8, disetujui)
 - Uji browser Playwright: KPI, matriks, legenda, klik sel, Reset, expand panel peserta & dokumen BA.
 - Rekonsiliasi: total `hitungan` detail = `matrixGrandTotal` = KPI Total hitungan.
 
-## File yang belum di-commit
+## File yang di-commit pada `fe660e6`
 - M `new-code1-cf/public/detail-laporan.html`
 - M `new-code1-cf/public/_headers`, M `new-code1-cf/src/security/csp.js`
 - M `new-code1-cf/test/detail-laporan-pagination.test.js`
@@ -47,5 +48,5 @@ Mockup referensi: `mockups/laporan-bagian-audit/` (revisi 8, disetujui)
 6. Tidak perlu migrasi D1 (murni perubahan front-end).
 
 ## Catatan
-- Jangan commit/deploy tanpa perintah eksplisit.
+- Commit `fe660e6` di branch `main`; deploy worker `inhal-form` versi `be2e3824-2c15-4fa4-8d06-5769f20221e8`.
 - Setiap edit inline script di `detail-laporan.html` wajib diikuti `npm run csp:generate`.
