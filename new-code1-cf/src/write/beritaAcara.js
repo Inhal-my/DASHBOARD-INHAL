@@ -3,7 +3,7 @@ import { getBagianBaStatuses, kegiatanKey, getMasterOptions, resolveBagian12 } f
 import { nextIdNumber } from '../sequence.js';
 import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
 import { validateBaCreateInput, validateBaUpdateInput } from '../validation.js';
-import { normalizeDosenList, dosenKey } from '../dosen.js';
+import { normalizeDosenList, dosenKey, validateDosenAgainstMaster, dosenMasterErrorMessage } from '../dosen.js';
 import { writeAuditLog } from '../audit.js';
 
 function str(v) {
@@ -354,8 +354,15 @@ async function loadJadwalDosenList(db, jadwalIds) {
 // sesi, pakai dosen yang dikirim klien.
 async function resolveBaDosenList(db, payloadDosenList, sesi) {
   const fromSesi = await loadJadwalDosenList(db, (sesi || []).map((jd) => jd.jadwal_id));
-  if (fromSesi.length) return fromSesi;
-  return normalizeDosenList(payloadDosenList);
+  if (fromSesi.length) return { list: fromSesi, fromSesi: true };
+  return { list: normalizeDosenList(payloadDosenList), fromSesi: false };
+}
+
+async function checkBaDosenMaster(db, list, existing) {
+  const master = await getMasterOptions(db, 'Dosen');
+  const result = validateDosenAgainstMaster(list, master, existing);
+  if (result.invalid.length) return { ok: false, message: dosenMasterErrorMessage(result.invalid) };
+  return { ok: true, list: result.list };
 }
 
 // Daftar dosen BA yang tersimpan; fallback ke kolom dosen tunggal lama.
@@ -693,7 +700,13 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   p.__jumlah = peserta.length;
   p.__sumber = 'Bagian';
   // Daftar dosen BA: gabungan sesi jadwal (sumber kebenaran), fallback input klien.
-  const dosenList = await resolveBaDosenList(db, p.dosenList, sesi);
+  const resolvedDosen = await resolveBaDosenList(db, p.dosenList, sesi);
+  let dosenList = resolvedDosen.list;
+  if (!resolvedDosen.fromSesi) {
+    const dosenCheck = await checkBaDosenMaster(db, dosenList, []);
+    if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
+    dosenList = dosenCheck.list;
+  }
   // Kolom jam & dosen BA tetap terisi (dipakai penanda "selesai" dan export);
   // untuk multi-sesi nilainya diambil dari sesi paling awal. Kolom dosen hanya
   // menyimpan dosen utama; daftar lengkap ada di ba_dosen.
@@ -735,9 +748,13 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
   const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
-  const dosenList = p.dosenList !== undefined
+  const currentDosen = await loadBaDosenList(db, id, existing.dosen);
+  const dosenInput = p.dosenList !== undefined
     ? normalizeDosenList(p.dosenList)
     : await loadBaDosenList(db, id, p.dosen !== undefined ? p.dosen : existing.dosen);
+  const dosenCheck = await checkBaDosenMaster(db, dosenInput, currentDosen);
+  if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
+  const dosenList = dosenCheck.list;
   const dosen = dosenList[0] || (p.dosen !== undefined ? str(p.dosen) : str(existing.dosen));
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
@@ -842,9 +859,13 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   if (!input.ok) return { success: false, message: input.message };
   const tanggal = p.tanggal !== undefined ? str(p.tanggal) : str(existing.tanggal_pelaksanaan);
   const jam = p.jam !== undefined ? str(p.jam) : str(existing.jam);
-  const dosenList = p.dosenList !== undefined
+  const currentDosen = await loadBaDosenList(db, id, existing.dosen);
+  const dosenInput = p.dosenList !== undefined
     ? normalizeDosenList(p.dosenList)
     : await loadBaDosenList(db, id, p.dosen !== undefined ? p.dosen : existing.dosen);
+  const dosenCheck = await checkBaDosenMaster(db, dosenInput, currentDosen);
+  if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
+  const dosenList = dosenCheck.list;
   const dosen = dosenList[0] || (p.dosen !== undefined ? str(p.dosen) : str(existing.dosen));
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
