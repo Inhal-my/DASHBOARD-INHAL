@@ -168,6 +168,7 @@
     </style>
     <script src="/vendor/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
+    <script src="/dosen-picker.js" defer></script>
 </head>
 <body>
     <div id="app" v-cloak class="font-sans text-ink antialiased">
@@ -781,13 +782,10 @@
                                                         <label class="label !mb-0">Dosen <span class="font-normal text-slate-400">(maks 5)</span></label>
                                                         <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="jadwal.dosenList.length >= maxDosen" @click="addDosenRow(jadwal)"><i class="bi bi-plus-lg"></i> Tambah Dosen</button>
                                                     </div>
-                                                    <div v-for="(d, i) in jadwal.dosenList" :key="'jdosen'+i" class="relative mb-2">
+                                                    <div v-for="(d, i) in jadwal.dosenList" :key="'jdosen'+i" class="mb-2">
                                                         <div class="flex items-center gap-2">
-                                                            <input v-model="jadwal.dosenList[i]" class="input" :placeholder="'Nama dosen ' + (i+1)" autocomplete="off" @input="dosenPick.jadwal = i" @focus="dosenPick.jadwal = i" @blur="dosenPick.jadwal = -1">
+                                                            <dosen-picker v-model="jadwal.dosenList[i]" :options="config.dosenOptions" :placeholder="'Pilih dosen ' + (i+1)" class="flex-1"></dosen-picker>
                                                             <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="jadwal.dosenList.length <= 1" title="Hapus dosen" @click="removeDosenRow(jadwal, i)"><i class="bi bi-dash-lg"></i></button>
-                                                        </div>
-                                                        <div v-if="dosenPick.jadwal === i && dosenSuggest(d).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                                                            <button v-for="s in dosenSuggest(d)" :key="s" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosenAt('jadwal', i, s)">{{ s }}</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -845,13 +843,10 @@
                                                     <label class="label !mb-0">Dosen <span class="font-normal text-slate-400">(maks 5)</span></label>
                                                     <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="ba.lengkapi.dosenList.length >= maxDosen" @click="addDosenRow(ba.lengkapi)"><i class="bi bi-plus-lg"></i> Tambah Dosen</button>
                                                 </div>
-                                                <div v-for="(d, i) in ba.lengkapi.dosenList" :key="'ldosen'+i" class="relative mb-2">
+                                                <div v-for="(d, i) in ba.lengkapi.dosenList" :key="'ldosen'+i" class="mb-2">
                                                     <div class="flex items-center gap-2">
-                                                        <input v-model="ba.lengkapi.dosenList[i]" class="input" :placeholder="'Nama dosen ' + (i+1)" autocomplete="off" @input="dosenPick.lengkapi = i" @focus="dosenPick.lengkapi = i" @blur="dosenPick.lengkapi = -1">
+                                                        <dosen-picker v-model="ba.lengkapi.dosenList[i]" :options="config.dosenOptions" :placeholder="'Pilih dosen ' + (i+1)" class="flex-1"></dosen-picker>
                                                         <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="ba.lengkapi.dosenList.length <= 1" title="Hapus dosen" @click="removeDosenRow(ba.lengkapi, i)"><i class="bi bi-dash-lg"></i></button>
-                                                    </div>
-                                                    <div v-if="dosenPick.lengkapi === i && dosenSuggest(d).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                                                        <button v-for="s in dosenSuggest(d)" :key="s" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosenAt('lengkapi', i, s)">{{ s }}</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1010,13 +1005,10 @@
                                                     <label class="label !mb-0">Dosen <span class="font-normal text-slate-400">(maks 5)</span></label>
                                                     <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="ba.dosenList.length >= maxDosen" @click="addDosenRow(ba)"><i class="bi bi-plus-lg"></i> Tambah Dosen</button>
                                                 </div>
-                                                <div v-for="(d, i) in ba.dosenList" :key="'bdosen'+i" class="relative mb-2">
+                                                <div v-for="(d, i) in ba.dosenList" :key="'bdosen'+i" class="mb-2">
                                                     <div class="flex items-center gap-2">
-                                                        <input v-model="ba.dosenList[i]" class="input" :placeholder="'Nama dosen ' + (i+1)" autocomplete="off" @input="dosenPick.ba = i" @focus="dosenPick.ba = i" @blur="dosenPick.ba = -1">
+                                                        <dosen-picker v-model="ba.dosenList[i]" :options="config.dosenOptions" :placeholder="'Pilih dosen ' + (i+1)" class="flex-1"></dosen-picker>
                                                         <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="ba.dosenList.length <= 1" title="Hapus dosen" @click="removeDosenRow(ba, i)"><i class="bi bi-dash-lg"></i></button>
-                                                    </div>
-                                                    <div v-if="dosenPick.ba === i && dosenSuggest(d).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                                                        <button v-for="s in dosenSuggest(d)" :key="s" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosenAt('ba', i, s)">{{ s }}</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1302,7 +1294,7 @@
 
         const { createApp } = Vue;
 
-        createApp({
+        const app = createApp({
             data() {
                 return {
                     loading: false,
@@ -1343,7 +1335,6 @@
                     kalenderMonth: new Date().getMonth() + 1,
                     kalenderFilter: 'semua',
                     kalenderDow: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-                    dosenPick: { jadwal: -1, ba: -1, lengkapi: -1 },
                     maxDosen: 5,
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
@@ -1785,28 +1776,6 @@
                     const s = String(v);
                     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
                     return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
-                },
-                dosenSuggest(query) {
-                    const q = String(query || '').replace(/\s+/g, ' ').trim().toLowerCase();
-                    if (!q) return [];
-                    const arr = this.config.dosenOptions || [];
-                    const out = [];
-                    for (const d of arr) {
-                        if (String(d).toLowerCase().indexOf(q) !== -1) out.push(d);
-                        if (out.length >= 50) break;
-                    }
-                    return out;
-                },
-                pickDosenAt(field, index, name) {
-                    const target = field === 'lengkapi' ? (this.ba && this.ba.lengkapi) : this[field];
-                    if (target && Array.isArray(target.dosenList) && index >= 0) {
-                        target.dosenList[index] = name;
-                        while (index + 1 < target.dosenList.length && !String(target.dosenList[index + 1] || '').trim()) {
-                            target.dosenList.splice(index + 1, 1);
-                        }
-                        target.dosen = target.dosenList[0] || '';
-                    }
-                    this.dosenPick = { jadwal: -1, ba: -1, lengkapi: -1 };
                 },
                 cleanDosenList(list) {
                     const out = [];
@@ -2836,7 +2805,9 @@
                     })
                     .catch(() => { this.config = { labOptions: [], dosenOptions: [] }; });
             }
-        }).mount('#app');
+        });
+        if (window.DosenPicker) window.DosenPicker.install(app);
+        app.mount('#app');
         }
 
         if (window.Vue) {

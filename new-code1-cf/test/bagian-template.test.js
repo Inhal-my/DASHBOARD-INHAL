@@ -160,3 +160,17 @@ describe('guard BA Pelaksanaan multi', () => {
     expect(html).not.toContain('Diterima / ACC');
   });
 });
+
+describe('dosen searchable picker', () => {
+  it('memakai komponen dosen-picker dan bukan input teks bebas', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('/dosen-picker.js');
+    expect(html).toContain('<dosen-picker v-model="jadwal.dosenList[i]"');
+    expect(html).toContain('<dosen-picker v-model="ba.lengkapi.dosenList[i]"');
+    expect(html).toContain('<dosen-picker v-model="ba.dosenList[i]"');
+    expect(html).toContain('DosenPicker.install(app)');
+    expect(html).not.toContain('@input="dosenPick.jadwal = i"');
+    expect(html).not.toContain('@input="dosenPick.lengkapi = i"');
+    expect(html).not.toContain('@input="dosenPick.ba = i"');
+  });
+});
