@@ -621,6 +621,15 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain("'Laporan' }}");
   });
 
+  it('mengekspor laporan dosen ke tiga sheet', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('exportDosenReport() {');
+    expect(html).toContain("'Rekap Dosen'");
+    expect(html).toContain("'Detail Kegiatan'");
+    expect(html).toContain("'Detail BA'");
+    expect(html).not.toContain('exportDosenMatrix');
+  });
+
   it('dosen memakai bar chart sesi per dosen dan legenda heat', async () => {
     const html = await loadHtml();
     expect(html).toContain('dosenBaBars');

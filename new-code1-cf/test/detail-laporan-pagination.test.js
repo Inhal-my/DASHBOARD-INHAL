@@ -173,8 +173,8 @@ describe('paginasi tabel detail laporan: export & ringkasan utuh', () => {
     const baTable = block(html, 'exportBaTable() {', 'exportDaftarBa() {');
     expect(baTable).toContain('baKegiatanRows');
     expect(baTable).not.toContain('pagerRows(');
-    const dosen = block(html, 'exportDosenMatrix() {', 'baReportRows(filter, q) {');
-    expect(dosen).toContain('dosenMatrix');
+    const dosen = block(html, 'exportDosenReport() {', 'baReportRows(filter, q) {');
+    expect(dosen).toContain('this.dosenReport');
     expect(dosen).not.toContain('pagerRows(');
   });
 });

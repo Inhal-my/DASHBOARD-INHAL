@@ -4157,41 +4157,6 @@
                     if (!hasLainnya && needLainnya) cols.push('Lainnya');
                     return cols;
                 },
-                dosenMatrixRows() {
-                    const cols = this.dosenMatrixCols;
-                    const colKeys = cols.map(c => this.normBagian(c));
-                    const q = this.normSearch(this.dosenFilter.q);
-                    const map = {};
-                    this.dosenFilteredBa.forEach(b => {
-                        const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
-                        const bk = this.normBagian(bagianLabel);
-                        if (colKeys.indexOf(bk) === -1) return;
-                        const seenDosen = {};
-                        this.baDosenList(b).forEach(dosen => {
-                            const dk = this.normSearch(dosen);
-                            if (!dk || seenDosen[dk]) return;
-                            seenDosen[dk] = 1;
-                            if (!map[dk]) {
-                                map[dk] = { key: dk, label: dosen, counts: {}, total: 0 };
-                                colKeys.forEach(k => { map[dk].counts[k] = 0; });
-                            }
-                            map[dk].counts[bk] = (map[dk].counts[bk] || 0) + 1;
-                            map[dk].total += 1;
-                        });
-                    });
-                    let arr = Object.values(map);
-                    if (q) arr = arr.filter(r => this.normSearch(r.label).indexOf(q) !== -1);
-                    arr.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
-                    return arr;
-                },
-                dosenGrandTotal() {
-                    let t = 0;
-                    this.dosenMatrixRows.forEach(r => { t += r.total; });
-                    return t;
-                },
-                dosenMatrix() {
-                    return { cols: this.dosenMatrixCols, rows: this.dosenMatrixRows, grandTotal: this.dosenGrandTotal };
-                },
                 dosenBaBars() {
                     const rows = this.dosenReport.rows.slice().sort((a, b) => b.totalRealisasi - a.totalRealisasi);
                     const max = Math.max(1, ...rows.map(r => Math.max(r.totalRealisasi, r.totalRencana)));
@@ -5676,16 +5641,27 @@
                             setUrlHyperlinks(wsRekap, 'Link', 'Buka link bukti bayar');
                             XLSX.utils.book_append_sheet(wb, wsRekap, 'Rekap');
 
-                            const dosenCols = this.dosenMatrixCols;
-                            const dosenRows = this.dosenMatrixRows.map(r => {
+                            const dosenReport = this.dosenReport;
+                            const dosenCols = dosenReport.cols;
+                            const dosenRows = dosenReport.rows.map(r => {
                                 const row = { Dosen: r.label };
-                                dosenCols.forEach(b => { row[b] = r.counts[this.bagianKey(b)] || 0; });
-                                row.Total = r.total;
+                                dosenCols.forEach(b => {
+                                    const c = r.counts[this.normBagian(b)] || { realisasi: 0, rencana: 0 };
+                                    row[b] = c.realisasi + '/' + c.rencana;
+                                });
+                                row['Total Realisasi'] = r.totalRealisasi;
+                                row['Total Rencana'] = r.totalRencana;
+                                row['Selisih'] = r.selisih;
                                 return row;
                             });
                             const dosenTotalRow = { Dosen: 'Total' };
-                            dosenCols.forEach(b => { dosenTotalRow[b] = this.dosenColTotal(b); });
-                            dosenTotalRow.Total = this.dosenGrandTotal;
+                            dosenCols.forEach(b => {
+                                const c = this.dosenColTotal(b);
+                                dosenTotalRow[b] = c.realisasi + '/' + c.rencana;
+                            });
+                            dosenTotalRow['Total Realisasi'] = dosenReport.totals.sesiRealisasi;
+                            dosenTotalRow['Total Rencana'] = dosenReport.totals.rencanaTabel;
+                            dosenTotalRow['Selisih'] = dosenReport.totals.sesiRealisasi - dosenReport.totals.rencanaTabel;
                             dosenRows.push(dosenTotalRow);
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Rekap Dosen');
 
@@ -5783,25 +5759,91 @@
                         this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                     });
                 },
-                exportDosenMatrix() {
+                exportDosenReport() {
                     this.exporting = true;
                     this._loadXlsx().then(() => {
                         try {
+                            const report = this.dosenReport;
                             const wb = XLSX.utils.book_new();
-                            const cols = this.dosenMatrixCols;
-                            const rows = this.dosenMatrixRows.map(r => {
+                            const cols = report.cols;
+
+                            const rekapRows = report.rows.map(r => {
                                 const row = { Dosen: r.label };
-                                cols.forEach(b => { row[b] = r.counts[this.bagianKey(b)] || 0; });
-                                row.Total = r.total;
+                                cols.forEach(b => {
+                                    const c = r.counts[this.normBagian(b)] || { realisasi: 0, rencana: 0 };
+                                    row[b] = c.realisasi + '/' + c.rencana;
+                                });
+                                row['Total Realisasi'] = r.totalRealisasi;
+                                row['Total Rencana'] = r.totalRencana;
+                                row['Selisih'] = r.selisih;
+                                row['Detail Kegiatan'] = r.detailCount;
+                                row['Peserta Unik'] = r.pesertaUnik;
+                                row['Varian Nama'] = r.variantCount > 1 ? r.variantCount : '';
                                 return row;
                             });
-                            const totalRow = { Dosen: 'Total' };
-                            cols.forEach(b => { totalRow[b] = this.dosenColTotal(b); });
-                            totalRow.Total = this.dosenGrandTotal;
-                            rows.push(totalRow);
-                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Rekap Dosen');
-                            XLSX.writeFile(wb, 'Rekap-Dosen-' + new Date().toISOString().slice(0, 10) + '.xlsx');
-                            this.showToast('bi-check-circle', 'Export matriks dosen berhasil diunduh.');
+                            const rekapTotal = { Dosen: 'Total' };
+                            cols.forEach(b => {
+                                const c = this.dosenColTotal(b);
+                                rekapTotal[b] = c.realisasi + '/' + c.rencana;
+                            });
+                            rekapTotal['Total Realisasi'] = report.totals.sesiRealisasi;
+                            rekapTotal['Total Rencana'] = report.totals.rencanaTabel;
+                            rekapTotal['Selisih'] = report.totals.sesiRealisasi - report.totals.rencanaTabel;
+                            rekapTotal['Detail Kegiatan'] = report.totals.detailUnik;
+                            rekapTotal['Peserta Unik'] = report.totals.pesertaUnik;
+                            rekapTotal['Varian Nama'] = '';
+                            rekapRows.push(rekapTotal);
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapRows), 'Rekap Dosen');
+
+                            const detailRows = [];
+                            report.rows.forEach(r => {
+                                r.details.forEach(d => {
+                                    detailRows.push({
+                                        Dosen: r.label,
+                                        Bagian: d.bagian,
+                                        Blok: d.blok,
+                                        'Jenis Kegiatan': d.jenis,
+                                        'Detail Kegiatan': d.label,
+                                        Realisasi: d.realisasi,
+                                        Rencana: d.rencana,
+                                        Selisih: d.selisih,
+                                        'BA Unik': d.baCount,
+                                        'Peserta Unik': d.pesertaUnik,
+                                        'Daftar BA': d.baIds.join(', '),
+                                        Status: d.statuses.join(', '),
+                                        Flag: d.flags.join('; '),
+                                        'Varian Nama': r.variantCount > 1 ? ('Ya (' + r.variantCount + ')') : ''
+                                    });
+                                });
+                            });
+                            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows), 'Detail Kegiatan');
+
+                            const baRows = [];
+                            report.rows.forEach(r => {
+                                r.baRows.forEach(b => {
+                                    baRows.push({
+                                        Dosen: r.label,
+                                        'BA ID': b.baId,
+                                        Bagian: b.bagian,
+                                        Blok: b.blok,
+                                        'Jenis Kegiatan': b.jenis,
+                                        'Detail Kegiatan': b.label,
+                                        Tanggal: b.tanggal ? fmtTanggal(b.tanggal) : '',
+                                        Jam: b.jam || '',
+                                        'Jumlah Sesi': b.sesiCount,
+                                        Peserta: b.pesertaCount,
+                                        Status: b.status,
+                                        Flag: b.flags.join('; '),
+                                        'Link BA': b.fileUrl || ''
+                                    });
+                                });
+                            });
+                            const wsBa = XLSX.utils.json_to_sheet(baRows);
+                            setUrlHyperlinks(wsBa, 'Link BA', 'Buka link berita acara');
+                            XLSX.utils.book_append_sheet(wb, wsBa, 'Detail BA');
+
+                            writeXlsxStyled(wb, 'Laporan-Dosen-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                            this.showToast('bi-check-circle', 'Laporan dosen berhasil diunduh.');
                         } catch (e) {
                             this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                         } finally {
