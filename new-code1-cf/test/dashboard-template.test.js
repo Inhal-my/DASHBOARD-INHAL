@@ -141,7 +141,11 @@ describe('dashboard template', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('progresDots');
     expect(html).toContain('openKelolaBa');
-    expect(html).toContain('dosenSuggestions');
+    expect(html).toContain('/dosen-picker.js');
+    expect(html).toContain('<dosen-picker v-model="kelola.dosenList[i]"');
+    expect(html).toContain('kelola.dosenList');
+    expect(html).toContain('DosenPicker.install(app)');
+    expect(html).not.toContain('v-model="kelola.dosen"');
   });
 
   it('menampilkan indikator BA Pendukung x/y peserta', async () => {
