@@ -79,14 +79,14 @@ describe('bagian template jadwal', () => {
 
   it('menyediakan picker Dosen searchable di semua field Dosen', async () => {
     const html = await loadBagianHtml();
-    expect(html).toContain('dosenOptions');
-    expect(html).toContain('dosenSuggest(');
-    expect(html).toContain('pickDosenAt(');
+    expect(html).toContain('/dosen-picker.js');
+    expect(html).toContain('<dosen-picker v-model="jadwal.dosenList[i]"');
+    expect(html).toContain('<dosen-picker v-model="ba.lengkapi.dosenList[i]"');
+    expect(html).toContain('<dosen-picker v-model="ba.dosenList[i]"');
+    expect(html).toContain('DosenPicker.install(app)');
     expect(html).toContain('addDosenRow(');
     expect(html).toContain('removeDosenRow(');
-    expect(html).toContain('dosenList');
-    expect(html).toContain('dosenPick.jadwal');
-    expect(html).toContain('dosenPick.ba');
-    expect(html).toContain('dosenPick.lengkapi');
+    expect(html).not.toContain('dosenSuggest(');
+    expect(html).not.toContain('dosenPick.jadwal');
   });
 });

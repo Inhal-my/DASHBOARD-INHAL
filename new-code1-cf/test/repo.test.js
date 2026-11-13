@@ -32,7 +32,7 @@ describe('repo reads', () => {
     expect(await getMahasiswaByNpm(env.DB, '000')).toBeNull();
   });
   it('returns dosen options', async () => {
-    expect(await getDosenOptions(env.DB)).toEqual(['dr. Andi']);
+    expect(await getDosenOptions(env.DB)).toEqual(['dr. Andi', 'dr. Budi', 'Dr. Citra', 'dr. Ani']);
   });
   it('returns the bagian staff list', async () => {
     await env.DB.prepare("INSERT INTO bagian_staff (email, kategori, nama, pass) VALUES ('a@x.id','SGD','Umum','pw')").run();
