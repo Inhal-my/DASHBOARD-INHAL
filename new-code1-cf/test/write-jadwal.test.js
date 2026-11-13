@@ -86,9 +86,9 @@ describe('jadwal write', () => {
     const up = await updateJadwalPelaksanaan(env.DB, res.jadwalId, { ...payload, dosenList: ['dr. Citra'] }, 'SGD', ctx);
     expect(up.success).toBe(true);
     const rows = await env.DB.prepare('SELECT nama FROM jadwal_dosen WHERE jadwal_id=?1 ORDER BY urutan, id').bind(res.jadwalId).all();
-    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Citra']);
+    expect(rows.results.map((r) => r.nama)).toEqual(['Dr. Citra']);
     const j = await env.DB.prepare('SELECT dosen FROM jadwal_pelaksanaan WHERE jadwal_id=?1').bind(res.jadwalId).first();
-    expect(j.dosen).toBe('dr. Citra');
+    expect(j.dosen).toBe('Dr. Citra');
   });
 
   it('mengubah jadwal selama belum ada BA', async () => {
@@ -121,5 +121,39 @@ describe('jadwal write', () => {
     expect(up.success).toBe(false);
     const cancel = await cancelJadwalPelaksanaan(env.DB, res.jadwalId, 'SGD', ctx);
     expect(cancel.success).toBe(false);
+  });
+
+  it('menolak dosen baru yang tidak ada di master', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveJadwalPelaksanaan(env.DB, { ...payload, dosenList: ['dr. Tidak Dikenal'] }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('master');
+  });
+
+  it('menyimpan nama master kanonik dari input yang berbeda kapitalisasi', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveJadwalPelaksanaan(env.DB, { ...payload, dosenList: ['DR.  ANDI'] }, 'SGD', ctx);
+    expect(res.success).toBe(true);
+    const j = await env.DB.prepare('SELECT dosen FROM jadwal_pelaksanaan WHERE jadwal_id=?1').bind(res.jadwalId).first();
+    expect(j.dosen).toBe('dr. Andi');
+    const rows = await env.DB.prepare('SELECT nama FROM jadwal_dosen WHERE jadwal_id=?1').bind(res.jadwalId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Andi']);
+  });
+
+  it('mengizinkan nama lama tetap ada saat update, tetapi menolak nama asing baru', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const first = await saveJadwalPelaksanaan(env.DB, payload, 'SGD', ctx);
+    await env.DB.prepare("UPDATE jadwal_pelaksanaan SET dosen='dr. Legacy' WHERE jadwal_id=?1").bind(first.jadwalId).run();
+    await env.DB.prepare("UPDATE jadwal_dosen SET nama='dr. Legacy', nama_key='dr. legacy' WHERE jadwal_id=?1").bind(first.jadwalId).run();
+
+    const keep = await updateJadwalPelaksanaan(env.DB, first.jadwalId, { ...payload, dosenList: ['dr. Legacy', 'dr. Andi'] }, 'SGD', ctx);
+    expect(keep.success).toBe(true);
+
+    const reject = await updateJadwalPelaksanaan(env.DB, first.jadwalId, { ...payload, dosenList: ['dr. Legacy', 'dr. Asing'] }, 'SGD', ctx);
+    expect(reject.success).toBe(false);
+    expect(reject.message).toContain('master');
   });
 });

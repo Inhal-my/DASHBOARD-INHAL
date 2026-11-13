@@ -1,9 +1,9 @@
 import { requireBagianSession } from '../session.js';
 import { nextIdNumber } from '../sequence.js';
-import { kegiatanKey, getBagianBaStatuses } from '../read/common.js';
+import { kegiatanKey, getBagianBaStatuses, getMasterOptions } from '../read/common.js';
 import { validateBaPesertaStatus } from './beritaAcara.js';
 import { validateJadwalInput } from '../validation.js';
-import { normalizeDosenList, dosenKey } from '../dosen.js';
+import { normalizeDosenList, dosenKey, validateDosenAgainstMaster, dosenMasterErrorMessage } from '../dosen.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -115,7 +115,7 @@ async function hasDuplicateJadwal(db, meta, peserta) {
 }
 
 export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
-  const p = payload || {};
+  const p = { ...(payload || {}) };
   await requireBagianSession(db, kategori, p.bagian, ctx.token, ctx.session);
   const input = validateJadwalInput(p);
   if (!input.ok) return { success: false, message: input.message };
@@ -127,6 +127,12 @@ export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
   const key = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
   const dup = await hasDuplicateJadwal(db, { kegiatanKey: key, tanggal: p.tanggal, jam: p.jam }, peserta);
   if (dup) return { success: false, message: 'Jadwal untuk kegiatan, tanggal, jam, dan peserta ini sudah ada.' };
+
+  const dosenList = normalizeDosenList(p.dosenList, p.dosen);
+  const dosenCheck = await checkDosenMaster(db, dosenList, []);
+  if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
+  p.dosenList = dosenCheck.list;
+  p.dosen = dosenCheck.list[0] || '';
 
   const jadwalId = await nextJadwalId(db);
   p.__peserta = peserta;
@@ -151,6 +157,20 @@ async function hasBa(db, jadwalId) {
   return !!sesi;
 }
 
+async function loadJadwalDosenList(db, jadwalId) {
+  const { results } = await db.prepare(
+    'SELECT nama FROM jadwal_dosen WHERE jadwal_id = ?1 ORDER BY urutan, id'
+  ).bind(str(jadwalId)).all();
+  return normalizeDosenList((results || []).map((r) => r.nama));
+}
+
+async function checkDosenMaster(db, list, existing) {
+  const master = await getMasterOptions(db, 'Dosen');
+  const result = validateDosenAgainstMaster(list, master, existing);
+  if (result.invalid.length) return { ok: false, message: dosenMasterErrorMessage(result.invalid) };
+  return { ok: true, list: result.list };
+}
+
 export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, ctx) {
   const p = payload || {};
   const id = str(jadwalId);
@@ -167,7 +187,11 @@ export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, c
 
   const ts = nowIso();
   const bagian = str(p.bagian) || str(existing.bagian) || str(kategori);
-  const dosenList = normalizeDosenList(p.dosenList, p.dosen !== undefined ? p.dosen : existing.dosen);
+  const currentDosen = await loadJadwalDosenList(db, id);
+  const dosenInput = normalizeDosenList(p.dosenList, p.dosen !== undefined ? p.dosen : existing.dosen);
+  const dosenCheck = await checkDosenMaster(db, dosenInput, currentDosen);
+  if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
+  const dosenList = dosenCheck.list;
   await db.batch([
     db.prepare(
       'UPDATE jadwal_pelaksanaan SET bagian=?1, blok=?2, nama_kegiatan=?3, kegiatan_key=?4, tanggal=?5, jam=?6, dosen=?7, catatan=?8, updated_at=?9 WHERE jadwal_id=?10'
