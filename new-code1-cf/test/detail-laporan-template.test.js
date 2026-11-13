@@ -600,6 +600,16 @@ describe('detail laporan export Berita Acara (Admin + Bagian)', () => {
 });
 
 describe('detail laporan tab dosen (mockup)', () => {
+  it('memakai modul laporan dosen untuk agregasi sesi', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('<script src="/dosen-report.js"></script>');
+    expect(html).toContain('DosenReport.buildDosenReport');
+    expect(html).toContain('dosenReportBaList() {');
+    expect(html).toContain('dosenReportJadwalList() {');
+    expect(html).toContain('baAuditByBaId() {');
+    expect(html).toContain('jenisByKegiatanKey() {');
+  });
+
   it('dosen memakai bar chart BA per dosen dan legenda heat', async () => {
     const html = await loadHtml();
     expect(html).toContain('dosenBaBars');

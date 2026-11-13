@@ -2775,6 +2775,7 @@
 
     <script src="/gs-shim.js"></script>
     <script src="/app-common.js"></script>
+    <script src="/dosen-report.js"></script>
     <script src="/vendor/vue.global.prod.js" defer></script>
     <script>
         function bootDetailLaporan() {
@@ -4047,6 +4048,70 @@
                         return true;
                     });
                 },
+                baAuditByBaId() {
+                    const map = {};
+                    (this.kegiatan || []).forEach(u => {
+                        const audit = u.baAudit;
+                        if (!audit) return;
+                        (audit.sesi || []).forEach(s => {
+                            if (s && s.baId) map[s.baId] = s;
+                        });
+                    });
+                    return map;
+                },
+                jenisByKegiatanKey() {
+                    const map = {};
+                    (this.kegiatan || []).forEach(u => {
+                        if (u && u.key) map[u.key] = String(u.jenis || '').trim();
+                    });
+                    return map;
+                },
+                dosenReportBaList() {
+                    return this.dosenFilteredBa.map(b => {
+                        const audit = this.baAuditByBaId[b['BA ID']] || null;
+                        const kegiatanKey = String(b['Kegiatan Key'] || '').trim();
+                        const sesiCount = Number(b.jumlahSesi) || (Array.isArray(b.jadwalIds) ? b.jadwalIds.length : 0) || 1;
+                        return {
+                            id: b['BA ID'],
+                            kegiatanKey: kegiatanKey,
+                            bagian: this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya',
+                            blok: b.Blok,
+                            jenis: this.jenisByKegiatanKey[kegiatanKey] || '',
+                            label: b.Label || b['Nama Kegiatan'] || '',
+                            tanggal: b['Tanggal Pelaksanaan'] || '',
+                            jam: b.Jam || '',
+                            sesiCount: sesiCount,
+                            status: audit ? audit.status : (b['File URL'] && b['Tanggal Pelaksanaan'] ? 'Lengkap' : 'Draft'),
+                            flags: audit ? (audit.flags || []) : [],
+                            peserta: b.peserta || [],
+                            dosenList: this.baDosenList(b),
+                            fileUrl: b['File URL'] || '',
+                            jadwalIds: Array.isArray(b.jadwalIds) ? b.jadwalIds : []
+                        };
+                    });
+                },
+                dosenReportJadwalList() {
+                    return (this.jadwal || []).map(j => ({
+                        id: j.jadwalId,
+                        kegiatanKey: j.kegiatanKey,
+                        bagian: j.bagian,
+                        blok: j.blok,
+                        jenis: this.jenisByKegiatanKey[j.kegiatanKey] || '',
+                        label: j.label || j.namaKegiatan || '',
+                        tanggal: j.tanggal,
+                        jam: j.jam,
+                        dosenList: Array.isArray(j.dosenList) && j.dosenList.length ? j.dosenList : (j.dosen ? [j.dosen] : []),
+                        baId: j.baId || ''
+                    }));
+                },
+                dosenReport() {
+                    return DosenReport.buildDosenReport({
+                        baList: this.dosenReportBaList,
+                        jadwalList: this.dosenReportJadwalList,
+                        cols: this.dosenMatrixCols,
+                        q: this.dosenFilter.q
+                    });
+                },
                 dosenMatrixCols() {
                     let cols = this.bagianAllLabels.slice();
                     const sel = String(this.dosenFilter.bagian || '').trim();
@@ -4054,6 +4119,9 @@
                         const sk = this.normBagian(sel);
                         cols = cols.filter(c => this.normBagian(c) === sk);
                     }
+                    const hasLainnya = cols.some(c => this.normBagian(c) === this.normBagian('Lainnya'));
+                    const needLainnya = this.dosenFilteredBa.some(b => !this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']));
+                    if (!hasLainnya && needLainnya) cols.push('Lainnya');
                     return cols;
                 },
                 dosenMatrixRows() {
