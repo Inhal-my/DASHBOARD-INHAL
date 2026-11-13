@@ -3898,6 +3898,7 @@
                         });
                         const unit = unitIndex[key];
                         if (unit && (unit.peserta || []).length) {
+                            const ketatTanggal = k.sumber === 'Pengajuan';
                             const tanggalKey = normTgl(k.tanggal);
                             const tanggalPerNpm = unitDateMap[key] || {};
                             const byNpm = {};
@@ -3905,7 +3906,7 @@
                             const merged = [];
                             unit.peserta.forEach(p => {
                                 const npm = String(p.npm || '').trim();
-                                if (!byNpm[npm]) {
+                                if (ketatTanggal && !byNpm[npm]) {
                                     const dates = tanggalPerNpm[npm] || {};
                                     if (!Object.prototype.hasOwnProperty.call(dates, tanggalKey)) return;
                                 }

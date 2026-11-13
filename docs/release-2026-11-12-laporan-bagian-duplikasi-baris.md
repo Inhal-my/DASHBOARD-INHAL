@@ -55,3 +55,32 @@ PostTest/Praktikum sehingga total 918. Bug ini masuk lewat commit `fe660e6`
 - Status **"Mengikuti PDF bersama"** hanya penanda berkas di BA Pendukung
   (`berita_acara_admin_berkas.scope='shared'`); tidak menambah baris kegiatan
   maupun baris peserta di Laporan Bagian.
+
+## Koreksi lanjutan: baris BA/Jadwal tetap memakai roster penuh
+
+Merge ketat berbasis tanggal hanya diperlukan untuk baris **Pengajuan**, karena
+hanya baris itu yang dipecah per tanggal. Baris **BA** dan **Jadwal** sudah satu
+baris per kegiatan (kunci `normName(nama)`), sehingga roster unit tetap digabung
+penuh. Tanpa pengecualian ini, kegiatan dengan BA PEL kehilangan peserta ajuan
+(mis. KKD 67 menjadi 62).
+
+Hasil simulasi snapshot produksi setelah koreksi:
+
+| Bagian | Sebelum | Sesudah | Ajuan (detail_kegiatan) |
+| --- | --- | --- | --- |
+| Parasitologi | 918 | 79 | 79 |
+| Mikrobiologi | 49 | 17 | 17 |
+| SGD | 68 | 43 | 43 |
+| Pat. Anatomi | 20 | 8 | 8 |
+| KKD | 67 | 67 | 67 |
+| Farmakologi | 11 | 11 | 11 |
+| Literature Searching | 7 | 7 | 7 |
+| Ujian | 9 | 7 | 7 |
+| Fisiologi | 7 | 4 | 4 |
+| Research | 7 | 4 | 4 |
+| Pat. Klinik | 3 | 3 | 3 |
+| Lainnya / Anatomi | 2 | 2 | 2 |
+| **Total** | **1168** | **252** | **252** |
+
+Total 252 sama dengan jumlah baris `detail_kegiatan`, sehingga ekspor Excel
+kembali setara dengan jumlah ajuan.

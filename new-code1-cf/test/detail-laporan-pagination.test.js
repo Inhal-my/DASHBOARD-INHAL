@@ -138,8 +138,18 @@ describe('detail laporan tab bagian: satu baris per kegiatan', () => {
     const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
     expect(all).toContain('const unitDateMap = {};');
     const merge = block(all, 'const unit = unitIndex[key];', 'const statusOf = st =>');
+    expect(merge).toContain('const ketatTanggal = k.sumber === \'Pengajuan\';');
     expect(merge).toContain('const tanggalKey = normTgl(k.tanggal);');
+    expect(merge).toContain('if (ketatTanggal && !byNpm[npm]) {');
     expect(merge).toContain('if (!Object.prototype.hasOwnProperty.call(dates, tanggalKey)) return;');
+  });
+
+  it('baris BA dan Jadwal tetap menggabungkan seluruh roster unit', async () => {
+    const html = await loadHtml();
+    const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
+    const merge = block(all, 'const unit = unitIndex[key];', 'const statusOf = st =>');
+    expect(merge).not.toContain("k.sumber === 'Pengajuan' && !byNpm[npm]");
+    expect(merge).toContain('Object.keys(byNpm).forEach(npm => merged.push(byNpm[npm]));');
   });
 });
 
