@@ -434,3 +434,40 @@ describe('berita acara bagian', () => {
     expect(missing.message).toContain('tidak ditemukan');
   });
 });
+
+describe('dosen master BA', () => {
+  const peserta = [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }];
+
+  it('menolak dosen baru di luar master saat membuat BA tanpa sesi', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      jam: '09:00', dosenList: ['dr. Tidak Dikenal'], catatan: '', peserta
+    }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('master');
+  });
+
+  it('mempertahankan dosen lama dan menolak nama asing saat update BA', async () => {
+    await seedPengajuan();
+    const bagian = await bagianCtx(['SGD']);
+    const draft = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      jam: '09:00', dosen: 'dr. Andi', catatan: '', peserta
+    }, 'SGD', bagian);
+    expect(draft.success).toBe(true);
+
+    await env.DB.prepare("UPDATE berita_acara SET dosen='dr. Legacy' WHERE ba_id=?1").bind(draft.baId).run();
+    await env.DB.prepare("DELETE FROM ba_dosen WHERE ba_id=?1").bind(draft.baId).run();
+    await env.DB.prepare("INSERT INTO ba_dosen (timestamp, ba_id, nama, nama_key, urutan) VALUES ('2026-09-10T08:00:00', ?1, 'dr. Legacy', 'dr. legacy', 1)").bind(draft.baId).run();
+
+    const admin = await adminCtx();
+    const keep = await updateBeritaAcaraBagian(env.DB, draft.baId, { dosenList: ['dr. Legacy', 'dr. Andi'] }, admin);
+    expect(keep.success).toBe(true);
+
+    const reject = await updateBeritaAcaraBagian(env.DB, draft.baId, { dosenList: ['dr. Legacy', 'dr. Asing'] }, admin);
+    expect(reject.success).toBe(false);
+    expect(reject.message).toContain('master');
+  });
+});

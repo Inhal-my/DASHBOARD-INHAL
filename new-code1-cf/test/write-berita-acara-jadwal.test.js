@@ -75,7 +75,7 @@ describe('BA merujuk jadwal', () => {
     const ba = await env.DB.prepare('SELECT dosen FROM berita_acara WHERE ba_id=?1').bind(draft.baId).first();
     expect(ba.dosen).toBe('dr. Budi');
     const rows = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id=?1 ORDER BY urutan, id').bind(draft.baId).all();
-    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Budi', 'dr. Citra']);
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Budi', 'Dr. Citra']);
     const p = await env.DB.prepare('SELECT dosen FROM pengajuan WHERE id_pengajuan=?1').bind('INHAL-1').first();
     expect(p.dosen).toBe('dr. Budi');
   });
