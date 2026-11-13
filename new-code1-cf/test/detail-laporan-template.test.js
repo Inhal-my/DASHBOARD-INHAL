@@ -82,8 +82,11 @@ describe('detail-laporan template', () => {
     expect(html).toContain('openKelolaBa');
     expect(html).toContain('deleteBaAdmin');
     expect(html).toContain('this.kegiatan = data.kegiatan || []');
-    expect(html).toContain('dosenSuggestionsList');
+    expect(html).toContain('/dosen-picker.js');
+    expect(html).toContain('<dosen-picker v-model="kelola.dosenList[i]"');
+    expect(html).toContain('DosenPicker.install(app)');
     expect(html).toContain('dosenOptions');
+    expect(html).not.toContain('dosenSuggestionsList');
   });
 
   it('menyediakan drawer Riwayat Proses', async () => {
