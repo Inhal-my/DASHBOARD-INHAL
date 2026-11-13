@@ -626,6 +626,7 @@
     </style>
     <script src="/vendor/vue.global.prod.js" defer></script>
     <script src="/scan-pdf.js" defer></script>
+    <script src="/dosen-picker.js" defer></script>
 </head>
 <body>
     <div id="app" v-cloak class="app-shell font-sans text-ink antialiased" :class="sidebarCollapsed ? 'sidebar-collapsed' : ''">
@@ -2944,11 +2945,16 @@
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div><label class="label">Tanggal Pelaksanaan</label><input v-model="kelola.tanggal" type="date" class="input"></div>
                     <div><label class="label">Jam</label><input v-model="kelola.jam" type="time" class="input"></div>
-                    <div class="relative sm:col-span-2">
-                        <label class="label">Dosen</label>
-                        <input v-model="kelola.dosen" class="input" placeholder="Ketik nama dosen..." autocomplete="off" @focus="dosenPick.open = true" @input="dosenPick.open = true" @blur="dosenPick.open = false">
-                        <div v-if="dosenPick.open && dosenSuggestions(dosenOptions).length" class="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
-                            <button v-for="d in dosenSuggestions(dosenOptions)" :key="d" type="button" class="block w-full px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-brand-50" @mousedown.prevent="pickDosen(d)">{{ d }}</button>
+                    <div v-if="kelola.sumber !== 'Admin'" class="relative sm:col-span-2">
+                        <div class="mb-1 flex items-center justify-between">
+                            <label class="label !mb-0">Dosen</label>
+                            <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="kelola.dosenList.length >= 5" @click="addKelolaDosenRow"><i class="bi bi-plus-lg"></i> Tambah Dosen</button>
+                        </div>
+                        <div v-for="(d, i) in kelola.dosenList" :key="'kdosen'+i" class="mb-2">
+                            <div class="flex items-center gap-2">
+                                <dosen-picker v-model="kelola.dosenList[i]" :options="dosenOptions" :placeholder="'Pilih dosen ' + (i+1)" class="flex-1"></dosen-picker>
+                                <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="kelola.dosenList.length <= 1" title="Hapus dosen" @click="removeKelolaDosenRow(i)"><i class="bi bi-dash-lg"></i></button>
+                            </div>
                         </div>
                     </div>
                     <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
@@ -3360,8 +3366,7 @@
                     bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', page: 1, perPage: 10, expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
                     kb: { open: false, loading: false, data: null, pick: false, addPicks: [], kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     expandedBa: {},
-                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
-                    dosenPick: { open: false },
+                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', dosenList: [''], catatan: '', pesertaIds: [], pesertaOpsi: [] },
                     riwayat: { open: false, unit: null },
                     act: {
                         loading: false,
@@ -3427,7 +3432,7 @@
                 };
         }
 
-        createApp({
+        const app = createApp({
             mixins: [AppCommon.buktiPreviewMixin],
             data() {
                 return initialData();
@@ -5857,15 +5862,32 @@
                         ' · Pelaksanaan: ' + (p.pelaksanaan === 'all' ? 'ada' : 'belum') +
                         ' · Selesai: ' + (p.selesai === 'all' ? 'ya' : 'belum');
                 },
-                dosenSuggestions(list) {
-                    const arr = list || [];
-                    const q = this.normBagian(this.kelola.dosen);
-                    const matched = q ? arr.filter(d => this.normBagian(d).indexOf(q) !== -1) : arr;
-                    return matched.slice(0, 50);
+                addKelolaDosenRow() {
+                    if (!Array.isArray(this.kelola.dosenList)) this.kelola.dosenList = [''];
+                    if (this.kelola.dosenList.length >= 5) return;
+                    this.kelola.dosenList.push('');
                 },
-                pickDosen(name) {
-                    this.kelola.dosen = name;
-                    this.dosenPick.open = false;
+                removeKelolaDosenRow(index) {
+                    if (!Array.isArray(this.kelola.dosenList)) return;
+                    if (this.kelola.dosenList.length <= 1) {
+                        this.kelola.dosenList.splice(0, this.kelola.dosenList.length, '');
+                    } else {
+                        this.kelola.dosenList.splice(index, 1);
+                    }
+                    this.kelola.dosen = this.kelola.dosenList[0] || '';
+                },
+                cleanKelolaDosenList() {
+                    const out = [];
+                    const seen = {};
+                    (Array.isArray(this.kelola.dosenList) ? this.kelola.dosenList : []).forEach((v) => {
+                        const nama = String(v || '').replace(/\s+/g, ' ').trim();
+                        if (!nama) return;
+                        const key = this.normBagian(nama);
+                        if (seen[key]) return;
+                        seen[key] = 1;
+                        if (out.length < 5) out.push(nama);
+                    });
+                    return out;
                 },
                 openKelolaBa(baId, sumber) {
                     const units = this.bagian.units || [];
@@ -5878,9 +5900,15 @@
                     const opsi = ((unit && unit.peserta) || []).slice();
                     const npmSet = new Set((found.peserta || []).map((p) => p.npm));
                     const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan);
+                    const dosenList = (Array.isArray(found.dosenList) && found.dosenList.length)
+                        ? found.dosenList
+                        : (found.dosen ? [found.dosen] : ['']);
                     this.kelola = {
                         open: true, baId: baId, sumber: sumber || found.sumber || 'Bagian',
-                        tanggal: found.tanggal || '', jam: found.jam || '', dosen: found.dosen || '', catatan: found.catatan || '',
+                        tanggal: found.tanggal || '', jam: found.jam || '',
+                        dosen: dosenList[0] || found.dosen || '',
+                        dosenList: dosenList.length ? dosenList.slice() : [''],
+                        catatan: found.catatan || '',
                         pesertaIds: pesertaIds, pesertaOpsi: opsi
                     };
                 },
@@ -5889,7 +5917,8 @@
                     this.loading = true;
                     try {
                         const fn = k.sumber === 'Admin' ? 'updateBeritaAcaraAdmin' : 'updateBeritaAcaraBagian';
-                        const payload = { tanggal: k.tanggal, jam: k.jam, dosen: k.dosen, catatan: k.catatan };
+                        const dosenList = this.cleanKelolaDosenList();
+                        const payload = { tanggal: k.tanggal, jam: k.jam, dosenList: dosenList, dosen: dosenList[0] || '', catatan: k.catatan };
                         if (k.sumber !== 'Admin' && k.pesertaOpsi.length) payload.pesertaIds = k.pesertaIds.slice();
                         const res = await this.run(fn, k.baId, payload);
                         this.notify((res && res.message) || 'Selesai.', !!(res && res.success));
@@ -6660,7 +6689,9 @@
                 if (this._onKeydown) document.removeEventListener('keydown', this._onKeydown);
                 if (this._onHashchange) window.removeEventListener('hashchange', this._onHashchange);
             }
-        }).mount('#app');
+        });
+        if (window.DosenPicker) window.DosenPicker.install(app);
+        app.mount('#app');
         }
 
         if (window.Vue) {
