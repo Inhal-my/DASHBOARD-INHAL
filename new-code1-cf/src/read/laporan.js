@@ -160,6 +160,8 @@ export async function getLaporanBootstrap(db, ctx) {
     const c = toClientRow('berita_acara', r);
     const baId = String(r.ba_id || '').trim();
     c.peserta = pesertaMap[baId] || [];
+    c.jadwalIds = baJadwalIds(sesiMap, r.ba_id, r.jadwal_id);
+    c.jumlahSesi = c.jadwalIds.length;
     const list = dosenListFor(baDosenMap, baId, c.Dosen);
     c.DosenList = list;
     if (list.length) c.Dosen = list[0];
@@ -213,7 +215,19 @@ export async function getLaporanBootstrap(db, ctx) {
       const key = kegiatanKey(bagian, blokUnit, label);
       if (unitIndex[key] === undefined) {
         unitIndex[key] = units.length;
-        units.push({ key, bagian, blok: blokUnit, label, peserta: [], baPendukung: [], baPelaksanaan: [], pelaksanaan: [], dosenList: [], jadwal: [] });
+        units.push({
+          key,
+          bagian,
+          blok: blokUnit,
+          label,
+          jenis: String(d['Jenis Kegiatan'] || '').trim(),
+          peserta: [],
+          baPendukung: [],
+          baPelaksanaan: [],
+          pelaksanaan: [],
+          dosenList: [],
+          jadwal: []
+        });
       }
       const u = units[unitIndex[key]];
       if (!u.peserta.some((x) => x.idPengajuan === idp)) {
