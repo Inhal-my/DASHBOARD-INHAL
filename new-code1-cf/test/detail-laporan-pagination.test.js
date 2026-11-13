@@ -105,8 +105,9 @@ describe('paginasi tabel detail laporan: pengelompokan bagian', () => {
 describe('paginasi tabel detail laporan: baris total matriks', () => {
   it('baris Total matriks tetap di luar potongan', async () => {
     const html = await loadHtml();
-    const dosen = block(html, "pagerRows('dosen', dosenMatrix.rows)", '</table>');
-    expect(dosen).toContain('dosenMatrix.grandTotal');
+    const dosen = block(html, "pagerRows('dosen', dosenReport.rows)", '</table>');
+    expect(dosen).toContain('dosenReport.totals.sesiRealisasi');
+    expect(dosen).toContain('dosenColTotal(b)');
     const matrix = block(html, "pagerRows('bagianMatrix', bagianMatrixRows)", '</table>');
     expect(matrix).toContain('matrixGrandTotal');
   });

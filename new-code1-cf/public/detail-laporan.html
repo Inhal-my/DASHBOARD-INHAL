@@ -1137,7 +1137,7 @@
                         <template v-else>
                         <div class="lap-card p-4">
                             <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-4">
+                                <div class="md:col-span-3">
                                     <label class="label">Bagian</label>
                                     <select v-model="dosenFilter.bagian" class="input">
                                         <option value="">Semua Bagian</option>
@@ -1148,16 +1148,24 @@
                                     <label class="label">Cari Dosen</label>
                                     <input v-model="dosenFilter.q" class="input" placeholder="Ketik nama dosen...">
                                 </div>
-                                <div v-if="activeDosenCell" class="flex items-end md:col-span-3">
-                                    <button class="btn-soft w-full" @click="resetDosenCell">
+                                <div class="flex items-end gap-2 md:col-span-4">
+                                    <button class="btn-soft flex-1" @click="resetDosenCell">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
+                                    </button>
+                                    <button class="btn-soft flex-1" :disabled="exporting" @click="exportDosenReport">
+                                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i> {{ exporting ? 'Menyiapkan...' : 'Laporan' }}
                                     </button>
                                 </div>
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                                <span class="lap-chip">{{ dosenMatrix.rows.length }} dosen</span>
-                                <span class="lap-chip">{{ dosenMatrix.cols.length }} bagian</span>
-                                <span class="lap-chip">{{ dosenMatrix.grandTotal }} BA total</span>
+                                <span class="lap-chip">{{ dosenReport.totals.dosen }} dosen</span>
+                                <span class="lap-chip">{{ dosenReport.totals.detailUnik }} detail kegiatan</span>
+                                <span class="lap-chip">{{ dosenReport.totals.baUnik }} BA unik</span>
+                                <span class="lap-chip">{{ dosenReport.totals.baDosen }} BA-dosen</span>
+                                <span class="lap-chip">{{ dosenReport.totals.pesertaUnik }} peserta unik</span>
+                                <span class="lap-chip">{{ dosenReport.totals.sesiRealisasi }} sesi realisasi</span>
+                                <span class="lap-chip">Rencana dosen tampil: {{ dosenReport.totals.rencanaTabel }}</span>
+                                <span class="lap-chip">Rencana global: {{ dosenReport.totals.rencanaGlobal }}</span>
                             </div>
                         </div>
 
@@ -1165,15 +1173,15 @@
                             <div class="mb-4 flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-2">
                                     <i class="bi bi-bar-chart-steps text-brand-500"></i>
-                                    <h2 class="lap-card-title">Jumlah Berita Acara per Dosen</h2>
+                                    <h2 class="lap-card-title">Sesi Pelaksanaan per Dosen</h2>
                                 </div>
-                                <span class="in-badge cancel">{{ dosenMatrix.grandTotal }} BA-dosen</span>
+                                <span class="in-badge cancel">{{ dosenReport.totals.sesiRealisasi }}/{{ dosenReport.totals.rencanaTabel }} sesi</span>
                             </div>
                             <div class="space-y-3">
                                 <div v-for="b in dosenBaBars" :key="b.label">
                                     <div class="mb-1 flex items-center justify-between text-xs">
                                         <span class="text-slate-600">{{ b.label }}</span>
-                                        <span class="font-bold text-slate-800">{{ b.value }} BA</span>
+                                        <span class="font-bold text-slate-800">{{ b.value }}/{{ b.rencana }} sesi</span>
                                     </div>
                                     <div class="in-bar-track"><div class="in-bar-fill brand transition-all duration-700 ease-out" :style="{ width: (b.pct * barProgress) + '%' }"></div></div>
                                 </div>
@@ -1184,87 +1192,112 @@
                         <div id="dosen-matrix" class="overflow-hidden lap-card">
                             <div class="lap-card-head">
                                 <div>
-                                    <div class="lap-card-title">Rekap Berita Acara per Dosen &amp; Bagian</div>
-                                    <div class="lap-card-sub">Baris = Dosen, kolom = Bagian. Klik angka pada sel untuk melihat daftar BA-nya</div>
+                                    <div class="lap-card-title">Rekap Realisasi dan Rencana Sesi per Dosen</div>
+                                    <div class="lap-card-sub">Baris = Dosen, kolom = Bagian. Format sel: sesi realisasi / sesi rencana. Klik sel untuk melihat BA dan jadwal.</div>
                                 </div>
-                                <button class="btn-soft !py-1.5 text-xs" :disabled="exporting" @click="exportDosenMatrix">
-                                    <i class="bi bi-file-earmark-excel"></i> Export XLSX
-                                </button>
                             </div>
                             <div class="heat-scroll overflow-x-auto">
                                 <table class="heat-table in-heat">
                                     <thead>
                                         <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
                                             <th class="lab">Dosen \ Bagian</th>
-                                            <th v-for="b in dosenMatrix.cols" :key="b">{{ b }}</th>
+                                            <th v-for="b in dosenReport.cols" :key="b">{{ b }}</th>
                                             <th>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="(row, ri) in pagerRows('dosen', dosenMatrix.rows)" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
+                                        <tr v-for="(row, ri) in pagerRows('dosen', dosenReport.rows)" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
                                             <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="lab">
                                                 <div class="flex items-center gap-2">
                                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-violet-500 text-white"><i class="bi bi-person-video3 text-sm"></i></div>
                                                     <span class="font-semibold text-slate-700">{{ row.label }}</span>
+                                                    <span v-if="row.variantCount > 1" class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{{ row.variantCount }} varian</span>
+                                                    <span v-if="row.nearDuplicate" class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700" :title="'Kemungkinan varian dari ' + row.nearDuplicate">varian?</span>
                                                 </div>
                                             </td>
-                                            <td v-for="b in dosenMatrix.cols" :key="b" class="px-1 py-1 text-center">
+                                            <td v-for="b in dosenReport.cols" :key="b" class="px-1 py-1 text-center">
                                                 <button
-                                                    :disabled="!row.counts[bagianKey(b)]"
+                                                    :disabled="!dosenCellHasData(row, b)"
                                                     :class="[
-                                                        'heat-cell c inline-flex h-8 w-8 items-center justify-center text-sm font-bold transition',
+                                                        'heat-cell c inline-flex items-center justify-center text-xs font-bold transition',
                                                         activeDosenCell && activeDosenCell.key === dosenCellKey(row.label, b)
                                                             ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/30'
-                                                            : (row.counts[bagianKey(b)] >= 2 ? 'g' : (row.counts[bagianKey(b)] === 1 ? 'y' : 'text-slate-200'))
+                                                            : (dosenCellRealisasi(row, b) >= 2 ? 'g' : (dosenCellRealisasi(row, b) === 1 ? 'y' : 'text-slate-300'))
                                                     ]"
                                                     @click="openDosenCell(row.label, b)">
-                                                    {{ row.counts[bagianKey(b)] || '0' }}
+                                                    {{ cellText(row, b) }}
                                                 </button>
                                             </td>
-                                            <td class="px-3 py-2 text-center font-bold text-slate-800">{{ row.total }}</td>
+                                            <td class="px-3 py-2 text-center font-bold text-slate-800">{{ row.totalRealisasi }}/{{ row.totalRencana }}</td>
                                         </tr>
                                         <tr class="bg-slate-100">
                                             <td class="lab font-bold text-slate-700">Total</td>
-                                            <td v-for="b in dosenMatrix.cols" :key="b" class="px-3 py-2.5 text-center font-bold text-slate-700">{{ dosenColTotal(b) }}</td>
-                                            <td class="px-3 py-2.5 text-center font-extrabold text-slate-900">{{ dosenMatrix.grandTotal }}</td>
+                                            <td v-for="b in dosenReport.cols" :key="b" class="px-3 py-2.5 text-center font-bold text-slate-700">{{ dosenColTotal(b).realisasi }}/{{ dosenColTotal(b).rencana }}</td>
+                                            <td class="px-3 py-2.5 text-center font-extrabold text-slate-900">{{ dosenReport.totals.sesiRealisasi }}/{{ dosenReport.totals.rencanaTabel }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                             <div class="in-heat-legend px-3 pb-3">
-                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ BA</span>
-                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 BA</span>
+                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ sesi realisasi</span>
+                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 sesi realisasi</span>
                             </div>
-                            <pager-bar id="pg-dosen" :state="pagers.dosen" :total="dosenMatrix.rows.length" unit="dosen"
+                            <pager-bar id="pg-dosen" :state="pagers.dosen" :total="dosenReport.rows.length" unit="dosen"
                                 nav-label="Halaman matriks dosen"
-                                @go="pagerGo('dosen', $event, dosenMatrix.rows.length)"
+                                @go="pagerGo('dosen', $event, dosenReport.rows.length)"
                                 @size="pagerSetPerPage('dosen', $event)"></pager-bar>
-                            <div v-if="!dosenMatrix.rows.length" class="border-t border-slate-100 px-4 py-14 text-center">
+                            <div v-if="!dosenReport.rows.length" class="border-t border-slate-100 px-4 py-14 text-center">
                                 <i class="bi bi-table text-3xl text-slate-300"></i>
                                 <p class="mt-3 text-sm text-slate-400">Tidak ada data BA untuk filter ini.</p>
                             </div>
+                        </div>
+
+                        <div v-if="dosenReport.quality.length" class="lap-card p-4">
+                            <div class="mb-3 flex flex-wrap items-center gap-2">
+                                <i class="bi bi-clipboard-check text-brand-500"></i>
+                                <h2 class="lap-card-title">Pemeriksaan Data Dosen</h2>
+                                <span class="in-badge">{{ dosenReport.quality.length }} temuan</span>
+                            </div>
+                            <ul class="space-y-2 text-sm text-slate-600">
+                                <li v-for="(q, qi) in dosenReport.quality" :key="qi" class="flex flex-wrap items-start gap-2">
+                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">{{ qualityLabel(q.type) }}</span>
+                                    <span class="min-w-0 flex-1">{{ q.message }}</span>
+                                    <span v-if="q.baId" class="font-mono text-xs text-slate-400">{{ q.baId }}</span>
+                                </li>
+                            </ul>
                         </div>
 
                         <div v-if="activeDosenCell" id="dosen-detail" class="overflow-hidden lap-card">
                             <div class="lap-card-head bg-brand-50/60">
                                 <div>
                                     <div class="lap-card-title">Detail BA: {{ activeDosenCell.dosen }}</div>
-                                    <div class="lap-card-sub">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA · Total <span class="font-semibold text-teal-700">{{ fmtRupiah(dosenCellBiayaTotal) }}</span></div>
+                                    <div class="lap-card-sub">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA · {{ dosenCellJadwal.length }} jadwal · {{ dosenCellSesiTotal }} sesi</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" @click="closeDosenDetail"><i class="bi bi-x-lg"></i> Tutup</button>
                             </div>
                             <div v-if="dosenCellDetail.length" class="divide-y divide-slate-50">
-                                <div v-for="(d, i) in dosenCellDetail" :key="i" class="flex flex-wrap items-center gap-3 px-4 py-3">
+                                <div v-for="(d, i) in dosenCellDetail" :key="'ba-' + i" class="flex flex-wrap items-center gap-3 px-4 py-3">
                                     <div class="min-w-0 flex-1">
-                                        <div class="truncate font-semibold text-slate-800">{{ d.nama }}</div>
-                                        <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(d.tanggal) }}</div>
+                                        <div class="truncate font-semibold text-slate-800">{{ d.label }}</div>
+                                        <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(d.tanggal) }} · {{ d.jam || '-' }} · {{ d.sesiCount }} sesi</div>
                                     </div>
-                                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ d.jumlahPeserta }} peserta</span>
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ d.pesertaCount }} peserta</span>
+                                    <span v-for="f in d.flags" :key="f" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
                                     <a v-if="d.fileUrl" :href="safeUrl(d.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
-                                    <span v-if="d.biaya" class="whitespace-nowrap rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-700">{{ fmtRupiah(d.biaya) }}</span>
                                 </div>
                             </div>
-                            <div v-else class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada BA untuk kombinasi ini.</div>
+                            <div v-else class="px-4 py-6 text-center text-sm text-slate-400">Tidak ada BA untuk kombinasi ini.</div>
+                            <div v-if="dosenCellJadwal.length" class="border-t border-slate-100">
+                                <div class="px-4 pt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Jadwal Aktif</div>
+                                <div v-for="(j, i) in dosenCellJadwal" :key="'j-' + i" class="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-sm text-slate-700">{{ j.label }}</div>
+                                        <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(j.tanggal) }} · {{ j.jam || '-' }}</div>
+                                    </div>
+                                    <span v-if="j.baId" class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">{{ j.baId }}</span>
+                                    <span v-else class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">Belum terealisasi</span>
+                                </div>
+                            </div>
                         </div>
                         </template>
                     </section>
@@ -4160,33 +4193,35 @@
                     return { cols: this.dosenMatrixCols, rows: this.dosenMatrixRows, grandTotal: this.dosenGrandTotal };
                 },
                 dosenBaBars() {
-                    const rows = this.dosenMatrixRows.slice().sort((a, b) => b.total - a.total);
-                    const max = Math.max(1, ...rows.map(r => r.total));
-                    return rows.map(r => ({ label: r.label, value: r.total, pct: Math.round((r.total / max) * 100) }));
+                    const rows = this.dosenReport.rows.slice().sort((a, b) => b.totalRealisasi - a.totalRealisasi);
+                    const max = Math.max(1, ...rows.map(r => Math.max(r.totalRealisasi, r.totalRencana)));
+                    return rows.map(r => ({
+                        label: r.label,
+                        value: r.totalRealisasi,
+                        rencana: r.totalRencana,
+                        pct: Math.round((r.totalRealisasi / max) * 100)
+                    }));
+                },
+                dosenRowForCell() {
+                    const cell = this.activeDosenCell;
+                    if (!cell) return null;
+                    const key = DosenReport.dosenKey(cell.dosen);
+                    return this.dosenReport.rows.find(r => r.key === key) || null;
                 },
                 dosenCellDetail() {
-                    const cell = this.activeDosenCell;
-                    if (!cell) return [];
-                    const bk = this.normBagian(cell.bagian);
-                    const dk = this.normSearch(cell.dosen);
-                    const out = [];
-                    this.dosenFilteredBa.forEach(b => {
-                        const bagianLabel = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
-                        if (this.normBagian(bagianLabel) !== bk) return;
-                        const found = this.baDosenList(b).some(d => this.normSearch(d) === dk);
-                        if (!found) return;
-                        out.push({
-                            nama: b['Nama Kegiatan'] || '-',
-                            tanggal: b['Tanggal Pelaksanaan'] || '',
-                            jumlahPeserta: Math.max((b.peserta || []).length, Number(b['Jumlah Peserta']) || 0),
-                            fileUrl: b['File URL'] || '',
-                            biaya: (b.peserta || []).reduce((t, p) => t + this.biayaForNpm(String(p.npm || '').trim(), b.Blok), 0)
-                        });
-                    });
-                    return out;
+                    const row = this.dosenRowForCell();
+                    if (!row || !this.activeDosenCell) return [];
+                    const bk = this.normBagian(this.activeDosenCell.bagian);
+                    return row.baRows.filter(b => this.normBagian(b.bagian) === bk);
                 },
-                dosenCellBiayaTotal() {
-                    return this.dosenCellDetail.reduce((t, d) => t + (d.biaya || 0), 0);
+                dosenCellJadwal() {
+                    const row = this.dosenRowForCell();
+                    if (!row || !this.activeDosenCell) return [];
+                    const bk = this.normBagian(this.activeDosenCell.bagian);
+                    return row.jadwalRows.filter(j => this.normBagian(j.bagian) === bk);
+                },
+                dosenCellSesiTotal() {
+                    return this.dosenCellDetail.reduce((t, b) => t + (Number(b.sesiCount) || 0), 0);
                 },
                 bagianDetailRows() {
                     const sel = this.activeMatrixCell;
@@ -5309,10 +5344,40 @@
                     return t;
                 },
                 dosenColTotal(bagianLabel) {
-                    let t = 0;
                     const bk = this.normBagian(bagianLabel);
-                    this.dosenMatrixRows.forEach(r => { t += r.counts[bk] || 0; });
-                    return t;
+                    let realisasi = 0;
+                    let rencana = 0;
+                    this.dosenReport.rows.forEach(r => {
+                        const c = r.counts[bk];
+                        if (!c) return;
+                        realisasi += c.realisasi;
+                        rencana += c.rencana;
+                    });
+                    return { realisasi: realisasi, rencana: rencana };
+                },
+                dosenCellValue(row, bagian) {
+                    return (row && row.counts) ? (row.counts[this.normBagian(bagian)] || { realisasi: 0, rencana: 0 }) : { realisasi: 0, rencana: 0 };
+                },
+                dosenCellRealisasi(row, bagian) {
+                    return this.dosenCellValue(row, bagian).realisasi;
+                },
+                dosenCellRencana(row, bagian) {
+                    return this.dosenCellValue(row, bagian).rencana;
+                },
+                dosenCellHasData(row, bagian) {
+                    const c = this.dosenCellValue(row, bagian);
+                    return !!(c.realisasi || c.rencana);
+                },
+                cellText(row, bagian) {
+                    const c = this.dosenCellValue(row, bagian);
+                    return c.realisasi + '/' + c.rencana;
+                },
+                qualityLabel(type) {
+                    if (type === 'tanpa-sesi') return 'Tanpa tautan sesi';
+                    if (type === 'tanpa-jadwal') return 'Tanpa jadwal';
+                    if (type === 'draft') return 'Draft';
+                    if (type === 'varian') return 'Varian nama';
+                    return type;
                 },
                 dosenCellKey(dosen, bagian) {
                     return this.normSearch(dosen) + '::' + this.normBagian(bagian);

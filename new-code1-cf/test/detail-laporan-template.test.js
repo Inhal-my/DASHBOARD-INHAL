@@ -610,23 +610,32 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('jenisByKegiatanKey() {');
   });
 
-  it('dosen memakai bar chart BA per dosen dan legenda heat', async () => {
+  it('menampilkan sel realisasi/rencana, KPI, dan panel pemeriksaan data', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('{{ cellText(row, b) }}');
+    expect(html).toContain('Rencana dosen tampil:');
+    expect(html).toContain('Rencana global:');
+    expect(html).toContain('Pemeriksaan Data Dosen');
+    expect(html).toContain('dosenCellJadwal');
+    expect(html).toContain('exportDosenReport');
+    expect(html).toContain("'Laporan' }}");
+  });
+
+  it('dosen memakai bar chart sesi per dosen dan legenda heat', async () => {
     const html = await loadHtml();
     expect(html).toContain('dosenBaBars');
-    expect(html).toContain('Jumlah Berita Acara per Dosen');
+    expect(html).toContain('Sesi Pelaksanaan per Dosen');
+    expect(html).toContain('{{ b.value }}/{{ b.rencana }} sesi');
     expect(html).toContain('in-heat-legend');
   });
 
-  it('matriks dosen menghitung jumlah BA per bagian, bukan jumlah peserta', async () => {
+  it('matriks dosen menghitung sesi realisasi dan rencana per detail kegiatan', async () => {
     const html = await loadHtml();
-    const start = html.indexOf('dosenMatrixRows() {');
-    expect(start).toBeGreaterThan(-1);
-    const end = html.indexOf('dosenGrandTotal() {', start);
-    const body = html.slice(start, end);
-    expect(body).toContain('map[dk].counts[bk] = (map[dk].counts[bk] || 0) + 1;');
-    expect(body).toContain('map[dk].total += 1;');
-    expect(body).not.toContain('(b.peserta || []).length');
-    expect(html).toContain('{{ b.value }} BA');
+    expect(html).toContain('DosenReport.buildDosenReport');
+    expect(html).toContain('{{ cellText(row, b) }}');
+    expect(html).toContain('dosenCellHasData(row, b)');
+    expect(html).toContain('Rencana global: {{ dosenReport.totals.rencanaGlobal }}');
+    expect(html).not.toContain('{{ b.value }} BA');
   });
 });
 
