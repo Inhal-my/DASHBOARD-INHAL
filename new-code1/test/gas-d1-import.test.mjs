@@ -49,11 +49,13 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.match(source, /Impor Snapshot D1 - Tahap 2/);
     assert.match(source, /Impor Snapshot D1 - Tahap 3/);
     assert.match(source, /Impor Snapshot D1 - Tahap 4/);
+    assert.match(source, /Impor Snapshot D1 - Tahap 5/);
     assert.match(source, /function d1ImportDryRun\(\)/);
     assert.match(source, /function d1ImportStage1\(\)/);
     assert.match(source, /function d1ImportStage2\(\)/);
     assert.match(source, /function d1ImportStage3\(\)/);
     assert.match(source, /function d1ImportStage4\(\)/);
+    assert.match(source, /function d1ImportStage5\(\)/);
   });
 
   it('mengaktifkan layanan Drive lanjutan untuk konversi XLSX', () => {
@@ -84,6 +86,10 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.deepEqual(
       api.D1_IMPORT_STAGES[4].tables,
       ['jadwal_pelaksanaan', 'jadwal_peserta', 'jadwal_dosen', 'ba_dosen', 'berita_acara_sesi']
+    );
+    assert.deepEqual(
+      api.D1_IMPORT_STAGES[5].tables,
+      ['log_upload', 'audit_log']
     );
   });
 
@@ -429,5 +435,41 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.equal(stat.accepted, 1);
     assert.equal(stat.skipped, 2);
     assert.equal(report.errors, 2);
+  });
+
+  it('memetakan log upload dan audit log dari header mentah', () => {
+    const api = pureApi();
+    const log = api._d1MapRow('log_upload', {
+      timestamp: '2026-01-01T00:00:00Z', id_pengajuan: 'P-1', npm: '001',
+      nama_lengkap: 'Ani', jenis_kegiatan: 'Praktikum', detail: 'ACC',
+      tanggal: '2026-01-01', link_acc_inhal: 'https://drive/acc',
+      link_bukti_bayar: 'https://drive/bayar'
+    });
+    assert.equal(log['ID Pengajuan'], 'P-1');
+    assert.equal(log['Jenis Kegiatan'], 'Praktikum');
+    assert.equal(log['Link ACC INHAL'], 'https://drive/acc');
+    assert.equal(log['Link Bukti Bayar'], 'https://drive/bayar');
+
+    const audit = api._d1MapRow('audit_log', {
+      timestamp: '2026-01-01T00:00:00Z', actor_email: 'admin@x',
+      aksi: 'VERIFY', target: 'Pembayaran', detail: '{"x":1}', alasan: 'cek'
+    });
+    assert.equal(audit['Actor Email'], 'admin@x');
+    assert.equal(audit.Aksi, 'VERIFY');
+    assert.equal(audit.Target, 'Pembayaran');
+    assert.equal(audit.Detail, '{"x":1}');
+    assert.equal(audit.Alasan, 'cek');
+  });
+
+  it('menerima banyak log tanpa kunci unik pada tahap 5', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(5, {
+      log_upload: [{ id_pengajuan: 'P-1' }, { id_pengajuan: 'P-1' }],
+      audit_log: [{ target: 'Pembayaran' }, { target: 'Pembayaran' }]
+    });
+    assert.equal(report.errors, 0);
+    assert.equal(report.warnings, 0);
+    assert.equal(report.stats.find((item) => item.table === 'log_upload').accepted, 2);
+    assert.equal(report.stats.find((item) => item.table === 'audit_log').accepted, 2);
   });
 })

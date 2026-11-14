@@ -16,6 +16,10 @@ const D1_IMPORT_STAGES = {
     4: {
         label: 'Jadwal, Dosen, dan Sesi BA',
         tables: ['jadwal_pelaksanaan', 'jadwal_peserta', 'jadwal_dosen', 'ba_dosen', 'berita_acara_sesi']
+    },
+    5: {
+        label: 'Log Upload dan Audit Log',
+        tables: ['log_upload', 'audit_log']
     }
 };
 
@@ -363,6 +367,36 @@ const D1_IMPORT_TABLES = {
             { to: 'Jadwal ID', from: ['jadwal_id', 'Jadwal ID'] },
             { to: 'Urutan', from: ['urutan', 'Urutan'] }
         ]
+    },
+    log_upload: {
+        sheet: 'LogUpload',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Nama Lengkap', from: ['nama_lengkap', 'Nama Lengkap'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Jenis Kegiatan', from: ['jenis_kegiatan', 'Jenis Kegiatan'] },
+            { to: 'Detail', from: ['detail', 'Detail'] },
+            { to: 'Tanggal', from: ['tanggal', 'Tanggal'] },
+            { to: 'Link ACC INHAL', from: ['link_acc_inhal', 'Link ACC INHAL'] },
+            { to: 'Link Bukti Bayar', from: ['link_bukti_bayar', 'Link Bukti Bayar'] }
+        ]
+    },
+    audit_log: {
+        sheet: 'AuditLog',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'Actor Email', from: ['actor_email', 'Actor Email'] },
+            { to: 'Aksi', from: ['aksi', 'Aksi'] },
+            { to: 'Target', from: ['target', 'Target'] },
+            { to: 'Detail', from: ['detail', 'Detail'] },
+            { to: 'Alasan', from: ['alasan', 'Alasan'] }
+        ]
     }
 };
 
@@ -505,6 +539,7 @@ function onOpen() {
         .addItem('Impor Snapshot D1 - Tahap 2', 'd1ImportStage2')
         .addItem('Impor Snapshot D1 - Tahap 3', 'd1ImportStage3')
         .addItem('Impor Snapshot D1 - Tahap 4', 'd1ImportStage4')
+        .addItem('Impor Snapshot D1 - Tahap 5', 'd1ImportStage5')
         .addSeparator()
         .addItem('Bantuan Impor Snapshot', 'd1ImportHelp')
         .addToUi();
@@ -538,6 +573,10 @@ function d1ImportStage4() {
     _d1RunStage(4);
 }
 
+function d1ImportStage5() {
+    _d1RunStage(5);
+}
+
 function d1ImportHelp() {
     const text = [
         'Cara impor snapshot D1:',
@@ -551,6 +590,7 @@ function d1ImportHelp() {
         'Tahap 2: Pengajuan, DetailKegiatan, StatusHistory, CheckData, PembayaranRevisi.',
         'Tahap 3: BeritaAcara, BeritaAcaraPeserta, BeritaAcaraAdmin, BeritaAcaraAdminPeserta, BeritaAcaraAdminBerkas.',
         'Tahap 4: JadwalPelaksanaan, JadwalPeserta, JadwalDosen, BaDosen, BeritaAcaraSesi.',
+        'Tahap 5: LogUpload dan AuditLog.',
         'Jalankan tahap secara berurutan.',
         '',
         'Admin, BagianStaff, dan NomorSurat tidak pernah diubah.',
