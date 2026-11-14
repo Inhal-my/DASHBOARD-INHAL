@@ -19,6 +19,14 @@ function runtimeApi(inject) {
 
 const manifest = JSON.parse(read('../appsscript.json'));
 
+function gasSchemas() {
+  const core = read('../0_code.gs');
+  const start = core.indexOf('const SCHEMAS =');
+  const end = core.indexOf('const HEADER_BG_COLOR');
+  assert.ok(start !== -1 && end > start, 'SCHEMAS tidak ditemukan');
+  return new Function(core.slice(start, end) + '\nreturn SCHEMAS;')();
+}
+
 function pureApi() {
   const start = source.indexOf('const D1_IMPORT_PRESERVE');
   const end = source.indexOf('// ===== RUNTIME GAS =====');
@@ -38,8 +46,10 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.match(source, /createMenu\('INHAL'\)/);
     assert.match(source, /Impor Snapshot D1 - Dry-run/);
     assert.match(source, /Impor Snapshot D1 - Tahap 1/);
+    assert.match(source, /Impor Snapshot D1 - Tahap 2/);
     assert.match(source, /function d1ImportDryRun\(\)/);
     assert.match(source, /function d1ImportStage1\(\)/);
+    assert.match(source, /function d1ImportStage2\(\)/);
   });
 
   it('mengaktifkan layanan Drive lanjutan untuk konversi XLSX', () => {
@@ -59,6 +69,24 @@ describe('impor snapshot D1 tahap 1', () => {
       api.D1_IMPORT_STAGES[1].tables,
       ['mahasiswa', 'master_kegiatan', 'master_bagian', 'master_biaya', 'config']
     );
+    assert.deepEqual(
+      api.D1_IMPORT_STAGES[2].tables,
+      ['pengajuan', 'detail_kegiatan', 'status_history', 'check_data', 'pembayaran_revisi']
+    );
+  });
+
+  it('memetakan setiap kolom impor ke header SCHEMAS GAS', () => {
+    const api = pureApi();
+    const schemas = gasSchemas();
+    Object.keys(api.D1_IMPORT_TABLES).forEach((table) => {
+      const def = api.D1_IMPORT_TABLES[table];
+      assert.ok(schemas[def.sheet], 'sheet ' + def.sheet + ' tidak ada di SCHEMAS');
+      assert.deepEqual(
+        def.fields.map((field) => field.to),
+        schemas[def.sheet],
+        'kolom ' + table + ' tidak cocok dengan SCHEMAS ' + def.sheet
+      );
+    });
   });
 
   it('memetakan header mentah dan header ramah ke header GAS', () => {
@@ -219,4 +247,59 @@ describe('impor snapshot D1 tahap 1', () => {
     const api = runtimeApi({});
     assert.throws(() => api._d1ApplyStage(1, { errors: 1, tables: {} }), /masih memiliki error/);
   });
-})
+
+  it('memetakan data pengajuan dan revisi pembayaran dari header D1', () => {
+    const api = pureApi();
+    const pengajuan = api._d1MapRow('pengajuan', {
+      'ID Pengajuan': 'P-1', 'NPM': '001', 'No. HP/WA': '0812', 'Form Key': 'K-1',
+      'Status Pembayaran': 'valid', 'Payment Revision': 2
+    });
+    assert.equal(pengajuan['ID Pengajuan'], 'P-1');
+    assert.equal(pengajuan['No. HP/WA'], '0812');
+    assert.equal(pengajuan['Form Key'], 'K-1');
+    assert.equal(pengajuan['Status Pembayaran'], 'valid');
+    assert.equal(pengajuan['Payment Revision'], 2);
+
+    const revisi = api._d1MapRow('pembayaran_revisi', {
+      id: 9, id_pengajuan: 'P-1', revision: 2, created_at: '2026-01-01T00:00:00Z',
+      before_json: '{"a":1}', after_json: '{"a":2}'
+    });
+    assert.equal(revisi['Revisi ID'], 9);
+    assert.equal(revisi.Timestamp, '2026-01-01T00:00:00Z');
+    assert.equal(revisi['Created At'], '2026-01-01T00:00:00Z');
+    assert.equal(revisi['Before JSON'], '{"a":1}');
+  });
+
+  it('menerima banyak baris tanpa kunci unik pada tahap 2', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(2, {
+      pengajuan: [{ id_pengajuan: 'P-1' }, { id_pengajuan: 'P-2' }],
+      detail_kegiatan: [{ id_pengajuan: 'P-1' }, { id_pengajuan: 'P-1' }],
+      status_history: [{ id_pengajuan: 'P-1' }, { id_pengajuan: 'P-1' }],
+      check_data: [{ id_pengajuan: 'P-1' }, { id_pengajuan: 'P-1' }],
+      pembayaran_revisi: [{ id_pengajuan: 'P-1', revision: 1 }, { id_pengajuan: 'P-1', revision: 2 }]
+    });
+    assert.equal(report.errors, 0);
+    assert.equal(report.warnings, 0);
+    ['detail_kegiatan', 'status_history', 'check_data', 'pembayaran_revisi'].forEach((table) => {
+      const stat = report.stats.find((item) => item.table === table);
+      assert.equal(stat.accepted, 2, table + ' harus menerima semua baris');
+    });
+  });
+
+  it('menolak ID Pengajuan kosong atau duplikat pada tahap 2', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(2, {
+      pengajuan: [
+        { id_pengajuan: 'P-1' },
+        { id_pengajuan: 'P-1' },
+        { id_pengajuan: '' }
+      ],
+      detail_kegiatan: [], status_history: [], check_data: [], pembayaran_revisi: []
+    });
+    const stat = report.stats.find((item) => item.table === 'pengajuan');
+    assert.equal(stat.accepted, 1);
+    assert.equal(stat.skipped, 2);
+    assert.equal(report.errors, 2);
+  });
+});

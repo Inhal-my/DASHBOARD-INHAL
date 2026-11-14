@@ -4,6 +4,10 @@ const D1_IMPORT_STAGES = {
     1: {
         label: 'Master, Mahasiswa, dan Config',
         tables: ['mahasiswa', 'master_kegiatan', 'master_bagian', 'master_biaya', 'config']
+    },
+    2: {
+        label: 'Pengajuan, Detail, Riwayat, Check Data, dan Revisi Pembayaran',
+        tables: ['pengajuan', 'detail_kegiatan', 'status_history', 'check_data', 'pembayaran_revisi']
     }
 };
 
@@ -57,6 +61,131 @@ const D1_IMPORT_TABLES = {
             { to: 'Key', from: ['key', 'Key'] },
             { to: 'Value', from: ['value', 'Value'] }
         ]
+    },
+    pengajuan: {
+        sheet: 'Pengajuan',
+        strictKey: true,
+        key: ['ID Pengajuan'],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Nama Lengkap', from: ['nama_lengkap', 'Nama Lengkap'] },
+            { to: 'Email', from: ['email', 'Email'] },
+            { to: 'No. HP/WA', from: ['no_hp_wa', 'No. HP/WA'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Jenis Kegiatan', from: ['jenis_kegiatan', 'Jenis Kegiatan'] },
+            { to: 'Dosen', from: ['dosen', 'Dosen'] },
+            { to: 'Tanggal Pelaksanaan', from: ['tanggal_pelaksanaan', 'Tanggal Pelaksanaan'] },
+            { to: 'Keterangan', from: ['keterangan', 'Keterangan'] },
+            { to: 'Link Surat Keterangan', from: ['link_surat_keterangan', 'Link Surat Keterangan'] },
+            { to: 'Status', from: ['status', 'Status'] },
+            { to: 'Catatan Admin', from: ['catatan_admin', 'Catatan Admin'] },
+            { to: 'Notifikasi Terkirim Pada', from: ['notifikasi_terkirim_pada', 'Notifikasi Terkirim Pada'] },
+            { to: 'Status Notifikasi Email', from: ['status_notifikasi_email', 'Status Notifikasi Email'] },
+            { to: 'Error Notifikasi Email', from: ['error_notifikasi_email', 'Error Notifikasi Email'] },
+            { to: 'Lampiran Email', from: ['lampiran_email', 'Lampiran Email'] },
+            { to: 'Nomor Surat', from: ['nomor_surat', 'Nomor Surat'] },
+            { to: 'Link ACC INHAL', from: ['link_acc_inhal', 'Link ACC INHAL'] },
+            { to: 'Link Bukti Bayar', from: ['link_bukti_bayar', 'Link Bukti Bayar'] },
+            { to: 'Link Final', from: ['link_final', 'Link Final'] },
+            { to: 'Status Info Bagian', from: ['status_info_bagian', 'Status Info Bagian'] },
+            { to: 'Waktu Info Bagian', from: ['waktu_info_bagian', 'Waktu Info Bagian'] },
+            { to: 'Email Bagian', from: ['email_bagian', 'Email Bagian'] },
+            { to: 'Catatan Info Bagian', from: ['catatan_info_bagian', 'Catatan Info Bagian'] },
+            { to: 'UpdatedAt', from: ['updated_at', 'UpdatedAt'] },
+            { to: 'Sumber', from: ['sumber', 'Sumber'] },
+            { to: 'Status Pembayaran', from: ['status_pembayaran', 'Status Pembayaran'] },
+            { to: 'Kesesuaian Pembayaran', from: ['kesesuaian_pembayaran', 'Kesesuaian Pembayaran'] },
+            { to: 'Nominal Dibayar', from: ['nominal_dibayar', 'Nominal Dibayar'] },
+            { to: 'Tanggal Bayar', from: ['tanggal_bayar', 'Tanggal Bayar'] },
+            { to: 'Metode Bayar', from: ['metode_bayar', 'Metode Bayar'] },
+            { to: 'Catatan Verifikasi', from: ['catatan_verifikasi', 'Catatan Verifikasi'] },
+            { to: 'Verified At', from: ['verified_at', 'Verified At'] },
+            { to: 'Verified By', from: ['verified_by', 'Verified By'] },
+            { to: 'Payment Revision', from: ['payment_revision', 'Payment Revision'] },
+            { to: 'Upload Reset At', from: ['upload_reset_at', 'Upload Reset At'] },
+            { to: 'Upload Reset By', from: ['upload_reset_by', 'Upload Reset By'] },
+            { to: 'Upload Reset Note', from: ['upload_reset_note', 'Upload Reset Note'] },
+            { to: 'Form Key', from: ['form_key', 'Form Key'] }
+        ]
+    },
+    detail_kegiatan: {
+        sheet: 'DetailKegiatan',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'Jenis Kegiatan', from: ['jenis_kegiatan', 'Jenis Kegiatan'] },
+            { to: 'Pilihan', from: ['pilihan', 'Pilihan'] },
+            { to: 'Detail', from: ['detail', 'Detail'] },
+            { to: 'Tanggal Pelaksanaan', from: ['tanggal_pelaksanaan', 'Tanggal Pelaksanaan'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] }
+        ]
+    },
+    status_history: {
+        sheet: 'StatusHistory',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'Status', from: ['status', 'Status'] },
+            { to: 'Catatan', from: ['catatan', 'Catatan'] },
+            { to: 'Actor Email', from: ['actor_email', 'Actor Email'] }
+        ]
+    },
+    check_data: {
+        sheet: 'CheckData',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'Check ID', from: ['check_id', 'Check ID'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Nama Lengkap', from: ['nama_lengkap', 'Nama Lengkap'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Jenis Kegiatan', from: ['jenis_kegiatan', 'Jenis Kegiatan'] },
+            { to: 'Pilihan', from: ['pilihan', 'Pilihan'] },
+            { to: 'Detail', from: ['detail', 'Detail'] },
+            { to: 'Tanggal Pelaksanaan', from: ['tanggal_pelaksanaan', 'Tanggal Pelaksanaan'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] },
+            { to: 'Dosen', from: ['dosen', 'Dosen'] },
+            { to: 'Hadir', from: ['hadir', 'Hadir'] },
+            { to: 'Catatan', from: ['catatan', 'Catatan'] },
+            { to: 'Biaya', from: ['biaya', 'Biaya'] },
+            { to: 'UpdatedAt', from: ['updated_at', 'UpdatedAt'] }
+        ]
+    },
+    pembayaran_revisi: {
+        sheet: 'PembayaranRevisi',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['created_at', 'Created At', 'timestamp', 'Timestamp'] },
+            { to: 'Revisi ID', from: ['id', 'Revisi ID'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'Revision', from: ['revision', 'Revision'] },
+            { to: 'Mode', from: ['mode', 'Mode'] },
+            { to: 'Status Lama', from: ['status_lama', 'Status Lama'] },
+            { to: 'Status Baru', from: ['status_baru', 'Status Baru'] },
+            { to: 'Kesesuaian Lama', from: ['kesesuaian_lama', 'Kesesuaian Lama'] },
+            { to: 'Kesesuaian Baru', from: ['kesesuaian_baru', 'Kesesuaian Baru'] },
+            { to: 'Nominal Lama', from: ['nominal_lama', 'Nominal Lama'] },
+            { to: 'Nominal Baru', from: ['nominal_baru', 'Nominal Baru'] },
+            { to: 'Tanggal Lama', from: ['tanggal_lama', 'Tanggal Lama'] },
+            { to: 'Tanggal Baru', from: ['tanggal_baru', 'Tanggal Baru'] },
+            { to: 'Metode Lama', from: ['metode_lama', 'Metode Lama'] },
+            { to: 'Metode Baru', from: ['metode_baru', 'Metode Baru'] },
+            { to: 'Alasan', from: ['alasan', 'Alasan'] },
+            { to: 'Catatan', from: ['catatan', 'Catatan'] },
+            { to: 'Actor', from: ['actor', 'Actor'] },
+            { to: 'Created At', from: ['created_at', 'Created At'] },
+            { to: 'Before JSON', from: ['before_json', 'Before JSON'] },
+            { to: 'After JSON', from: ['after_json', 'After JSON'] }
+        ]
     }
 };
 
@@ -99,7 +228,9 @@ function _d1MapRow(tableName, row) {
 }
 
 function _d1RowKey(def, mapped) {
-    const parts = (def.key || []).map(function(header) { return _d1Norm(mapped[header]); });
+    const keys = def.key || [];
+    if (!keys.length) return { valid: true, value: '' };
+    const parts = keys.map(function(header) { return _d1Norm(mapped[header]); });
     return { valid: parts.every(function(part) { return !!part; }), value: parts.join('|') };
 }
 
@@ -133,7 +264,7 @@ function _d1ValidateStage(stage, tables) {
                 stat.skipped += 1;
                 return;
             }
-            if (seen[key.value]) {
+            if ((def.key || []).length && seen[key.value]) {
                 const level = def.strictKey ? 'error' : 'warning';
                 issues.push({ level: level, table: tableName, row: index + 2, message: 'Duplikat kunci ' + def.key.join(' + ') + ': ' + key.value + '.' });
                 if (def.strictKey) {
@@ -194,6 +325,7 @@ function onOpen() {
         .createMenu('INHAL')
         .addItem('Impor Snapshot D1 - Dry-run', 'd1ImportDryRun')
         .addItem('Impor Snapshot D1 - Tahap 1', 'd1ImportStage1')
+        .addItem('Impor Snapshot D1 - Tahap 2', 'd1ImportStage2')
         .addSeparator()
         .addItem('Bantuan Impor Snapshot', 'd1ImportHelp')
         .addToUi();
@@ -215,6 +347,10 @@ function d1ImportStage1() {
     _d1RunStage(1);
 }
 
+function d1ImportStage2() {
+    _d1RunStage(2);
+}
+
 function d1ImportHelp() {
     const text = [
         'Cara impor snapshot D1:',
@@ -222,7 +358,11 @@ function d1ImportHelp() {
         '2. Unggah file XLSX ke Google Drive.',
         '3. Salin link atau ID file XLSX.',
         '4. Klik INHAL -> Impor Snapshot D1 - Dry-run, tempel link/ID.',
-        '5. Periksa laporan. Jika tidak ada error, jalankan Impor Snapshot D1 - Tahap 1.',
+        '5. Periksa laporan. Jika tidak ada error, jalankan impor sesuai tahap.',
+        '',
+        'Tahap 1: Mahasiswa, MasterKegiatan, MasterBagian, MasterBiaya, Config.',
+        'Tahap 2: Pengajuan, DetailKegiatan, StatusHistory, CheckData, PembayaranRevisi.',
+        'Jalankan Tahap 1 sebelum Tahap 2.',
         '',
         'Admin, BagianStaff, dan NomorSurat tidak pernah diubah.',
         'Config dan sheet pada tahap terpilih akan dikosongkan lalu diisi dari D1.',

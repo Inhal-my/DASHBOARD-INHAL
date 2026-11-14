@@ -126,16 +126,16 @@ Autentikasi `authenticateAdmin` (token sesi `_CURRENT_SESSION`). Panggilan aktua
 - **Tab Berita Acara (admin)** memakai `uploadBeritaAcaraAdmin` yang **menolak BA tanpa peserta** (batch 11) dan `_resolveBaPesertaFromDetail` → fallback `normalizeBaPeserta`.
 - Setelah simpan master (`saveEdit`), dashboard me-reset lazy-load `loaded.pengajuan`/`loaded.stats` lalu reload agar data pengajuan langsung segar.
 
-### Impor Snapshot D1 (Tahap 1)
-Menu spreadsheet **INHAL** menyediakan `Impor Snapshot D1 - Dry-run` dan `Impor Snapshot D1 - Tahap 1` (`5_d1_import.gs`).
+### Impor Snapshot D1 (Tahap 1 dan 2)
+Menu spreadsheet **INHAL** menyediakan `Impor Snapshot D1 - Dry-run`, `Impor Snapshot D1 - Tahap 1`, dan `Impor Snapshot D1 - Tahap 2` (`5_d1_import.gs`).
 
 Alur:
 1. Dashboard CF → **Download Database** → cakupan **Semua tabel**.
 2. Unggah XLSX ke Google Drive, salin link/ID file.
 3. Jalankan **Dry-run**, tempel link/ID, periksa jumlah baris dan temuan.
-4. Jika tidak ada error, jalankan **Tahap 1** dan konfirmasi full replace.
+4. Jika tidak ada error, jalankan **Tahap 1** lalu **Tahap 2**, masing-masing dengan konfirmasi full replace.
 
-Tahap 1 mengganti `Mahasiswa`, `MasterKegiatan`, `MasterBagian`, `MasterBiaya`, dan `Config`. Sheet `Admin`, `BagianStaff`, dan `NomorSurat` dipertahankan. XLSX dikonversi otomatis menjadi Google Sheet sementara lewat Drive API lanjutan; konversi disimpan per file agar dry-run dan impor memakai salinan yang sama.
+Tahap 1 mengganti `Mahasiswa`, `MasterKegiatan`, `MasterBagian`, `MasterBiaya`, dan `Config`. Tahap 2 mengganti `Pengajuan`, `DetailKegiatan`, `StatusHistory`, `CheckData`, dan `PembayaranRevisi`. Sheet `Admin`, `BagianStaff`, dan `NomorSurat` dipertahankan. XLSX dikonversi otomatis menjadi Google Sheet sementara lewat Drive API lanjutan; konversi disimpan per file agar dry-run dan impor memakai salinan yang sama.
 
 ### `detail-laporan.html` — Laporan (admin)
 `authenticateAdmin` → `getLaporanBootstrap` (memuat data laporan + `masterBiaya`), `deletePengajuanAdmin`, `updateBeritaAcaraAdmin`, `updateBeritaAcaraBagian`, `logoutSession`.
