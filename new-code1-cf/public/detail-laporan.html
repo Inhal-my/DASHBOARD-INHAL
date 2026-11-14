@@ -3733,6 +3733,7 @@
                             tanggal: String(b['Tanggal Pelaksanaan'] || '').trim(),
                             jam: String(b.Jam || '').trim(),
                             dosen: this.baDosenList(b).join(', '),
+                            dosenList: this.baDosenList(b),
                             jumlahPeserta: Number(b['Jumlah Peserta']) || (b.peserta || []).length,
                             pesertaNpm: (b.peserta || []).map(x => String(x.npm || '').trim()).filter(Boolean),
                             fileUrl: String(b['File URL'] || '').trim()
@@ -3916,8 +3917,9 @@
                         ba.baPel.forEach(b => b.pesertaNpm.forEach(npm => { baPelNpm[npm] = 1; }));
                         const dosenList = [];
                         ba.baPel.forEach(b => {
-                            String(b.dosen || '').split(',').forEach(d => {
-                                const v = String(d || '').trim();
+                            const names = Array.isArray(b.dosenList) ? b.dosenList : (b.dosen ? [b.dosen] : []);
+                            names.forEach(d => {
+                                const v = String(d || '').replace(/\s+/g, ' ').trim();
                                 if (v && dosenList.indexOf(v) === -1) dosenList.push(v);
                             });
                         });

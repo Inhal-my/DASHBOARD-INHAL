@@ -219,6 +219,15 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
     expect(body).toContain('this.normBagian(v) !== this.normBagian(this.activeMatrixCell.bagian)');
   });
 
+  it('tidak memecah nama dosen ber-koma pada detail kegiatan', async () => {
+    const html = await loadHtml();
+    const index = block(html, 'bagianBaIndex() {', 'bagianKegiatanAll() {');
+    expect(index).toContain('dosenList: this.baDosenList(b),');
+    const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
+    expect(all).not.toContain("String(b.dosen || '').split(',')");
+    expect(all).toContain('Array.isArray(b.dosenList) ? b.dosenList : (b.dosen ? [b.dosen] : [])');
+  });
+
   it('reset filter global juga mereset semua pager', async () => {
     const html = await loadHtml();
     const reset = block(html, 'resetGlobalFilters() {', 'animateNumbers() {');
