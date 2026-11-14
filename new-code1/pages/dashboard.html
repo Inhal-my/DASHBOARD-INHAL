@@ -155,6 +155,8 @@
             --rose-soft: #fff1f2;
             --violet: #7c3aed;
             --violet-soft: #f5f3ff;
+            --teal: #0d9488;
+            --teal-soft: #f0fdfa;
             --shadow-soft: 0 1px 2px rgba(15,23,42,.04);
             --shadow-lift: 0 20px 45px -25px rgba(15,23,42,.35);
         }
@@ -270,6 +272,94 @@
             .pd-grid2, .pd-grid3 { grid-template-columns: 1fr; }
             .pd-statuspick { grid-template-columns: 1fr; }
             .pd-step .lbl { display: none; }
+        }
+        .dash-card { background: #fff; border: 1px solid #e7ebf3; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -18px rgba(15,23,42,.28); }
+        .act-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+        .act-side { display: grid; gap: 14px; }
+        .act-filters { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; padding: 14px 16px; border-bottom: 1px solid #eef2f7; }
+        .act-filters .f-date { grid-column: span 3; }
+        .act-filters .f-sel { grid-column: span 2; }
+        .act-filters .f-search { grid-column: span 4; }
+        .act-filters .f-btn { grid-column: span 3; display: flex; align-items: flex-end; gap: 8px; }
+        .act-filters .f-btn .btn-primary, .act-filters .f-btn .btn-soft { padding: .5rem .75rem; font-size: .75rem; }
+        .act-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 14px; border-bottom: 1px solid #eef2f7; }
+        .act-chip { display: inline-flex; align-items: center; gap: .375rem; padding: .4rem .75rem; border-radius: 9999px; font-size: .75rem; font-weight: 700; color: var(--ink-500); background: #fff; border: 1px solid var(--line); transition: border-color .15s ease, color .15s ease, background .15s ease; }
+        .act-chip:hover { border-color: #cbd5e1; color: var(--ink-700); }
+        .act-chip.is-active { background: #0f172a; color: #fff; border-color: #0f172a; }
+        .act-chip .n { font-variant-numeric: tabular-nums; opacity: .7; font-weight: 800; }
+        .act-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+        .act-badge.acc { background: var(--emerald-soft); color: var(--emerald); }
+        .act-badge.reject, .act-badge.deny { background: var(--rose-soft); color: var(--rose); }
+        .act-badge.pay { background: var(--teal-soft); color: var(--teal); }
+        .act-badge.ba { background: var(--violet-soft); color: var(--violet); }
+        .act-badge.master { background: var(--amber-soft); color: var(--amber); }
+        .act-badge.file { background: #f1f5f9; color: var(--ink-700); }
+        .act-badge.act { background: var(--brand-soft); color: var(--brand); }
+        .act-badge.slate { background: #f1f5f9; color: #64748b; }
+        .act-day { border-bottom: 1px solid #eef2f7; }
+        .act-day-head { display: flex; align-items: baseline; gap: 10px; padding: 11px 16px; background: #fbfcfe; border-bottom: 1px solid #eef2f7; position: sticky; top: 0; z-index: 2; }
+        .act-day-head .d { font-size: 13px; font-weight: 800; color: var(--ink-900); }
+        .act-day-head .n { font-size: 11px; color: var(--ink-400); font-weight: 700; }
+        .act-feed { display: grid; }
+        .act-item { display: grid; grid-template-columns: 56px 24px 1fr; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; text-align: left; width: 100%; background: transparent; }
+        .act-item:last-child { border-bottom: 0; }
+        .act-item:hover { background: #fbfcff; }
+        .act-item .t { font-size: 11px; font-weight: 800; color: var(--ink-400); font-variant-numeric: tabular-nums; padding-top: 2px; }
+        .act-item .dotwrap { display: flex; justify-content: center; position: relative; }
+        .act-item .dotwrap::before { content: ""; position: absolute; top: 4px; bottom: -26px; width: 2px; background: #eef2f7; }
+        .act-item:last-child .dotwrap::before { display: none; }
+        .act-item .dot { width: 10px; height: 10px; border-radius: 9999px; margin-top: 4px; background: #cbd5e1; position: relative; z-index: 1; box-shadow: 0 0 0 3px #fff; }
+        .act-item .dot.acc { background: var(--emerald); }
+        .act-item .dot.reject, .act-item .dot.deny { background: var(--rose); }
+        .act-item .dot.pay { background: var(--teal); }
+        .act-item .dot.ba { background: var(--violet); }
+        .act-item .dot.master { background: #f59e0b; }
+        .act-item .dot.file { background: #94a3b8; }
+        .act-item .dot.act { background: var(--brand); }
+        .act-item .body { min-width: 0; }
+        .act-item .line1 { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+        .act-item .who { font-weight: 800; font-size: 12.5px; color: var(--ink-900); }
+        .act-item .what { font-size: 12px; color: var(--ink-700); }
+        .act-item .meta { font-size: 10.5px; color: var(--ink-400); margin-top: 3px; }
+        .act-item .why { font-size: 11px; color: var(--ink-500); margin-top: 4px; font-style: italic; }
+        .act-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid #eef2f7; }
+        .act-side .side-title { font-size: 12.5px; font-weight: 800; color: var(--ink-900); }
+        .act-side .side-sub { font-size: 10.5px; color: var(--ink-400); margin-top: 2px; }
+        .act-daynav { display: grid; gap: 3px; }
+        .act-daynav button { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 9px; font-size: 11.5px; font-weight: 700; color: var(--ink-700); text-align: left; }
+        .act-daynav button:hover { background: #f1f5f9; }
+        .act-daynav button .c { font-size: 10px; color: var(--ink-400); font-weight: 800; }
+        .act-legend { display: grid; gap: 7px; }
+        .act-legend .lg { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-700); font-weight: 700; }
+        .act-legend .sw { width: 10px; height: 10px; border-radius: 9999px; flex: 0 0 auto; }
+        .act-legend .n { margin-left: auto; font-size: 10.5px; color: var(--ink-400); font-variant-numeric: tabular-nums; }
+        .act-kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+        .act-kv .k { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-400); font-weight: 800; }
+        .act-kv .v { font-size: 12px; font-weight: 700; color: var(--ink-900); margin-top: 2px; word-break: break-word; }
+        .act-info { border: 1px solid #eef2f7; border-radius: 12px; padding: 12px; background: #fff; }
+        .act-info + .act-info { margin-top: 10px; }
+        .act-section-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-400); font-weight: 800; }
+        .act-note { margin-top: 9px; border-radius: 9px; background: #fffbeb; padding: 8px 10px; font-size: 11.5px; color: #92400e; }
+        .act-diff { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .act-diff th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-400); padding: 6px 8px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
+        .act-diff td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+        .act-diff td.k { font-weight: 800; color: var(--ink-700); white-space: nowrap; }
+        .act-diff td.before { color: var(--rose); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+        .act-diff td.after { color: var(--emerald); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+        .act-json { background: #0f172a; color: #cbd5e1; border-radius: 12px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; line-height: 1.6; overflow-x: auto; white-space: pre; }
+        .act-drawer-scrim { position: fixed; inset: 0; z-index: 120; display: flex; justify-content: flex-end; background: rgba(15,23,42,.45); }
+        .act-drawer { height: 100%; width: 100%; max-width: 460px; overflow-y: auto; background: #fff; box-shadow: 0 24px 60px -24px rgba(15,23,42,.45); }
+        .act-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #eef2f7; position: sticky; top: 0; background: #fff; z-index: 1; }
+        .act-drawer-body { padding: 14px 18px 22px; }
+        @media (max-width: 1100px) {
+            .act-grid { grid-template-columns: minmax(0, 1fr); }
+            .act-side { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+            .act-filters .f-date, .act-filters .f-sel, .act-filters .f-search, .act-filters .f-btn { grid-column: span 6; }
+        }
+        @media (max-width: 640px) {
+            .act-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .act-filters .f-date, .act-filters .f-sel, .act-filters .f-search, .act-filters .f-btn { grid-column: span 2; }
+            .act-item { grid-template-columns: 46px 20px 1fr; gap: 8px; padding: 10px 12px; }
         }
     </style>
     <style>
@@ -818,6 +908,7 @@
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button class="btn-primary !py-2 text-xs" @click="openBaUpload()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
+                            <button class="btn-soft !py-2 text-xs" @click="openBaCreate()"><i class="bi bi-plus-lg"></i> Buat BA Pendukung</button>
                             <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
                         </div>
                     </div>
@@ -1446,6 +1537,7 @@
                                         <input type="file" accept=".csv,text/csv" class="hidden" @change="onMahasiswaCsv">
                                     </label>
                                     <button class="btn-primary !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openMasterRow(activeMasterCard.key)"><i class="bi bi-plus-lg"></i> Tambah</button>
+                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openAuditMaster()"><i class="bi bi-shield-check"></i> Periksa Integritas</button>
                                 </div>
                             </div>
                             <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
@@ -1602,10 +1694,257 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- ============ TAB: RIWAYAT ============ -->
+                <section v-if="tab==='riwayat'">
+                    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Riwayat Aktivitas</h1>
+                            <p class="mt-0.5 text-sm text-slate-500">Siapa melakukan apa, kapan, pada pengajuan atau berkas mana. Hanya baca.</p>
+                        </div>
+                        <button type="button" class="btn-soft" :disabled="act.loading || !act.total" @click="exportActivityLog()">
+                            <i class="bi bi-file-earmark-excel"></i> Ekspor XLSX
+                        </button>
+                    </div>
+
+                    <div v-if="sectionLoading.riwayat" class="flex items-center justify-center gap-3 dash-card py-16 text-slate-400">
+                        <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Memuat riwayat...</span>
+                    </div>
+
+                    <div v-else class="space-y-4">
+                        <div v-if="act.error" class="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 ring-1 ring-rose-600/20">
+                            <i class="bi bi-exclamation-triangle"></i> {{ act.error }}
+                        </div>
+                        <div v-if="act.truncated" class="rounded-xl bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800 ring-1 ring-amber-600/20">
+                            Data melebihi 5.000 entri. Persempit rentang tanggal agar hasil lengkap.
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                            <div class="dash-card flex items-center gap-3 p-4">
+                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><i class="bi bi-activity"></i></span>
+                                <div><div class="text-lg font-extrabold text-slate-900">{{ act.summary.total }}</div><div class="text-[11px] font-semibold text-slate-500">Total entri</div></div>
+                            </div>
+                            <div class="dash-card flex items-center gap-3 p-4">
+                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><i class="bi bi-check2-circle"></i></span>
+                                <div><div class="text-lg font-extrabold text-slate-900">{{ act.summary.keputusan }}</div><div class="text-[11px] font-semibold text-slate-500">Keputusan</div></div>
+                            </div>
+                            <div class="dash-card flex items-center gap-3 p-4">
+                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-emerald-600"><i class="bi bi-cloud-upload"></i></span>
+                                <div><div class="text-lg font-extrabold text-slate-900">{{ act.summary.unggahan }}</div><div class="text-[11px] font-semibold text-slate-500">Unggahan</div></div>
+                            </div>
+                            <div class="dash-card flex items-center gap-3 p-4">
+                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><i class="bi bi-shield-exclamation"></i></span>
+                                <div><div class="text-lg font-extrabold text-slate-900">{{ act.summary.kritis }}</div><div class="text-[11px] font-semibold text-slate-500">Perlu perhatian</div></div>
+                            </div>
+                        </div>
+
+                        <div class="act-grid">
+                            <div class="dash-card overflow-hidden">
+                                <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5">
+                                    <div>
+                                        <div class="text-sm font-extrabold text-slate-900">Linimasa</div>
+                                        <div class="mt-0.5 text-[11px] text-slate-400">{{ act.rangeLabel }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="act-filters">
+                                    <div class="f-date"><label class="label">Dari</label><input v-model="act.filters.dari" type="date" class="input"></div>
+                                    <div class="f-date"><label class="label">Sampai</label><input v-model="act.filters.sampai" type="date" class="input"></div>
+                                    <div class="f-sel">
+                                        <label class="label">Aktor</label>
+                                        <select v-model="act.filters.aktor" class="input">
+                                            <option value="">Semua aktor</option>
+                                            <option v-for="a in act.actors" :key="a.nama + '|' + a.role" :value="a.nama">{{ a.nama }} ({{ a.jumlah }})</option>
+                                        </select>
+                                    </div>
+                                    <div class="f-sel">
+                                        <label class="label">Jenis</label>
+                                        <select v-model="act.filters.jenis" class="input">
+                                            <option value="">Semua jenis</option>
+                                            <option v-for="k in act.kinds" :key="k.jenis" :value="k.jenis">{{ k.label }} ({{ k.jumlah }})</option>
+                                        </select>
+                                    </div>
+                                    <div class="f-search"><label class="label">Cari</label><input v-model="act.filters.q" type="search" class="input" placeholder="Aktor, ID, ringkasan, alasan..." @keyup.enter="applyActivityFilter()"></div>
+                                    <div class="f-btn">
+                                        <button type="button" class="btn-primary" :disabled="act.loading" @click="applyActivityFilter()"><i class="bi bi-search"></i> Terapkan</button>
+                                        <button type="button" class="btn-soft" :disabled="act.loading" @click="resetActivityFilter()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                                    </div>
+                                </div>
+
+                                <div class="act-chips">
+                                    <button v-for="g in act.groups" :key="g.key || 'all'" type="button" class="act-chip" :class="{ 'is-active': act.filters.grup === g.key }" @click="setActivityGroup(g.key)">
+                                        {{ g.label }} <span class="n">{{ g.jumlah }}</span>
+                                    </button>
+                                </div>
+
+                                <div v-if="!act.rows.length" class="px-4 py-14 text-center text-sm text-slate-400">
+                                    <i class="bi bi-clock-history text-2xl"></i>
+                                    <div class="mt-2 font-semibold">Tidak ada aktivitas pada rentang ini.</div>
+                                </div>
+
+                                <div v-for="day in act.days" :key="day.key" class="act-day" :id="'act-day-' + day.key">
+                                    <div class="act-day-head">
+                                        <span class="d">{{ day.label }}</span>
+                                        <span class="n">{{ day.items.length }} aktivitas</span>
+                                    </div>
+                                    <div class="act-feed">
+                                        <button v-for="e in day.items" :key="e.id" type="button" class="act-item" @click="openActivity(e)">
+                                            <span class="t">{{ activityClock(e.waktu) }}</span>
+                                            <span class="dotwrap"><span class="dot" :class="activityDot(e.jenis)"></span></span>
+                                            <span class="body">
+                                                <span class="line1">
+                                                    <span class="who">{{ e.aktor }}</span>
+                                                    <span class="act-badge" :class="activityBadge(e.jenis)">{{ activityLabel(e.jenis) }}</span>
+                                                </span>
+                                                <span class="what block">{{ e.ringkasan }}</span>
+                                                <span class="meta block">
+                                                    <span class="font-mono">{{ e.targetId || '-' }}</span>
+                                                    <span> &middot; {{ e.targetJenis }}</span>
+                                                    <span> &middot; {{ e.sumber }}</span>
+                                                </span>
+                                                <span v-if="e.alasan" class="why block">{{ e.alasan }}</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div v-if="act.rows.length" class="act-pager">
+                                    <div class="text-[11px] font-semibold text-slate-500">
+                                        Menampilkan {{ act.from }}-{{ act.to }} dari {{ act.total }}
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <select v-model.number="act.filters.perPage" class="input w-20 !py-1.5 text-xs" @change="applyActivityFilter()">
+                                            <option :value="10">10</option>
+                                            <option :value="25">25</option>
+                                            <option :value="50">50</option>
+                                            <option :value="100">100</option>
+                                        </select>
+                                        <button type="button" class="btn-soft !py-1.5 !px-2 text-xs" :disabled="act.page <= 1 || act.loading" @click="goActivityPage(act.page - 1)"><i class="bi bi-chevron-left"></i></button>
+                                        <span class="text-xs font-bold text-slate-600">{{ act.page }} / {{ act.pages }}</span>
+                                        <button type="button" class="btn-soft !py-1.5 !px-2 text-xs" :disabled="act.page >= act.pages || act.loading" @click="goActivityPage(act.page + 1)"><i class="bi bi-chevron-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <aside class="act-side">
+                                <div class="dash-card">
+                                    <div class="border-b border-slate-100 px-4 py-3">
+                                        <div class="side-title">Hari</div>
+                                        <div class="side-sub">Lompat ke tanggal</div>
+                                    </div>
+                                    <div class="act-daynav p-2">
+                                        <button v-for="day in act.days" :key="'nav' + day.key" type="button" @click="scrollActivityDay(day.key)">
+                                            <span>{{ day.label }}</span><span class="c">{{ day.items.length }}</span>
+                                        </button>
+                                        <div v-if="!act.days.length" class="px-2 py-3 text-[11px] text-slate-400">Belum ada data.</div>
+                                    </div>
+                                </div>
+                                <div class="dash-card">
+                                    <div class="border-b border-slate-100 px-4 py-3">
+                                        <div class="side-title">Legenda</div>
+                                        <div class="side-sub">Warna titik per jenis aksi</div>
+                                    </div>
+                                    <div class="act-legend p-4">
+                                        <div class="lg"><span class="sw" style="background:var(--emerald)"></span> Keputusan ACC <span class="n">{{ activityKindCount('ACC') }}</span></div>
+                                        <div class="lg"><span class="sw" style="background:var(--rose)"></span> Ditolak / Dibatalkan <span class="n">{{ activityKindCount('Tolak') + activityKindCount('Batal') }}</span></div>
+                                        <div class="lg"><span class="sw" style="background:var(--teal)"></span> Pembayaran / Unggahan <span class="n">{{ activityKindCount('VerifyBayar') + activityKindCount('UploadMahasiswa') + activityKindCount('UploadAdmin') }}</span></div>
+                                        <div class="lg"><span class="sw" style="background:var(--violet)"></span> Berita Acara <span class="n">{{ activityKindCount('BaCreate') + activityKindCount('BaUpdate') + activityKindCount('BaDelete') }}</span></div>
+                                        <div class="lg"><span class="sw" style="background:#f59e0b"></span> Master Data <span class="n">{{ activityKindCount('RenameMaster') }}</span></div>
+                                        <div class="lg"><span class="sw" style="background:var(--brand)"></span> Ubah / Hapus Data <span class="n">{{ activityKindCount('UpdatePengajuan') + activityKindCount('DeletePengajuan') }}</span></div>
+                                    </div>
+                                </div>
+                                <div class="dash-card">
+                                    <div class="border-b border-slate-100 px-4 py-3">
+                                        <div class="side-title">Sorotan</div>
+                                        <div class="side-sub">Perlu perhatian</div>
+                                    </div>
+                                    <div class="p-4">
+                                        <div v-for="h in act.highlights" :key="h.id" class="mb-2 flex items-start gap-2">
+                                            <span class="mt-1 h-2 w-2 shrink-0 rounded-full" :style="{ background: activityHighlightColor(h.jenis) }"></span>
+                                            <button type="button" class="min-w-0 flex-1 text-left" @click="openActivity(h)">
+                                                <div class="truncate text-[11px] font-bold text-slate-700">{{ h.ringkasan }}</div>
+                                                <div class="text-[10px] text-slate-400">{{ h.aktor }} &middot; {{ activityWhen(h.waktu) }}</div>
+                                            </button>
+                                        </div>
+                                        <div v-if="!act.highlights.length" class="text-[11px] text-slate-400">Tidak ada aktivitas kritis pada rentang ini.</div>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    </div>
+
+                    <!-- ============ DRAWER: DETAIL AKTIVITAS ============ -->
+                    <div v-if="act.detail.open" class="act-drawer-scrim" @click.self="closeActivityDetail()">
+                        <aside class="act-drawer">
+                            <div class="act-drawer-head">
+                                <div>
+                                    <div class="text-sm font-extrabold text-slate-900">Detail Aktivitas</div>
+                                    <div class="mt-0.5 text-[11px] text-slate-400">{{ act.detail.e ? activityWhen(act.detail.e.waktu) : '' }} &middot; <span class="font-mono">{{ act.detail.e ? act.detail.e.targetId : '' }}</span></div>
+                                </div>
+                                <button type="button" class="text-slate-400 hover:text-slate-600" @click="closeActivityDetail()"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                            <div v-if="act.detail.e" class="act-drawer-body">
+                                <div class="act-info">
+                                    <div class="act-kv">
+                                        <div><div class="k">Aktor</div><div class="v">{{ act.detail.e.aktor }}</div></div>
+                                        <div><div class="k">Peran</div><div class="v">{{ act.detail.e.aktorRole }}</div></div>
+                                        <div><div class="k">Jenis Aksi</div><div class="v"><span class="act-badge" :class="activityBadge(act.detail.e.jenis)">{{ activityLabel(act.detail.e.jenis) }}</span></div></div>
+                                        <div><div class="k">Sumber Data</div><div class="v font-mono">{{ act.detail.e.sumber }}</div></div>
+                                        <div><div class="k">Target</div><div class="v">{{ act.detail.e.targetJenis }}</div></div>
+                                        <div><div class="k">ID Target</div><div class="v font-mono">{{ act.detail.e.targetId || '-' }}</div></div>
+                                    </div>
+                                </div>
+
+                                <div class="act-info">
+                                    <div class="act-section-label">Ringkasan</div>
+                                    <div class="mt-1.5 text-[13px] font-bold leading-relaxed text-slate-800">{{ act.detail.e.ringkasan }}</div>
+                                    <div v-if="act.detail.e.alasan" class="act-note"><b>Alasan / catatan:</b> {{ act.detail.e.alasan }}</div>
+                                </div>
+
+                                <div v-if="activityMetaRows(act.detail.e).length" class="act-info">
+                                    <div class="act-section-label">Rincian</div>
+                                    <div class="act-kv mt-2">
+                                        <div v-for="row in activityMetaRows(act.detail.e)" :key="row.key">
+                                            <div class="k">{{ row.key }}</div>
+                                            <div class="v">{{ row.value }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="activityDiffRows(act.detail.e).length" class="act-info">
+                                    <div class="act-section-label">Sebelum &rarr; Sesudah</div>
+                                    <table class="act-diff mt-2">
+                                        <thead><tr><th>Field</th><th>Sebelum</th><th>Sesudah</th></tr></thead>
+                                        <tbody>
+                                            <tr v-for="row in activityDiffRows(act.detail.e)" :key="row.key">
+                                                <td class="k">{{ row.key }}</td>
+                                                <td class="before">{{ row.before }}</td>
+                                                <td class="after">{{ row.after }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div v-if="act.detail.e.raw" class="act-info">
+                                    <div class="act-section-label">Payload mentah</div>
+                                    <pre class="act-json mt-2">{{ activityRawText(act.detail.e) }}</pre>
+                                </div>
+
+                                <div class="mt-4 flex flex-wrap justify-end gap-2">
+                                    <button v-if="act.detail.e.targetId && act.detail.e.targetJenis === 'Pengajuan'" type="button" class="btn-soft" @click="openActivityTarget(act.detail.e)"><i class="bi bi-box-arrow-up-right"></i> Buka pengajuan</button>
+                                    <button type="button" class="btn-soft" @click="copyActivityId(act.detail.e.targetId)"><i class="bi bi-clipboard"></i> Salin ID</button>
+                                    <button type="button" class="btn-primary" @click="closeActivityDetail()">Tutup</button>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                </section>
             </div>
         </main>
-
-        <!-- ============ DRAWER: DETAIL PENGAJUAN ============ -->
         <transition name="fade">
             <div v-if="detail.open" class="pd-overlay" @click.self="detail.open=false">
                 <aside class="pd-drawer" :class="{ open: detail.open }">
@@ -1981,8 +2320,104 @@
                 </transition>
             </div>
         </transition>
+        <div v-if="baCreate.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
+                <div class="mb-4 flex items-start justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Buat BA Pendukung</h3>
+                        <p class="text-xs text-slate-500">Buat BA dari kegiatan, lalu tambahkan peserta tanpa unggah berkas terlebih dahulu.</p>
+                    </div>
+                    <button class="text-slate-400 hover:text-slate-600" @click="baCreate.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="baCreate.loading" class="py-10 text-center text-sm text-slate-400">Memuat kegiatan...</div>
+                <template v-else>
+                    <div class="mb-3">
+                        <label class="label">Kegiatan tanpa BA Pendukung</label>
+                        <select v-model="baCreate.unitKey" class="input" @change="baCreatePick()">
+                            <option value="">- Pilih kegiatan -</option>
+                            <option v-for="u in baCreateUnits()" :key="u.key" :value="u.key">{{ u.bagian }} · {{ u.blok }} · {{ u.label }} ({{ (u.peserta || []).length }} peserta)</option>
+                        </select>
+                        <p v-if="!baCreateUnits().length" class="mt-1 text-[11px] text-slate-400">Semua kegiatan sudah memiliki BA Pendukung.</p>
+                    </div>
+                    <template v-if="baCreate.kegiatan">
+                        <div class="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+                            <div class="font-semibold text-slate-800">{{ baCreate.kegiatan.namaKegiatan || '-' }}</div>
+                            <div>{{ baCreate.kegiatan.bagian }} · Blok {{ baCreate.kegiatan.blok || '-' }}</div>
+                            <div v-if="baCreate.baAda" class="mt-1 text-amber-600">BA sudah ada: {{ baCreate.baId }}</div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="mb-1 flex items-center justify-between">
+                                <label class="label !mb-0">Peserta BA</label>
+                                <button class="text-[11px] font-semibold text-brand-700" @click="baCreateToggleAll()">{{ baCreateAllSelected() ? 'Kosongkan' : 'Pilih semua' }}</button>
+                            </div>
+                            <div class="max-h-56 overflow-y-auto rounded-xl border border-slate-200">
+                                <label v-for="p in baCreate.pesertaOpsi" :key="p.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2 last:border-0">
+                                    <input v-model="baCreate.pesertaIds" type="checkbox" :value="p.idPengajuan" class="h-4 w-4 accent-brand-600">
+                                    <span class="text-xs text-slate-700">{{ p.npm }} — {{ p.namaLengkap }}</span>
+                                </label>
+                            </div>
+                            <p class="mt-1 text-[11px] text-slate-400">Peserta terpilih: {{ baCreate.pesertaIds.length }}</p>
+                        </div>
+                    </template>
+                </template>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button class="btn-soft" @click="baCreate.open = false">Batal</button>
+                    <button class="btn-primary" :disabled="baCreate.busy || !baCreate.kegiatan || !baCreate.pesertaIds.length" @click="baCreateSubmit()">Buat &amp; tambah peserta</button>
+                </div>
+            </div>
+        </div>
+        <div v-if="auditMaster.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+            <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
+                <div class="mb-4 flex items-start justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Pemeriksaan Integritas Master</h3>
+                        <p class="text-xs text-slate-500">Duplikat master, referensi Blok yatim, kunci kegiatan, dan kualitas data.</p>
+                    </div>
+                    <button class="text-slate-400 hover:text-slate-600" @click="auditMaster.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="auditMaster.loading" class="py-12 text-center text-sm text-slate-400">Memeriksa data...</div>
+                <template v-else-if="auditMaster.data">
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Duplikat Master</div><div class="mt-1 text-2xl font-bold text-slate-800">{{ auditMaster.data.totals.duplicates }}</div></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Blok Yatim</div><div class="mt-1 text-2xl font-bold text-amber-700">{{ auditMaster.data.totals.orphans }}</div></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Blok Kosong</div><div class="mt-1 text-2xl font-bold text-rose-700">{{ auditMaster.data.totals.blanks }}</div></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Key Drift</div><div class="mt-1 text-2xl font-bold text-indigo-700">{{ auditMaster.data.totals.keyDrift }}</div></div>
+                    </div>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Duplikat Master ({{ (auditMaster.data.duplicates || []).length }})</div>
+                            <div v-if="!(auditMaster.data.duplicates || []).length" class="text-xs text-slate-400">Tidak ada duplikat.</div>
+                            <div v-for="d in (auditMaster.data.duplicates || [])" :key="d.kategori + d.nilai" class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>{{ d.kategori }} · {{ d.nilai }}</span><span class="font-semibold text-slate-500">{{ d.count }}x</span></div>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Blok Yatim ({{ (auditMaster.data.orphans || []).length }})</div>
+                            <div v-if="!(auditMaster.data.orphans || []).length" class="text-xs text-slate-400">Tidak ada blok yatim.</div>
+                            <div v-for="o in (auditMaster.data.orphans || [])" :key="o.table + o.blok" class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>{{ o.table }} · {{ o.blok }}</span><span class="font-semibold text-slate-500">{{ o.count }}x</span></div>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Key Drift</div>
+                            <div v-for="(v, k) in (auditMaster.data.keyDrift || {})" :key="k" class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>{{ k }}</span><span class="font-semibold" :class="v.count ? 'text-rose-600' : 'text-emerald-600'">{{ v.count }}</span></div>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Kualitas Data</div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>Mahasiswa tanpa Blok</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.mahasiswaBlokKosong.count }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>BA tanpa peserta</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.totals.baOrphan }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>Jadwal duplikat</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.jadwalDuplikat.count }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>BA perlu regenerate</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.baNeedsRegen.count }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>Peserta BA nonaktif</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.baPesertaNonaktif.count }}</span></div>
+                        </div>
+                    </div>
+                </template>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button class="btn-soft" @click="auditMaster.open = false">Tutup</button>
+                    <button class="btn-primary" :disabled="auditMaster.loading" @click="loadAuditMaster()"><i class="bi bi-arrow-repeat"></i> Periksa Ulang</button>
+                </div>
+            </div>
+        </div>
         <input ref="baManageBaseFile" type="file" accept="application/pdf,image/jpeg,image/png" class="hidden" @change="onBaManageBaseFile">
         <input ref="baManagePesertaFile" type="file" accept="application/pdf,image/jpeg,image/png" multiple class="hidden" @change="onBaManagePesertaFile">
+        <input ref="baManageSharedFile" type="file" accept="application/pdf,image/jpeg,image/png" class="hidden" @change="onBaManageSharedFile">
+        <input ref="baManageSharedFile" type="file" accept="application/pdf" class="hidden" @change="onBaManageSharedFile">
         <div v-if="baManage.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
             <div class="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
                 <div class="mb-4 flex items-start justify-between gap-3">
@@ -2022,6 +2457,19 @@
                         <p class="mt-1 text-[10px] text-slate-400">Halaman dokumen dasar tampil paling awal pada PDF gabungan.</p>
                     </div>
 
+                    <div class="mt-3 rounded-xl bg-slate-50 p-3">
+                        <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">PDF BA bersama</div>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <template v-if="(baManage.data.ba.sharedFiles || []).length">
+                                <a v-for="f in baManage.data.ba.sharedFiles" :key="f.fileUrl" :href="safeUrl(f.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]" @pointerenter="onBuktiEnter($event, f.fileUrl, 'PDF BA Bersama')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i> {{ f.fileName || 'Lihat PDF' }}</a>
+                            </template>
+                            <span v-else class="text-[11px] text-slate-400">Belum ada PDF bersama.</span>
+                            <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy" @click="baManagePickShared()"><i class="bi bi-upload"></i> {{ (baManage.data.ba.sharedFiles || []).length ? 'Ganti' : 'Unggah' }}</button>
+                            <button v-if="(baManage.data.ba.sharedFiles || []).length" class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" :disabled="baManage.busy" @click="removeBaManageShared()"><i class="bi bi-x-lg"></i> Hapus</button>
+                        </div>
+                        <p class="mt-1 text-[10px] text-slate-400">PDF bersama dipakai untuk menambah peserta massal.</p>
+                    </div>
+
                     <div class="mt-4">
                         <div class="mb-2 flex items-center justify-between">
                             <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (baManage.data.peserta || []).length }})</div>
@@ -2048,18 +2496,28 @@
                     </div>
 
                     <div class="mt-4">
-                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Kandidat peserta</div>
+                        <div class="mb-2 flex items-center justify-between">
+                            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Kandidat peserta</div>
+                            <button v-if="(baManage.data.candidates || []).length" class="text-[11px] font-semibold text-brand-700" @click="baManageToggleAllCandidates()">{{ baManageAllCandidatesSelected ? 'Kosongkan' : 'Pilih semua' }}</button>
+                        </div>
                         <div v-if="!(baManage.data.candidates || []).length" class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">Tidak ada kandidat baru untuk kegiatan ini.</div>
                         <div v-else class="max-h-52 space-y-1.5 overflow-y-auto">
-                            <div v-for="c in baManage.data.candidates" :key="c.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
-                                <div class="min-w-0">
-                                    <div class="truncate text-xs font-semibold text-slate-700">{{ c.namaLengkap || '-' }}</div>
-                                    <div class="font-mono text-[10px] text-slate-400">{{ c.npm || '-' }} · {{ c.statusPengajuan || '-' }}</div>
-                                </div>
-                                <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy" @click="baManagePickUpload('candidate', c.idPengajuan)"><i class="bi bi-plus-lg"></i> Tambah</button>
-                            </div>
+                            <label v-for="c in baManage.data.candidates" :key="c.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                                <span class="flex min-w-0 items-center gap-2">
+                                    <input v-model="baManage.addPicks" type="checkbox" :value="c.idPengajuan" class="h-4 w-4 accent-brand-600">
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-xs font-semibold text-slate-700">{{ c.namaLengkap || '-' }}</span>
+                                        <span class="block font-mono text-[10px] text-slate-400">{{ c.npm || '-' }} · {{ c.statusPengajuan || '-' }}</span>
+                                    </span>
+                                </span>
+                                <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy" @click.prevent="baManagePickUpload('candidate', c.idPengajuan)"><i class="bi bi-plus-lg"></i> Berkas</button>
+                            </label>
                         </div>
-                        <p class="mt-1 text-[10px] text-slate-400">Menambah peserta wajib menyertakan minimal satu halaman PDF/JPG/PNG.</p>
+                        <div class="mt-2 flex flex-wrap justify-end gap-2">
+                            <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy || !baManage.addPicks.length" @click="baManageAddBulk(false)"><i class="bi bi-person-plus"></i> Tambah tanpa berkas ({{ baManage.addPicks.length }})</button>
+                            <button v-if="(baManage.data.ba.sharedFiles || []).length" class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy || !baManage.addPicks.length" @click="baManageAddBulk(true)"><i class="bi bi-people"></i> Tambah massal</button>
+                        </div>
+                        <p class="mt-1 text-[10px] text-slate-400">Tambah lewat tombol Berkas wajib menyertakan minimal satu halaman PDF/JPG/PNG.</p>
                     </div>
 
                     <div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
@@ -2424,6 +2882,18 @@
                     } catch (e) { /* dokumen dasar rusak diabaikan */ }
                 }
 
+                var sharedFiles = Array.isArray(cfg.sharedFiles) ? cfg.sharedFiles : [];
+                for (var si = 0; si < sharedFiles.length; si += 1) {
+                    var sf = sharedFiles[si];
+                    if (!sf || !sf.base64) continue;
+                    var sbytes = b64ToBytes(sf.base64);
+                    if (!sbytes.length) continue;
+                    try {
+                        if (pdfLooksLikePdf(sbytes)) sourcePages += await copyPdfPages(sbytes);
+                        else { await addImagePage(sbytes, sf.mimeType); sourcePages += 1; }
+                    } catch (e) { /* lewati berkas bersama rusak */ }
+                }
+
                 var withFiles = groups.filter(function(g) { return g && Array.isArray(g.files) && g.files.length; });
                 var sepIndex = 0;
                 for (var gi = 0; gi < withFiles.length; gi += 1) {
@@ -2489,7 +2959,7 @@
             return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
         }
 
-        const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'master'];
+        const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'riwayat', 'master'];
         const TAB_TTL_MS = 60000;
 
         const { createApp } = Vue;
@@ -2499,9 +2969,9 @@
             data() {
                 return {
                     loading: false,
-                    sectionLoading: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
-                    loaded: { pengajuan: false, stats: false, bagian: false, ba: false, master: false },
-                    loadedAt: { pengajuan: 0, stats: 0, bagian: 0, ba: 0, master: 0 },
+                    sectionLoading: { pengajuan: false, stats: false, bagian: false, ba: false, riwayat: false, master: false },
+                    loaded: { pengajuan: false, stats: false, bagian: false, ba: false, riwayat: false, master: false },
+                    loadedAt: { pengajuan: 0, stats: 0, bagian: 0, ba: 0, riwayat: 0, master: 0 },
                     tab: 'pengajuan',
                     sidebarOpen: false,
                     sidebarCollapsed: false,
@@ -2538,7 +3008,9 @@
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
-                    baManage: { open: false, loading: false, busy: false, baId: '', data: { ba: null, peserta: [], candidates: [] }, edit: { tanggal: '', jam: '', catatan: '' }, upload: { mode: '', idPengajuan: '' } },
+                    baManage: { open: false, loading: false, busy: false, baId: '', data: { ba: null, peserta: [], candidates: [] }, edit: { tanggal: '', jam: '', catatan: '' }, upload: { mode: '', idPengajuan: '' }, addPicks: [] },
+                    baCreate: { open: false, loading: false, busy: false, unitKey: '', unit: null, kegiatan: null, pesertaOpsi: [], pesertaIds: [], baAda: false, baId: '' },
+                    auditMaster: { open: false, loading: false, data: null },
                     dosenPick: { open: false },
                     riwayat: { open: false, unit: null },
                     bab: {
@@ -2554,6 +3026,27 @@
                         fBlok: '',
                         baSettings: { statuses: ['ACC'], finalOnly: true },
                         ba: { open: false, kegiatanKey: null, tanggal: '', label: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
+                    },
+                    act: {
+                        loading: false,
+                        error: '',
+                        rows: [],
+                        days: [],
+                        actors: [],
+                        kinds: [],
+                        groups: [],
+                        highlights: [],
+                        summary: { hariIni: 0, keputusan: 0, unggahan: 0, kritis: 0, total: 0 },
+                        total: 0,
+                        page: 1,
+                        pages: 1,
+                        from: 0,
+                        to: 0,
+                        perPage: 25,
+                        truncated: false,
+                        rangeLabel: '',
+                        filters: { dari: '', sampai: '', aktor: '', jenis: '', grup: '', q: '', perPage: 25 },
+                        detail: { open: false, e: null }
                     },
                     master: {
                         data: {},
@@ -2585,8 +3078,12 @@
                 loggedIn() {
                     return !!(this.session && this.session.token);
                 },
+                baManageAllCandidatesSelected() {
+                    const list = (this.baManage.data && this.baManage.data.candidates) || [];
+                    return list.length > 0 && this.baManage.addPicks.length === list.length;
+                },
                 pageTitle() {
-                    return { pengajuan: 'Telaah Pengajuan', manual: 'Input Manual', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
+                    return { pengajuan: 'Telaah Pengajuan', manual: 'Input Manual', stats: 'Statistik', ba: 'Berita Acara', riwayat: 'Riwayat Aktivitas', master: 'Master Data' }[this.tab] || 'Dashboard';
                 },
                 menungguCount() {
                     return (this.stats.perStatus || {})['Menunggu'] || 0;
@@ -2597,6 +3094,7 @@
                         { key: 'manual', icon: 'bi-pencil-square', label: 'Manual' },
                         { key: 'stats', icon: 'bi-bar-chart-line', label: 'Statistik' },
                         { key: 'ba', icon: 'bi-file-earmark-pdf', label: 'Berita Acara' },
+                        { key: 'riwayat', icon: 'bi-clock-history', label: 'Riwayat' },
                         { key: 'master', icon: 'bi-sliders', label: 'Master Data' }
                     ];
                 },
@@ -3411,6 +3909,7 @@
                         if (this.isTabStale('bagian') || this.isTabStale('ba')) this.loadBaTab({ silent: this.loaded.bagian && this.loaded.ba });
                         if (this.bab.active) this.babLoad();
                     }
+                    if (tab === 'riwayat' && this.isTabStale('riwayat')) this.loadActivity({ silent: this.loaded.riwayat });
                     if (tab === 'master' && this.isTabStale('master')) this.loadMaster({ silent: this.loaded.master });
                 },
 
@@ -3549,6 +4048,244 @@
                         if (!silent) this.sectionLoading.master = false;
                     }
                 },
+                // ---------- riwayat aktivitas ----------
+                activityLabel(jenis) {
+                    const map = {
+                        ACC: 'ACC', Tolak: 'Ditolak', Batal: 'Dibatalkan', Menunggu: 'Kembali Menunggu',
+                        UploadMahasiswa: 'Unggah (Mahasiswa)', UploadAdmin: 'Unggah (Admin)',
+                        VerifyBayar: 'Verifikasi Bayar', CorrectBayar: 'Koreksi Bayar', ResetUpload: 'Reset Unggahan',
+                        UpdatePengajuan: 'Ubah Pengajuan', DeletePengajuan: 'Hapus Pengajuan',
+                        BaCreate: 'Buat BA', BaUpdate: 'Ubah BA', BaDelete: 'Hapus BA',
+                        RenameMaster: 'Ganti Nama Master', FileAccess: 'Akses Berkas', Deny: 'Akses Ditolak'
+                    };
+                    return map[jenis] || jenis || 'Lainnya';
+                },
+                activityBadge(jenis) {
+                    const map = {
+                        ACC: 'acc', Tolak: 'reject', Batal: 'slate', Menunggu: 'master',
+                        UploadMahasiswa: 'pay', UploadAdmin: 'pay', VerifyBayar: 'pay', CorrectBayar: 'master', ResetUpload: 'master',
+                        UpdatePengajuan: 'act', DeletePengajuan: 'reject',
+                        BaCreate: 'ba', BaUpdate: 'ba', BaDelete: 'reject',
+                        RenameMaster: 'master', FileAccess: 'file', Deny: 'deny'
+                    };
+                    return map[jenis] || 'slate';
+                },
+                activityDot(jenis) {
+                    const map = {
+                        ACC: 'acc', Tolak: 'reject', Batal: 'reject', Menunggu: 'master',
+                        UploadMahasiswa: 'pay', UploadAdmin: 'pay', VerifyBayar: 'pay', CorrectBayar: 'master', ResetUpload: 'master',
+                        UpdatePengajuan: 'act', DeletePengajuan: 'reject',
+                        BaCreate: 'ba', BaUpdate: 'ba', BaDelete: 'reject',
+                        RenameMaster: 'master', FileAccess: 'file', Deny: 'deny'
+                    };
+                    return map[jenis] || 'act';
+                },
+                activityHighlightColor(jenis) {
+                    const map = {
+                        Deny: 'var(--rose)', DeletePengajuan: 'var(--rose)', BaDelete: 'var(--rose)',
+                        CorrectBayar: '#f59e0b', ResetUpload: '#f59e0b'
+                    };
+                    return map[jenis] || 'var(--ink-400)';
+                },
+                activityClock(v) {
+                    const m = String(v || '').match(/T(\d{2}):(\d{2})/);
+                    if (!m) return '';
+                    const total = (Number(m[1]) * 60 + Number(m[2]) + 420) % (24 * 60);
+                    return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+                },
+                activityWhen(v) {
+                    const s = String(v || '');
+                    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                    if (!m) return this.formatTanggalWaktu(v);
+                    const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5])) + 7 * 3600000;
+                    const d = new Date(ms);
+                    const p = n => String(n).padStart(2, '0');
+                    return d.getUTCDate() + '/' + (d.getUTCMonth() + 1) + '/' + d.getUTCFullYear() + ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes());
+                },
+                activityDayKey(v) {
+                    const s = String(v || '');
+                    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                    if (!m) return s.slice(0, 10);
+                    const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5])) + 7 * 3600000;
+                    const d = new Date(ms);
+                    const p = n => String(n).padStart(2, '0');
+                    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate());
+                },
+                activityDayLabel(key) {
+                    const m = String(key || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    if (!m) return key || '-';
+                    const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+                    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    const bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                    const d = new Date(ms);
+                    return days[d.getUTCDay()] + ', ' + d.getUTCDate() + ' ' + bulan[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+                },
+                activityKindCount(jenis) {
+                    const found = (this.act.kinds || []).find(k => k.jenis === jenis);
+                    return found ? found.jumlah : 0;
+                },
+                activityMetaRows(e) {
+                    const meta = (e && e.meta) || {};
+                    const rupiahKeys = ['nominal', 'nominalLama', 'nominalBaru', 'tagihan'];
+                    return Object.keys(meta).map(key => {
+                        let val = meta[key];
+                        if (Array.isArray(val)) val = val.join(', ');
+                        if (val && typeof val === 'object') val = JSON.stringify(val);
+                        if (rupiahKeys.indexOf(key) !== -1 && val !== '' && val !== null && val !== undefined) val = this.formatRupiah(val);
+                        return { key: key, value: String(val === null || val === undefined || val === '' ? '-' : val) };
+                    });
+                },
+                activityDiffRows(e) {
+                    if (!e) return [];
+                    const before = e.sebelum || {};
+                    const after = e.sesudah || {};
+                    const keys = [];
+                    Object.keys(before).forEach(k => { if (keys.indexOf(k) === -1) keys.push(k); });
+                    Object.keys(after).forEach(k => { if (keys.indexOf(k) === -1) keys.push(k); });
+                    const fv = v => (v === undefined || v === null || v === '') ? '-' : String(v);
+                    return keys.map(k => ({ key: k, before: fv(before[k]), after: fv(after[k]) }));
+                },
+                activityRawText(e) {
+                    if (!e || !e.raw) return '';
+                    try {
+                        return JSON.stringify(JSON.parse(e.raw), null, 2);
+                    } catch (err) {
+                        return e.raw;
+                    }
+                },
+                buildActivityDays(rows) {
+                    const map = new Map();
+                    (rows || []).forEach(e => {
+                        const key = this.activityDayKey(e.waktu);
+                        if (!map.has(key)) map.set(key, []);
+                        map.get(key).push(e);
+                    });
+                    return Array.from(map.entries())
+                        .sort((a, b) => a[0] < b[0] ? 1 : (a[0] > b[0] ? -1 : 0))
+                        .map(([key, items]) => ({ key: key, label: this.activityDayLabel(key), items: items }));
+                },
+                async loadActivity(opts) {
+                    const silent = !!(opts && opts.silent);
+                    const st = this.act;
+                    st.loading = true;
+                    if (!silent) this.sectionLoading.riwayat = !this.loaded.riwayat;
+                    st.error = '';
+                    try {
+                        const payload = Object.assign({}, st.filters, { page: st.page });
+                        const res = await this.run('getActivityLog', payload);
+                        if (res && res.error) {
+                            st.error = res.error;
+                            return;
+                        }
+                        const data = res || {};
+                        st.rows = data.rows || [];
+                        st.total = data.total || 0;
+                        st.page = data.page || 1;
+                        st.pages = data.pages || 1;
+                        st.perPage = data.perPage || 25;
+                        st.truncated = !!data.truncated;
+                        st.actors = data.actors || [];
+                        st.kinds = data.kinds || [];
+                        st.groups = data.groups || [];
+                        st.summary = data.summary || st.summary;
+                        st.days = this.buildActivityDays(st.rows);
+                        st.highlights = st.rows.filter(e => ['Deny', 'DeletePengajuan', 'BaDelete', 'CorrectBayar', 'ResetUpload'].indexOf(e.jenis) !== -1).slice(0, 6);
+                        const range = data.range || {};
+                        if (range.dari && !st.filters.dari) st.filters.dari = range.dari;
+                        if (range.sampai && !st.filters.sampai) st.filters.sampai = range.sampai;
+                        st.rangeLabel = range.dari && range.sampai
+                            ? this.formatTanggal(range.dari) + ' - ' + this.formatTanggal(range.sampai)
+                            : '';
+                        st.from = st.total ? ((st.page - 1) * st.perPage + 1) : 0;
+                        st.to = Math.min(st.page * st.perPage, st.total);
+                        this.loaded.riwayat = true;
+                        this.loadedAt.riwayat = Date.now();
+                    } catch (e) {
+                        st.error = 'Gagal memuat riwayat: ' + e;
+                    } finally {
+                        st.loading = false;
+                        this.sectionLoading.riwayat = false;
+                    }
+                },
+                applyActivityFilter() {
+                    this.act.page = 1;
+                    this.loadActivity();
+                },
+                resetActivityFilter() {
+                    this.act.filters = { dari: '', sampai: '', aktor: '', jenis: '', grup: '', q: '', perPage: 25 };
+                    this.act.page = 1;
+                    this.loadActivity();
+                },
+                setActivityGroup(key) {
+                    this.act.filters.grup = this.act.filters.grup === key ? '' : key;
+                    this.act.page = 1;
+                    this.loadActivity();
+                },
+                goActivityPage(page) {
+                    if (page < 1 || page > this.act.pages) return;
+                    this.act.page = page;
+                    this.loadActivity();
+                },
+                scrollActivityDay(key) {
+                    const el = document.getElementById('act-day-' + key);
+                    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                },
+                openActivity(e) {
+                    this.act.detail = { open: true, e: e };
+                },
+                closeActivityDetail() {
+                    this.act.detail = { open: false, e: null };
+                },
+                copyActivityId(id) {
+                    const text = String(id || '');
+                    if (!text) { this.notify('Tidak ada ID untuk disalin.', false); return; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(() => this.notify('ID disalin.'), () => this.notify('Gagal menyalin ID.', false));
+                    } else {
+                        this.notify('Penyalinan tidak didukung browser ini.', false);
+                    }
+                },
+                openActivityTarget(e) {
+                    const id = String((e && e.targetId) || '').trim();
+                    this.closeActivityDetail();
+                    if (!id) return;
+                    this.switchTab('pengajuan');
+                    this.filters.search = id;
+                    this.loadPengajuan();
+                },
+                async exportActivityLog() {
+                    if (!window.XLSX) { this.notify('Fungsi ekspor belum siap, muat ulang halaman.', false); return; }
+                    let res;
+                    try {
+                        const payload = Object.assign({}, this.act.filters, { page: 1, perPage: 5000 });
+                        res = await this.run('getActivityLog', payload);
+                    } catch (e) {
+                        this.notify('Gagal mengambil data ekspor: ' + e, false);
+                        return;
+                    }
+                    if (res && res.error) { this.notify(res.error, false); return; }
+                    const rows = ((res && res.rows) || []).map(e => ({
+                        Waktu: this.activityWhen(e.waktu),
+                        Aktor: e.aktor,
+                        Peran: e.aktorRole,
+                        'Jenis Aksi': this.activityLabel(e.jenis),
+                        Target: e.targetJenis,
+                        'ID Target': e.targetId,
+                        Ringkasan: e.ringkasan,
+                        Alasan: e.alasan || '',
+                        Sumber: e.sumber
+                    }));
+                    const headers = ['Waktu', 'Aktor', 'Peran', 'Jenis Aksi', 'Target', 'ID Target', 'Ringkasan', 'Alasan', 'Sumber'];
+                    const ws = rows.length
+                        ? window.XLSX.utils.json_to_sheet(rows, { header: headers })
+                        : window.XLSX.utils.aoa_to_sheet([headers]);
+                    const wb = window.XLSX.utils.book_new();
+                    window.XLSX.utils.book_append_sheet(wb, ws, 'Riwayat Aktivitas');
+                    const d = new Date();
+                    const p = n => String(n).padStart(2, '0');
+                    window.XLSX.writeFile(wb, 'riwayat-aktivitas-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
+                },
+
                 async loadMahasiswaPage(page) {
                     this.master.mhsLoading = true;
                     try {
@@ -4283,6 +5020,170 @@
                         this.baManage.busy = false;
                     }
                 },
+                baManagePickShared() {
+                    const el = this.$refs.baManageSharedFile;
+                    if (el) { el.value = ''; el.click(); }
+                },
+                async onBaManageSharedFile(e) {
+                    const input = e.target;
+                    const file = input && input.files && input.files.length ? input.files[0] : null;
+                    if (input) input.value = '';
+                    if (!file) return;
+                    this.baManage.busy = true;
+                    try {
+                        const fd = await this.readFileAsBase64(file);
+                        const res = await this.run('setBaAdminSharedFile', this.baManage.baId, {
+                            data: fd.data,
+                            mimeType: file.type || 'application/pdf',
+                            name: file.name
+                        });
+                        this.notify((res && res.message) || 'PDF BA bersama disimpan.', !!(res && res.success));
+                        if (res && res.success) await this.loadBaManage();
+                    } catch (err) {
+                        this.notify('Gagal menyimpan PDF bersama: ' + err, false);
+                    } finally {
+                        this.baManage.busy = false;
+                    }
+                },
+                async removeBaManageShared() {
+                    const ok = await this.askConfirm({
+                        title: 'Hapus PDF BA bersama',
+                        message: 'Hapus PDF BA bersama dari BA Pendukung ini?',
+                        icon: 'bi-x-lg',
+                        tone: 'danger',
+                        confirmLabel: 'Hapus'
+                    });
+                    if (!ok) return;
+                    this.baManage.busy = true;
+                    try {
+                        const res = await this.run('removeBaAdminSharedFile', this.baManage.baId);
+                        this.notify((res && res.message) || 'PDF bersama dihapus.', !!(res && res.success));
+                        if (res && res.success) await this.loadBaManage();
+                    } catch (err) {
+                        this.notify('Gagal menghapus PDF bersama: ' + err, false);
+                    } finally {
+                        this.baManage.busy = false;
+                    }
+                },
+                baManageToggleAllCandidates() {
+                    const list = (this.baManage.data && this.baManage.data.candidates) || [];
+                    this.baManage.addPicks = this.baManageAllCandidatesSelected ? [] : list.map((c) => c.idPengajuan);
+                },
+                async baManageAddBulk(requireShared) {
+                    const ids = (this.baManage.addPicks || []).slice();
+                    if (!ids.length) { this.notify('Pilih minimal satu peserta.', false); return; }
+                    this.baManage.busy = true;
+                    try {
+                        const fn = requireShared ? 'baAdminAddPesertaMassal' : 'baAdminAddPeserta';
+                        const res = await this.run(fn, this.baManage.baId, ids);
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal menambah peserta.', false);
+                            return;
+                        }
+                        const added = Number(res.added) || 0;
+                        const skipped = Number(res.skipped) || 0;
+                        this.notify(added + ' peserta ditambahkan' + (skipped ? ', ' + skipped + ' dilewati' : '') + '.', true);
+                        this.baManage.addPicks = [];
+                        await this.loadBaManage();
+                        await this.loadBa({ silent: true });
+                        await this.loadBagian({ silent: true });
+                    } catch (err) {
+                        this.notify('Gagal menambah peserta: ' + err, false);
+                    } finally {
+                        this.baManage.busy = false;
+                    }
+                },
+                openBaCreate() {
+                    this.baCreate = { open: true, loading: false, busy: false, unitKey: '', unit: null, kegiatan: null, pesertaOpsi: [], pesertaIds: [], baAda: false, baId: '' };
+                },
+                baCreateUnits() {
+                    const units = (this.bagian && this.bagian.units) || [];
+                    return units.filter((u) => !((u.baPendukung || []).length));
+                },
+                baCreateAllSelected() {
+                    const list = (this.baCreate && this.baCreate.pesertaOpsi) || [];
+                    return list.length > 0 && this.baCreate.pesertaIds.length === list.length;
+                },
+                baCreateToggleAll() {
+                    const list = this.baCreate.pesertaOpsi || [];
+                    this.baCreate.pesertaIds = this.baCreateAllSelected() ? [] : list.map((p) => p.idPengajuan);
+                },
+                async baCreatePick() {
+                    const key = this.baCreate.unitKey;
+                    const unit = (this.bagian.units || []).filter((u) => u.key === key)[0] || null;
+                    this.baCreate.unit = unit;
+                    this.baCreate.kegiatan = null;
+                    this.baCreate.pesertaOpsi = [];
+                    this.baCreate.pesertaIds = [];
+                    this.baCreate.baAda = false;
+                    this.baCreate.baId = '';
+                    if (!unit) return;
+                    const first = ((unit.peserta || [])[0] || {}).idPengajuan || '';
+                    if (!first) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
+                    this.baCreate.loading = true;
+                    try {
+                        const res = await this.run('baAdminGet', first);
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal memuat kegiatan.', false);
+                            return;
+                        }
+                        this.baCreate.kegiatan = res.data.kegiatan;
+                        this.baCreate.baAda = !!res.data.ba;
+                        this.baCreate.baId = res.data.ba ? res.data.ba.baId : '';
+                        this.baCreate.pesertaOpsi = this.baCreate.baAda ? (res.data.candidates || []) : (unit.peserta || []).slice();
+                    } catch (e) {
+                        this.notify('Gagal memuat kegiatan: ' + e, false);
+                    } finally {
+                        this.baCreate.loading = false;
+                    }
+                },
+                async baCreateSubmit() {
+                    const ids = (this.baCreate.pesertaIds || []).slice();
+                    if (!ids.length || !this.baCreate.kegiatan) return;
+                    this.baCreate.busy = true;
+                    try {
+                        const created = await this.run('baAdminCreate', this.baCreate.kegiatan);
+                        if (!created || !created.success) {
+                            this.notify((created && created.message) || 'Gagal membuat BA.', false);
+                            return;
+                        }
+                        const added = await this.run('baAdminAddPeserta', created.baId, ids);
+                        if (!added || !added.success) {
+                            this.notify((added && added.message) || 'Gagal menambah peserta.', false);
+                            return;
+                        }
+                        const skipped = Number(added.skipped) || 0;
+                        this.notify('BA ' + created.baId + ': ' + (Number(added.added) || 0) + ' peserta ditambahkan' + (skipped ? ', ' + skipped + ' dilewati' : '') + '.', true);
+                        this.baCreate.open = false;
+                        await this.loadBagian({ silent: true });
+                        await this.openBaManage(created.baId);
+                    } catch (e) {
+                        this.notify('Gagal membuat BA: ' + e, false);
+                    } finally {
+                        this.baCreate.busy = false;
+                    }
+                },
+                openAuditMaster() {
+                    this.auditMaster.open = true;
+                    this.loadAuditMaster();
+                },
+                async loadAuditMaster() {
+                    this.auditMaster.loading = true;
+                    try {
+                        const res = await this.run('auditMasterIntegrity');
+                        if (!res || res.success === false) {
+                            this.notify((res && res.message) || 'Gagal memeriksa integritas.', false);
+                            this.auditMaster.data = null;
+                            return;
+                        }
+                        this.auditMaster.data = res;
+                    } catch (e) {
+                        this.notify('Gagal memeriksa integritas: ' + e, false);
+                        this.auditMaster.data = null;
+                    } finally {
+                        this.auditMaster.loading = false;
+                    }
+                },
                 baManagePickUpload(mode, idPengajuan) {
                     this.baManage.upload = { mode: mode, idPengajuan: String(idPengajuan || '') };
                     const el = this.$refs.baManagePesertaFile;
@@ -4377,38 +5278,37 @@
                     if (!d || !d.ba) return;
                     this.baManage.busy = true;
                     try {
+                        const regen = await this.run('baAdminRegenerate', this.baManage.baId);
+                        if (!regen || !regen.success) {
+                            this.notify((regen && regen.message) || 'Gagal menyiapkan penggabungan PDF.', false);
+                            return;
+                        }
+                        const plan = regen.plan || {};
+                        const fetchPdf = async (url) => {
+                            const got = await this.baFetchFileBase64(url);
+                            return { base64: got.base64, mimeType: got.mimeType || 'application/pdf' };
+                        };
                         let baseFile = null;
-                        if (d.ba.baseFileUrl) {
-                            const got = await this.baFetchFileBase64(d.ba.baseFileUrl);
-                            baseFile = { base64: got.base64, mimeType: got.mimeType || 'application/pdf' };
+                        if (plan.base && plan.base.fileUrl) baseFile = await fetchPdf(plan.base.fileUrl);
+                        const sharedFiles = [];
+                        for (const sf of (plan.sharedFiles || [])) {
+                            const got = await fetchPdf(sf.fileUrl);
+                            sharedFiles.push({ base64: got.base64, mimeType: got.mimeType });
                         }
                         const groups = [];
-                        for (const p of (d.peserta || [])) {
+                        for (const g of (plan.groups || [])) {
                             const files = [];
-                            for (const f of (p.files || [])) {
-                                const got = await this.baFetchFileBase64(f.fileUrl);
-                                files.push({ base64: got.base64, mimeType: got.mimeType || 'application/pdf' });
+                            for (const f of (g.files || [])) {
+                                const got = await fetchPdf(f.fileUrl);
+                                files.push({ base64: got.base64, mimeType: got.mimeType });
                             }
-                            if (files.length) {
-                                groups.push({
-                                    peserta: { nama: p.namaLengkap, npm: p.npm, blok: p.blok },
-                                    files: files
-                                });
-                            }
+                            if (files.length) groups.push({ peserta: g.peserta, files: files });
                         }
                         const merged = await window.mergeBaPdfFiles({
-                            ba: {
-                                bagian: d.ba.bagian,
-                                blok: d.ba.blok,
-                                namaKegiatan: d.ba.namaKegiatan,
-                                tanggal: d.ba.tanggal
-                            },
-                            peserta: (d.peserta || []).map((p) => ({
-                                nama: p.namaLengkap,
-                                npm: p.npm,
-                                halaman: p.pages
-                            })),
+                            ba: plan.ba,
+                            peserta: plan.peserta || [],
                             baseFile: baseFile,
+                            sharedFiles: sharedFiles,
                             groups: groups
                         });
                         const blob = new Blob([merged.bytes], { type: 'application/pdf' });

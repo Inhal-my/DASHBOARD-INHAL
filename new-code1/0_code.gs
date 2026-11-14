@@ -18,6 +18,14 @@ const JENIS_KEGIATAN = ['Ujian', 'SGD', 'KKD', 'Praktikum'];
 
 const KATEGORI_MASTER = ['Blok', 'Ujian', 'SGD', 'Detail SGD', 'KKD', 'Detail KKD', 'Lab', 'Kegiatan Lab', 'Dosen'];
 
+// Seed email admin untuk login Google (G3). Password lama tetap disimpan
+// sebagai fallback; kolom Email dipakai untuk memetakan akun Google ke role admin.
+const ADMIN_EMAIL_SEED = [
+    { nama: 'Devi', email: 'devisafriyani@umsu.ac.id' },
+    { nama: 'Yudha', email: 'yudhasudira@umsu.ac.id' },
+    { nama: 'dr. Desi Isnayanti, M.Med.Ed', email: 'desiisnayanti@umsu.ac.id' }
+];
+
 const SCHEMAS = {
     Pengajuan: [
         'Timestamp',
@@ -59,7 +67,8 @@ const SCHEMAS = {
         'Payment Revision',
         'Upload Reset At',
         'Upload Reset By',
-        'Upload Reset Note'
+        'Upload Reset Note',
+        'Form Key'
     ],
     DetailKegiatan: [
         'Timestamp',
@@ -100,7 +109,8 @@ const SCHEMAS = {
     ],
     Admin: [
         'Password',
-        'Nama'
+        'Nama',
+        'Email'
     ],
     BagianStaff: [
         'Email',
@@ -183,7 +193,8 @@ const SCHEMAS = {
         'Kegiatan Key',
         'Base File URL',
         'Base File Name',
-        'Needs Regen'
+        'Needs Regen',
+        'Updated At'
     ],
     BeritaAcaraAdminPeserta: [
         'Timestamp',
@@ -209,7 +220,8 @@ const SCHEMAS = {
         'Page Count',
         'Byte Size',
         'Active',
-        'Superseded At'
+        'Superseded At',
+        'Scope'
     ],
     JadwalPelaksanaan: [
         'Timestamp',
@@ -234,6 +246,26 @@ const SCHEMAS = {
         'Nama Lengkap',
         'Blok',
         'Status Pengajuan'
+    ],
+    JadwalDosen: [
+        'Timestamp',
+        'Jadwal ID',
+        'Nama',
+        'Nama Key',
+        'Urutan'
+    ],
+    BaDosen: [
+        'Timestamp',
+        'BA ID',
+        'Nama',
+        'Nama Key',
+        'Urutan'
+    ],
+    BeritaAcaraSesi: [
+        'Timestamp',
+        'BA ID',
+        'Jadwal ID',
+        'Urutan'
     ],
     PembayaranRevisi: [
         'Timestamp',
@@ -384,6 +416,13 @@ function requireAdmin(token) {
     const s = getSession(token);
     if (!s || s.role !== 'admin') {
         throw new Error('Sesi tidak valid atau sudah kedaluwarsa. Silakan login kembali.');
+    }
+    if (s.auth === 'google') {
+        const email = String(getCurrentUserEmail() || '').trim().toLowerCase();
+        const sessionEmail = String(s.email || '').trim().toLowerCase();
+        if (!email || !sessionEmail || email !== sessionEmail) {
+            throw new Error('Sesi admin tidak lagi cocok dengan akun Google aktif. Silakan login kembali.');
+        }
     }
     _CURRENT_SESSION = s;
     return s;
@@ -571,6 +610,59 @@ function setupDatabase() {
     };
     console.log(JSON.stringify(summary));
     return summary;
+}
+
+function seedAdminEmails() {
+    const ss = getGlobalSpreadsheet();
+    ensureSheetWithHeaders(ss, 'Admin', SCHEMAS.Admin);
+    const sheet = ss.getSheetByName('Admin');
+    const headers = getHeadersFromSheet(sheet);
+    const iNama = headers.indexOf('Nama');
+    const iEmail = headers.indexOf('Email');
+    if (iNama === -1 || iEmail === -1) {
+        throw new Error('Kolom Admin (Nama/Email) belum lengkap. Jalankan setupDatabase terlebih dahulu.');
+    }
+
+    const lastRow = sheet.getLastRow();
+    const values = lastRow > 1
+        ? sheet.getRange(2, 1, lastRow - 1, headers.length).getValues()
+        : [];
+    const byName = {};
+    const emailSeen = {};
+    values.forEach(function(row, index) {
+        const namaKey = norm(row[iNama]);
+        const email = String(row[iEmail] || '').trim().toLowerCase();
+        if (namaKey) byName[namaKey] = index + 2;
+        if (email) emailSeen[email] = true;
+    });
+
+    const report = { updated: [], added: [], skipped: [] };
+    ADMIN_EMAIL_SEED.forEach(function(seed) {
+        const nama = String(seed && seed.nama || '').trim();
+        const email = String(seed && seed.email || '').trim();
+        const namaKey = norm(nama);
+        if (!namaKey || !email) return;
+        if (emailSeen[email.toLowerCase()]) {
+            report.skipped.push({ nama: nama, email: email, reason: 'email sudah terdaftar' });
+            return;
+        }
+        if (byName[namaKey]) {
+            sheet.getRange(byName[namaKey], iEmail + 1).setValue(email);
+            emailSeen[email.toLowerCase()] = true;
+            report.updated.push({ nama: nama, email: email, rowIndex: byName[namaKey] });
+            return;
+        }
+        const row = new Array(headers.length).fill('');
+        row[iNama] = nama;
+        row[iEmail] = email;
+        sheet.appendRow(row);
+        emailSeen[email.toLowerCase()] = true;
+        byName[namaKey] = sheet.getLastRow();
+        report.added.push({ nama: nama, email: email, rowIndex: sheet.getLastRow() });
+    });
+
+    invalidateSheetCache('Admin');
+    return { success: true, report: report };
 }
 
 function applyDropdownValidation(ss, sheetName, headerName, options) {

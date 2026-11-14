@@ -145,7 +145,7 @@ describe('dashboard scan kamera', () => {
 
 describe('dashboard tab persistence', () => {
   it('tab aktif dibaca dari hash dan disinkronkan', () => {
-    assert.match(html, /const TAB_KEYS = \['pengajuan', 'manual', 'stats', 'ba', 'master'\]/);
+    assert.match(html, /const TAB_KEYS = \['pengajuan', 'manual', 'stats', 'ba', 'riwayat', 'master'\]/);
     assert.match(html, /hashTab\(\)/);
     assert.match(html, /history\.replaceState\(null, '', h\)/);
     assert.match(html, /this\.tab = this\.hashTab\(\)/);
