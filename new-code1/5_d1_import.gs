@@ -8,6 +8,10 @@ const D1_IMPORT_STAGES = {
     2: {
         label: 'Pengajuan, Detail, Riwayat, Check Data, dan Revisi Pembayaran',
         tables: ['pengajuan', 'detail_kegiatan', 'status_history', 'check_data', 'pembayaran_revisi']
+    },
+    3: {
+        label: 'Berita Acara dan Berkas Pendukung',
+        tables: ['berita_acara', 'berita_acara_peserta', 'berita_acara_admin', 'berita_acara_admin_peserta', 'berita_acara_admin_berkas']
     }
 };
 
@@ -186,6 +190,106 @@ const D1_IMPORT_TABLES = {
             { to: 'Before JSON', from: ['before_json', 'Before JSON'] },
             { to: 'After JSON', from: ['after_json', 'After JSON'] }
         ]
+    },
+    berita_acara: {
+        sheet: 'BeritaAcara',
+        strictKey: true,
+        key: ['BA ID'],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Nama Kegiatan', from: ['nama_kegiatan', 'Nama Kegiatan'] },
+            { to: 'Tanggal Pelaksanaan', from: ['tanggal_pelaksanaan', 'Tanggal Pelaksanaan'] },
+            { to: 'Jumlah Peserta', from: ['jumlah_peserta', 'Jumlah Peserta'] },
+            { to: 'File Name', from: ['file_name', 'File Name'] },
+            { to: 'File URL', from: ['file_url', 'File URL'] },
+            { to: 'Catatan', from: ['catatan', 'Catatan'] },
+            { to: 'Sumber', from: ['sumber', 'Sumber'] },
+            { to: 'Jam', from: ['jam', 'Jam'] },
+            { to: 'Dosen', from: ['dosen', 'Dosen'] },
+            { to: 'Jadwal ID', from: ['jadwal_id', 'Jadwal ID'] },
+            { to: 'Label', from: ['label', 'Label'] },
+            { to: 'Kegiatan Key', from: ['kegiatan_key', 'Kegiatan Key'] }
+        ]
+    },
+    berita_acara_peserta: {
+        sheet: 'BeritaAcaraPeserta',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Nama Lengkap', from: ['nama_lengkap', 'Nama Lengkap'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] },
+            { to: 'Status Pengajuan', from: ['status_pengajuan', 'Status Pengajuan'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] }
+        ]
+    },
+    berita_acara_admin: {
+        sheet: 'BeritaAcaraAdmin',
+        strictKey: true,
+        key: ['BA ID'],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Nama Kegiatan', from: ['nama_kegiatan', 'Nama Kegiatan'] },
+            { to: 'Tanggal Pelaksanaan', from: ['tanggal_pelaksanaan', 'Tanggal Pelaksanaan'] },
+            { to: 'Jumlah Peserta', from: ['jumlah_peserta', 'Jumlah Peserta'] },
+            { to: 'File Name', from: ['file_name', 'File Name'] },
+            { to: 'File URL', from: ['file_url', 'File URL'] },
+            { to: 'Catatan', from: ['catatan', 'Catatan'] },
+            { to: 'Sumber', from: ['sumber', 'Sumber'] },
+            { to: 'Jam', from: ['jam', 'Jam'] },
+            { to: 'Dosen', from: ['dosen', 'Dosen'] },
+            { to: 'Kegiatan Key', from: ['kegiatan_key', 'Kegiatan Key'] },
+            { to: 'Base File URL', from: ['base_file_url', 'Base File URL'] },
+            { to: 'Base File Name', from: ['base_file_name', 'Base File Name'] },
+            { to: 'Needs Regen', from: ['needs_regen', 'Needs Regen'] },
+            { to: 'Updated At', from: ['updated_at', 'Updated At'] }
+        ]
+    },
+    berita_acara_admin_peserta: {
+        sheet: 'BeritaAcaraAdminPeserta',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Nama Lengkap', from: ['nama_lengkap', 'Nama Lengkap'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] },
+            { to: 'Status Pengajuan', from: ['status_pengajuan', 'Status Pengajuan'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'Urutan', from: ['urutan', 'Urutan'] },
+            { to: 'Active', from: ['active', 'Active'] }
+        ]
+    },
+    berita_acara_admin_berkas: {
+        sheet: 'BeritaAcaraAdminBerkas',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Urutan', from: ['urutan', 'Urutan'] },
+            { to: 'Page Index', from: ['page_index', 'Page Index'] },
+            { to: 'File Name', from: ['file_name', 'File Name'] },
+            { to: 'File URL', from: ['file_url', 'File URL'] },
+            { to: 'Page Count', from: ['page_count', 'Page Count'] },
+            { to: 'Byte Size', from: ['byte_size', 'Byte Size'] },
+            { to: 'Active', from: ['active', 'Active'] },
+            { to: 'Superseded At', from: ['superseded_at', 'Superseded At'] },
+            { to: 'Scope', from: ['scope', 'Scope'] }
+        ]
     }
 };
 
@@ -326,6 +430,7 @@ function onOpen() {
         .addItem('Impor Snapshot D1 - Dry-run', 'd1ImportDryRun')
         .addItem('Impor Snapshot D1 - Tahap 1', 'd1ImportStage1')
         .addItem('Impor Snapshot D1 - Tahap 2', 'd1ImportStage2')
+        .addItem('Impor Snapshot D1 - Tahap 3', 'd1ImportStage3')
         .addSeparator()
         .addItem('Bantuan Impor Snapshot', 'd1ImportHelp')
         .addToUi();
@@ -351,6 +456,10 @@ function d1ImportStage2() {
     _d1RunStage(2);
 }
 
+function d1ImportStage3() {
+    _d1RunStage(3);
+}
+
 function d1ImportHelp() {
     const text = [
         'Cara impor snapshot D1:',
@@ -362,7 +471,8 @@ function d1ImportHelp() {
         '',
         'Tahap 1: Mahasiswa, MasterKegiatan, MasterBagian, MasterBiaya, Config.',
         'Tahap 2: Pengajuan, DetailKegiatan, StatusHistory, CheckData, PembayaranRevisi.',
-        'Jalankan Tahap 1 sebelum Tahap 2.',
+        'Tahap 3: BeritaAcara, BeritaAcaraPeserta, BeritaAcaraAdmin, BeritaAcaraAdminPeserta, BeritaAcaraAdminBerkas.',
+        'Jalankan tahap secara berurutan.',
         '',
         'Admin, BagianStaff, dan NomorSurat tidak pernah diubah.',
         'Config dan sheet pada tahap terpilih akan dikosongkan lalu diisi dari D1.',

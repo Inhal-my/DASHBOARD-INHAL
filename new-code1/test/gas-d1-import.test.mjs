@@ -47,9 +47,11 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.match(source, /Impor Snapshot D1 - Dry-run/);
     assert.match(source, /Impor Snapshot D1 - Tahap 1/);
     assert.match(source, /Impor Snapshot D1 - Tahap 2/);
+    assert.match(source, /Impor Snapshot D1 - Tahap 3/);
     assert.match(source, /function d1ImportDryRun\(\)/);
     assert.match(source, /function d1ImportStage1\(\)/);
     assert.match(source, /function d1ImportStage2\(\)/);
+    assert.match(source, /function d1ImportStage3\(\)/);
   });
 
   it('mengaktifkan layanan Drive lanjutan untuk konversi XLSX', () => {
@@ -72,6 +74,10 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.deepEqual(
       api.D1_IMPORT_STAGES[2].tables,
       ['pengajuan', 'detail_kegiatan', 'status_history', 'check_data', 'pembayaran_revisi']
+    );
+    assert.deepEqual(
+      api.D1_IMPORT_STAGES[3].tables,
+      ['berita_acara', 'berita_acara_peserta', 'berita_acara_admin', 'berita_acara_admin_peserta', 'berita_acara_admin_berkas']
     );
   });
 
@@ -302,4 +308,61 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.equal(stat.skipped, 2);
     assert.equal(report.errors, 2);
   });
-});
+
+  it('memetakan berita acara admin dan berkas dari header mentah', () => {
+    const api = pureApi();
+    const admin = api._d1MapRow('berita_acara_admin', {
+      ba_id: 'BA-1', nama_kegiatan: 'Praktikum', needs_regen: 1,
+      updated_at: '2026-01-01T00:00:00Z', base_file_url: 'https://drive/x',
+      base_file_name: 'base.pdf'
+    });
+    assert.equal(admin['BA ID'], 'BA-1');
+    assert.equal(admin['Nama Kegiatan'], 'Praktikum');
+    assert.equal(admin['Needs Regen'], 1);
+    assert.equal(admin['Updated At'], '2026-01-01T00:00:00Z');
+    assert.equal(admin['Base File URL'], 'https://drive/x');
+    assert.equal(admin['Base File Name'], 'base.pdf');
+    assert.equal(admin.Dosen, '');
+
+    const berkas = api._d1MapRow('berita_acara_admin_berkas', {
+      ba_id: 'BA-1', id_pengajuan: 'P-1', npm: '001', urutan: 1, page_index: 0,
+      page_count: 2, byte_size: 1234, active: 1, superseded_at: '', scope: 'base'
+    });
+    assert.equal(berkas['Page Index'], 0);
+    assert.equal(berkas['Page Count'], 2);
+    assert.equal(berkas['Byte Size'], 1234);
+    assert.equal(berkas.Active, 1);
+    assert.equal(berkas.Scope, 'base');
+  });
+
+  it('menerima banyak peserta dan berkas pada tahap 3', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(3, {
+      berita_acara: [{ ba_id: 'BA-1' }, { ba_id: 'BA-2' }],
+      berita_acara_peserta: [{ ba_id: 'BA-1' }, { ba_id: 'BA-1' }],
+      berita_acara_admin: [{ ba_id: 'BA-1' }],
+      berita_acara_admin_peserta: [{ ba_id: 'BA-1' }, { ba_id: 'BA-1' }],
+      berita_acara_admin_berkas: [{ ba_id: 'BA-1' }, { ba_id: 'BA-1' }]
+    });
+    assert.equal(report.errors, 0);
+    assert.equal(report.warnings, 0);
+    ['berita_acara_peserta', 'berita_acara_admin_peserta', 'berita_acara_admin_berkas'].forEach((table) => {
+      assert.equal(report.stats.find((item) => item.table === table).accepted, 2, table);
+    });
+  });
+
+  it('menolak BA ID kosong atau duplikat pada tahap 3', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(3, {
+      berita_acara: [{ ba_id: 'BA-1' }, { ba_id: 'BA-1' }, { ba_id: '' }],
+      berita_acara_peserta: [],
+      berita_acara_admin: [],
+      berita_acara_admin_peserta: [],
+      berita_acara_admin_berkas: []
+    });
+    const stat = report.stats.find((item) => item.table === 'berita_acara');
+    assert.equal(stat.accepted, 1);
+    assert.equal(stat.skipped, 2);
+    assert.equal(report.errors, 2);
+  });
+})
