@@ -102,6 +102,18 @@ describe('parity UI dashboard GAS dengan CF', () => {
     assert.match(dashboard, /async baManageAddBulk\(requireShared\)/);
   });
 
+  it('menyediakan tab Riwayat Aktivitas dengan linimasa dan detail', () => {
+    assert.match(dashboard, /key: 'riwayat', icon: 'bi-clock-history', label: 'Riwayat'/);
+    assert.match(dashboard, /v-if="tab==='riwayat'"/);
+    assert.match(dashboard, /run\('getActivityLog'/);
+    assert.match(dashboard, /async loadActivity\(opts\)/);
+    assert.match(dashboard, /class="act-grid"/);
+    assert.match(dashboard, /@click="openActivity\(e\)"/);
+    assert.match(dashboard, /async exportActivityLog\(\)/);
+    assert.match(dashboard, /v-if="act\.detail\.open"/);
+    assert.match(dashboard, /\.act-drawer/);
+  });
+
   it('semua RPC yang dipanggil dashboard tersedia di backend GAS', () => {
     const calls = new Set(Array.from(dashboard.matchAll(/run\('([A-Za-z0-9_]+)'/g), (m) => m[1]));
     const missing = Array.from(calls).filter((name) => !new RegExp('function ' + name + '\\(').test(allGs));

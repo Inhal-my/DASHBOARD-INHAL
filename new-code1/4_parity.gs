@@ -402,112 +402,515 @@ function getKalenderBagianPelaksanaan(token) {
 }
 
 // ---------- Activity log ----------
-function _activityKind(aksi) {
-    const a = String(aksi || '').toUpperCase();
-    if (a.indexOf('BA_') === 0) {
-        if (a.indexOf('DELETE') !== -1) return 'BaDelete';
-        if (a.indexOf('CREATE') !== -1) return 'BaCreate';
-        return 'BaUpdate';
+const ACTIVITY_KIND_LABELS = {
+    ACC: 'ACC', Tolak: 'Ditolak', Batal: 'Dibatalkan', Menunggu: 'Kembali Menunggu',
+    UploadMahasiswa: 'Unggah (Mahasiswa)', UploadAdmin: 'Unggah (Admin)',
+    VerifyBayar: 'Verifikasi Bayar', CorrectBayar: 'Koreksi Bayar', ResetUpload: 'Reset Unggahan',
+    UpdatePengajuan: 'Ubah Pengajuan', DeletePengajuan: 'Hapus Pengajuan',
+    BaCreate: 'Buat BA', BaUpdate: 'Ubah BA', BaDelete: 'Hapus BA',
+    RenameMaster: 'Ganti Nama Master', FileAccess: 'Akses Berkas', Deny: 'Akses Ditolak', Lainnya: 'Lainnya'
+};
+const ACTIVITY_KRITIS = ['Deny', 'DeletePengajuan', 'BaDelete', 'CorrectBayar', 'ResetUpload'];
+const ACTIVITY_GROUP_OF = {
+    ACC: ['keputusan'], Tolak: ['keputusan'], Batal: ['keputusan'], Menunggu: ['keputusan'],
+    UploadMahasiswa: ['unggahan'], UploadAdmin: ['unggahan'], ResetUpload: ['unggahan'],
+    VerifyBayar: ['bayar'], CorrectBayar: ['bayar'],
+    BaCreate: ['ba'], BaUpdate: ['ba'], BaDelete: ['ba'],
+    Deny: ['deny'], DeletePengajuan: ['kritis'], RenameMaster: ['master'],
+    FileAccess: ['berkas'], UpdatePengajuan: ['data']
+};
+const ACTIVITY_GROUPS = [
+    { key: '', label: 'Semua' },
+    { key: 'keputusan', label: 'Keputusan' },
+    { key: 'unggahan', label: 'Unggahan' },
+    { key: 'bayar', label: 'Verifikasi Bayar' },
+    { key: 'ba', label: 'Berita Acara' },
+    { key: 'kritis', label: 'Kritis' },
+    { key: 'deny', label: 'Akses Ditolak' }
+];
+const ACTIVITY_STATUS_JENIS = { ACC: 'ACC', Ditolak: 'Tolak', Dibatalkan: 'Batal', Menunggu: 'Menunggu' };
+const ACTIVITY_STATUS_RINGKAS = {
+    ACC: 'ACC pengajuan', Ditolak: 'Menolak pengajuan',
+    Dibatalkan: 'Membatalkan pengajuan', Menunggu: 'Mengembalikan ke Menunggu'
+};
+
+function _actPad(n) {
+    return (n < 10 ? '0' : '') + n;
+}
+
+// Timestamp audit tersimpan sebagai Date (UTC) atau teks ISO. Hasil selalu ISO
+// UTC tanpa sufiks zona, agar UI dapat menambahkan offset WIB sendiri.
+function _actIsoUtc(v) {
+    if (v instanceof Date && !isNaN(v.getTime())) {
+        return v.toISOString().slice(0, 19);
     }
+    const s = String(v || '').trim();
+    if (!s) return '';
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) return m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + (m[6] || '00');
+    const parsed = new Date(s);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 19);
+    return s.replace(' ', 'T');
+}
+
+function _actWibDay(iso) {
+    const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!m) return String(iso || '').slice(0, 10);
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5])) + 7 * 3600000);
+    return d.getUTCFullYear() + '-' + _actPad(d.getUTCMonth() + 1) + '-' + _actPad(d.getUTCDate());
+}
+
+function _actWibToday() {
+    const d = new Date(Date.now() + 7 * 3600000);
+    return d.getUTCFullYear() + '-' + _actPad(d.getUTCMonth() + 1) + '-' + _actPad(d.getUTCDate());
+}
+
+function _actShiftDay(day, days) {
+    const m = String(day || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return '';
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) + (Number(days) || 0) * 86400000);
+    return d.getUTCFullYear() + '-' + _actPad(d.getUTCMonth() + 1) + '-' + _actPad(d.getUTCDate());
+}
+
+function _actParseJson(raw) {
+    const s = String(raw === undefined || raw === null ? '' : raw);
+    if (!s) return { value: null, json: false, text: '' };
+    try {
+        return { value: JSON.parse(s), json: true, text: s };
+    } catch (e) {
+        return { value: null, json: false, text: s };
+    }
+}
+
+function _actInitials(name) {
+    const cleaned = String(name || '').replace(/[,;]/g, ' ');
+    const words = cleaned.split(/\s+/).filter(function(w) {
+        const bare = w.replace(/\./g, '');
+        if (!bare) return false;
+        if (w.endsWith('.')) return false;
+        if (/^(dr|drs|prof|hj|h)$/i.test(bare)) return false;
+        return /[A-Za-z]/.test(bare);
+    });
+    const sig = words.length ? words : cleaned.split(/\s+/).filter(Boolean);
+    if (!sig.length) return '?';
+    if (sig.length === 1) return (sig[0].replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || '?').toUpperCase();
+    return (sig[0][0] + sig[1][0]).toUpperCase();
+}
+
+function _actFileLabel(url) {
+    const s = String(url || '');
+    if (!s) return '';
+    const drive = s.match(/\/file\/d\/([^/?#]+)/);
+    if (drive) return drive[1];
+    const parts = s.split('?')[0].split('#')[0].split('/').filter(Boolean);
+    const last = parts.length ? parts[parts.length - 1] : '';
+    try { return decodeURIComponent(last); } catch (e) { return last; }
+}
+
+function _actDetailId(detail) {
+    if (!detail || typeof detail !== 'object') return '';
+    return String(detail.idPengajuan || detail['ID Pengajuan'] || '').trim();
+}
+
+function _activityKind(aksi, target) {
+    const a = String(aksi || '').toUpperCase();
+    const t = String(target || '').toLowerCase();
+    if (t === 'checkdata') return 'UpdatePengajuan';
+    if (a === 'BA_CREATE') return 'BaCreate';
+    if (a === 'BA_UPDATE') return 'BaUpdate';
+    if (a === 'BA_DELETE') return 'BaDelete';
+    if (a === 'RENAME_MASTER') return 'RenameMaster';
+    if (a === 'VERIFY') return 'VerifyBayar';
+    if (a === 'CORRECT') return 'CorrectBayar';
+    if (a === 'RESET_UPLOAD') return 'ResetUpload';
+    if (a === 'UPLOAD_BUKTI_ADMIN' || a === 'UPLOAD_SURAT') return 'UploadAdmin';
+    if (a === 'DENY') return 'Deny';
+    if (a === 'FILE_ACCESS') return 'FileAccess';
+    if (a === 'DELETE' && (t === 'pengajuan' || t === 'detailkegiatan')) return 'DeletePengajuan';
+    if (a === 'UPDATE' && (t === 'pengajuan' || t === 'detailkegiatan')) return 'UpdatePengajuan';
     if (a.indexOf('JADWAL') !== -1) return 'BaUpdate';
-    if (a.indexOf('RENAME_MASTER') !== -1) return 'RenameMaster';
-    if (a.indexOf('LOGIN') !== -1) return 'Lainnya';
-    if (a.indexOf('ACC') === 0) return 'ACC';
-    if (a.indexOf('TOLAK') === 0) return 'Tolak';
-    if (a.indexOf('BATAL') === 0) return 'Batal';
     return 'Lainnya';
 }
 
+function _activityKindLabel(jenis) {
+    return ACTIVITY_KIND_LABELS[jenis] || String(jenis || '') || 'Lainnya';
+}
+
 function _activityGroup(jenis) {
-    const map = {
-        ACC: ['keputusan'], Tolak: ['keputusan'], Batal: ['keputusan'],
-        BaCreate: ['ba'], BaUpdate: ['ba'], BaDelete: ['ba', 'kritis'],
-        RenameMaster: ['master'], Lainnya: ['data']
+    return ACTIVITY_GROUP_OF[jenis] || [];
+}
+
+function _actEvent(source, ts, jenis, targetJenis, targetId, ringkasan, extra, idx) {
+    const waktu = _actIsoUtc(ts);
+    const e = {
+        id: source + ':' + waktu + ':' + String(jenis) + ':' + String(targetId || '') + ':' + (idx || 0),
+        waktu: waktu,
+        aktor: String((extra && extra.aktor) || '').trim() || 'Sistem',
+        aktorRole: String((extra && extra.aktorRole) || 'Admin'),
+        inisial: _actInitials((extra && extra.aktor) || 'Sistem'),
+        jenis: jenis,
+        label: _activityKindLabel(jenis),
+        grup: _activityGroup(jenis),
+        sumber: source,
+        targetJenis: targetJenis,
+        targetId: String(targetId || ''),
+        ringkasan: ringkasan,
+        meta: (extra && extra.meta) || {},
+        alasan: String((extra && extra.alasan) || ''),
+        raw: String((extra && extra.raw) || '')
     };
-    return map[jenis] || [];
+    if (extra && extra.sebelum) e.sebelum = extra.sebelum;
+    if (extra && extra.sesudah) e.sesudah = extra.sesudah;
+    return e;
+}
+
+function _actFields(detail, skip) {
+    const out = {};
+    Object.keys(detail || {}).forEach(function(k) {
+        if (skip && skip.indexOf(k) !== -1) return;
+        out[k] = detail[k];
+    });
+    return out;
+}
+
+function _actNormalizeAudit(row, idx) {
+    const action = String(row.Aksi || '').trim().toUpperCase();
+    const target = String(row.Target || '').trim();
+    const targetLow = target.toLowerCase();
+    const parsed = _actParseJson(row.Detail);
+    const detail = parsed.value && typeof parsed.value === 'object' ? parsed.value : null;
+    const idPengajuan = _actDetailId(detail);
+    const aktor = String(row['Actor Email'] || '').trim() || 'Sistem';
+    const extra = { aktor: aktor, aktorRole: 'Admin', alasan: String(row.Alasan || '').trim(), raw: String(row.Detail || '') };
+
+    if (targetLow === 'checkdata') {
+        const cleared = !!(detail && detail.cleared);
+        extra.meta = detail ? { biaya: detail.biaya, cleared: cleared } : {};
+        return _actEvent('audit_log', row.Timestamp, 'UpdatePengajuan', 'CheckData', idPengajuan,
+            cleared ? 'Mengembalikan biaya pengajuan ke MasterBiaya' : 'Mengoreksi biaya pengajuan', extra, idx);
+    }
+
+    if (action === 'UPDATE' && targetLow === 'pengajuan') {
+        const keys = detail ? Object.keys(detail).filter(function(k) { return k !== 'idPengajuan' && k !== 'ID Pengajuan'; }) : [];
+        extra.meta = { perubahan: keys.join(', ') };
+        extra.sesudah = detail ? _actFields(detail, ['idPengajuan', 'ID Pengajuan']) : undefined;
+        return _actEvent('audit_log', row.Timestamp, 'UpdatePengajuan', 'Pengajuan', idPengajuan,
+            keys.length ? 'Memperbarui data pengajuan (' + keys.join(', ') + ')' : 'Memperbarui data pengajuan', extra, idx);
+    }
+
+    if (action === 'UPDATE' && targetLow === 'detailkegiatan') {
+        const keys = detail ? Object.keys(detail).filter(function(k) { return k !== 'idPengajuan' && k !== 'ID Pengajuan' && k !== 'index'; }) : [];
+        extra.meta = detail ? { perubahan: keys.join(', '), index: detail.index } : {};
+        return _actEvent('audit_log', row.Timestamp, 'UpdatePengajuan', 'DetailKegiatan', idPengajuan,
+            'Mengubah detail kegiatan', extra, idx);
+    }
+
+    if (action === 'DELETE' && targetLow === 'pengajuan') {
+        extra.meta = detail ? { deleted: 1 } : {};
+        return _actEvent('audit_log', row.Timestamp, 'DeletePengajuan', 'Pengajuan', idPengajuan,
+            'Menghapus pengajuan', extra, idx);
+    }
+
+    if (action === 'DELETE' && targetLow === 'detailkegiatan') {
+        extra.meta = detail ? _actFields(detail, ['idPengajuan', 'ID Pengajuan']) : {};
+        extra.sebelum = detail ? _actFields(detail, ['idPengajuan', 'ID Pengajuan', 'index']) : undefined;
+        return _actEvent('audit_log', row.Timestamp, 'DeletePengajuan', 'DetailKegiatan', idPengajuan,
+            'Menghapus detail kegiatan', extra, idx);
+    }
+
+    if (action === 'UPLOAD_BUKTI_ADMIN') {
+        extra.meta = detail ? { sumber: detail.sumber, berkas: _actFileLabel(detail.linkBukti) } : {};
+        return _actEvent('audit_log', row.Timestamp, 'UploadAdmin', 'Pengajuan', idPengajuan,
+            'Admin mengunggah bukti bayar', extra, idx);
+    }
+
+    if (action === 'UPLOAD_SURAT') {
+        extra.meta = detail ? { berkas: _actFileLabel(detail.linkSurat) } : {};
+        return _actEvent('audit_log', row.Timestamp, 'UploadAdmin', 'Pengajuan', idPengajuan,
+            'Admin mengunggah surat keterangan', extra, idx);
+    }
+
+    if (action === 'RESET_UPLOAD') {
+        extra.meta = detail ? { berkas: _actFileLabel(detail.linkBukti) } : {};
+        extra.sebelum = detail ? { linkBukti: String(detail.linkBukti || '') } : undefined;
+        extra.sesudah = { linkBukti: '' };
+        return _actEvent('audit_log', row.Timestamp, 'ResetUpload', 'Pengajuan', idPengajuan,
+            'Mereset unggahan mahasiswa', extra, idx);
+    }
+
+    if (action === 'VERIFY') {
+        const nominal = detail ? Number(detail.nominal) || 0 : 0;
+        const kesesuaian = detail ? String(detail.kesesuaian || '') : '';
+        extra.meta = detail ? { nominal: nominal, kesesuaian: kesesuaian, tanggalBayar: detail.tanggal } : {};
+        extra.sebelum = { status: 'menunggu' };
+        extra.sesudah = { status: 'valid', nominal: nominal };
+        return _actEvent('audit_log', row.Timestamp, 'VerifyBayar', 'Pembayaran', idPengajuan,
+            'Memvalidasi pembayaran' + (nominal ? ' Rp' + Number(nominal).toLocaleString('id-ID') : '') +
+            (kesesuaian ? ' (' + kesesuaian + ')' : ''), extra, idx);
+    }
+
+    if (action === 'CORRECT') {
+        const mode = detail ? String(detail.mode || '') : '';
+        const statusBaru = detail ? String(detail.statusBaru || '') : '';
+        extra.meta = { mode: mode, statusBaru: statusBaru };
+        extra.sebelum = { status: 'valid' };
+        extra.sesudah = { status: statusBaru };
+        return _actEvent('audit_log', row.Timestamp, 'CorrectBayar', 'Pembayaran', idPengajuan,
+            mode === 'buka_kembali' ? 'Membuka kembali pembayaran ke antrean' : 'Koreksi administratif pembayaran', extra, idx);
+    }
+
+    if (action === 'BA_CREATE' || action === 'BA_UPDATE' || action === 'BA_DELETE') {
+        const jenisBa = detail ? String(detail.jenis || '') : '';
+        const map = { BA_CREATE: 'BaCreate', BA_UPDATE: 'BaUpdate', BA_DELETE: 'BaDelete' };
+        const verb = { BA_CREATE: 'Membuat', BA_UPDATE: 'Memperbarui', BA_DELETE: 'Menghapus' };
+        extra.meta = detail ? _actFields(detail, []) : {};
+        return _actEvent('audit_log', row.Timestamp, map[action], 'Berita Acara', target,
+            verb[action] + ' ' + (jenisBa ? 'BA ' + jenisBa : 'BA'), extra, idx);
+    }
+
+    if (action === 'RENAME_MASTER') {
+        const parts = target.split('->');
+        const dari = parts.length > 1 ? parts[0].replace(/^Blok:\s*/i, '').trim() : target;
+        const ke = parts.length > 1 ? parts[1].trim() : '';
+        extra.meta = detail ? _actFields(detail, []) : {};
+        extra.sebelum = { nilai: dari };
+        extra.sesudah = ke ? { nilai: ke } : undefined;
+        return _actEvent('audit_log', row.Timestamp, 'RenameMaster', 'Master Data', target,
+            'Mengganti nama master: ' + dari + (ke ? ' -> ' + ke : ''), extra, idx);
+    }
+
+    if (action === 'CREATE_JADWAL' || action === 'UPDATE_JADWAL' || action === 'CANCEL_JADWAL') {
+        const jid = detail ? String(detail.jadwalId || '') : '';
+        const ring = action === 'CREATE_JADWAL' ? 'Membuat jadwal pelaksanaan'
+            : (action === 'CANCEL_JADWAL' ? 'Membatalkan jadwal pelaksanaan' : 'Memperbarui jadwal pelaksanaan');
+        extra.meta = detail ? _actFields(detail, []) : {};
+        return _actEvent('audit_log', row.Timestamp, _activityKind(action, target), 'Jadwal', jid || target, ring, extra, idx);
+    }
+
+    const fallbackText = parsed.json ? parsed.text : String(row.Detail || '');
+    extra.meta = fallbackText ? { detail: fallbackText } : {};
+    return _actEvent('audit_log', row.Timestamp, 'Lainnya', target || 'Lainnya', '',
+        (action || 'AKSI') + (fallbackText ? ': ' + fallbackText.slice(0, 120) : ''), extra, idx);
+}
+
+function _actNormalizeStatus(row, prevStatus, idx) {
+    const status = String(row.Status || '').trim();
+    const idPengajuan = String(row['ID Pengajuan'] || '').trim();
+    const aktor = String(row['Actor Email'] || '').trim() || 'Admin';
+    const jenis = ACTIVITY_STATUS_JENIS[status] || 'Lainnya';
+    const extra = {
+        aktor: aktor,
+        aktorRole: 'Admin',
+        alasan: String(row.Catatan || ''),
+        meta: { statusLama: String(prevStatus || ''), statusBaru: status },
+        raw: String(row.Catatan || '')
+    };
+    if (prevStatus) extra.sebelum = { status: String(prevStatus) };
+    extra.sesudah = { status: status };
+    const ring = (ACTIVITY_STATUS_RINGKAS[status] || ('Status menjadi ' + status)) + (idPengajuan ? ' ' + idPengajuan : '');
+    return _actEvent('status_history', row.Timestamp, jenis, 'Pengajuan', idPengajuan, ring, extra, idx);
+}
+
+function _actNormalizeUpload(row, adminAudit, idx) {
+    const detail = String(row.Detail || '');
+    const isAdmin = /unggah bukti bayar oleh admin/i.test(detail) || !!adminAudit;
+    const aktor = isAdmin
+        ? (adminAudit ? String(adminAudit['Actor Email'] || '').trim() || 'Admin' : 'Admin')
+        : (String(row['Nama Lengkap'] || '').trim() || 'Mahasiswa');
+    const jenis = isAdmin ? 'UploadAdmin' : 'UploadMahasiswa';
+    const nama = String(row['Nama Lengkap'] || '').trim();
+    const jenisKegiatan = String(row['Jenis Kegiatan'] || '').trim();
+    const extra = {
+        aktor: aktor,
+        aktorRole: isAdmin ? 'Admin' : 'Mahasiswa',
+        meta: {
+            namaMahasiswa: nama,
+            npm: String(row.NPM || '').trim(),
+            blok: String(row.Blok || '').trim(),
+            jenisKegiatan: jenisKegiatan,
+            berkas: _actFileLabel(row['Link Bukti Bayar']),
+            tanggal: String(row.Tanggal || '').trim()
+        },
+        raw: detail
+    };
+    const ring = isAdmin
+        ? 'Admin mengunggah bukti bayar atas nama ' + (nama || String(row.NPM || '').trim() || '-')
+        : 'Mahasiswa mengunggah bukti bayar' + (jenisKegiatan ? ' (' + jenisKegiatan + ')' : '');
+    return _actEvent('log_upload', row.Timestamp, jenis, 'Pengajuan', String(row['ID Pengajuan'] || '').trim(), ring, extra, idx);
+}
+
+function _actTimeMs(v) {
+    if (v instanceof Date) return v.getTime();
+    const s = String(v || '').trim();
+    if (!s) return NaN;
+    return new Date(s).getTime();
+}
+
+function _actDedupeUploads(uploadRows, auditRows) {
+    const watches = [];
+    (auditRows || []).forEach(function(r) {
+        const a = String(r.Aksi || '').trim().toUpperCase();
+        if (a !== 'UPLOAD_BUKTI_ADMIN' && a !== 'RESET_UPLOAD') return;
+        const parsed = _actParseJson(r.Detail);
+        const d = parsed.value && typeof parsed.value === 'object' ? parsed.value : null;
+        const id = _actDetailId(d);
+        const ts = _actTimeMs(r.Timestamp);
+        if (id && !isNaN(ts)) watches.push({ id: id, ts: ts });
+    });
+    return (uploadRows || []).filter(function(u) {
+        if (!watches.length) return true;
+        const id = String(u['ID Pengajuan'] || '').trim();
+        if (!id) return true;
+        const ts = _actTimeMs(u.Timestamp);
+        if (isNaN(ts)) return true;
+        return !watches.some(function(w) { return w.id === id && Math.abs(w.ts - ts) <= 10000; });
+    });
+}
+
+function _actFilter(events, f) {
+    const jenis = String(f.jenis || '').trim();
+    const grup = String(f.grup || '').trim();
+    const aktor = String(f.aktor || '').trim();
+    const target = String(f.target || '').trim();
+    const q = String(f.q || '').trim().toLowerCase();
+    const dari = String(f.dari || '').trim();
+    const sampai = String(f.sampai || '').trim();
+    return (events || []).filter(function(e) {
+        if (jenis && e.jenis !== jenis) return false;
+        if (grup && _activityGroup(e.jenis).indexOf(grup) === -1) return false;
+        if (aktor && e.aktor !== aktor) return false;
+        if (target && e.targetJenis !== target) return false;
+        const day = _actWibDay(e.waktu);
+        if (dari && day < dari) return false;
+        if (sampai && day > sampai) return false;
+        if (q) {
+            const hay = [e.aktor, e.aktorRole, e.targetId, e.targetJenis, e.ringkasan, e.alasan, _activityKindLabel(e.jenis)].join(' ').toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+        }
+        return true;
+    });
+}
+
+function _actActorSummary(events) {
+    const map = {};
+    (events || []).forEach(function(e) {
+        const key = e.aktor + '|' + e.aktorRole;
+        if (!map[key]) map[key] = { nama: e.aktor, role: e.aktorRole, jumlah: 0 };
+        map[key].jumlah += 1;
+    });
+    return Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) {
+        return b.jumlah - a.jumlah || String(a.nama).localeCompare(String(b.nama));
+    });
+}
+
+function _actKindSummary(events) {
+    const map = {};
+    (events || []).forEach(function(e) {
+        if (!map[e.jenis]) map[e.jenis] = { jenis: e.jenis, label: _activityKindLabel(e.jenis), jumlah: 0 };
+        map[e.jenis].jumlah += 1;
+    });
+    return Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return b.jumlah - a.jumlah; });
+}
+
+function _actGroupSummaries(events) {
+    return ACTIVITY_GROUPS.map(function(g) {
+        return {
+            key: g.key,
+            label: g.label,
+            jumlah: (events || []).filter(function(e) {
+                return !g.key || _activityGroup(e.jenis).indexOf(g.key) !== -1;
+            }).length
+        };
+    });
+}
+
+function _actSummary(events) {
+    const list = events || [];
+    const today = _actWibToday();
+    const out = { hariIni: 0, keputusan: 0, unggahan: 0, kritis: 0, total: list.length };
+    list.forEach(function(e) {
+        if (_actWibDay(e.waktu) === today) out.hariIni += 1;
+        if (['ACC', 'Tolak', 'Batal', 'Menunggu'].indexOf(e.jenis) !== -1) out.keputusan += 1;
+        if (e.jenis === 'UploadMahasiswa' || e.jenis === 'UploadAdmin') out.unggahan += 1;
+        if (ACTIVITY_KRITIS.indexOf(e.jenis) !== -1) out.kritis += 1;
+    });
+    return out;
 }
 
 function getActivityLog(payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     const p = payload || {};
-    const perPage = Math.min(100, Math.max(5, parseInt(p.perPage, 10) || 25));
-    const kindFilter = String(p.jenis || '').trim();
-    const groupFilter = String(p.grup || '').trim();
-    const actorFilter = String(p.aktor || '').trim().toLowerCase();
-    const targetFilter = String(p.target || '').trim().toLowerCase();
-    const q = String(p.q || '').trim().toLowerCase();
-    const dari = String(p.dari || '').trim();
-    const sampai = String(p.sampai || '').trim();
-
+    const today = _actWibToday();
+    const dari = String(p.dari || '').trim() || _actShiftDay(today, -6);
+    const sampai = String(p.sampai || '').trim() || today;
     const events = [];
-    getAllRows('AuditLog').forEach(function(r) {
-        const ts = _clientDate(r.Timestamp) || String(r.Timestamp || '').trim();
-        const day = ts.slice(0, 10);
-        if (dari && day && day < dari) return;
-        if (sampai && day && day > sampai) return;
-        const jenis = _activityKind(r.Aksi);
-        const actor = String(r['Actor Email'] || '').trim();
-        const target = String(r.Target || '').trim();
-        if (kindFilter && jenis !== kindFilter) return;
-        if (groupFilter && _activityGroup(jenis).indexOf(groupFilter) === -1) return;
-        if (actorFilter && actor.toLowerCase().indexOf(actorFilter) === -1) return;
-        if (targetFilter && target.toLowerCase().indexOf(targetFilter) === -1) return;
-        const detail = String(r.Detail || '');
-        if (q && (actor + ' ' + target + ' ' + detail + ' ' + String(r.Aksi || '')).toLowerCase().indexOf(q) === -1) return;
-        events.push({
-            id: 'audit:' + ts + ':' + target,
-            jenis: jenis,
-            grup: _activityGroup(jenis),
-            waktu: _isoUtc(ts),
-            aktor: actor || 'Sistem',
-            aksi: String(r.Aksi || '').trim(),
-            target: target,
-            detail: detail,
-            alasan: String(r.Alasan || '')
-        });
+
+    const auditRows = getAllRows('AuditLog');
+    auditRows.forEach(function(r, i) { events.push(_actNormalizeAudit(r, i)); });
+
+    // Status history diurutkan naik agar status sebelumnya per pengajuan akurat;
+    // perhitungan ini memakai seluruh riwayat, bukan hanya rentang filter.
+    const statusRows = getAllRows('StatusHistory').slice().sort(function(a, b) {
+        return String(_actIsoUtc(a.Timestamp)).localeCompare(String(_actIsoUtc(b.Timestamp)));
     });
-    events.sort(function(a, b) { return String(b.waktu || '').localeCompare(String(a.waktu || '')); });
-    const total = events.length;
-    const pages = Math.max(1, Math.ceil(total / perPage));
+    const prev = {};
+    statusRows.forEach(function(r, i) {
+        const id = String(r['ID Pengajuan'] || '').trim();
+        events.push(_actNormalizeStatus(r, prev[id], i));
+        if (String(r.Status || '').trim()) prev[id] = String(r.Status || '').trim();
+    });
+
+    const adminUpload = {};
+    auditRows.forEach(function(r) {
+        if (String(r.Aksi || '').trim().toUpperCase() !== 'UPLOAD_BUKTI_ADMIN') return;
+        const parsed = _actParseJson(r.Detail);
+        const d = parsed.value && typeof parsed.value === 'object' ? parsed.value : null;
+        const id = _actDetailId(d);
+        if (id && !adminUpload[id]) adminUpload[id] = r;
+    });
+    const uploadRows = _actDedupeUploads(getAllRows('LogUpload'), auditRows);
+    uploadRows.forEach(function(r, i) {
+        events.push(_actNormalizeUpload(r, adminUpload[String(r['ID Pengajuan'] || '').trim()], i));
+    });
+
+    events.sort(function(a, b) {
+        const wa = String(a.waktu || '');
+        const wb = String(b.waktu || '');
+        if (wa !== wb) return wb < wa ? -1 : 1;
+        return String(b.id) < String(a.id) ? -1 : 1;
+    });
+
+    const HARD_CAP = 5000;
+    const ranged = _actFilter(events, { dari: dari, sampai: sampai });
+    const truncated = ranged.length > HARD_CAP;
+    const capped = truncated ? ranged.slice(0, HARD_CAP) : ranged;
+    const filtered = _actFilter(capped, {
+        jenis: p.jenis, grup: p.grup, aktor: p.aktor, target: p.target, q: p.q,
+        dari: dari, sampai: sampai
+    });
+
+    const perPageRaw = parseInt(p.perPage, 10);
+    const perPage = !perPageRaw || perPageRaw < 1 ? 25 : Math.min(perPageRaw, HARD_CAP);
+    const pages = Math.max(1, Math.ceil(filtered.length / perPage));
     let page = parseInt(p.page, 10) || 1;
     if (page < 1) page = 1;
     if (page > pages) page = pages;
     const start = (page - 1) * perPage;
-    const actors = {};
-    events.forEach(function(e) {
-        if (!actors[e.aktor]) actors[e.aktor] = { aktor: e.aktor, total: 0 };
-        actors[e.aktor].total++;
-    });
-    const kinds = {};
-    events.forEach(function(e) {
-        if (!kinds[e.jenis]) kinds[e.jenis] = { jenis: e.jenis, total: 0 };
-        kinds[e.jenis].total++;
-    });
+
     return {
-        rows: events.slice(start, start + perPage),
-        total: total,
+        rows: filtered.slice(start, start + perPage),
+        total: filtered.length,
         page: page,
         perPage: perPage,
         pages: pages,
-        truncated: false,
+        truncated: truncated,
         range: { dari: dari, sampai: sampai },
-        actors: Object.keys(actors).map(function(k) { return actors[k]; }),
-        kinds: Object.keys(kinds).map(function(k) { return kinds[k]; }),
-        groups: _activityGroupSummaries(events),
+        actors: _actActorSummary(ranged),
+        kinds: _actKindSummary(ranged),
+        groups: _actGroupSummaries(ranged),
+        summary: _actSummary(ranged),
         ok: true
     };
-}
-
-function _activityGroupSummaries(events) {
-    const labels = { keputusan: 'Keputusan', unggahan: 'Unggahan', bayar: 'Verifikasi Bayar', ba: 'Berita Acara', kritis: 'Kritis', master: 'Master', data: 'Data' };
-    const sums = {};
-    events.forEach(function(e) {
-        (e.grup || []).forEach(function(g) {
-            if (!sums[g]) sums[g] = { key: g, label: labels[g] || g, total: 0 };
-            sums[g].total++;
-        });
-    });
-    return Object.keys(sums).map(function(k) { return sums[k]; });
 }
 
 // ---------- Master rename (Blok) ----------

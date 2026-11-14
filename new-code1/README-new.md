@@ -32,7 +32,7 @@ Halaman dilayani lewat satu deployment webapp dengan routing `?page=...` di `2_w
 | `pages/index.html` | Pendaftaran pengajuan (publik). |
 | `pages/portal.html` | Portal mahasiswa: daftar/pengajuan baru, upload ACC + bukti bayar, validasi bukti, lihat status. |
 | `pages/bagian.html` | Panel Bagian: pilih kegiatan, input status peserta, upload Berita Acara bagian. |
-| `pages/dashboard.html` | Dashboard admin: tab Pengajuan, Statistik, Laporan Bagian, Berita Acara (bagian & admin), Master Data. |
+| `pages/dashboard.html` | Dashboard admin: tab Pengajuan, Statistik, Laporan Bagian, Berita Acara (bagian & admin), Riwayat Aktivitas, Master Data. |
 | `pages/detail-laporan.html` | Laporan admin: tab Laporan Bagian + tab Laporan Dosen (matriks BA, biaya), export XLSX. |
 | `template-acc-diterima-ditolak.html`, `template-acc-final.html` | Template email ACC. |
 | `docs/2026-08-18-detail-laporan-tabs-design.md` | Spesifikasi desain halaman laporan (dasar seluruh fitur laporan). |
@@ -112,6 +112,7 @@ Autentikasi `authenticateAdmin` (token sesi `_CURRENT_SESSION`). Panggilan aktua
 | BA Bagian | `uploadBeritaAcaraAdmin`, `deleteBeritaAcaraAdmin`, `saveBagianBaSettings`, `adminBagianBypass` (sesi bagian) lalu `getBagianBootstrap`, `getBeritaAcaraList`, `uploadBeritaAcaraBagian` via `runAsBab` |
 | BA Pendukung (admin) | `baAdminGet`, `baAdminCreate`, `baAdminAddPeserta`, `baAdminAddPesertaMassal`, `baAdminRegenerate`, `getBaAdminDetail`, `getBaAdminFileBase64`, `setBaAdminBaseFile`, `removeBaAdminBaseFile`, `setBaAdminSharedFile`, `removeBaAdminSharedFile`, `addBaAdminPesertaBerkas`, `removeBaAdminPeserta`, `saveBaAdminMergedPdf` |
 | Audit master | `auditMasterIntegrity` (duplikat master, Blok yatim/kosong, key drift, kualitas data) |
+| Riwayat aktivitas | `getActivityLog` (gabungan `AuditLog` + `StatusHistory` + `LogUpload`, normalisasi setara CF) |
 | Email | `sendFinalEmail`, `sendBulkFinalEmail`, `sendAccFinalToBagian`, `sendStatusNotificationEmail` |
 | Master data (via `saveFn`) | `saveAdminList`, `saveBagianStaff`, `saveConfig`, `saveMasterKegiatan`, `saveMasterBagian`, `saveMasterBiaya` |
 | Utilitas | `diagnosticData`, `logoutSession` |
@@ -124,6 +125,7 @@ Autentikasi `authenticateAdmin` (token sesi `_CURRENT_SESSION`). Panggilan aktua
 - **Regenerate PDF**: dashboard meminta rencana `baAdminRegenerate` (base, `sharedFiles`, grup peserta), merakit PDF di klien (`mergeBaPdfFiles`), lalu menyimpan lewat `saveBaAdminMergedPdf`.
 - **Periksa Integritas**: tombol pada tab Master Data memanggil `auditMasterIntegrity` dan menampilkan ringkasan duplikat, Blok yatim/kosong, key drift, serta kualitas data.
 - **Tab Berita Acara (admin)** memakai `uploadBeritaAcaraAdmin` yang **menolak BA tanpa peserta** (batch 11) dan `_resolveBaPesertaFromDetail` → fallback `normalizeBaPeserta`.
+- **Tab Riwayat Aktivitas** memakai `getActivityLog` yang menggabungkan `AuditLog`, `StatusHistory`, dan `LogUpload` menjadi baris seragam (`id, waktu, jenis, aktor, aktorRole, ringkas, sumber, ...`) dengan label/kelompok yang sama seperti UI CF (`ACTIVITY_KIND_LABELS`, `ACTIVITY_GROUPS`). Mendukung filter jenis/grup/aktor/kata kunci/rentang tanggal, paginasi, ringkasan kartu (hari ini, keputusan, unggahan, kritis, total), linimasa per hari WIB, panel detail (diff sebelum/sesudah, data mentah), serta ekspor XLSX di klien. Aktor memakai `Admin`/`Mahasiswa` (GAS tidak memiliki peran `Verifikator`); unggahan mahasiswa (`LogUpload`) masuk sebagai `UploadMahasiswa`/`UploadAdmin`.
 - Setelah simpan master (`saveEdit`), dashboard me-reset lazy-load `loaded.pengajuan`/`loaded.stats` lalu reload agar data pengajuan langsung segar.
 
 ### Impor Snapshot D1 (Tahap 1 sampai 5)
