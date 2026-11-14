@@ -818,6 +818,7 @@
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button class="btn-primary !py-2 text-xs" @click="openBaUpload()"><i class="bi bi-upload"></i> Unggah BA Pendukung</button>
+                            <button class="btn-soft !py-2 text-xs" @click="openBaCreate()"><i class="bi bi-plus-lg"></i> Buat BA Pendukung</button>
                             <button class="btn-soft !py-2 text-xs" @click="exportBagianExcel"><i class="bi bi-file-earmark-excel"></i> Ekspor Excel</button>
                         </div>
                     </div>
@@ -1446,6 +1447,7 @@
                                         <input type="file" accept=".csv,text/csv" class="hidden" @change="onMahasiswaCsv">
                                     </label>
                                     <button class="btn-primary !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openMasterRow(activeMasterCard.key)"><i class="bi bi-plus-lg"></i> Tambah</button>
+                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" @click="openAuditMaster()"><i class="bi bi-shield-check"></i> Periksa Integritas</button>
                                 </div>
                             </div>
                             <div v-if="!activeMasterCard.settings" class="master-table-scroll overflow-x-auto">
@@ -1981,8 +1983,104 @@
                 </transition>
             </div>
         </transition>
+        <div v-if="baCreate.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
+                <div class="mb-4 flex items-start justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Buat BA Pendukung</h3>
+                        <p class="text-xs text-slate-500">Buat BA dari kegiatan, lalu tambahkan peserta tanpa unggah berkas terlebih dahulu.</p>
+                    </div>
+                    <button class="text-slate-400 hover:text-slate-600" @click="baCreate.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="baCreate.loading" class="py-10 text-center text-sm text-slate-400">Memuat kegiatan...</div>
+                <template v-else>
+                    <div class="mb-3">
+                        <label class="label">Kegiatan tanpa BA Pendukung</label>
+                        <select v-model="baCreate.unitKey" class="input" @change="baCreatePick()">
+                            <option value="">- Pilih kegiatan -</option>
+                            <option v-for="u in baCreateUnits()" :key="u.key" :value="u.key">{{ u.bagian }} · {{ u.blok }} · {{ u.label }} ({{ (u.peserta || []).length }} peserta)</option>
+                        </select>
+                        <p v-if="!baCreateUnits().length" class="mt-1 text-[11px] text-slate-400">Semua kegiatan sudah memiliki BA Pendukung.</p>
+                    </div>
+                    <template v-if="baCreate.kegiatan">
+                        <div class="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+                            <div class="font-semibold text-slate-800">{{ baCreate.kegiatan.namaKegiatan || '-' }}</div>
+                            <div>{{ baCreate.kegiatan.bagian }} · Blok {{ baCreate.kegiatan.blok || '-' }}</div>
+                            <div v-if="baCreate.baAda" class="mt-1 text-amber-600">BA sudah ada: {{ baCreate.baId }}</div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="mb-1 flex items-center justify-between">
+                                <label class="label !mb-0">Peserta BA</label>
+                                <button class="text-[11px] font-semibold text-brand-700" @click="baCreateToggleAll()">{{ baCreateAllSelected() ? 'Kosongkan' : 'Pilih semua' }}</button>
+                            </div>
+                            <div class="max-h-56 overflow-y-auto rounded-xl border border-slate-200">
+                                <label v-for="p in baCreate.pesertaOpsi" :key="p.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2 last:border-0">
+                                    <input v-model="baCreate.pesertaIds" type="checkbox" :value="p.idPengajuan" class="h-4 w-4 accent-brand-600">
+                                    <span class="text-xs text-slate-700">{{ p.npm }} — {{ p.namaLengkap }}</span>
+                                </label>
+                            </div>
+                            <p class="mt-1 text-[11px] text-slate-400">Peserta terpilih: {{ baCreate.pesertaIds.length }}</p>
+                        </div>
+                    </template>
+                </template>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button class="btn-soft" @click="baCreate.open = false">Batal</button>
+                    <button class="btn-primary" :disabled="baCreate.busy || !baCreate.kegiatan || !baCreate.pesertaIds.length" @click="baCreateSubmit()">Buat &amp; tambah peserta</button>
+                </div>
+            </div>
+        </div>
+        <div v-if="auditMaster.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+            <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
+                <div class="mb-4 flex items-start justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Pemeriksaan Integritas Master</h3>
+                        <p class="text-xs text-slate-500">Duplikat master, referensi Blok yatim, kunci kegiatan, dan kualitas data.</p>
+                    </div>
+                    <button class="text-slate-400 hover:text-slate-600" @click="auditMaster.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="auditMaster.loading" class="py-12 text-center text-sm text-slate-400">Memeriksa data...</div>
+                <template v-else-if="auditMaster.data">
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Duplikat Master</div><div class="mt-1 text-2xl font-bold text-slate-800">{{ auditMaster.data.totals.duplicates }}</div></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Blok Yatim</div><div class="mt-1 text-2xl font-bold text-amber-700">{{ auditMaster.data.totals.orphans }}</div></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Blok Kosong</div><div class="mt-1 text-2xl font-bold text-rose-700">{{ auditMaster.data.totals.blanks }}</div></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Key Drift</div><div class="mt-1 text-2xl font-bold text-indigo-700">{{ auditMaster.data.totals.keyDrift }}</div></div>
+                    </div>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Duplikat Master ({{ (auditMaster.data.duplicates || []).length }})</div>
+                            <div v-if="!(auditMaster.data.duplicates || []).length" class="text-xs text-slate-400">Tidak ada duplikat.</div>
+                            <div v-for="d in (auditMaster.data.duplicates || [])" :key="d.kategori + d.nilai" class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>{{ d.kategori }} · {{ d.nilai }}</span><span class="font-semibold text-slate-500">{{ d.count }}x</span></div>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Blok Yatim ({{ (auditMaster.data.orphans || []).length }})</div>
+                            <div v-if="!(auditMaster.data.orphans || []).length" class="text-xs text-slate-400">Tidak ada blok yatim.</div>
+                            <div v-for="o in (auditMaster.data.orphans || [])" :key="o.table + o.blok" class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>{{ o.table }} · {{ o.blok }}</span><span class="font-semibold text-slate-500">{{ o.count }}x</span></div>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Key Drift</div>
+                            <div v-for="(v, k) in (auditMaster.data.keyDrift || {})" :key="k" class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>{{ k }}</span><span class="font-semibold" :class="v.count ? 'text-rose-600' : 'text-emerald-600'">{{ v.count }}</span></div>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 p-3">
+                            <div class="mb-2 text-xs font-bold text-slate-700">Kualitas Data</div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs first:border-0"><span>Mahasiswa tanpa Blok</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.mahasiswaBlokKosong.count }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>BA tanpa peserta</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.totals.baOrphan }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>Jadwal duplikat</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.jadwalDuplikat.count }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>BA perlu regenerate</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.baNeedsRegen.count }}</span></div>
+                            <div class="flex items-center justify-between border-t border-slate-100 py-1 text-xs"><span>Peserta BA nonaktif</span><span class="font-semibold text-slate-600">{{ auditMaster.data.dataQuality.baPesertaNonaktif.count }}</span></div>
+                        </div>
+                    </div>
+                </template>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button class="btn-soft" @click="auditMaster.open = false">Tutup</button>
+                    <button class="btn-primary" :disabled="auditMaster.loading" @click="loadAuditMaster()"><i class="bi bi-arrow-repeat"></i> Periksa Ulang</button>
+                </div>
+            </div>
+        </div>
         <input ref="baManageBaseFile" type="file" accept="application/pdf,image/jpeg,image/png" class="hidden" @change="onBaManageBaseFile">
         <input ref="baManagePesertaFile" type="file" accept="application/pdf,image/jpeg,image/png" multiple class="hidden" @change="onBaManagePesertaFile">
+        <input ref="baManageSharedFile" type="file" accept="application/pdf,image/jpeg,image/png" class="hidden" @change="onBaManageSharedFile">
+        <input ref="baManageSharedFile" type="file" accept="application/pdf" class="hidden" @change="onBaManageSharedFile">
         <div v-if="baManage.open" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
             <div class="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift">
                 <div class="mb-4 flex items-start justify-between gap-3">
@@ -2022,6 +2120,19 @@
                         <p class="mt-1 text-[10px] text-slate-400">Halaman dokumen dasar tampil paling awal pada PDF gabungan.</p>
                     </div>
 
+                    <div class="mt-3 rounded-xl bg-slate-50 p-3">
+                        <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">PDF BA bersama</div>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <template v-if="(baManage.data.ba.sharedFiles || []).length">
+                                <a v-for="f in baManage.data.ba.sharedFiles" :key="f.fileUrl" :href="safeUrl(f.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 !px-2 text-[11px]" @pointerenter="onBuktiEnter($event, f.fileUrl, 'PDF BA Bersama')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()"><i class="bi bi-file-earmark-pdf"></i> {{ f.fileName || 'Lihat PDF' }}</a>
+                            </template>
+                            <span v-else class="text-[11px] text-slate-400">Belum ada PDF bersama.</span>
+                            <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy" @click="baManagePickShared()"><i class="bi bi-upload"></i> {{ (baManage.data.ba.sharedFiles || []).length ? 'Ganti' : 'Unggah' }}</button>
+                            <button v-if="(baManage.data.ba.sharedFiles || []).length" class="btn-soft !py-1 !px-2 text-[11px] !text-rose-600" :disabled="baManage.busy" @click="removeBaManageShared()"><i class="bi bi-x-lg"></i> Hapus</button>
+                        </div>
+                        <p class="mt-1 text-[10px] text-slate-400">PDF bersama dipakai untuk menambah peserta massal.</p>
+                    </div>
+
                     <div class="mt-4">
                         <div class="mb-2 flex items-center justify-between">
                             <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Peserta ({{ (baManage.data.peserta || []).length }})</div>
@@ -2048,18 +2159,28 @@
                     </div>
 
                     <div class="mt-4">
-                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Kandidat peserta</div>
+                        <div class="mb-2 flex items-center justify-between">
+                            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Kandidat peserta</div>
+                            <button v-if="(baManage.data.candidates || []).length" class="text-[11px] font-semibold text-brand-700" @click="baManageToggleAllCandidates()">{{ baManageAllCandidatesSelected ? 'Kosongkan' : 'Pilih semua' }}</button>
+                        </div>
                         <div v-if="!(baManage.data.candidates || []).length" class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">Tidak ada kandidat baru untuk kegiatan ini.</div>
                         <div v-else class="max-h-52 space-y-1.5 overflow-y-auto">
-                            <div v-for="c in baManage.data.candidates" :key="c.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
-                                <div class="min-w-0">
-                                    <div class="truncate text-xs font-semibold text-slate-700">{{ c.namaLengkap || '-' }}</div>
-                                    <div class="font-mono text-[10px] text-slate-400">{{ c.npm || '-' }} · {{ c.statusPengajuan || '-' }}</div>
-                                </div>
-                                <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy" @click="baManagePickUpload('candidate', c.idPengajuan)"><i class="bi bi-plus-lg"></i> Tambah</button>
-                            </div>
+                            <label v-for="c in baManage.data.candidates" :key="c.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                                <span class="flex min-w-0 items-center gap-2">
+                                    <input v-model="baManage.addPicks" type="checkbox" :value="c.idPengajuan" class="h-4 w-4 accent-brand-600">
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-xs font-semibold text-slate-700">{{ c.namaLengkap || '-' }}</span>
+                                        <span class="block font-mono text-[10px] text-slate-400">{{ c.npm || '-' }} · {{ c.statusPengajuan || '-' }}</span>
+                                    </span>
+                                </span>
+                                <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy" @click.prevent="baManagePickUpload('candidate', c.idPengajuan)"><i class="bi bi-plus-lg"></i> Berkas</button>
+                            </label>
                         </div>
-                        <p class="mt-1 text-[10px] text-slate-400">Menambah peserta wajib menyertakan minimal satu halaman PDF/JPG/PNG.</p>
+                        <div class="mt-2 flex flex-wrap justify-end gap-2">
+                            <button class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy || !baManage.addPicks.length" @click="baManageAddBulk(false)"><i class="bi bi-person-plus"></i> Tambah tanpa berkas ({{ baManage.addPicks.length }})</button>
+                            <button v-if="(baManage.data.ba.sharedFiles || []).length" class="btn-soft !py-1 !px-2 text-[11px]" :disabled="baManage.busy || !baManage.addPicks.length" @click="baManageAddBulk(true)"><i class="bi bi-people"></i> Tambah massal</button>
+                        </div>
+                        <p class="mt-1 text-[10px] text-slate-400">Tambah lewat tombol Berkas wajib menyertakan minimal satu halaman PDF/JPG/PNG.</p>
                     </div>
 
                     <div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
@@ -2424,6 +2545,18 @@
                     } catch (e) { /* dokumen dasar rusak diabaikan */ }
                 }
 
+                var sharedFiles = Array.isArray(cfg.sharedFiles) ? cfg.sharedFiles : [];
+                for (var si = 0; si < sharedFiles.length; si += 1) {
+                    var sf = sharedFiles[si];
+                    if (!sf || !sf.base64) continue;
+                    var sbytes = b64ToBytes(sf.base64);
+                    if (!sbytes.length) continue;
+                    try {
+                        if (pdfLooksLikePdf(sbytes)) sourcePages += await copyPdfPages(sbytes);
+                        else { await addImagePage(sbytes, sf.mimeType); sourcePages += 1; }
+                    } catch (e) { /* lewati berkas bersama rusak */ }
+                }
+
                 var withFiles = groups.filter(function(g) { return g && Array.isArray(g.files) && g.files.length; });
                 var sepIndex = 0;
                 for (var gi = 0; gi < withFiles.length; gi += 1) {
@@ -2538,7 +2671,9 @@
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
-                    baManage: { open: false, loading: false, busy: false, baId: '', data: { ba: null, peserta: [], candidates: [] }, edit: { tanggal: '', jam: '', catatan: '' }, upload: { mode: '', idPengajuan: '' } },
+                    baManage: { open: false, loading: false, busy: false, baId: '', data: { ba: null, peserta: [], candidates: [] }, edit: { tanggal: '', jam: '', catatan: '' }, upload: { mode: '', idPengajuan: '' }, addPicks: [] },
+                    baCreate: { open: false, loading: false, busy: false, unitKey: '', unit: null, kegiatan: null, pesertaOpsi: [], pesertaIds: [], baAda: false, baId: '' },
+                    auditMaster: { open: false, loading: false, data: null },
                     dosenPick: { open: false },
                     riwayat: { open: false, unit: null },
                     bab: {
@@ -2584,6 +2719,10 @@
             computed: {
                 loggedIn() {
                     return !!(this.session && this.session.token);
+                },
+                baManageAllCandidatesSelected() {
+                    const list = (this.baManage.data && this.baManage.data.candidates) || [];
+                    return list.length > 0 && this.baManage.addPicks.length === list.length;
                 },
                 pageTitle() {
                     return { pengajuan: 'Telaah Pengajuan', manual: 'Input Manual', stats: 'Statistik', ba: 'Berita Acara', master: 'Master Data' }[this.tab] || 'Dashboard';
@@ -4283,6 +4422,170 @@
                         this.baManage.busy = false;
                     }
                 },
+                baManagePickShared() {
+                    const el = this.$refs.baManageSharedFile;
+                    if (el) { el.value = ''; el.click(); }
+                },
+                async onBaManageSharedFile(e) {
+                    const input = e.target;
+                    const file = input && input.files && input.files.length ? input.files[0] : null;
+                    if (input) input.value = '';
+                    if (!file) return;
+                    this.baManage.busy = true;
+                    try {
+                        const fd = await this.readFileAsBase64(file);
+                        const res = await this.run('setBaAdminSharedFile', this.baManage.baId, {
+                            data: fd.data,
+                            mimeType: file.type || 'application/pdf',
+                            name: file.name
+                        });
+                        this.notify((res && res.message) || 'PDF BA bersama disimpan.', !!(res && res.success));
+                        if (res && res.success) await this.loadBaManage();
+                    } catch (err) {
+                        this.notify('Gagal menyimpan PDF bersama: ' + err, false);
+                    } finally {
+                        this.baManage.busy = false;
+                    }
+                },
+                async removeBaManageShared() {
+                    const ok = await this.askConfirm({
+                        title: 'Hapus PDF BA bersama',
+                        message: 'Hapus PDF BA bersama dari BA Pendukung ini?',
+                        icon: 'bi-x-lg',
+                        tone: 'danger',
+                        confirmLabel: 'Hapus'
+                    });
+                    if (!ok) return;
+                    this.baManage.busy = true;
+                    try {
+                        const res = await this.run('removeBaAdminSharedFile', this.baManage.baId);
+                        this.notify((res && res.message) || 'PDF bersama dihapus.', !!(res && res.success));
+                        if (res && res.success) await this.loadBaManage();
+                    } catch (err) {
+                        this.notify('Gagal menghapus PDF bersama: ' + err, false);
+                    } finally {
+                        this.baManage.busy = false;
+                    }
+                },
+                baManageToggleAllCandidates() {
+                    const list = (this.baManage.data && this.baManage.data.candidates) || [];
+                    this.baManage.addPicks = this.baManageAllCandidatesSelected ? [] : list.map((c) => c.idPengajuan);
+                },
+                async baManageAddBulk(requireShared) {
+                    const ids = (this.baManage.addPicks || []).slice();
+                    if (!ids.length) { this.notify('Pilih minimal satu peserta.', false); return; }
+                    this.baManage.busy = true;
+                    try {
+                        const fn = requireShared ? 'baAdminAddPesertaMassal' : 'baAdminAddPeserta';
+                        const res = await this.run(fn, this.baManage.baId, ids);
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal menambah peserta.', false);
+                            return;
+                        }
+                        const added = Number(res.added) || 0;
+                        const skipped = Number(res.skipped) || 0;
+                        this.notify(added + ' peserta ditambahkan' + (skipped ? ', ' + skipped + ' dilewati' : '') + '.', true);
+                        this.baManage.addPicks = [];
+                        await this.loadBaManage();
+                        await this.loadBa({ silent: true });
+                        await this.loadBagian({ silent: true });
+                    } catch (err) {
+                        this.notify('Gagal menambah peserta: ' + err, false);
+                    } finally {
+                        this.baManage.busy = false;
+                    }
+                },
+                openBaCreate() {
+                    this.baCreate = { open: true, loading: false, busy: false, unitKey: '', unit: null, kegiatan: null, pesertaOpsi: [], pesertaIds: [], baAda: false, baId: '' };
+                },
+                baCreateUnits() {
+                    const units = (this.bagian && this.bagian.units) || [];
+                    return units.filter((u) => !((u.baPendukung || []).length));
+                },
+                baCreateAllSelected() {
+                    const list = (this.baCreate && this.baCreate.pesertaOpsi) || [];
+                    return list.length > 0 && this.baCreate.pesertaIds.length === list.length;
+                },
+                baCreateToggleAll() {
+                    const list = this.baCreate.pesertaOpsi || [];
+                    this.baCreate.pesertaIds = this.baCreateAllSelected() ? [] : list.map((p) => p.idPengajuan);
+                },
+                async baCreatePick() {
+                    const key = this.baCreate.unitKey;
+                    const unit = (this.bagian.units || []).filter((u) => u.key === key)[0] || null;
+                    this.baCreate.unit = unit;
+                    this.baCreate.kegiatan = null;
+                    this.baCreate.pesertaOpsi = [];
+                    this.baCreate.pesertaIds = [];
+                    this.baCreate.baAda = false;
+                    this.baCreate.baId = '';
+                    if (!unit) return;
+                    const first = ((unit.peserta || [])[0] || {}).idPengajuan || '';
+                    if (!first) { this.notify('Kegiatan ini belum punya peserta.', false); return; }
+                    this.baCreate.loading = true;
+                    try {
+                        const res = await this.run('baAdminGet', first);
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal memuat kegiatan.', false);
+                            return;
+                        }
+                        this.baCreate.kegiatan = res.data.kegiatan;
+                        this.baCreate.baAda = !!res.data.ba;
+                        this.baCreate.baId = res.data.ba ? res.data.ba.baId : '';
+                        this.baCreate.pesertaOpsi = this.baCreate.baAda ? (res.data.candidates || []) : (unit.peserta || []).slice();
+                    } catch (e) {
+                        this.notify('Gagal memuat kegiatan: ' + e, false);
+                    } finally {
+                        this.baCreate.loading = false;
+                    }
+                },
+                async baCreateSubmit() {
+                    const ids = (this.baCreate.pesertaIds || []).slice();
+                    if (!ids.length || !this.baCreate.kegiatan) return;
+                    this.baCreate.busy = true;
+                    try {
+                        const created = await this.run('baAdminCreate', this.baCreate.kegiatan);
+                        if (!created || !created.success) {
+                            this.notify((created && created.message) || 'Gagal membuat BA.', false);
+                            return;
+                        }
+                        const added = await this.run('baAdminAddPeserta', created.baId, ids);
+                        if (!added || !added.success) {
+                            this.notify((added && added.message) || 'Gagal menambah peserta.', false);
+                            return;
+                        }
+                        const skipped = Number(added.skipped) || 0;
+                        this.notify('BA ' + created.baId + ': ' + (Number(added.added) || 0) + ' peserta ditambahkan' + (skipped ? ', ' + skipped + ' dilewati' : '') + '.', true);
+                        this.baCreate.open = false;
+                        await this.loadBagian({ silent: true });
+                        await this.openBaManage(created.baId);
+                    } catch (e) {
+                        this.notify('Gagal membuat BA: ' + e, false);
+                    } finally {
+                        this.baCreate.busy = false;
+                    }
+                },
+                openAuditMaster() {
+                    this.auditMaster.open = true;
+                    this.loadAuditMaster();
+                },
+                async loadAuditMaster() {
+                    this.auditMaster.loading = true;
+                    try {
+                        const res = await this.run('auditMasterIntegrity');
+                        if (!res || res.success === false) {
+                            this.notify((res && res.message) || 'Gagal memeriksa integritas.', false);
+                            this.auditMaster.data = null;
+                            return;
+                        }
+                        this.auditMaster.data = res;
+                    } catch (e) {
+                        this.notify('Gagal memeriksa integritas: ' + e, false);
+                        this.auditMaster.data = null;
+                    } finally {
+                        this.auditMaster.loading = false;
+                    }
+                },
                 baManagePickUpload(mode, idPengajuan) {
                     this.baManage.upload = { mode: mode, idPengajuan: String(idPengajuan || '') };
                     const el = this.$refs.baManagePesertaFile;
@@ -4377,38 +4680,37 @@
                     if (!d || !d.ba) return;
                     this.baManage.busy = true;
                     try {
+                        const regen = await this.run('baAdminRegenerate', this.baManage.baId);
+                        if (!regen || !regen.success) {
+                            this.notify((regen && regen.message) || 'Gagal menyiapkan penggabungan PDF.', false);
+                            return;
+                        }
+                        const plan = regen.plan || {};
+                        const fetchPdf = async (url) => {
+                            const got = await this.baFetchFileBase64(url);
+                            return { base64: got.base64, mimeType: got.mimeType || 'application/pdf' };
+                        };
                         let baseFile = null;
-                        if (d.ba.baseFileUrl) {
-                            const got = await this.baFetchFileBase64(d.ba.baseFileUrl);
-                            baseFile = { base64: got.base64, mimeType: got.mimeType || 'application/pdf' };
+                        if (plan.base && plan.base.fileUrl) baseFile = await fetchPdf(plan.base.fileUrl);
+                        const sharedFiles = [];
+                        for (const sf of (plan.sharedFiles || [])) {
+                            const got = await fetchPdf(sf.fileUrl);
+                            sharedFiles.push({ base64: got.base64, mimeType: got.mimeType });
                         }
                         const groups = [];
-                        for (const p of (d.peserta || [])) {
+                        for (const g of (plan.groups || [])) {
                             const files = [];
-                            for (const f of (p.files || [])) {
-                                const got = await this.baFetchFileBase64(f.fileUrl);
-                                files.push({ base64: got.base64, mimeType: got.mimeType || 'application/pdf' });
+                            for (const f of (g.files || [])) {
+                                const got = await fetchPdf(f.fileUrl);
+                                files.push({ base64: got.base64, mimeType: got.mimeType });
                             }
-                            if (files.length) {
-                                groups.push({
-                                    peserta: { nama: p.namaLengkap, npm: p.npm, blok: p.blok },
-                                    files: files
-                                });
-                            }
+                            if (files.length) groups.push({ peserta: g.peserta, files: files });
                         }
                         const merged = await window.mergeBaPdfFiles({
-                            ba: {
-                                bagian: d.ba.bagian,
-                                blok: d.ba.blok,
-                                namaKegiatan: d.ba.namaKegiatan,
-                                tanggal: d.ba.tanggal
-                            },
-                            peserta: (d.peserta || []).map((p) => ({
-                                nama: p.namaLengkap,
-                                npm: p.npm,
-                                halaman: p.pages
-                            })),
+                            ba: plan.ba,
+                            peserta: plan.peserta || [],
                             baseFile: baseFile,
+                            sharedFiles: sharedFiles,
                             groups: groups
                         });
                         const blob = new Blob([merged.bytes], { type: 'application/pdf' });

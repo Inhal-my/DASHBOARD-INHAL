@@ -26,6 +26,8 @@ Halaman dilayani lewat satu deployment webapp dengan routing `?page=...` di `2_w
 | `0_code.gs` | Data layer: konstanta (`DATABASE_SHEET_ID`, `DRIVE_FOLDER_ID`, `STATUS`, `JENIS_KEGIATAN`, `KATEGORI_MASTER`), `SCHEMAS`, helper akses sheet (`ensureSheetWithHeaders`, `generateId`, `appendRowSafe`, `getRowByKey`, `upsertRowByKey`, `deleteRowByKey`), normalisasi (`norm`, `_clientDate`, `_dateOnly`), cache (`_rowsCache`, `getAllRowsCached`, `invalidateSheetCache`), sesi (`createSession`/`getSession`/`destroySession`, `requireAdmin`), audit log, migrasi BA sheets. |
 | `1_business.gs` | Seluruh logika bisnis + fungsi API GAS (terbesar, ~3050 baris). Setiap fungsi di halaman memanggilnya via `google.script.run`. |
 | `2_web.gs` | Routing `doGet` (param `?page=`), `PAGE_TITLES`, alias `admin` → `dashboard`, `renderPage`. |
+| `3_drive_bridge.gs` | Bridge `doPost` untuk CF (`saveFile`, `trashFile`, `getFile`, email) dengan token `DRIVE_BRIDGE_TOKEN`. Jangan diubah saat migrasi UI. |
+| `4_parity.gs` | Lapisan parity CF: login admin Google, validasi/relasi dosen, multi-sesi BA, PDF BA bersama, notifikasi, kalender, activity log, rename master, draft/lengkapi BA, export database. |
 | `pages/index.html` | Pendaftaran pengajuan (publik). |
 | `pages/portal.html` | Portal mahasiswa: daftar/pengajuan baru, upload ACC + bukti bayar, validasi bukti, lihat status. |
 | `pages/bagian.html` | Panel Bagian: pilih kegiatan, input status peserta, upload Berita Acara bagian. |
@@ -45,14 +47,14 @@ Skema didefinisikan sebagai array kolom di `SCHEMAS` (`0_code.gs:22`). Kolom bar
 
 | Sheet | Kolom (sesuai `SCHEMAS`) | Fungsi |
 |---|---|---|
-| `Pengajuan` | `Timestamp`, `ID Pengajuan`, `NPM`, `Nama Lengkap`, `Email`, `No. HP/WA`, `Blok`, `Jenis Kegiatan`, `Dosen`, `Tanggal Pelaksanaan`, `Keterangan`, `Link Surat Keterangan`, `Status`, `Catatan Admin`, `Notifikasi Terkirim Pada`, `Status Notifikasi Email`, `Error Notifikasi Email`, `Lampiran Email`, `Nomor Surat`, `Link ACC INHAL`, `Link Bukti Bayar`, `Link Final`, `Status Info Bagian`, `Waktu Info Bagian`, `Email Bagian`, `Catatan Info Bagian`, `UpdatedAt` | Data induk setiap pengajuan. |
+| `Pengajuan` | `Timestamp`, `ID Pengajuan`, `NPM`, `Nama Lengkap`, `Email`, `No. HP/WA`, `Blok`, `Jenis Kegiatan`, `Dosen`, `Tanggal Pelaksanaan`, `Keterangan`, `Link Surat Keterangan`, `Status`, `Catatan Admin`, `Notifikasi Terkirim Pada`, `Status Notifikasi Email`, `Error Notifikasi Email`, `Lampiran Email`, `Nomor Surat`, `Link ACC INHAL`, `Link Bukti Bayar`, `Link Final`, `Status Info Bagian`, `Waktu Info Bagian`, `Email Bagian`, `Catatan Info Bagian`, `UpdatedAt`, `Form Key` | Data induk setiap pengajuan. `Form Key` mencegah duplikat formulir. |
 | `DetailKegiatan` | `Timestamp`, `ID Pengajuan`, `Jenis Kegiatan`, `Pilihan`, `Detail`, `Tanggal Pelaksanaan`, `Bagian` | Baris kegiatan/BA (bisa >1 per pengajuan). |
 | `StatusHistory` | `Timestamp`, `ID Pengajuan`, `Status`, `Catatan`, `Actor Email` | Riwayat status (pelaku dicatat sebagai `Actor Email`, bukan `UpdatedBy`). |
 | `Mahasiswa` | `NPM`, `Nama Lengkap`, `Email`, `Blok`, `Keterangan` | Data mahasiswa. |
 | `MasterKegiatan` | `Kategori`, `Nilai` | Referensi nilai kegiatan (nilai dropdown diisi lewat master ini). |
 | `MasterBagian` | `Lab`, `Kegiatan Lab`, `Bagian`, `Email` | Opsi bagian + email staf. |
 | `MasterBiaya` | `Kegiatan`, `Biaya` | Daftar biaya per kegiatan (dipakai dropdown per-baris & fallback). |
-| `Admin` | `Password`, `Nama` | Autentikasi admin. |
+| `Admin` | `Password`, `Nama`, `Email` | Autentikasi admin. `Password` tetap sebagai fallback; `Email` dipakai login Google. |
 | `BagianStaff` | `Email`, `Kategori`, `Nama`, `Pass` | Autentikasi staf bagian. |
 | `Config` | `Key`, `Value` | Pengaturan dinamis: `BUKTI_MODE` (`strict`/`lenggang`), `BAGIAN_BA_STATUSES`, `BAGIAN_BA_FINAL_ONLY`. |
 | `NomorSurat` | `Type`, `Tahun`, `LastNumber`, `UpdatedAt` | Penomoran surat per tahun (`getNextSuratNumberYearly`). |
@@ -60,6 +62,11 @@ Skema didefinisikan sebagai array kolom di `SCHEMAS` (`0_code.gs:22`). Kolom bar
 | `AuditLog` | `Timestamp`, `Actor Email`, `Aksi`, `Target`, `Detail`, `Alasan` | Jejak audit perubahan data. |
 | `BeritaAcara` / `BeritaAcaraPeserta` | BA bagian | BA yang diupload bagian (`Sumber` = `'Bagian'`). |
 | `BeritaAcaraAdmin` / `BeritaAcaraAdminPeserta` | BA admin | BA yang diupload admin (dipisah dari BA bagian, hasil fitur sheet split; `Sumber` = `'Admin'`). |
+| `BeritaAcaraAdminBerkas` | Berkas BA admin | Halaman PDF/gambar per peserta (`Scope='peserta'`) atau PDF bersama (`Scope='shared'`). |
+| `JadwalPelaksanaan` / `JadwalPeserta` | Jadwal | Jadwal pelaksanaan per kegiatan, peserta, tanggal, dan jam. |
+| `JadwalDosen` | Relasi dosen jadwal | Daftar dosen per `Jadwal ID` (maks 5, `Urutan`). |
+| `BaDosen` | Relasi dosen BA | Daftar dosen per `BA ID` (maks 5, `Urutan`). |
+| `BeritaAcaraSesi` | Relasi sesi BA | Satu BA dapat mencakup beberapa `Jadwal ID`. |
 | `CheckData` | `Timestamp`, `Check ID`, `ID Pengajuan`, `NPM`, `Nama Lengkap`, `Blok`, `Jenis Kegiatan`, `Pilihan`, `Detail`, `Tanggal Pelaksanaan`, `Bagian`, `Dosen`, `Hadir`, `Catatan`, `Biaya`, `UpdatedAt` | Baris check/presensi per pengajuan + sentinel biaya override. |
 
 ### Konvensi penting
@@ -87,7 +94,10 @@ Pola pemanggilan backend di setiap halaman: wrapper `run(fn, ...args)` → `goog
 - `getStudentPortalData` sengaja **tidak mengirim kolom biaya** ke mahasiswa (peraturan internal) dan tidak mengekspos file ACC/bukti yang sudah terkirim.
 
 ### `bagian.html` — Panel Bagian
-`authenticateBagian` → `getBagianBootstrap`, `getBaginaConfig`, `getBeritaAcaraList`, `uploadBeritaAcaraBagian`, `logoutSession`.
+`authenticateBagian` → `getBagianBootstrap`, `getBaginaConfig`, `getBeritaAcaraList`, `uploadBeritaAcaraBagian`, `getKalenderBagianPelaksanaan`, `logoutSession`.
+- Notifikasi peserta disetujui (`notifikasiList` dari bootstrap) tampil sebagai bell + panel dengan penanda baca tersimpan di `localStorage` (`inhal_bagian_notif_read`).
+- Tab **Kalender** read-only lintas bagian (bulan/agenda/bentrok) memakai `getKalenderBagianPelaksanaan`.
+- Input dosen pada Jadwal dan BA memakai komponen `dosen-picker` multi-dosen (maks. 5, `dosenList`); payload mengirim `dosenList` dengan fallback `dosen`.
 - `uploadBeritaAcaraBagian` melewati `_validateBaPesertaStatus` (peserta harus sesuai status yang diizinkan pengaturan BA) lalu cek duplikat (lihat konvensi di bagian 3) sebelum menulis BA + peserta ke `BeritaAcara`/`BeritaAcaraPeserta`.
 - Notifikasi lewat toast (`showToast`) **kini dirender** (sebelumnya state di-set tanpa elemen di template); sesi bagian **dipulihkan** dari `localStorage` saat `mounted()` (refresh tidak memaksa login ulang, polling 30s dilanjutkan).
 
@@ -98,7 +108,9 @@ Autentikasi `authenticateAdmin` (token sesi `_CURRENT_SESSION`). Panggilan aktua
 |---|---|
 | Bootstrap & data | `getDashboardBootstrap`, `getPengajuanList`, `getPengajuanWithDetails`, `getDashboardStats`, `getMasterDataMonitor`, `getDosenOptions`, `getLabOptions`, `getBaUploadOptions`, `getBagianAggregation`, `getBagianBaSettings`, `getBeritaAcaraAdminList` |
 | Mutasi pengajuan | `updatePengajuanStatus`, `updatePengajuanFields`, `updateDetailKegiatan`, `deleteDetailKegiatan`, `deletePengajuanAdmin`, `syncLogDataToPengajuan` |
-| BA | `uploadBeritaAcaraAdmin`, `deleteBeritaAcaraAdmin`, `saveBagianBaSettings`, `adminBagianBypass` (sesi bagian) lalu `getBagianBootstrap`, `getBeritaAcaraList`, `uploadBeritaAcaraBagian` via `runAsBab` |
+| BA Bagian | `uploadBeritaAcaraAdmin`, `deleteBeritaAcaraAdmin`, `saveBagianBaSettings`, `adminBagianBypass` (sesi bagian) lalu `getBagianBootstrap`, `getBeritaAcaraList`, `uploadBeritaAcaraBagian` via `runAsBab` |
+| BA Pendukung (admin) | `baAdminGet`, `baAdminCreate`, `baAdminAddPeserta`, `baAdminAddPesertaMassal`, `baAdminRegenerate`, `getBaAdminDetail`, `getBaAdminFileBase64`, `setBaAdminBaseFile`, `removeBaAdminBaseFile`, `setBaAdminSharedFile`, `removeBaAdminSharedFile`, `addBaAdminPesertaBerkas`, `removeBaAdminPeserta`, `saveBaAdminMergedPdf` |
+| Audit master | `auditMasterIntegrity` (duplikat master, Blok yatim/kosong, key drift, kualitas data) |
 | Email | `sendFinalEmail`, `sendBulkFinalEmail`, `sendAccFinalToBagian`, `sendStatusNotificationEmail` |
 | Master data (via `saveFn`) | `saveAdminList`, `saveBagianStaff`, `saveConfig`, `saveMasterKegiatan`, `saveMasterBagian`, `saveMasterBiaya` |
 | Utilitas | `diagnosticData`, `logoutSession` |
@@ -106,12 +118,20 @@ Autentikasi `authenticateAdmin` (token sesi `_CURRENT_SESSION`). Panggilan aktua
 - **Keamanan**: seluruh fungsi di atas dilindungi `requireAuthorized` — termasuk `updatePengajuanStatus` & `getPengajuanWithDetails` (batch 11).
 - **`Catatan Admin`**: hanya ditimpa bila isi catatan non-kosong; modal status **mem-prefill** catatan tersimpan agar admin tidak menimpanya secara tidak sengaja. `Keterangan` tidak pernah dikirim.
 - **Tab Laporan Bagian** (matriks bagian×blok): tiap kegiatan di panel detail menampilkan dua badge — **"BA ada"** dan **"ACC Final"** (ceklis `✓`/`✗` dengan gaya sama) plus link "Lihat File" (BA) dan link "Final" (`Link Final`). Sumber `linkFinal` ditambahkan di agregasi backend `getBagianAggregation` → `_computeBagianAggregation` (`:1588`, field `linkFinal` pada baris ber-sumber `Pengajuan`).
+- **Buat BA Pendukung**: tombol pada tab Berita Acara membuka modal `baCreate` — pilih kegiatan tanpa BA Pendukung, pilih peserta, lalu `baAdminCreate` + `baAdminAddPeserta` (peserta dapat ditambah tanpa berkas terlebih dahulu).
+- **Kelola BA Pendukung**: modal `baManage` memuat `getBaAdminDetail` (peserta + kandidat), unggah halaman peserta (`addBaAdminPesertaBerkas`), dokumen dasar (`setBaAdminBaseFile`), dan **PDF BA bersama** (`setBaAdminSharedFile`) yang dipakai untuk **Tambah massal** (`baAdminAddPesertaMassal`).
+- **Regenerate PDF**: dashboard meminta rencana `baAdminRegenerate` (base, `sharedFiles`, grup peserta), merakit PDF di klien (`mergeBaPdfFiles`), lalu menyimpan lewat `saveBaAdminMergedPdf`.
+- **Periksa Integritas**: tombol pada tab Master Data memanggil `auditMasterIntegrity` dan menampilkan ringkasan duplikat, Blok yatim/kosong, key drift, serta kualitas data.
 - **Tab Berita Acara (admin)** memakai `uploadBeritaAcaraAdmin` yang **menolak BA tanpa peserta** (batch 11) dan `_resolveBaPesertaFromDetail` → fallback `normalizeBaPeserta`.
 - Setelah simpan master (`saveEdit`), dashboard me-reset lazy-load `loaded.pengajuan`/`loaded.stats` lalu reload agar data pengajuan langsung segar.
 
 ### `detail-laporan.html` — Laporan (admin)
-`authenticateAdmin` → `getLaporanBootstrap` (memuat data laporan + `masterBiaya`), `logoutSession`.
+`authenticateAdmin` → `getLaporanBootstrap` (memuat data laporan + `masterBiaya`), `deletePengajuanAdmin`, `updateBeritaAcaraAdmin`, `updateBeritaAcaraBagian`, `logoutSession`.
 > Catatan: fungsi laporan legacy `getDetailLaporanData` telah **dihapus** (batch 11); laporan cukup memakai `getLaporanBootstrap`.
+
+Aksi per baris:
+- **Rekap**: tombol hapus pengajuan (`deletePengajuanAdmin`, konfirmasi + alasan opsional) — ikut membersihkan detail, riwayat, dan BA terkait.
+- **Daftar BA**: tombol **Kelola** (`openKelolaBa`/`submitKelolaBa`) untuk BA Pelaksanaan (`updateBeritaAcaraBagian`) dan Pendukung (`updateBeritaAcaraAdmin`) — ubah tanggal, jam, dosen (`dosen-picker`), dan catatan.
 
 Dua tab:
 - **Laporan Bagian**: matriks kelengkapan BA per bagian; kolom kegiatan + Tanggal + **Biaya**; subtotal per bagian + grand total; `exportExcel` (client-side via SheetJS).
@@ -175,4 +195,4 @@ Catatan: seluruh fitur 7–11 sudah digabung ke `feat/laporan-dosen-matriks` dan
 - Setiap commit memakai trailer `Co-authored-by: monkeycode-ai <monkeycode-ai@chaitin.com>`.
 - Dilarang menambah komentar pada kode tanpa diminta; nama fungsi/halaman tetap konsisten dengan pola lama.
 - Review berjenjang: per-task clean → ledger → whole-branch. Masalah `Minor` boleh diteruskan jika konsisten pola lama (didokumentasikan).
-- Deploy & pengujian interaktif (login + data nyata) adalah **tanggung jawab user** pada deployment asli — halaman GAS tidak bisa diuji login lewat preview statis lokal. Alur deploy: salin **seluruh** `0_code.gs`, `1_business.gs`, `2_web.gs`, dan `pages/*.html` ke editor Apps Script, lalu buat **"New version"** deployment agar kode baru aktif. Jangan menyalin sebagian: helper lintas file seperti `_clientTime` (`0_code.gs`) dipakai `1_business.gs`; bila `0_code.gs` tertinggal, muncul `ReferenceError: _clientTime is not defined` dan tab Berita Acara/laporan gagal memuat. Jangan mencampur `pages/` baru dengan backend legacy di root (`Code.js`).
+- Deploy & pengujian interaktif (login + data nyata) adalah **tanggung jawab user** pada deployment asli — halaman GAS tidak bisa diuji login lewat preview statis lokal. Alur deploy: salin **seluruh** `0_code.gs`, `1_business.gs`, `2_web.gs`, `3_drive_bridge.gs`, `4_parity.gs`, dan `pages/*.html` ke editor Apps Script, lalu buat **"New version"** deployment agar kode baru aktif. Jangan menyalin sebagian: helper lintas file seperti `_clientTime` (`0_code.gs`) dipakai `1_business.gs`; bila `0_code.gs` tertinggal, muncul `ReferenceError: _clientTime is not defined` dan tab Berita Acara/laporan gagal memuat. Jangan mencampur `pages/` baru dengan backend legacy di root (`Code.js`).

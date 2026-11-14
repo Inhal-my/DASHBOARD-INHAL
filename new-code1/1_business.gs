@@ -189,6 +189,105 @@ function _resolveBagian12(rawLabel, pilihan, namaKegiatan, labs) {
 }
 
 const MANUAL_STATUSES = ['Menunggu'];
+const MAX_DOSEN = 5;
+
+function _dosenStr(v) {
+    if (v === undefined || v === null) return '';
+    return String(v).replace(/\u00a0/g, ' ').trim();
+}
+
+function _dosenKey(v) {
+    return _dosenStr(v).replace(/\s+/g, ' ').toLowerCase();
+}
+
+function _splitLegacyDosen(v) {
+    const raw = _dosenStr(v);
+    if (!raw) return [];
+    return _normalizeDosenList(raw.split(/[,;|]/));
+}
+
+function _normalizeDosenList(value, fallback) {
+    let raw = value;
+    if (raw === undefined || raw === null || raw === '') raw = fallback;
+    if (raw === undefined || raw === null || raw === '') return [];
+    if (!Array.isArray(raw)) raw = [raw];
+    const out = [];
+    const seen = {};
+    for (let i = 0; i < raw.length; i += 1) {
+        const nama = _dosenStr(raw[i]).replace(/\s+/g, ' ');
+        if (!nama) continue;
+        const key = _dosenKey(nama);
+        if (!key || seen[key]) continue;
+        seen[key] = true;
+        out.push(nama);
+        if (out.length >= MAX_DOSEN) break;
+    }
+    return out;
+}
+
+function _dosenJoin(list) {
+    return (Array.isArray(list) ? list : []).filter(Boolean).join(', ');
+}
+
+function _relationalDosenNames(rows, keyField, keyValue, fallbackDosen) {
+    const target = _dosenStr(keyValue);
+    const names = (rows || [])
+        .filter(function(r) {
+            return _dosenStr(r && r[keyField]) === target;
+        })
+        .sort(function(a, b) {
+            return (Number(a && a.Urutan) || 0) - (Number(b && b.Urutan) || 0);
+        })
+        .map(function(r) {
+            return _dosenStr(r && r.Nama);
+        })
+        .filter(Boolean);
+    if (names.length) return _normalizeDosenList(names);
+    return _splitLegacyDosen(fallbackDosen);
+}
+
+function _loadJadwalDosenList(jadwalId, fallbackDosen) {
+    return _relationalDosenNames(_getRowsOptional('JadwalDosen'), 'Jadwal ID', jadwalId, fallbackDosen);
+}
+
+function _loadBaDosenList(baId, fallbackDosen) {
+    return _relationalDosenNames(_getRowsOptional('BaDosen'), 'BA ID', baId, fallbackDosen);
+}
+
+function _loadBaSesiIds(baId, fallbackJadwalId) {
+    const target = _dosenStr(baId);
+    const ids = (_getRowsOptional('BeritaAcaraSesi') || [])
+        .filter(function(r) {
+            return _dosenStr(r && r['BA ID']) === target;
+        })
+        .sort(function(a, b) {
+            return (Number(a && a.Urutan) || 0) - (Number(b && b.Urutan) || 0);
+        })
+        .map(function(r) {
+            return _dosenStr(r && r['Jadwal ID']);
+        })
+        .filter(Boolean);
+    const out = [];
+    ids.forEach(function(id) {
+        if (out.indexOf(id) === -1) out.push(id);
+    });
+    if (out.length) return out;
+    const legacy = _dosenStr(fallbackJadwalId);
+    return legacy ? [legacy] : [];
+}
+
+function _loadBaSesiMap() {
+    const map = {};
+    (_getRowsOptional('BeritaAcaraSesi') || []).forEach(function(r) {
+        const baId = _dosenStr(r && r['BA ID']);
+        const jadwalId = _dosenStr(r && r['Jadwal ID']);
+        if (!baId || !jadwalId) return;
+        if (!map[baId]) map[baId] = [];
+        if (map[baId].indexOf(jadwalId) === -1) map[baId].push(jadwalId);
+    });
+    return map;
+}
+
 
 function registerPengajuan(formData) {
     return _createPengajuan(formData, { manual: false });
@@ -247,6 +346,7 @@ function _createPengajuan(formData, opts) {
         const pengajuanData = {
             Timestamp: now,
             'ID Pengajuan': idPengajuan,
+            'Form Key': _buildPengajuanKey(formData),
             'NPM': npm,
             'Nama Lengkap': nama,
             'Email': email,
@@ -343,6 +443,13 @@ function checkDuplicatePengajuan(formData) {
         if (!searchKey) return { isDuplicate: false };
 
         const pengajuans = getAllRows('Pengajuan');
+        for (let i = 0; i < pengajuans.length; i++) {
+            const storedKey = String(pengajuans[i]['Form Key'] || '').trim();
+            if (storedKey && storedKey === searchKey) {
+                return { isDuplicate: true, message: 'Data identik sudah pernah diajukan. Silakan cek status pengajuan Anda.' };
+            }
+        }
+
         const allDetails = getAllRows('DetailKegiatan');
         const detailByPengajuan = {};
         allDetails.forEach(function(d) {
@@ -353,6 +460,7 @@ function checkDuplicatePengajuan(formData) {
 
         for (let i = 0; i < pengajuans.length; i++) {
             const p = pengajuans[i];
+            if (String(p['Form Key'] || '').trim()) continue;
             const id = String(p['ID Pengajuan'] || '').trim();
             const key = _buildPengajuanKeyFromStored(p, detailByPengajuan[id]);
             if (key === searchKey) {
@@ -1409,21 +1517,24 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             };
         }
 
-        const jadwalId = String((payload && payload.jadwalId) || '').trim();
-        let jadwal = null;
-        if (jadwalId) {
-            jadwal = getRowByKey('JadwalPelaksanaan', 'Jadwal ID', jadwalId);
-            if (!jadwal || String(jadwal.Active) === '0' || jadwal.Active === false) {
-                return { success: false, message: 'Jadwal pelaksanaan tidak ditemukan atau sudah dibatalkan.' };
-            }
-            if (_jadwalHasBa(jadwalId)) {
-                return { success: false, message: 'Berita acara untuk jadwal ini sudah ada.' };
-            }
-        }
+        const sesiPayload = (payload && payload.jadwalId && payload.jadwalIds === undefined && payload.sesi === undefined)
+            ? Object.assign({}, payload, { jadwalIds: [String(payload.jadwalId).trim()] })
+            : payload;
+        const sesiRes = _resolveBaSesiForWrite(sesiPayload, '');
+        if (!sesiRes.ok) return { success: false, message: sesiRes.message };
+        const jadwalIds = sesiRes.ids;
+        const jadwalId = jadwalIds.length ? jadwalIds[0] : '';
+        const jadwal = jadwalIds.length ? sesiRes.jadwalRows[0] : null;
 
         const tanggalPelaksanaan = String((payload && payload.tanggalPelaksanaan) || (jadwal && jadwal.Tanggal) || '').trim();
         const jam = _clientTime((payload && payload.jam) || (jadwal && jadwal.Jam) || '');
-        const dosen = String((payload && payload.dosen) || (jadwal && jadwal.Dosen) || '').trim();
+        const dosenInput = (payload && payload.dosenList !== undefined)
+            ? payload.dosenList
+            : (sesiRes.dosenList.length ? sesiRes.dosenList : ((payload && payload.dosen) || (jadwal && jadwal.Dosen) || ''));
+        const dosenRes = _resolveDosenForWrite(dosenInput, sesiRes.dosenList);
+        if (!dosenRes.ok) return { success: false, message: dosenRes.message };
+        const dosenList = dosenRes.list;
+        const dosen = dosenList[0] || '';
 
         appendRowSafe('BeritaAcara', {
             Timestamp: new Date(),
@@ -1456,6 +1567,10 @@ function uploadBeritaAcaraBagian(payload, kategori) {
                 'ID Pengajuan': p.idPengajuan || ''
             });
         });
+
+        const relationNow = new Date();
+        _writeDosenRelation('BaDosen', 'BA ID', baId, dosenList, relationNow);
+        _writeBaSesiRelation(baId, jadwalIds, relationNow);
 
         return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
     } catch (e) {
@@ -1616,8 +1731,14 @@ function _validateJadwalPeserta(peserta) {
 }
 
 function _jadwalHasBa(jadwalId) {
-    return getAllRows('BeritaAcara').some(function(r) {
-        return String(r['Jadwal ID'] || '').trim() === String(jadwalId || '').trim();
+    const id = String(jadwalId || '').trim();
+    if (!id) return false;
+    const direct = getAllRows('BeritaAcara').some(function(r) {
+        return String(r['Jadwal ID'] || '').trim() === id;
+    });
+    if (direct) return true;
+    return getAllRows('BeritaAcaraSesi').some(function(r) {
+        return String(r['Jadwal ID'] || '').trim() === id;
     });
 }
 
@@ -1658,6 +1779,9 @@ function saveJadwalPelaksanaan(payload, kategori) {
         const tanggal = String(p.tanggal || '').trim();
         const jam = _clientTime(p.jam);
         const key = _kegiatanKey(bagian, blok, namaKegiatan);
+        const dosenRes = _resolveDosenForWrite(p.dosenList !== undefined ? p.dosenList : p.dosen, []);
+        if (!dosenRes.ok) return { success: false, message: dosenRes.message };
+        const dosenList = dosenRes.list;
 
         const ids = {};
         peserta.forEach(function(x) {
@@ -1688,12 +1812,13 @@ function saveJadwalPelaksanaan(payload, kategori) {
             'Kegiatan Key': key,
             'Tanggal': tanggal,
             'Jam': jam,
-            'Dosen': String(p.dosen || '').trim(),
+            'Dosen': dosenList[0] || '',
             'Catatan': String(p.catatan || '').trim(),
             'Active': 1,
             'Created By': getActorName(),
             'Updated At': now
         });
+        _writeDosenRelation('JadwalDosen', 'Jadwal ID', jadwalId, dosenList, now);
         peserta.forEach(function(x) {
             appendRowSafe('JadwalPeserta', {
                 Timestamp: now,
@@ -1740,6 +1865,10 @@ function updateJadwalPelaksanaan(jadwalId, payload, kategori) {
         const bagian = String(p.bagian || existing.Bagian || kategori || '').trim();
         const blok = String(p.blok || '').trim();
         const namaKegiatan = String(p.namaKegiatan || '').trim();
+        const currentDosen = _loadJadwalDosenList(id);
+        const dosenRes = _resolveDosenForWrite(p.dosenList !== undefined ? p.dosenList : p.dosen, currentDosen);
+        if (!dosenRes.ok) return { success: false, message: dosenRes.message };
+        const dosenList = dosenRes.list;
         const now = new Date();
         upsertRowByKey('JadwalPelaksanaan', 'Jadwal ID', id, {
             'Bagian': bagian,
@@ -1748,10 +1877,11 @@ function updateJadwalPelaksanaan(jadwalId, payload, kategori) {
             'Kegiatan Key': _kegiatanKey(bagian, blok, namaKegiatan),
             'Tanggal': String(p.tanggal || '').trim(),
             'Jam': _clientTime(p.jam),
-            'Dosen': String(p.dosen || '').trim(),
+            'Dosen': dosenList[0] || '',
             'Catatan': String(p.catatan || '').trim(),
             'Updated At': now
         });
+        _writeDosenRelation('JadwalDosen', 'Jadwal ID', id, dosenList, now);
         _deleteRowsByKey('JadwalPeserta', 'Jadwal ID', id);
         peserta.forEach(function(x) {
             appendRowSafe('JadwalPeserta', {
@@ -1929,7 +2059,8 @@ function getBagianBootstrap(kategori, subBagian, token) {
         rows: [],
         baList: [],
         baPendukungList: [],
-        jadwalList: []
+        jadwalList: [],
+        notifikasiList: []
     };
     try {
         const s = getSession(token);
@@ -1948,6 +2079,7 @@ function getBagianBootstrap(kategori, subBagian, token) {
         out.config.labOptions = getMasterOptions('Lab');
         out.config.kegiatanLabOptions = getMasterOptions('Kegiatan Lab');
         out.rows = _computeBagianRows(kat, subBagian);
+        out.notifikasiList = _computeBagianNotifikasi(out.rows, 30);
         out.baList = _computeBaList(subBagian || out.kategori, out.kategori);
         out.baPendukungList = _computeBaPendukungList(subBagian || out.kategori, out.kategori);
         out.jadwalList = _computeJadwalList(subBagian || out.kategori, out.kategori);
@@ -2888,12 +3020,13 @@ function _resolveBaPesertaByIds(ids, ba) {
 }
 
 function updateBeritaAcaraBagian(baId, payload) {
-    requireAuthorized(arguments[arguments.length - 1]);
+    const sessionToken = arguments[arguments.length - 1];
     return _lockMutate(function() {
         const id = String(baId || '').trim();
         if (!id) return { success: false, message: 'BA ID wajib diisi.' };
         const existing = getRowByKey('BeritaAcara', 'BA ID', id);
         if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        _requireBagianOrAdmin(sessionToken, (payload && payload.kategori) || '', existing.Bagian);
         const p = payload || {};
         const tanggal = p.tanggal !== undefined ? String(p.tanggal || '').trim() : String(existing['Tanggal Pelaksanaan'] || '').trim();
         if (!tanggal) return { success: false, message: 'Tanggal pelaksanaan wajib diisi.' };
@@ -2923,16 +3056,31 @@ function updateBeritaAcaraBagian(baId, payload) {
         if (idx < 0) return { success: false, message: 'Kolom BA ID tidak ditemukan.' };
         const rowIndex = findRowByColumnValue(sheet, idx + 1, id);
         if (rowIndex < 2) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        const currentDosen = _loadBaDosenList(id, existing.Dosen);
+        const dosenChanged = p.dosenList !== undefined || p.dosen !== undefined;
+        const dosenRes = dosenChanged
+            ? _resolveDosenForWrite(p.dosenList !== undefined ? p.dosenList : p.dosen, currentDosen)
+            : { ok: true, list: currentDosen };
+        if (!dosenRes.ok) return { success: false, message: dosenRes.message };
+        const dosenList = dosenRes.list;
         const merged = Object.assign({}, existing, {
             'Tanggal Pelaksanaan': tanggal,
             Jam: p.jam !== undefined ? _clientTime(p.jam) : _clientTime(existing.Jam),
-            Dosen: p.dosen !== undefined ? String(p.dosen || '').trim() : existing.Dosen,
+            Dosen: dosenList[0] || '',
             Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
         });
         if (pesertaBaru) merged['Jumlah Peserta'] = pesertaBaru.length;
         sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
         invalidateSheetCache('BeritaAcara');
 
+        if (dosenChanged) {
+            _writeDosenRelation('BaDosen', 'BA ID', id, dosenList, new Date());
+        }
+        if (p.jadwalIds !== undefined || p.jadwalId !== undefined || p.sesi !== undefined) {
+            const sesiRes = _resolveBaSesiForWrite(p, id);
+            if (!sesiRes.ok) return { success: false, message: sesiRes.message };
+            _writeBaSesiRelation(id, sesiRes.ids, new Date());
+        }
         if (pesertaBaru) {
             while (getRowByKey('BeritaAcaraPeserta', 'BA ID', id)) {
                 deleteRowByKey('BeritaAcaraPeserta', 'BA ID', id, 'Perbarui peserta BA', getActorName());
@@ -2976,13 +3124,24 @@ function updateBeritaAcaraAdmin(baId, payload) {
         if (idx < 0) return { success: false, message: 'Kolom BA ID tidak ditemukan.' };
         const rowIndex = findRowByColumnValue(sheet, idx + 1, id);
         if (rowIndex < 2) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        const currentDosen = _loadBaDosenList(id, existing.Dosen);
+        const dosenChanged = p.dosenList !== undefined || p.dosen !== undefined;
+        const dosenRes = dosenChanged
+            ? _resolveDosenForWrite(p.dosenList !== undefined ? p.dosenList : p.dosen, currentDosen)
+            : { ok: true, list: currentDosen };
+        if (!dosenRes.ok) return { success: false, message: dosenRes.message };
+        const dosenList = dosenRes.list;
+        const now = new Date();
         const merged = Object.assign({}, existing, {
             'Tanggal Pelaksanaan': tanggal,
             Jam: p.jam !== undefined ? _clientTime(p.jam) : _clientTime(existing.Jam),
-            Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan
+            Dosen: dosenList[0] || '',
+            Catatan: p.catatan !== undefined ? String(p.catatan || '').trim() : existing.Catatan,
+            'Updated At': now
         });
         sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
         invalidateSheetCache('BeritaAcaraAdmin');
+        if (dosenChanged) _writeDosenRelation('BaDosen', 'BA ID', id, dosenList, now);
         return { success: true, message: 'Berita acara pendukung diperbarui.' };
     });
 }
@@ -4222,6 +4381,14 @@ function uploadBeritaAcaraAdmin(payload) {
             return { success: false, message: 'Upload dibatalkan: tidak ada peserta pada berita acara ini. Pilih minimal satu peserta.' };
         }
 
+        const dosenRes = _resolveDosenForWrite(
+            (payload && payload.dosenList !== undefined) ? payload.dosenList : ((payload && payload.dosen) || ''),
+            []
+        );
+        if (!dosenRes.ok) return { success: false, message: dosenRes.message };
+        const dosenList = dosenRes.list;
+        const now = new Date();
+
         appendRowSafe('BeritaAcaraAdmin', {
             Timestamp: new Date(),
             'BA ID': baId,
@@ -4237,8 +4404,11 @@ function uploadBeritaAcaraAdmin(payload) {
             'Kegiatan Key': _kegiatanKey(String((payload && payload.bagian) || 'Admin').trim(), String((payload && payload.blok) || '').trim(), String((payload && payload.namaKegiatan) || '').trim()),
             'Base File URL': fileUrl,
             'Base File Name': fileName,
-            'Needs Regen': '0'
+            'Needs Regen': '0',
+            'Dosen': dosenList[0] || '',
+            'Updated At': now
         });
+        _writeDosenRelation('BaDosen', 'BA ID', baId, dosenList, now);
 
         peserta.forEach(function(p) {
             appendRowSafe('BeritaAcaraAdminPeserta', {
@@ -4338,7 +4508,19 @@ function getBaAdminDetail(baId) {
         const id = _baAdminStr(baId);
         const ba = getRowByKey('BeritaAcaraAdmin', 'BA ID', id);
         if (!ba) return { success: false, message: 'BA Pendukung tidak ditemukan.' };
-        const berkas = _baAdminBerkasRows(id);
+        const allBerkas = _baAdminBerkasRows(id);
+        const sharedFiles = allBerkas.filter(function(r) {
+            return _baAdminStr(r.Scope).toLowerCase() === 'shared';
+        }).map(function(r) {
+            return {
+                fileUrl: _baAdminStr(r['File URL']),
+                fileName: _baAdminStr(r['File Name']),
+                pageCount: Number(r['Page Count']) || 1
+            };
+        });
+        const berkas = allBerkas.filter(function(r) {
+            return _baAdminStr(r.Scope).toLowerCase() !== 'shared';
+        });
         let baseUrl = _baAdminStr(ba['Base File URL']);
         let baseName = _baAdminStr(ba['Base File Name']);
         if (!baseUrl && !berkas.length && _baAdminStr(ba['File URL'])) {
@@ -4421,6 +4603,7 @@ function getBaAdminDetail(baId) {
                     fileName: _baAdminStr(ba['File Name']),
                     baseFileUrl: baseUrl,
                     baseFileName: baseName,
+                    sharedFiles: sharedFiles,
                     needsRegen: String(ba['Needs Regen'] || '') === '1'
                 },
                 peserta: peserta,
@@ -4446,7 +4629,8 @@ function setBaAdminBaseFile(baId, file) {
         updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
             'Base File URL': url,
             'Base File Name': name,
-            'Needs Regen': '1'
+            'Needs Regen': '1',
+            'Updated At': new Date()
         });
         return { success: true, baseFileUrl: url, message: 'Dokumen dasar disimpan. Jalankan Regenerate PDF.' };
     } catch (e) {
@@ -4464,7 +4648,8 @@ function removeBaAdminBaseFile(baId) {
         updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
             'Base File URL': '',
             'Base File Name': '',
-            'Needs Regen': '1'
+            'Needs Regen': '1',
+            'Updated At': new Date()
         });
         _baAdminTrashUrl(oldUrl);
         return { success: true, message: 'Dokumen dasar dihapus. Jalankan Regenerate PDF.' };
@@ -4586,7 +4771,8 @@ function addBaAdminPesertaBerkas(payload) {
                 'Page Count': f.pageCount,
                 'Byte Size': f.byteSize,
                 'Active': '1',
-                'Superseded At': ''
+                'Superseded At': '',
+                'Scope': 'peserta'
             });
         });
         const count = getAllRows('BeritaAcaraAdminPeserta').filter(function(r) {
@@ -4670,7 +4856,8 @@ function saveBaAdminMergedPdf(baId, file) {
         updateRowByKey('BeritaAcaraAdmin', 'BA ID', id, {
             'File URL': url,
             'File Name': name,
-            'Needs Regen': '0'
+            'Needs Regen': '0',
+            'Updated At': new Date()
         });
         return { success: true, fileUrl: url, message: 'PDF gabungan disimpan.' };
     } catch (e) {
