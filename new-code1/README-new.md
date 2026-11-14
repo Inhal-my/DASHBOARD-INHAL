@@ -28,6 +28,7 @@ Halaman dilayani lewat satu deployment webapp dengan routing `?page=...` di `2_w
 | `2_web.gs` | Routing `doGet` (param `?page=`), `PAGE_TITLES`, alias `admin` → `dashboard`, `renderPage`. |
 | `3_drive_bridge.gs` | Bridge `doPost` untuk CF (`saveFile`, `trashFile`, `getFile`, email) dengan token `DRIVE_BRIDGE_TOKEN`. Jangan diubah saat migrasi UI. |
 | `4_parity.gs` | Lapisan parity CF: login admin Google, validasi/relasi dosen, multi-sesi BA, PDF BA bersama, notifikasi, kalender, activity log, rename master, draft/lengkapi BA, export database. |
+| `5_d1_import.gs` | Impor snapshot D1 bertahap: menu `INHAL`, konversi XLSX via Drive lanjutan, validasi dry-run, dan full replace per sheet. `Admin`, `BagianStaff`, dan `NomorSurat` tidak pernah disentuh. |
 | `pages/index.html` | Pendaftaran pengajuan (publik). |
 | `pages/portal.html` | Portal mahasiswa: daftar/pengajuan baru, upload ACC + bukti bayar, validasi bukti, lihat status. |
 | `pages/bagian.html` | Panel Bagian: pilih kegiatan, input status peserta, upload Berita Acara bagian. |
@@ -35,7 +36,7 @@ Halaman dilayani lewat satu deployment webapp dengan routing `?page=...` di `2_w
 | `pages/detail-laporan.html` | Laporan admin: tab Laporan Bagian + tab Laporan Dosen (matriks BA, biaya), export XLSX. |
 | `template-acc-diterima-ditolak.html`, `template-acc-final.html` | Template email ACC. |
 | `docs/2026-08-18-detail-laporan-tabs-design.md` | Spesifikasi desain halaman laporan (dasar seluruh fitur laporan). |
-| `appsscript.json` | Konfigurasi project: runtime V8, oauth scopes (spreadsheets, drive, send_mail, userinfo.email). |
+| `appsscript.json` | Konfigurasi project: runtime V8, oauth scopes (spreadsheets, drive, send_mail, userinfo.email), dan Drive API lanjutan untuk konversi XLSX snapshot D1. |
 
 > Struktur ini adalah hasil **refactor** dari kode legacy di root repo (`Code.js` satu file besar + halaman HTML datar seperti `check.html`, `admin.html`, `info.html`). Versi `new-code1/` memisahkan backend menjadi 3 file dan menata halaman ke folder `pages/`.
 
@@ -124,6 +125,17 @@ Autentikasi `authenticateAdmin` (token sesi `_CURRENT_SESSION`). Panggilan aktua
 - **Periksa Integritas**: tombol pada tab Master Data memanggil `auditMasterIntegrity` dan menampilkan ringkasan duplikat, Blok yatim/kosong, key drift, serta kualitas data.
 - **Tab Berita Acara (admin)** memakai `uploadBeritaAcaraAdmin` yang **menolak BA tanpa peserta** (batch 11) dan `_resolveBaPesertaFromDetail` → fallback `normalizeBaPeserta`.
 - Setelah simpan master (`saveEdit`), dashboard me-reset lazy-load `loaded.pengajuan`/`loaded.stats` lalu reload agar data pengajuan langsung segar.
+
+### Impor Snapshot D1 (Tahap 1)
+Menu spreadsheet **INHAL** menyediakan `Impor Snapshot D1 - Dry-run` dan `Impor Snapshot D1 - Tahap 1` (`5_d1_import.gs`).
+
+Alur:
+1. Dashboard CF → **Download Database** → cakupan **Semua tabel**.
+2. Unggah XLSX ke Google Drive, salin link/ID file.
+3. Jalankan **Dry-run**, tempel link/ID, periksa jumlah baris dan temuan.
+4. Jika tidak ada error, jalankan **Tahap 1** dan konfirmasi full replace.
+
+Tahap 1 mengganti `Mahasiswa`, `MasterKegiatan`, `MasterBagian`, `MasterBiaya`, dan `Config`. Sheet `Admin`, `BagianStaff`, dan `NomorSurat` dipertahankan. XLSX dikonversi otomatis menjadi Google Sheet sementara lewat Drive API lanjutan; konversi disimpan per file agar dry-run dan impor memakai salinan yang sama.
 
 ### `detail-laporan.html` — Laporan (admin)
 `authenticateAdmin` → `getLaporanBootstrap` (memuat data laporan + `masterBiaya`), `deletePengajuanAdmin`, `updateBeritaAcaraAdmin`, `updateBeritaAcaraBagian`, `logoutSession`.
