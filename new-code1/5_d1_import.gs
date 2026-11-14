@@ -12,6 +12,10 @@ const D1_IMPORT_STAGES = {
     3: {
         label: 'Berita Acara dan Berkas Pendukung',
         tables: ['berita_acara', 'berita_acara_peserta', 'berita_acara_admin', 'berita_acara_admin_peserta', 'berita_acara_admin_berkas']
+    },
+    4: {
+        label: 'Jadwal, Dosen, dan Sesi BA',
+        tables: ['jadwal_pelaksanaan', 'jadwal_peserta', 'jadwal_dosen', 'ba_dosen', 'berita_acara_sesi']
     }
 };
 
@@ -290,6 +294,75 @@ const D1_IMPORT_TABLES = {
             { to: 'Superseded At', from: ['superseded_at', 'Superseded At'] },
             { to: 'Scope', from: ['scope', 'Scope'] }
         ]
+    },
+    jadwal_pelaksanaan: {
+        sheet: 'JadwalPelaksanaan',
+        strictKey: true,
+        key: ['Jadwal ID'],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'Jadwal ID', from: ['jadwal_id', 'Jadwal ID'] },
+            { to: 'Bagian', from: ['bagian', 'Bagian'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Nama Kegiatan', from: ['nama_kegiatan', 'Nama Kegiatan'] },
+            { to: 'Kegiatan Key', from: ['kegiatan_key', 'Kegiatan Key'] },
+            { to: 'Tanggal', from: ['tanggal', 'Tanggal'] },
+            { to: 'Jam', from: ['jam', 'Jam'] },
+            { to: 'Dosen', from: ['dosen', 'Dosen'] },
+            { to: 'Catatan', from: ['catatan', 'Catatan'] },
+            { to: 'Active', from: ['active', 'Active'] },
+            { to: 'Created By', from: ['created_by', 'Created By'] },
+            { to: 'Updated At', from: ['updated_at', 'Updated At'] }
+        ]
+    },
+    jadwal_peserta: {
+        sheet: 'JadwalPeserta',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'Jadwal ID', from: ['jadwal_id', 'Jadwal ID'] },
+            { to: 'ID Pengajuan', from: ['id_pengajuan', 'ID Pengajuan'] },
+            { to: 'NPM', from: ['npm', 'NPM'] },
+            { to: 'Nama Lengkap', from: ['nama_lengkap', 'Nama Lengkap'] },
+            { to: 'Blok', from: ['blok', 'Blok'] },
+            { to: 'Status Pengajuan', from: ['status_pengajuan', 'Status Pengajuan'] }
+        ]
+    },
+    jadwal_dosen: {
+        sheet: 'JadwalDosen',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'Jadwal ID', from: ['jadwal_id', 'Jadwal ID'] },
+            { to: 'Nama', from: ['nama', 'Nama'] },
+            { to: 'Nama Key', from: ['nama_key', 'Nama Key'] },
+            { to: 'Urutan', from: ['urutan', 'Urutan'] }
+        ]
+    },
+    ba_dosen: {
+        sheet: 'BaDosen',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'Nama', from: ['nama', 'Nama'] },
+            { to: 'Nama Key', from: ['nama_key', 'Nama Key'] },
+            { to: 'Urutan', from: ['urutan', 'Urutan'] }
+        ]
+    },
+    berita_acara_sesi: {
+        sheet: 'BeritaAcaraSesi',
+        strictKey: false,
+        key: [],
+        fields: [
+            { to: 'Timestamp', from: ['timestamp', 'Timestamp'] },
+            { to: 'BA ID', from: ['ba_id', 'BA ID'] },
+            { to: 'Jadwal ID', from: ['jadwal_id', 'Jadwal ID'] },
+            { to: 'Urutan', from: ['urutan', 'Urutan'] }
+        ]
     }
 };
 
@@ -431,6 +504,7 @@ function onOpen() {
         .addItem('Impor Snapshot D1 - Tahap 1', 'd1ImportStage1')
         .addItem('Impor Snapshot D1 - Tahap 2', 'd1ImportStage2')
         .addItem('Impor Snapshot D1 - Tahap 3', 'd1ImportStage3')
+        .addItem('Impor Snapshot D1 - Tahap 4', 'd1ImportStage4')
         .addSeparator()
         .addItem('Bantuan Impor Snapshot', 'd1ImportHelp')
         .addToUi();
@@ -460,6 +534,10 @@ function d1ImportStage3() {
     _d1RunStage(3);
 }
 
+function d1ImportStage4() {
+    _d1RunStage(4);
+}
+
 function d1ImportHelp() {
     const text = [
         'Cara impor snapshot D1:',
@@ -472,6 +550,7 @@ function d1ImportHelp() {
         'Tahap 1: Mahasiswa, MasterKegiatan, MasterBagian, MasterBiaya, Config.',
         'Tahap 2: Pengajuan, DetailKegiatan, StatusHistory, CheckData, PembayaranRevisi.',
         'Tahap 3: BeritaAcara, BeritaAcaraPeserta, BeritaAcaraAdmin, BeritaAcaraAdminPeserta, BeritaAcaraAdminBerkas.',
+        'Tahap 4: JadwalPelaksanaan, JadwalPeserta, JadwalDosen, BaDosen, BeritaAcaraSesi.',
         'Jalankan tahap secara berurutan.',
         '',
         'Admin, BagianStaff, dan NomorSurat tidak pernah diubah.',

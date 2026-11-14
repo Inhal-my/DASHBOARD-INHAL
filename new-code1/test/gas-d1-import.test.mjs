@@ -48,10 +48,12 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.match(source, /Impor Snapshot D1 - Tahap 1/);
     assert.match(source, /Impor Snapshot D1 - Tahap 2/);
     assert.match(source, /Impor Snapshot D1 - Tahap 3/);
+    assert.match(source, /Impor Snapshot D1 - Tahap 4/);
     assert.match(source, /function d1ImportDryRun\(\)/);
     assert.match(source, /function d1ImportStage1\(\)/);
     assert.match(source, /function d1ImportStage2\(\)/);
     assert.match(source, /function d1ImportStage3\(\)/);
+    assert.match(source, /function d1ImportStage4\(\)/);
   });
 
   it('mengaktifkan layanan Drive lanjutan untuk konversi XLSX', () => {
@@ -78,6 +80,10 @@ describe('impor snapshot D1 tahap 1', () => {
     assert.deepEqual(
       api.D1_IMPORT_STAGES[3].tables,
       ['berita_acara', 'berita_acara_peserta', 'berita_acara_admin', 'berita_acara_admin_peserta', 'berita_acara_admin_berkas']
+    );
+    assert.deepEqual(
+      api.D1_IMPORT_STAGES[4].tables,
+      ['jadwal_pelaksanaan', 'jadwal_peserta', 'jadwal_dosen', 'ba_dosen', 'berita_acara_sesi']
     );
   });
 
@@ -361,6 +367,65 @@ describe('impor snapshot D1 tahap 1', () => {
       berita_acara_admin_berkas: []
     });
     const stat = report.stats.find((item) => item.table === 'berita_acara');
+    assert.equal(stat.accepted, 1);
+    assert.equal(stat.skipped, 2);
+    assert.equal(report.errors, 2);
+  });
+
+  it('memetakan jadwal, dosen, dan sesi dari header mentah', () => {
+    const api = pureApi();
+    const jadwal = api._d1MapRow('jadwal_pelaksanaan', {
+      jadwal_id: 'J-1', bagian: 'Anatomi', blok: 'A', nama_kegiatan: 'Praktikum',
+      kegiatan_key: 'K-1', tanggal: '2026-01-01', jam: '08:00', dosen: 'dr. Andi',
+      active: 1, created_by: 'admin@x', updated_at: '2026-01-02T00:00:00Z'
+    });
+    assert.equal(jadwal['Jadwal ID'], 'J-1');
+    assert.equal(jadwal['Kegiatan Key'], 'K-1');
+    assert.equal(jadwal.Active, 1);
+    assert.equal(jadwal['Created By'], 'admin@x');
+    assert.equal(jadwal['Updated At'], '2026-01-02T00:00:00Z');
+
+    const sesi = api._d1MapRow('berita_acara_sesi', {
+      ba_id: 'BA-1', jadwal_id: 'J-1', urutan: 1
+    });
+    assert.deepEqual(sesi, {
+      Timestamp: '', 'BA ID': 'BA-1', 'Jadwal ID': 'J-1', Urutan: 1
+    });
+
+    const baDosen = api._d1MapRow('ba_dosen', {
+      ba_id: 'BA-1', nama: 'dr. Andi', nama_key: 'dr andi', urutan: 2
+    });
+    assert.equal(baDosen['BA ID'], 'BA-1');
+    assert.equal(baDosen['Nama Key'], 'dr andi');
+    assert.equal(baDosen.Urutan, 2);
+  });
+
+  it('menerima banyak peserta, dosen, dan sesi pada tahap 4', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(4, {
+      jadwal_pelaksanaan: [{ jadwal_id: 'J-1' }, { jadwal_id: 'J-2' }],
+      jadwal_peserta: [{ jadwal_id: 'J-1' }, { jadwal_id: 'J-1' }],
+      jadwal_dosen: [{ jadwal_id: 'J-1' }, { jadwal_id: 'J-1' }],
+      ba_dosen: [{ ba_id: 'BA-1' }, { ba_id: 'BA-1' }],
+      berita_acara_sesi: [{ ba_id: 'BA-1' }, { ba_id: 'BA-1' }]
+    });
+    assert.equal(report.errors, 0);
+    assert.equal(report.warnings, 0);
+    ['jadwal_peserta', 'jadwal_dosen', 'ba_dosen', 'berita_acara_sesi'].forEach((table) => {
+      assert.equal(report.stats.find((item) => item.table === table).accepted, 2, table);
+    });
+  });
+
+  it('menolak Jadwal ID kosong atau duplikat pada tahap 4', () => {
+    const api = pureApi();
+    const report = api._d1ValidateStage(4, {
+      jadwal_pelaksanaan: [{ jadwal_id: 'J-1' }, { jadwal_id: 'J-1' }, { jadwal_id: '' }],
+      jadwal_peserta: [],
+      jadwal_dosen: [],
+      ba_dosen: [],
+      berita_acara_sesi: []
+    });
+    const stat = report.stats.find((item) => item.table === 'jadwal_pelaksanaan');
     assert.equal(stat.accepted, 1);
     assert.equal(stat.skipped, 2);
     assert.equal(report.errors, 2);
