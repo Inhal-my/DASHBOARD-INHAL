@@ -624,12 +624,14 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain("'Laporan' }}");
   });
 
-  it('mengekspor laporan dosen ke tiga sheet', async () => {
+  it('mengekspor laporan dosen beserta sheet BA tanpa dosen', async () => {
     const html = await loadHtml();
     expect(html).toContain('exportDosenReport() {');
     expect(html).toContain("'Rekap Dosen'");
     expect(html).toContain("'Detail Kegiatan'");
     expect(html).toContain("'Detail BA'");
+    expect(html).toContain("'BA Tanpa Dosen'");
+    expect(html).toContain('dosenTanpaBaRows');
     expect(html).not.toContain('exportDosenMatrix');
   });
 

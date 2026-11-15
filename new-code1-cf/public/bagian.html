@@ -2624,6 +2624,10 @@
                         this.showToast('Pilih kegiatan terlebih dahulu.', 'error');
                         return;
                     }
+                    if (this.isDosenListEmpty(this.ba.dosenList)) {
+                        this.showToast('Pilih minimal satu dosen untuk BA Pelaksanaan.', 'error');
+                        return;
+                    }
                     if (!this.selectedList.length) {
                         this.showToast('Pilih minimal satu peserta.', 'error');
                         return;

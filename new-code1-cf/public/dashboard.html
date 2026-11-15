@@ -4099,6 +4099,12 @@
                     if (!this.babSelectedList.length) { this.notify('Pilih minimal satu peserta.', false); return; }
                     if (!this.bab.ba.file) { this.notify('Pilih file berita acara terlebih dahulu.', false); return; }
                     if (!this.bab.ba.tanggal) { this.notify('Isi tanggal pelaksanaan terlebih dahulu.', false); return; }
+                    const jadwal = this.babSelectedJadwal || {};
+                    const dosenList = (Array.isArray(jadwal.DosenList) ? jadwal.DosenList : []).filter(Boolean);
+                    if (!dosenList.length && !String(jadwal.Dosen || '').trim()) {
+                        this.notify('Pilih sesi jadwal yang sudah memiliki dosen.', false);
+                        return;
+                    }
                     this.bab.ba.confirm = true;
                 },
                 async babDoUploadBa() {

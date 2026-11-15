@@ -122,6 +122,7 @@ describe('berita acara admin', () => {
 describe('berita acara bagian', () => {
   const payload = {
     bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '',
+    dosen: 'dr. Andi',
     peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
   };
 
@@ -143,11 +144,11 @@ describe('berita acara bagian', () => {
     await seedPengajuan({ status: 'ACC' });
     const ctx = await bagianCtx(['SGD']);
     const first = await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '', dosen: 'dr. Andi',
       peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', ctx);
     const second = await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-21', label: 'Sesi 2', catatan: '',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-21', label: 'Sesi 2', catatan: '', dosen: 'dr. Andi',
       peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', ctx);
     expect(first.success).toBe(true);
@@ -164,7 +165,7 @@ describe('berita acara bagian', () => {
     await seedPengajuan({ status: 'ACC' });
     const ctx = await bagianCtx(['SGD']);
     const base = {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', catatan: '',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', catatan: '', dosen: 'dr. Andi',
       peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     };
     await saveBeritaAcaraBagian(env.DB, { ...base, tanggalPelaksanaan: '2026-09-20', label: 'Sesi 1' }, 'SGD', ctx);
@@ -255,6 +256,48 @@ describe('berita acara bagian', () => {
     expect(p.tanggal_pelaksanaan).toBe('2026-09-20T09:00');
   });
 
+  it('menolak BA Pelaksanaan tanpa dosen', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, { ...payload, dosen: '', dosenList: [] }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('dosen');
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara').first();
+    expect(Number(n.n)).toBe(0);
+  });
+
+  it('tidak mengunggah berkas bila dosen belum diisi', async () => {
+    await seedPengajuan();
+    const upload = vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/AAAABBBBCCCCDDDDEEEEFFFFGGGG12345/view' }),
+      { status: 200 }
+    ));
+    vi.stubGlobal('fetch', upload);
+    const ctx = {
+      token: await createSession(env.DB, { role: 'bagian', nama: 'Bagian', kategoris: ['SGD'] }),
+      env: { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' }
+    };
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      ...payload, dosen: '', dosenList: [],
+      file: { data: btoa('%PDF-1.4 berkas berita acara'), mimeType: 'application/pdf', name: 'ba.pdf' }
+    }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('dosen');
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it('menolak penghapusan dosen pada BA yang sudah ada', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx(['SGD']);
+    const res = await saveBeritaAcaraBagian(env.DB, payload, 'SGD', ctx);
+    const admin = await adminCtx();
+    const up = await updateBeritaAcaraBagian(env.DB, res.baId, { dosenList: [] }, admin);
+    expect(up.success).toBe(false);
+    expect(up.message).toContain('dosen');
+    const rows = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id = ?1').bind(res.baId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Andi']);
+  });
+
   it('rejects peserta whose current status is not allowed', async () => {
     await seedPengajuan({ status: 'Menunggu' });
     const ctx = await bagianCtx(['SGD']);
@@ -302,7 +345,7 @@ describe('berita acara bagian', () => {
     const ctx = await adminCtx();
     const res = await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
-      catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+      dosen: 'dr. Andi', catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', await bagianCtx(['SGD']));
     const up = await updateBeritaAcaraBagian(env.DB, res.baId, { tanggal: '2026-09-20', jam: '13:30', dosen: 'dr. Budi', catatan: 'revisi' }, ctx);
     expect(up.success).toBe(true);
@@ -357,7 +400,7 @@ describe('berita acara bagian', () => {
     const bagian = await bagianCtx(['SGD']);
     const res = await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
-      catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
+      dosen: 'dr. Andi', catatan: '', peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', bagian);
     const admin = await adminCtx();
 
@@ -401,6 +444,7 @@ describe('berita acara bagian', () => {
     const bagian = await bagianCtx(['SGD']);
     const res = await saveBeritaAcaraBagian(env.DB, {
       bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '',
+      dosen: 'dr. Andi',
       peserta: [
         { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' },
         { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'ACC' }

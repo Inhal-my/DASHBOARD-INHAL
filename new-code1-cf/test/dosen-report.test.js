@@ -183,4 +183,24 @@ describe('buildDosenReport', () => {
     expect(data.rows[0].pesertaUnik).toBe(3);
     expect(data.totals.pesertaUnik).toBe(3);
   });
+
+  it('menandai BA tanpa dosen agar tidak hilang diam-diam dari rekap', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [
+        ba({ id: 'BA-1' }),
+        ba({ id: 'BA-2', kegiatanKey: 'sgd|a|sgd 1', bagian: 'SGD', dosenList: [] })
+      ],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    expect(data.rows).toHaveLength(1);
+    expect(data.totals.baTotal).toBe(2);
+    expect(data.totals.baUnik).toBe(1);
+    expect(data.totals.baTanpaDosen).toBe(1);
+    expect(data.baTanpaDosenRows).toHaveLength(1);
+    expect(data.baTanpaDosenRows[0].id).toBe('BA-2');
+    expect(data.quality.some((q) => q.type === 'tanpa-dosen' && q.baId === 'BA-2')).toBe(true);
+  });
 });

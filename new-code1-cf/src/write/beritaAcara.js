@@ -686,6 +686,19 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   if (!sesiResult.ok) return { success: false, message: sesiResult.message };
   const sesi = sesiResult.sesi;
 
+  // Daftar dosen BA: gabungan sesi jadwal (sumber kebenaran), fallback input klien.
+  // Divalidasi sebelum unggah berkas agar BA tanpa dosen tidak meninggalkan file yatim.
+  const resolvedDosen = await resolveBaDosenList(db, normalizeDosenList(p.dosenList, p.dosen), sesi);
+  let dosenList = resolvedDosen.list;
+  if (!dosenList.length) {
+    return { success: false, message: 'Upload dibatalkan: dosen BA Pelaksanaan wajib diisi. Pilih minimal satu dosen.' };
+  }
+  if (!resolvedDosen.fromSesi) {
+    const dosenCheck = await checkBaDosenMaster(db, dosenList, []);
+    if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
+    dosenList = dosenCheck.list;
+  }
+
   const baId = await nextBaId(db, 'berita_acara');
   let fileUrl = '';
   let fileName = '';
@@ -699,14 +712,6 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   p.__peserta = peserta;
   p.__jumlah = peserta.length;
   p.__sumber = 'Bagian';
-  // Daftar dosen BA: gabungan sesi jadwal (sumber kebenaran), fallback input klien.
-  const resolvedDosen = await resolveBaDosenList(db, p.dosenList, sesi);
-  let dosenList = resolvedDosen.list;
-  if (!resolvedDosen.fromSesi) {
-    const dosenCheck = await checkBaDosenMaster(db, dosenList, []);
-    if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
-    dosenList = dosenCheck.list;
-  }
   // Kolom jam & dosen BA tetap terisi (dipakai penanda "selesai" dan export);
   // untuk multi-sesi nilainya diambil dari sesi paling awal. Kolom dosen hanya
   // menyimpan dosen utama; daftar lengkap ada di ba_dosen.
@@ -751,10 +756,15 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   const currentDosen = await loadBaDosenList(db, id, existing.dosen);
   const dosenInput = p.dosenList !== undefined
     ? normalizeDosenList(p.dosenList)
-    : await loadBaDosenList(db, id, p.dosen !== undefined ? p.dosen : existing.dosen);
+    : (p.dosen !== undefined
+      ? normalizeDosenList(p.dosen)
+      : await loadBaDosenList(db, id, existing.dosen));
   const dosenCheck = await checkBaDosenMaster(db, dosenInput, currentDosen);
   if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
   const dosenList = dosenCheck.list;
+  if (!dosenList.length) {
+    return { success: false, message: 'Dosen BA Pelaksanaan wajib diisi. Pilih minimal satu dosen.' };
+  }
   const dosen = dosenList[0] || (p.dosen !== undefined ? str(p.dosen) : str(existing.dosen));
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);
@@ -862,10 +872,15 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   const currentDosen = await loadBaDosenList(db, id, existing.dosen);
   const dosenInput = p.dosenList !== undefined
     ? normalizeDosenList(p.dosenList)
-    : await loadBaDosenList(db, id, p.dosen !== undefined ? p.dosen : existing.dosen);
+    : (p.dosen !== undefined
+      ? normalizeDosenList(p.dosen)
+      : await loadBaDosenList(db, id, existing.dosen));
   const dosenCheck = await checkBaDosenMaster(db, dosenInput, currentDosen);
   if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
   const dosenList = dosenCheck.list;
+  if (!dosenList.length) {
+    return { success: false, message: 'Dosen BA Pelaksanaan wajib diisi. Pilih minimal satu dosen.' };
+  }
   const dosen = dosenList[0] || (p.dosen !== undefined ? str(p.dosen) : str(existing.dosen));
   const catatan = p.catatan !== undefined ? str(p.catatan) : str(existing.catatan);
   const label = p.label !== undefined ? str(p.label) : str(existing.label);

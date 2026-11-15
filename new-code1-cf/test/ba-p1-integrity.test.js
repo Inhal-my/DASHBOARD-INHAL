@@ -52,7 +52,7 @@ describe('validasi BA Pelaksanaan', () => {
   it('menolak peserta yang tidak ada di data pengajuan', async () => {
     await seedPengajuan();
     const res = await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi',
       catatan: '', peserta: peserta('INHAL-X', '9999999999', 'Tidak Ada')
     }, 'SGD', await bagianCtx());
 
@@ -63,7 +63,7 @@ describe('validasi BA Pelaksanaan', () => {
   it('menolak peserta yang tidak terdaftar pada kegiatan BA', async () => {
     await seedPengajuan();
     const res = await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 2', tanggalPelaksanaan: '2026-09-20',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 2', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi',
       catatan: '', peserta: peserta()
     }, 'SGD', await bagianCtx());
 

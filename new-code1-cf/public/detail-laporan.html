@@ -1157,7 +1157,8 @@
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                                 <span class="lap-chip">{{ dosenReport.totals.dosen }} dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.detailUnik }} detail kegiatan</span>
-                                <span class="lap-chip">{{ dosenReport.totals.baUnik }} BA unik</span>
+                                <span class="lap-chip">{{ dosenReport.totals.baUnik }}/{{ dosenReport.totals.baTotal }} BA berdosen</span>
+                                <span v-if="dosenReport.totals.baTanpaDosen" class="lap-chip text-rose-600">{{ dosenReport.totals.baTanpaDosen }} BA tanpa dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.baDosen }} BA-dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.pesertaUnik }} peserta unik</span>
                                 <span class="lap-chip">{{ dosenReport.totals.sesiRealisasi }} sesi realisasi</span>
@@ -5094,6 +5095,23 @@
                     if (list.length) return list.join(', ');
                     return String((b && b.Dosen) || '').trim();
                 },
+                dosenBaTextForNpm(r, npm) {
+                    const key = String(npm || '').trim();
+                    const out = [];
+                    const seen = {};
+                    const add = v => {
+                        const nama = String(v || '').replace(/\s+/g, ' ').trim();
+                        if (!nama) return;
+                        const k = this.normSearch(nama);
+                        if (seen[k]) return;
+                        seen[k] = 1;
+                        out.push(nama);
+                    };
+                    const ba = ((r && r.baPel) || []).find(b => (b.pesertaNpm || []).indexOf(key) !== -1);
+                    if (ba && Array.isArray(ba.dosenList)) ba.dosenList.forEach(add);
+                    if (!out.length && r && Array.isArray(r.dosenList)) r.dosenList.forEach(add);
+                    return out.join(', ');
+                },
                 npmInfoFor(npm, baBlok) {
                     const list = this.dosenNpmMap[String(npm || '').trim()] || [];
                     if (!list.length) return null;
@@ -5334,6 +5352,7 @@
                     if (type === 'tanpa-sesi') return 'Tanpa tautan sesi';
                     if (type === 'tanpa-jadwal') return 'Tanpa jadwal';
                     if (type === 'draft') return 'Draft';
+                    if (type === 'tanpa-dosen') return 'Tanpa dosen';
                     if (type === 'varian') return 'Varian nama';
                     return type;
                 },
@@ -5534,6 +5553,10 @@
                     try {
                         const fn = k.sumber === 'Admin' ? 'updateBeritaAcaraAdmin' : 'updateBeritaAcaraBagian';
                         const dosenList = this.cleanKelolaDosenList();
+                        if (k.sumber !== 'Admin' && !dosenList.length) {
+                            this.showToast('bi-x-circle', 'Dosen BA Pelaksanaan wajib diisi.');
+                            return;
+                        }
                         const payload = { tanggal: k.tanggal, jam: k.jam, dosenList: dosenList, dosen: dosenList[0] || '', catatan: k.catatan };
                         if (k.sumber !== 'Admin' && k.pesertaOpsi.length) payload.pesertaIds = k.pesertaIds.slice();
                         const res = await this.run(fn, k.baId, payload);
@@ -5649,6 +5672,12 @@
                             dosenTotalRow['Selisih'] = dosenReport.totals.sesiRealisasi - dosenReport.totals.rencanaTabel;
                             dosenRows.push(dosenTotalRow);
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Rekap Dosen');
+                            const dosenTanpaRows = this.dosenTanpaBaRows(dosenReport);
+                            if (dosenTanpaRows.length) {
+                                const wsTanpa = XLSX.utils.json_to_sheet(dosenTanpaRows);
+                                setUrlHyperlinks(wsTanpa, 'Link BA', 'Buka link berita acara');
+                                XLSX.utils.book_append_sheet(wb, wsTanpa, 'BA Tanpa Dosen');
+                            }
 
                             const bagianLabels = this.bagianAllLabels;
                             const rekapBagianRows = this.bagianMatrixRows.map(r => {
@@ -5827,6 +5856,13 @@
                             setUrlHyperlinks(wsBa, 'Link BA', 'Buka link berita acara');
                             XLSX.utils.book_append_sheet(wb, wsBa, 'Detail BA');
 
+                            const tanpaRows = this.dosenTanpaBaRows(report);
+                            if (tanpaRows.length) {
+                                const wsTanpa = XLSX.utils.json_to_sheet(tanpaRows);
+                                setUrlHyperlinks(wsTanpa, 'Link BA', 'Buka link berita acara');
+                                XLSX.utils.book_append_sheet(wb, wsTanpa, 'BA Tanpa Dosen');
+                            }
+
                             writeXlsxStyled(wb, 'Laporan-Dosen-' + new Date().toISOString().slice(0, 10) + '.xlsx');
                             this.showToast('bi-check-circle', 'Laporan dosen berhasil diunduh.');
                         } catch (e) {
@@ -5838,6 +5874,21 @@
                         this.exporting = false;
                         this.showToast('bi-x-circle', 'Export gagal: ' + ((e && e.message) ? e.message : e));
                     });
+                },
+                dosenTanpaBaRows(report) {
+                    return ((report && report.baTanpaDosenRows) ? report.baTanpaDosenRows : []).map(b => ({
+                        'BA ID': b.id,
+                        'Bagian': b.bagian,
+                        'Blok': b.blok,
+                        'Jenis Kegiatan': b.jenis,
+                        'Detail Kegiatan': b.label,
+                        'Tanggal': b.tanggal ? fmtTanggal(b.tanggal) : '',
+                        'Jam': b.jam || '',
+                        'Jumlah Sesi': b.sesiCount,
+                        'Peserta': b.pesertaCount,
+                        'Status': b.status,
+                        'Link BA': b.fileUrl || ''
+                    }));
                 },
                 baExportRows(filter, q) {
                     const f = filter || {};
@@ -6041,7 +6092,7 @@
                                         'Detail Kegiatan': detailTextFor(row, r.nama),
                                         'Biaya/Tagihan': this.biayaForNpm(npm, r.blok),
                                         'Kesesuaian': peng ? this.bayarKesesuaianLabel(String(peng['Kesesuaian Pembayaran'] || '').trim()) : '-',
-                                        'Dosen': String((peng && peng.Dosen) || this.resolveDosenForNpm(npm, r.blok) || (r.dosenList || []).join(', ') || '').trim(),
+                                        'Dosen': String(this.dosenBaTextForNpm(r, npm) || (peng && peng.Dosen) || this.resolveDosenForNpm(npm, r.blok) || '').trim(),
                                         'Tanggal Pelaksanaan': r.tanggal ? fmtTanggalWaktu(r.tanggal) : '',
                                         'Link Bukti Bayar': String(p.linkBukti || '').trim(),
                                         'Link BA Pelaksanaan': baLinks,

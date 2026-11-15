@@ -26,7 +26,7 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     await addBaAdminPesertaBulk(env.DB, baId, ['INHAL-1'], a);
 
     await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20', dosen: 'dr. Andi',
       peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', await bagianCtx());
 
@@ -46,7 +46,7 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     await env.DB.prepare("UPDATE berita_acara_admin SET file_url='https://x/admin.pdf' WHERE ba_id=?1").bind(baId).run();
 
     await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20', dosen: 'dr. Andi',
       peserta: [{ idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' }]
     }, 'SGD', await bagianCtx());
     await env.DB.prepare("UPDATE berita_acara SET file_url='https://x/pel.pdf' WHERE kegiatan_key='sgd|a|sgd 1'").run();
@@ -62,7 +62,7 @@ describe('BA Pendukung & BA Pelaksanaan berdampingan di unit', () => {
     await seed('INHAL-2', '2201010002', 'Budi');
     const a = await adminCtx();
     await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20',
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-10-20', dosen: 'dr. Andi',
       peserta: [
         { idPengajuan: 'INHAL-1', npm: '2201010001', namaLengkap: 'Aisyah', blok: 'A', statusPengajuan: 'ACC' },
         { idPengajuan: 'INHAL-2', npm: '2201010002', namaLengkap: 'Budi', blok: 'A', statusPengajuan: 'ACC' }

@@ -145,6 +145,9 @@
 
     normBa.forEach(function (b) {
       const dosenText = b.dosenList.map(function (d) { return d.nama; }).join(', ');
+      if (!b.dosenList.length) {
+        quality.push({ type: 'tanpa-dosen', baId: b.id, dosen: '', label: b.label, message: 'BA Pelaksanaan belum memiliki dosen; tidak masuk rekapitulasi dosen.' });
+      }
       if (b.flags.indexOf('Tanpa tautan sesi') !== -1) {
         quality.push({ type: 'tanpa-sesi', baId: b.id, dosen: dosenText, label: b.label, message: 'BA tanpa tautan sesi; dihitung 1 sesi.' });
       }
@@ -339,7 +342,12 @@
     const visBa = {};
     const visDetail = {};
     const visPeserta = {};
+    const semuaBaIds = {};
     let baDosen = 0;
+    normBa.forEach(function (b) {
+      if (b.id) semuaBaIds[b.id] = 1;
+    });
+    const tanpaDosen = normBa.filter(function (b) { return !b.dosenList.length; });
     rows.forEach(function (r) {
       r.details.forEach(function (x) {
         visDetail[x.key] = 1;
@@ -354,10 +362,27 @@
     return {
       cols: cols,
       rows: rows,
+      baTanpaDosenRows: tanpaDosen.map(function (b) {
+        return {
+          id: b.id,
+          bagian: b.bagian,
+          blok: b.blok,
+          jenis: b.jenis,
+          label: b.label,
+          tanggal: b.tanggal,
+          jam: b.jam,
+          sesiCount: b.sesiCount,
+          pesertaCount: b.peserta.length,
+          status: b.status,
+          fileUrl: b.fileUrl
+        };
+      }),
       totals: {
         dosen: rows.length,
         detailUnik: Object.keys(visDetail).length,
         baUnik: Object.keys(visBa).length,
+        baTotal: Object.keys(semuaBaIds).length,
+        baTanpaDosen: tanpaDosen.length,
         baDosen: baDosen,
         pesertaUnik: Object.keys(visPeserta).length,
         sesiRealisasi: rows.reduce(function (t, r) { return t + r.totalRealisasi; }, 0),

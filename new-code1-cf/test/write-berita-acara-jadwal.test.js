@@ -69,7 +69,7 @@ describe('BA merujuk jadwal', () => {
   it('lengkapi menerima dosenList dan menyinkron pengajuan dengan dosen utama', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx();
-    const draft = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '', peserta }, 'SGD', ctx);
+    const draft = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi', catatan: '', peserta }, 'SGD', ctx);
     const filled = await lengkapiBeritaAcaraBagian(env.DB, draft.baId, { jam: '13:30', dosenList: ['dr. Budi', 'dr. Citra'] }, 'SGD', ctx);
     expect(filled.success).toBe(true);
     const ba = await env.DB.prepare('SELECT dosen FROM berita_acara WHERE ba_id=?1').bind(draft.baId).first();
@@ -83,7 +83,7 @@ describe('BA merujuk jadwal', () => {
   it('lengkapi mengisi dosen/jam dan menyinkron pengajuan', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx();
-    const draft = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '', peserta }, 'SGD', ctx);
+    const draft = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi', catatan: '', peserta }, 'SGD', ctx);
     const filled = await lengkapiBeritaAcaraBagian(env.DB, draft.baId, { jam: '13:30', dosen: 'dr. Budi' }, 'SGD', ctx);
     expect(filled.success).toBe(true);
     const ba = await env.DB.prepare('SELECT jam, dosen, tanggal_pelaksanaan FROM berita_acara WHERE ba_id=?1').bind(draft.baId).first();
@@ -92,6 +92,17 @@ describe('BA merujuk jadwal', () => {
     const p = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan=?1').bind('INHAL-1').first();
     expect(p.dosen).toBe('dr. Budi');
     expect(p.tanggal_pelaksanaan).toBe('2026-09-20T13:30');
+  });
+
+  it('lengkapi menolak penghapusan dosen BA Pelaksanaan', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const draft = await saveBeritaAcaraBagian(env.DB, { bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi', catatan: '', peserta }, 'SGD', ctx);
+    const res = await lengkapiBeritaAcaraBagian(env.DB, draft.baId, { dosenList: [] }, 'SGD', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('dosen');
+    const rows = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id=?1').bind(draft.baId).all();
+    expect(rows.results.map((r) => r.nama)).toEqual(['dr. Andi']);
   });
 });
 
@@ -109,7 +120,7 @@ describe('koreksi peserta dan berkas BA oleh Bagian', () => {
   ];
   async function draftBa(ctx) {
     return saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '', peserta
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi', catatan: '', peserta
     }, 'SGD', ctx);
   }
 
@@ -150,7 +161,7 @@ describe('koreksi peserta dan berkas BA oleh Bagian', () => {
     await seedDuaKegiatan();
     const ctx = await bagianCtx();
     const draft = await saveBeritaAcaraBagian(env.DB, {
-      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', catatan: '', peserta: pesertaDua
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20', dosen: 'dr. Andi', catatan: '', peserta: pesertaDua
     }, 'SGD', ctx);
     await env.DB.prepare("UPDATE pengajuan SET dosen='dr. Andi', tanggal_pelaksanaan='2026-09-20T09:00'").run();
 
