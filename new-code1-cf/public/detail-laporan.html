@@ -75,14 +75,12 @@
         .dosen-list-scroll { max-height: 420px; overflow-y: auto; padding: .5rem; }
         .dosen-statgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
         .dosen-statgrid > div { min-width: 0; }
-        #bagian-detail { scroll-margin-top: 9rem; }
         @media (min-width: 1024px) {
             .filter-desktop { display: block; }
             .filter-mobile-bar { display: none; }
             .filter-mobile { display: none; }
             .dosen-split { grid-template-columns: 300px minmax(0, 1fr); }
             .dosen-split > .dosen-pane-left { border-bottom: 0; border-right: 1px solid #f1f5f9; }
-            #bagian-detail { scroll-margin-top: 11rem; }
         }
     </style>
     <style>
@@ -203,52 +201,105 @@
         .in-bar-fill.g { background:#10b981; }
         .in-bar-fill.y { background:#fbbf24; }
         .in-bar-fill.r { background:#fb7185; }
-        .in-heat { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; font-size:12px; }
-        .in-heat th { padding:8px 10px; color:var(--ink-500); font-weight:700; white-space:nowrap; min-width:70px; text-align:center; }
-        .in-heat td { padding:4px; text-align:center; }
-        .in-heat th.lab, .in-heat td.lab { text-align:left; font-weight:700; position:sticky; left:0; background:#fff; z-index:1; min-width:110px; padding-left:0; }
-        .in-heat .c { min-width:60px; border-radius:8px; padding:6px 8px; font-weight:800; border:1px solid transparent; }
-        .in-heat .c.g { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
-        .in-heat .c.y { background:#fffbeb; color:#b45309; border-color:#fde68a; }
-        .in-heat .c.r { background:#fff1f2; color:#be123c; border-color:#fecdd3; }
-        .in-heat .c.off { background:#fff; color:#cbd5e1; border-color:#e2e8f0; cursor:default; }
-        .in-heat .bgd-sq { min-width:36px; height:32px; padding:0; }
-        /* ===== Tab Laporan Bagian (matriks BA PEL + detail kegiatan) ===== */
-        .bgd-keg { font-size:12.5px; font-weight:800; line-height:1.3; color:#0f172a; }
-        .bgd-sub { margin-top:3px; font-size:10.5px; font-weight:500; color:#94a3b8; line-height:1.35; }
-        .bgd-hit { display:inline-block; min-width:30px; border-radius:7px; background:#f1f5f9; color:#475569; font-size:11.5px; font-weight:800; padding:3px 7px; }
-        .bgd-hit.is-zero { background:#fff; border:1px dashed #fcd34d; color:#b45309; }
-        .bgd-badge { display:inline-flex; align-items:center; border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:800; white-space:nowrap; }
-        .bgd-badge.is-violet { background:#f5f3ff; color:#6d28d9; }
-        .bgd-badge.is-amber { background:#fffbeb; color:#b45309; }
-        .bgd-panel { display:grid; grid-template-columns:minmax(0,1fr) 352px; gap:18px; }
-        .bgd-panel-title { margin-bottom:7px; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#94a3b8; }
-        .bgd-side { align-self:start; background:#fff; border:1px solid #e7ebf3; border-radius:11px; padding:12px 13px; }
-        .bgd-ptab, .bgd-btab { width:100%; border-collapse:collapse; background:#fff; border:1px solid #e7ebf3; border-radius:10px; overflow:hidden; }
-        .bgd-ptab th, .bgd-btab th { font-size:9.5px; padding:6px 9px; border-bottom:1px solid #e7ebf3; background:#f8fafc; text-align:left; white-space:nowrap; color:#64748b; }
-        .bgd-ptab th.c, .bgd-btab th.c { text-align:center; }
-        .bgd-ptab td, .bgd-btab td { padding:6px 9px; border-bottom:1px solid #e7ebf3; font-size:11.5px; background:#fff; color:#334155; }
-        .bgd-ptab td.c, .bgd-btab td.c { text-align:center; }
-        .bgd-ptab tr:last-child td, .bgd-btab tr:last-child td { border-bottom:0; }
-        .bgd-btab td:first-child { white-space:nowrap; }
-        .bgd-dtab { table-layout:auto; }
-        .bgd-dtab thead th { padding:10px 9px; }
-        .bgd-dtab tbody tr.bgd-row > td { padding:10px 9px; }
-        .bgd-dtab tbody tr.bgd-subrow > td { padding:7px 9px; }
-        .bgd-dtab tbody tr.bgd-grprow > td { padding:7px 9px; }
-        .bgd-dtab thead th:first-child, .bgd-dtab tbody tr.bgd-row > td:first-child { padding-left:12px; }
-        .bgd-btab td { font-size:11px; }
-        .bgd-btab td:nth-child(2) { white-space:nowrap; font-variant-numeric:tabular-nums; }
-        .bgd-btab { margin-bottom:4px; }
-        .bgd-empty { font-size:11.5px; color:#94a3b8; background:#fff; border:1px dashed #e2e8f0; border-radius:10px; padding:12px; line-height:1.5; }
-        .bgd-sum { display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-top:1px dashed #e7ebf3; font-size:11.5px; color:#64748b; }
-        .bgd-sum b { margin-left:auto; text-align:right; font-weight:800; white-space:nowrap; }
-        .bgd-readlist { margin:0; padding:0; list-style:none; }
-        .bgd-readlist li { display:flex; gap:9px; padding:8px 0; border-bottom:1px dashed #e7ebf3; font-size:12px; color:#475569; line-height:1.5; }
-        .bgd-readlist li:last-child { border-bottom:0; padding-bottom:0; }
-        .bgd-readlist .k { flex:0 0 112px; font-size:11.5px; font-weight:800; color:#334155; }
-        .bgd-readlist b { color:#0f172a; }
-        @media (max-width:1023px) { .bgd-panel { grid-template-columns:1fr; } .bgd-side { order:-1; } }
+        .bgd-ptab { width:100%; border-collapse:collapse; background:#fff; border:1px solid #e7ebf3; border-radius:10px; overflow:hidden; }
+        .bgd-ptab th { font-size:9.5px; padding:6px 9px; border-bottom:1px solid #e7ebf3; background:#f8fafc; text-align:left; white-space:nowrap; color:#64748b; }
+        .bgd-ptab th.c { text-align:center; }
+        .bgd-ptab td { padding:6px 9px; border-bottom:1px solid #e7ebf3; font-size:11.5px; background:#fff; color:#334155; }
+        .bgd-ptab td.c { text-align:center; }
+        .bgd-ptab tr:last-child td { border-bottom:0; }
+        /* ===== Tab Laporan Bagian: papan periksa ===== */
+        .bgc-workspace { display:grid; grid-template-columns:296px minmax(0,1fr); gap:16px; align-items:start; }
+        .bgc-bagian-list { display:flex; flex-direction:column; gap:8px; padding:12px; }
+        .bgc-bagian { display:flex; align-items:center; gap:10px; width:100%; border:1px solid var(--line); border-radius:12px; background:#fff; padding:10px; text-align:left; transition:.15s ease; }
+        .bgc-bagian:hover { border-color:#cbd5e1; background:#f8fafc; }
+        .bgc-bagian.is-active { border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 2px rgba(99,102,241,.10); }
+        .bgc-mark { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; flex:0 0 auto; background:#f1f5f9; color:#475569; font-size:11px; font-weight:800; }
+        .bgc-bagian.is-active .bgc-mark { background:var(--brand); color:#fff; }
+        .bgc-meta { min-width:0; flex:1; }
+        .bgc-meta b { display:block; font-size:12.5px; font-weight:800; line-height:1.2; color:#0f172a; }
+        .bgc-meta span { display:block; margin-top:2px; font-size:10.5px; color:#94a3b8; }
+        .bgc-pct { font-size:11.5px; font-weight:800; color:#475569; }
+        .bgc-audit-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; width:100%; flex-wrap:wrap; }
+        .bgc-coverage { min-width:190px; }
+        .bgc-progress { height:8px; flex:1; border-radius:9999px; background:#f1f5f9; overflow:hidden; }
+        .bgc-progress i { display:block; height:100%; border-radius:9999px; background:#10b981; transition:width .25s ease; }
+        .bgc-progress.is-warn i { background:#fbbf24; }
+        .bgc-progress.is-bad i { background:#fb7185; }
+        .bgc-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+        .bgc-stat { border:1px solid var(--line); border-radius:12px; background:#f8fafc; padding:11px 12px; }
+        .bgc-stat span { display:block; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#94a3b8; }
+        .bgc-stat b { display:block; margin-top:4px; font-size:20px; font-weight:800; line-height:1.1; color:#0f172a; }
+        .bgc-stat small { display:block; margin-top:3px; font-size:10.5px; font-weight:600; color:#94a3b8; }
+        .bgc-issue-bar { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px; }
+        .bgc-issue { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:9999px; background:#fff; padding:6px 10px; font-size:11px; font-weight:700; color:var(--ink-500); white-space:nowrap; }
+        .bgc-issue:hover { border-color:#cbd5e1; color:var(--ink-700); }
+        .bgc-issue.is-active { border-color:#0f172a; background:#0f172a; color:#fff; }
+        .bgc-issue .n { border-radius:9999px; background:#f1f5f9; padding:0 5px; font-size:9.5px; color:#475569; }
+        .bgc-issue.is-active .n { background:rgba(255,255,255,.18); color:#fff; }
+        .bgc-table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+        .bgc-table { width:100%; min-width:920px; border-collapse:collapse; }
+        .bgc-table th { padding:9px 10px; border-bottom:1px solid var(--line); background:#f8fafc; font-size:9.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#64748b; text-align:left; white-space:nowrap; }
+        .bgc-table th.num, .bgc-table td.num { text-align:center; }
+        .bgc-table td { padding:10px; border-top:1px solid #f1f5f9; font-size:11.5px; color:#334155; vertical-align:middle; }
+        .bgc-row { cursor:pointer; transition:background .15s ease; }
+        .bgc-row:hover { background:#f8fafc; }
+        .bgc-who { font-size:12px; font-weight:800; line-height:1.25; color:#0f172a; }
+        .bgc-sub { margin-top:2px; font-size:10.5px; font-weight:500; line-height:1.35; color:#94a3b8; }
+        .bgc-sub.is-issue { color:#be123c; font-weight:700; }
+        .bgc-badge { display:inline-flex; align-items:center; border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:800; white-space:nowrap; }
+        .bgc-badge.is-ok { background:#ecfdf5; color:#047857; }
+        .bgc-badge.is-draft { background:#fffbeb; color:#b45309; }
+        .bgc-badge.is-missing { background:#fff1f2; color:#be123c; }
+        .bgc-badge.is-neutral { background:#f1f5f9; color:#64748b; }
+        .bgc-checks { display:flex; flex-wrap:wrap; gap:5px; }
+        .bgc-check { display:inline-flex; align-items:center; gap:5px; border:1px solid #e2e8f0; border-radius:9999px; background:#fff; padding:2px 7px; font-size:10px; font-weight:700; color:#64748b; white-space:nowrap; }
+        .bgc-check .mark { display:grid; place-items:center; width:14px; height:14px; border-radius:9999px; background:#e2e8f0; color:#475569; font-size:8px; font-weight:800; }
+        .bgc-check.is-ok { border-color:#a7f3d0; background:#ecfdf5; color:#047857; }
+        .bgc-check.is-ok .mark { background:#10b981; color:#fff; }
+        .bgc-check.is-warn { border-color:#fde68a; background:#fffbeb; color:#b45309; }
+        .bgc-check.is-warn .mark { background:#f59e0b; color:#fff; }
+        .bgc-check.is-missing { border-color:#fecdd3; background:#fff1f2; color:#be123c; }
+        .bgc-check.is-missing .mark { background:#f43f5e; color:#fff; }
+        .bgc-hit { display:inline-block; min-width:30px; border-radius:7px; background:#f1f5f9; padding:3px 7px; font-size:11.5px; font-weight:800; color:#475569; }
+        .bgc-hit.is-zero { border:1px dashed #fcd34d; background:#fff; color:#b45309; }
+        .bgc-detail-cell { background:#f8fafc; padding:12px !important; }
+        .bgc-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .bgc-panel { border:1px solid #e7ebf3; border-radius:12px; background:#fff; padding:12px; min-width:0; }
+        .bgc-panel-h { margin-bottom:7px; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#94a3b8; }
+        .bgc-mini { width:100%; border-collapse:collapse; }
+        .bgc-mini th { padding:6px 8px; border-bottom:1px solid #e7ebf3; background:#f8fafc; font-size:9px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:#64748b; text-align:left; white-space:nowrap; }
+        .bgc-mini td { padding:6px 8px; border-bottom:1px solid #f1f5f9; font-size:11px; color:#334155; }
+        .bgc-mini tr:last-child td { border-bottom:0; }
+        .bgc-mini .num { text-align:center; }
+        .bgc-ba { display:inline-flex; align-items:center; gap:4px; border:1px solid #e0e7ff; border-radius:9999px; background:#eef2ff; padding:2px 7px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:9.5px; font-weight:700; color:#4338ca; }
+        .bgc-ba:hover { background:#e0e7ff; }
+        .bgc-ba.is-draft { border-color:#fde68a; background:#fffbeb; color:#b45309; }
+        .bgc-statline { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+        .bgc-chip { display:inline-flex; align-items:center; gap:4px; border-radius:9999px; background:#f1f5f9; padding:3px 8px; font-size:10px; font-weight:700; color:#64748b; }
+        .bgc-chip b { color:#0f172a; font-weight:800; }
+        .bgc-chip.is-green { background:#ecfdf5; color:#047857; }
+        .bgc-chip.is-green b { color:#047857; }
+        .bgc-chip.is-rose { background:#fff1f2; color:#be123c; }
+        .bgc-chip.is-rose b { color:#be123c; }
+        .bgc-empty { border:1px dashed #e2e8f0; border-radius:10px; background:#fff; padding:12px; font-size:11.5px; line-height:1.5; color:#94a3b8; }
+        .bgc-empty b { display:block; margin-bottom:2px; color:#475569; font-weight:800; }
+        .bgc-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:end; margin-bottom:12px; scroll-margin-top:6rem; }
+        .bgc-inline { display:inline; margin-top:0; }
+        .bgc-readlist { margin:0; padding:0; list-style:none; }
+        .bgc-readlist li { display:flex; gap:9px; padding:8px 0; border-bottom:1px dashed #e7ebf3; font-size:12px; line-height:1.5; color:#475569; }
+        .bgc-readlist li:last-child { border-bottom:0; padding-bottom:0; }
+        .bgc-readlist .k { flex:0 0 112px; font-size:11.5px; font-weight:800; color:#334155; }
+        .bgc-readlist b { color:#0f172a; }
+        @media (max-width:1023px) {
+            .bgc-workspace { grid-template-columns:1fr; }
+            .bgc-bagian-list { flex-direction:row; overflow-x:auto; }
+            .bgc-bagian { min-width:210px; }
+        }
+        @media (max-width:640px) {
+            .bgc-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .bgc-detail-grid { grid-template-columns:1fr; }
+            .bgc-toolbar { grid-template-columns:1fr; }
+        }
         .in-tabsw { display:flex; gap:.5rem; overflow-x:auto; border-bottom:1px solid var(--line); }
         .in-tab { display:flex; flex:1 1 0%; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; padding:.7rem 1rem; border-bottom:2.5px solid transparent; color:var(--ink-400); font-size:.8125rem; font-weight:700; transition:.15s ease; }
         .in-tab:hover { color:var(--ink-700); }
@@ -325,8 +376,6 @@
         .in-basum .n.rose { color:var(--rose); }
         .in-basum .n.emerald { color:var(--emerald); }
         @media (max-width:1100px){ .in-basum { grid-template-columns:repeat(2,minmax(0,1fr)); } .in-basum.is-6 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        .in-heat-legend { display:flex; gap:12px; font-size:11px; color:var(--ink-500); margin-top:10px; }
-        .in-heat-legend .dot { width:9px; height:9px; border-radius:99px; display:inline-block; margin-right:4px; }
         .panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
         .panel-head h3 { margin:0; font-size:13.5px; font-weight:800; display:flex; align-items:center; gap:8px; color:var(--ink-900); }
         .panel-head .sub { font-size:11.5px; color:var(--ink-400); font-weight:500; margin-top:2px; }
@@ -1350,319 +1399,222 @@
                             <div v-for="i in 4" :key="i" class="h-14 animate-pulse lap-card"></div>
                         </div>
                         <template v-else>
-                        <div class="lap-card p-4">
-                            <div class="grid gap-3 md:grid-cols-12">
-                                <div class="md:col-span-4">
-                                    <label class="label">Bagian</label>
-                                    <select v-model="bagianFilter.bagian" class="input">
-                                        <option value="">Semua Bagian</option>
-                                        <option v-for="o in bagianAllLabels" :key="o" :value="o">{{ o }}</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-4">
-                                    <label class="label">Kelompokkan detail menurut</label>
-                                    <select v-model="bagianFilter.group" class="input">
-                                        <option value="blok">Blok &rsaquo; Bagian</option>
-                                        <option value="bagian">Bagian &rsaquo; Blok</option>
-                                    </select>
-                                </div>
-                                <div class="flex items-end gap-2 md:col-span-4">
-                                    <button class="btn-soft flex-1" @click="resetBagianMatrix">
-                                        <i class="bi bi-arrow-counterclockwise"></i> Reset
-                                    </button>
-                                    <button class="btn-soft flex-1" :disabled="exporting" @click="exportBagianSheets">
-                                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i> {{ exporting ? 'Menyiapkan...' : 'Laporan' }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            <div class="in-statrow">
-                                <div class="ic indigo"><i class="bi bi-calendar3"></i></div>
-                                <div class="min-w-0">
-                                    <div class="num">{{ bagianStats.kegiatan }}</div>
-                                    <div class="lbl">Kegiatan</div>
-                                </div>
-                                <div class="pct">{{ bagianStats.tanpaAcc }} tanpa ACC</div>
-                            </div>
-                            <div class="in-statrow">
-                                <div class="ic emerald"><i class="bi bi-file-earmark-text"></i></div>
-                                <div class="min-w-0">
-                                    <div class="num">{{ bagianStats.baPel }}</div>
-                                    <div class="lbl">BA PEL</div>
-                                </div>
-                                <div class="pct">1 BA PEL = 1 hitungan</div>
-                            </div>
-                            <div class="in-statrow">
-                                <div class="ic violet"><i class="bi bi-journal-bookmark"></i></div>
-                                <div class="min-w-0">
-                                    <div class="num">{{ bagianStats.baPen }}</div>
-                                    <div class="lbl">BA PEN</div>
-                                </div>
-                                <div class="pct">berkas pendukung</div>
-                            </div>
-                            <div class="in-statrow">
-                                <div class="ic rose"><i class="bi bi-bullseye"></i></div>
-                                <div class="min-w-0">
-                                    <div class="num">{{ bagianStats.hitungan }}</div>
-                                    <div class="lbl">Total hitungan</div>
-                                </div>
-                                <div class="pct">{{ bagianStats.belum }} belum BA PEL</div>
-                            </div>
-                        </div>
-
-                        <div class="overflow-hidden lap-card">
-                            <div class="lap-card-head">
-                                <div>
-                                    <div class="lap-card-title">Jumlah BA PEL per Blok dan Bagian</div>
-                                    <div class="lap-card-sub">Baris = Blok, kolom = Bagian &middot; Angka = jumlah BA PEL &middot; kegiatan tanpa BA PEL tidak dihitung</div>
-                                </div>
-                            </div>
-                            <div class="heat-scroll overflow-x-auto">
-                                <table class="heat-table in-heat w-full">
-                                    <thead>
-                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
-                                            <th class="lab">Blok \ Bagian</th>
-                                            <th v-for="b in bagianMatrixCols" :key="b">{{ b }}</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(row, ri) in pagerRows('bagianMatrix', bagianMatrixRows)" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
-                                            <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="lab">{{ row.label }}</td>
-                                            <td v-for="b in bagianMatrixCols" :key="b" class="px-1 py-1 text-center">
-                                                <button
-                                                    :disabled="!row.keg[bagianKey(b)]"
-                                                    :class="[
-                                                        'heat-cell c bgd-sq inline-flex items-center justify-center text-sm font-bold transition',
-                                                        activeMatrixCell && activeMatrixCell.key === matrixCellKey(row.label, b)
-                                                            ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/30'
-                                                            : (row.counts[bagianKey(b)] >= 2 ? 'g' : (row.counts[bagianKey(b)] === 1 ? 'y' : (row.keg[bagianKey(b)] ? 'r' : 'off')))
-                                                    ]"
-                                                    :title="row.label + ' · ' + b + ': ' + (row.counts[bagianKey(b)] || 0) + ' BA PEL, ' + (row.keg[bagianKey(b)] || 0) + ' kegiatan'"
-                                                    @click="filterByMatrixCell(b, row.label)">
-                                                    {{ row.counts[bagianKey(b)] || '0' }}
-                                                </button>
-                                            </td>
-                                            <td class="px-3 py-2 text-center font-bold text-slate-800">{{ row.total }}</td>
-                                        </tr>
-                                        <tr class="bg-slate-100">
-                                            <td class="lab font-bold text-slate-700">Total</td>
-                                            <td v-for="b in bagianMatrixCols" :key="b" class="px-3 py-2.5 text-center font-bold text-slate-700">{{ matrixColTotal(b) }}</td>
-                                            <td class="px-3 py-2.5 text-center font-extrabold text-slate-900">{{ matrixGrandTotal }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="in-heat-legend px-3 pb-2">
-                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2 BA PEL atau lebih</span>
-                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 BA PEL</span>
-                                <span><i class="dot" style="background:#fff1f2;border:1px solid #fecdd3"></i>0 BA PEL, ada kegiatan</span>
-                                <span><i class="dot" style="background:#fff;border:1px solid #e2e8f0"></i>0 BA PEL, tanpa kegiatan</span>
-                            </div>
-                            <div class="flex flex-wrap items-center justify-between gap-2 px-3 pb-3 text-xs">
-                                <div v-if="activeMatrixCell" class="flex items-center gap-2">
-                                    <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 font-bold text-brand-700">{{ activeMatrixCell.blok }} &middot; {{ activeMatrixCell.bagian }}</span>
-                                    <button class="font-bold text-brand-600 hover:underline" @click="resetMatrixCell">Tampilkan semua</button>
-                                </div>
-                                <div v-else class="text-slate-400">Klik angka untuk menyaring detail kegiatan di bawah</div>
-                            </div>
-                            <pager-bar id="pg-bagianMatrix" :state="pagers.bagianMatrix" :total="bagianMatrixRows.length" unit="blok"
-                                nav-label="Halaman rekap kegiatan per bagian dan blok"
-                                @go="pagerGo('bagianMatrix', $event, bagianMatrixRows.length)"
-                                @size="pagerSetPerPage('bagianMatrix', $event)"></pager-bar>
-                        </div>
-
-                        <div id="bagian-detail" class="overflow-hidden lap-card">
-                            <div class="lap-card-head">
-                                <div>
-                                    <div class="lap-card-title">Detail Kegiatan per Bagian &amp; Blok</div>
-                                    <div class="lap-card-sub">Klik baris untuk melihat peserta dan rincian setiap BA PEL. Satu BA PEL dihitung satu kali.</div>
-                                    <div v-if="activeMatrixCell" class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                                        <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 font-bold text-brand-700">Disaring: {{ activeMatrixCell.blok }} &middot; {{ activeMatrixCell.bagian }}</span>
-                                        <button type="button" class="font-bold text-brand-600 hover:underline" @click="resetMatrixCell">Tampilkan semua</button>
+                        <div class="bgc-workspace">
+                            <div class="lap-card overflow-hidden">
+                                <div class="lap-card-head">
+                                    <div>
+                                        <div class="lap-card-title">Bagian</div>
+                                        <div class="lap-card-sub">Cakupan dan temuan per bagian</div>
                                     </div>
                                 </div>
+                                <div class="bgc-bagian-list">
+                                    <button type="button" class="bgc-bagian" :class="!bagianFilter.bagian ? 'is-active' : ''" @click="selectBagianFilter('')">
+                                        <span class="bgc-mark"><i class="bi bi-grid-1x2"></i></span>
+                                        <span class="bgc-meta"><b>Semua Bagian</b><span>{{ bagianAllSummary.kegiatan }} kegiatan &middot; {{ bagianAllSummary.temuan }} temuan</span></span>
+                                        <span class="bgc-pct">{{ bagianAllSummary.coverage }}%</span>
+                                    </button>
+                                    <button v-for="it in bagianSectionItems" :key="it.label" type="button" class="bgc-bagian" :class="it.active ? 'is-active' : ''" @click="selectBagianFilter(it.label)">
+                                        <span class="bgc-mark">{{ it.kode }}</span>
+                                        <span class="bgc-meta"><b>{{ it.label }}</b><span>{{ it.stats.kegiatan }} kegiatan &middot; {{ it.stats.temuan }} temuan</span></span>
+                                        <span class="bgc-pct">{{ it.stats.coverage }}%</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="in-tbl bgd-dtab">
-                                    <thead>
-                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
-                                            <th class="w-8 px-3 py-2.5"></th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Bagian</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Blok</th>
-                                            <th class="px-3 py-2.5 text-left">Kegiatan</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">Tanggal</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-center">Peserta</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-left">BA PEL &middot; BA PEN</th>
-                                            <th class="whitespace-nowrap px-3 py-2.5 text-center" title="Jumlah hitungan yang disumbangkan ke matriks">Hitungan</th>
+
+                            <div class="min-w-0 space-y-4">
+                                <div class="lap-card">
+                                    <div class="lap-card-head">
+                                        <div class="bgc-audit-head">
+                                            <div>
+                                                <div class="lap-card-title">Pemeriksaan {{ bagianSelectionTitle }}</div>
+                                                <div class="lap-card-sub">{{ bagianSelectionSubtitle }}</div>
+                                            </div>
+                                            <div class="bgc-coverage">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="bgc-progress" :class="bagianCoverageCls"><i :style="{ width: bagianCoverage + '%' }"></i></div>
+                                                    <b class="text-sm text-slate-700">{{ bagianCoverage }}%</b>
+                                                </div>
+                                                <div class="bgc-sub text-right">cakupan BA PEL</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="bgc-summary">
+                                            <div class="bgc-stat"><span>Kegiatan</span><b>{{ bagianStats.kegiatan }}</b><small>pada filter aktif</small></div>
+                                            <div class="bgc-stat"><span>Belum BA PEL</span><b>{{ bagianStats.belumBa }}</b><small>tidak dihitung</small></div>
+                                            <div class="bgc-stat"><span>BA draft</span><b>{{ bagianStats.draft }}</b><small>tetap dihitung</small></div>
+                                            <div class="bgc-stat"><span>Peserta unik</span><b>{{ bagianStats.pesertaUnik }}</b><small>NPM berbeda</small></div>
+                                        </div>
+                                        <div class="bgc-toolbar">
+                                            <div>
+                                                <label class="label" for="bagian-q">Cari kegiatan, BA, atau peserta</label>
+                                                <input id="bagian-q" v-model="bagianFilter.q" class="input" placeholder="Kata kunci...">
+                                            </div>
+                                            <div class="flex items-end gap-2">
+                                                <button type="button" class="btn-soft" @click="resetBagianFilter"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                                                <button type="button" class="btn-soft" :disabled="exporting" @click="exportBagianSheets"><i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i> {{ exporting ? 'Menyiapkan...' : 'Laporan' }}</button>
+                                            </div>
+                                        </div>
+                                        <div class="bgc-issue-bar">
+                                            <button v-for="it in bagianIssueOptions" :key="it.id" type="button" class="bgc-issue" :class="bagianFilter.issue === it.id ? 'is-active' : ''" @click="setBagianIssue(it.id)">
+                                                {{ it.label }}<span class="n">{{ it.n }}</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="bgc-table-wrap">
+                                            <table class="bgc-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Kegiatan</th>
+                                                        <th>Blok / Tanggal</th>
+                                                        <th>Status BA</th>
+                                                        <th>Checklist kelengkapan</th>
+                                                        <th class="num">ACC / Peserta</th>
+                                                        <th class="num">Hitungan</th>
+                                                        <th class="num">Aksi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                        <template v-for="row in pagerRows('bagian', bagianChecklistRows)" :key="row.uid">
+                                        <tr class="bgc-row" @click="toggleExpand(row.uid)">
+                                            <td>
+                                                <div class="bgc-who">{{ row.nama }}</div>
+                                                <div class="bgc-sub">{{ row.sumber === 'BA' ? 'Berita Acara' : (row.sumber === 'Jadwal' ? 'Jadwal' : 'Pengajuan') }} &middot; {{ row.dosenList && row.dosenList.length ? row.dosenList.join(', ') : 'dosen belum ada di BA PEL' }}</div>
+                                            </td>
+                                            <td>
+                                                <div class="font-semibold text-slate-700">{{ row.blok }}</div>
+                                                <div class="bgc-sub">{{ row.tanggal ? fmtTanggal(row.tanggal) : 'tanggal belum ada' }}</div>
+                                            </td>
+                                            <td>
+                                                <span class="bgc-badge" :class="bagianStatusClass(row.statusBa)">{{ row.statusBa }}</span>
+                                                <div class="bgc-sub" :class="bagianIssueText(row) ? 'is-issue' : ''">{{ bagianIssueText(row) || 'sesuai' }}</div>
+                                            </td>
+                                            <td>
+                                                <div class="bgc-checks">
+                                                    <span v-for="(c, ci) in bagianChecklist(row)" :key="ci" class="bgc-check" :class="'is-' + c.state">
+                                                        <span class="mark">{{ c.state === 'ok' ? 'OK' : '!' }}</span>{{ c.text }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="num">
+                                                <div><b class="text-slate-800">{{ row.accCount }}</b><span class="bgc-sub bgc-inline">/{{ row.peserta.length }}</span></div>
+                                                <div class="bgc-sub">BA: {{ row.baPelPesertaCount }}</div>
+                                            </td>
+                                            <td class="num"><span class="bgc-hit" :class="{ 'is-zero': !row.hitungan }">{{ row.hitungan }}&times;</span></td>
+                                            <td class="num">
+                                                <button type="button" class="btn-soft !px-2 !py-1 text-[11px]" @click.stop="toggleExpand(row.uid)">{{ expanded[row.uid] ? 'Tutup' : 'Periksa' }}</button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template v-for="s in bagianPagedSections" :key="s.type === 'row' ? s.row.uid : (s.type === 'header' ? ('h-' + s.block.key) : ('sub-' + s.key))">
-                                            <template v-if="s.type === 'header'">
-                                                <tr class="bgd-grprow bg-slate-50">
-                                                    <td colspan="8" class="px-3 py-2">
-                                                        <div class="flex flex-wrap items-center gap-2">
-                                                            <span class="rounded-md bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700">{{ bagianFilter.group === 'bagian' ? 'Bagian' : 'Blok' }}</span>
-                                                            <span class="text-xs font-bold text-slate-700">{{ s.block.outer }}</span>
-                                                            <span class="text-[11px] text-slate-400">&rsaquo;</span>
-                                                            <span class="text-xs font-semibold text-slate-600">{{ s.block.inner }}</span>
-                                                            <span class="ml-auto text-[11px] text-slate-400"><b class="font-bold text-slate-600">{{ s.block.subtotal.kegiatan }}</b> kegiatan &middot; <b class="font-bold text-slate-600">{{ s.block.subtotal.hitungan }}</b> hitungan</span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                            <template v-else-if="s.type === 'subtotal'">
-                                                <tr class="bgd-subrow bg-slate-100/80">
-                                                    <td colspan="5" class="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">Subtotal {{ s.outer }} &middot; {{ s.inner }}</td>
-                                                    <td class="px-3 py-2 text-center font-semibold text-slate-500">{{ s.pesertaCount }}</td>
-                                                    <td class="px-3 py-2 text-right text-[11px] font-semibold text-slate-500">{{ s.kegiatan }} kegiatan</td>
-                                                    <td class="px-3 py-2 text-center font-bold text-slate-600">{{ s.hitungan }}&times;</td>
-                                                </tr>
-                                            </template>
-                                            <template v-else>
-                                            <tr class="bgd-row cursor-pointer border-t border-slate-50 transition hover:bg-slate-50/60" @click="toggleExpand(s.row.uid)">
-                                                <td class="px-3 py-2.5 text-slate-400">
-                                                    <i :class="expanded[s.row.uid] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                                                </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-700">{{ s.row.bagian }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-600">{{ s.row.blok }}</td>
-                                                <td class="px-3 py-2.5">
-                                                    <div class="bgd-keg">{{ s.row.nama }}</div>
-                                                    <div class="bgd-sub">{{ s.row.dosenList && s.row.dosenList.length ? s.row.dosenList.join(', ') : 'dosen belum ada di BA PEL' }}</div>
-                                                </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-slate-500">
-                                                    <div>{{ s.row.tanggal ? fmtTanggal(s.row.tanggal) : '-' }}</div>
-                                                    <div class="bgd-sub">{{ s.row.baPelCount ? 'tanggal BA PEL' : 'jadwal (rencana)' }}</div>
-                                                </td>
-                                                <td class="px-3 py-2.5 text-center">
-                                                    <template v-if="s.row.peserta.length">
-                                                        <div class="text-xs"><b class="text-slate-800">{{ s.row.accCount }}</b><span class="text-slate-400">/{{ s.row.peserta.length }}</span></div>
-                                                        <div class="bgd-sub">{{ s.row.menungguCount }} menunggu &middot; {{ s.row.ditolakCount }} ditolak</div>
-                                                        <span v-if="!s.row.accCount" class="bgd-badge is-amber mt-1">Tanpa ACC</span>
-                                                    </template>
-                                                    <template v-else>
-                                                        <div class="bgd-sub !mt-0">tanpa pendaftar</div>
-                                                        <span class="bgd-badge is-amber mt-1">Tanpa ACC</span>
-                                                    </template>
-                                                </td>
-                                                <td class="whitespace-nowrap px-3 py-2.5">
-                                                    <template v-if="s.row.baPelCount">
-                                                        <span class="bgd-badge is-violet">{{ s.row.baPelCount }} BA PEL</span>
-                                                        <div class="bgd-sub">BA PEN: {{ s.row.baPenCount ? (s.row.baPenCount + ' berkas') : 'belum ada' }}</div>
-                                                        <div v-if="s.row.baPelPesertaCount < s.row.accCount" class="bgd-sub !text-rose-600 !font-bold">{{ s.row.baPelPesertaCount }} peserta, kurang dari {{ s.row.accCount }} ACC</div>
-                                                    </template>
-                                                    <template v-else>
-                                                        <span class="bgd-badge is-amber">Belum ada BA PEL</span>
-                                                        <div class="bgd-sub">tidak dihitung</div>
-                                                    </template>
-                                                </td>
-                                                <td class="px-3 py-2.5 text-center">
-                                                    <span :class="['bgd-hit', s.row.hitungan ? '' : 'is-zero']">{{ s.row.hitungan }}&times;</span>
-                                                </td>
-                                            </tr>
-                                            <tr v-if="expanded[s.row.uid]">
-                                                <td colspan="8" class="bg-slate-50/60 p-0">
-                                                    <div class="bgd-panel p-3">
-                                                        <div>
-                                                            <div class="bgd-panel-title">Peserta ({{ s.row.peserta.length }})</div>
-                                                            <table v-if="s.row.peserta.length" class="bgd-ptab">
-                                                                <thead>
-                                                                    <tr><th>NPM</th><th>Nama</th><th>Status</th><th class="c">Di BA PEL</th><th class="c">Bukti Bayar</th></tr>
-                                                                </thead>
+                                        <tr v-if="expanded[row.uid]" @click.stop>
+                                            <td colspan="7" class="bgc-detail-cell">
+                                                <div class="bgc-detail-grid">
+                                                    <div class="bgc-panel">
+                                                        <div class="bgc-panel-h">BA PEL dan BA PEN</div>
+                                                        <div v-if="row.baPel.length" class="overflow-x-auto">
+                                                            <table class="bgc-mini">
+                                                                <thead><tr><th>BA PEL</th><th>Tanggal</th><th>Dosen</th><th class="num">Peserta</th><th>Status</th></tr></thead>
                                                                 <tbody>
-                                                                    <tr v-for="(p, i) in s.row.peserta" :key="i">
-                                                                        <td class="font-mono">{{ p.npm || '-' }}</td>
-                                                                        <td class="font-semibold text-slate-800">{{ p.namaLengkap || '-' }}</td>
-                                                                        <td><span v-if="p.status" :class="statusBadgeCls(p.status)" class="whitespace-nowrap">{{ p.status }}</span><span v-else class="text-slate-300">-</span></td>
-                                                                        <td class="c"><span v-if="p.diBa" class="font-bold text-emerald-600">&#10003;</span><span v-else class="text-slate-300">&ndash;</span></td>
-                                                                        <td class="c"><a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti whitespace-nowrap" @pointerenter="onBuktiEnter($event, p.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti Bayar</a><span v-else class="text-slate-300">-</span></td>
+                                                                    <tr v-for="b in row.baPel" :key="b.baId">
+                                                                        <td>
+                                                                            <button type="button" class="bgc-ba" :class="b.status === 'Draft' ? 'is-draft' : ''" :title="'Periksa / edit ' + b.baId" @click.stop="openKelolaBaById(b.baId)"><i class="bi bi-pencil-square"></i>{{ b.baId }}</button>
+                                                                        </td>
+                                                                        <td>{{ b.tanggal ? fmtTanggal(b.tanggal) : '-' }}<div v-if="b.jam" class="bgc-sub">{{ b.jam }}</div></td>
+                                                                        <td>{{ b.dosen || 'dosen belum diisi' }}</td>
+                                                                        <td class="num">{{ b.jumlahPeserta }}</td>
+                                                                        <td><span class="bgc-badge" :class="bagianStatusClass(b.status)">{{ b.status }}</span></td>
                                                                     </tr>
                                                                 </tbody>
                                                             </table>
-                                                            <div v-else class="bgd-empty">Tidak ada pendaftar pada kegiatan ini.</div>
                                                         </div>
-                                                        <div class="bgd-side">
-                                                            <div class="bgd-panel-title">Hitungan BA PEL</div>
-                                                            <table v-if="s.row.baPelCount" class="bgd-btab">
-                                                                <thead>
-                                                                    <tr><th>BA PEL</th><th>Tanggal</th><th class="c">Peserta</th></tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <tr v-for="(b, i) in s.row.baPel" :key="i">
-                                                                        <td>
-                                                                            <div class="font-mono">{{ b.baId }}</div>
-                                                                            <div class="bgd-sub !mt-0.5">{{ b.dosen || 'dosen belum diisi' }}</div>
-                                                                        </td>
-                                                                        <td>
-                                                                            <div>{{ b.tanggal ? fmtTanggal(b.tanggal) : '-' }}</div>
-                                                                            <div v-if="b.jam" class="bgd-sub !mt-0.5">{{ b.jam }}</div>
-                                                                        </td>
-                                                                        <td class="c">{{ b.jumlahPeserta }}</td>
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                            <div v-else class="bgd-empty">Belum ada BA PEL. Kegiatan ini <b>tidak dihitung</b> pada matriks, tetapi tetap didaftar di sini.</div>
-                                                            <div class="bgd-sum"><span>Kegiatan ini dihitung</span><b :class="s.row.hitungan ? 'text-emerald-600' : 'text-rose-600'">{{ s.row.hitungan }}&times;</b></div>
-                                                            <div class="bgd-sum"><span>BA PEN</span><b :class="s.row.baPenCount ? 'text-emerald-600' : 'text-rose-600'">{{ s.row.baPenCount ? (s.row.baPenCount + ' berkas') : 'belum ada' }}</b></div>
+                                                        <div v-else class="bgc-empty"><b>Belum ada BA PEL</b>Kegiatan ini tidak dihitung sampai BA diunggah.</div>
+                                                        <div v-if="row.baPen.length" class="mt-3">
+                                                            <div class="bgc-panel-h">BA PEN</div>
+                                                            <div class="flex flex-wrap gap-1.5">
+                                                                <button v-for="b in row.baPen" :key="b.baId" type="button" class="bgc-ba" :title="'Periksa / edit ' + b.baId" @click.stop="openKelolaBaById(b.baId)"><i class="bi bi-paperclip"></i>{{ b.baId }}</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="bgc-statline">
+                                                            <span class="bgc-chip">BA PEN: <b>{{ row.baPenCount || 'belum ada' }}</b></span>
+                                                            <span class="bgc-chip">Hitungan: <b>{{ row.hitungan }}x</b></span>
+                                                            <span class="bgc-chip" :class="row.accCount ? 'is-green' : 'is-rose'">ACC: <b>{{ row.accCount }}/{{ row.peserta.length }}</b></span>
+                                                        </div>
+                                                        <div class="mt-2">
+                                                            <button type="button" class="btn-soft" @click.stop="periksaBagianRow(row)"><i class="bi bi-pencil-square"></i> Periksa / koreksi data</button>
                                                         </div>
                                                     </div>
-                                                </td>
-                                            </tr>
-                                            </template>
-                                        </template>
-                                        <tr v-if="bagianDetailRows.length" class="bg-slate-200/70 font-extrabold">
-                                            <td class="px-3 py-2.5"></td>
-                                            <td colspan="4" class="px-3 py-2.5 text-[11px] uppercase tracking-wider text-slate-700">Grand Total</td>
-                                            <td class="px-3 py-2.5 text-center text-slate-700">{{ bagianDetailPesertaTotal }}</td>
-                                            <td class="px-3 py-2.5 text-right text-[11px] uppercase tracking-wider text-slate-700">{{ bagianDetailRows.length }} kegiatan</td>
-                                            <td class="px-3 py-2.5 text-center text-slate-800">{{ bagianDetailGrandTotal }}&times;</td>
+                                                    <div class="bgc-panel">
+                                                        <div class="bgc-panel-h">Peserta ({{ row.peserta.length }})</div>
+                                                        <div v-if="row.peserta.length" class="overflow-x-auto">
+                                                            <table class="bgc-mini">
+                                                                <thead><tr><th>NPM</th><th>Nama</th><th>Status</th><th class="num">Di BA</th><th class="num">Bukti</th></tr></thead>
+                                                                <tbody>
+                                                                    <tr v-for="(p, pi) in row.peserta" :key="(p.npm || p.namaLengkap || pi) + '::' + pi">
+                                                                        <td class="font-mono">{{ p.npm || '-' }}</td>
+                                                                        <td><b>{{ p.namaLengkap || '-' }}</b></td>
+                                                                        <td><span v-if="p.status" :class="statusBadgeCls(p.status)" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold">{{ p.status }}</span><span v-else class="text-slate-300">-</span></td>
+                                                                        <td class="num">{{ p.diBa ? 'Ya' : '-' }}</td>
+                                                                        <td class="num"><a v-if="p.linkBukti" :href="safeUrl(p.linkBukti)" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand-600 hover:underline" @pointerenter="onBuktiEnter($event, p.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()">Bukti</a><span v-else>-</span></td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                        <div v-else class="bgc-empty"><b>Tanpa pendaftar</b>Perlu dicek ke pengajuan.</div>
+                                                    </div>
+                                                </div>
+                                            </td>
                                         </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <pager-bar id="pg-bagian" :state="pagers.bagian" :total="bagianDetailRows.length" :info="bagianPageInfo" unit="kegiatan"
-                                nav-label="Halaman detail kegiatan per bagian"
-                                @go="pagerGo('bagian', $event, bagianDetailRows.length, bagianPageInfo.pages)"
-                                @size="pagerSetPerPage('bagian', $event)"></pager-bar>
-                            <div v-if="!bagianDetailRows.length" class="px-4 py-14 text-center">
-                                <i class="bi bi-table text-3xl text-slate-300"></i>
-                                <p class="mt-3 text-sm text-slate-400">Tidak ada data kegiatan untuk filter ini.</p>
+                                        </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div v-if="!bagianChecklistRows.length" class="px-4 py-12 text-center">
+                                            <i class="bi bi-clipboard-x text-3xl text-slate-300"></i>
+                                            <p class="mt-3 text-sm text-slate-400">Tidak ada kegiatan yang cocok dengan filter ini.</p>
+                                        </div>
+                                        <div class="flex flex-wrap items-center justify-between gap-2 px-1 py-2 text-xs text-slate-500">
+                                            <span><b class="text-slate-700">{{ bagianChecklistRows.length }}</b> kegiatan pada filter ini</span>
+                                            <span><b class="text-slate-700">{{ bagianPerluTindakLanjut }}</b> perlu tindak lanjut</span>
+                                        </div>
+                                        <pager-bar id="pg-bagian" :state="pagers.bagian" :total="bagianChecklistRows.length" unit="kegiatan"
+                                            nav-label="Halaman papan periksa laporan bagian"
+                                            @go="pagerGo('bagian', $event, bagianChecklistRows.length)"
+                                            @size="pagerSetPerPage('bagian', $event)"></pager-bar>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <div class="grid gap-3 lg:grid-cols-2">
                             <div class="lap-card p-4">
-                                <div class="lap-card-title"><i class="bi bi-calculator text-brand-500"></i> Cara menghitung</div>
-                                <div class="lap-card-sub mb-2">Aturan yang dipakai matriks dan tabel detail</div>
-                                <ul class="bgd-readlist">
-                                    <li><span class="k">Satuan hitung</span><span>Satu <b>BA PEL</b> = satu hitungan. Kegiatan dengan dua BA PEL menyumbang 2 pada selnya dan muncul sebagai <b>2&times;</b> di kolom Hitungan.</span></li>
-                                    <li><span class="k">Tanpa BA PEL</span><span>Kegiatan yang belum punya BA PEL <b>tidak dihitung</b> di matriks. Tetap didaftar di tabel detail dengan <b>0&times;</b> agar pekerjaan tertunda tetap terlihat.</span></li>
-                                    <li><span class="k">BA PEN</span><span>Berita Acara Pendukung. Dihitung sebagai berkas pendukung; jumlahnya tampil di kolom BA PEL &middot; BA PEN dan di panel rincian.</span></li>
-                                    <li><span class="k">Total baris</span><span>Jumlah hitungan pada satu Blok di semua Bagian.</span></li>
-                                    <li><span class="k">Total kolom</span><span>Jumlah hitungan pada satu Bagian di semua Blok.</span></li>
-                                    <li><span class="k">Tanpa biaya</span><span>Rekapitulasi biaya ada di tab lain, sehingga nominal rupiah tidak muncul di halaman ini.</span></li>
+                                <div class="lap-card-title"><i class="bi bi-clipboard-check text-brand-500"></i> Cara memeriksa</div>
+                                <div class="lap-card-sub mb-2">Aturan yang dipakai papan periksa dan ekspor</div>
+                                <ul class="bgc-readlist">
+                                    <li><span class="k">Satuan hitung</span><span>Satu <b>BA PEL</b> = satu hitungan. Kegiatan dengan dua BA PEL muncul sebagai <b>2&times;</b> di kolom Hitungan.</span></li>
+                                    <li><span class="k">Tanpa BA PEL</span><span>Kegiatan yang belum punya BA PEL <b>tidak dihitung</b>, tetapi tetap tampil dengan status <b>Tanpa BA</b> agar pekerjaan tertunda terlihat.</span></li>
+                                    <li><span class="k">BA draft</span><span>BA yang belum lengkap (berkas, tanggal, dosen, atau peserta) diberi status <b>Draft</b>. BA draft tetap dihitung sebagai BA PEL.</span></li>
+                                    <li><span class="k">BA PEN</span><span>Berita Acara Pendukung. Jumlahnya tampil sebagai chip dan ID-nya dapat diklik untuk diperiksa.</span></li>
+                                    <li><span class="k">Tindak lanjut</span><span>Filter isu menyaring kegiatan yang perlu dikoreksi. Tombol <b>Periksa</b> membuka rincian BA dan peserta.</span></li>
                                 </ul>
                             </div>
                             <div class="lap-card p-4">
                                 <div class="lap-card-title"><i class="bi bi-info-circle text-brand-500"></i> Cakupan data</div>
                                 <div class="lap-card-sub mb-2">Apa yang masuk dan bagaimana ditandai</div>
-                                <ul class="bgd-readlist">
-                                    <li><span class="k">Tanpa peserta ACC</span><span>Tetap ditampilkan, bukan disembunyikan. Diberi badge <b>Tanpa ACC</b> di tabel detail.</span></li>
-                                    <li><span class="k">Tanpa pendaftar</span><span>Juga tetap tampil dengan keterangan &ldquo;tanpa pendaftar&rdquo; dan badge Tanpa ACC, supaya kegiatan terjadwal tidak luput dari pemeriksaan.</span></li>
-                                    <li><span class="k">Peserta BA PEL</span><span>Jumlah peserta yang tercatat di seluruh BA PEL kegiatan. Bila lebih kecil dari jumlah ACC, ditulis merah sebagai informasi.</span></li>
+                                <ul class="bgc-readlist">
+                                    <li><span class="k">Tanpa peserta ACC</span><span>Tetap ditampilkan, bukan disembunyikan. Diberi penanda <b>Tanpa ACC</b> di checklist.</span></li>
+                                    <li><span class="k">Tanpa pendaftar</span><span>Juga tetap tampil dengan keterangan &ldquo;tanpa pendaftar&rdquo; dan penanda <b>Tanpa ACC</b>.</span></li>
+                                    <li><span class="k">Peserta BA PEL</span><span>Jumlah peserta di seluruh BA PEL kegiatan. Bila lebih kecil dari jumlah ACC, checklist memberi peringatan <b>Peserta kurang</b>.</span></li>
                                     <li><span class="k">Dosen</span><span>Diambil dari seluruh BA PEL kegiatan; bila belum ada BA PEL, kolom dosen dikosongkan.</span></li>
+                                    <li><span class="k">Pencarian</span><span>Mencakup nama kegiatan, blok, dosen, ID BA, NPM, dan nama peserta pada Bagian yang dipilih.</span></li>
                                 </ul>
                             </div>
                         </div>
 
                         <p class="text-[11px] text-slate-400">
-                            Matriks menghitung <b class="text-slate-600">{{ bagianStats.hitungan }}</b> BA PEL dari {{ bagianStats.kegiatan }} kegiatan pada {{ bagianMatrixRows.length }} blok &times; {{ bagianMatrixCols.length }} bagian &middot;
-                            <span v-if="bagianStats.belum"><b class="text-slate-600">{{ bagianStats.belum }}</b> kegiatan belum ada BA PEL tidak dihitung tetapi tetap didaftar</span>
-                            <span v-else>semua kegiatan sudah ada BA PEL</span> &middot;
-                            {{ bagianStats.tanpaAcc }} kegiatan tanpa peserta ACC tetap ditampilkan ({{ bagianStats.tanpaPendaftar }} tanpa pendaftar).
+                            Menampilkan <b class="text-slate-600">{{ bagianChecklistRows.length }}</b> kegiatan pada {{ bagianSelectionTitle }}:
+                            <b class="text-slate-600">{{ bagianStats.baPel }}</b> BA PEL,
+                            <b class="text-slate-600">{{ bagianStats.belumBa }}</b> belum BA PEL,
+                            <b class="text-slate-600">{{ bagianStats.draft }}</b> BA draft.
+                            <span v-if="bagianStats.tanpaAcc"><b class="text-slate-600">{{ bagianStats.tanpaAcc }}</b> kegiatan tanpa peserta ACC tetap ditampilkan ({{ bagianStats.tanpaPendaftar }} tanpa pendaftar).</span>
                         </p>
                         </template>
                     </section>
@@ -3246,7 +3198,6 @@
                         rekap: { page: 1, perPage: 10 },
                         dosen: { page: 1, perPage: 10 },
                         bagian: { page: 1, perPage: 10 },
-                        bagianMatrix: { page: 1, perPage: 10 },
                         baKegiatan: { page: 1, perPage: 10 },
                         baAudit: { page: 1, perPage: 10 },
                         daftarba: { page: 1, perPage: 10 },
@@ -3258,7 +3209,7 @@
                     dosenFilter: { bagian: '', q: '' },
                     dosenView: { blok: '', kegiatanKey: '' },
                     dosenSelectedKey: '',
-                    bagianFilter: { bagian: '', group: 'blok' },
+                    bagianFilter: { bagian: '', q: '', issue: 'semua' },
                     baFilter: { bagian: '' },
                     baLayer: 'kegiatan',
                     baListFilter: { jenis: '', dosen: '', sumber: '', kelengkapan: '', sesi: '' },
@@ -3286,7 +3237,6 @@
                     baMenu: { open: false, type: '', items: [], top: 0, left: 0, hover: false },
                     baMenuTimer: null,
                     baMenuCloseTimer: null,
-                    activeMatrixCell: null,
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
                     barProgress: 0,
@@ -3769,15 +3719,23 @@
                     this.beritaAcara.forEach(b => {
                         const bagian = this.resolveBagianLabel(b.Bagian, '', b['Nama Kegiatan']) || 'Lainnya';
                         const key = keyOf(bagian, String(b.Blok || '').trim() || 'Tanpa Blok', b['Nama Kegiatan']);
+                        const dosenList = this.baDosenList(b);
+                        const tanggal = String(b['Tanggal Pelaksanaan'] || '').trim();
+                        const jam = String(b.Jam || '').trim();
+                        const fileUrl = String(b['File URL'] || '').trim();
+                        const pesertaNpm = (b.peserta || []).map(x => String(x.npm || '').trim()).filter(Boolean);
+                        const jadwalIds = Array.isArray(b.jadwalIds) ? b.jadwalIds : [];
+                        const lengkap = !!(fileUrl && tanggal && dosenList.length && pesertaNpm.length && (jam || jadwalIds.length > 1));
                         bucket(key).baPel.push({
                             baId: String(b['BA ID'] || '').trim() || 'BA',
-                            tanggal: String(b['Tanggal Pelaksanaan'] || '').trim(),
-                            jam: String(b.Jam || '').trim(),
-                            dosen: this.baDosenList(b).join(', '),
-                            dosenList: this.baDosenList(b),
-                            jumlahPeserta: Number(b['Jumlah Peserta']) || (b.peserta || []).length,
-                            pesertaNpm: (b.peserta || []).map(x => String(x.npm || '').trim()).filter(Boolean),
-                            fileUrl: String(b['File URL'] || '').trim()
+                            tanggal: tanggal,
+                            jam: jam,
+                            dosen: dosenList.join(', '),
+                            dosenList: dosenList,
+                            jumlahPeserta: Number(b['Jumlah Peserta']) || pesertaNpm.length,
+                            pesertaNpm: pesertaNpm,
+                            fileUrl: fileUrl,
+                            status: lengkap ? 'Lengkap' : 'Draft'
                         });
                     });
                     (this.kegiatan || []).forEach(u => {
@@ -3997,8 +3955,9 @@
                         k.baPen = ba.baPen;
                         k.baPelCount = ba.baPel.length;
                         k.baPenCount = ba.baPen.length;
+                        k.statusBa = !ba.baPel.length ? 'Tanpa BA' : (ba.baPel.some(b => b.status === 'Draft') ? 'Draft' : 'Lengkap');
                         k.hitungan = ba.baPel.length;
-                        k.baPelPesertaCount = ba.baPel.reduce((t, b) => t + (Number(b.jumlahPeserta) || 0), 0);
+                        k.baPelPesertaCount = Object.keys(baPelNpm).length;
                         k.dosenList = dosenList;
                         k.accCount = statusOf('ACC');
                         k.menungguCount = statusOf('Menunggu');
@@ -4062,17 +4021,71 @@
                     if (!selBagian) return this.bagianKegiatanAll;
                     return this.bagianKegiatanAll.filter(k => this.normBagian(k.bagian) === this.normBagian(selBagian));
                 },
+                bagianAllSearchRows() {
+                    const q = this.normSearch(this.bagianFilter.q);
+                    if (!q) return this.bagianKegiatanAll;
+                    return this.bagianKegiatanAll.filter(k => this.bagianRowMatchesSearch(k, q));
+                },
+                bagianScopeSearchRows() {
+                    const q = this.normSearch(this.bagianFilter.q);
+                    if (!q) return this.bagianScopeRows;
+                    return this.bagianScopeRows.filter(k => this.bagianRowMatchesSearch(k, q));
+                },
+                bagianSectionItems() {
+                    const current = this.normBagian(this.bagianFilter.bagian);
+                    return this.bagianAllLabels.map(label => {
+                        const key = this.normBagian(label);
+                        const rows = this.bagianAllSearchRows.filter(k => this.normBagian(k.bagian) === key);
+                        const stats = this.bagianSummaryFor(rows);
+                        const parts = String(label || '').trim().split(/\s+/).filter(Boolean);
+                        const kode = parts.slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
+                        return { label: label, kode: kode, stats: stats, active: !!current && key === current };
+                    });
+                },
+                bagianAllSummary() {
+                    return this.bagianSummaryFor(this.bagianAllSearchRows);
+                },
+                bagianHeaderStats() {
+                    return this.bagianSummaryFor(this.bagianScopeSearchRows);
+                },
+                bagianIssueOptions() {
+                    const rows = this.bagianScopeSearchRows;
+                    const count = issue => rows.filter(k => this.bagianRowMatchesIssue(k, issue)).length;
+                    return [
+                        { id: 'semua', label: 'Semua', n: rows.length },
+                        { id: 'tanpaBa', label: 'Tanpa BA', n: count('tanpaBa') },
+                        { id: 'draft', label: 'Draft', n: count('draft') },
+                        { id: 'baPenKosong', label: 'BA PEN kosong', n: count('baPenKosong') },
+                        { id: 'pesertaKurang', label: 'Peserta kurang', n: count('pesertaKurang') },
+                        { id: 'tanpaAcc', label: 'Tanpa ACC', n: count('tanpaAcc') }
+                    ];
+                },
+                bagianChecklistRows() {
+                    const issue = this.bagianFilter.issue || 'semua';
+                    if (issue === 'semua') return this.bagianScopeSearchRows;
+                    return this.bagianScopeSearchRows.filter(k => this.bagianRowMatchesIssue(k, issue));
+                },
                 bagianStats() {
-                    const rows = this.bagianScopeRows;
-                    return {
-                        kegiatan: rows.length,
-                        baPel: rows.reduce((t, k) => t + (k.baPelCount || 0), 0),
-                        baPen: rows.reduce((t, k) => t + (k.baPenCount || 0), 0),
-                        hitungan: rows.reduce((t, k) => t + (Number(k.hitungan) || 0), 0),
-                        belum: rows.filter(k => !k.baPelCount).length,
-                        tanpaAcc: rows.filter(k => !k.accCount).length,
-                        tanpaPendaftar: rows.filter(k => !k.peserta.length).length
-                    };
+                    return this.bagianSummaryFor(this.bagianChecklistRows);
+                },
+                bagianPerluTindakLanjut() {
+                    return this.bagianChecklistRows.filter(k => k.statusBa !== 'Lengkap' || !k.baPenCount || k.baPelPesertaCount < k.accCount || !k.accCount).length;
+                },
+                bagianCoverage() {
+                    return this.bagianHeaderStats.coverage;
+                },
+                bagianCoverageCls() {
+                    const pct = this.bagianCoverage;
+                    if (pct >= 80) return '';
+                    if (pct >= 50) return 'is-warn';
+                    return 'is-bad';
+                },
+                bagianSelectionTitle() {
+                    return String(this.bagianFilter.bagian || '').trim() || 'Semua Bagian';
+                },
+                bagianSelectionSubtitle() {
+                    const s = this.bagianHeaderStats;
+                    return s.kegiatan + ' kegiatan \u00b7 ' + s.baPel + ' BA PEL \u00b7 ' + s.belumBa + ' belum BA';
                 },
                 dosenFilteredBa() {
                     const blok = String(this.filters.blok || '').trim();
@@ -4270,104 +4283,7 @@
                     return out.sort((a, b) => a.nama.localeCompare(b.nama, 'id') || a.npm.localeCompare(b.npm));
                 },
                 bagianDetailRows() {
-                    const sel = this.activeMatrixCell;
-                    return this.bagianScopeRows.filter(k => {
-                        if (sel && (k.blok !== sel.blok || this.normBagian(k.bagian) !== this.normBagian(sel.bagian))) return false;
-                        return true;
-                    });
-                },
-                bagianDetailSections() {
-                    const sections = [];
-                    let last = null;
-                    let sub = null;
-                    this.bagianDetailRows.forEach(r => {
-                        if (last !== r.bagian) {
-                            if (sub) sections.push(sub);
-                            sub = { type: 'subtotal', bagian: r.bagian, pesertaCount: 0, hitungan: 0, kegiatan: 0 };
-                            last = r.bagian;
-                        }
-                        sub.pesertaCount += r.peserta.length || 0;
-                        sub.hitungan += r.hitungan || 0;
-                        sub.kegiatan += 1;
-                        sections.push({ type: 'row', row: r });
-                    });
-                    if (sub) sections.push(sub);
-                    return sections;
-                },
-                bagianDetailBlocks() {
-                    const groupBy = this.bagianFilter.group === 'bagian' ? 'bagian' : 'blok';
-                    const blocks = [];
-                    const map = {};
-                    this.bagianDetailRows.forEach(r => {
-                        const outer = groupBy === 'bagian' ? r.bagian : r.blok;
-                        const inner = groupBy === 'bagian' ? r.blok : r.bagian;
-                        const key = String(outer) + '::' + String(inner);
-                        let block = map[key];
-                        if (!block) {
-                            block = { key: key, bagian: r.bagian, outer: outer, inner: inner, rows: [], subtotal: { type: 'subtotal', key: key, outer: outer, inner: inner, pesertaCount: 0, hitungan: 0, kegiatan: 0 } };
-                            map[key] = block;
-                            blocks.push(block);
-                        }
-                        block.rows.push(r);
-                        block.subtotal.pesertaCount += r.peserta.length || 0;
-                        block.subtotal.hitungan += r.hitungan || 0;
-                        block.subtotal.kegiatan += 1;
-                    });
-                    blocks.sort((a, b) => String(a.outer).localeCompare(String(b.outer)) || String(a.inner).localeCompare(String(b.inner)));
-                    return blocks;
-                },
-                bagianPageSlices() {
-                    const per = Number(this.pagers.bagian.perPage) || 0;
-                    const blocks = this.bagianDetailBlocks;
-                    if (!blocks.length) return [];
-                    if (!per) return [blocks];
-                    const pages = [];
-                    let current = [];
-                    let count = 0;
-                    blocks.forEach(b => {
-                        const n = b.rows.length;
-                        if (current.length && count + n > per) {
-                            pages.push(current);
-                            current = [];
-                            count = 0;
-                        }
-                        current.push(b);
-                        count += n;
-                    });
-                    if (current.length) pages.push(current);
-                    return pages;
-                },
-                bagianPageInfo() {
-                    const slices = this.bagianPageSlices;
-                    const pages = Math.max(1, slices.length);
-                    const perPage = Number(this.pagers.bagian.perPage) || 0;
-                    const page = Math.min(Math.max(1, Number(this.pagers.bagian.page) || 1), pages);
-                    const total = this.bagianDetailRows.length;
-                    if (!total) return { total: 0, perPage: perPage, pages: pages, page: page, start: 0, end: 0 };
-                    const countRows = (list) => list.reduce((t, b) => t + b.rows.length, 0);
-                    const before = slices.slice(0, page - 1).reduce((t, s) => t + countRows(s), 0);
-                    const start = before + 1;
-                    const end = before + countRows(slices[page - 1] || []);
-                    return { total: total, perPage: perPage, pages: pages, page: page, start: start, end: end };
-                },
-                bagianPagedSections() {
-                    const page = this.bagianPageInfo.page;
-                    const blocks = this.bagianPageSlices[page - 1] || [];
-                    const sections = [];
-                    blocks.forEach(b => {
-                        sections.push({ type: 'header', block: b });
-                        b.rows.forEach(r => sections.push({ type: 'row', row: r }));
-                        sections.push(b.subtotal);
-                    });
-                    return sections;
-                },
-                bagianDetailGrandTotal() {
-                    return this.bagianDetailRows.reduce((t, r) => t + (Number(r.hitungan) || 0), 0);
-                },
-                bagianDetailPesertaTotal() {
-                    const seen = {};
-                    this.bagianDetailRows.forEach(r => r.peserta.forEach(p => { const key = (p.npm || p.namaLengkap || '').toLowerCase(); if (key) seen[key] = 1; }));
-                    return Object.keys(seen).length;
+                    return this.bagianChecklistRows;
                 },
                 baKegiatanRows() {
                     const bagian = this.baFilter.bagian;
@@ -4662,21 +4578,24 @@
             watch: {
                 'filters.blok': function () {
                     this.animateCharts();
-                    this.activeMatrixCell = null;
                     this.resetPagers();
                 },
-                'filters.status': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.jenis': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.from': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.to': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.search': function () { this.activeMatrixCell = null; this.resetPagers(); },
-                'bagianFilter.bagian': function (v) {
+                'filters.status': function () { this.animateCharts(); this.resetPagers(); },
+                'filters.jenis': function () { this.animateCharts(); this.resetPagers(); },
+                'filters.from': function () { this.animateCharts(); this.resetPagers(); },
+                'filters.to': function () { this.animateCharts(); this.resetPagers(); },
+                'filters.search': function () { this.resetPagers(); },
+                'bagianFilter.bagian': function () {
                     this.pagers.bagian.page = 1;
-                    this.pagers.bagianMatrix.page = 1;
-                    if (this.activeMatrixCell && this.normBagian(v) !== this.normBagian(this.activeMatrixCell.bagian)) this.activeMatrixCell = null;
+                    this.expanded = {};
                 },
-                'bagianFilter.group': function () {
+                'bagianFilter.q': function () {
                     this.pagers.bagian.page = 1;
+                    this.expanded = {};
+                },
+                'bagianFilter.issue': function () {
+                    this.pagers.bagian.page = 1;
+                    this.expanded = {};
                 },
                 'dosenFilter.bagian': function () { this.onDosenFilterChange(); },
                 'dosenFilter.q': function () { this.onDosenFilterChange(); },
@@ -5487,35 +5406,109 @@
                     if (type === 'varian') return 'Varian nama';
                     return type;
                 },
-                matrixCellKey(blok, bagianLabel) {
-                    return this.normBagian(bagianLabel) + '::' + String(blok || '').trim();
-                },
-                bagianKey(v) {
-                    return this.normBagian(v);
-                },
-                filterByMatrixCell(bagian, blok) {
-                    const cur = this.activeMatrixCell;
-                    if (cur && cur.blok === blok && cur.bagian === bagian) {
-                        this.activeMatrixCell = null;
-                        return;
-                    }
-                    this.activeMatrixCell = { key: this.matrixCellKey(blok, bagian), bagian: bagian, blok: blok };
-                    this.pagers.bagian.page = 1;
-                    this.$nextTick(() => {
-                        const el = document.getElementById('bagian-detail');
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                bagianSummaryFor(rows) {
+                    const npm = {};
+                    let baPel = 0, baPen = 0, hitungan = 0, belumBa = 0, draft = 0;
+                    let tanpaAcc = 0, tanpaPendaftar = 0, temuan = 0;
+                    (rows || []).forEach(k => {
+                        const peserta = k.peserta || [];
+                        peserta.forEach(p => {
+                            const key = String(p.npm || p.namaLengkap || '').trim().toLowerCase();
+                            if (key) npm[key] = 1;
+                        });
+                        baPel += Number(k.baPelCount) || 0;
+                        baPen += Number(k.baPenCount) || 0;
+                        hitungan += Number(k.hitungan) || 0;
+                        if (!k.baPelCount) belumBa += 1;
+                        if (k.statusBa === 'Draft') draft += 1;
+                        if (!k.accCount) tanpaAcc += 1;
+                        if (!peserta.length) tanpaPendaftar += 1;
+                        const kurang = Number(k.baPelCount) > 0 && Number(k.baPelPesertaCount) < Number(k.accCount);
+                        if (!k.baPelCount || k.statusBa === 'Draft' || !k.baPenCount || kurang) temuan += 1;
                     });
+                    const kegiatan = (rows || []).length;
+                    return {
+                        kegiatan: kegiatan,
+                        baPel: baPel,
+                        baPen: baPen,
+                        hitungan: hitungan,
+                        belumBa: belumBa,
+                        draft: draft,
+                        tanpaAcc: tanpaAcc,
+                        tanpaPendaftar: tanpaPendaftar,
+                        temuan: temuan,
+                        pesertaUnik: Object.keys(npm).length,
+                        coverage: kegiatan ? Math.round(((kegiatan - belumBa) / kegiatan) * 100) : 0
+                    };
                 },
-                resetMatrixCell() {
-                    this.activeMatrixCell = null;
+                bagianRowMatchesSearch(k, q) {
+                    const parts = [k.nama, k.bagian, k.blok, k.tanggal, k.statusBa, k.sumber];
+                    (k.dosenList || []).forEach(d => parts.push(d));
+                    (k.baPel || []).forEach(b => parts.push(b.baId, b.dosen, b.tanggal));
+                    (k.baPen || []).forEach(b => parts.push(b.baId, b.tanggal));
+                    (k.peserta || []).forEach(p => parts.push(p.npm, p.namaLengkap, p.status));
+                    return this.normSearch(parts.join(' ')).indexOf(q) !== -1;
                 },
-                resetBagianMatrix() {
-                    this.bagianFilter.bagian = '';
-                    this.bagianFilter.group = 'blok';
-                    this.activeMatrixCell = null;
+                bagianRowMatchesIssue(k, issue) {
+                    if (!issue || issue === 'semua') return true;
+                    if (issue === 'tanpaBa') return !k.baPelCount;
+                    if (issue === 'draft') return k.statusBa === 'Draft';
+                    if (issue === 'baPenKosong') return !k.baPenCount;
+                    if (issue === 'pesertaKurang') return k.baPelCount > 0 && k.baPelPesertaCount < k.accCount;
+                    if (issue === 'tanpaAcc') return !k.accCount;
+                    return true;
+                },
+                bagianChecklist(k) {
+                    const baOk = k.baPelCount > 0;
+                    const draft = k.statusBa === 'Draft';
+                    const penOk = k.baPenCount > 0;
+                    const pesertaOk = k.peserta.length > 0 && k.baPelPesertaCount >= k.accCount;
+                    const pesertaWarn = k.peserta.length > 0 && k.baPelPesertaCount < k.accCount;
+                    return [
+                        { text: !baOk ? 'BA PEL belum' : (draft ? 'BA PEL draft' : 'BA PEL ada'), state: baOk && !draft ? 'ok' : (draft ? 'warn' : 'missing') },
+                        { text: penOk ? 'BA PEN ada' : 'BA PEN belum', state: penOk ? 'ok' : 'warn' },
+                        { text: !k.peserta.length ? 'Tanpa peserta' : ('Peserta ' + k.baPelPesertaCount + '/' + k.accCount), state: pesertaOk ? 'ok' : (pesertaWarn || !k.peserta.length ? 'warn' : 'missing') }
+                    ];
+                },
+                bagianIssueText(k) {
+                    if (!k.baPelCount) return 'Tanpa BA PEL';
+                    if (k.statusBa === 'Draft') return 'BA PEL draft';
+                    if (!k.baPenCount) return 'BA PEN kosong';
+                    if (k.baPelPesertaCount < k.accCount) return 'Peserta BA kurang';
+                    return '';
+                },
+                bagianStatusClass(status) {
+                    if (status === 'Lengkap') return 'is-ok';
+                    if (status === 'Draft') return 'is-draft';
+                    if (status === 'Tanpa BA') return 'is-missing';
+                    return 'is-neutral';
+                },
+                selectBagianFilter(label) {
+                    this.bagianFilter.bagian = String(label || '').trim();
+                    this.bagianFilter.issue = 'semua';
+                    this.bagianFilter.q = '';
                     this.expanded = {};
                     this.pagers.bagian.page = 1;
-                    this.pagers.bagianMatrix.page = 1;
+                },
+                setBagianIssue(issue) {
+                    this.bagianFilter.issue = issue || 'semua';
+                    this.expanded = {};
+                    this.pagers.bagian.page = 1;
+                },
+                resetBagianFilter() {
+                    this.bagianFilter.bagian = '';
+                    this.bagianFilter.q = '';
+                    this.bagianFilter.issue = 'semua';
+                    this.expanded = {};
+                    this.pagers.bagian.page = 1;
+                },
+                periksaBagianRow(row) {
+                    const ba = ((row && row.baPel) || [])[0] || ((row && row.baPen) || [])[0];
+                    if (ba && ba.baId) {
+                        this.openKelolaBaById(ba.baId);
+                        return;
+                    }
+                    this.showToast('bi-exclamation-circle', 'Belum ada BA untuk diperiksa. Unggah BA PEL terlebih dahulu.');
                 },
                 resetGlobalFilters() {
                     this.filters.from = '';
@@ -5718,7 +5711,6 @@
                         this.uploadBukti = data.uploadBukti || [];
                         this.bagian = data.bagian || { categories: [], labs: [] };
                         this.expanded = {};
-                        this.activeMatrixCell = null;
                         this.dosenSelectedKey = '';
                         this.dosenView = { blok: '', kegiatanKey: '' };
                         this.animateNumbers();

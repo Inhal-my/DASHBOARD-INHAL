@@ -106,7 +106,7 @@ describe('detail-laporan template', () => {
 
   it('token & definisi primitif mockup tersedia', async () => {
     const html = await loadHtml();
-    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.acc {', '.in-tbl thead th {', '.in-tbl thead th.text-right {', '.in-bar-fill.y {', '.in-heat .c.y {', '.lap-card {', '.lap-stat {']) {
+    for (const s of ['--line:#e7ebf3', '.in-chip {', '.in-badge.acc {', '.in-tbl thead th {', '.in-tbl thead th.text-right {', '.in-bar-fill.y {', '.bgc-table {', '.bgc-badge {', '.lap-card {', '.lap-stat {']) {
       expect(html).toContain(s);
     }
   });
@@ -122,7 +122,7 @@ describe('detail-laporan template', () => {
     const html = await loadHtml();
     for (const s of ['.in-pageintro {', '.in-avatar {', '.in-celluser {', '.in-docdot {',
       '.in-docdot.on.bukti {', '.in-cards {', '.in-mcard {', '.in-proc {', '.in-basum {',
-      '.in-heat-legend {', '.panel-head {', '.in-statrow .ic.indigo {', '.in-bar-fill.brand {']) {
+      '.bgc-bagian-list {', '.bgc-issue-bar {', '.panel-head {', '.in-statrow .ic.indigo {', '.in-bar-fill.brand {']) {
       expect(html).toContain(s);
     }
   });
@@ -341,11 +341,12 @@ describe('detail laporan tab pembayaran', () => {
 });
 
 describe('detail laporan kejelasan tampilan', () => {
-  it('sumbu matriks dijelaskan', async () => {
+  it('papan periksa menjelaskan status dan cakupan BA', async () => {
     const html = await loadHtml();
-    expect(html).toContain('Blok \\ Bagian');
-    expect(html).toContain('Pilih dosen, lalu saring blok dan detail kegiatan.');
-    expect(html).toContain('Baris = Blok, kolom = Bagian');
+    expect(html).toContain('Pemeriksaan {{ bagianSelectionTitle }}');
+    expect(html).toContain('cakupan BA PEL');
+    expect(html).toContain('Cara memeriksa');
+    expect(html).toContain('Cakupan data');
   });
   it('istilah chip seragam', async () => {
     const html = await loadHtml();
@@ -664,10 +665,13 @@ describe('detail laporan tab dosen (mockup)', () => {
 });
 
 describe('detail laporan tab bagian (mockup)', () => {
-  it('bagian memakai primitif heat yang konsisten', async () => {
+  it('bagian memakai papan periksa dengan checklist dan filter isu', async () => {
     const html = await loadHtml();
-    expect(html).toContain('heat-table in-heat w-full');
-    expect(html).toContain('Baris = Blok, kolom = Bagian');
+    expect(html).toContain('class="bgc-table"');
+    expect(html).toContain(`<template v-for="row in pagerRows('bagian', bagianChecklistRows)" :key="row.uid">`);
+    expect(html).toContain('bagianIssueOptions');
+    expect(html).toContain('bagianChecklist(row)');
+    expect(html).toContain('periksaBagianRow(row)');
   });
 });
 

@@ -18,10 +18,11 @@ function block(html, startNeedle, endNeedle) {
 describe('paginasi tabel detail laporan: state & helper', () => {
   it('menyediakan state pagers untuk setiap tabel', async () => {
     const html = await loadHtml();
-    for (const key of ['rekap', 'dosen', 'bagian', 'bagianMatrix', 'baKegiatan', 'baAudit',
+    for (const key of ['rekap', 'dosen', 'bagian', 'baKegiatan', 'baAudit',
       'daftarba', 'jadwal', 'bayarTabel', 'bayarAntrean', 'bayarSelisih']) {
       expect(html, key).toContain(`${key}: { page: 1, perPage: 10 }`);
     }
+    expect(html).not.toContain('bagianMatrix: { page: 1, perPage: 10 }');
   });
 
   it('menyediakan helper paginasi di methods', async () => {
@@ -52,18 +53,20 @@ describe('paginasi tabel detail laporan: state & helper', () => {
 describe('paginasi tabel detail laporan: pemakaian per tabel', () => {
   it('memotong daftar tabel utama lewat pagerRows', async () => {
     const html = await loadHtml();
-    for (const key of ['rekap', 'dosen', 'bagianMatrix', 'baKegiatan', 'baAudit',
+    for (const key of ['rekap', 'dosen', 'bagian', 'baKegiatan', 'baAudit',
       'daftarba', 'jadwal', 'bayarTabel', 'bayarAntrean', 'bayarSelisih']) {
       expect(html, key).toContain(`pagerRows('${key}'`);
     }
+    expect(html).not.toContain(`pagerRows('bagianMatrix'`);
   });
 
   it('memasang pager-bar pada setiap tabel', async () => {
     const html = await loadHtml();
-    for (const id of ['rekap', 'dosen', 'bagian', 'bagianMatrix', 'baKegiatan', 'baAudit',
+    for (const id of ['rekap', 'dosen', 'bagian', 'baKegiatan', 'baAudit',
       'daftarba', 'jadwal', 'bayarTabel', 'bayarAntrean', 'bayarSelisih']) {
       expect(html, id).toContain(`id="pg-${id}"`);
     }
+    expect(html).not.toContain('id="pg-bagianMatrix"');
   });
 
   it('memakai satu state pager untuk tabel desktop dan kartu mobile', async () => {
@@ -81,32 +84,31 @@ describe('paginasi tabel detail laporan: pemakaian per tabel', () => {
   });
 });
 
-describe('paginasi tabel detail laporan: pengelompokan bagian', () => {
-  it('memaginasi per blok bagian, bukan potongan mentah', async () => {
+describe('paginasi tabel detail laporan: papan periksa bagian', () => {
+  it('memaginasi baris checklist bagian lewat satu pager', async () => {
     const html = await loadHtml();
-    for (const name of ['bagianDetailBlocks() {', 'bagianPageSlices() {', 'bagianPageInfo() {', 'bagianPagedSections() {']) {
-      expect(html, name).toContain(name);
-    }
-    expect(html).toContain('<template v-for="s in bagianPagedSections"');
-    expect(html).not.toContain("pagerRows('bagian',");
-    expect(html).toContain(`@go="pagerGo('bagian', $event, bagianDetailRows.length, bagianPageInfo.pages)"`);
+    const checklist = block(html, 'bagianChecklistRows() {', 'bagianStats() {');
+    expect(checklist).toContain("bagianRowMatchesIssue(k, issue)");
+    expect(html).toContain(`<template v-for="row in pagerRows('bagian', bagianChecklistRows)" :key="row.uid">`);
+    expect(html).toContain('@click="toggleExpand(row.uid)"');
+    expect(html).toContain(`@go="pagerGo('bagian', $event, bagianChecklistRows.length)"`);
+    expect(html).not.toContain('bagianPagedSections');
   });
 
-  it('tetap menampilkan subtotal dan grand total', async () => {
+  it('ringkasan papan dihitung dari seluruh baris terfilter', async () => {
     const html = await loadHtml();
-    const table = block(html, '<template v-for="s in bagianPagedSections"', '<pager-bar id="pg-bagian"');
-    expect(table).toContain('bagianDetailGrandTotal');
-    expect(table).toContain('bagianDetailPesertaTotal');
-    expect(block(html, 'bagianDetailBlocks() {', 'bagianPageSlices() {')).toContain("type: 'subtotal'");
-    expect(block(html, 'bagianPagedSections() {', 'bagianDetailGrandTotal() {')).toContain('sections.push(b.subtotal)');
+    expect(block(html, 'bagianStats() {', 'bagianPerluTindakLanjut() {')).toContain('bagianSummaryFor(this.bagianChecklistRows)');
+    expect(block(html, 'bagianSummaryFor(rows) {', 'bagianRowMatchesSearch(k, q) {')).toContain('coverage: kegiatan');
+    expect(html).toContain('{{ bagianStats.kegiatan }}');
+    expect(html).toContain('{{ bagianStats.belumBa }}');
+    expect(html).toContain('{{ bagianStats.pesertaUnik }}');
   });
-});
 
-describe('paginasi tabel detail laporan: baris total matriks', () => {
-  it('baris Total matriks tetap di luar potongan', async () => {
+  it('tidak lagi menampilkan matriks blok x bagian', async () => {
     const html = await loadHtml();
-    const matrix = block(html, "pagerRows('bagianMatrix', bagianMatrixRows)", '</table>');
-    expect(matrix).toContain('matrixGrandTotal');
+    expect(html).not.toContain('heat-table in-heat');
+    expect(html).not.toContain('Baris = Blok, kolom = Bagian');
+    expect(html).not.toContain(`pagerRows('bagianMatrix'`);
   });
 });
 
@@ -180,12 +182,13 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
   it('watcher filter global mereset halaman', async () => {
     const html = await loadHtml();
     const watch = block(html, 'watch: {', 'methods: {');
-    expect(watch).toContain("'filters.search': function () { this.activeMatrixCell = null; this.resetPagers(); }");
+    expect(watch).toContain("'filters.search': function () { this.resetPagers(); }");
     expect(watch).toContain("'filters.blok': function () {");
     expect((watch.match(/this\.resetPagers\(\);/g) || []).length).toBeGreaterThanOrEqual(5);
+    expect(watch).not.toContain('activeMatrixCell');
   });
 
-  it('watcher filter global mengosongkan sel matriks yang tersisa', async () => {
+  it('watcher filter global mereset pager', async () => {
     const html = await loadHtml();
     const watch = block(html, 'watch: {', 'methods: {');
     for (const key of ['blok', 'status', 'jenis', 'from', 'to', 'search']) {
@@ -193,35 +196,37 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
       expect(start, key).toBeGreaterThan(-1);
       const nextEntry = watch.indexOf("\n                '", start + 30);
       const body = watch.slice(start, nextEntry === -1 ? undefined : nextEntry);
-      expect(body, key).toContain('this.activeMatrixCell = null;');
+      expect(body, key).toContain('this.resetPagers();');
     }
   });
 
   it('watcher filter per tab mereset pager terkait', async () => {
     const html = await loadHtml();
     const watch = block(html, 'watch: {', 'methods: {');
-    for (const key of ['bagian', 'bagianMatrix', 'baKegiatan', 'baAudit',
+    for (const key of ['bagian', 'baKegiatan', 'baAudit',
       'daftarba', 'jadwal', 'bayarTabel', 'bayarAntrean', 'bayarSelisih']) {
       expect(watch, key).toContain(`this.pagers.${key}.page = 1;`);
     }
+    expect(watch).not.toContain('this.pagers.bagianMatrix');
     expect(watch).toContain('this.onDosenFilterChange();');
     expect(html).toContain('this.pagers.dosen.page = 1;');
     expect(watch).toContain('deep: true');
   });
 
-  it('filter bagian memakai label penuh dan membandingkan sel secara ternormalisasi', async () => {
+  it('filter bagian memakai label penuh lewat sidebar dan pencarian', async () => {
     const html = await loadHtml();
-    expect(html).toContain('v-model="bagianFilter.bagian" class="input">\n                                        <option value="">Semua Bagian</option>\n                                        <option v-for="o in bagianAllLabels"');
-    const watch = block(html, 'watch: {', 'methods: {');
-    const start = watch.indexOf("'bagianFilter.bagian':");
-    const body = watch.slice(start, watch.indexOf("\n                '", start + 30));
-    expect(body).toContain('this.normBagian(v) !== this.normBagian(this.activeMatrixCell.bagian)');
+    expect(html).toContain(`@click="selectBagianFilter(it.label)"`);
+    expect(html).toContain('v-model="bagianFilter.q"');
+    expect(html).toContain('@click="setBagianIssue(it.id)"');
+    expect(html).toContain('selectBagianFilter(label) {');
+    expect(html).toContain('bagianScopeRows() {');
   });
 
   it('tidak memecah nama dosen ber-koma pada detail kegiatan', async () => {
     const html = await loadHtml();
     const index = block(html, 'bagianBaIndex() {', 'bagianKegiatanAll() {');
-    expect(index).toContain('dosenList: this.baDosenList(b),');
+    expect(index).toContain('const dosenList = this.baDosenList(b);');
+    expect(index).toContain('dosenList: dosenList,');
     const all = block(html, 'bagianKegiatanAll() {', 'bagianAllLabels() {');
     expect(all).not.toContain("String(b.dosen || '').split(',')");
     expect(all).toContain('Array.isArray(b.dosenList) ? b.dosenList : (b.dosen ? [b.dosen] : [])');
