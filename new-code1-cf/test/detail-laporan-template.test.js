@@ -667,6 +667,18 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('this.kelola.tanggal = String(first.tanggal).slice(0, 10);');
   });
 
+  it('menyediakan menu perbaikan data dosen khusus admin', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('Menu Perbaikan Data Dosen');
+    expect(html).toContain('openPerbaikanDosen');
+    expect(html).toContain('perbaikanDosenRows');
+    expect(html).toContain('Rapikan Nama');
+    expect(html).toContain('applyRapikanNama');
+    expect(html).toContain('v-if="loggedIn && perbaikanDosen.open"');
+    expect(html).toContain('Cara membaca temuan');
+    expect(html).toContain('Cara memperbaiki');
+  });
+
   it('daftar ID BA dapat diklik untuk memeriksa dan mengoreksi data', async () => {
     const html = await loadHtml();
     expect(html).toContain('dosenBaRowsForDetail(d)');

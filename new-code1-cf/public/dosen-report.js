@@ -145,17 +145,18 @@
 
     normBa.forEach(function (b) {
       const dosenText = b.dosenList.map(function (d) { return d.nama; }).join(', ');
+      const baIds = b.id ? [b.id] : [];
       if (!b.dosenList.length) {
-        quality.push({ type: 'tanpa-dosen', baId: b.id, dosen: '', label: b.label, message: 'BA Pelaksanaan belum memiliki dosen; tidak masuk rekapitulasi dosen.' });
+        quality.push({ type: 'tanpa-dosen', baId: b.id, baIds: baIds, dosen: '', label: b.label, message: 'BA Pelaksanaan belum memiliki dosen; tidak masuk rekapitulasi dosen.' });
       }
       if (b.flags.indexOf('Tanpa tautan sesi') !== -1) {
-        quality.push({ type: 'tanpa-sesi', baId: b.id, dosen: dosenText, label: b.label, message: 'BA tanpa tautan sesi; dihitung 1 sesi.' });
+        quality.push({ type: 'tanpa-sesi', baId: b.id, baIds: baIds, dosen: dosenText, label: b.label, message: 'BA tanpa tautan sesi; dihitung 1 sesi.' });
       }
       if (b.flags.indexOf('Tanpa jadwal') !== -1) {
-        quality.push({ type: 'tanpa-jadwal', baId: b.id, dosen: dosenText, label: b.label, message: 'Belum ada jadwal aktif untuk detail kegiatan ini; rencana 0.' });
+        quality.push({ type: 'tanpa-jadwal', baId: b.id, baIds: baIds, dosen: dosenText, label: b.label, message: 'Belum ada jadwal aktif untuk detail kegiatan ini; rencana 0.' });
       }
       if (b.status === 'Draft') {
-        quality.push({ type: 'draft', baId: b.id, dosen: dosenText, label: b.label, message: 'BA berstatus Draft; tetap dihitung sebagai realisasi.' });
+        quality.push({ type: 'draft', baId: b.id, baIds: baIds, dosen: dosenText, label: b.label, message: 'BA berstatus Draft; tetap dihitung sebagai realisasi.' });
       }
     });
 
@@ -241,6 +242,8 @@
         quality.push({
           type: 'varian',
           dosen: dosenMap[key].label,
+          names: names.slice(),
+          baIds: Object.keys(dosenMap[key].baIds),
           message: 'Nama dosen memiliki ' + names.length + ' penulisan; digabung berdasarkan huruf dan angka. Varian: ' + names.join(' | ')
         });
       }
@@ -259,10 +262,15 @@
       });
       if (best) {
         dosenMap[key].nearDuplicate = dosenMap[best.key].label;
+        const baIds = Object.keys(dosenMap[key].baIds).concat(Object.keys(dosenMap[best.key].baIds)).filter(function (v, i, arr) {
+          return v && arr.indexOf(v) === i;
+        });
         quality.push({
           type: 'varian',
           dosen: dosenMap[key].label,
           related: dosenMap[best.key].label,
+          names: [dosenMap[key].label, dosenMap[best.key].label].filter(function (v, i, arr) { return v && arr.indexOf(v) === i; }),
+          baIds: baIds,
           message: 'Kemungkinan varian nama dari "' + dosenMap[best.key].label + '"; tidak digabung otomatis.'
         });
       }

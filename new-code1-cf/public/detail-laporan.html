@@ -603,6 +603,84 @@
                 </div>
             </div>
         </div>
+        <!-- menu perbaikan data dosen (admin) -->
+        <div v-if="loggedIn && perbaikanDosen.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="perbaikanDosen.open = false">
+            <div class="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="perbaikanDosenTitle">
+                <div class="mb-1 flex flex-wrap items-center gap-2">
+                    <h3 id="perbaikanDosenTitle" class="text-sm font-bold text-slate-900">Menu Perbaikan Data Dosen</h3>
+                    <span class="in-badge">Admin</span>
+                    <button type="button" class="ml-auto text-slate-400 hover:text-slate-600" aria-label="Tutup menu perbaikan" @click="perbaikanDosen.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <p class="mb-3 text-[11px] text-slate-400">Pilih temuan di bawah. Perbaikan BA dan penggabungan nama hanya tersedia untuk admin.</p>
+                <div class="mb-3 flex flex-wrap gap-1.5">
+                    <button v-for="t in dosenQualityTypes" :key="t.key" type="button"
+                        class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset transition"
+                        :class="perbaikanDosen.filter === t.key ? 'bg-brand-50 text-brand-700 ring-brand-300' : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
+                        @click="perbaikanDosen.filter = perbaikanDosen.filter === t.key ? '' : t.key">
+                        {{ t.label }} <span class="ml-1">{{ t.count }}</span>
+                    </button>
+                </div>
+                <ul class="space-y-2">
+                    <li v-for="(q, qi) in perbaikanDosenRows" :key="qi" class="rounded-xl border border-slate-200 p-3">
+                        <div class="flex flex-wrap items-start gap-2">
+                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ qualityLabel(q.type) }}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs text-slate-700">{{ q.message }}</div>
+                                <div class="mt-1 text-[11px] text-slate-400">
+                                    <span v-if="q.label">{{ q.label }}</span>
+                                    <span v-if="q.dosen"> &middot; {{ q.dosen }}</span>
+                                    <span v-if="q.baIds && q.baIds.length"> &middot; BA: {{ q.baIds.join(', ') }}</span>
+                                </div>
+                            </div>
+                            <button v-if="q.type === 'varian'" type="button" class="btn-soft !py-1 text-[11px]" :disabled="!q.baIds || !q.baIds.length" @click="openRapikanVarian(q)">
+                                <i class="bi bi-magic"></i> Rapikan Nama
+                            </button>
+                            <a v-else-if="q.type === 'tanpa-jadwal'" href="/bagian" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 text-[11px]">
+                                <i class="bi bi-calendar-plus"></i> Buat Jadwal
+                            </a>
+                            <button v-else-if="q.baId" type="button" class="btn-soft !py-1 text-[11px]" @click="perbaikiBaDariMenu(q)">
+                                <i class="bi bi-pencil-square"></i> {{ perbaikanActionLabel(q) }}
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+                <div v-if="!perbaikanDosenRows.length" class="py-8 text-center text-xs text-slate-400">Tidak ada temuan pada jenis ini.</div>
+                <div class="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                    Perbaikan langsung tersimpan ke data BA. File PDF yang sudah diunggah tidak berubah dan tidak ada email yang dikirim.
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button type="button" class="btn-soft" @click="perbaikanDosen.open = false">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- rapikan varian nama dosen (admin) -->
+        <div v-if="loggedIn && rapikanDosen.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="!rapikanDosen.saving && (rapikanDosen.open = false)">
+            <div class="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="rapikanDosenTitle">
+                <div class="mb-1 flex items-center gap-2">
+                    <h3 id="rapikanDosenTitle" class="text-sm font-bold text-slate-900">Rapikan Nama Dosen</h3>
+                    <span class="in-badge">Admin</span>
+                    <button type="button" class="ml-auto text-slate-400 hover:text-slate-600" aria-label="Tutup rapikan nama" :disabled="rapikanDosen.saving" @click="rapikanDosen.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <p class="mb-3 text-[11px] text-slate-400">Pilih satu ejaan baku. Nama pada {{ rapikanDosen.baIds.length }} BA terkait akan diseragamkan.</p>
+                <label class="label" for="rapikanDosenNama">Nama baku</label>
+                <select id="rapikanDosenNama" v-model="rapikanDosen.canonical" class="input" :disabled="rapikanDosen.saving">
+                    <option v-for="n in rapikanDosen.names" :key="n" :value="n">{{ n }}</option>
+                </select>
+                <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600">
+                    <div><b class="text-slate-800">Varian:</b> {{ rapikanDosen.names.join(' | ') }}</div>
+                    <div class="mt-1"><b class="text-slate-800">BA terkait:</b> {{ rapikanDosen.baIds.join(', ') || '-' }}</div>
+                </div>
+                <div v-if="rapikanDosen.message" class="mt-2 text-[11px] font-semibold text-rose-600">{{ rapikanDosen.message }}</div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" class="btn-soft" :disabled="rapikanDosen.saving" @click="rapikanDosen.open = false">Batal</button>
+                    <button type="button" class="btn-primary" :disabled="rapikanDosen.saving || !rapikanDosen.baIds.length" @click="applyRapikanNama">
+                        <i :class="rapikanDosen.saving ? 'bi bi-arrow-repeat animate-spin' : 'bi bi-check2-circle'"></i>
+                        {{ rapikanDosen.saving ? 'Menerapkan...' : 'Terapkan' }}
+                    </button>
+                </div>
+            </div>
+        </div>
         <div v-if="riwayat.open" class="fixed inset-0 z-[130] flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
             <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="riwayatTitle">
                 <div class="mb-4 flex items-center justify-between">
@@ -1391,19 +1469,55 @@
                         </div>
 
                         <div v-if="dosenReport.quality.length" class="lap-card p-4">
-                            <div class="mb-3 flex flex-wrap items-center gap-2">
+                            <div class="mb-2 flex flex-wrap items-center gap-2">
                                 <i class="bi bi-clipboard-check text-brand-500"></i>
                                 <h2 class="lap-card-title">Pemeriksaan Data Dosen</h2>
                                 <span class="in-badge">{{ dosenReport.quality.length }} temuan</span>
+                                <button v-if="loggedIn" type="button" class="btn-soft ml-auto !py-1.5 text-xs" @click="openPerbaikanDosen">
+                                    <i class="bi bi-tools"></i> Menu Perbaikan
+                                </button>
                             </div>
+                            <p class="mb-3 text-[11px] text-slate-400">Temuan mengikuti filter global aktif. Perbaikan hanya dapat dilakukan admin yang sudah masuk.</p>
                             <ul class="space-y-2 text-sm text-slate-600">
                                 <li v-for="(q, qi) in dosenReport.quality" :key="qi" class="flex flex-wrap items-start gap-2">
                                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">{{ qualityLabel(q.type) }}</span>
                                     <span class="min-w-0 flex-1">{{ q.message }}</span>
                                     <button v-if="q.baId" type="button" class="font-mono text-xs font-semibold text-brand-700 hover:underline" :title="'Periksa / edit ' + q.baId" @click="openKelolaBaById(q.baId)">{{ q.baId }}</button>
+                                    <button v-if="loggedIn" type="button" class="btn-soft !py-1 text-[11px]" @click="perbaikiTemuanDosen(q)">{{ perbaikanActionLabel(q) }}</button>
                                 </li>
                             </ul>
                         </div>
+
+                        <div class="grid gap-3 lg:grid-cols-2">
+                            <div class="lap-card p-4">
+                                <div class="lap-card-title"><i class="bi bi-clipboard-check text-brand-500"></i> Cara membaca temuan</div>
+                                <div class="lap-card-sub mb-2">Arti kotak Pemeriksaan Data Dosen</div>
+                                <ul class="bgc-readlist">
+                                    <li><span class="k">Tanpa dosen</span><span>BA Pelaksanaan belum punya dosen. BA tetap tampil, tetapi tidak masuk rekapitulasi dosen sampai dosen diisi.</span></li>
+                                    <li><span class="k">Tanpa tautan sesi</span><span>BA belum ditautkan ke jadwal. Sementara dihitung <b>1 sesi</b> agar realisasi tidak hilang.</span></li>
+                                    <li><span class="k">Tanpa jadwal</span><span>Belum ada jadwal aktif pada detail kegiatan tersebut. Rencana sesi terbaca <b>0</b>.</span></li>
+                                    <li><span class="k">Draft</span><span>BA belum lengkap (tanggal, berkas, dosen, atau peserta), tetapi tetap dihitung sebagai realisasi.</span></li>
+                                    <li><span class="k">Varian nama</span><span>Nama dosen punya beberapa penulisan. Yang mirip tidak digabung otomatis agar tidak salah hitung.</span></li>
+                                </ul>
+                            </div>
+                            <div class="lap-card p-4">
+                                <div class="lap-card-title"><i class="bi bi-tools text-brand-500"></i> Cara memperbaiki</div>
+                                <div class="lap-card-sub mb-2">Alur perbaikan khusus admin</div>
+                                <ul class="bgc-readlist">
+                                    <li><span class="k">1. Buka menu</span><span>Klik <b>Menu Perbaikan</b> pada kotak Pemeriksaan Data Dosen, lalu pilih temuan yang ingin ditindak.</span></li>
+                                    <li><span class="k">2. Tanpa dosen</span><span>Pilih <b>Isi Dosen</b> &rarr; pilih dosen (maksimal 5) &rarr; <b>Simpan</b>. BA langsung masuk rekapitulasi dosen.</span></li>
+                                    <li><span class="k">3. Tanpa tautan sesi</span><span>Pilih <b>Tautkan Sesi</b> &rarr; centang satu atau beberapa Sesi Jadwal &rarr; <b>Simpan</b>. Tanggal dan jam mengikuti sesi paling awal.</span></li>
+                                    <li><span class="k">4. Tanpa jadwal</span><span>Pilih <b>Buat Jadwal</b> untuk membuka halaman Bagian, buat jadwal aktif, lalu tautkan sesinya dari menu ini.</span></li>
+                                    <li><span class="k">5. Draft</span><span>Pilih <b>Lengkapi BA</b>, periksa tanggal, dosen, peserta, dan berkas sampai status BA menjadi <b>Lengkap</b>.</span></li>
+                                    <li><span class="k">6. Varian nama</span><span>Pilih <b>Rapikan Nama</b>, tentukan ejaan baku, lalu terapkan ke semua BA terkait sekaligus.</span></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <p class="text-[11px] text-slate-400">
+                            <b class="text-slate-600">{{ dosenReport.quality.length }}</b> temuan pada filter global aktif.
+                            Menu perbaikan hanya tersedia untuk admin yang sudah masuk. Perubahan data BA tidak mengirim email dan tidak mengubah isi file PDF.
+                        </p>
 
                         </template>
                     </section>
@@ -3261,6 +3375,8 @@
                     donutProgress: 0,
                     barProgress: 0,
                     kelola: { open: false, baId: '', sumber: 'Bagian', kegiatanKey: '', jadwalIds: [], tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [], pesertaDirty: false },
+                    perbaikanDosen: { open: false, filter: '' },
+                    rapikanDosen: { open: false, saving: false, names: [], baIds: [], canonical: '', message: '' },
                     riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' },
                     toastTimer: null,
@@ -4231,6 +4347,17 @@
                         cols: this.dosenMatrixCols,
                         q: this.dosenFilter.q
                     });
+                },
+                dosenQualityTypes() {
+                    const labels = { 'tanpa-dosen': 'Tanpa dosen', 'tanpa-sesi': 'Tanpa tautan sesi', 'tanpa-jadwal': 'Tanpa jadwal', 'draft': 'Draft', 'varian': 'Varian nama' };
+                    const counts = {};
+                    (this.dosenReport.quality || []).forEach(q => { counts[q.type] = (counts[q.type] || 0) + 1; });
+                    return Object.keys(labels).map(key => ({ key: key, label: labels[key], count: counts[key] || 0 })).filter(t => t.count);
+                },
+                perbaikanDosenRows() {
+                    const filter = String(this.perbaikanDosen.filter || '').trim();
+                    const rows = this.dosenReport.quality || [];
+                    return filter ? rows.filter(q => q.type === filter) : rows;
                 },
                 dosenMatrixCols() {
                     let cols = this.bagianAllLabels.slice();
@@ -5445,6 +5572,113 @@
                     if (type === 'tanpa-dosen') return 'Tanpa dosen';
                     if (type === 'varian') return 'Varian nama';
                     return type;
+                },
+                perbaikanActionLabel(q) {
+                    const type = q && q.type;
+                    if (type === 'tanpa-dosen') return 'Isi Dosen';
+                    if (type === 'tanpa-sesi') return 'Tautkan Sesi';
+                    if (type === 'draft') return 'Lengkapi BA';
+                    if (type === 'tanpa-jadwal') return 'Buat Jadwal';
+                    if (type === 'varian') return 'Rapikan Nama';
+                    return 'Periksa BA';
+                },
+                openPerbaikanDosen() {
+                    if (!this.loggedIn) return;
+                    this.perbaikanDosen.filter = '';
+                    this.perbaikanDosen.open = true;
+                },
+                perbaikiBaDariMenu(q) {
+                    if (!q || !q.baId) return;
+                    this.perbaikanDosen.open = false;
+                    this.openKelolaBaById(q.baId);
+                },
+                perbaikiTemuanDosen(q) {
+                    if (!q) return;
+                    if (q.type === 'varian') {
+                        this.openRapikanVarian(q);
+                        return;
+                    }
+                    if (q.type === 'tanpa-jadwal') {
+                        window.open('/bagian', '_blank', 'noopener');
+                        return;
+                    }
+                    if (q.baId) this.openKelolaBaById(q.baId);
+                },
+                openRapikanVarian(q) {
+                    if (!this.loggedIn) return;
+                    const names = (q && Array.isArray(q.names) ? q.names : []).map(v => String(v || '').trim()).filter(Boolean);
+                    const baIds = (q && Array.isArray(q.baIds) ? q.baIds : []).map(v => String(v || '').trim()).filter(Boolean);
+                    if (names.length < 2 || !baIds.length) {
+                        this.showToast('bi-exclamation-triangle', 'Tidak ada BA terkait yang bisa dirapikan.');
+                        return;
+                    }
+                    this.rapikanDosen = {
+                        open: true,
+                        saving: false,
+                        names: names,
+                        baIds: baIds,
+                        canonical: names[0],
+                        message: ''
+                    };
+                    this.perbaikanDosen.open = false;
+                },
+                async applyRapikanNama() {
+                    if (!this.loggedIn) return;
+                    const r = this.rapikanDosen;
+                    const canonical = String(r.canonical || '').trim();
+                    if (!canonical) {
+                        r.message = 'Pilih nama baku terlebih dahulu.';
+                        return;
+                    }
+                    const variantKeys = {};
+                    r.names.forEach(n => { variantKeys[DosenReport.dosenKey(n)] = 1; });
+                    r.saving = true;
+                    r.message = '';
+                    let changed = 0;
+                    const failed = [];
+                    for (const baId of r.baIds) {
+                        const known = this.dosenReportBaList.find(b => b.id === baId);
+                        const flat = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === baId);
+                        const current = known ? (known.dosenList || []).slice() : this.baDosenList(flat);
+                        if (!current.length) {
+                            failed.push(baId);
+                            continue;
+                        }
+                        const next = [];
+                        const seen = {};
+                        current.forEach(nama => {
+                            const finalName = variantKeys[DosenReport.dosenKey(nama)] ? canonical : nama;
+                            const key = DosenReport.dosenKey(finalName);
+                            if (!key || seen[key]) return;
+                            seen[key] = 1;
+                            next.push(finalName);
+                        });
+                        if (!next.length) {
+                            failed.push(baId);
+                            continue;
+                        }
+                        if (next.join('|') === current.join('|')) continue;
+                        try {
+                            const res = await this.run('updateBeritaAcaraBagian', baId, { dosenList: next, dosen: next[0] });
+                            if (res && res.success) changed += 1;
+                            else failed.push(baId);
+                        } catch (e) {
+                            failed.push(baId);
+                        }
+                    }
+                    r.saving = false;
+                    if (changed) {
+                        this.rapikanDosen.open = false;
+                        await this.loadData();
+                    }
+                    if (changed && failed.length) {
+                        this.showToast('bi-exclamation-triangle', changed + ' BA dirapikan, ' + failed.length + ' BA gagal.');
+                    } else if (changed) {
+                        this.showToast('bi-check-circle', changed + ' BA berhasil dirapikan.');
+                    } else {
+                        r.message = 'Tidak ada BA yang berubah. Periksa kembali data dosen pada BA terkait.';
+                        this.showToast('bi-x-circle', 'Gagal merapikan nama dosen.');
+                    }
                 },
                 bagianSummaryFor(rows) {
                     const npm = {};

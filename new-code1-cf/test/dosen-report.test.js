@@ -151,6 +151,9 @@ describe('buildDosenReport', () => {
     const typo = data.rows.find((r) => r.label.indexOf('asfnita') !== -1);
     expect(typo).toBeTruthy();
     expect(typo.nearDuplicate).toBe('dr. Desi Afnita Lubis, MKT');
+    const varian = data.quality.find((q) => q.type === 'varian');
+    expect(varian.names).toHaveLength(2);
+    expect(varian.baIds.sort()).toEqual(['BA-1', 'BA-2']);
   });
 
   it('mengurutkan baris dosen dan detail kegiatan secara alfabetis', async () => {
@@ -201,6 +204,25 @@ describe('buildDosenReport', () => {
     expect(data.totals.baTanpaDosen).toBe(1);
     expect(data.baTanpaDosenRows).toHaveLength(1);
     expect(data.baTanpaDosenRows[0].id).toBe('BA-2');
-    expect(data.quality.some((q) => q.type === 'tanpa-dosen' && q.baId === 'BA-2')).toBe(true);
+    const tanpaDosen = data.quality.find((q) => q.type === 'tanpa-dosen' && q.baId === 'BA-2');
+    expect(tanpaDosen).toBeTruthy();
+    expect(tanpaDosen.baIds).toEqual(['BA-2']);
+  });
+
+  it('menyertakan daftar BA pada temuan varian ejaan yang sama', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [
+        ba({ id: 'BA-1', dosenList: ['dr. Nanda Sari'] }),
+        ba({ id: 'BA-2', tanggal: '2026-09-21', dosenList: ['dr.Nanda Sari'] })
+      ],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    const varian = data.quality.find((q) => q.type === 'varian');
+    expect(varian).toBeTruthy();
+    expect(varian.names).toEqual(['dr. Nanda Sari', 'dr.Nanda Sari']);
+    expect(varian.baIds.sort()).toEqual(['BA-1', 'BA-2']);
   });
 });
