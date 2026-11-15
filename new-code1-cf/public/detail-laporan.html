@@ -562,6 +562,25 @@
                             </div>
                         </div>
                     </div>
+                    <div v-if="kelola.sumber !== 'Admin'" class="sm:col-span-2">
+                        <div class="mb-1 flex items-center justify-between">
+                            <label class="label !mb-0">Sesi Jadwal</label>
+                            <span class="text-[11px] text-slate-400">{{ kelola.jadwalIds.length }} dipilih</span>
+                        </div>
+                        <div v-if="kelolaSesiOptions.length" class="max-h-44 overflow-y-auto rounded-xl border border-slate-200">
+                            <label v-for="s in kelolaSesiOptions" :key="s.id" class="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2 last:border-0" :class="s.baId && s.baId !== kelola.baId ? 'opacity-60' : ''">
+                                <input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="kelola.jadwalIds.indexOf(s.id) !== -1" :disabled="!!s.baId && s.baId !== kelola.baId" @change="toggleKelolaSesi(s.id)">
+                                <span class="min-w-0 flex-1 text-xs text-slate-700">{{ fmtTanggal(s.tanggal) }} &middot; {{ s.jam || '-' }}<span class="block text-[11px] text-slate-400">{{ s.dosen || 'Dosen belum diisi' }} &middot; {{ s.pesertaCount }} peserta</span></span>
+                                <span v-if="s.baId && s.baId !== kelola.baId" class="text-[10px] font-semibold text-amber-700">BA lain</span>
+                            </label>
+                        </div>
+                        <div v-else class="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-[11px] text-slate-400">Belum ada jadwal aktif untuk kegiatan ini. Buat jadwal terlebih dahulu di halaman Bagian.</div>
+                        <div v-if="kelolaSesiOptions.length && kelola.jadwalIds.length > kelolaSesiTerpilih.length" class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-amber-700">
+                            <span>{{ kelola.jadwalIds.length - kelolaSesiTerpilih.length }} sesi tersimpan sudah tidak aktif atau tidak ditemukan.</span>
+                            <button type="button" class="font-semibold hover:underline" @click="dropKelolaSesiTidakAktif">Bersihkan</button>
+                        </div>
+                        <p class="mt-1 text-[11px] text-slate-400">Pilih satu atau beberapa sesi. Tanggal dan jam BA mengikuti sesi paling awal. Kosongkan hanya jika BA lama memang belum memiliki jadwal.</p>
+                    </div>
                     <div class="sm:col-span-2"><label class="label">Catatan</label><textarea v-model="kelola.catatan" rows="2" class="input"></textarea></div>
                     <div v-if="kelola.sumber !== 'Admin' && kelola.pesertaOpsi.length" class="sm:col-span-2">
                         <div class="mb-1 flex items-center justify-between">
@@ -570,16 +589,17 @@
                         </div>
                         <div class="max-h-44 overflow-y-auto rounded-xl border border-slate-200">
                             <label v-for="p in kelola.pesertaOpsi" :key="p.idPengajuan" class="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2 last:border-0">
-                                <input v-model="kelola.pesertaIds" type="checkbox" :value="p.idPengajuan" class="h-4 w-4 accent-brand-600">
+                                <input v-model="kelola.pesertaIds" type="checkbox" :value="p.idPengajuan" class="h-4 w-4 accent-brand-600" @change="kelola.pesertaDirty = true">
                                 <span class="text-xs text-slate-700">{{ p.npm }} — {{ p.namaLengkap }} <span class="text-slate-400">({{ p.blok }})</span></span>
                             </label>
                         </div>
-                        <p class="mt-1 text-[11px] text-amber-600">Mengubah peserta tidak mengubah isi file PDF.</p>
+                        <p v-if="!kelola.pesertaDirty && !kelola.pesertaIds.length" class="mt-1 text-[11px] text-amber-600">Peserta BA saat ini tidak ditemukan pada daftar kegiatan. Daftar peserta tidak diubah kecuali Anda memilih ulang.</p>
+                        <p v-else class="mt-1 text-[11px] text-amber-600">Mengubah peserta tidak mengubah isi file PDF.</p>
                     </div>
                 </div>
                 <div class="mt-5 flex justify-end gap-2">
                     <button class="btn-soft" @click="kelola.open = false">Batal</button>
-                    <button class="btn-primary" :disabled="loading || (kelola.sumber !== 'Admin' && kelola.pesertaOpsi.length > 0 && !kelola.pesertaIds.length)" @click="submitKelolaBa">Simpan</button>
+                    <button class="btn-primary" :disabled="loading || (kelola.sumber !== 'Admin' && kelola.pesertaDirty && !kelola.pesertaIds.length)" @click="submitKelolaBa">Simpan</button>
                 </div>
             </div>
         </div>
@@ -3240,7 +3260,7 @@
                     animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
                     barProgress: 0,
-                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
+                    kelola: { open: false, baId: '', sumber: 'Bagian', kegiatanKey: '', jadwalIds: [], tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [], pesertaDirty: false },
                     riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' },
                     toastTimer: null,
@@ -4183,6 +4203,26 @@
                         dosenList: Array.isArray(j.dosenList) && j.dosenList.length ? j.dosenList : (j.dosen ? [j.dosen] : []),
                         baId: j.baId || ''
                     }));
+                },
+                kelolaSesiOptions() {
+                    const key = String(this.kelola.kegiatanKey || '').trim();
+                    if (!key) return [];
+                    return (this.jadwal || [])
+                        .filter(j => String(j.kegiatanKey || '').trim() === key)
+                        .map(j => ({
+                            id: String(j.jadwalId || '').trim(),
+                            tanggal: String(j.tanggal || '').trim(),
+                            jam: String(j.jam || '').trim(),
+                            dosen: (Array.isArray(j.dosenList) && j.dosenList.length ? j.dosenList.join(', ') : String(j.dosen || '').trim()),
+                            pesertaCount: (j.peserta || []).length,
+                            baId: String(j.baId || '').trim()
+                        }))
+                        .filter(j => j.id)
+                        .sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)) || String(a.jam).localeCompare(String(b.jam)) || a.id.localeCompare(b.id));
+                },
+                kelolaSesiTerpilih() {
+                    const ids = Array.isArray(this.kelola.jadwalIds) ? this.kelola.jadwalIds : [];
+                    return this.kelolaSesiOptions.filter(s => ids.indexOf(s.id) !== -1);
                 },
                 dosenReport() {
                     return DosenReport.buildDosenReport({
@@ -5650,16 +5690,38 @@
                     if (!found) found = {};
                     const opsi = ((unit && unit.peserta) || []).slice();
                     const npmSet = new Set((found.peserta || []).map((p) => p.npm));
-                    const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan);
+                    const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan).filter(Boolean);
                     const dosenList = this.baDosenList(found);
+                    const jadwalIds = Array.isArray(found.jadwalIds) ? found.jadwalIds.map(v => String(v || '').trim()).filter(Boolean) : [];
+                    const kegiatanKey = String(found['Kegiatan Key'] || (unit && unit.key) || DosenReport.kegiatanKey(found.Bagian, found.Blok, found['Nama Kegiatan']) || '').trim();
                     this.kelola = {
                         open: true, baId: baId, sumber: sumber || found.Sumber || 'Bagian',
+                        kegiatanKey: kegiatanKey,
+                        jadwalIds: jadwalIds,
                         tanggal: found['Tanggal Pelaksanaan'] || '', jam: found.Jam || '',
                         dosen: dosenList[0] || found.Dosen || '',
                         dosenList: dosenList.length ? dosenList.slice() : [''],
                         catatan: found.Catatan || '',
-                        pesertaIds: pesertaIds, pesertaOpsi: opsi
+                        pesertaIds: pesertaIds, pesertaOpsi: opsi, pesertaDirty: false
                     };
+                },
+                dropKelolaSesiTidakAktif() {
+                    this.kelola.jadwalIds = this.kelolaSesiTerpilih.map(s => s.id);
+                },
+                toggleKelolaSesi(jadwalId) {
+                    const id = String(jadwalId || '').trim();
+                    if (!id) return;
+                    const list = Array.isArray(this.kelola.jadwalIds) ? this.kelola.jadwalIds.slice() : [];
+                    const i = list.indexOf(id);
+                    if (i === -1) list.push(id);
+                    else list.splice(i, 1);
+                    this.kelola.jadwalIds = list;
+                    const sesi = this.kelolaSesiOptions.filter(s => list.indexOf(s.id) !== -1);
+                    if (sesi.length) {
+                        const first = sesi.slice().sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)) || String(a.jam).localeCompare(String(b.jam)))[0];
+                        if (first.tanggal) this.kelola.tanggal = String(first.tanggal).slice(0, 10);
+                        if (first.jam) this.kelola.jam = first.jam;
+                    }
                 },
                 async submitKelolaBa() {
                     const k = this.kelola;
@@ -5672,7 +5734,8 @@
                             return;
                         }
                         const payload = { tanggal: k.tanggal, jam: k.jam, dosenList: dosenList, dosen: dosenList[0] || '', catatan: k.catatan };
-                        if (k.sumber !== 'Admin' && k.pesertaOpsi.length) payload.pesertaIds = k.pesertaIds.slice();
+                        if (k.sumber !== 'Admin') payload.jadwalIds = (Array.isArray(k.jadwalIds) ? k.jadwalIds : []).slice();
+                        if (k.sumber !== 'Admin' && k.pesertaDirty) payload.pesertaIds = k.pesertaIds.slice();
                         const res = await this.run(fn, k.baId, payload);
                         this.showToast('bi-check-circle', (res && res.message) || 'BA diperbarui.');
                         if (res && res.success) {

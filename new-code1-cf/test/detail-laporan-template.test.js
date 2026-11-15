@@ -654,6 +654,19 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).not.toContain('{{ b.value }} BA');
   });
 
+  it('menyediakan pemilih Sesi Jadwal untuk koreksi BA', async () => {
+    const html = await loadHtml();
+    expect(html).toContain("kegiatanKey: '', jadwalIds: []");
+    expect(html).toContain('kelolaSesiOptions');
+    expect(html).toContain('toggleKelolaSesi(s.id)');
+    expect(html).toContain('dropKelolaSesiTidakAktif');
+    expect(html).toContain(`:disabled="!!s.baId && s.baId !== kelola.baId"`);
+    expect(html).toContain('pesertaDirty: false');
+    expect(html).toContain("@change=\"kelola.pesertaDirty = true\"");
+    expect(html).toContain('payload.jadwalIds = (Array.isArray(k.jadwalIds) ? k.jadwalIds : []).slice();');
+    expect(html).toContain('this.kelola.tanggal = String(first.tanggal).slice(0, 10);');
+  });
+
   it('daftar ID BA dapat diklik untuk memeriksa dan mengoreksi data', async () => {
     const html = await loadHtml();
     expect(html).toContain('dosenBaRowsForDetail(d)');
