@@ -635,12 +635,12 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).not.toContain('exportDosenMatrix');
   });
 
-  it('dosen memakai bar chart sesi per dosen dan legenda heat', async () => {
+  it('empat ringkasan dosen tampil mendatar tanpa bar chart sesi', async () => {
     const html = await loadHtml();
-    expect(html).toContain('dosenBaBars');
-    expect(html).toContain('Sesi Pelaksanaan per Dosen');
-    expect(html).toContain('{{ b.value }}/{{ b.rencana }} sesi');
-    expect(html).toContain('in-heat-legend');
+    expect(html).toContain('dosen-statgrid');
+    expect(html).toContain('Peserta unik');
+    expect(html).not.toContain('Sesi Pelaksanaan per Dosen');
+    expect(html).not.toContain('dosenBaBars');
   });
 
   it('master-detail dosen memakai detail kegiatan dan saringan blok', async () => {
