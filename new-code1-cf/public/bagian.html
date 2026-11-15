@@ -41,6 +41,21 @@
         .app-toast-error { background: #e11d48; }
         .app-toast-success { background: #059669; }
         .app-toast-info { background: #0f172a; }
+        .field-invalid { box-shadow: inset 0 0 0 2px #e11d48; background: #fff1f2; }
+        .field-msg { display: flex; align-items: flex-start; gap: .3rem; margin-top: .35rem; font-size: 11px; line-height: 1.45; font-weight: 600; color: #be123c; }
+        .field-msg.is-warn { color: #b45309; }
+        .check-box { border-radius: 1rem; background: #f8fafc; padding: .75rem .85rem; box-shadow: inset 0 0 0 1px #e2e8f0; }
+        .check-box.has-error { background: #fff1f2; box-shadow: inset 0 0 0 1px #fecdd3; }
+        .check-box.has-warn { background: #fffbeb; box-shadow: inset 0 0 0 1px #fde68a; }
+        .check-head { display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #64748b; }
+        .check-list { display: flex; flex-direction: column; gap: .4rem; }
+        .check-row { display: flex; align-items: flex-start; gap: .4rem; font-size: 11px; line-height: 1.45; color: #475569; }
+        .check-ic { flex: 0 0 auto; margin-top: 1px; font-size: 12px; }
+        .check-row.is-ok .check-ic { color: #059669; }
+        .check-row.is-warn { color: #92400e; }
+        .check-row.is-warn .check-ic { color: #d97706; }
+        .check-row.is-error { color: #be123c; font-weight: 600; }
+        .check-row.is-error .check-ic { color: #e11d48; }
         .app-main { padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)); }
         .top-nav { display: none; align-items: center; gap: .2rem; border-radius: 1rem; background: rgba(255,255,255,.12); padding: .2rem; }
         .top-nav button { display: inline-flex; align-items: center; gap: .35rem; border-radius: .75rem; padding: .45rem .7rem; font-size: .78rem; font-weight: 700; color: #e0e7ff; }
@@ -773,9 +788,20 @@
                                                     </label>
                                                 </div>
                                                 <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ jadwalSelectedList().length }} peserta</p>
+                                                <p v-if="jadwalFieldIssue.peserta" class="field-msg">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    <span>{{ jadwalFieldIssue.peserta.text }}</span>
+                                                </p>
                                             </div>
                                             <div class="space-y-4">
-                                                <div><label class="label">Tanggal Pelaksanaan</label><input v-model="jadwal.tanggal" type="date" class="input"></div>
+                                                <div>
+                                                    <label class="label">Tanggal Pelaksanaan</label>
+                                                    <input v-model="jadwal.tanggal" type="date" class="input" :class="{ 'field-invalid': !!jadwalFieldIssue.tanggal }">
+                                                    <p v-if="jadwalFieldIssue.tanggal" class="field-msg" :class="{ 'is-warn': jadwalFieldIssue.tanggal.level === 'warn' }">
+                                                        <i class="bi" :class="jadwalFieldIssue.tanggal.level === 'warn' ? 'bi-exclamation-triangle' : 'bi-x-circle'"></i>
+                                                        <span>{{ jadwalFieldIssue.tanggal.text }}</span>
+                                                    </p>
+                                                </div>
                                                 <div><label class="label">Jam</label><input v-model="jadwal.jam" type="time" class="input"></div>
                                                 <div>
                                                     <div class="mb-1 flex items-center justify-between">
@@ -788,8 +814,21 @@
                                                             <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="jadwal.dosenList.length <= 1" title="Hapus dosen" @click="removeDosenRow(jadwal, i)"><i class="bi bi-dash-lg"></i></button>
                                                         </div>
                                                     </div>
+                                                    <p v-if="jadwalFieldIssue.dosen" class="field-msg is-warn">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                        <span>{{ jadwalFieldIssue.dosen.text }}</span>
+                                                    </p>
                                                 </div>
                                                 <div><label class="label">Catatan (Opsional)</label><textarea v-model="jadwal.catatan" rows="2" maxlength="2000" class="input" placeholder="Catatan jadwal, mis. ruang atau kendala..."></textarea><p class="mt-1 text-[11px] text-slate-400">Catatan ini otomatis terisi saat Anda membuat BA dari jadwal.</p></div>
+                                            </div>
+                                            <div class="check-box" :class="{ 'has-error': jadwalCheckState === 'error', 'has-warn': jadwalCheckState === 'warn' }">
+                                                <div class="check-head"><i class="bi bi-clipboard-check"></i> Pemeriksaan sebelum simpan</div>
+                                                <div class="check-list">
+                                                    <div v-for="c in jadwalChecks" :key="c.key" class="check-row" :class="'is-' + c.level">
+                                                        <i class="bi check-ic" :class="c.level === 'ok' ? 'bi-check-circle-fill' : (c.level === 'warn' ? 'bi-exclamation-triangle-fill' : 'bi-x-circle-fill')"></i>
+                                                        <span>{{ c.label }}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="flex gap-3">
                                                 <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
@@ -897,6 +936,15 @@
                                                 <input ref="lengkapiFile" type="file" accept=".pdf" class="hidden" @change="onLengkapiFile">
                                             </div>
                                         </div>
+                                        <div class="check-box" :class="{ 'has-error': lengkapiCheckState === 'error' }">
+                                            <div class="check-head"><i class="bi bi-clipboard-check"></i> Pemeriksaan sebelum simpan</div>
+                                            <div class="check-list">
+                                                <div v-for="c in lengkapiChecks" :key="c.key" class="check-row" :class="'is-' + c.level">
+                                                    <i class="bi check-ic" :class="c.level === 'ok' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"></i>
+                                                    <span>{{ c.label }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="flex flex-wrap gap-3">
                                             <button v-if="!selectedItem.ba['File URL']" type="button" class="btn-soft flex-1 text-rose-600" :disabled="loading" @click="deleteDraftBa"><i class="bi bi-trash"></i> Hapus Draft</button>
                                             <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
@@ -996,6 +1044,10 @@
                                                 </label>
                                             </div>
                                             <p class="mt-2 text-[11px] text-slate-400">Terpilih: {{ selectedCount }} peserta</p>
+                                            <p v-if="baFieldIssue.peserta" class="field-msg">
+                                                <i class="bi bi-x-circle"></i>
+                                                <span>{{ baFieldIssue.peserta.text }}</span>
+                                            </p>
                                         </div>
                                         <div class="space-y-4">
                                             <div><label class="label">Label <span class="font-normal text-slate-400">(opsional)</span></label><input v-model="ba.label" class="input" placeholder="mis. Sesi 1 / Hari ke-2"></div>
@@ -1011,12 +1063,23 @@
                                                         <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600 disabled:opacity-40" :disabled="ba.dosenList.length <= 1" title="Hapus dosen" @click="removeDosenRow(ba, i)"><i class="bi bi-dash-lg"></i></button>
                                                     </div>
                                                 </div>
+                                                <p v-if="baFieldIssue.dosen" class="field-msg">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    <span>{{ baFieldIssue.dosen.text }}</span>
+                                                </p>
                                             </div>
                                             <div><label class="label">Jam</label><input v-model="ba.jam" type="time" class="input"></div>
-                                            <div><label class="label">Tanggal Pelaksanaan</label><input v-model="ba.tanggal" type="date" class="input"></div>
+                                            <div>
+                                                <label class="label">Tanggal Pelaksanaan</label>
+                                                <input v-model="ba.tanggal" type="date" class="input" :class="{ 'field-invalid': !!baFieldIssue.tanggal }">
+                                                <p v-if="baFieldIssue.tanggal" class="field-msg">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    <span>{{ baFieldIssue.tanggal.text }}</span>
+                                                </p>
+                                            </div>
                                             <div>
                                                 <label class="label">File Berita Acara (PDF)</label>
-                                                <div class="flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3">
+                                                <div class="flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed border-slate-200 p-3" :class="{ 'field-invalid': !!baFieldIssue.file }">
                                                     <i class="bi bi-cloud-arrow-up text-2xl text-brand-400"></i>
                                                     <div class="min-w-0 flex-1 text-xs text-slate-500">
                                                         <span v-if="ba.fileName" class="font-semibold text-slate-700">{{ ba.fileName }}</span>
@@ -1025,6 +1088,10 @@
                                                     <button type="button" class="btn-soft h-11 shrink-0 !py-2 text-xs" @click="$refs.baFile.click()"><i class="bi bi-folder2-open"></i> Pilih File PDF</button>
                                                     <input ref="baFile" type="file" accept=".pdf" class="hidden" @change="onBaFile">
                                                 </div>
+                                                <p v-if="baFieldIssue.file" class="field-msg">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    <span>{{ baFieldIssue.file.text }}</span>
+                                                </p>
                                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                                     <button type="button" class="btn-soft text-xs" :disabled="ba.scanBusy" @click="$refs.scanCamera.click()"><i class="bi bi-camera"></i> Scan Kamera</button>
                                                     <span v-if="ba.scanItems.length" class="text-[11px] text-slate-500">{{ ba.scanItems.length }} halaman</span>
@@ -1046,6 +1113,15 @@
                                                 <p v-if="ba.scanBusy" class="mt-2 text-[11px] text-brand-600">Memproses gambar...</p>
                                             </div>
                                             <div><label class="label">Catatan (Opsional)</label><textarea v-model="ba.catatan" rows="2" maxlength="2000" class="input" placeholder="Catatan pelaksanaan, kendala, atau hal yang perlu diketahui admin..."></textarea></div>
+                                        </div>
+                                        <div class="check-box" :class="{ 'has-error': baCheckState === 'error', 'has-warn': baCheckState === 'warn' }">
+                                            <div class="check-head"><i class="bi bi-clipboard-check"></i> Pemeriksaan sebelum upload</div>
+                                            <div class="check-list">
+                                                <div v-for="c in baChecks" :key="c.key" class="check-row" :class="'is-' + c.level">
+                                                    <i class="bi check-ic" :class="c.level === 'ok' ? 'bi-check-circle-fill' : (c.level === 'warn' ? 'bi-exclamation-triangle-fill' : 'bi-x-circle-fill')"></i>
+                                                    <span>{{ c.label }}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="flex gap-3">
                                             <button type="button" class="btn-soft flex-1" @click="closeDetail">Batal</button>
@@ -1232,6 +1308,10 @@
                     <div v-if="baDuplicate" class="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-800 ring-1 ring-amber-200">
                         <i class="bi bi-info-circle mt-0.5 shrink-0"></i>
                         <span>Sudah ada BA untuk kegiatan ini (Blok {{ selectedGroup.blok }}, {{ formatTanggal(baDuplicate['Tanggal Pelaksanaan']) }}). Upload ini akan menambah BA baru.</span>
+                    </div>
+                    <div v-if="baSessionsSelected.length > 1" class="mt-3 flex items-start gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-[11px] leading-relaxed text-brand-700 ring-1 ring-brand-100">
+                        <i class="bi bi-collection mt-0.5 shrink-0"></i>
+                        <span>BA mencakup {{ baSessionsSelected.length }} sesi. Tanggal BA mengikuti sesi paling awal ({{ formatTanggal(baExpectedTanggal) }}).</span>
                     </div>
                     <div class="mt-3 max-h-56 space-y-1.5 overflow-y-auto pr-1">
                         <div v-for="p in selectedList" :key="p.idPengajuan" class="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 ring-1 ring-slate-100">
@@ -1780,6 +1860,109 @@
                     if (!this.selectedGroup) return false;
                     const list = this.baCandidates.peserta;
                     return list.length > 0 && list.every(function(p) { return !!this.ba.selected[p.idPengajuan]; }.bind(this));
+                },
+                jadwalPesertaTerpilih() {
+                    return this.jadwalSelectedList().length;
+                },
+                jadwalFieldIssue() {
+                    const map = {};
+                    const put = function(field, level, text) {
+                        if (!map[field] || level === 'error') map[field] = { level: level, text: text };
+                    };
+                    const tgl = this.dateOnly(this.jadwal.tanggal);
+                    const dosen = this.cleanDosenList(this.jadwal.dosenList);
+                    if (!this.jadwalPesertaTerpilih) put('peserta', 'error', 'Pilih minimal satu peserta sebelum menyimpan jadwal.');
+                    if (!tgl) put('tanggal', 'error', 'Tanggal pelaksanaan wajib diisi.');
+                    else if (tgl < this.kalenderTodayIso) put('tanggal', 'warn', 'Tanggal ini sudah lewat. Pastikan memang untuk sesi yang sudah berlangsung.');
+                    if (!dosen.length) put('dosen', 'warn', 'Dosen belum diisi. BA Pelaksanaan nanti wajib memilih dosen.');
+                    return map;
+                },
+                jadwalChecks() {
+                    const m = this.jadwalFieldIssue;
+                    return [
+                        { key: 'peserta', label: 'Minimal satu peserta dipilih', level: m.peserta ? m.peserta.level : 'ok' },
+                        { key: 'tanggal', label: 'Tanggal pelaksanaan terisi dan wajar', level: m.tanggal ? m.tanggal.level : 'ok' },
+                        { key: 'dosen', label: 'Dosen terisi (disarankan)', level: m.dosen ? m.dosen.level : 'ok' }
+                    ];
+                },
+                jadwalCheckState() {
+                    if (this.jadwalChecks.some(function(c) { return c.level === 'error'; })) return 'error';
+                    if (this.jadwalChecks.some(function(c) { return c.level === 'warn'; })) return 'warn';
+                    return 'ok';
+                },
+                baPesertaBlokBeda() {
+                    const g = this.selectedGroup;
+                    if (!g) return [];
+                    const norm = function(v) {
+                        return String(v || '').toLowerCase().replace(/^blok\s+/, '').replace(/[^a-z0-9]/g, '');
+                    };
+                    const blok = norm(g.blok);
+                    return this.selectedList.filter(function(p) {
+                        return String(p.blok || '').trim() && norm(p.blok) !== blok;
+                    });
+                },
+                baPesertaStatusBeda() {
+                    const allowed = (this.baConfig.statuses || ['ACC']).map(function(s) {
+                        return String(s || '').toLowerCase().trim();
+                    });
+                    return this.selectedList.filter(function(p) {
+                        return allowed.indexOf(String(p.statusPengajuan || '').toLowerCase().trim()) === -1;
+                    });
+                },
+                baExpectedTanggal() {
+                    const dates = this.baSessionsSelected.map(function(j) {
+                        return window.BagianState.dateOnly(j.Tanggal);
+                    }).filter(Boolean).sort();
+                    return dates[0] || '';
+                },
+                baFieldIssue() {
+                    const map = {};
+                    const put = function(field, level, text) {
+                        if (!map[field] || level === 'error') map[field] = { level: level, text: text };
+                    };
+                    if (!this.selectedGroup) put('group', 'error', 'Pilih kegiatan terlebih dahulu.');
+                    if (!this.selectedList.length) put('peserta', 'error', 'Pilih minimal satu peserta.');
+                    if (!this.cleanDosenList(this.ba.dosenList).length) put('dosen', 'error', 'Pilih minimal satu dosen untuk BA Pelaksanaan.');
+                    const tgl = this.dateOnly(this.ba.tanggal);
+                    const expected = this.baExpectedTanggal;
+                    if (!tgl) put('tanggal', 'error', 'Tanggal pelaksanaan wajib diisi.');
+                    else if (expected && tgl !== expected) put('tanggal', 'error', 'Tanggal BA harus sama dengan tanggal sesi paling awal (' + this.formatTanggal(expected) + ').');
+                    if (!this.ba.file) put('file', 'error', 'Pilih file BA (PDF) atau buat PDF lewat Scan Kamera.');
+                    if (this.baPesertaBlokBeda.length) put('peserta', 'error', this.baPesertaBlokBeda.length + ' peserta berasal dari blok berbeda.');
+                    if (this.baPesertaStatusBeda.length) put('peserta', 'error', this.baPesertaStatusBeda.length + ' peserta belum berstatus ' + (this.baConfig.statuses || ['ACC']).join(' / ') + '.');
+                    return map;
+                },
+                baChecks() {
+                    const m = this.baFieldIssue;
+                    const items = [
+                        { key: 'peserta', label: 'Minimal satu peserta dipilih', level: m.peserta ? m.peserta.level : 'ok' },
+                        { key: 'dosen', label: 'Dosen terisi (wajib untuk BA)', level: m.dosen ? m.dosen.level : 'ok' },
+                        { key: 'tanggal', label: 'Tanggal pelaksanaan terisi', level: m.tanggal ? m.tanggal.level : 'ok' },
+                        { key: 'file', label: 'Berkas BA (PDF) tersedia', level: m.file ? m.file.level : 'ok' }
+                    ];
+                    if (this.baExpectedTanggal) {
+                        items.splice(3, 0, { key: 'sesi', label: 'Tanggal mengikuti sesi paling awal (' + this.formatTanggal(this.baExpectedTanggal) + ')', level: m.tanggal && m.tanggal.level === 'error' && this.dateOnly(this.ba.tanggal) !== this.baExpectedTanggal ? 'error' : 'ok' });
+                    }
+                    items.push({ key: 'blok', label: 'Semua peserta satu blok dan berstatus ' + (this.baConfig.statuses || ['ACC']).join(' / '), level: (this.baPesertaBlokBeda.length || this.baPesertaStatusBeda.length) ? 'error' : 'ok' });
+                    if (this.baDuplicate) items.push({ key: 'duplikat', label: 'Sudah ada BA untuk kegiatan dan tanggal ini; unggahan akan menambah BA baru', level: 'warn' });
+                    return items;
+                },
+                baCheckState() {
+                    if (this.baChecks.some(function(c) { return c.level === 'error'; })) return 'error';
+                    if (this.baChecks.some(function(c) { return c.level === 'warn'; })) return 'warn';
+                    return 'ok';
+                },
+                lengkapiChecks() {
+                    const d = this.ba.lengkapi;
+                    if (!d) return [];
+                    return [
+                        { key: 'peserta', label: 'Minimal satu peserta dipilih', level: this.lengkapiSelectedList.length ? 'ok' : 'error' },
+                        { key: 'dosen', label: 'Minimal satu dosen dipilih', level: this.cleanDosenList(d.dosenList).length ? 'ok' : 'error' },
+                        { key: 'tanggal', label: 'Tanggal pelaksanaan terisi', level: this.dateOnly(d.tanggal) ? 'ok' : 'error' }
+                    ];
+                },
+                lengkapiCheckState() {
+                    return this.lengkapiChecks.some(function(c) { return c.level === 'error'; }) ? 'error' : 'ok';
                 },
                 blokOptions() {
                     const seen = {};

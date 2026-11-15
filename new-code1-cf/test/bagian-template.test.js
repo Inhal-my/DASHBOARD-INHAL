@@ -189,3 +189,38 @@ describe('panduan jadwal dan BA Pelaksanaan', () => {
     expect(html).toContain('Jadwal lewat tanpa BA');
   });
 });
+
+describe('peringatan validasi form jadwal dan BA', () => {
+  it('menampilkan checklist pemeriksaan dan pesan field pada form jadwal', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Pemeriksaan sebelum simpan');
+    expect(html).toContain('jadwalChecks');
+    expect(html).toContain('jadwalFieldIssue');
+    expect(html).toContain('Tanggal ini sudah lewat');
+    expect(html).toContain('Dosen belum diisi. BA Pelaksanaan nanti wajib memilih dosen.');
+    expect(html).toContain(`class="input" :class="{ 'field-invalid': !!jadwalFieldIssue.tanggal }"`);
+  });
+
+  it('menampilkan checklist pemeriksaan dan pesan field pada form BA', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Pemeriksaan sebelum upload');
+    expect(html).toContain('baChecks');
+    expect(html).toContain('baFieldIssue');
+    expect(html).toContain('Tanggal BA harus sama dengan tanggal sesi paling awal');
+    expect(html).toContain('Semua peserta satu blok dan berstatus');
+    expect(html).toContain('Berkas BA (PDF) tersedia');
+    expect(html).toContain(`class="input" :class="{ 'field-invalid': !!baFieldIssue.tanggal }"`);
+  });
+
+  it('menampilkan ringkasan multi-sesi di konfirmasi upload', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('BA mencakup {{ baSessionsSelected.length }} sesi.');
+    expect(html).toContain('Tanggal BA mengikuti sesi paling awal');
+  });
+
+  it('menampilkan checklist ringkas saat melengkapi draft BA', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('lengkapiChecks');
+    expect(html).toContain('lengkapiCheckState');
+  });
+});
