@@ -4168,13 +4168,13 @@
                     return this.dosenReport.rows.find(r => r.key === key) || null;
                 },
                 dosenCellDetail() {
-                    const row = this.dosenRowForCell();
+                    const row = this.dosenRowForCell;
                     if (!row || !this.activeDosenCell) return [];
                     const bk = this.normBagian(this.activeDosenCell.bagian);
                     return row.baRows.filter(b => this.normBagian(b.bagian) === bk);
                 },
                 dosenCellJadwal() {
-                    const row = this.dosenRowForCell();
+                    const row = this.dosenRowForCell;
                     if (!row || !this.activeDosenCell) return [];
                     const bk = this.normBagian(this.activeDosenCell.bagian);
                     return row.jadwalRows.filter(j => this.normBagian(j.bagian) === bk);

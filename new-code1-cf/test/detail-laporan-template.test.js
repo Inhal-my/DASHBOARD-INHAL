@@ -651,6 +651,13 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('Rencana global: {{ dosenReport.totals.rencanaGlobal }}');
     expect(html).not.toContain('{{ b.value }} BA');
   });
+
+  it('panel detail sel dosen memakai dosenRowForCell sebagai computed, bukan dipanggil', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('dosenRowForCell() {');
+    expect(html).toContain('const row = this.dosenRowForCell;');
+    expect(html).not.toContain('this.dosenRowForCell()');
+  });
 });
 
 describe('detail laporan tab bagian (mockup)', () => {
