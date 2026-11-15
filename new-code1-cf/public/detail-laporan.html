@@ -70,12 +70,17 @@
         .sheet-panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 105; max-height: 88vh; overflow-y: auto; border-radius: 1.5rem 1.5rem 0 0; background: #fff; padding: .75rem .75rem calc(1rem + env(safe-area-inset-bottom)); box-shadow: 0 -12px 40px -12px rgba(15,23,42,.4); }
         .sheet-handle { width: 2.5rem; height: .25rem; border-radius: 9999px; background: #cbd5e1; margin: .25rem auto .75rem; }
         .filter-mobile { display: block; }
-        #dosen-matrix, #dosen-detail, #bagian-detail { scroll-margin-top: 9rem; }
+        .dosen-split { display: grid; grid-template-columns: minmax(0, 1fr); }
+        .dosen-split > .dosen-pane-left { border-bottom: 1px solid #f1f5f9; }
+        .dosen-list-scroll { max-height: 420px; overflow-y: auto; padding: .5rem; }
+        #bagian-detail { scroll-margin-top: 9rem; }
         @media (min-width: 1024px) {
             .filter-desktop { display: block; }
             .filter-mobile-bar { display: none; }
             .filter-mobile { display: none; }
-            #dosen-matrix, #dosen-detail, #bagian-detail { scroll-margin-top: 11rem; }
+            .dosen-split { grid-template-columns: 300px minmax(0, 1fr); }
+            .dosen-split > .dosen-pane-left { border-bottom: 0; border-right: 1px solid #f1f5f9; }
+            #bagian-detail { scroll-margin-top: 11rem; }
         }
     </style>
     <style>
@@ -1146,7 +1151,7 @@
                                     <input v-model="dosenFilter.q" class="input" placeholder="Ketik nama dosen...">
                                 </div>
                                 <div class="flex items-end gap-2 md:col-span-4">
-                                    <button class="btn-soft flex-1" @click="resetDosenCell">
+                                    <button class="btn-soft flex-1" @click="resetDosenView">
                                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                                     </button>
                                     <button class="btn-soft flex-1" :disabled="exporting" @click="exportDosenReport">
@@ -1187,66 +1192,150 @@
                             </div>
                         </div>
 
-                        <div id="dosen-matrix" class="overflow-hidden lap-card">
+                        <div class="overflow-hidden lap-card">
                             <div class="lap-card-head">
                                 <div>
-                                    <div class="lap-card-title">Rekap Realisasi dan Rencana Sesi per Dosen</div>
-                                    <div class="lap-card-sub">Baris = Dosen, kolom = Bagian. Format sel: sesi realisasi / sesi rencana. Klik sel untuk melihat BA dan jadwal.</div>
+                                    <div class="lap-card-title">Pemeriksaan per Dosen</div>
+                                    <div class="lap-card-sub">Pilih dosen, lalu saring blok dan detail kegiatan. Klik ID BA untuk memeriksa dan mengoreksi data agar sesuai hardcopy.</div>
                                 </div>
+                                <span class="in-badge cancel">{{ dosenReport.totals.dosen }} dosen</span>
                             </div>
-                            <div class="heat-scroll overflow-x-auto">
-                                <table class="heat-table in-heat">
-                                    <thead>
-                                        <tr class="lap-th text-[11px] uppercase tracking-wide text-slate-500">
-                                            <th class="lab">Dosen \ Bagian</th>
-                                            <th v-for="b in dosenReport.cols" :key="b">{{ b }}</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(row, ri) in pagerRows('dosen', dosenReport.rows)" :key="row.key" :class="ri % 2 ? 'bg-slate-50/50' : 'bg-white'">
-                                            <td :class="ri % 2 ? 'bg-slate-50' : 'bg-white'" class="lab">
-                                                <div class="flex items-center gap-2">
-                                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-violet-500 text-white"><i class="bi bi-person-video3 text-sm"></i></div>
-                                                    <span class="font-semibold text-slate-700">{{ row.label }}</span>
-                                                    <span v-if="row.variantCount > 1" class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{{ row.variantCount }} varian</span>
-                                                    <span v-if="row.nearDuplicate" class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700" :title="'Kemungkinan varian dari ' + row.nearDuplicate">varian?</span>
+                            <div class="dosen-split">
+                                <div class="dosen-pane-left">
+                                    <div class="dosen-list-scroll space-y-1">
+                                        <button v-for="row in pagerRows('dosen', dosenReport.rows)" :key="row.key" type="button"
+                                            class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition"
+                                            :class="dosenSelectedRow && dosenSelectedRow.key === row.key ? 'bg-brand-50 ring-1 ring-brand-100' : 'hover:bg-slate-50'"
+                                            @click="selectDosenRow(row.key)">
+                                            <span class="in-avatar shrink-0" :style="{background: vwAvatarColor(row.label)}">{{ vwInitials(row.label) }}</span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="block truncate text-xs font-semibold text-slate-700">{{ row.label }}</span>
+                                                <span class="block text-[10px] text-slate-400">{{ row.detailCount }} kegiatan · {{ row.pesertaUnik }} peserta</span>
+                                            </span>
+                                            <span class="shrink-0 rounded-lg bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">{{ row.totalRealisasi }}/{{ row.totalRencana }}</span>
+                                        </button>
+                                        <div v-if="!dosenReport.rows.length" class="px-3 py-10 text-center text-xs text-slate-400">Tidak ada dosen pada filter ini.</div>
+                                    </div>
+                                    <pager-bar id="pg-dosen" :state="pagers.dosen" :total="dosenReport.rows.length" unit="dosen"
+                                        nav-label="Halaman daftar dosen"
+                                        @go="pagerGo('dosen', $event, dosenReport.rows.length)"
+                                        @size="pagerSetPerPage('dosen', $event)"></pager-bar>
+                                </div>
+
+                                <div class="min-w-0">
+                                    <template v-if="dosenSelectedRow">
+                                        <div class="border-b border-slate-100 p-4">
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <span class="in-avatar shrink-0" :style="{background: vwAvatarColor(dosenSelectedRow.label)}">{{ vwInitials(dosenSelectedRow.label) }}</span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="truncate text-sm font-bold text-slate-800">{{ dosenSelectedRow.label }}</div>
+                                                    <div class="text-xs text-slate-400">{{ dosenSelectedRow.detailCount }} detail kegiatan · {{ dosenSelectedRow.baCount }} BA · {{ dosenSelectedRow.pesertaUnik }} peserta unik</div>
                                                 </div>
-                                            </td>
-                                            <td v-for="b in dosenReport.cols" :key="b" class="px-1 py-1 text-center">
-                                                <button
-                                                    :disabled="!dosenCellHasData(row, b)"
-                                                    :class="[
-                                                        'heat-cell c inline-flex items-center justify-center text-xs font-bold transition',
-                                                        activeDosenCell && activeDosenCell.key === dosenCellKey(row.label, b)
-                                                            ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/30'
-                                                            : (dosenCellRealisasi(row, b) >= 2 ? 'g' : (dosenCellRealisasi(row, b) === 1 ? 'y' : 'text-slate-300'))
-                                                    ]"
-                                                    @click="openDosenCell(row.label, b)">
-                                                    {{ cellText(row, b) }}
-                                                </button>
-                                            </td>
-                                            <td class="px-3 py-2 text-center font-bold text-slate-800">{{ row.totalRealisasi }}/{{ row.totalRencana }}</td>
-                                        </tr>
-                                        <tr class="bg-slate-100">
-                                            <td class="lab font-bold text-slate-700">Total</td>
-                                            <td v-for="b in dosenReport.cols" :key="b" class="px-3 py-2.5 text-center font-bold text-slate-700">{{ dosenColTotal(b).realisasi }}/{{ dosenColTotal(b).rencana }}</td>
-                                            <td class="px-3 py-2.5 text-center font-extrabold text-slate-900">{{ dosenReport.totals.sesiRealisasi }}/{{ dosenReport.totals.rencanaTabel }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="in-heat-legend px-3 pb-3">
-                                <span><i class="dot" style="background:#ecfdf5;border:1px solid #a7f3d0"></i>2+ sesi realisasi</span>
-                                <span><i class="dot" style="background:#fffbeb;border:1px solid #fde68a"></i>1 sesi realisasi</span>
-                            </div>
-                            <pager-bar id="pg-dosen" :state="pagers.dosen" :total="dosenReport.rows.length" unit="dosen"
-                                nav-label="Halaman matriks dosen"
-                                @go="pagerGo('dosen', $event, dosenReport.rows.length)"
-                                @size="pagerSetPerPage('dosen', $event)"></pager-bar>
-                            <div v-if="!dosenReport.rows.length" class="border-t border-slate-100 px-4 py-14 text-center">
-                                <i class="bi bi-table text-3xl text-slate-300"></i>
-                                <p class="mt-3 text-sm text-slate-400">Tidak ada data BA untuk filter ini.</p>
+                                                <span v-if="dosenSelectedRow.variantCount > 1" class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{{ dosenSelectedRow.variantCount }} varian nama</span>
+                                                <span v-if="dosenSelectedRow.nearDuplicate" class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700" :title="'Kemungkinan varian dari ' + dosenSelectedRow.nearDuplicate">varian?</span>
+                                            </div>
+                                            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                                <div>
+                                                    <label class="label">Blok</label>
+                                                    <select v-model="dosenView.blok" class="input" @change="onDosenViewBlokChange">
+                                                        <option value="">Semua blok</option>
+                                                        <option v-for="b in dosenViewBlokOptions" :key="b" :value="b">{{ b }}</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="label">Detail kegiatan</label>
+                                                    <select v-model="dosenView.kegiatanKey" class="input">
+                                                        <option value="">Semua kegiatan</option>
+                                                        <option v-for="d in dosenViewKegiatanOptions" :key="d.key" :value="d.key">{{ d.label }} — {{ d.jenis || 'Kegiatan' }} ({{ d.blok || '-' }})</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-4">
+                                            <div class="grid gap-2 sm:grid-cols-4">
+                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Kegiatan</div>
+                                                    <div class="text-lg font-extrabold text-slate-800">{{ dosenViewStats.kegiatan }}</div>
+                                                    <div class="text-[10px] text-slate-400">pada filter aktif</div>
+                                                </div>
+                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Peserta unik</div>
+                                                    <div class="text-lg font-extrabold text-slate-800">{{ dosenViewStats.peserta }}</div>
+                                                    <div class="text-[10px] text-slate-400">NPM berbeda</div>
+                                                </div>
+                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Sesi</div>
+                                                    <div class="text-lg font-extrabold text-slate-800">{{ dosenViewStats.sesi }}/{{ dosenViewStats.rencana }}</div>
+                                                    <div class="text-[10px] text-slate-400">realisasi / rencana</div>
+                                                </div>
+                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Tanpa BA</div>
+                                                    <div class="text-lg font-extrabold" :class="dosenViewStats.tanpaBa ? 'text-rose-600' : 'text-slate-800'">{{ dosenViewStats.tanpaBa }}</div>
+                                                    <div class="text-[10px] text-slate-400">kegiatan perlu tindak lanjut</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-4 overflow-x-auto">
+                                                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Kegiatan &amp; BA</h3>
+                                                    <span class="text-[11px] text-slate-400">Klik ID BA untuk memeriksa / mengoreksi data.</span>
+                                                </div>
+                                                <table class="bgd-ptab">
+                                                    <thead>
+                                                        <tr><th>Kegiatan</th><th>Blok</th><th>Tanggal</th><th class="c">Sesi</th><th class="c">Peserta</th><th>Status BA</th><th>BA</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="d in dosenViewDetails" :key="d.key">
+                                                            <td>
+                                                                <div class="font-semibold text-slate-800">{{ d.label }}</div>
+                                                                <div class="text-[10px] text-slate-400">{{ d.jenis || '-' }} · {{ d.bagian }}</div>
+                                                            </td>
+                                                            <td>{{ d.blok || '-' }}</td>
+                                                            <td>{{ dosenDetailTanggal(d) }}</td>
+                                                            <td class="c">{{ d.realisasi }}/{{ d.rencana }}</td>
+                                                            <td class="c">{{ d.pesertaUnik }}</td>
+                                                            <td><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="dosenStatusCls(dosenDetailStatus(d))">{{ dosenDetailStatus(d) }}</span></td>
+                                                            <td>
+                                                                <div class="flex flex-wrap gap-1">
+                                                                    <button v-for="b in dosenBaRowsForDetail(d)" :key="b.baId" type="button"
+                                                                        class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-brand-700 hover:bg-slate-100"
+                                                                        :title="'Periksa / edit ' + b.baId" @click="openKelolaBaById(b.baId)">
+                                                                        <i class="bi bi-pencil-square"></i>{{ b.baId }}
+                                                                    </button>
+                                                                    <span v-if="!dosenBaRowsForDetail(d).length" class="text-[11px] text-slate-300">Belum ada BA</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <div v-if="!dosenViewDetails.length" class="py-8 text-center text-xs text-slate-400">Tidak ada kegiatan pada filter ini.</div>
+                                            </div>
+
+                                            <div class="mt-4 overflow-x-auto">
+                                                <h3 class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Peserta</h3>
+                                                <table class="bgd-ptab">
+                                                    <thead>
+                                                        <tr><th>NPM</th><th>Nama</th><th>Kegiatan</th><th>Blok</th><th>Tanggal</th><th class="c">Sesi</th><th>Status BA</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="p in dosenViewPesertaRows" :key="p.npm + '::' + p.kegiatanKey">
+                                                            <td class="font-mono">{{ p.npm }}</td>
+                                                            <td class="font-semibold text-slate-800">{{ p.nama }}</td>
+                                                            <td>{{ p.kegiatan }}</td>
+                                                            <td>{{ p.blok || '-' }}</td>
+                                                            <td>{{ p.tanggal }}</td>
+                                                            <td class="c">{{ p.sesi }}</td>
+                                                            <td><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="dosenStatusCls(p.status)">{{ p.status }}</span></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <div v-if="!dosenViewPesertaRows.length" class="py-8 text-center text-xs text-slate-400">Tidak ada peserta pada filter ini.</div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div v-else class="p-8 text-center text-sm text-slate-400">Pilih dosen di panel kiri untuk mulai memeriksa.</div>
+                                </div>
                             </div>
                         </div>
 
@@ -1260,43 +1349,11 @@
                                 <li v-for="(q, qi) in dosenReport.quality" :key="qi" class="flex flex-wrap items-start gap-2">
                                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">{{ qualityLabel(q.type) }}</span>
                                     <span class="min-w-0 flex-1">{{ q.message }}</span>
-                                    <span v-if="q.baId" class="font-mono text-xs text-slate-400">{{ q.baId }}</span>
+                                    <button v-if="q.baId" type="button" class="font-mono text-xs font-semibold text-brand-700 hover:underline" :title="'Periksa / edit ' + q.baId" @click="openKelolaBaById(q.baId)">{{ q.baId }}</button>
                                 </li>
                             </ul>
                         </div>
 
-                        <div v-if="activeDosenCell" id="dosen-detail" class="overflow-hidden lap-card">
-                            <div class="lap-card-head bg-brand-50/60">
-                                <div>
-                                    <div class="lap-card-title">Detail BA: {{ activeDosenCell.dosen }}</div>
-                                    <div class="lap-card-sub">Bagian: {{ activeDosenCell.bagian }} · {{ dosenCellDetail.length }} BA · {{ dosenCellJadwal.length }} jadwal · {{ dosenCellSesiTotal }} sesi</div>
-                                </div>
-                                <button class="btn-soft !py-1.5 text-xs" @click="closeDosenDetail"><i class="bi bi-x-lg"></i> Tutup</button>
-                            </div>
-                            <div v-if="dosenCellDetail.length" class="divide-y divide-slate-50">
-                                <div v-for="(d, i) in dosenCellDetail" :key="'ba-' + i" class="flex flex-wrap items-center gap-3 px-4 py-3">
-                                    <div class="min-w-0 flex-1">
-                                        <div class="truncate font-semibold text-slate-800">{{ d.label }}</div>
-                                        <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(d.tanggal) }} · {{ d.jam || '-' }} · {{ d.sesiCount }} sesi</div>
-                                    </div>
-                                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">{{ d.pesertaCount }} peserta</span>
-                                    <span v-for="f in d.flags" :key="f" class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{{ f }}</span>
-                                    <a v-if="d.fileUrl" :href="safeUrl(d.fileUrl)" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1.5 text-xs"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>
-                                </div>
-                            </div>
-                            <div v-else class="px-4 py-6 text-center text-sm text-slate-400">Tidak ada BA untuk kombinasi ini.</div>
-                            <div v-if="dosenCellJadwal.length" class="border-t border-slate-100">
-                                <div class="px-4 pt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Jadwal Aktif</div>
-                                <div v-for="(j, i) in dosenCellJadwal" :key="'j-' + i" class="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                                    <div class="min-w-0 flex-1">
-                                        <div class="truncate text-sm text-slate-700">{{ j.label }}</div>
-                                        <div class="text-xs text-slate-400">{{ fmtTanggalWaktu(j.tanggal) }} · {{ j.jam || '-' }}</div>
-                                    </div>
-                                    <span v-if="j.baId" class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">{{ j.baId }}</span>
-                                    <span v-else class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">Belum terealisasi</span>
-                                </div>
-                            </div>
-                        </div>
                         </template>
                     </section>
 
@@ -3217,7 +3274,8 @@
                         bayarSelisih: { page: 1, perPage: 10 }
                     },
                     dosenFilter: { bagian: '', q: '' },
-                    activeDosenCell: null,
+                    dosenView: { blok: '', kegiatanKey: '' },
+                    dosenSelectedKey: '',
                     bagianFilter: { bagian: '', group: 'blok' },
                     baFilter: { bagian: '' },
                     baLayer: 'kegiatan',
@@ -4161,26 +4219,83 @@
                         pct: Math.round((r.totalRealisasi / max) * 100)
                     }));
                 },
-                dosenRowForCell() {
-                    const cell = this.activeDosenCell;
-                    if (!cell) return null;
-                    const key = DosenReport.dosenKey(cell.dosen);
-                    return this.dosenReport.rows.find(r => r.key === key) || null;
+                dosenSelectedRow() {
+                    const rows = this.dosenReport.rows;
+                    if (!rows.length) return null;
+                    return rows.find(r => r.key === this.dosenSelectedKey) || rows[0];
                 },
-                dosenCellDetail() {
-                    const row = this.dosenRowForCell;
-                    if (!row || !this.activeDosenCell) return [];
-                    const bk = this.normBagian(this.activeDosenCell.bagian);
-                    return row.baRows.filter(b => this.normBagian(b.bagian) === bk);
+                dosenViewBlokOptions() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const seen = {};
+                    const out = [];
+                    row.details.forEach(d => {
+                        const blok = String(d.blok || '').trim();
+                        if (!blok || seen[blok]) return;
+                        seen[blok] = 1;
+                        out.push(blok);
+                    });
+                    return out.sort((a, b) => a.localeCompare(b, 'id'));
                 },
-                dosenCellJadwal() {
-                    const row = this.dosenRowForCell;
-                    if (!row || !this.activeDosenCell) return [];
-                    const bk = this.normBagian(this.activeDosenCell.bagian);
-                    return row.jadwalRows.filter(j => this.normBagian(j.bagian) === bk);
+                dosenViewKegiatanOptions() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const blok = String(this.dosenView.blok || '').trim();
+                    return row.details.filter(d => !blok || String(d.blok || '').trim() === blok);
                 },
-                dosenCellSesiTotal() {
-                    return this.dosenCellDetail.reduce((t, b) => t + (Number(b.sesiCount) || 0), 0);
+                dosenViewDetails() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const blok = String(this.dosenView.blok || '').trim();
+                    const key = String(this.dosenView.kegiatanKey || '').trim();
+                    return row.details.filter(d => {
+                        if (blok && String(d.blok || '').trim() !== blok) return false;
+                        if (key && d.key !== key) return false;
+                        return true;
+                    });
+                },
+                dosenViewStats() {
+                    const details = this.dosenViewDetails;
+                    const peserta = {};
+                    let sesi = 0;
+                    let rencana = 0;
+                    let tanpaBa = 0;
+                    details.forEach(d => {
+                        d.peserta.forEach(npm => { if (npm) peserta[npm] = 1; });
+                        sesi += Number(d.realisasi) || 0;
+                        rencana += Number(d.rencana) || 0;
+                        if (!d.baCount) tanpaBa += 1;
+                    });
+                    return { kegiatan: details.length, peserta: Object.keys(peserta).length, sesi: sesi, rencana: rencana, tanpaBa: tanpaBa };
+                },
+                dosenViewPesertaRows() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const allowed = {};
+                    this.dosenViewDetails.forEach(d => d.baIds.forEach(id => { allowed[id] = 1; }));
+                    const out = [];
+                    const seen = {};
+                    this.dosenReportBaList.forEach(b => {
+                        if (!allowed[String(b.id || '').trim()]) return;
+                        (b.peserta || []).forEach(p => {
+                            const npm = String((p && p.npm) || '').trim();
+                            if (!npm) return;
+                            const uniq = npm + '::' + String(b.kegiatanKey || '');
+                            if (seen[uniq]) return;
+                            seen[uniq] = 1;
+                            out.push({
+                                npm: npm,
+                                nama: String((p && p.namaLengkap) || '').trim() || npm,
+                                kegiatan: String(b.label || '').trim() || '-',
+                                blok: String(b.blok || '').trim(),
+                                tanggal: b.tanggal ? this.fmtTanggal(b.tanggal) : '-',
+                                sesi: Number(b.sesiCount) || 1,
+                                status: String(b.status || 'Lengkap').trim() || 'Lengkap',
+                                kegiatanKey: String(b.kegiatanKey || '')
+                            });
+                        });
+                    });
+                    return out.sort((a, b) => a.nama.localeCompare(b.nama, 'id') || a.npm.localeCompare(b.npm));
                 },
                 bagianDetailRows() {
                     const sel = this.activeMatrixCell;
@@ -4575,15 +4690,14 @@
             watch: {
                 'filters.blok': function () {
                     this.animateCharts();
-                    this.activeDosenCell = null;
                     this.activeMatrixCell = null;
                     this.resetPagers();
                 },
-                'filters.status': function () { this.animateCharts(); this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.jenis': function () { this.animateCharts(); this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.from': function () { this.animateCharts(); this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.to': function () { this.animateCharts(); this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); },
-                'filters.search': function () { this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); },
+                'filters.status': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
+                'filters.jenis': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
+                'filters.from': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
+                'filters.to': function () { this.animateCharts(); this.activeMatrixCell = null; this.resetPagers(); },
+                'filters.search': function () { this.activeMatrixCell = null; this.resetPagers(); },
                 'bagianFilter.bagian': function (v) {
                     this.pagers.bagian.page = 1;
                     this.pagers.bagianMatrix.page = 1;
@@ -4592,8 +4706,9 @@
                 'bagianFilter.group': function () {
                     this.pagers.bagian.page = 1;
                 },
-                'dosenFilter.bagian': function () { this.activeDosenCell = null; this.pagers.dosen.page = 1; },
-                'dosenFilter.q': function () { this.activeDosenCell = null; this.pagers.dosen.page = 1; },
+                'dosenFilter.bagian': function () { this.onDosenFilterChange(); },
+                'dosenFilter.q': function () { this.onDosenFilterChange(); },
+                'pagers.dosen.page': function () { this.keepDosenSelectionOnPage(); },
                 'baFilter.bagian': function () { this.pagers.baKegiatan.page = 1; this.pagers.baAudit.page = 1; this.pagers.daftarba.page = 1; },
                 baLayer: function (v) {
                     if (v === 'berkas') this.pagers.daftarba.page = 1;
@@ -5331,22 +5446,66 @@
                     });
                     return { realisasi: realisasi, rencana: rencana };
                 },
-                dosenCellValue(row, bagian) {
-                    return (row && row.counts) ? (row.counts[this.normBagian(bagian)] || { realisasi: 0, rencana: 0 }) : { realisasi: 0, rencana: 0 };
+                selectDosenRow(key) {
+                    this.dosenSelectedKey = String(key || '');
+                    this.dosenView = { blok: '', kegiatanKey: '' };
                 },
-                dosenCellRealisasi(row, bagian) {
-                    return this.dosenCellValue(row, bagian).realisasi;
+                onDosenFilterChange() {
+                    this.dosenView = { blok: '', kegiatanKey: '' };
+                    this.dosenSelectedKey = '';
+                    this.pagers.dosen.page = 1;
                 },
-                dosenCellRencana(row, bagian) {
-                    return this.dosenCellValue(row, bagian).rencana;
+                onDosenViewBlokChange() {
+                    this.dosenView.kegiatanKey = '';
                 },
-                dosenCellHasData(row, bagian) {
-                    const c = this.dosenCellValue(row, bagian);
-                    return !!(c.realisasi || c.rencana);
+                keepDosenSelectionOnPage() {
+                    const rows = this.pagerRows('dosen', this.dosenReport.rows);
+                    if (!rows.length) return;
+                    if (rows.some(r => r.key === this.dosenSelectedKey)) return;
+                    this.dosenSelectedKey = rows[0].key;
+                    this.dosenView = { blok: '', kegiatanKey: '' };
                 },
-                cellText(row, bagian) {
-                    const c = this.dosenCellValue(row, bagian);
-                    return c.realisasi + '/' + c.rencana;
+                resetDosenView() {
+                    this.dosenFilter.q = '';
+                    this.dosenFilter.bagian = '';
+                    this.dosenView = { blok: '', kegiatanKey: '' };
+                    this.dosenSelectedKey = '';
+                },
+                dosenDetailStatus(d) {
+                    if (!d || !d.baCount) return 'Tanpa BA';
+                    if ((d.statuses || []).indexOf('Draft') !== -1) return 'Draft';
+                    return 'Lengkap';
+                },
+                dosenStatusCls(status) {
+                    if (status === 'Lengkap') return 'bg-emerald-50 text-emerald-700';
+                    if (status === 'Draft') return 'bg-amber-50 text-amber-700';
+                    if (status === 'Tanpa BA') return 'bg-rose-50 text-rose-700';
+                    return 'bg-slate-100 text-slate-500';
+                },
+                dosenDetailTanggal(d) {
+                    const row = this.dosenSelectedRow;
+                    if (!row || !d) return '-';
+                    const ba = row.baRows.find(b => b.kegiatanKey === d.key && b.tanggal);
+                    if (ba && ba.tanggal) return this.fmtTanggal(ba.tanggal);
+                    const j = row.jadwalRows.find(x => x.kegiatanKey === d.key && x.tanggal);
+                    if (j && j.tanggal) return this.fmtTanggal(j.tanggal);
+                    return '-';
+                },
+                dosenBaRowsForDetail(d) {
+                    const row = this.dosenSelectedRow;
+                    if (!row || !d) return [];
+                    return row.baRows.filter(b => b.kegiatanKey === d.key && b.baId);
+                },
+                openKelolaBaById(baId) {
+                    const id = String(baId || '').trim();
+                    if (!id) return;
+                    const inUnits = (this.kegiatan || []).some(u => (u.baPelaksanaan || []).concat(u.baPendukung || []).some(b => String(b['BA ID'] || '').trim() === id));
+                    let sumber = '';
+                    if (!inUnits) {
+                        const flat = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === id);
+                        sumber = (flat && String(flat.Sumber || '').trim()) || 'Bagian';
+                    }
+                    this.openKelolaBa(id, sumber || undefined);
                 },
                 qualityLabel(type) {
                     if (type === 'tanpa-sesi') return 'Tanpa tautan sesi';
@@ -5355,9 +5514,6 @@
                     if (type === 'tanpa-dosen') return 'Tanpa dosen';
                     if (type === 'varian') return 'Varian nama';
                     return type;
-                },
-                dosenCellKey(dosen, bagian) {
-                    return this.normSearch(dosen) + '::' + this.normBagian(bagian);
                 },
                 matrixCellKey(blok, bagianLabel) {
                     return this.normBagian(bagianLabel) + '::' + String(blok || '').trim();
@@ -5388,19 +5544,6 @@
                     this.expanded = {};
                     this.pagers.bagian.page = 1;
                     this.pagers.bagianMatrix.page = 1;
-                },
-                openDosenCell(dosen, bagian) {
-                    this.activeDosenCell = { key: this.dosenCellKey(dosen, bagian), dosen: dosen, bagian: bagian };
-                    this.$nextTick(() => {
-                        const el = document.getElementById('dosen-detail');
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    });
-                },
-                resetDosenCell() {
-                    this.activeDosenCell = null;
-                },
-                closeDosenDetail() {
-                    this.activeDosenCell = null;
                 },
                 resetGlobalFilters() {
                     this.filters.from = '';
@@ -5528,12 +5671,18 @@
                 },
                 openKelolaBa(baId, sumber) {
                     const units = this.kegiatan || [];
-                    let found = {};
+                    let found = null;
                     let unit = null;
                     for (const u of units) {
                         const hit = (u.baPelaksanaan || []).concat(u.baPendukung || []).find(b => b['BA ID'] === baId);
                         if (hit) { found = hit; unit = u; break; }
                     }
+                    if (!found) {
+                        found = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === baId) || null;
+                        const key = found && String(found['Kegiatan Key'] || '').trim();
+                        if (key) unit = units.find(u => String(u.key || '').trim() === key) || null;
+                    }
+                    if (!found) found = {};
                     const opsi = ((unit && unit.peserta) || []).slice();
                     const npmSet = new Set((found.peserta || []).map((p) => p.npm));
                     const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan);
@@ -5597,8 +5746,9 @@
                         this.uploadBukti = data.uploadBukti || [];
                         this.bagian = data.bagian || { categories: [], labs: [] };
                         this.expanded = {};
-                        this.activeDosenCell = null;
                         this.activeMatrixCell = null;
+                        this.dosenSelectedKey = '';
+                        this.dosenView = { blok: '', kegiatanKey: '' };
                         this.animateNumbers();
                         this.animateCharts();
                         this.loadTimeMs = Math.round(performance.now() - t0);

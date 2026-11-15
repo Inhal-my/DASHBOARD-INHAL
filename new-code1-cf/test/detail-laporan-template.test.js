@@ -343,9 +343,8 @@ describe('detail laporan tab pembayaran', () => {
 describe('detail laporan kejelasan tampilan', () => {
   it('sumbu matriks dijelaskan', async () => {
     const html = await loadHtml();
-    expect(html).toContain('Dosen \\ Bagian');
     expect(html).toContain('Blok \\ Bagian');
-    expect(html).toContain('Baris = Dosen, kolom = Bagian');
+    expect(html).toContain('Pilih dosen, lalu saring blok dan detail kegiatan.');
     expect(html).toContain('Baris = Blok, kolom = Bagian');
   });
   it('istilah chip seragam', async () => {
@@ -535,7 +534,7 @@ describe('detail laporan struktur tab terjaga setelah restyle', () => {
     const html = await loadHtml();
     expect(html).toContain('Distribusi Status');
     expect(html).toContain('stroke-dasharray');
-    expect(html).toContain('Baris = Dosen, kolom = Bagian');
+    expect(html).toContain('Pilih dosen, lalu saring blok dan detail kegiatan.');
     expect(html).toContain('>Aksi</th>');
     expect(html).toContain('btn-acc');
     expect(html).toContain('btn-bukti');
@@ -613,13 +612,14 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('jenisByKegiatanKey() {');
   });
 
-  it('menampilkan sel realisasi/rencana, KPI, dan panel pemeriksaan data', async () => {
+  it('menampilkan master-detail dosen, KPI, dan panel pemeriksaan data', async () => {
     const html = await loadHtml();
-    expect(html).toContain('{{ cellText(row, b) }}');
+    expect(html).toContain('dosenViewDetails');
+    expect(html).toContain('dosenViewStats');
     expect(html).toContain('Rencana dosen tampil:');
     expect(html).toContain('Rencana global:');
     expect(html).toContain('Pemeriksaan Data Dosen');
-    expect(html).toContain('dosenCellJadwal');
+    expect(html).toContain('dosenDetailTanggal(d)');
     expect(html).toContain('exportDosenReport');
     expect(html).toContain("'Laporan' }}");
   });
@@ -643,20 +643,23 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('in-heat-legend');
   });
 
-  it('matriks dosen menghitung sesi realisasi dan rencana per detail kegiatan', async () => {
+  it('master-detail dosen memakai detail kegiatan dan saringan blok', async () => {
     const html = await loadHtml();
     expect(html).toContain('DosenReport.buildDosenReport');
-    expect(html).toContain('{{ cellText(row, b) }}');
-    expect(html).toContain('dosenCellHasData(row, b)');
+    expect(html).toContain('dosenViewBlokOptions');
+    expect(html).toContain('dosenViewKegiatanOptions');
+    expect(html).toContain('dosenViewDetails');
     expect(html).toContain('Rencana global: {{ dosenReport.totals.rencanaGlobal }}');
     expect(html).not.toContain('{{ b.value }} BA');
   });
 
-  it('panel detail sel dosen memakai dosenRowForCell sebagai computed, bukan dipanggil', async () => {
+  it('daftar ID BA dapat diklik untuk memeriksa dan mengoreksi data', async () => {
     const html = await loadHtml();
-    expect(html).toContain('dosenRowForCell() {');
-    expect(html).toContain('const row = this.dosenRowForCell;');
-    expect(html).not.toContain('this.dosenRowForCell()');
+    expect(html).toContain('dosenBaRowsForDetail(d)');
+    expect(html).toContain('@click="openKelolaBaById(b.baId)"');
+    expect(html).toContain('@click="openKelolaBaById(q.baId)"');
+    expect(html).toContain('openKelolaBaById(baId) {');
+    expect(html).toContain('this.openKelolaBa(id, sumber || undefined);');
   });
 });
 

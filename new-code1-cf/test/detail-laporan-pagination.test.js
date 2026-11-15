@@ -105,9 +105,6 @@ describe('paginasi tabel detail laporan: pengelompokan bagian', () => {
 describe('paginasi tabel detail laporan: baris total matriks', () => {
   it('baris Total matriks tetap di luar potongan', async () => {
     const html = await loadHtml();
-    const dosen = block(html, "pagerRows('dosen', dosenReport.rows)", '</table>');
-    expect(dosen).toContain('dosenReport.totals.sesiRealisasi');
-    expect(dosen).toContain('dosenColTotal(b)');
     const matrix = block(html, "pagerRows('bagianMatrix', bagianMatrixRows)", '</table>');
     expect(matrix).toContain('matrixGrandTotal');
   });
@@ -183,7 +180,7 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
   it('watcher filter global mereset halaman', async () => {
     const html = await loadHtml();
     const watch = block(html, 'watch: {', 'methods: {');
-    expect(watch).toContain("'filters.search': function () { this.activeDosenCell = null; this.activeMatrixCell = null; this.resetPagers(); }");
+    expect(watch).toContain("'filters.search': function () { this.activeMatrixCell = null; this.resetPagers(); }");
     expect(watch).toContain("'filters.blok': function () {");
     expect((watch.match(/this\.resetPagers\(\);/g) || []).length).toBeGreaterThanOrEqual(5);
   });
@@ -203,10 +200,12 @@ describe('paginasi tabel detail laporan: reset saat filter berubah', () => {
   it('watcher filter per tab mereset pager terkait', async () => {
     const html = await loadHtml();
     const watch = block(html, 'watch: {', 'methods: {');
-    for (const key of ['bagian', 'bagianMatrix', 'dosen', 'baKegiatan', 'baAudit',
+    for (const key of ['bagian', 'bagianMatrix', 'baKegiatan', 'baAudit',
       'daftarba', 'jadwal', 'bayarTabel', 'bayarAntrean', 'bayarSelisih']) {
       expect(watch, key).toContain(`this.pagers.${key}.page = 1;`);
     }
+    expect(watch).toContain('this.onDosenFilterChange();');
+    expect(html).toContain('this.pagers.dosen.page = 1;');
     expect(watch).toContain('deep: true');
   });
 
