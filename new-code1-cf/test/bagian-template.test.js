@@ -174,3 +174,18 @@ describe('dosen searchable picker', () => {
     expect(html).not.toContain('@input="dosenPick.ba = i"');
   });
 });
+
+describe('panduan jadwal dan BA Pelaksanaan', () => {
+  it('menampilkan panduan lengkap di bawah halaman', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Panduan Jadwal &amp; Berita Acara');
+    expect(html).toContain('Cara membuat jadwal');
+    expect(html).toContain('Cara membuat BA Pelaksanaan');
+    expect(html).toContain('Teknis memilih peserta');
+    expect(html).toContain('Peserta dari beda ajuan');
+    expect(html).toContain('tanggal BA wajib sama dengan tanggal sesi paling awal');
+    expect(html).toContain('bagian, blok, dan nama kegiatan sama');
+    expect(html).toContain('Buat BA terpisah untuk masing-masing kegiatan/blok');
+    expect(html).toContain('Jadwal lewat tanpa BA');
+  });
+});
