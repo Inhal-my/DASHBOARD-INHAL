@@ -346,7 +346,7 @@ describe('detail laporan kejelasan tampilan', () => {
     expect(html).toContain('Pemeriksaan {{ bagianSelectionTitle }}');
     expect(html).toContain('cakupan BA PEL');
     expect(html).toContain('Cara memeriksa');
-    expect(html).toContain('Cakupan data');
+    expect(html).toContain('Arah koreksi BA Pelaksanaan khusus admin');
   });
   it('istilah chip seragam', async () => {
     const html = await loadHtml();
@@ -677,6 +677,17 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('v-if="loggedIn && perbaikanDosen.open"');
     expect(html).toContain('Cara membaca temuan');
     expect(html).toContain('Cara memperbaiki');
+  });
+
+  it('menyediakan menu perbaikan laporan bagian khusus admin', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('Menu Perbaikan Laporan Bagian');
+    expect(html).toContain('openPerbaikanBagian');
+    expect(html).toContain('bagianPerbaikanRows');
+    expect(html).toContain('v-if="loggedIn && perbaikanBagian.open"');
+    expect(html).toContain('bagianSesiFindings');
+    expect(html).toContain('perbaikiBagianDariMenu');
+    expect(html).toContain('Tanggal BA harus sama dengan sesi paling awal');
   });
 
   it('daftar ID BA dapat diklik untuk memeriksa dan mengoreksi data', async () => {

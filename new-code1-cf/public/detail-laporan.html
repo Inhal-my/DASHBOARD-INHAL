@@ -681,6 +681,54 @@
                 </div>
             </div>
         </div>
+        <!-- menu perbaikan laporan bagian (admin) -->
+        <div v-if="loggedIn && perbaikanBagian.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="perbaikanBagian.open = false">
+            <div class="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="perbaikanBagianTitle">
+                <div class="mb-1 flex flex-wrap items-center gap-2">
+                    <h3 id="perbaikanBagianTitle" class="text-sm font-bold text-slate-900">Menu Perbaikan Laporan Bagian</h3>
+                    <span class="in-badge">Admin</span>
+                    <button type="button" class="ml-auto text-slate-400 hover:text-slate-600" aria-label="Tutup menu perbaikan bagian" @click="perbaikanBagian.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <p class="mb-3 text-[11px] text-slate-400">Pilih temuan, lalu ikuti arah perbaikannya. Koreksi BA PEL, sesi, dan peserta hanya tersedia untuk admin.</p>
+                <div class="mb-3 flex flex-wrap gap-1.5">
+                    <button v-for="t in bagianPerbaikanTypes" :key="t.key" type="button"
+                        class="rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset transition"
+                        :class="perbaikanBagian.filter === t.key ? 'bg-brand-50 text-brand-700 ring-brand-300' : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
+                        @click="perbaikanBagian.filter = perbaikanBagian.filter === t.key ? 'semua' : t.key">
+                        {{ t.label }} <span class="ml-1">{{ t.count }}</span>
+                    </button>
+                </div>
+                <ul class="space-y-2">
+                    <li v-for="(q, qi) in bagianPerbaikanRows" :key="qi" class="rounded-xl border border-slate-200 p-3">
+                        <div class="flex flex-wrap items-start gap-2">
+                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{{ perbaikanBagianLabel(q.type) }}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs font-semibold text-slate-800">{{ q.kegiatan }}</div>
+                                <div class="mt-0.5 text-[11px] text-slate-500">{{ q.bagian }} &middot; {{ q.blok || 'Tanpa blok' }}<span v-if="q.baId"> &middot; {{ q.baId }}</span></div>
+                                <div class="mt-1 text-xs text-slate-700">{{ q.message }}</div>
+                            </div>
+                            <a v-if="q.action === 'bagian'" href="/bagian" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 text-[11px]">
+                                <i class="bi bi-box-arrow-up-right"></i> {{ perbaikanBagianActionLabel(q) }}
+                            </a>
+                            <a v-else-if="q.action === 'pengajuan'" href="/dashboard" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 text-[11px]">
+                                <i class="bi bi-box-arrow-up-right"></i> {{ perbaikanBagianActionLabel(q) }}
+                            </a>
+                            <button v-else-if="q.baId" type="button" class="btn-soft !py-1 text-[11px]" @click="perbaikiBagianDariMenu(q)">
+                                <i class="bi bi-pencil-square"></i> {{ perbaikanBagianActionLabel(q) }}
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+                <div v-if="!bagianPerbaikanRows.length" class="py-8 text-center text-xs text-slate-400">Tidak ada temuan pada jenis ini.</div>
+                <div class="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                    Untuk Sesi Jadwal: buka Kelola BA &rarr; centang sesi yang benar. Tanggal BA harus sama dengan sesi paling awal, dan sesi yang sudah dipakai BA lain tidak dapat dipilih.
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button type="button" class="btn-soft" @click="perbaikanBagian.open = false">Tutup</button>
+                </div>
+            </div>
+        </div>
+
         <div v-if="riwayat.open" class="fixed inset-0 z-[130] flex justify-end bg-slate-900/40" @click.self="riwayat.open = false">
             <div class="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="riwayatTitle">
                 <div class="mb-4 flex items-center justify-between">
@@ -1585,6 +1633,7 @@
                                                 <input id="bagian-q" v-model="bagianFilter.q" class="input" placeholder="Kata kunci...">
                                             </div>
                                             <div class="flex items-end gap-2">
+                                                <button v-if="loggedIn" type="button" class="btn-soft" @click="openPerbaikanBagian"><i class="bi bi-tools"></i> Menu Perbaikan</button>
                                                 <button type="button" class="btn-soft" @click="resetBagianFilter"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
                                                 <button type="button" class="btn-soft" :disabled="exporting" @click="exportBagianSheets"><i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i> {{ exporting ? 'Menyiapkan...' : 'Laporan' }}</button>
                                             </div>
@@ -1731,14 +1780,16 @@
                                 </ul>
                             </div>
                             <div class="lap-card p-4">
-                                <div class="lap-card-title"><i class="bi bi-info-circle text-brand-500"></i> Cakupan data</div>
-                                <div class="lap-card-sub mb-2">Apa yang masuk dan bagaimana ditandai</div>
+                                <div class="lap-card-title"><i class="bi bi-tools text-brand-500"></i> Cara memperbaiki</div>
+                                <div class="lap-card-sub mb-2">Arah koreksi BA Pelaksanaan khusus admin</div>
                                 <ul class="bgc-readlist">
-                                    <li><span class="k">Tanpa peserta ACC</span><span>Tetap ditampilkan, bukan disembunyikan. Diberi penanda <b>Tanpa ACC</b> di checklist.</span></li>
-                                    <li><span class="k">Tanpa pendaftar</span><span>Juga tetap tampil dengan keterangan &ldquo;tanpa pendaftar&rdquo; dan penanda <b>Tanpa ACC</b>.</span></li>
-                                    <li><span class="k">Peserta BA PEL</span><span>Jumlah peserta di seluruh BA PEL kegiatan. Bila lebih kecil dari jumlah ACC, checklist memberi peringatan <b>Peserta kurang</b>.</span></li>
-                                    <li><span class="k">Dosen</span><span>Diambil dari seluruh BA PEL kegiatan; bila belum ada BA PEL, kolom dosen dikosongkan.</span></li>
-                                    <li><span class="k">Pencarian</span><span>Mencakup nama kegiatan, blok, dosen, ID BA, NPM, dan nama peserta pada Bagian yang dipilih.</span></li>
+                                    <li><span class="k">Buka menu</span><span>Klik <b>Menu Perbaikan</b>, lalu pilih jenis temuan. Setiap temuan menunjukkan kegiatan dan BA yang perlu ditindak.</span></li>
+                                    <li><span class="k">Tanpa BA PEL</span><span>Klik <b>Buat BA PEL</b> &rarr; buat BA dari Jadwal di halaman Bagian. Tanpa BA PEL, kegiatan tidak dihitung.</span></li>
+                                    <li><span class="k">BA PEL draft</span><span>Klik <b>Lengkapi BA</b> &rarr; periksa tanggal, dosen, peserta, dan berkas sampai statusnya <b>Lengkap</b>.</span></li>
+                                    <li><span class="k">Sesi jadwal</span><span>Klik <b>Periksa Sesi</b> &rarr; centang sesi yang benar. Tanggal BA harus sama dengan sesi paling awal; sesi yang sudah dipakai BA lain tidak dapat dipilih.</span></li>
+                                    <li><span class="k">BA PEN kosong</span><span>Klik <b>Buat BA PEN</b> &rarr; buat BA Pendukung di halaman Bagian bila kegiatan memerlukannya.</span></li>
+                                    <li><span class="k">Peserta kurang</span><span>Klik <b>Kelola Peserta</b> &rarr; centang peserta ACC yang belum masuk ke BA PEL.</span></li>
+                                    <li><span class="k">Tanpa ACC</span><span>Klik <b>Buka Pengajuan</b> &rarr; perbaiki status pengajuan di dashboard/portal. BA tidak dapat menggantikan ACC.</span></li>
                                 </ul>
                             </div>
                         </div>
@@ -3377,6 +3428,7 @@
                     kelola: { open: false, baId: '', sumber: 'Bagian', kegiatanKey: '', jadwalIds: [], tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [], pesertaDirty: false },
                     perbaikanDosen: { open: false, filter: '' },
                     rapikanDosen: { open: false, saving: false, names: [], baIds: [], canonical: '', message: '' },
+                    perbaikanBagian: { open: false, filter: 'semua' },
                     riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' },
                     toastTimer: null,
@@ -3871,6 +3923,8 @@
                             jumlahPeserta: Number(b['Jumlah Peserta']) || pesertaNpm.length,
                             pesertaNpm: pesertaNpm,
                             fileUrl: fileUrl,
+                            jadwalIds: jadwalIds,
+                            sesiCount: jadwalIds.length,
                             status: lengkap ? 'Lengkap' : 'Draft'
                         });
                     });
@@ -4191,6 +4245,7 @@
                         { id: 'semua', label: 'Semua', n: rows.length },
                         { id: 'tanpaBa', label: 'Tanpa BA', n: count('tanpaBa') },
                         { id: 'draft', label: 'Draft', n: count('draft') },
+                        { id: 'sesi', label: 'Sesi jadwal', n: count('sesi') },
                         { id: 'baPenKosong', label: 'BA PEN kosong', n: count('baPenKosong') },
                         { id: 'pesertaKurang', label: 'Peserta kurang', n: count('pesertaKurang') },
                         { id: 'tanpaAcc', label: 'Tanpa ACC', n: count('tanpaAcc') }
@@ -4205,7 +4260,77 @@
                     return this.bagianSummaryFor(this.bagianChecklistRows);
                 },
                 bagianPerluTindakLanjut() {
-                    return this.bagianChecklistRows.filter(k => k.statusBa !== 'Lengkap' || !k.baPenCount || k.baPelPesertaCount < k.accCount || !k.accCount).length;
+                    return this.bagianChecklistRows.filter(k => k.statusBa !== 'Lengkap' || !k.baPenCount || k.baPelPesertaCount < k.accCount || !k.accCount || this.bagianSesiFindings(k).length).length;
+                },
+                jadwalByJadwalId() {
+                    const map = {};
+                    (this.jadwal || []).forEach(j => {
+                        const id = String(j.jadwalId || '').trim();
+                        if (id) map[id] = j;
+                    });
+                    return map;
+                },
+                bagianPerbaikanAll() {
+                    const rows = this.bagianScopeSearchRows || [];
+                    const out = [];
+                    rows.forEach(k => {
+                        const base = { kegiatan: k.nama, bagian: k.bagian, blok: k.blok, uid: k.uid };
+                        const firstBa = (k.baPel || [])[0] || null;
+                        if (!k.baPelCount) {
+                            out.push(Object.assign({}, base, {
+                                type: 'tanpaBa',
+                                message: 'Belum ada BA PEL untuk kegiatan ini. Arah perbaikan: buat BA PEL dari Jadwal di halaman Bagian.',
+                                action: 'bagian'
+                            }));
+                        }
+                        (k.baPel || []).forEach(b => {
+                            if (b.status === 'Draft') {
+                                out.push(Object.assign({}, base, {
+                                    type: 'draft',
+                                    baId: b.baId,
+                                    message: 'BA ' + b.baId + ' berstatus Draft; lengkapi tanggal, dosen, peserta, atau berkas.',
+                                    action: 'ba'
+                                }));
+                            }
+                        });
+                        this.bagianSesiFindings(k).forEach(f => {
+                            out.push(Object.assign({}, base, { type: 'sesi', baId: f.baId, message: f.message, action: 'ba' }));
+                        });
+                        if (!k.baPenCount) {
+                            out.push(Object.assign({}, base, {
+                                type: 'baPenKosong',
+                                message: 'BA PEN belum ada. Arah perbaikan: buat BA Pendukung di halaman Bagian bila kegiatan memerlukannya.',
+                                action: 'bagian'
+                            }));
+                        }
+                        if (k.baPelCount && k.baPelPesertaCount < k.accCount) {
+                            out.push(Object.assign({}, base, {
+                                type: 'pesertaKurang',
+                                baId: firstBa ? firstBa.baId : '',
+                                message: 'Peserta BA PEL ' + k.baPelPesertaCount + ' dari ' + k.accCount + ' peserta ACC. Arah perbaikan: kelola peserta pada BA PEL.',
+                                action: firstBa ? 'ba' : 'bagian'
+                            }));
+                        }
+                        if (!k.accCount) {
+                            out.push(Object.assign({}, base, {
+                                type: 'tanpaAcc',
+                                message: 'Belum ada peserta ACC. Arah perbaikan: periksa status pengajuan di dashboard/portal, bukan dari BA.',
+                                action: 'pengajuan'
+                            }));
+                        }
+                    });
+                    return out;
+                },
+                bagianPerbaikanRows() {
+                    const filter = String(this.perbaikanBagian.filter || 'semua').trim();
+                    const rows = this.bagianPerbaikanAll;
+                    return !filter || filter === 'semua' ? rows : rows.filter(q => q.type === filter);
+                },
+                bagianPerbaikanTypes() {
+                    const labels = { tanpaBa: 'Tanpa BA PEL', draft: 'BA PEL Draft', sesi: 'Sesi jadwal', baPenKosong: 'BA PEN kosong', pesertaKurang: 'Peserta kurang', tanpaAcc: 'Tanpa ACC' };
+                    const counts = {};
+                    this.bagianPerbaikanAll.forEach(q => { counts[q.type] = (counts[q.type] || 0) + 1; });
+                    return Object.keys(labels).map(key => ({ key: key, label: labels[key], count: counts[key] || 0 })).filter(t => t.count);
                 },
                 bagianCoverage() {
                     return this.bagianHeaderStats.coverage;
@@ -5723,10 +5848,62 @@
                     (k.peserta || []).forEach(p => parts.push(p.npm, p.namaLengkap, p.status));
                     return this.normSearch(parts.join(' ')).indexOf(q) !== -1;
                 },
+                bagianLooseKegiatanKey(bagian, blok, nama) {
+                    const loose = v => this.normBagian(v).replace(/[^a-z0-9]+/g, '');
+                    return loose(bagian) + '::' + loose(blok) + '::' + loose(nama);
+                },
+                bagianSesiFindings(k) {
+                    const out = [];
+                    if (!k || !k.baPelCount) return out;
+                    const map = this.jadwalByJadwalId;
+                    const rowKey = this.bagianLooseKegiatanKey(k.bagian, k.blok, k.nama);
+                    (k.baPel || []).forEach(b => {
+                        const ids = (b.jadwalIds || []).map(v => String(v || '').trim()).filter(Boolean);
+                        if (!ids.length) {
+                            out.push({ baId: b.baId, message: 'BA ' + b.baId + ' belum mengisi Sesi Jadwal; realisasi sementara dihitung 1 sesi.' });
+                            return;
+                        }
+                        const found = [];
+                        const missing = [];
+                        ids.forEach(id => {
+                            const j = map[id];
+                            if (j) found.push(j);
+                            else missing.push(id);
+                        });
+                        if (missing.length) {
+                            out.push({ baId: b.baId, message: 'Sesi ' + missing.join(', ') + ' pada BA ' + b.baId + ' tidak ditemukan atau sudah tidak aktif.' });
+                        }
+                        if (!found.length) return;
+                        found.sort((x, y) => String(x.tanggal || '').localeCompare(String(y.tanggal || '')) || String(x.jam || '').localeCompare(String(y.jam || '')) || String(x.jadwalId || '').localeCompare(String(y.jadwalId || '')));
+                        const first = found[0];
+                        const baDate = String(b.tanggal || '').slice(0, 10);
+                        const firstDate = String(first.tanggal || '').slice(0, 10);
+                        if (baDate && firstDate && baDate !== firstDate) {
+                            out.push({ baId: b.baId, message: 'Tanggal BA ' + b.baId + ' tidak sama dengan sesi paling awal (' + this.fmtTanggal(firstDate) + '). Perbaiki tanggal atau pilihan sesinya.' });
+                        }
+                        const other = found.find(j => {
+                            const linked = String(j.baId || '').trim();
+                            return linked && linked !== String(b.baId || '').trim();
+                        });
+                        if (other) {
+                            out.push({ baId: b.baId, message: 'Sesi ' + other.jadwalId + ' pada BA ' + b.baId + ' sudah tertaut ke BA lain (' + other.baId + ').' });
+                        }
+                        const wrong = found.find(j => {
+                            const label = j.namaKegiatan || j.label || '';
+                            const bagian = this.resolveBagianLabel(j.bagian, '', label);
+                            return this.bagianLooseKegiatanKey(bagian, j.blok, label) !== rowKey;
+                        });
+                        if (wrong) {
+                            out.push({ baId: b.baId, message: 'Sesi ' + wrong.jadwalId + ' pada BA ' + b.baId + ' berasal dari kegiatan lain.' });
+                        }
+                    });
+                    return out;
+                },
                 bagianRowMatchesIssue(k, issue) {
                     if (!issue || issue === 'semua') return true;
                     if (issue === 'tanpaBa') return !k.baPelCount;
                     if (issue === 'draft') return k.statusBa === 'Draft';
+                    if (issue === 'sesi') return this.bagianSesiFindings(k).length > 0;
                     if (issue === 'baPenKosong') return !k.baPenCount;
                     if (issue === 'pesertaKurang') return k.baPelCount > 0 && k.baPelPesertaCount < k.accCount;
                     if (issue === 'tanpaAcc') return !k.accCount;
@@ -5736,17 +5913,20 @@
                     const baOk = k.baPelCount > 0;
                     const draft = k.statusBa === 'Draft';
                     const penOk = k.baPenCount > 0;
+                    const sesi = this.bagianSesiFindings(k);
                     const pesertaOk = k.peserta.length > 0 && k.baPelPesertaCount >= k.accCount;
                     const pesertaWarn = k.peserta.length > 0 && k.baPelPesertaCount < k.accCount;
                     return [
                         { text: !baOk ? 'BA PEL belum' : (draft ? 'BA PEL draft' : 'BA PEL ada'), state: baOk && !draft ? 'ok' : (draft ? 'warn' : 'missing') },
                         { text: penOk ? 'BA PEN ada' : 'BA PEN belum', state: penOk ? 'ok' : 'warn' },
-                        { text: !k.peserta.length ? 'Tanpa peserta' : ('Peserta ' + k.baPelPesertaCount + '/' + k.accCount), state: pesertaOk ? 'ok' : (pesertaWarn || !k.peserta.length ? 'warn' : 'missing') }
+                        { text: !k.peserta.length ? 'Tanpa peserta' : ('Peserta ' + k.baPelPesertaCount + '/' + k.accCount), state: pesertaOk ? 'ok' : (pesertaWarn || !k.peserta.length ? 'warn' : 'missing') },
+                        { text: !baOk ? 'Sesi belum' : (sesi.length ? 'Sesi perlu dicek' : 'Sesi ok'), state: !baOk ? 'missing' : (sesi.length ? 'warn' : 'ok') }
                     ];
                 },
                 bagianIssueText(k) {
                     if (!k.baPelCount) return 'Tanpa BA PEL';
                     if (k.statusBa === 'Draft') return 'BA PEL draft';
+                    if (this.bagianSesiFindings(k).length) return 'Sesi jadwal perlu dicek';
                     if (!k.baPenCount) return 'BA PEN kosong';
                     if (k.baPelPesertaCount < k.accCount) return 'Peserta BA kurang';
                     return '';
@@ -5783,6 +5963,30 @@
                         return;
                     }
                     this.showToast('bi-exclamation-circle', 'Belum ada BA untuk diperiksa. Unggah BA PEL terlebih dahulu.');
+                },
+                openPerbaikanBagian() {
+                    if (!this.loggedIn) return;
+                    this.perbaikanBagian.filter = 'semua';
+                    this.perbaikanBagian.open = true;
+                },
+                perbaikanBagianLabel(type) {
+                    const labels = { tanpaBa: 'Tanpa BA PEL', draft: 'BA PEL Draft', sesi: 'Sesi jadwal', baPenKosong: 'BA PEN kosong', pesertaKurang: 'Peserta kurang', tanpaAcc: 'Tanpa ACC' };
+                    return labels[type] || type;
+                },
+                perbaikanBagianActionLabel(q) {
+                    if (!q) return 'Periksa BA';
+                    if (q.type === 'sesi') return 'Periksa Sesi';
+                    if (q.type === 'draft') return 'Lengkapi BA';
+                    if (q.type === 'pesertaKurang') return 'Kelola Peserta';
+                    if (q.type === 'tanpaBa') return 'Buat BA PEL';
+                    if (q.type === 'baPenKosong') return 'Buat BA PEN';
+                    if (q.type === 'tanpaAcc') return 'Buka Pengajuan';
+                    return 'Periksa BA';
+                },
+                perbaikiBagianDariMenu(q) {
+                    if (!q || q.action !== 'ba' || !q.baId) return;
+                    this.perbaikanBagian.open = false;
+                    this.openKelolaBaById(q.baId);
                 },
                 resetGlobalFilters() {
                     this.filters.from = '';
