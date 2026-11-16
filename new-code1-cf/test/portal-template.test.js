@@ -19,6 +19,14 @@ describe('guard template portal', () => {
     expect(html).toContain("(detailItem.statusCode === 'disetujui' || detailItem.statusCode === 'approved') && !detailItem.hasUpload");
   });
 
+  it('badge Disetujui memakai warna sky yang benar-benar ada di CSS', async () => {
+    const html = await loadPortalHtml();
+    expect(html).toContain("disetujui: 'bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-600/20'");
+    expect(html).toContain('.bg-sky-50 { background-color: #f0f9ff; }');
+    expect(html).toContain('.text-sky-700 { color: #0369a1; }');
+    expect(html).toContain('.ring-sky-600\\/20 { --tw-ring-color: rgba(2, 132, 199, .2); }');
+  });
+
   it('field keterangan wajib diisi pada form pendaftaran', async () => {
     const html = await loadPortalHtml();
     expect(html).toContain('for="regKeterangan">Keterangan <span class="text-rose-500">*</span>');
