@@ -2354,7 +2354,7 @@
                         <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                             <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:4px">
                                 <div class="top"><div class="ic indigo"><i class="bi bi-cash-stack"></i></div></div>
-                                <div><div class="num text-sm">{{ fmtRupiah(pembayaranSummary.biaya) }}</div><div class="lbl uppercase tracking-wider">Total Tagihan (ACC)</div></div>
+                                <div><div class="num text-sm">{{ fmtRupiah(pembayaranSummary.biaya) }}</div><div class="lbl uppercase tracking-wider">Total Tagihan (Disetujui)</div></div>
                             </div>
                             <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:4px">
                                 <div class="top"><div class="ic emerald"><i class="bi bi-check2-circle"></i></div></div>
@@ -2366,7 +2366,7 @@
                             </div>
                             <div class="in-statrow lap-stat flex-col" style="align-items:flex-start;gap:4px">
                                 <div class="top"><div class="ic rose"><i class="bi bi-x-circle"></i></div></div>
-                                <div><div class="num">{{ pembayaranSummary.belum }}</div><div class="lbl uppercase tracking-wider">ACC Belum Bayar</div></div>
+                                <div><div class="num">{{ pembayaranSummary.belum }}</div><div class="lbl uppercase tracking-wider">Disetujui Belum Bayar</div></div>
                             </div>
                         </div>
 
@@ -2385,7 +2385,7 @@
                                         <label class="label">Status Pembayaran</label>
                                         <select v-model="bayarFilter.status" class="in-input">
                                             <option value="">Semua status</option>
-                                            <option value="belum">ACC Belum Bayar</option>
+                                            <option value="belum">Disetujui Belum Bayar</option>
                                             <option value="menunggu">Menunggu Verifikasi</option>
                                             <option value="valid">Valid</option>
                                             <option value="gratis">Gratis</option>
@@ -2399,7 +2399,7 @@
                                 </div>
                             </div>
                             <div class="flex flex-wrap items-center gap-1.5 px-4 pb-4 text-xs text-slate-400">
-                                <span class="lap-chip">{{ pembayaranSummary.total }} pengajuan ACC</span>
+                                <span class="lap-chip">{{ pembayaranSummary.total }} pengajuan siap bayar</span>
                                 <span class="lap-chip is-emerald">{{ pembayaranSummary.valid }} valid</span>
                                 <span class="lap-chip is-amber">{{ pembayaranSummary.menunggu }} menunggu</span>
                                 <span class="lap-chip">{{ pembayaranSummary.gratis }} gratis</span>
@@ -2410,7 +2410,7 @@
                             <div class="lap-card-head">
                                 <div>
                                     <div class="lap-card-title">Data Pembayaran per Pengajuan</div>
-                                    <div class="lap-card-sub">Hanya pengajuan ACC yang ditampilkan. Arahkan kursor ke tombol Bukti untuk pratinjau file; klik Periksa untuk melihat detail dan memvalidasi.</div>
+                                    <div class="lap-card-sub">Hanya pengajuan Disetujui/ACC yang ditampilkan. Arahkan kursor ke tombol Bukti untuk pratinjau file; klik Periksa untuk melihat detail dan memvalidasi.</div>
                                 </div>
                                 <button class="btn-soft !py-1.5 text-xs" type="button" :disabled="exporting" @click="exportExcel()">
                                     <i class="bi bi-file-earmark-excel"></i> Export XLSX
@@ -2542,12 +2542,12 @@
                         <template v-if="bayarView === 'ringkasan'">
                             <div class="lap-card p-4">
                                 <div class="lap-card-title">Ringkasan Pembayaran</div>
-                                <div class="lap-card-sub">Total tagihan hanya menghitung pengajuan berstatus ACC.</div>
+                                <div class="lap-card-sub">Total tagihan hanya menghitung pengajuan berstatus Disetujui atau ACC.</div>
                                 <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-                                    <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total Tagihan (ACC)</div><div class="mt-1 font-semibold text-slate-800">{{ fmtRupiah(pembayaranSummary.biaya) }}</div></div>
+                                    <div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total Tagihan (Disetujui)</div><div class="mt-1 font-semibold text-slate-800">{{ fmtRupiah(pembayaranSummary.biaya) }}</div></div>
                                     <div class="rounded-xl bg-emerald-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-emerald-600">Valid</div><div class="mt-1 font-semibold text-emerald-800">{{ pembayaranSummary.valid }} <span class="text-xs font-normal">- {{ fmtRupiah(pembayaranSummary.validBiaya) }}</span></div></div>
                                     <div class="rounded-xl bg-amber-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-amber-600">Menunggu</div><div class="mt-1 font-semibold text-amber-800">{{ pembayaranSummary.menunggu }}</div></div>
-                                    <div class="rounded-xl bg-rose-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-rose-600">ACC Belum Bayar</div><div class="mt-1 font-semibold text-rose-800">{{ pembayaranSummary.belum }}</div></div>
+                                    <div class="rounded-xl bg-rose-50 p-3"><div class="text-[10px] font-bold uppercase tracking-wide text-rose-600">Disetujui Belum Bayar</div><div class="mt-1 font-semibold text-rose-800">{{ pembayaranSummary.belum }}</div></div>
                                 </div>
                             </div>
 
@@ -3197,6 +3197,7 @@
         function statusBadgeCls(status) {
             const cls = {
                 'Menunggu': 'wait',
+                'Disetujui': 'recv',
                 'Ditolak': 'rej',
                 'ACC': 'acc',
                 'Dibatalkan': 'cancel'
@@ -3206,6 +3207,7 @@
         function statusChipCls(status) {
             return {
                 'Menunggu': 'bg-amber-50 text-amber-700',
+                'Disetujui': 'bg-sky-50 text-sky-700',
                 'Ditolak': 'bg-rose-50 text-rose-700',
                 'ACC': 'bg-indigo-50 text-indigo-700',
                 'Dibatalkan': 'bg-slate-100 text-slate-500'
@@ -3214,6 +3216,7 @@
         function statusColor(status) {
             return {
                 'Menunggu': '#f59e0b',
+                'Disetujui': '#0284c7',
                 'ACC': '#6366f1',
                 'Ditolak': '#f43f5e',
                 'Dibatalkan': '#94a3b8'
@@ -3413,7 +3416,7 @@
                         { key: 'ringkasan', label: 'Ringkasan', icon: 'bi-bar-chart' }
                     ],
                     bayarColumns: [
-                        { key: 'belum', label: 'ACC Belum Bayar', icon: 'bi-circle', text: 'text-rose-600' },
+                        { key: 'belum', label: 'Disetujui Belum Bayar', icon: 'bi-circle', text: 'text-rose-600' },
                         { key: 'menunggu', label: 'Menunggu', icon: 'bi-hourglass-split', text: 'text-amber-600' },
                         { key: 'valid', label: 'Valid', icon: 'bi-check2-circle', text: 'text-emerald-600' },
                         { key: 'gratis', label: 'Gratis', icon: 'bi-gift', text: 'text-slate-500' }
@@ -3423,7 +3426,7 @@
                     baMenu: { open: false, type: '', items: [], top: 0, left: 0, hover: false },
                     baMenuTimer: null,
                     baMenuCloseTimer: null,
-                    animated: { totalPendaftar: 0, totalMenunggu: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
+                    animated: { totalPendaftar: 0, totalMenunggu: 0, totalDisetujui: 0, totalAcc: 0, totalDitolak: 0, totalBiaya: 0 },
                     donutProgress: 0,
                     barProgress: 0,
                     kelola: { open: false, baId: '', sumber: 'Bagian', kegiatanKey: '', jadwalIds: [], tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [], pesertaDirty: false },
@@ -3451,7 +3454,7 @@
                 statusOptions() {
                     const set = {};
                     Object.keys(this.summary.perStatus || {}).forEach(k => { set[k] = 1; });
-                    ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(k => { set[k] = 1; });
+                    ['Menunggu', 'Disetujui', 'ACC', 'Ditolak', 'Dibatalkan'].forEach(k => { set[k] = 1; });
                     return Object.keys(set);
                 },
                 jenisOptions() {
@@ -3658,6 +3661,7 @@
                     return [
                         { label: 'Total Pendaftar', num: this.animated.totalPendaftar, icon: 'bi-people-fill', color: '#4f46e5', tint: 'indigo', pct: '100%' },
                         { label: 'Menunggu', num: this.animated.totalMenunggu, icon: 'bi-hourglass-split', color: '#d97706', tint: 'amber', pct: share(this.animated.totalMenunggu) },
+                        { label: 'Disetujui', num: this.animated.totalDisetujui, icon: 'bi-check2-circle', color: '#0284c7', tint: 'sky', pct: share(this.animated.totalDisetujui) },
                         { label: 'ACC', num: this.animated.totalAcc, icon: 'bi-patch-check-fill', color: '#6366f1', tint: 'emerald', pct: share(this.animated.totalAcc) },
                         { label: 'Ditolak', num: this.animated.totalDitolak, icon: 'bi-x-circle', color: '#e11d48', tint: 'rose', pct: share(this.animated.totalDitolak) },
                         { label: 'Total Biaya', num: fmtRupiah(this.animated.totalBiaya), money: true, icon: 'bi-cash-stack', color: '#0d9488', tint: 'teal' }
@@ -3764,7 +3768,8 @@
                     const out = [];
                     this.filteredRows.forEach(r => {
                         const p = r.pengajuan;
-                        if (String(p.Status || '').trim() !== 'ACC') return;
+                        const st = String(p.Status || '').trim();
+                        if (st !== 'ACC' && st !== 'Disetujui') return;
                         const id = String(p['ID Pengajuan'] || '').trim();
                         const biaya = Number(p.Biaya) || 0;
                         const linkBukti = String(p['Link Bukti Bayar'] || '').trim();
@@ -6004,6 +6009,7 @@
                     const targets = {
                         totalPendaftar: s.totalPendaftar || 0,
                         totalMenunggu: s.totalMenunggu || 0,
+                        totalDisetujui: s.totalDisetujui || 0,
                         totalAcc: s.totalAcc || 0,
                         totalDitolak: s.totalDitolak || 0,
                         totalBiaya: s.totalBiaya || 0

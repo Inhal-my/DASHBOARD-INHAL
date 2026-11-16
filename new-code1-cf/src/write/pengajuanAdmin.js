@@ -1,12 +1,13 @@
 import { requireAdmin } from '../session.js';
 import { isVerifikator, VERIFIKATOR_DENIED } from '../policy.js';
 import { resolveBagianFor } from '../read/common.js';
-import { sendRejectionPdfEmail } from './email.js';
+import { sendApprovalEmail, sendFinalPdfEmails, sendRejectionPdfEmail } from './email.js';
+import { resolveTagihan } from '../tagihan.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
 import { logError } from '../obs/log.js';
 
-const STATUS_VALID = ['Menunggu', 'ACC', 'Ditolak', 'Dibatalkan'];
+const STATUS_VALID = ['Menunggu', 'Disetujui', 'ACC', 'Ditolak', 'Dibatalkan'];
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -242,7 +243,7 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   // Keputusan baru (ACC/Ditolak/Dibatalkan) dan meninggalkan status keputusan
   // menuju Menunggu hanya boleh dilakukan verifikator. Admin lain tetap bisa
   // memperbarui catatan tanpa mengubah status.
-  const DECIDED = ['ACC', 'Ditolak', 'Dibatalkan'];
+  const DECIDED = ['Disetujui', 'ACC', 'Ditolak', 'Dibatalkan'];
   const changesStatus = status !== prevStatus;
   const enteringDecision = changesStatus && DECIDED.indexOf(status) !== -1;
   const leavingDecision = changesStatus && status === 'Menunggu' && DECIDED.indexOf(prevStatus) !== -1;
@@ -257,11 +258,33 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     return { success: false, message: VERIFIKATOR_DENIED };
   }
   const ts = nowIso();
+  let effectiveStatus = status;
+  let settledAtApproval = false;
+  let gratisAtApproval = false;
+  const paymentStatus = str(existing.status_pembayaran);
+  if ((status === 'Disetujui' || status === 'ACC') && changesStatus) {
+    const tagihan = await resolveTagihan(db, existing);
+    const paymentSettled = paymentStatus === 'valid' || paymentStatus === 'gratis';
+    const gratis = !paymentSettled && tagihan <= 0;
+    if (status === 'Disetujui' && (paymentSettled || gratis)) {
+      effectiveStatus = 'ACC';
+      settledAtApproval = true;
+      gratisAtApproval = gratis;
+    } else if (status === 'ACC') {
+      settledAtApproval = paymentSettled || gratis;
+      gratisAtApproval = gratis;
+    }
+  }
+  const autoFinal = changesStatus && effectiveStatus === 'ACC' && settledAtApproval;
   let nomorSurat = str(existing.nomor_surat);
   const sets = ['status = ?1', 'updated_at = ?2'];
-  const vals = [status, ts];
+  const vals = [effectiveStatus, ts];
   if (catatanVal !== '') { sets.push('catatan_admin = ?' + (vals.length + 1)); vals.push(catatanVal); }
-  const claimNumber = status === 'ACC' && !nomorSurat;
+  if (gratisAtApproval && paymentStatus !== 'gratis' && paymentStatus !== 'valid') {
+    sets.push('status_pembayaran = ?' + (vals.length + 1));
+    vals.push('gratis');
+  }
+  const claimNumber = (effectiveStatus === 'Disetujui' || effectiveStatus === 'ACC') && !nomorSurat;
   if (claimNumber) {
     nomorSurat = await nextSuratNumberYearly(db, 'INHAL');
     sets.push('nomor_surat = ?' + (vals.length + 1));
@@ -274,14 +297,14 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     ? db.prepare(
       'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) ' +
       'SELECT ?1, ?2, ?3, ?4, ?5 WHERE EXISTS (SELECT 1 FROM pengajuan WHERE id_pengajuan = ?2 AND nomor_surat = ?6)'
-    ).bind(ts, id, status, catatanVal, actor, nomorSurat)
+    ).bind(ts, id, effectiveStatus, catatanVal, actor, nomorSurat)
     : db.prepare(
       'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
-    ).bind(ts, id, status, catatanVal, actor);
+    ).bind(ts, id, effectiveStatus, catatanVal, actor);
   const syncStatusStmts = [
-    db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(status, id),
-    db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(status, id),
-    db.prepare('UPDATE jadwal_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(status, id)
+    db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(effectiveStatus, id),
+    db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(effectiveStatus, id),
+    db.prepare('UPDATE jadwal_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(effectiveStatus, id)
   ];
   await db.batch([db.prepare(updateSql).bind(...vals, id), historyStmt, ...syncStatusStmts]);
 
@@ -310,27 +333,55 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     } catch (e) {
       notification = { ok: false, error: (e && e.message) ? e.message : String(e), kind: 'rejection', status: status };
     }
+  } else if (changesStatus && effectiveStatus === 'Disetujui' && prevStatus !== 'Disetujui' && str(existing.sumber) !== 'Manual') {
+    try {
+      const approval = await sendApprovalEmail(db, id, ctx.env);
+      notification = approval.ok
+        ? { ok: true, kind: 'approval', status: effectiveStatus }
+        : { ok: false, error: (approval.notes && approval.notes.join(' ')) || 'Gagal mengirim email persetujuan.', kind: 'approval', status: effectiveStatus };
+    } catch (e) {
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e), kind: 'approval', status: effectiveStatus };
+    }
+  } else if (autoFinal && str(existing.sumber) !== 'Manual') {
+    try {
+      const final = await sendFinalPdfEmails(db, id, ctx.env, actor);
+      notification = final.ok
+        ? { ok: true, kind: 'final', pdfUrl: final.pdfUrl }
+        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim surat ACC final.', kind: 'final' };
+    } catch (e) {
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e), kind: 'final' };
+    }
   }
 
-  const baseMessage = 'Status diperbarui menjadi ' + status + '.';
+  let baseMessage = 'Status diperbarui menjadi ' + effectiveStatus + '.';
+  if (effectiveStatus !== status) {
+    baseMessage = gratisAtApproval
+      ? 'Pengajuan gratis: status langsung menjadi ACC.'
+      : 'Pembayaran sudah valid: status langsung menjadi ACC.';
+  }
   if (notification) {
     let suffix;
     if (notification.kind === 'rejection') {
       suffix = notification.ok
         ? ' Email pemberitahuan ' + notification.status + ' terkirim ke mahasiswa.'
         : ' Pengiriman email pemberitahuan ' + notification.status + ' gagal: ' + notification.error;
+    } else if (notification.kind === 'approval') {
+      suffix = notification.ok
+        ? ' Email persetujuan terkirim ke mahasiswa.'
+        : ' Pengiriman email persetujuan gagal: ' + notification.error;
     } else {
       suffix = notification.ok ? ' Surat ACC final terkirim.' : ' Pengiriman surat ACC final gagal: ' + notification.error;
     }
     return {
       success: true,
       idPengajuan: id,
+      status: effectiveStatus,
       nomorSurat: nomorSurat,
       notification: notification,
       message: baseMessage + suffix
     };
   }
-  return { success: true, idPengajuan: id, nomorSurat: nomorSurat, message: baseMessage };
+  return { success: true, idPengajuan: id, status: effectiveStatus, nomorSurat: nomorSurat, message: baseMessage };
 }
 
 export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
@@ -457,8 +508,8 @@ export async function resetUploadBukti(db, idPengajuan, payload, ctx) {
   if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
   const status = str(p.status);
-  if (status !== 'ACC') {
-    return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus ACC.' };
+  if (status !== 'Disetujui' && status !== 'ACC') {
+    return { success: false, message: 'Reset unggahan hanya untuk pengajuan berstatus Disetujui atau ACC.' };
   }
 
   if (str(p.status_pembayaran) === 'valid') {
@@ -520,8 +571,8 @@ export async function uploadBuktiAdmin(db, idPengajuan, file, ctx) {
   const p = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!p) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
-  if (str(p.status) !== 'ACC') {
-    return { success: false, message: 'Unggah bukti bayar hanya untuk pengajuan berstatus ACC.' };
+  if (str(p.status) !== 'Disetujui' && str(p.status) !== 'ACC') {
+    return { success: false, message: 'Unggah bukti bayar hanya untuk pengajuan berstatus Disetujui atau ACC.' };
   }
 
   if (str(p.status_pembayaran) === 'valid') {

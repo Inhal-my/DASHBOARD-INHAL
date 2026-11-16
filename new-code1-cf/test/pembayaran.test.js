@@ -231,6 +231,17 @@ describe('verifyPembayaran', () => {
     const p = await env.DB.prepare("SELECT status_pembayaran FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
     expect(p.status_pembayaran).toBe('menunggu');
   });
+
+  it('memvalidasi pembayaran pengajuan Disetujui dan menaikkan status ke ACC', async () => {
+    await seedPengajuan({ status: 'Disetujui' });
+    const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtx());
+    expect(res).toMatchObject({ success: true, status: 'valid', pengajuanStatus: 'ACC' });
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status).toBe('ACC');
+    expect(p.status_pembayaran).toBe('valid');
+    const hist = await env.DB.prepare("SELECT * FROM status_history WHERE id_pengajuan = 'INHAL-1'").all();
+    expect(hist.results.map((r) => r.status)).toEqual(['ACC']);
+  });
 });
 
 describe('correctPembayaran', () => {
@@ -274,11 +285,31 @@ describe('correctPembayaran', () => {
     expect(res).toMatchObject({ success: true, status: 'menunggu', revision: 2 });
 
     const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status).toBe('Disetujui');
     expect(p.status_pembayaran).toBe('menunggu');
     expect(p.verified_by).toBe('');
     expect(p.verified_at).toBe('');
+    expect(p.link_final).toBe('');
     const rev = await env.DB.prepare("SELECT * FROM pembayaran_revisi WHERE id_pengajuan = 'INHAL-1' AND revision = 2").first();
     expect(rev).toMatchObject({ mode: 'buka_kembali', status_lama: 'valid', status_baru: 'menunggu' });
+  });
+
+  it('menolak buka kembali bila peserta sudah masuk jadwal atau BA', async () => {
+    const ctx = await verified();
+    await env.DB.prepare(
+      "INSERT INTO jadwal_peserta (timestamp,jadwal_id,id_pengajuan,npm,nama_lengkap,blok,status_pengajuan) VALUES ('2026-10-01T08:00:00','JDW-1','INHAL-1','2201010001','Siti','A','ACC')"
+    ).run();
+    const res = await correctPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      mode: 'buka_kembali',
+      alasan: 'Bukti perlu dicek ulang',
+      expectedRevision: 1
+    }, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/jadwal atau Berita Acara/);
+    const p = await env.DB.prepare("SELECT status, status_pembayaran FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status).toBe('ACC');
+    expect(p.status_pembayaran).toBe('valid');
   });
 
   it('corrects a payment that already has ACC Final', async () => {

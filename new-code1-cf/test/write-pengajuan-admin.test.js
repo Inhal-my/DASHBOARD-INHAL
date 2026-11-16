@@ -50,6 +50,12 @@ async function seedDetail(jenis = 'SGD', pilihan = 'SGD 1', detail = '') {
   ).bind(jenis, pilihan, detail).run();
 }
 
+async function seedBiayaOverride(nominal = '150000') {
+  await env.DB.prepare(
+    "INSERT INTO check_data (timestamp,check_id,id_pengajuan,detail,biaya) VALUES ('2026-09-10T08:00:00','CHK-BIAYA','INHAL-1','BIAYA-OVERRIDE',?1)"
+  ).bind(nominal).run();
+}
+
 describe('pengajuan admin writes', () => {
   it('requires admin', async () => {
     await expect(updatePengajuanFields(env.DB, 'INHAL-1', {}, {})).rejects.toThrow();
@@ -238,6 +244,51 @@ describe('pengajuan admin status and delete', () => {
     expect(row.status).toBe('ACC');
     expect(row.catatan_admin).toBe('Berkas lengkap');
     expect(row.nomor_surat).toBe(ok.nomorSurat);
+    const hist = await env.DB.prepare('SELECT * FROM status_history WHERE id_pengajuan = ?1').bind('INHAL-1').all();
+    expect(hist.results.map((r) => r.status)).toEqual(['ACC']);
+  });
+
+  it('Disetujui menerbitkan nomor surat dan mengirim email persetujuan', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    await seedBiayaOverride();
+    const calls = stubBridge(() => ({ success: true, sent: true }));
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Disetujui', 'Berkas lengkap', '', ctx);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe('Disetujui');
+    expect(res.nomorSurat).toMatch(/^\d{3}\/INHAL\/FKIK-UMSU\/[IVX]+\/\d{4}$/);
+    expect(res.message).toContain('Email persetujuan terkirim');
+    expect(calls).toHaveLength(1);
+    expect(calls[0].action).toBe('sendApprovalEmail');
+    expect(calls[0].recipient).toBe('aisyah@contoh.com');
+    expect(calls[0].data.NomorSurat).toBe(res.nomorSurat);
+    expect(calls[0].data.Status).toBe('Disetujui');
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Disetujui');
+    expect(row.nomor_surat).toBe(res.nomorSurat);
+    expect(row.status_pembayaran).toBe('belum');
+    expect(row.status_notifikasi_email).toBe('Berhasil');
+    const hist = await env.DB.prepare('SELECT * FROM status_history WHERE id_pengajuan = ?1').bind('INHAL-1').all();
+    expect(hist.results.map((r) => r.status)).toEqual(['Disetujui']);
+  });
+
+  it('pengajuan gratis langsung menjadi ACC dan mengirim surat final', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    const calls = stubBridge((body) => body.action === 'sendFinalEmail'
+      ? { success: true, pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view', studentEmailSent: true, bagianEmailSent: false }
+      : { success: true, sent: true });
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'Disetujui', '', '', ctx);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe('ACC');
+    expect(res.message).toContain('langsung menjadi ACC');
+    expect(calls[0].action).toBe('sendFinalEmail');
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('ACC');
+    expect(row.status_pembayaran).toBe('gratis');
+    expect(row.link_final).toContain('FINAL1234567890');
     const hist = await env.DB.prepare('SELECT * FROM status_history WHERE id_pengajuan = ?1').bind('INHAL-1').all();
     expect(hist.results.map((r) => r.status)).toEqual(['ACC']);
   });

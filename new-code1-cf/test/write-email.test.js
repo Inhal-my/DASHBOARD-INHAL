@@ -300,4 +300,38 @@ describe('sendRejectionPdfEmail', () => {
     expect(res.ok).toBe(false);
     expect(calls).toHaveLength(0);
   });
+
+  it('sendApprovalEmail mengirim email tanpa lampiran untuk status Disetujui', async () => {
+    await seedPengajuan({ status: 'Disetujui' });
+    await seedDetail();
+    const calls = stubBridge(() => ({ success: true, sent: true }));
+    const { sendApprovalEmail } = await import('../src/write/email.js');
+    const res = await sendApprovalEmail(env.DB, 'INHAL-1', driveEnv);
+    expect(res.ok).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].action).toBe('sendApprovalEmail');
+    expect(calls[0].recipient).toBe('aisyah@contoh.com');
+    expect(calls[0].data.Status).toBe('Disetujui');
+    expect(calls[0].data.DetailKegiatan).toBe('Lab Anatomi - Praktikum 1');
+    const row = await env.DB.prepare('SELECT status_notifikasi_email FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_notifikasi_email).toBe('Berhasil');
+  });
+
+  it('sendApprovalEmail menolak pengajuan yang belum Disetujui', async () => {
+    await seedPengajuan({ status: 'Menunggu' });
+    const calls = stubBridge(() => ({ success: true }));
+    const { sendApprovalEmail } = await import('../src/write/email.js');
+    const res = await sendApprovalEmail(env.DB, 'INHAL-1', driveEnv);
+    expect(res.ok).toBe(false);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('sendApprovalEmailManual boleh mengirim ulang dari panel admin', async () => {
+    await seedPengajuan({ status: 'Disetujui' });
+    const calls = stubBridge(() => ({ success: true, sent: true }));
+    const { sendApprovalEmailManual } = await import('../src/write/email.js');
+    const res = await sendApprovalEmailManual(env.DB, 'INHAL-1', await adminCtx());
+    expect(res).toMatchObject({ success: true, emailSent: true });
+    expect(calls[0].action).toBe('sendApprovalEmail');
+  });
 });

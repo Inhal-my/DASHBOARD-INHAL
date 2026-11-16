@@ -44,8 +44,8 @@ export async function uploadBuktiFiles(db, payload, env) {
     return { success: false, message: 'NPM tidak cocok dengan pengajuan ini.' };
   }
 
-  if (str(existing.status) !== 'ACC') {
-    return { success: false, message: 'Unggah bukti bayar hanya tersedia setelah pengajuan ACC.' };
+  if (str(existing.status) !== 'Disetujui' && str(existing.status) !== 'ACC') {
+    return { success: false, message: 'Unggah bukti bayar hanya tersedia setelah pengajuan Disetujui.' };
   }
 
   if (str(existing.status_pembayaran) === 'valid') {

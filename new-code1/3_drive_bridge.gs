@@ -12,6 +12,7 @@
  *   - saveFile            : simpan berkas base64 ke Drive.
  *   - trashFile           : pindahkan berkas Drive ke trash.
  *   - getFile             : baca isi berkas (base64 + mimeType) berdasarkan fileId.
+ *   - sendApprovalEmail   : kirim email persetujuan (tanpa lampiran PDF) ke mahasiswa.
  *   - sendStatusEmail     : render PDF ACC/Ditolak + kirim notifikasi status ke mahasiswa.
  *   - sendFinalEmail      : render PDF ACC final + kirim ke mahasiswa dan Bagian.
  *   - sendFinalToBagian   : render PDF ACC final + kirim ulang khusus ke Bagian.
@@ -42,6 +43,49 @@ function _driveBridgeStr(v) {
 function _driveBridgeIdOf(data, body) {
     const id = _driveBridgeStr((data && data.IDPengajuan) || body.idPengajuan);
     return id || 'unknown';
+}
+
+
+function _driveBridgeSendApproval(data) {
+    const recipient = _driveBridgeStr(data.recipient || data.Email);
+    if (!recipient) throw new Error('Email mahasiswa tidak ditemukan.');
+    const nama = _driveBridgeStr(data['Nama Lengkap'] || data.nama);
+    const npm = _driveBridgeStr(data.NPM || data.npm);
+    const nomorSurat = _driveBridgeStr(data.NomorSurat);
+    const blok = _driveBridgeStr(data.Blok);
+    const jenis = _driveBridgeStr(data['Jenis Kegiatan']);
+    const detail = _driveBridgeStr(data.DetailKegiatan);
+    const tanggal = _driveBridgeStr(data.TanggalKegiatan);
+    const portalUrl = _driveBridgeStr(data.PortalUrl) || 'https://inhal-form.prodi.workers.dev/portal';
+
+    const subject = 'Pengajuan INHAL Disetujui - ' + (nomorSurat || nama);
+    const lines = [
+        "Assalamu'alaikum " + nama + ' (NPM: ' + npm + '),',
+        'Pengajuan INHAL Anda telah disetujui dengan rincian berikut:',
+        'Nomor Surat: ' + nomorSurat,
+        'Blok: ' + blok,
+        'Jenis Kegiatan: ' + jenis,
+        'Detail Kegiatan: ' + detail,
+        'Tanggal Kegiatan: ' + tanggal,
+        'Status: Disetujui',
+        '',
+        'Untuk melanjutkan, silakan lakukan pembayaran sesuai informasi biaya yang diberikan oleh Bagian, lalu unggah bukti pembayaran melalui portal:',
+        portalUrl,
+        '',
+        'Setelah pembayaran divalidasi oleh admin, status pengajuan Anda akan berubah menjadi ACC dan surat keterangan final akan dikirim melalui email.',
+        'Jika ada pertanyaan, silakan hubungi admin Prodi.',
+        'Terima kasih.',
+        "Wassalamu'alaikum."
+    ];
+    const plainBody = lines.join('\n');
+    const htmlLines = lines.map(function(line) {
+        if (line === portalUrl) {
+            return '<p><a href="' + portalUrl + '" target="_blank">' + portalUrl + '</a></p>';
+        }
+        return '<p>' + line + '</p>';
+    }).join('');
+    MailApp.sendEmail(recipient, subject, plainBody, { htmlBody: htmlLines });
+    return true;
 }
 
 function _driveBridgeSendStatus(data, status, recipient) {
@@ -208,6 +252,14 @@ function doPost(e) {
             if (!id) return _driveBridgeJson({ success: false, message: 'fileId wajib diisi.' });
             try { DriveApp.getFileById(id).setTrashed(true); } catch (err) { }
             return _driveBridgeJson({ success: true });
+        }
+
+        if (action === 'sendApprovalEmail') {
+            const data = body.data || {};
+            data.recipient = _driveBridgeStr(body.recipient || data.Email);
+            if (!data.recipient) return _driveBridgeJson({ success: false, message: 'Email mahasiswa tidak ditemukan.' });
+            _driveBridgeSendApproval(data);
+            return _driveBridgeJson({ success: true, sent: true });
         }
 
         if (action === 'sendStatusEmail') {

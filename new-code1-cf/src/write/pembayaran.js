@@ -1,7 +1,8 @@
 import { requireAdmin } from '../session.js';
 import { writeAuditLog } from '../audit.js';
 import { sendFinalPdfEmails } from './email.js';
-import { formatRupiah, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan } from '../read/common.js';
+import { formatRupiah } from '../read/common.js';
+import { resolveTagihan } from '../tagihan.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -49,15 +50,6 @@ function kesesuaianLabel(value) {
   return '-';
 }
 
-async function resolveTagihan(db, row) {
-  const [biayaMap, overrideMap] = await Promise.all([getBiayaMap(db), getBiayaOverrideMap(db)]);
-  const details = (await db.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(str(row.id_pengajuan)).all()).results || [];
-  return resolveBiayaForPengajuan({
-    'ID Pengajuan': row.id_pengajuan,
-    'Jenis Kegiatan': row.jenis_kegiatan
-  }, biayaMap, overrideMap, details);
-}
-
 function sameRevision(expected, row) {
   return Number(expected) === revisionOf(row);
 }
@@ -91,8 +83,9 @@ export async function verifyPembayaran(db, payload, ctx) {
 
   const row = await loadRow(db, id);
   if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
-  if (pengajuanStatus(row) !== 'ACC') {
-    return { success: false, message: 'Pembayaran hanya dapat diverifikasi untuk pengajuan berstatus ACC.' };
+  const prevPengajuanStatus = pengajuanStatus(row);
+  if (prevPengajuanStatus !== 'Disetujui' && prevPengajuanStatus !== 'ACC') {
+    return { success: false, message: 'Pembayaran hanya dapat diverifikasi untuk pengajuan berstatus Disetujui atau ACC.' };
   }
   if (status(row) === 'valid') return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi.' };
   if (status(row) === 'gratis') return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
@@ -122,7 +115,7 @@ export async function verifyPembayaran(db, payload, ctx) {
   const revision = revisionOf(row) + 1;
 
   const update = db.prepare(
-    'UPDATE pengajuan SET status_pembayaran = \'valid\', kesesuaian_pembayaran = ?1, nominal_dibayar = ?2, ' +
+    'UPDATE pengajuan SET status = \'ACC\', status_pembayaran = \'valid\', kesesuaian_pembayaran = ?1, nominal_dibayar = ?2, ' +
     'tanggal_bayar = ?3, metode_bayar = ?4, catatan_verifikasi = ?5, verified_at = ?6, verified_by = ?7, ' +
     'payment_revision = ?8, updated_at = ?9 WHERE id_pengajuan = ?10 AND payment_revision = ?11'
   ).bind(kesesuaian, nominal, tanggal, metode, catatan, ts, actor, revision, ts, id, revisionOf(row));
@@ -140,7 +133,18 @@ export async function verifyPembayaran(db, payload, ctx) {
     after: { status: 'valid', kesesuaian, nominal }
   });
 
-  const results = await db.batch([update, rev]);
+  const statements = [update, rev];
+  if (prevPengajuanStatus !== 'ACC') {
+    statements.push(db.prepare(
+      'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
+    ).bind(ts, id, 'ACC', 'Pembayaran divalidasi', actor));
+    statements.push(
+      db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('ACC', id),
+      db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('ACC', id),
+      db.prepare('UPDATE jadwal_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('ACC', id)
+    );
+  }
+  const results = await db.batch(statements);
   const changed = results && results[0] && results[0].meta && results[0].meta.changes;
   if (changed === 0) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 
@@ -162,14 +166,14 @@ export async function verifyPembayaran(db, payload, ctx) {
     }
   }
 
-  let message = 'Pembayaran divalidasi.';
+  let message = 'Pembayaran divalidasi. Status pengajuan menjadi ACC.';
   if (notification) {
     message += notification.ok
       ? ' Surat final dikirim ke mahasiswa dan Bagian.'
       : ' Pengiriman surat final gagal: ' + notification.error;
   }
 
-  return { success: true, status: 'valid', revision, message, notification };
+  return { success: true, status: 'valid', pengajuanStatus: 'ACC', revision, message, notification };
 }
 
 export async function correctPembayaran(db, payload, ctx) {
@@ -200,21 +204,49 @@ export async function correctPembayaran(db, payload, ctx) {
     }
   }
 
+  if (mode === 'buka_kembali') {
+    const used = await db.prepare(
+      'SELECT ' +
+      '(SELECT COUNT(*) FROM jadwal_peserta WHERE id_pengajuan = ?1) + ' +
+      '(SELECT COUNT(*) FROM berita_acara_peserta WHERE id_pengajuan = ?1) + ' +
+      '(SELECT COUNT(*) FROM berita_acara_admin_peserta WHERE id_pengajuan = ?1) AS total'
+    ).bind(id).first();
+    if (Number(used && used.total) > 0) {
+      return { success: false, message: 'Pembayaran tidak dapat dibuka kembali karena peserta sudah masuk jadwal atau Berita Acara. Keluarkan peserta dari jadwal/BA terlebih dahulu.' };
+    }
+  }
+
   const actor = actorName({ session });
   const ts = nowIso();
   const revision = revisionOf(row) + 1;
   const nextStatus = mode === 'buka_kembali' ? 'menunggu' : 'valid';
+  const nextPengajuanStatus = mode === 'buka_kembali' ? 'Disetujui' : 'ACC';
   const tanggal = mode === 'administratif' && p.tanggal !== undefined ? str(p.tanggal) : str(row.tanggal_bayar);
   const metode = mode === 'administratif' && p.metode !== undefined ? str(p.metode) : str(row.metode_bayar);
   const catatan = mode === 'administratif' && p.catatan !== undefined ? str(p.catatan) : str(row.catatan_verifikasi);
   const verifiedAt = mode === 'buka_kembali' ? '' : str(row.verified_at);
   const verifiedBy = mode === 'buka_kembali' ? '' : str(row.verified_by);
 
+  const sets = [];
+  const vals = [];
+  const setVal = (col, val) => { sets.push(col + ' = ?' + (vals.length + 1)); vals.push(val); };
+  setVal('status_pembayaran', nextStatus);
+  setVal('tanggal_bayar', tanggal);
+  setVal('metode_bayar', metode);
+  setVal('catatan_verifikasi', catatan);
+  setVal('verified_at', verifiedAt);
+  setVal('verified_by', verifiedBy);
+  if (mode === 'buka_kembali') {
+    setVal('status', 'Disetujui');
+    setVal('link_final', '');
+  }
+  setVal('payment_revision', revision);
+  setVal('updated_at', ts);
+
   const update = db.prepare(
-    'UPDATE pengajuan SET status_pembayaran = ?1, tanggal_bayar = ?2, metode_bayar = ?3, catatan_verifikasi = ?4, ' +
-    'verified_at = ?5, verified_by = ?6, payment_revision = ?7, updated_at = ?8 ' +
-    'WHERE id_pengajuan = ?9 AND payment_revision = ?10 AND status_pembayaran = \'valid\''
-  ).bind(nextStatus, tanggal, metode, catatan, verifiedAt, verifiedBy, revision, ts, id, revisionOf(row));
+    'UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1) +
+    ' AND payment_revision = ?' + (vals.length + 2) + " AND status_pembayaran = 'valid'"
+  ).bind(...vals, id, revisionOf(row));
 
   const rev = revisionInsert(db, {
     idPengajuan: id, revision, mode,
@@ -229,19 +261,31 @@ export async function correctPembayaran(db, payload, ctx) {
     after: { status: nextStatus, tanggal, metode, catatan }
   });
 
-  const results = await db.batch([update, rev]);
+  const statements = [update, rev];
+  if (mode === 'buka_kembali') {
+    statements.push(db.prepare(
+      'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
+    ).bind(ts, id, 'Disetujui', 'Pembayaran dibuka kembali', actor));
+    statements.push(
+      db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('Disetujui', id),
+      db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('Disetujui', id),
+      db.prepare('UPDATE jadwal_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('Disetujui', id)
+    );
+  }
+  const results = await db.batch(statements);
   const changed = results && results[0] && results[0].meta && results[0].meta.changes;
   if (changed === 0) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 
   await writeAuditLog(db, {
     actor, action: 'CORRECT', target: 'Pembayaran',
-    detail: JSON.stringify({ idPengajuan: id, mode, statusBaru: nextStatus }),
+    detail: JSON.stringify({ idPengajuan: id, mode, statusBaru: nextStatus, pengajuanStatus: nextPengajuanStatus }),
     alasan
   });
   return {
     success: true,
     status: nextStatus,
+    pengajuanStatus: nextPengajuanStatus,
     revision,
-    message: mode === 'buka_kembali' ? 'Pembayaran dikembalikan ke antrean.' : 'Koreksi administratif disimpan.'
+    message: mode === 'buka_kembali' ? 'Pembayaran dikembalikan ke antrean. Status pengajuan menjadi Disetujui.' : 'Koreksi administratif disimpan.'
   };
 }

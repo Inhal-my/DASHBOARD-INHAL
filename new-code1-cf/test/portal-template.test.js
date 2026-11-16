@@ -13,10 +13,10 @@ describe('guard template portal', () => {
     expect(html).not.toContain('accFile');
   });
 
-  it('form unggah hanya mengirim buktiFile dan tampil saat status approved', async () => {
+  it('form unggah hanya mengirim buktiFile dan tampil saat status Disetujui/ACC', async () => {
     const html = await loadPortalHtml();
     expect(html).toContain('buktiFile: await this.readFileAsBase64');
-    expect(html).toContain("detailItem.statusCode === 'approved' && !detailItem.hasUpload");
+    expect(html).toContain("(detailItem.statusCode === 'disetujui' || detailItem.statusCode === 'approved') && !detailItem.hasUpload");
   });
 
   it('field keterangan wajib diisi pada form pendaftaran', async () => {

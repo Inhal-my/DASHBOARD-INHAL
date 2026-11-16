@@ -131,7 +131,7 @@ export async function getLaporanBootstrap(db, ctx) {
   }
   const rawDetailsById = buildDetailRowsByPengajuan(details);
 
-  let totalPendaftar = 0, totalDitolak = 0, totalMenunggu = 0, totalAcc = 0, totalBiaya = 0;
+  let totalPendaftar = 0, totalDitolak = 0, totalMenunggu = 0, totalDisetujui = 0, totalAcc = 0, totalBiaya = 0;
   const perJenis = {}, perBlok = {}, perStatus = {};
   const rows = pengajuan.map((p) => {
     const id = String(p.id_pengajuan || '').trim();
@@ -140,6 +140,7 @@ export async function getLaporanBootstrap(db, ctx) {
     totalPendaftar++;
     if (status === 'Ditolak') totalDitolak++;
     if (status === 'Menunggu') totalMenunggu++;
+    if (status === 'Disetujui') totalDisetujui++;
     if (status === 'ACC') totalAcc++;
     perStatus[status || 'Lainnya'] = (perStatus[status || 'Lainnya'] || 0) + 1;
     const jenis = String(row['Jenis Kegiatan'] || 'Lainnya').trim();
@@ -305,7 +306,7 @@ export async function getLaporanBootstrap(db, ctx) {
   });
 
   return {
-    summary: { totalPendaftar, totalDitolak, totalMenunggu, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
+    summary: { totalPendaftar, totalDitolak, totalMenunggu, totalDisetujui, totalAcc, totalBiaya, perJenis, perBlok, perStatus },
     rows,
     uploadBukti,
     beritaAcara,

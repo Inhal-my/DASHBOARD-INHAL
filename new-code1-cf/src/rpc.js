@@ -32,7 +32,7 @@ import {
   updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti, uploadBuktiAdmin
 } from './write/pengajuanAdmin.js';
 import {
-  sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail
+  sendFinalEmail, sendAccFinalToBagian, sendBulkFinalEmail, sendApprovalEmailManual
 } from './write/email.js';
 import {
   getOrCreateBaAdmin, addBaAdminPesertaBulk, getBaAdminForPengajuan,
@@ -92,6 +92,7 @@ const HANDLERS = {
   correctPembayaran: (db, args, ctx) => correctPembayaran(db, args[0], ctx),
   deletePengajuanAdmin: (db, args, ctx) => deletePengajuanAdmin(db, args[0], args[1], ctx),
   sendFinalEmail: (db, args, ctx) => sendFinalEmail(db, args[0], ctx),
+  sendApprovalEmail: (db, args, ctx) => sendApprovalEmailManual(db, args[0], ctx),
   sendAccFinalToBagian: (db, args, ctx) => sendAccFinalToBagian(db, args[0], ctx),
   sendBulkFinalEmail: (db, args, ctx) => sendBulkFinalEmail(db, args[0], ctx),
   uploadBeritaAcaraAdmin: (db, args, ctx) => saveBeritaAcaraAdmin(db, args[0], ctx),

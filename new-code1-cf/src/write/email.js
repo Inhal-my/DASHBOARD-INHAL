@@ -180,6 +180,52 @@ export async function sendFinalPdfEmails(db, idPengajuan, env, actor) {
   return { ok: !!bridge.ok, pdfUrl: pdfUrl, studentEmailSent: studentSent, bagianEmailSent: bagianSent, bagianEmail: bagian.email, bagianName: bagian.name, notes: notes };
 }
 
+export async function sendApprovalEmail(db, idPengajuan, env) {
+  const pengajuan = await getPengajuan(db, idPengajuan);
+  if (!pengajuan) return { ok: false, sent: false, notes: ['Pengajuan tidak ditemukan.'] };
+  if (str(pengajuan.status) !== 'Disetujui') {
+    return { ok: false, sent: false, notes: ['Pengajuan belum berstatus Disetujui.'] };
+  }
+
+  const recipient = str(pengajuan.email);
+  if (!recipient) {
+    await markStatusNotification(db, idPengajuan, 'Gagal', 'Email mahasiswa tidak ditemukan.');
+    return { ok: false, sent: false, notes: ['Email mahasiswa tidak ditemukan.'] };
+  }
+
+  const details = await getDetailRows(db, idPengajuan);
+  const enhanced = buildEnhanced(pengajuan, details, 'Disetujui');
+  const bridge = await callDriveBridge(env, {
+    action: 'sendApprovalEmail',
+    data: enhanced,
+    recipient: recipient,
+    idPengajuan: str(idPengajuan)
+  });
+
+  if (!bridge.ok) {
+    const message = bridge.message || 'Gagal mengirim email persetujuan.';
+    await markStatusNotification(db, idPengajuan, 'Gagal', message);
+    return { ok: false, sent: false, configured: bridge.configured !== false, notes: [message] };
+  }
+
+  await markStatusNotification(db, idPengajuan, 'Berhasil', '');
+  return { ok: true, sent: true, notes: [] };
+}
+
+export async function sendApprovalEmailManual(db, idPengajuan, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  try {
+    const result = await sendApprovalEmail(db, idPengajuan, ctx.env);
+    if (result.ok) {
+      return { success: true, emailSent: true, message: 'Email persetujuan berhasil dikirim ulang.' };
+    }
+    const message = (result.notes && result.notes.length) ? result.notes.join(' ') : 'Gagal mengirim email persetujuan.';
+    return { success: false, emailSent: false, message: message };
+  } catch (e) {
+    return { success: false, emailSent: false, message: (e && e.message) ? e.message : String(e) };
+  }
+}
+
 export async function sendFinalEmail(db, idPengajuan, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   try {

@@ -32,11 +32,24 @@ describe('portal upload bukti-only', () => {
     expect(row.link_bukti_bayar).toBe('');
   });
 
-  it('menolak unggah saat status bukan ACC', async () => {
+  it('menolak unggah saat status belum Disetujui', async () => {
     await seedPengajuan('Menunggu');
     const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
     expect(res.success).toBe(false);
-    expect(res.message).toMatch(/ACC/);
+    expect(res.message).toMatch(/Disetujui/);
+  });
+
+  it('menerima unggah saat status Disetujui', async () => {
+    await seedPengajuan('Disetujui');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890/view' }),
+      { status: 200 }
+    )));
+    const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
+    expect(res.success).toBe(true);
+    const row = await env.DB.prepare('SELECT status_pembayaran, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status_pembayaran).toBe('menunggu');
+    expect(row.link_bukti_bayar).toContain('BBBBCCCCDDDDEEEEFFFFGGGGHHHH67890');
   });
 
   it('rejects a non-PDF bukti in strict mode', async () => {

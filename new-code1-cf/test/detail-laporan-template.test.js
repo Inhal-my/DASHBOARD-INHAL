@@ -185,17 +185,17 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('@click="sortBayar(\'upload\')"');
     expect(html).toContain('sortBayarIcon(key)');
   });
-  it('membatasi data pembayaran ke pengajuan ACC', async () => {
+  it('membatasi data pembayaran ke pengajuan Disetujui/ACC', async () => {
     const html = await loadHtml();
     const start = html.indexOf('pembayaranItemsAll()');
     const body = html.slice(start, start + 700);
-    expect(body).toContain("if (String(p.Status || '').trim() !== 'ACC') return;");
-    expect(html).toContain('Hanya pengajuan ACC yang ditampilkan.');
-    expect(html).toContain('Total tagihan hanya menghitung pengajuan berstatus ACC.');
+    expect(body).toContain("if (st !== 'ACC' && st !== 'Disetujui') return;");
+    expect(html).toContain('Hanya pengajuan Disetujui/ACC yang ditampilkan.');
+    expect(html).toContain('Total tagihan hanya menghitung pengajuan berstatus Disetujui atau ACC.');
   });
   it('menyediakan filter status pembayaran dan reset mengembalikan sort', async () => {
     const html = await loadHtml();
-    expect(html).toContain('<option value="belum">ACC Belum Bayar</option>');
+    expect(html).toContain('<option value="belum">Disetujui Belum Bayar</option>');
     expect(html).toContain('<option value="menunggu">Menunggu Verifikasi</option>');
     expect(html).toContain("if (bayarStatus && it.statusPembayaran !== bayarStatus) return false;");
     expect(html).toContain('@click="resetBayarFilter()"');
@@ -262,7 +262,7 @@ describe('detail laporan tab pembayaran', () => {
   });
   it('pembayaran memakai band kartu statistik dan kartu mobile', async () => {
     const html = await loadHtml();
-    expect(html).toContain('>Total Tagihan (ACC)</div>');
+    expect(html).toContain('>Total Tagihan (Disetujui)</div>');
     expect(html).toContain('in-mcard');
     expect(html).toContain('bayarColumns');
   });

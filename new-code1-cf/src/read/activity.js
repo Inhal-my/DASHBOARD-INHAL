@@ -8,6 +8,7 @@ const HARD_CAP = 5000;
 // UI (badge) agar keduanya konsisten.
 export const KIND_LABELS = {
   ACC: 'ACC',
+  Setujui: 'Disetujui',
   Tolak: 'Ditolak',
   Batal: 'Dibatalkan',
   Menunggu: 'Kembali Menunggu',
@@ -33,6 +34,7 @@ const KRITIS = ['Deny', 'DeletePengajuan', 'BaDelete', 'CorrectBayar', 'ResetUpl
 // kelompok (mis. VerifyBayar ada di "bayar" dan "unggahan" tidak).
 export const GROUP_OF = {
   ACC: ['keputusan'],
+  Setujui: ['keputusan'],
   Tolak: ['keputusan'],
   Batal: ['keputusan'],
   Menunggu: ['keputusan'],
@@ -328,9 +330,10 @@ export function normalizeAudit(row) {
     (action || 'AKSI') + (fallbackText ? ': ' + fallbackText.slice(0, 120) : ''), extra);
 }
 
-const STATUS_JENIS = { ACC: 'ACC', Ditolak: 'Tolak', Dibatalkan: 'Batal', Menunggu: 'Menunggu' };
+const STATUS_JENIS = { ACC: 'ACC', Disetujui: 'Setujui', Ditolak: 'Tolak', Dibatalkan: 'Batal', Menunggu: 'Menunggu' };
 const STATUS_RINGKAS = {
   ACC: 'ACC pengajuan',
+  Disetujui: 'Menyetujui pengajuan',
   Ditolak: 'Menolak pengajuan',
   Dibatalkan: 'Membatalkan pengajuan',
   Menunggu: 'Mengembalikan ke Menunggu'
@@ -460,7 +463,7 @@ export function summarize(events, today) {
   const out = { hariIni: 0, keputusan: 0, unggahan: 0, kritis: 0, total: list.length };
   for (const e of list) {
     if (wibDay(e.waktu) === targetDay) out.hariIni += 1;
-    if (['ACC', 'Tolak', 'Batal', 'Menunggu'].indexOf(e.jenis) !== -1) out.keputusan += 1;
+    if (['ACC', 'Setujui', 'Tolak', 'Batal', 'Menunggu'].indexOf(e.jenis) !== -1) out.keputusan += 1;
     if (e.jenis === 'UploadMahasiswa' || e.jenis === 'UploadAdmin') out.unggahan += 1;
     if (KRITIS.indexOf(e.jenis) !== -1) out.kritis += 1;
   }
