@@ -449,6 +449,13 @@ describe('modal Kelola BA', () => {
     const html = await loadHtml();
     expect(html).toContain("v-if=\"kelola.sumber !== 'Admin'\" class=\"relative sm:col-span-2\"");
   });
+  it('memakai modal-scroll agar isi Kelola BA dapat digeser', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('.modal-scroll {');
+    expect(html).toContain('overflow: auto;');
+    expect(html).toContain('overscroll-behavior: contain;');
+    expect(html).toContain('class="modal-scroll w-full max-w-md rounded-2xl bg-white p-5 shadow-lift"');
+  });
 });
 
 describe('detail laporan komponen ExpandedDetail', () => {
