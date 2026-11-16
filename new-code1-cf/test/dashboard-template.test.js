@@ -663,6 +663,13 @@ describe('dashboard periksa pembayaran', () => {
     expect(html).toContain('paymentStatusOf(r)');
   });
 
+  it('membuka pemeriksaan pembayaran untuk semua admin dan menyediakan aksi desktop', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('title="Periksa Pembayaran"');
+    expect(html).toContain("if (!r || !this.loggedIn) return false;");
+    expect(html).not.toContain("if (!r || !this.canVerify) return false;");
+  });
+
   it('membuka modal layar penuh dan memakai verifyPembayaran', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('class="pm-scrim"');

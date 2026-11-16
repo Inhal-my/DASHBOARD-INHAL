@@ -960,6 +960,7 @@
                                         <td class="px-4 py-2.5 text-right" @click.stop>
                                             <div class="flex justify-end gap-1">
                                                 <button class="rounded-lg p-1.5 text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Buka detail" @click="openDetail(r['ID Pengajuan'])"><i class="bi bi-eye text-sm"></i></button>
+                                                <button v-if="canCheckPayment(r)" class="rounded-lg p-1.5 text-brand-600 transition hover:bg-brand-50" title="Periksa Pembayaran" @click="openPeriksaPayment(r)"><i class="bi bi-cash-coin text-sm"></i></button>
                                                 <button class="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus pengajuan" @click="deletePengajuanRow(r)"><i class="bi bi-trash text-sm"></i></button>
                                             </div>
                                         </td>
@@ -4181,7 +4182,7 @@
                     return String((r && r['Link Bukti Bayar']) || '').trim() ? 'menunggu' : 'belum';
                 },
                 canCheckPayment(r) {
-                    if (!r || !this.canVerify) return false;
+                    if (!r || !this.loggedIn) return false;
                     const status = String(r.Status || '').trim();
                     if (status !== 'Disetujui' && status !== 'ACC') return false;
                     const ps = this.paymentStatusOf(r);
