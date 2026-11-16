@@ -75,6 +75,8 @@ describe('bagian template jadwal', () => {
     const html = await loadBagianHtml();
     expect(html).toContain('jadwalFormGroup');
     expect(html).toContain('jadwalPendingGroups');
+    expect(html).toContain('editJadwalPesertaPool');
+    expect(html).toContain('Mode edit menampilkan peserta dari semua tanggal pengajuan');
   });
 
   it('menyediakan picker Dosen searchable di semua field Dosen', async () => {

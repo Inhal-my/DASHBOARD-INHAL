@@ -78,6 +78,29 @@ describe('bagian-state helpers', () => {
     expect(S.unscheduledPeserta(pending, jadwalList).map((p) => p.idPengajuan)).toEqual(['p2']);
   });
 
+  it('menggabungkan peserta lintas tanggal pengajuan saat edit jadwal', async () => {
+    const S = await loadState();
+    const peserta = [
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-11-09', blok: '1', status: 'ACC', idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani' },
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-11-03', blok: '1', status: 'ACC', idPengajuan: 'p2', npm: '002', namaLengkap: 'Budi' },
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-11-06', blok: '1', status: 'ACC', idPengajuan: 'p3', npm: '003', namaLengkap: 'Cici' },
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-11-04', blok: '1', status: 'ACC', idPengajuan: 'p4', npm: '004', namaLengkap: 'Dodi' },
+      { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-11-04', blok: '1', status: 'Menunggu', idPengajuan: 'p5', npm: '005', namaLengkap: 'Eka' },
+      { jenis: 'KKD', pilihan: 'Farmasi', detail: '', tanggal: '2026-11-04', blok: '1', status: 'ACC', idPengajuan: 'p6', npm: '006', namaLengkap: 'Fani' }
+    ];
+    const jadwal = [
+      { JadwalID: 'j1', Blok: 'Blok 1', NamaKegiatan: 'neurologi - a', peserta: [
+        { idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani' },
+        { idPengajuan: 'p9', npm: '009', namaLengkap: 'Ika' }
+      ] },
+      { JadwalID: 'j2', Blok: '1', NamaKegiatan: 'Neurologi - A', peserta: [
+        { idPengajuan: 'p3', npm: '003', namaLengkap: 'Cici' }
+      ] }
+    ];
+    const pool = S.editJadwalPesertaPool(peserta, jadwal, jadwal[0], ['ACC']);
+    expect(pool.map((p) => p.idPengajuan)).toEqual(['p1', 'p2', 'p4', 'p9']);
+  });
+
   it('membangun daftar jadwal tanpa grup yang sudah terjadwal penuh', async () => {
     const S = await loadState();
     const pending = S.buildKegiatanGroups(rows, { statuses: ['ACC'] });

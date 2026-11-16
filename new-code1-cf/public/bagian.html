@@ -773,6 +773,9 @@
                                         </div>
                                         <div v-else class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Pilih kegiatan terlebih dahulu.</div>
                                         <template v-if="jadwalFormGroup">
+                                            <div v-if="jadwal.editingId" class="rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+                                                <i class="bi bi-info-circle"></i> Mode edit menampilkan peserta dari semua tanggal pengajuan untuk kegiatan ini. Peserta yang sudah dijadwalkan di jadwal lain tidak ditampilkan.
+                                            </div>
                                             <div>
                                                 <div class="mb-2 flex items-center justify-between">
                                                     <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Pilih Peserta</span>
@@ -1624,6 +1627,25 @@
                 },
                 jadwalFormGroup() {
                     const key = this.jadwal.kegiatanKey;
+                    if (this.jadwal.editingId) {
+                        const B = window.BagianState;
+                        const jadwal = this.jadwalList.find(function (j) { return j.JadwalID === this.jadwal.editingId; }.bind(this));
+                        if (jadwal) {
+                            const base = this.jadwalKegiatanGroups.find(function (g) {
+                                return B.sameKegiatan(g.blok, B.kegiatanName(g), jadwal.Blok, jadwal.NamaKegiatan);
+                            });
+                            return {
+                                key: key || ('edit:' + jadwal.JadwalID),
+                                blok: jadwal.Blok,
+                                pilihan: base ? base.pilihan : String(jadwal.NamaKegiatan || '').trim(),
+                                detail: base ? base.detail : '',
+                                nama: jadwal.NamaKegiatan,
+                                label: jadwal.NamaKegiatan,
+                                tanggal: this.dateOnly(jadwal.Tanggal),
+                                peserta: B.editJadwalPesertaPool(this.rows, this.jadwalList, jadwal, this.baConfig.statuses)
+                            };
+                        }
+                    }
                     if (!key) return null;
                     const source = this.jadwal.editingId ? this.jadwalKegiatanGroups : this.jadwalPendingGroups;
                     return source.find(function (g) { return g.key === key; }.bind(this))

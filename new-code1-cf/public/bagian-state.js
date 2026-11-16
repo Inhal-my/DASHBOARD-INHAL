@@ -385,6 +385,52 @@
     return clean.join(' ');
   }
 
+  function editJadwalPesertaPool(rows, jadwalList, jadwal, statuses) {
+    var out = [];
+    var seen = {};
+    var scheduled = {};
+    var selfId = String((jadwal && jadwal.JadwalID) || '');
+    (jadwalList || []).forEach(function (j) {
+      if (String((j && j.JadwalID) || '') === selfId) return;
+      (j && j.peserta || []).forEach(function (p) {
+        var id = String((p && p.idPengajuan) || '');
+        if (id) scheduled[id] = true;
+      });
+    });
+    var allowed = (Array.isArray(statuses) && statuses.length ? statuses : ['ACC']).map(function (s) {
+      return String(s == null ? '' : s).trim();
+    });
+    (rows || []).forEach(function (r) {
+      var id = String((r && r.idPengajuan) || '');
+      if (!id || seen[id] || scheduled[id]) return;
+      if (!sameKegiatan(jadwal && jadwal.Blok, jadwal && jadwal.NamaKegiatan, r.blok, kegiatanName(r))) return;
+      if (allowed.indexOf(String(r.status == null ? '' : r.status).trim()) === -1) return;
+      seen[id] = true;
+      out.push({
+        idPengajuan: id,
+        npm: r.npm,
+        namaLengkap: r.namaLengkap,
+        blok: r.blok,
+        statusPengajuan: r.status,
+        baMember: !!r.baMember
+      });
+    });
+    ((jadwal && jadwal.peserta) || []).forEach(function (p) {
+      var id = String((p && p.idPengajuan) || '');
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      out.push({
+        idPengajuan: id,
+        npm: p.npm,
+        namaLengkap: p.namaLengkap,
+        blok: p.blok,
+        statusPengajuan: p.statusPengajuan,
+        baMember: !!p.baMember
+      });
+    });
+    return out;
+  }
+
   function buildJadwalItems(kegiatanGroups, jadwalList, baList) {
     var items = (jadwalList || []).map(function (j) {
       var ba = baForJadwal(j, baList);
@@ -775,6 +821,7 @@
     applyPendukungToggle: applyPendukungToggle,
     sesiSummary: sesiSummary,
     unscheduledPeserta: unscheduledPeserta,
+    editJadwalPesertaPool: editJadwalPesertaPool,
     groupFullyScheduled: groupFullyScheduled,
     buildAllGroups: buildAllGroups,
     buildKegiatanGroups: buildKegiatanGroups,
