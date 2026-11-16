@@ -653,3 +653,33 @@ describe('dashboard detail drawer', () => {
     expect(iBa).toBeLessThan(iAcc);
   });
 });
+
+describe('dashboard periksa pembayaran', () => {
+  it('menambahkan tombol Periksa Pembayaran pada kartu pengajuan mobile', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('v-if="canCheckPayment(r)"');
+    expect(html).toContain('@click.stop="openPeriksaPayment(r)"');
+    expect(html).toContain('Periksa Pembayaran');
+    expect(html).toContain('paymentStatusOf(r)');
+  });
+
+  it('membuka modal layar penuh dan memakai verifyPembayaran', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('class="pm-scrim"');
+    expect(html).toContain('class="pm-panel"');
+    expect(html).toContain('periksaKesesuaianInfo');
+    expect(html).toContain('periksaTimeline');
+    expect(html).toContain("this.run('verifyPembayaran'");
+    expect(html).toContain('expectedRevision: it.revision');
+    expect(html).toContain('Menekan Valid mengubah status menjadi ACC');
+    expect(html).toContain('await this.loadPengajuan();');
+  });
+
+  it('mendefinisikan CSS kunci modal pembayaran', async () => {
+    const html = await loadDashboardHtml();
+    const selectors = cssSelectors(html);
+    for (const sel of ['.pm-scrim', '.pm-panel', '.pm-open-btn', '.pm-badge.wait', '.pm-badge.acc', '.input.is-error']) {
+      expect(selectors.has(sel)).toBe(true);
+    }
+  });
+});
