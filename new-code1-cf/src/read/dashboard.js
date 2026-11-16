@@ -1,4 +1,5 @@
 import { requireAdmin } from '../session.js';
+import { getAccSettings } from '../settings.js';
 import { toClientRow, toClientRows } from './columns.js';
 import { saveDriveFile } from '../drive.js';
 import {
@@ -492,7 +493,8 @@ export async function getMasterDataMonitor(db, ctx) {
     config: toClientRows('config', await all('config')),
     bagianStaff: maskSecret(toClientRows('bagian_staff', await all('bagian_staff')), 'Pass'),
     admin: maskSecret(toClientRows('admin', await all('admin')), 'Password'),
-    bagianSettings: await getBagianBaSettings(db)
+    bagianSettings: await getBagianBaSettings(db),
+    accSettings: await getAccSettings(db)
   };
 }
 

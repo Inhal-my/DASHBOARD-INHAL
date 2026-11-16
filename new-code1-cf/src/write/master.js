@@ -1,4 +1,5 @@
 import { requireAdmin } from '../session.js';
+import { setAccSettings } from '../settings.js';
 import { hashPassword, isHashed } from '../password.js';
 import { kegiatanKey } from '../read/common.js';
 import { writeAuditLog } from '../audit.js';
@@ -131,6 +132,12 @@ export async function saveConfig(db, payload, ctx) {
   if (guard) return guard;
   await replaceAll(db, 'config', ['key', 'value'], clean);
   return { success: true, message: 'Config diperbarui.' };
+}
+
+export async function saveAccSettings(db, payload, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const settings = await setAccSettings(db, payload || {});
+  return { success: true, accSettings: settings, message: settings.allowManualAcc ? 'ACC manual diaktifkan.' : 'ACC manual dinonaktifkan.' };
 }
 
 export async function saveBagianStaff(db, payload, ctx) {

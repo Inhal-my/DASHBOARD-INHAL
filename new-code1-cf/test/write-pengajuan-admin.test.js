@@ -50,6 +50,12 @@ async function seedDetail(jenis = 'SGD', pilihan = 'SGD 1', detail = '') {
   ).bind(jenis, pilihan, detail).run();
 }
 
+async function seedManualAcc(enabled = true) {
+  await env.DB.prepare(
+    "INSERT INTO config (key, value) VALUES ('allow_manual_acc', ?1) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).bind(enabled ? '1' : '0').run();
+}
+
 async function seedBiayaOverride(nominal = '150000') {
   await env.DB.prepare(
     "INSERT INTO check_data (timestamp,check_id,id_pengajuan,detail,biaya) VALUES ('2026-09-10T08:00:00','CHK-BIAYA','INHAL-1','BIAYA-OVERRIDE',?1)"
@@ -234,8 +240,19 @@ describe('pengajuan admin status and delete', () => {
     expect(row.status).toBe('Menunggu');
   });
 
+  it('menolak ACC manual saat pengaturan dinonaktifkan', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', 'Berkas lengkap', '', ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('ACC manual dinonaktifkan');
+    const row = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Menunggu');
+  });
+
   it('ACC issues a nomor surat and records history', async () => {
     await seedPengajuan();
+    await seedManualAcc();
     const ctx = await adminCtx();
     const ok = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', 'Berkas lengkap', '', ctx);
     expect(ok.success).toBe(true);
@@ -295,6 +312,7 @@ describe('pengajuan admin status and delete', () => {
 
   it('keeps the existing nomor surat on a repeated ACC', async () => {
     await seedPengajuan();
+    await seedManualAcc();
     const ctx = await adminCtx();
     const first = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx);
     const second = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx);
@@ -304,6 +322,7 @@ describe('pengajuan admin status and delete', () => {
 
   it('issues consecutive nomor surat for two ACC transitions', async () => {
     await seedPengajuan();
+    await seedManualAcc();
     await env.DB.prepare(
       "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,email,no_hp_wa,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00','INHAL-2','2201010002','Budi','budi@contoh.com','0813','A','SGD','Menunggu')"
     ).run();

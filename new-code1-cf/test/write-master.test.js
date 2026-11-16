@@ -5,7 +5,7 @@ import { verifyPassword, isHashed, hashPassword } from '../src/password.js';
 import { getMasterDataMonitor } from '../src/read/dashboard.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
-  saveBagianStaff, saveAdminList, saveBagianBaSettings
+  saveBagianStaff, saveAdminList, saveBagianBaSettings, saveAccSettings
 } from '../src/write/master.js';
 
 async function adminCtx() {
@@ -48,6 +48,7 @@ describe('master write handlers', () => {
     await expect(saveMasterKegiatan(env.DB, { rows: [] }, {})).rejects.toThrow();
     await expect(saveConfig(env.DB, { rows: [] }, {})).rejects.toThrow();
     await expect(saveBagianBaSettings(env.DB, { statuses: ['ACC'] }, {})).rejects.toThrow();
+    await expect(saveAccSettings(env.DB, { allowManualAcc: true }, {})).rejects.toThrow();
   });
 
   it('rejects an empty row set without wiping the table', async () => {
@@ -140,6 +141,18 @@ describe('master write handlers', () => {
     await saveAdminList(env.DB, { rows: [{ Password: first, Nama: 'Admin 1' }] }, ctx);
     const second = (await env.DB.prepare('SELECT password FROM admin').first()).password;
     expect(second).toBe(first);
+  });
+
+  it('menyimpan pengaturan ACC manual dan membacanya kembali', async () => {
+    const ctx = await adminCtx();
+    const on = await saveAccSettings(env.DB, { allowManualAcc: true }, ctx);
+    expect(on).toMatchObject({ success: true, accSettings: { allowManualAcc: true } });
+    let data = await getMasterDataMonitor(env.DB, ctx);
+    expect(data.accSettings).toEqual({ allowManualAcc: true });
+    const off = await saveAccSettings(env.DB, { allowManualAcc: false }, ctx);
+    expect(off).toMatchObject({ success: true, accSettings: { allowManualAcc: false } });
+    data = await getMasterDataMonitor(env.DB, ctx);
+    expect(data.accSettings).toEqual({ allowManualAcc: false });
   });
 
   it('validates and persists bagian BA settings', async () => {

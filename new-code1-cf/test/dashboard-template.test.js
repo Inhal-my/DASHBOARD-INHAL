@@ -484,6 +484,7 @@ describe('dashboard ubah status ke ACC', () => {
   it('menyediakan pemilih status ACC pada panel keputusan', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('class="pd-statuspick"');
+    expect(html).toContain('master.accSettings.allowManualAcc');
     expect(html).toContain('data-s="ACC"');
   });
   it('menyediakan tombol Jadikan ACC yang menerbitkan surat dan mengirim PDF', async () => {
@@ -493,10 +494,19 @@ describe('dashboard ubah status ke ACC', () => {
     expect(html).toContain("status === 'ACC'");
     expect(html).toContain('Surat keterangan final (PDF) dikirim');
   });
+  it('menyediakan pengaturan ACC manual di tab Master Data', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("key: 'accSettings'");
+    expect(html).toContain('Aktifkan ACC manual');
+    expect(html).toContain("@click=\"saveAccSettings\"");
+    expect(html).toContain("run('saveAccSettings'");
+    expect(html).toContain('master.accSettings = Object.assign({ allowManualAcc: false }, d.accSettings || {})');
+  });
   it('memisahkan aksi cepat ACC dari aksi destruktif Tolak', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('Aksi cepat');
     expect(html).toContain('class="btn-danger-soft sm:ml-auto"');
+    expect(html).toContain("v-if=\"master.accSettings.allowManualAcc\" class=\"btn-soft\" :disabled=\"loading\" @click=\"quickStatus('ACC')\"");
     expect(html).toContain("@click=\"quickStatus('Ditolak')\"");
     expect(html).toContain('Tolak Pengajuan');
     const acc = html.indexOf("@click=\"quickStatus('ACC')\"");

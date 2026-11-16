@@ -3,6 +3,7 @@ import { isVerifikator, VERIFIKATOR_DENIED } from '../policy.js';
 import { resolveBagianFor } from '../read/common.js';
 import { sendApprovalEmail, sendFinalPdfEmails, sendRejectionPdfEmail } from './email.js';
 import { resolveTagihan } from '../tagihan.js';
+import { isManualAccEnabled } from '../settings.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
 import { logError } from '../obs/log.js';
@@ -256,6 +257,12 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
       alasan: VERIFIKATOR_DENIED
     });
     return { success: false, message: VERIFIKATOR_DENIED };
+  }
+  if (status === 'ACC' && changesStatus) {
+    const allowManualAcc = await isManualAccEnabled(db);
+    if (!allowManualAcc) {
+      return { success: false, message: 'ACC manual dinonaktifkan. Setujui pengajuan lalu validasi pembayaran; aktifkan ACC manual di Master Data bila perlu.' };
+    }
   }
   const ts = nowIso();
   let effectiveStatus = status;

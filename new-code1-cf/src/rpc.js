@@ -13,7 +13,7 @@ import {
 } from './read/dashboard.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
-  saveBagianStaff, saveAdminList, saveBagianBaSettings,
+  saveBagianStaff, saveAdminList, saveBagianBaSettings, saveAccSettings,
   saveMahasiswa, deleteMahasiswa, importMahasiswaCsv, saveMasterRow, deleteMasterRow,
   previewMasterRename, renameMasterValue
 } from './write/master.js';
@@ -72,6 +72,7 @@ const HANDLERS = {
   saveMasterBagian: (db, args, ctx) => saveMasterBagian(db, args[0], ctx),
   saveMasterBiaya: (db, args, ctx) => saveMasterBiaya(db, args[0], ctx),
   saveConfig: (db, args, ctx) => saveConfig(db, args[0], ctx),
+  saveAccSettings: (db, args, ctx) => saveAccSettings(db, args[0], ctx),
   saveBagianStaff: (db, args, ctx) => saveBagianStaff(db, args[0], ctx),
   saveAdminList: (db, args, ctx) => saveAdminList(db, args[0], ctx),
   saveBagianBaSettings: (db, args, ctx) => saveBagianBaSettings(db, args[0], ctx),

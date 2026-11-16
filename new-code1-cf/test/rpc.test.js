@@ -61,6 +61,9 @@ describe('dispatchRpc', () => {
     expect(csv.success).toBe(true);
     const master = await dispatchRpc(env.DB, 'saveMasterRow', [{ table: 'master_biaya', row: { Kegiatan: 'KKD', Biaya: 'Rp 1' } }, token]);
     expect(master.success).toBe(true);
+    const acc = await dispatchRpc(env.DB, 'saveAccSettings', [{ allowManualAcc: true }, token]);
+    expect(acc.success).toBe(true);
+    expect(acc.accSettings).toEqual({ allowManualAcc: true });
     const del = await dispatchRpc(env.DB, 'deleteMahasiswa', ['6600000001', token]);
     expect(del.success).toBe(true);
   });
