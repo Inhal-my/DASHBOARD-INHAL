@@ -5,6 +5,7 @@ import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
 import { loadBaDosenMap, loadJadwalDosenMap, dosenListFor } from './dosen.js';
+import { paymentGatePassed } from '../paymentGate.js';
 
 function baSumber(r) {
   const s = String((r && r.Sumber) || '').trim().toLowerCase();
@@ -151,6 +152,7 @@ export async function getLaporanBootstrap(db, ctx) {
     if (status !== 'ACC') row['Link Final'] = '';
     row['Masuk BA'] = baPengajuanIds.has(id);
     row['Pembayaran Final'] = !!String(row['Link Final'] || '').trim() || row['Masuk BA'];
+    row['Email Final Diizinkan'] = paymentGatePassed(p);
     totalBiaya += row.Biaya;
     return { pengajuan: row, details: detailById[id] || [], history: historyById[id] || [] };
   });

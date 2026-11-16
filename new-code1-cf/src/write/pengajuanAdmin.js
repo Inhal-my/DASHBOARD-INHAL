@@ -1,7 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { isVerifikator, VERIFIKATOR_DENIED } from '../policy.js';
 import { resolveBagianFor } from '../read/common.js';
-import { sendFinalPdfEmails, sendRejectionPdfEmail } from './email.js';
+import { sendRejectionPdfEmail } from './email.js';
 import { writeAuditLog, writeLogUpload, getUploadLogDetail } from '../audit.js';
 import { saveDriveFile } from '../drive.js';
 import { logError } from '../obs/log.js';
@@ -298,18 +298,6 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   }
 
   let notification = null;
-  const transitionToAcc = status === 'ACC' && prevStatus !== 'ACC';
-  if (transitionToAcc) {
-    try {
-      const final = await sendFinalPdfEmails(db, id, ctx.env, actor);
-      notification = final.ok
-        ? { ok: true, pdfUrl: final.pdfUrl, kind: 'acc' }
-        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.', kind: 'acc' };
-    } catch (e) {
-      notification = { ok: false, error: (e && e.message) ? e.message : String(e), kind: 'acc' };
-    }
-  }
-
   const isRejection = status === 'Ditolak' || status === 'Dibatalkan';
   const wasRejection = prevStatus === 'Ditolak' || prevStatus === 'Dibatalkan';
   const transitionToRejection = isRejection && !wasRejection && str(existing.sumber) !== 'Manual';

@@ -1,6 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { norm } from '../read/common.js';
 import { callDriveBridge } from '../drive.js';
+import { paymentGatePassed } from '../paymentGate.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -176,12 +177,20 @@ export async function sendFinalPdfEmails(db, idPengajuan, env, actor) {
     (!bagianSent ? ("Email untuk Bagian '" + (bagian.name || '-') + "' tidak terkirim / tidak ditemukan.") : '')
   );
 
-  return { ok: true, pdfUrl: pdfUrl, studentEmailSent: studentSent, bagianEmailSent: bagianSent, bagianEmail: bagian.email, bagianName: bagian.name, notes: notes };
+  return { ok: !!bridge.ok, pdfUrl: pdfUrl, studentEmailSent: studentSent, bagianEmailSent: bagianSent, bagianEmail: bagian.email, bagianName: bagian.name, notes: notes };
 }
 
 export async function sendFinalEmail(db, idPengajuan, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   try {
+    const row = await getPengajuan(db, idPengajuan);
+    if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+    if (str(row.status) !== 'ACC') {
+      return { success: false, message: 'Pengajuan belum berstatus ACC. Setujui (ACC) pengajuan terlebih dahulu.' };
+    }
+    if (!paymentGatePassed(row)) {
+      return { success: false, message: 'Email final baru dapat dikirim setelah pembayaran divalidasi atau berstatus gratis.' };
+    }
     const result = await sendFinalPdfEmails(db, idPengajuan, ctx.env, ctx.session && ctx.session.nama);
     return {
       success: result.ok,
@@ -212,13 +221,15 @@ export async function sendBulkFinalEmail(db, ids, ctx) {
     const id = str(p.id_pengajuan);
     if (!id) continue;
     results.total++;
-    // Email final tidak boleh mengubah status. Pengajuan yang belum ACC
-    // dilewati (bukan dipaksa ACC) agar pemilihan massal aman.
-    if (str(p.status) !== 'ACC') {
+    // Email final tidak boleh mengubah status. Pengajuan yang belum ACC atau
+    // pembayarannya belum valid/gratis dilewati agar pemilihan massal aman.
+    if (!paymentGatePassed(p)) {
       results.skipped++;
       results.details.push({
         idPengajuan: id, npm: str(p.npm), nama: str(p.nama_lengkap), ok: false, skipped: true,
-        notes: ['Dilewati: pengajuan belum berstatus ACC.']
+        notes: [str(p.status) !== 'ACC'
+          ? 'Dilewati: pengajuan belum berstatus ACC.'
+          : 'Dilewati: pembayaran belum valid atau gratis.']
       });
       continue;
     }
@@ -238,7 +249,7 @@ export async function sendBulkFinalEmail(db, ids, ctx) {
     }
   }
 
-  const skippedText = results.skipped ? ', ' + results.skipped + ' dilewati (belum ACC)' : '';
+  const skippedText = results.skipped ? ', ' + results.skipped + ' dilewati (belum ACC / pembayaran belum valid)' : '';
   return {
     success: true,
     total: results.total,
@@ -255,6 +266,12 @@ export async function sendAccFinalToBagian(db, idPengajuan, ctx) {
   try {
     const pengajuan = await getPengajuan(db, idPengajuan);
     if (!pengajuan) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+    if (str(pengajuan.status) !== 'ACC') {
+      return { success: false, message: 'Pengajuan belum berstatus ACC. Setujui (ACC) pengajuan terlebih dahulu.' };
+    }
+    if (!paymentGatePassed(pengajuan)) {
+      return { success: false, message: 'Email final baru dapat dikirim setelah pembayaran divalidasi atau berstatus gratis.' };
+    }
     const details = await getDetailRows(db, idPengajuan);
     const bagian = await resolveBagianEmail(db, pengajuan, details);
     const nama = str(pengajuan.nama_lengkap);

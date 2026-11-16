@@ -43,7 +43,8 @@ CREATE TABLE pengajuan (
   catatan_verifikasi TEXT,
   verified_at TEXT,
   verified_by TEXT,
-  payment_revision INTEGER NOT NULL DEFAULT 0
+  payment_revision INTEGER NOT NULL DEFAULT 0,
+  payment_gate_exempt INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE detail_kegiatan (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, id_pengajuan TEXT,

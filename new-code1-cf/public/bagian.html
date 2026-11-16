@@ -1501,7 +1501,8 @@
                     const B = window.BagianState;
                     return B.buildAllGroups(this.rows, {
                         statuses: this.baConfig.statuses || ['ACC'],
-                        finalOnly: this.baConfig.finalOnly !== false
+                        finalOnly: this.baConfig.finalOnly !== false,
+                        requirePembayaran: true
                     });
                 },
                 ringkasanStats() {
@@ -1708,7 +1709,8 @@
                 kegiatanGroups() {
                     return window.BagianState.buildKegiatanGroups(this.rows, {
                         statuses: this.baConfig.statuses || ['ACC'],
-                        finalOnly: this.baConfig.finalOnly !== false
+                        finalOnly: this.baConfig.finalOnly !== false,
+                        requirePembayaran: true
                     });
                 },
                 selectedGroup() {

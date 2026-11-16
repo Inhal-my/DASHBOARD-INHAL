@@ -78,6 +78,20 @@ describe('bagian-state helpers', () => {
     expect(S.unscheduledPeserta(pending, jadwalList).map((p) => p.idPengajuan)).toEqual(['p2']);
   });
 
+  it('menyaring peserta ACC yang pembayarannya belum lolos', async () => {
+    const S = await loadState();
+    const withPayment = rows.map((r) => Object.assign({}, r, {
+      eligiblePembayaran: r.idPengajuan !== 'p2'
+    }));
+    const all = S.buildAllGroups(withPayment, { statuses: ['ACC'], requirePembayaran: true });
+    expect(all.length).toBe(2);
+    const sgd = all.find((g) => g.jenis === 'SGD');
+    expect(sgd.peserta.map((p) => p.idPengajuan)).toEqual(['p1']);
+
+    const unfiltered = S.buildAllGroups(withPayment, { statuses: ['ACC'] });
+    expect(unfiltered.find((g) => g.jenis === 'SGD').peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+  });
+
   it('menggabungkan peserta lintas tanggal pengajuan saat edit jadwal', async () => {
     const S = await loadState();
     const peserta = [

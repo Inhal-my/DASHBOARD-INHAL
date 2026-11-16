@@ -245,7 +245,10 @@
       if (!barisKegiatanCocok(refKegiatan, group, r)) return;
       cocok = true;
       var pid = String((r && r.idPengajuan) || '').trim();
-      if (pid) map[pid] = String((r && r.status) || '').trim();
+      if (pid) map[pid] = {
+        status: String((r && r.status) || '').trim(),
+        eligible: r.eligiblePembayaran !== false
+      };
     });
     return cocok ? map : null;
   }
@@ -283,7 +286,9 @@
       seen[key] = true;
       var pid = String(p.idPengajuan || '').trim();
       if (baris && !(pid && baris[pid] !== undefined)) { tidakSesuai.push(p); return; }
-      var status = pid && baris && baris[pid] !== undefined ? baris[pid] : String(p.statusPengajuan || '').trim();
+      var row = pid && baris ? baris[pid] : null;
+      var status = row ? row.status : String(p.statusPengajuan || '').trim();
+      if (row && row.eligible === false) { ditolak.push(p); return; }
       if (statusDiterima(status, opts.statuses)) tambahan.push(p);
       else ditolak.push(p);
     });
@@ -322,6 +327,7 @@
     var opts = options || {};
     var statuses = opts.statuses || ['ACC'];
     var finalOnly = opts.finalOnly !== false;
+    var requirePembayaran = opts.requirePembayaran === true;
     var map = {};
     (rows || []).forEach(function (r) {
       if (pendingOnly && r.baMember) return;
@@ -343,7 +349,7 @@
         };
       }
       g.statusCounts[r.status] = (g.statusCounts[r.status] || 0) + 1;
-      if (statuses.indexOf(r.status) !== -1) {
+      if (statuses.indexOf(r.status) !== -1 && (!requirePembayaran || r.eligiblePembayaran !== false)) {
         g.peserta.push({
           idPengajuan: r.idPengajuan,
           npm: r.npm,
@@ -405,6 +411,7 @@
       if (!id || seen[id] || scheduled[id]) return;
       if (!sameKegiatan(jadwal && jadwal.Blok, jadwal && jadwal.NamaKegiatan, r.blok, kegiatanName(r))) return;
       if (allowed.indexOf(String(r.status == null ? '' : r.status).trim()) === -1) return;
+      if (r.eligiblePembayaran === false) return;
       seen[id] = true;
       out.push({
         idPengajuan: id,

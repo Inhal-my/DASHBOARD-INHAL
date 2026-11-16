@@ -7,6 +7,7 @@ import {
   baginaKey, getMasterOptions, getBagianBaSettings, baginaHasAccess,
   getBagianAliasMap, resolveBagian12, kegiatanKey
 } from './common.js';
+import { paymentGatePassed } from '../paymentGate.js';
 
 function baSumber(r) {
   const s = String((r && r.Sumber) || '').trim().toLowerCase();
@@ -78,6 +79,9 @@ async function computeBagianRows(db, kategori, subBagian) {
         tanggal: String(d['Tanggal Pelaksanaan'] || ''),
         bagian: String(d.Bagian || '').trim(),
         status: statusP,
+        statusPembayaran: String(prow['Status Pembayaran'] || 'belum').trim(),
+        linkBuktiBayar: String(prow['Link Bukti Bayar'] || '').trim(),
+        eligiblePembayaran: statusP === 'ACC' ? paymentGatePassed(p) : true,
         linkSurat: String(prow['Link Surat Keterangan'] || '').trim(),
         linkFinal: statusP === 'ACC' ? String(prow['Link Final'] || '').trim() : '',
         baMember: !!(memberSet && memberSet.has(id))

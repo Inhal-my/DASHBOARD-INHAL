@@ -1,11 +1,30 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { verifyPembayaran, correctPembayaran } from '../src/write/pembayaran.js';
 import { getLaporanBootstrap } from '../src/read/laporan.js';
 
+afterEach(() => { vi.unstubAllGlobals(); });
+
+const driveEnv = { GAS_DRIVE_URL: 'https://script.example/exec', GAS_DRIVE_TOKEN: 'tok' };
+
 async function adminCtx() {
   return { token: await createSession(env.DB, { role: 'admin', nama: 'Rani' }), env: {} };
+}
+
+async function adminCtxWithDrive() {
+  return { token: await createSession(env.DB, { role: 'admin', nama: 'Rani' }), env: driveEnv };
+}
+
+function stubBridge(handler) {
+  const calls = [];
+  const f = vi.fn(async (_url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push(body);
+    return new Response(JSON.stringify(handler(body)), { status: 200 });
+  });
+  vi.stubGlobal('fetch', f);
+  return calls;
 }
 
 async function seedPengajuan(extra = {}) {
@@ -107,6 +126,33 @@ describe('verifyPembayaran', () => {
     const revs = (await env.DB.prepare("SELECT * FROM pembayaran_revisi WHERE id_pengajuan = 'INHAL-1' ORDER BY revision").all()).results;
     expect(revs).toHaveLength(1);
     expect(revs[0]).toMatchObject({ mode: 'verifikasi', status_lama: 'menunggu', status_baru: 'valid', kesesuaian_baru: 'kurang', nominal_baru: 300000, actor: 'Rani' });
+  });
+
+  it('mengirim email final setelah pembayaran divalidasi', async () => {
+    await seedPengajuan();
+    const calls = stubBridge(() => ({
+      success: true,
+      pdfUrl: 'https://drive.google.com/file/d/FINAL1234567890/view',
+      studentEmailSent: true,
+      bagianEmailSent: true
+    }));
+    const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtxWithDrive());
+    expect(res).toMatchObject({ success: true, status: 'valid' });
+    expect(res.notification).toMatchObject({ ok: true });
+    expect(calls[0].action).toBe('sendFinalEmail');
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.link_final).toContain('FINAL1234567890');
+  });
+
+  it('tetap valid walau pengiriman email final gagal', async () => {
+    await seedPengajuan();
+    stubBridge(() => ({ success: false, message: 'Layanan email sibuk' }));
+    const res = await verifyPembayaran(env.DB, verifyPayload(), await adminCtxWithDrive());
+    expect(res).toMatchObject({ success: true, status: 'valid' });
+    expect(res.notification).toMatchObject({ ok: false });
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status_pembayaran).toBe('valid');
+    expect(p.link_final || '').toBe('');
   });
 
   it('rejects a kesesuaian that does not match the nominal', async () => {

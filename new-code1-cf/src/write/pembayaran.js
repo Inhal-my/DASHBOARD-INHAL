@@ -1,5 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { writeAuditLog } from '../audit.js';
+import { sendFinalPdfEmails } from './email.js';
 import { formatRupiah, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan } from '../read/common.js';
 
 function str(v) {
@@ -148,7 +149,27 @@ export async function verifyPembayaran(db, payload, ctx) {
     detail: JSON.stringify({ idPengajuan: id, nominal, kesesuaian, tanggal }),
     alasan: ''
   });
-  return { success: true, status: 'valid', revision, message: 'Pembayaran divalidasi.' };
+
+  let notification = null;
+  if (!str(row.link_final)) {
+    try {
+      const final = await sendFinalPdfEmails(db, id, ctx && ctx.env, actor);
+      notification = final.ok
+        ? { ok: true, pdfUrl: final.pdfUrl }
+        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.' };
+    } catch (e) {
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
+    }
+  }
+
+  let message = 'Pembayaran divalidasi.';
+  if (notification) {
+    message += notification.ok
+      ? ' Surat final dikirim ke mahasiswa dan Bagian.'
+      : ' Pengiriman surat final gagal: ' + notification.error;
+  }
+
+  return { success: true, status: 'valid', revision, message, notification };
 }
 
 export async function correctPembayaran(db, payload, ctx) {

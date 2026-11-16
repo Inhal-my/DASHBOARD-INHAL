@@ -20,7 +20,7 @@ export const TABLE_COLUMNS = {
     status_pembayaran: 'Status Pembayaran', kesesuaian_pembayaran: 'Kesesuaian Pembayaran',
     nominal_dibayar: 'Nominal Dibayar', tanggal_bayar: 'Tanggal Bayar', metode_bayar: 'Metode Bayar',
     catatan_verifikasi: 'Catatan Verifikasi', verified_at: 'Verified At', verified_by: 'Verified By',
-    payment_revision: 'Payment Revision',
+    payment_revision: 'Payment Revision', payment_gate_exempt: 'Payment Gate Exempt',
     sumber: 'Sumber'
   },
   detail_kegiatan: {

@@ -2456,8 +2456,9 @@
                                     <div class="pd-card-head"><h4><i class="bi bi-envelope-check text-brand-600"></i> Email ACC Final</h4></div>
                                     <div class="pd-card-body">
                                         <div class="flex flex-wrap gap-2">
-                                            <button v-if="!isManual(detail.p) && detail.p.Status==='ACC'" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
-                                            <button v-if="detail.p.Status==='ACC'" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                            <button v-if="!isManual(detail.p) && detail.p.Status==='ACC' && detail.p['Email Final Diizinkan']" class="btn-soft" @click="sendFinalEmail()"><i class="bi bi-envelope-paper"></i>Kirim Ulang Email ACC Final</button>
+                                            <button v-if="detail.p.Status==='ACC' && detail.p['Email Final Diizinkan']" class="btn-soft" @click="sendAccFinalToBagian()"><i class="bi bi-send"></i>Kirim Ulang Khusus ke Bagian</button>
+                                            <span v-if="detail.p.Status==='ACC' && !detail.p['Email Final Diizinkan']" class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-200"><i class="bi bi-hourglass-split"></i>Email final tersedia setelah pembayaran divalidasi.</span>
                                             <span v-if="isManual(detail.p)" class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-600 ring-1 ring-inset ring-violet-200"><i class="bi bi-info-circle"></i>Pengajuan manual tanpa email — notifikasi email dinonaktifkan.</span>
                                         </div>
                                     </div>
@@ -4923,8 +4924,8 @@
                         title: 'Kirim Email ACC Final',
                         message: sel.length
                             ? 'Kirim email ACC final (PDF) ke ' + sel.length + ' pengajuan terpilih?'
-                            : 'Kirim email ACC final (PDF) ke SEMUA pengajuan berstatus ACC?',
-                        details: sel.length ? [] : ['Pastikan berkas ACC INHAL sudah diunggah pada setiap pengajuan.'],
+                            : 'Kirim email ACC final (PDF) ke SEMUA pengajuan berstatus ACC yang pembayarannya sudah valid/gratis?',
+                        details: sel.length ? [] : ['Pengajuan yang pembayarannya belum valid akan dilewati otomatis.'],
                         icon: 'bi-envelope-paper',
                         confirmLabel: 'Kirim Email'
                     });
@@ -5722,6 +5723,10 @@
                 },
                 async sendFinalEmail() {
                     const alreadyAcc = this.detail.p.Status === 'ACC';
+                    if (alreadyAcc && !this.detail.p['Email Final Diizinkan']) {
+                        this.notify('Email final baru tersedia setelah pembayaran divalidasi atau berstatus gratis.', false);
+                        return;
+                    }
                     const ok = await this.askConfirm({
                         title: alreadyAcc ? 'Kirim Ulang Email ACC Final' : 'ACC & Kirim Email Final',
                         message: alreadyAcc

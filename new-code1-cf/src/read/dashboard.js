@@ -10,6 +10,7 @@ import {
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds } from './baSesi.js';
+import { paymentGatePassed } from '../paymentGate.js';
 import { loadBaDosenMap, dosenListFor } from './dosen.js';
 import { logError } from '../obs/log.js';
 
@@ -30,6 +31,7 @@ function buildPengajuanClientRows(rows, biayaMap, overrideMap, detailsById) {
     copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap, (detailsById || {})[id]);
     copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
     copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
+    copy['Email Final Diizinkan'] = paymentGatePassed(r);
     return copy;
   });
 }
@@ -255,6 +257,7 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
   const id = String(p.id_pengajuan || '').trim();
   copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
   copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
+  copy['Email Final Diizinkan'] = paymentGatePassed(p);
   copy.ba = await loadPengajuanBa(db, id);
   copy.BaCatatanCount = copy.ba.filter((b) => b.catatan).length;
   return copy;
