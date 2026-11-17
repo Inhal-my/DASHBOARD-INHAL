@@ -116,6 +116,13 @@
     });
   }
 
+  function earliestBaSession(ref, jadwalList) {
+    var list = sessionsForKegiatan(ref, jadwalList).filter(function (j) {
+      return !j.punyaBa;
+    });
+    return list[0] || null;
+  }
+
   function pesertaKey(p) {
     return String((p && (p.idPengajuan || p.npm)) || '').trim();
   }
@@ -140,6 +147,20 @@
     return out;
   }
 
+  // Gabungkan dua daftar peserta tanpa duplikat. Dipakai untuk menambahkan
+  // peserta yang belum dijadwalkan ke kandidat sesi terpilih.
+  function mergePesertaUnik(listA, listB) {
+    var seen = {};
+    var out = [];
+    (listA || []).concat(listB || []).forEach(function (p) {
+      var key = pesertaKey(p);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      out.push(normalizePeserta(p, (p && p.sumber) || 'kegiatan'));
+    });
+    return out;
+  }
+
   // Toggle satu sesi jadwal pada form BA. Mengembalikan daftar sesi terpilih
   // beserta union peserta dan peta peserta terpilih.
   function applySessionToggle(jadwalIds, jadwalId, sessions) {
@@ -155,6 +176,42 @@
     var selected = {};
     peserta.forEach(function (p) { if (p.idPengajuan) selected[p.idPengajuan] = true; });
     return { jadwalIds: list, sessions: chosen, peserta: peserta, selected: selected };
+  }
+
+  // Toggle sesi sambil melepas peserta yang hanya berasal dari sesi yang
+  // dimatikan. Peserta sesi lain dan peserta yang belum dijadwalkan
+  // (protectedIds) tetap terpilih.
+  function applySessionToggleWithRelease(jadwalIds, jadwalId, sessions, selected, protectedIds) {
+    var id = String(jadwalId || '').trim();
+    var list = (jadwalIds || []).map(function (v) { return String(v || '').trim(); }).filter(Boolean);
+    var idx = list.indexOf(id);
+    if (id && idx === -1) list.push(id);
+    else if (idx !== -1) list.splice(idx, 1);
+    var picked = {};
+    list.forEach(function (jid) { picked[jid] = true; });
+    var chosen = (sessions || []).filter(function (j) { return picked[String(j.JadwalID)]; });
+    var chosenIds = {};
+    chosen.forEach(function (j) { chosenIds[String(j.JadwalID)] = true; });
+    var remaining = {};
+    unionPeserta(chosen).forEach(function (p) {
+      if (p.idPengajuan) remaining[p.idPengajuan] = true;
+    });
+    var guard = protectedIds || {};
+    var out = {};
+    Object.keys(selected || {}).forEach(function (key) {
+      if (selected[key]) out[key] = true;
+    });
+    (sessions || []).forEach(function (j) {
+      if (chosenIds[String(j.JadwalID)]) return;
+      (j.peserta || []).forEach(function (p) {
+        var pid = String((p && p.idPengajuan) || '').trim();
+        if (pid && !remaining[pid] && !guard[pid]) delete out[pid];
+      });
+    });
+    unionPeserta(chosen).forEach(function (p) {
+      if (p.idPengajuan) out[p.idPengajuan] = true;
+    });
+    return { jadwalIds: list, sessions: chosen, peserta: unionPeserta(chosen), selected: out };
   }
 
   function sesiSummary(sessions) {
@@ -820,8 +877,11 @@
     baForJadwal: baForJadwal,
     statusOf: statusOf,
     sessionsForKegiatan: sessionsForKegiatan,
+    earliestBaSession: earliestBaSession,
     unionPeserta: unionPeserta,
+    mergePesertaUnik: mergePesertaUnik,
     applySessionToggle: applySessionToggle,
+    applySessionToggleWithRelease: applySessionToggleWithRelease,
     baPendukungFor: baPendukungFor,
     pendukungPesertaList: pendukungPesertaList,
     mergeBaCandidates: mergeBaCandidates,

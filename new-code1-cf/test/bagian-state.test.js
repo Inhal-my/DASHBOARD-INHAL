@@ -199,6 +199,29 @@ describe('bagian-state helpers', () => {
     expect(S.sesiSummary([]).label).toBe('Tanpa sesi');
   });
 
+  it('memilih sesi paling awal yang belum punya BA', async () => {
+    const S = await loadState();
+    const list = [
+      { JadwalID: 'j1', Blok: '1', NamaKegiatan: 'Neurologi - A', Tanggal: '2026-10-20', Jam: '08:00', punyaBa: true, peserta: [] },
+      { JadwalID: 'j3', Blok: '1', NamaKegiatan: 'Neurologi - A', Tanggal: '2026-10-24', Jam: '07:00', punyaBa: false, peserta: [] },
+      { JadwalID: 'j2', Blok: '1', NamaKegiatan: 'Neurologi - A', Tanggal: '2026-10-22', Jam: '10:00', punyaBa: false, peserta: [] }
+    ];
+    expect(S.earliestBaSession({ blok: '1', nama: 'Neurologi - A' }, list).JadwalID).toBe('j2');
+    expect(S.earliestBaSession({ blok: '1', nama: 'Neurologi - A' }, list.map((j) => Object.assign({}, j, { punyaBa: true })))).toBe(null);
+  });
+
+  it('melepas peserta sesi yang dimatikan tanpa membuang peserta sesi lain dan peserta belum dijadwalkan', async () => {
+    const S = await loadState();
+    const sessions = [
+      { JadwalID: 'j1', Tanggal: '2026-10-20', peserta: [{ idPengajuan: 'p1', namaLengkap: 'Ani', npm: '001' }] },
+      { JadwalID: 'j2', Tanggal: '2026-10-22', peserta: [{ idPengajuan: 'p2', namaLengkap: 'Budi', npm: '002' }] }
+    ];
+    const selected = { p1: true, p2: true, p3: true };
+    const off = S.applySessionToggleWithRelease(['j1', 'j2'], 'j1', sessions, selected, { p3: true });
+    expect(off.jadwalIds).toEqual(['j2']);
+    expect(Object.keys(off.selected).sort()).toEqual(['p2', 'p3']);
+  });
+
   it('menghitung statistik dan progres blok', async () => {
     const S = await loadState();
     const all = S.buildAllGroups(rows, { statuses: ['ACC'] });

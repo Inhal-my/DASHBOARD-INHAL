@@ -224,3 +224,21 @@ describe('peringatan validasi form jadwal dan BA', () => {
     expect(html).toContain('lengkapiCheckState');
   });
 });
+
+describe('auto-jadwal peserta belum dijadwalkan', () => {
+  it('menampilkan bagian peserta belum dijadwalkan dan mengirim flag auto-jadwal', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Belum dijadwalkan');
+    expect(html).toContain('baUnscheduled');
+    expect(html).toContain('baUnscheduledSelected');
+    expect(html).toContain('baPesertaTerjadwal');
+    expect(html).toContain('autoJadwalkanBelumDijadwalkan');
+    expect(html).toContain('Akan otomatis dijadwalkan ke sesi paling awal yang dipilih');
+  });
+
+  it('memakai sesi paling awal yang belum punya BA saat membuka BA dari grup', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('earliestBaSession');
+    expect(html).toContain('applySessionToggleWithRelease');
+  });
+});

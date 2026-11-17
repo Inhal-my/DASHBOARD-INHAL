@@ -17,14 +17,16 @@ async function seedPengajuan() {
     ['INHAL-1', '2201010001', 'Aisyah'],
     ['INHAL-2', '2201010002', 'Budi']
   ];
-  for (const [id, npm, nama] of rows) {
-    await env.DB.prepare(
-      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00',?1,?2,?3,'A','SGD','ACC')"
-    ).bind(id, npm, nama).run();
-    await env.DB.prepare(
-      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00',?1,'SGD','SGD 1','','2026-09-20','')"
-    ).bind(id).run();
-  }
+  for (const [id, npm, nama] of rows) await seedPeserta(id, npm, nama);
+}
+
+async function seedPeserta(id, npm, nama) {
+  await env.DB.prepare(
+    "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,blok,jenis_kegiatan,status) VALUES ('2026-09-10T08:00:00',?1,?2,?3,'A','SGD','ACC')"
+  ).bind(id, npm, nama).run();
+  await env.DB.prepare(
+    "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan,bagian) VALUES ('2026-09-10T08:00:00',?1,'SGD','SGD 1','','2026-09-20','')"
+  ).bind(id).run();
 }
 
 function pesertaOf(id, npm, nama) {
@@ -185,5 +187,92 @@ describe('BA Pelaksanaan multi-sesi', () => {
     const cancel = await cancelJadwalPelaksanaan(env.DB, b, 'SGD', ctx);
     expect(cancel.success).toBe(false);
     expect(cancel.message).toContain('terkunci');
+  });
+
+  it('menjadwalkan otomatis peserta belum dijadwalkan ke sesi terpilih', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const a = await makeJadwal(ctx, '2026-09-20', '09:00', 'dr. Andi', [pesertaOf(...AISYAH)]);
+
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', jadwalIds: [a],
+      peserta: [pesertaOf(...AISYAH), pesertaOf(...BUDI)],
+      autoJadwalkanBelumDijadwalkan: true
+    }, 'SGD', ctx);
+
+    expect(res.success).toBe(true);
+    expect(res.autoScheduled).toBe(1);
+    const rows = await env.DB.prepare(
+      "SELECT id_pengajuan FROM jadwal_peserta WHERE jadwal_id = ?1 AND id_pengajuan = 'INHAL-2'"
+    ).bind(a).all();
+    expect(rows.results.length).toBe(1);
+    const p2 = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-2').first();
+    expect(p2.dosen).toBe('dr. Andi');
+    expect(p2.tanggal_pelaksanaan).toBe('2026-09-20T09:00');
+    const baPeserta = await env.DB.prepare('SELECT id_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1').bind(res.baId).all();
+    expect(baPeserta.results.map((r) => r.id_pengajuan).sort()).toEqual(['INHAL-1', 'INHAL-2']);
+  });
+
+  it('menjadwalkan peserta baru ke sesi paling awal pada BA multi-sesi', async () => {
+    await seedPengajuan();
+    await seedPeserta('INHAL-3', '2201010003', 'Cici');
+    const ctx = await bagianCtx();
+    const a = await makeJadwal(ctx, '2026-09-20', '09:00', 'dr. Andi', [pesertaOf(...AISYAH)]);
+    const b = await makeJadwal(ctx, '2026-09-21', '13:00', 'dr. Budi', [pesertaOf(...BUDI)]);
+
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', jadwalIds: [b, a],
+      peserta: [pesertaOf(...AISYAH), pesertaOf(...BUDI), pesertaOf('INHAL-3', '2201010003', 'Cici')],
+      autoJadwalkanBelumDijadwalkan: true
+    }, 'SGD', ctx);
+
+    expect(res.success).toBe(true);
+    expect(res.autoScheduled).toBe(1);
+    const rows = await env.DB.prepare(
+      "SELECT jadwal_id FROM jadwal_peserta WHERE id_pengajuan = 'INHAL-3'"
+    ).all();
+    expect(rows.results.map((r) => r.jadwal_id)).toEqual([a]);
+    const p3 = await env.DB.prepare('SELECT dosen, tanggal_pelaksanaan FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-3').first();
+    expect(p3.dosen).toBe('dr. Andi');
+    expect(p3.tanggal_pelaksanaan).toBe('2026-09-20T09:00');
+  });
+
+  it('tidak menjadwalkan otomatis tanpa flag dari klien', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const a = await makeJadwal(ctx, '2026-09-20', '09:00', 'dr. Andi', [pesertaOf(...AISYAH)]);
+
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', jadwalIds: [a],
+      peserta: [pesertaOf(...AISYAH), pesertaOf(...BUDI)]
+    }, 'SGD', ctx);
+
+    expect(res.success).toBe(true);
+    expect(res.autoScheduled).toBe(0);
+    const rows = await env.DB.prepare(
+      "SELECT id FROM jadwal_peserta WHERE jadwal_id = ?1 AND id_pengajuan = 'INHAL-2'"
+    ).bind(a).all();
+    expect(rows.results).toEqual([]);
+  });
+
+  it('menolak auto-jadwal peserta baru tanpa sesi', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    await makeJadwal(ctx, '2026-09-20', '09:00', 'dr. Andi', [pesertaOf(...AISYAH)]);
+
+    const res = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', jadwalIds: [],
+      peserta: [pesertaOf(...BUDI)],
+      autoJadwalkanBelumDijadwalkan: true
+    }, 'SGD', ctx);
+
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('Pilih minimal satu sesi');
+    const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara').first();
+    expect(Number(count.n)).toBe(0);
   });
 });

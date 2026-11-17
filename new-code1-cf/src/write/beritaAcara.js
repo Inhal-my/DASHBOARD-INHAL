@@ -432,6 +432,50 @@ async function buildSesiSyncStmts(db, peserta, sesi, fallback) {
   return stmts;
 }
 
+async function loadJadwalPesertaIdsForKegiatan(db, baKey) {
+  const rows = (await db.prepare(
+    'SELECT jp.id_pengajuan, jd.bagian, jd.blok, jd.nama_kegiatan, jd.kegiatan_key ' +
+    'FROM jadwal_peserta jp JOIN jadwal_pelaksanaan jd ON jd.jadwal_id = jp.jadwal_id ' +
+    'WHERE jd.active = 1'
+  ).all()).results || [];
+  const ids = new Set();
+  for (const row of rows) {
+    const key = str(row.kegiatan_key) || kegiatanKey(str(row.bagian), str(row.blok), str(row.nama_kegiatan));
+    if (key === baKey) ids.add(str(row.id_pengajuan));
+  }
+  return ids;
+}
+
+// Peserta yang belum punya jadwal pada kegiatan ini dijadwalkan ke sesi
+// terpilih paling awal. Hanya dipakai alur buat BA baru dan bila klien
+// mengirim flag eksplisit, supaya endpoint lama tetap kompatibel.
+async function planAutoJadwalPeserta(db, peserta, sesi, baKey, payload) {
+  if (!payload || payload.autoJadwalkanBelumDijadwalkan !== true) {
+    return { ok: true, stmts: [], count: 0, targetJadwalId: '' };
+  }
+  const scheduled = await loadJadwalPesertaIdsForKegiatan(db, baKey);
+  const pending = (peserta || []).filter((p) => {
+    const id = str(p.idPengajuan);
+    return id && !scheduled.has(id);
+  });
+  if (!pending.length) return { ok: true, stmts: [], count: 0, targetJadwalId: '' };
+  if (!sesi.length) {
+    return {
+      ok: false,
+      message: 'Pilih minimal satu sesi jadwal agar peserta belum dijadwalkan dapat dijadwalkan otomatis.'
+    };
+  }
+  const target = sesi[0];
+  const targetJadwalId = str(target.jadwal_id);
+  const ts = nowIso();
+  const stmts = pending.map((p) => db.prepare(
+    'INSERT INTO jadwal_peserta (timestamp, jadwal_id, id_pengajuan, npm, nama_lengkap, blok, status_pengajuan) ' +
+    'SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE NOT EXISTS (' +
+    'SELECT 1 FROM jadwal_peserta WHERE jadwal_id = ?2 AND id_pengajuan = ?3)'
+  ).bind(ts, targetJadwalId, str(p.idPengajuan), str(p.npm), str(p.namaLengkap), str(p.blok), str(p.statusPengajuan)));
+  return { ok: true, stmts: stmts, count: stmts.length, targetJadwalId: targetJadwalId };
+}
+
 export async function saveBeritaAcaraAdmin(db, payload, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const p = payload || {};
@@ -686,6 +730,9 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   if (!sesiResult.ok) return { success: false, message: sesiResult.message };
   const sesi = sesiResult.sesi;
 
+  const autoJadwal = await planAutoJadwalPeserta(db, peserta, sesi, baKey, p);
+  if (!autoJadwal.ok) return { success: false, message: autoJadwal.message };
+
   // Daftar dosen BA: gabungan sesi jadwal (sumber kebenaran), fallback input klien.
   // Divalidasi sebelum unggah berkas agar BA tanpa dosen tidak meninggalkan file yatim.
   const resolvedDosen = await resolveBaDosenList(db, normalizeDosenList(p.dosenList, p.dosen), sesi);
@@ -729,15 +776,23 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
       kegiatanKey: baKey, withDosen: true, withLabel: true, allowMultiple: true, withJadwal: true
     }),
     ...buildBaSesiStmts(db, baId, sesi),
+    ...autoJadwal.stmts,
     ...buildBaDosenStmts(db, baId, dosenList),
     ...syncStmts
   ]);
   await auditBa(db, ctx, 'BA_CREATE', baId, {
     jenis: 'Pelaksanaan', bagian: bagian, jumlahPeserta: peserta.length,
-    jumlahSesi: sesi.length, jadwalIds: sesi.map((jd) => str(jd.jadwal_id))
+    jumlahSesi: sesi.length, jadwalIds: sesi.map((jd) => str(jd.jadwal_id)),
+    autoScheduled: autoJadwal.count, autoJadwalId: autoJadwal.targetJadwalId
   });
 
-  return { success: true, baId: baId, jumlahSesi: sesi.length, message: 'Berita acara berhasil diunggah.' };
+  return {
+    success: true, baId: baId, jumlahSesi: sesi.length,
+    autoScheduled: autoJadwal.count,
+    message: autoJadwal.count
+      ? 'Berita acara berhasil diunggah. ' + autoJadwal.count + ' peserta otomatis dijadwalkan.'
+      : 'Berita acara berhasil diunggah.'
+  };
 }
 
 export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
