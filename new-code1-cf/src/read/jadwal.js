@@ -64,7 +64,7 @@ function dedupeJadwal(rows) {
 export async function computeJadwalList(db, bagianFilter, kategori) {
   const jadwal = (await db.prepare('SELECT * FROM jadwal_pelaksanaan').all()).results || [];
   const pesertaRows = (await db.prepare('SELECT * FROM jadwal_peserta').all()).results || [];
-  const baRows = (await db.prepare('SELECT ba_id, jadwal_id FROM berita_acara').all()).results || [];
+  const baRows = (await db.prepare("SELECT ba_id, jadwal_id FROM berita_acara WHERE COALESCE(archived_at, '') = ''").all()).results || [];
 
   const sesiMap = await loadBaSesiMap(db);
   const dosenMap = await loadJadwalDosenMap(db);

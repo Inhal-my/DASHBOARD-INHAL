@@ -38,7 +38,7 @@ async function computeBagianRows(db, kategori, subBagian) {
   }
   const rows = [];
   const baKeyByBaId = {};
-  for (const b of (await db.prepare('SELECT ba_id, kegiatan_key FROM berita_acara').all()).results || []) {
+  for (const b of (await db.prepare("SELECT ba_id, kegiatan_key FROM berita_acara WHERE COALESCE(archived_at, '') = ''").all()).results || []) {
     const id = String(b.ba_id || '').trim();
     if (id) baKeyByBaId[id] = String(b.kegiatan_key || '').trim();
   }
@@ -167,7 +167,7 @@ async function computeBaPendukungList(db, bagianFilter, kategori) {
 }
 
 async function computeBaList(db, bagianFilter, kategori) {
-  const all = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
+  const all = (await db.prepare("SELECT * FROM berita_acara WHERE COALESCE(archived_at, '') = ''").all()).results || [];
   const rows = all.map((r) => toClientRow('berita_acara', r)).filter((r) => baSumber(r) === 'Bagian');
   const filter = baginaKey(bagianFilter);
   const kat = baginaKey(kategori);

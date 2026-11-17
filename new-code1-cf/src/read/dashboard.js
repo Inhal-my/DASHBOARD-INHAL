@@ -82,7 +82,7 @@ function computeDashboardStatsFromRows(pengajuan, details, ba, biayaMap, overrid
 async function computeDashboardStats(db) {
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
-  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
+  const ba = (await db.prepare("SELECT * FROM berita_acara WHERE COALESCE(archived_at, '') = ''").all()).results || [];
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
   const labs = await getMasterOptions(db, 'Lab');
@@ -93,7 +93,7 @@ export async function getDashboardBootstrap(db, ctx) {
   await requireAdmin(db, ctx.token, ctx.session);
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
-  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
+  const ba = (await db.prepare("SELECT * FROM berita_acara WHERE COALESCE(archived_at, '') = ''").all()).results || [];
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
   const labs = await getMasterOptions(db, 'Lab');
@@ -216,6 +216,7 @@ async function loadPengajuanBa(db, idPengajuan) {
     for (const baId of baIds) {
       const raw = await db.prepare(`SELECT * FROM ${src.headerTable} WHERE ba_id = ?1`).bind(baId).first();
       if (!raw) continue;
+      if (src.sumber === 'Bagian' && String(raw.archived_at || '').trim()) continue;
       const c = toClientRow(src.headerTable, raw);
       // jumlahPeserta = total anggota BA (bukan hanya yang sedang dibuka) agar
       // admin tahu berapa mahasiswa yang tercakup dalam satu BA.
@@ -317,7 +318,8 @@ export async function getBagianAggregation(db, ctx) {
   const normKegiatanText = normKegiatan;
 
   async function collectBa(table, pesertaTable, sumber) {
-    const rows = await all(table);
+    let rows = await all(table);
+    if (table === 'berita_acara') rows = rows.filter((r) => !String(r.archived_at || '').trim());
     const ps = await all(pesertaTable);
     const byId = {};
     const out = [];

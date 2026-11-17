@@ -28,11 +28,11 @@ export async function auditDataQuality(db) {
   ).all()).results || [];
 
   const baBagianOrphan = await db.prepare(
-    'SELECT COUNT(*) AS n FROM berita_acara b WHERE NOT EXISTS (' +
+    'SELECT COUNT(*) AS n FROM berita_acara b WHERE COALESCE(b.archived_at, \'\') = \'\' AND NOT EXISTS (' +
     'SELECT 1 FROM berita_acara_peserta p WHERE p.ba_id = b.ba_id)'
   ).first();
   const baBagianOrphanSamples = (await db.prepare(
-    'SELECT b.ba_id, b.bagian, b.blok, b.nama_kegiatan FROM berita_acara b WHERE NOT EXISTS (' +
+    'SELECT b.ba_id, b.bagian, b.blok, b.nama_kegiatan FROM berita_acara b WHERE COALESCE(b.archived_at, \'\') = \'\' AND NOT EXISTS (' +
     'SELECT 1 FROM berita_acara_peserta p WHERE p.ba_id = b.ba_id) ' +
     'ORDER BY b.timestamp DESC LIMIT 10'
   ).all()).results || [];

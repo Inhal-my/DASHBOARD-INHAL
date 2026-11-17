@@ -273,8 +273,11 @@ export function sesiLabel(sesi) {
 async function findSesiLink(db, jadwalId, excludeBaId) {
   const excluded = str(excludeBaId);
   const { results } = await db.prepare(
-    'SELECT ba_id, jadwal_id FROM berita_acara_sesi WHERE jadwal_id = ?1 ' +
-    'UNION ALL SELECT ba_id, jadwal_id FROM berita_acara WHERE jadwal_id = ?1'
+    'SELECT s.ba_id, s.jadwal_id FROM berita_acara_sesi s ' +
+    'JOIN berita_acara a ON a.ba_id = s.ba_id ' +
+    "WHERE s.jadwal_id = ?1 AND COALESCE(a.archived_at, '') = '' " +
+    'UNION ALL SELECT ba_id, jadwal_id FROM berita_acara ' +
+    "WHERE jadwal_id = ?1 AND COALESCE(archived_at, '') = ''"
   ).bind(jadwalId).all();
   for (const row of results || []) {
     const baId = str(row.ba_id);
@@ -575,6 +578,7 @@ async function buildRestorePengajuanStmts(db, ids, excludeBaId) {
       'SELECT a.dosen, a.tanggal_pelaksanaan, a.jam FROM berita_acara_peserta p ' +
       'JOIN berita_acara a ON a.ba_id = p.ba_id ' +
       'WHERE p.id_pengajuan = ?1 AND p.ba_id <> ?2 ' +
+      "AND COALESCE(a.archived_at, '') = '' " +
       'ORDER BY a.timestamp DESC, a.ba_id DESC LIMIT 1'
     ).bind(pid, excludeBaId).first();
     stmts.push(
@@ -670,6 +674,7 @@ export async function deleteDraftBeritaAcaraBagian(db, baId, kategori, ctx) {
 
   const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diubah.' };
   await requireBagianSession(db, kategori, existing.bagian, ctx.token, ctx.session);
 
   if (str(existing.file_url)) {
@@ -801,6 +806,7 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   if (!id) return { success: false, message: 'BA ID wajib diisi.' };
   const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diubah.' };
 
   const p = payload || {};
   const input = validateBaUpdateInput(p);

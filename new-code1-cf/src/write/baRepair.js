@@ -37,9 +37,18 @@ export async function applyBaRepair(db, payload, ctx) {
 
   const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(baId).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diperbaiki.' };
+  if (p.expectedRevision !== undefined && p.expectedRevision !== null && p.expectedRevision !== ''
+    && Number(p.expectedRevision) !== (Number(existing.revision) || 0)) {
+    return { success: false, message: 'Data BA sudah berubah. Muat ulang lalu ulangi.' };
+  }
 
   const key = str(existing.kegiatan_key) || kegiatanKey(existing.bagian, existing.blok, existing.nama_kegiatan);
   const addIds = uniq(Array.isArray(p.addPesertaIds) ? p.addPesertaIds : []);
+  const removeIds = uniq(Array.isArray(p.removePesertaIds) ? p.removePesertaIds : []);
+  if (addIds.some((id) => removeIds.indexOf(id) !== -1)) {
+    return { success: false, message: 'Peserta tidak boleh ditambahkan dan dikeluarkan pada waktu yang sama.' };
+  }
   const requestedJadwalIds = uniq(Array.isArray(p.jadwalIds) ? p.jadwalIds : []);
   const move = p.moveFromJadwal !== false;
 
@@ -69,13 +78,18 @@ export async function applyBaRepair(db, payload, ctx) {
   }
 
   const allSesi = (await db.prepare('SELECT ba_id, jadwal_id FROM berita_acara_sesi').all()).results || [];
+  const baLinkRows = (await db.prepare(
+    'SELECT ba_id, jadwal_id, kegiatan_key, bagian, blok, nama_kegiatan FROM berita_acara ' +
+    "WHERE COALESCE(archived_at, '') = ''"
+  ).all()).results || [];
+  const activeBaIds = {};
+  for (const r of baLinkRows) activeBaIds[str(r.ba_id)] = true;
   const linkByJadwal = {};
   for (const r of allSesi) {
     const jid = str(r.jadwal_id);
     const bid = str(r.ba_id);
-    if (jid && bid) linkByJadwal[jid] = bid;
+    if (jid && bid && activeBaIds[bid]) linkByJadwal[jid] = bid;
   }
-  const baLinkRows = (await db.prepare('SELECT ba_id, jadwal_id, kegiatan_key, bagian, blok, nama_kegiatan FROM berita_acara').all()).results || [];
   for (const r of baLinkRows) {
     const jid = str(r.jadwal_id);
     const bid = str(r.ba_id);
@@ -110,7 +124,8 @@ export async function applyBaRepair(db, payload, ctx) {
     if (problems.length) return { success: false, message: 'Peserta tidak sesuai dengan kegiatan BA — ' + problems.join(', ') + '.' };
 
     const inOtherBa = (await db.prepare(
-      'SELECT p.id_pengajuan, p.ba_id FROM berita_acara_peserta p JOIN berita_acara a ON a.ba_id = p.ba_id WHERE p.ba_id <> ?1'
+      'SELECT p.id_pengajuan, p.ba_id FROM berita_acara_peserta p JOIN berita_acara a ON a.ba_id = p.ba_id ' +
+      "WHERE p.ba_id <> ?1 AND COALESCE(a.archived_at, '') = ''"
     ).bind(baId).all()).results || [];
     const baKeyById = {};
     for (const r of baLinkRows) {
@@ -170,6 +185,10 @@ export async function applyBaRepair(db, payload, ctx) {
     const pid = str(r.id_pengajuan);
     if (pid) inBa[pid] = true;
   }
+  const missingRemove = removeIds.filter((id) => !inBa[id]);
+  if (missingRemove.length) {
+    return { success: false, message: 'Peserta tidak ada di BA ini: ' + missingRemove.join(', ') + '.' };
+  }
 
   const target = targetJadwalId ? jadwalById[targetJadwalId] : null;
   const dosen = target ? target.dosen : str(existing.dosen);
@@ -178,6 +197,7 @@ export async function applyBaRepair(db, payload, ctx) {
   const pelaksanaan = pelaksanaanValue(tanggal, jam);
 
   const moved = [];
+  const removed = [];
   let addedCount = 0;
   for (const row of addRows) {
     const pid = row.idPengajuan;
@@ -209,14 +229,24 @@ export async function applyBaRepair(db, payload, ctx) {
     );
   }
 
-  if (addedCount) {
+  for (const id of removeIds) {
+    stmts.push(db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1 AND id_pengajuan = ?2').bind(baId, id));
+    removed.push(id);
+  }
+
+  if (addedCount || removed.length) {
     stmts.push(
       db.prepare('UPDATE berita_acara SET jumlah_peserta = (SELECT COUNT(*) FROM berita_acara_peserta WHERE ba_id = ?1) WHERE ba_id = ?1')
         .bind(baId)
     );
   }
 
-  if (!stmts.length) return { success: true, message: 'Tidak ada perubahan.', added: 0, moved: 0, linked: 0 };
+  if (!stmts.length) return { success: true, message: 'Tidak ada perubahan.', added: 0, moved: 0, linked: 0, removed: 0 };
+
+  stmts.push(
+    db.prepare('UPDATE berita_acara SET revision = revision + 1, updated_at = ?1 WHERE ba_id = ?2')
+      .bind(ts, baId)
+  );
 
   await db.batch(stmts);
   try {
@@ -226,10 +256,12 @@ export async function applyBaRepair(db, payload, ctx) {
       target: baId,
       detail: JSON.stringify({
         added: addedCount,
+        removed: removed.length,
         moved: uniq(moved).length,
         linked: newLinks,
         targetJadwalId: targetJadwalId,
-        pesertaIds: addIds
+        pesertaIds: addIds,
+        removePesertaIds: removeIds
       }),
       alasan: 'Perbaikan peserta dan sesi BA'
     });
@@ -238,8 +270,10 @@ export async function applyBaRepair(db, payload, ctx) {
 
   return {
     success: true,
-    message: 'BA diperbarui: ' + addedCount + ' peserta ditambahkan, ' + uniq(moved).length + ' dipindahkan, ' + newLinks + ' sesi ditautkan.',
+    message: 'BA diperbarui: ' + addedCount + ' peserta ditambahkan, ' + removed.length + ' dikeluarkan, ' +
+      uniq(moved).length + ' dipindahkan, ' + newLinks + ' sesi ditautkan.',
     added: addedCount,
+    removed: removed.length,
     moved: uniq(moved).length,
     linked: newLinks
   };

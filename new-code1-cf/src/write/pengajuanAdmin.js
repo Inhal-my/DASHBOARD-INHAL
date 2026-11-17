@@ -434,7 +434,7 @@ export async function deletePengajuanAdmin(db, idPengajuan, alasan, ctx) {
     if (!baId) continue;
     cleanupBa.push(
       db.prepare(
-        'DELETE FROM berita_acara WHERE ba_id = ?1 AND NOT EXISTS (' +
+        "DELETE FROM berita_acara WHERE ba_id = ?1 AND COALESCE(archived_at, '') = '' AND NOT EXISTS (" +
         'SELECT 1 FROM berita_acara_peserta p WHERE p.ba_id = ?1)'
       ).bind(baId)
     );

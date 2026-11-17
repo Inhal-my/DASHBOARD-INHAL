@@ -151,9 +151,9 @@ async function findActiveJadwal(db, jadwalId) {
 }
 
 async function hasBa(db, jadwalId) {
-  const direct = await db.prepare('SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1').bind(jadwalId).first();
+  const direct = await db.prepare("SELECT ba_id FROM berita_acara WHERE jadwal_id = ?1 AND COALESCE(archived_at, '') = ''").bind(jadwalId).first();
   if (direct) return true;
-  const sesi = await db.prepare('SELECT ba_id FROM berita_acara_sesi WHERE jadwal_id = ?1').bind(jadwalId).first();
+  const sesi = await db.prepare("SELECT s.ba_id FROM berita_acara_sesi s JOIN berita_acara b ON b.ba_id = s.ba_id WHERE s.jadwal_id = ?1 AND COALESCE(b.archived_at, '') = ''").bind(jadwalId).first();
   return !!sesi;
 }
 

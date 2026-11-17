@@ -36,6 +36,7 @@ function groupRow(map, key, extra) {
       namaKegiatan: str(extra.namaKegiatan),
       jadwalCount: 0,
       baCount: 0,
+      archivedCount: 0,
       tanggalList: []
     };
   }
@@ -58,10 +59,15 @@ export async function getBaRepairData(db, payload, ctx) {
   const filterBlok = lowsp(p.blok);
   const filterKey = str(p.key);
   const q = lowsp(p.q);
+  const includeArchived = p.includeArchived === true;
 
   const jadwalRows = (await db.prepare('SELECT * FROM jadwal_pelaksanaan WHERE active = 1 ORDER BY tanggal, jam, jadwal_id').all()).results || [];
   const jadwalPesertaRows = (await db.prepare('SELECT * FROM jadwal_peserta').all()).results || [];
   const baRows = (await db.prepare('SELECT * FROM berita_acara ORDER BY tanggal_pelaksanaan, jam, ba_id').all()).results || [];
+  const activeBaRows = baRows.filter((b) => !str(b.archived_at));
+  const visibleBaRows = includeArchived ? baRows : activeBaRows;
+  const activeBaIdSet = {};
+  for (const b of activeBaRows) activeBaIdSet[str(b.ba_id)] = true;
   const baPesertaRows = (await db.prepare('SELECT * FROM berita_acara_peserta').all()).results || [];
   const baSesiRows = (await db.prepare('SELECT * FROM berita_acara_sesi').all()).results || [];
   const pengajuanRows = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
@@ -99,7 +105,7 @@ export async function getBaRepairData(db, payload, ctx) {
 
   const baByKey = {};
   const baById = {};
-  for (const b of baRows) {
+  for (const b of visibleBaRows) {
     const key = str(b.kegiatan_key) || kegiatanKey(b.bagian, b.blok, b.nama_kegiatan);
     if (!key) continue;
     const row = {
@@ -115,6 +121,13 @@ export async function getBaRepairData(db, payload, ctx) {
       fileUrl: str(b.file_url),
       fileName: str(b.file_name),
       catatan: str(b.catatan),
+      archivedAt: str(b.archived_at),
+      archivedBy: str(b.archived_by),
+      archiveReason: str(b.archive_reason),
+      mergedInto: str(b.merged_into),
+      updatedAt: str(b.updated_at),
+      revision: Number(b.revision) || 0,
+      archived: !!str(b.archived_at),
       peserta: [],
       jadwalIds: []
     };
@@ -133,7 +146,7 @@ export async function getBaRepairData(db, payload, ctx) {
     const b = baById[str(r.ba_id)];
     const j = jadwalById[str(r.jadwal_id)];
     if (b && b.jadwalIds.indexOf(str(r.jadwal_id)) === -1) b.jadwalIds.push(str(r.jadwal_id));
-    if (j && j.baIds.indexOf(str(r.ba_id)) === -1) j.baIds.push(str(r.ba_id));
+    if (j && activeBaIdSet[str(r.ba_id)] && j.baIds.indexOf(str(r.ba_id)) === -1) j.baIds.push(str(r.ba_id));
   }
   for (const b of baRows) {
     const row = baById[str(b.ba_id)];
@@ -141,7 +154,7 @@ export async function getBaRepairData(db, payload, ctx) {
     const jid = str(b.jadwal_id);
     if (jid && row.jadwalIds.indexOf(jid) === -1) row.jadwalIds.push(jid);
     const j = jadwalById[jid];
-    if (j && j.baIds.indexOf(row.baId) === -1) j.baIds.push(row.baId);
+    if (j && activeBaIdSet[row.baId] && j.baIds.indexOf(row.baId) === -1) j.baIds.push(row.baId);
   }
 
   const groups = {};
@@ -158,7 +171,8 @@ export async function getBaRepairData(db, payload, ctx) {
     const first = list[0];
     const row = groupRow(groups, key, first);
     if (!row) continue;
-    row.baCount += list.length;
+    row.baCount += list.filter((b) => !b.archivedAt).length;
+    row.archivedCount += list.filter((b) => b.archivedAt).length;
     for (const b of list) addTanggal(row, b.tanggal);
   }
 
@@ -190,6 +204,7 @@ export async function getBaRepairData(db, payload, ctx) {
     const g = groups[filterKey];
     const jadwal = (jadwalByKey[filterKey] || []).slice();
     const ba = (baByKey[filterKey] || []).slice();
+    const activeBa = ba.filter((b) => !b.archivedAt);
     const jadwalIdsByPid = {};
     for (const j of jadwal) {
       for (const x of j.peserta) {
@@ -200,7 +215,7 @@ export async function getBaRepairData(db, payload, ctx) {
       }
     }
     const baIdsByPid = {};
-    for (const b of ba) {
+    for (const b of activeBa) {
       for (const x of b.peserta) {
         const pid = str(x.idPengajuan);
         if (!pid) continue;
@@ -262,6 +277,7 @@ export async function getBaRepairData(db, payload, ctx) {
       namaKegiatan: g.namaKegiatan,
       jadwal: jadwal,
       ba: ba,
+      activeBa: activeBa,
       kandidat: kandidat
     };
   }

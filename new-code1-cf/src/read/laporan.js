@@ -25,11 +25,14 @@ export async function getLaporanBootstrap(db, ctx) {
   const pengajuan = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const details = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
   const histories = (await db.prepare('SELECT * FROM status_history').all()).results || [];
-  const ba = (await db.prepare('SELECT * FROM berita_acara').all()).results || [];
+  const ba = (await db.prepare("SELECT * FROM berita_acara WHERE COALESCE(archived_at, '') = ''").all()).results || [];
   const biayaMap = await getBiayaMap(db);
   const overrideMap = await getBiayaOverrideMap(db);
+  const baActiveIds = new Set(ba.map((r) => String(r.ba_id || '').trim()).filter(Boolean));
   const baPeserta = (await db.prepare('SELECT * FROM berita_acara_peserta').all()).results || [];
-  const baPengajuanIds = new Set(baPeserta.map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean));
+  const baPengajuanIds = new Set(baPeserta
+    .filter((r) => baActiveIds.has(String(r.ba_id || '').trim()))
+    .map((r) => String(r.id_pengajuan || '').trim()).filter(Boolean));
   let revisionRows = [];
   try {
     revisionRows = (await db.prepare('SELECT * FROM pembayaran_revisi ORDER BY id ASC').all()).results || [];

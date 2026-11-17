@@ -707,4 +707,29 @@ describe('dashboard edit jadwal/BA', () => {
     expect(html).toContain('Pindahkan peserta dari jadwal asal');
     expect(html).toContain('Buka hardcopy');
   });
+
+  it('menyediakan arsip, gabung, pulihkan, dan keluarkan peserta dari BA', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('Tampilkan BA arsip');
+    expect(html).toContain('includeArchived: r.includeArchived');
+    expect(html).toContain("this.run('archiveBeritaAcara'");
+    expect(html).toContain("this.run('mergeBeritaAcara'");
+    expect(html).toContain("this.run('restoreBeritaAcara'");
+    expect(html).toContain('Arsipkan BA');
+    expect(html).toContain('Gabungkan BA');
+    expect(html).toContain('Pulihkan BA');
+    expect(html).toContain('Keluarkan dari BA');
+    expect(html).toContain('toggleBaRepairRemove(x.idPengajuan)');
+    expect(html).toContain('removePesertaIds: r.removeIds');
+    expect(html).toContain('{{ g.archivedCount }} arsip');
+  });
+
+  it('menampilkan konfirmasi ketik BA dan centang hardcopy sebelum arsip atau gabung', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('confirmBaId');
+    expect(html).toContain('hardcopyAck');
+    expect(html).toContain("String(r.reason || '').trim().length < 10");
+    expect(html).toContain("'Ketik ' + baRepairSelectedBa.baId + ' untuk konfirmasi'");
+    expect(html).toContain('Saya sudah memeriksa hardcopy/PDF');
+  });
 });

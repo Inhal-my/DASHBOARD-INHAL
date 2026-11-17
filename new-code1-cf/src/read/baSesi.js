@@ -8,7 +8,9 @@ function str(v) {
 
 export async function loadBaSesiMap(db) {
   const { results } = await db.prepare(
-    'SELECT ba_id, jadwal_id FROM berita_acara_sesi ORDER BY urutan, id'
+    'SELECT s.ba_id, s.jadwal_id FROM berita_acara_sesi s ' +
+    'JOIN berita_acara b ON b.ba_id = s.ba_id ' +
+    "WHERE COALESCE(b.archived_at, '') = '' ORDER BY s.urutan, s.id"
   ).all();
   const map = {};
   for (const row of results || []) {
