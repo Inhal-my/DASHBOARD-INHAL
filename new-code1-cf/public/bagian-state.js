@@ -387,8 +387,10 @@
     var requirePembayaran = opts.requirePembayaran === true;
     var map = {};
     (rows || []).forEach(function (r) {
-      if (pendingOnly && r.baMember) return;
-      var key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
+      // Tanggal bukan bagian identitas kegiatan. Satu kegiatan bisa punya
+      // banyak sesi/tanggal, termasuk baris tanpa tanggal. Pengelompokan
+      // mengikuti bagian + blok + nama kegiatan agar tidak terpecah.
+      var key = [r.jenis, r.pilihan, r.detail, r.blok].join('|');
       var g = map[key];
       if (!g) {
         g = map[key] = {
@@ -396,15 +398,24 @@
           jenis: r.jenis,
           pilihan: r.pilihan,
           detail: r.detail,
-          tanggal: r.tanggal,
+          tanggal: '',
+          tanggalList: [],
+          tanggalLabel: '',
           blok: r.blok,
           label: kegiatanName(r),
           nama: kegiatanName(r),
           peserta: [],
           statusCounts: {},
+          npmCounts: {},
+          adaNpmGanda: false,
           blocked: false
         };
       }
+      var tgl = dateOnly(r.tanggal);
+      if (tgl && g.tanggalList.indexOf(tgl) === -1) g.tanggalList.push(tgl);
+      var npmKey = String(r.npm == null ? '' : r.npm).trim();
+      if (npmKey) g.npmCounts[npmKey] = (g.npmCounts[npmKey] || 0) + 1;
+      if (pendingOnly && r.baMember) return;
       g.statusCounts[r.status] = (g.statusCounts[r.status] || 0) + 1;
       if (statuses.indexOf(r.status) !== -1 && (!requirePembayaran || r.eligiblePembayaran !== false)) {
         g.peserta.push({
@@ -413,14 +424,30 @@
           namaLengkap: r.namaLengkap,
           blok: r.blok,
           statusPengajuan: r.status,
-          baMember: !!r.baMember
+          baMember: !!r.baMember,
+          npmGanda: false
         });
       }
       if (finalOnly && r.status === 'Menunggu') g.blocked = true;
     });
     return Object.keys(map).map(function (k) { return map[k]; })
       .filter(function (g) { return !g.blocked && g.peserta.length > 0; })
-      .map(function (g) { g.statusOrder = Object.keys(g.statusCounts); return g; });
+      .map(function (g) {
+        g.tanggalList.sort();
+        g.tanggal = g.tanggalList[0] || '';
+        g.tanggalLabel = g.tanggalList.length === 0
+          ? 'Tanggal belum diisi'
+          : (g.tanggalList.length > 1 ? g.tanggalList.length + ' tanggal' : '');
+        g.peserta.forEach(function (p) {
+          var npm = String(p.npm == null ? '' : p.npm).trim();
+          if (npm && g.npmCounts[npm] > 1) {
+            p.npmGanda = true;
+            g.adaNpmGanda = true;
+          }
+        });
+        g.statusOrder = Object.keys(g.statusCounts);
+        return g;
+      });
   }
 
   function buildAllGroups(rows, options) {
@@ -527,6 +554,9 @@
         blok: g.blok,
         nama: g.nama,
         tanggal: g.tanggal,
+        tanggalList: (g.tanggalList || []).slice(),
+        tanggalLabel: g.tanggalLabel || '',
+        adaNpmGanda: !!g.adaNpmGanda,
         jadwal: jadwal,
         ba: ba,
         status: 'acc',
@@ -575,6 +605,9 @@
         blok: g.blok,
         nama: g.nama,
         tanggal: g.tanggal,
+        tanggalList: (g.tanggalList || []).slice(),
+        tanggalLabel: g.tanggalLabel || '',
+        adaNpmGanda: !!g.adaNpmGanda,
         jadwal: jadwal,
         // Item group adalah sisa peserta yang belum punya BA. BA (draft maupun
         // selesai) sudah menjadi item tersendiri lewat `draftBaList`, jadi di

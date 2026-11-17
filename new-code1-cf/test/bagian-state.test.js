@@ -71,6 +71,47 @@ describe('bagian-state helpers', () => {
     expect(pending[0].peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
   });
 
+  it('menggabungkan kegiatan lintas tanggal dan menandai tanggal kosong', async () => {
+    const S = await loadState();
+    const rowsTanggal = [
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '2026-11-03', blok: 'Gastro', status: 'ACC', idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani', baMember: false },
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '2026-11-03T00:00', blok: 'Gastro', status: 'ACC', idPengajuan: 'p2', npm: '002', namaLengkap: 'Budi', baMember: false },
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '', blok: 'Gastro', status: 'ACC', idPengajuan: 'p3', npm: '003', namaLengkap: 'Cici', baMember: false },
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '2026-11-05', blok: 'Gastro', status: 'ACC', idPengajuan: 'p4', npm: '004', namaLengkap: 'Dodi', baMember: false }
+    ];
+    const groups = S.buildKegiatanGroups(rowsTanggal, { statuses: ['ACC'] });
+    expect(groups.length).toBe(1);
+    expect(groups[0].key).toBe('Praktikum|Parasitologi|Remediasi|Gastro');
+    expect(groups[0].tanggalList).toEqual(['2026-11-03', '2026-11-05']);
+    expect(groups[0].tanggal).toBe('2026-11-03');
+    expect(groups[0].tanggalLabel).toBe('2 tanggal');
+    expect(groups[0].peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2', 'p3', 'p4']);
+
+    const items = S.buildJadwalItems(groups, [], []);
+    const groupItem = items.find((i) => i.kind === 'group');
+    expect(groupItem.tanggalLabel).toBe('2 tanggal');
+    expect(groupItem.tanggalList).toEqual(['2026-11-03', '2026-11-05']);
+
+    const kosong = S.buildKegiatanGroups([
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '', blok: 'Gastro', status: 'ACC', idPengajuan: 'p9', npm: '009', namaLengkap: 'Eka', baMember: false }
+    ], { statuses: ['ACC'] });
+    expect(kosong[0].tanggalLabel).toBe('Tanggal belum diisi');
+    expect(kosong[0].tanggal).toBe('');
+  });
+
+  it('menandai NPM ganda tanpa menggabungkan peserta', async () => {
+    const S = await loadState();
+    const rowsNpm = [
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '2026-11-03', blok: 'Gastro', status: 'ACC', idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani', baMember: false },
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '2026-11-03', blok: 'Gastro', status: 'ACC', idPengajuan: 'p2', npm: '001', namaLengkap: 'Ani (ajuan kedua)', baMember: false },
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: 'Remediasi', tanggal: '2026-11-03', blok: 'Gastro', status: 'ACC', idPengajuan: 'p3', npm: '002', namaLengkap: 'Budi', baMember: false }
+    ];
+    const groups = S.buildKegiatanGroups(rowsNpm, { statuses: ['ACC'] });
+    expect(groups[0].adaNpmGanda).toBe(true);
+    expect(groups[0].peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2', 'p3']);
+    expect(groups[0].peserta.filter((p) => p.npmGanda).map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+  });
+
   it('menghitung peserta yang belum terjadwal', async () => {
     const S = await loadState();
     const pending = S.buildKegiatanGroups(rows, { statuses: ['ACC'] })[0];
