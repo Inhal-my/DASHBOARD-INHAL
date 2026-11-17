@@ -187,6 +187,10 @@ describe('panduan jadwal dan BA Pelaksanaan', () => {
     expect(html).toContain('bagian, blok, dan nama kegiatan sama');
     expect(html).toContain('Buat BA terpisah untuk masing-masing kegiatan/blok');
     expect(html).toContain('Jadwal lewat tanpa BA');
+    expect(html).toContain('sesi paling awal yang belum punya BA');
+    expect(html).toContain('Peserta yang belum punya jadwal tampil di bagian');
+    expect(html).toContain('peserta belum dijadwalkan tetap tercentang');
+    expect(html).toContain('simpan diblokir sampai satu sesi dipilih');
   });
 });
 
