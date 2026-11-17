@@ -690,3 +690,21 @@ describe('dashboard periksa pembayaran', () => {
     }
   });
 });
+
+describe('dashboard edit jadwal/BA', () => {
+  it('menyediakan kartu Edit Jadwal/BA di Master Data', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("key: 'editJadwalBa'");
+    expect(html).toContain("activeMasterCard.key === 'editJadwalBa'");
+    expect(html).toContain("if (key === 'editJadwalBa' && !this.master.repair.loaded) this.loadBaRepair();");
+  });
+
+  it('memuat kandidat peserta dan menyimpan lewat applyBaRepair', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("this.run('getBaRepairData'");
+    expect(html).toContain("this.run('applyBaRepair'");
+    expect(html).toContain('baRepairCandidates');
+    expect(html).toContain('Pindahkan peserta dari jadwal asal');
+    expect(html).toContain('Buka hardcopy');
+  });
+});

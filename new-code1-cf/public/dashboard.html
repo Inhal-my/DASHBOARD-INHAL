@@ -308,6 +308,25 @@
         .pm-step .d { color: #64748b; }
         @media (min-width: 640px) { .pm-grid { grid-template-columns: 1fr 1fr; } }
         @media (min-width: 768px) { .pm-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .ba-repair-filters { display: grid; gap: .5rem; }
+        .ba-repair-head { display: flex; flex-direction: column; gap: .75rem; }
+        .ba-repair-grid { display: grid; gap: 1rem; }
+        .ba-repair-inner { display: grid; gap: .75rem; }
+        .ba-repair-scroll { max-height: 560px; overflow-y: auto; }
+        .ba-repair-scroll-sm { max-height: 520px; overflow-y: auto; }
+        .ba-repair-sesi-list { max-height: 14rem; overflow-y: auto; }
+        .ba-repair-candidate-list { max-height: 16rem; overflow-y: auto; }
+        .ba-repair-candidate.is-blocked { opacity: .6; }
+        .hover\:bg-white\/70:hover { background-color: hsla(0, 0%, 100%, .7); }
+        .\!px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+        @media (min-width: 640px) {
+            .ba-repair-filters { grid-template-columns: 180px minmax(0, 1fr) auto; }
+            .ba-repair-head { flex-direction: row; align-items: flex-start; justify-content: space-between; }
+        }
+        @media (min-width: 1024px) {
+            .ba-repair-grid { grid-template-columns: 300px minmax(0, 1fr); }
+            .ba-repair-inner { grid-template-columns: 280px minmax(0, 1fr); }
+        }
     </style>
     <style>
 *,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.inset-x-0{left:0;right:0}.inset-y-0{top:0;bottom:0}.-left-10{left:-2.5rem}.-right-16{right:-4rem}.-top-16{top:-4rem}.bottom-0{bottom:0}.bottom-6{bottom:1.5rem}.left-0{left:0}.left-3\.5{left:.875rem}.left-4{left:1rem}.right-6{right:1.5rem}.top-0{top:0}.top-1\/2{top:50%}.z-10{z-index:10}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[100\]{z-index:100}.z-\[110\]{z-index:110}.z-\[120\]{z-index:120}.col-span-2{grid-column:span 2/span 2}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-5{margin-top:1.25rem;margin-bottom:1.25rem}.\!mb-0{margin-bottom:0!important}.-mt-10{margin-top:-2.5rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.ml-3{margin-left:.75rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-4{height:1rem}.h-40{height:10rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-full{height:100%}.h-px{height:1px}.max-h-\[88vh\]{max-height:88vh}.max-h-\[92vh\]{max-height:92vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-20{width:5rem}.w-24{width:6rem}.w-36{width:9rem}.w-4{width:1rem}.w-40{width:10rem}.w-5{width:1.25rem}.w-56{width:14rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-9{width:2.25rem}.w-\[268px\]{width:268px}.w-full{width:100%}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-5xl{max-width:64rem}.max-w-7xl{max-width:80rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-full{--tw-translate-x:-100%}.-translate-x-full,.-translate-y-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%}.translate-x-0{--tw-translate-x:0px}.transform,.translate-x-0{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-3{-moz-column-gap:.75rem;column-gap:.75rem}.gap-x-4{-moz-column-gap:1rem;column-gap:1rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-1{row-gap:.25rem}.gap-y-3{row-gap:.75rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-slate-50>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(248 250 252/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-t-3xl{border-top-left-radius:1.5rem;border-top-right-radius:1.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-brand-300{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-50{--tw-border-opacity:1;border-color:rgb(248 250 252/var(--tw-border-opacity,1))}.border-white\/10{border-color:hsla(0,0%,100%,.1)}.bg-amber-400\/90{background-color:rgba(251,191,36,.9)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.bg-brand-400\/20{background-color:rgba(129,140,248,.2)}.bg-brand-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-brand-500\/25{background-color:rgba(99,102,241,.25)}.bg-brand-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.bg-rose-600{--tw-bg-opacity:1;background-color:rgb(225 29 72/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-50\/60{background-color:rgba(248,250,252,.6)}.bg-slate-50\/70{background-color:rgba(248,250,252,.7)}.bg-slate-50\/80{background-color:rgba(248,250,252,.8)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/30{background-color:rgba(15,23,42,.3)}.bg-slate-900\/40{background-color:rgba(15,23,42,.4)}.bg-slate-900\/45{background-color:rgba(15,23,42,.45)}.bg-teal-50{--tw-bg-opacity:1;background-color:rgb(240 253 250/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/10{background-color:hsla(0,0%,100%,.1)}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.bg-white\/70{background-color:hsla(0,0%,100%,.7)}.bg-white\/80{background-color:hsla(0,0%,100%,.8)}.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-brand-400{--tw-gradient-from:#818cf8 var(--tw-gradient-from-position);--tw-gradient-to:rgba(129,140,248,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-50\/60{--tw-gradient-from:rgba(238,242,255,.6) var(--tw-gradient-from-position);--tw-gradient-to:rgba(238,242,255,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-600{--tw-gradient-from:#4f46e5 var(--tw-gradient-from-position);--tw-gradient-to:rgba(79,70,229,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-brand-700{--tw-gradient-from:#4338ca var(--tw-gradient-from-position);--tw-gradient-to:rgba(67,56,202,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.via-brand-800{--tw-gradient-to:rgba(55,48,163,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#3730a3 var(--tw-gradient-via-position),var(--tw-gradient-to)}.to-brand-800{--tw-gradient-to:#3730a3 var(--tw-gradient-to-position)}.to-brand-900{--tw-gradient-to:#312e81 var(--tw-gradient-to-position)}.to-brand-950{--tw-gradient-to:#1e1b4b var(--tw-gradient-to-position)}.to-violet-500{--tw-gradient-to:#8b5cf6 var(--tw-gradient-to-position)}.to-white{--tw-gradient-to:#fff var(--tw-gradient-to-position)}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.\!px-3{padding-left:.75rem!important;padding-right:.75rem!important}.\!py-1{padding-top:.25rem!important;padding-bottom:.25rem!important}.\!py-1\.5{padding-top:.375rem!important;padding-bottom:.375rem!important}.\!py-2{padding-top:.5rem!important;padding-bottom:.5rem!important}.\!py-2\.5{padding-top:.625rem!important;padding-bottom:.625rem!important}.\!py-3{padding-top:.75rem!important;padding-bottom:.75rem!important}.\!py-3\.5{padding-top:.875rem!important;padding-bottom:.875rem!important}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-12{padding-top:3rem;padding-bottom:3rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-16{padding-top:4rem;padding-bottom:4rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.\!pl-11{padding-left:2.75rem!important}.pb-2{padding-bottom:.5rem}.pb-20{padding-bottom:5rem}.pb-24{padding-bottom:6rem}.pb-8{padding-bottom:2rem}.pl-10{padding-left:2.5rem}.pt-14{padding-top:3.5rem}.pt-5{padding-top:1.25rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.font-sans{font-family:Plus Jakarta Sans,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3/var(--tw-text-opacity,1))}.text-brand-100{--tw-text-opacity:1;color:rgb(224 231 255/var(--tw-text-opacity,1))}.text-brand-200{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.text-brand-300{--tw-text-opacity:1;color:rgb(165 180 252/var(--tw-text-opacity,1))}.text-brand-400{--tw-text-opacity:1;color:rgb(129 140 248/var(--tw-text-opacity,1))}.text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}.text-brand-600{--tw-text-opacity:1;color:rgb(79 70 229/var(--tw-text-opacity,1))}.text-brand-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-brand-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153/var(--tw-text-opacity,1))}.text-emerald-500{--tw-text-opacity:1;color:rgb(16 185 129/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-ink{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-rose-400{--tw-text-opacity:1;color:rgb(251 113 133/var(--tw-text-opacity,1))}.text-rose-500{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-700{--tw-text-opacity:1;color:rgb(190 18 60/var(--tw-text-opacity,1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-transparent{color:transparent}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-indigo-600{accent-color:#4f46e5}.opacity-25{opacity:.25}.opacity-75{opacity:.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lift{--tw-shadow:0 4px 12px rgba(16,24,40,.08),0 18px 44px rgba(16,24,40,.1);--tw-shadow-colored:0 4px 12px var(--tw-shadow-color),0 18px 44px var(--tw-shadow-color)}.shadow-lift,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.shadow-soft{--tw-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06);--tw-shadow-colored:0 1px 2px var(--tw-shadow-color),0 10px 28px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-indigo-200\/50{--tw-shadow-color:rgba(199,210,254,.5);--tw-shadow:var(--tw-shadow-colored)}.shadow-indigo-950\/50{--tw-shadow-color:rgba(30,27,75,.5);--tw-shadow:var(--tw-shadow-colored)}.outline{outline-style:solid}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-600\/20{--tw-ring-color:rgba(217,119,6,.2)}.ring-brand-100{--tw-ring-opacity:1;--tw-ring-color:rgb(224 231 255/var(--tw-ring-opacity,1))}.ring-brand-600\/20{--tw-ring-color:rgba(79,70,229,.2)}.ring-emerald-100{--tw-ring-opacity:1;--tw-ring-color:rgb(209 250 229/var(--tw-ring-opacity,1))}.ring-emerald-600\/20{--tw-ring-color:rgba(5,150,105,.2)}.ring-rose-100{--tw-ring-opacity:1;--tw-ring-color:rgb(255 228 230/var(--tw-ring-opacity,1))}.ring-rose-600\/20{--tw-ring-color:rgba(225,29,72,.2)}.ring-slate-100{--tw-ring-opacity:1;--tw-ring-color:rgb(241 245 249/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.ring-slate-500\/20{--tw-ring-color:rgba(100,116,139,.2)}.ring-slate-900{--tw-ring-opacity:1;--tw-ring-color:rgb(15 23 42/var(--tw-ring-opacity,1))}.ring-white\/20{--tw-ring-color:hsla(0,0%,100%,.2)}.blur{--tw-blur:blur(8px)}.blur,.blur-2xl{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.blur-2xl{--tw-blur:blur(40px)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.duration-500{transition-duration:.5s}.hover\:border-slate-200:hover{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.hover\:bg-brand-50\/40:hover{background-color:rgba(238,242,255,.4)}.hover\:bg-brand-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202/var(--tw-bg-opacity,1))}.hover\:bg-rose-50:hover{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/20:hover{background-color:hsla(0,0%,100%,.2)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:text-rose-500:hover{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.hover\:ring-slate-300:hover{--tw-ring-opacity:1;--tw-ring-color:rgb(203 213 225/var(--tw-ring-opacity,1))}.active\:scale-\[\.98\]:active{--tw-scale-x:.98;--tw-scale-y:.98}.active\:scale-\[\.98\]:active,.active\:scale-\[\.99\]:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[\.99\]:active{--tw-scale-x:.99;--tw-scale-y:.99}.group:hover .group-hover\:text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:col-span-1{grid-column:span 1/span 1}.sm\:col-span-2{grid-column:span 2/span 2}.sm\:col-span-3{grid-column:span 3/span 3}.sm\:col-span-4{grid-column:span 4/span 4}.sm\:my-0{margin-top:0;margin-bottom:0}.sm\:inline{display:inline}.sm\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:items-end{align-items:flex-end}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width:768px){.md\:col-span-2{grid-column:span 2/span 2}.md\:col-span-3{grid-column:span 3/span 3}.md\:col-span-4{grid-column:span 4/span 4}.md\:inline{display:inline}.md\:flex{display:flex}.md\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:p-6{padding:1.5rem}.md\:px-8{padding-left:2rem;padding-right:2rem}}@media (min-width:1024px){.lg\:ml-\[268px\]{margin-left:268px}.lg\:hidden{display:none}.lg\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg\:p-8{padding:2rem}}@media (min-width:1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.xl\:grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}}
@@ -1935,6 +1954,145 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                            <div v-else-if="activeMasterCard.key === 'editJadwalBa'" class="p-5">
+                                <div class="ba-repair-head">
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">Edit Jadwal/BA</h4>
+                                        <p class="mt-0.5 text-xs text-slate-500">Pilih kegiatan, lalu tambahkan peserta dari pengajuan atau jadwal lain ke BA yang benar. Peserta dapat dipindahkan ke jadwal tujuan.</p>
+                                    </div>
+                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" :disabled="master.repair.loading" @click="loadBaRepair(true)">
+                                        <i class="bi bi-arrow-clockwise"></i> Muat ulang
+                                    </button>
+                                </div>
+
+                                <div class="mt-4 ba-repair-filters">
+                                    <select v-model="master.repair.bagian" class="input" @change="reloadBaRepairGroups">
+                                        <option value="">Semua bagian</option>
+                                        <option v-for="b in master.repair.bagianOptions" :key="b" :value="b">{{ b }}</option>
+                                    </select>
+                                    <input v-model="master.repair.q" type="text" class="input" placeholder="Cari kegiatan atau blok..." @keyup.enter="reloadBaRepairGroups" />
+                                    <button class="btn-primary !px-4 !py-2 text-xs" :disabled="master.repair.loading" @click="reloadBaRepairGroups"><i class="bi bi-search"></i> Cari</button>
+                                </div>
+
+                                <div v-if="master.repair.loading" class="mt-6 rounded-xl bg-slate-50 px-4 py-8 text-center text-xs text-slate-400">Memuat kegiatan...</div>
+                                <div v-else class="mt-4 ba-repair-grid">
+                                    <div class="rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-100">
+                                        <div class="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Kegiatan</div>
+                                        <div class="ba-repair-scroll space-y-1">
+                                            <button v-for="g in master.repair.groups" :key="g.key" type="button" class="w-full rounded-xl px-3 py-2 text-left" :class="master.repair.key === g.key ? 'bg-white shadow-sm ring-1 ring-brand-100' : 'hover:bg-white/70'" @click="selectBaRepairGroup(g.key)">
+                                                <div class="truncate text-xs font-bold text-slate-700">{{ g.namaKegiatan || '-' }}</div>
+                                                <div class="mt-0.5 truncate text-[11px] text-slate-500">{{ g.bagian }} · {{ g.blok || '-' }}</div>
+                                                <div class="mt-1 text-[10px] text-slate-400">{{ g.jadwalCount }} jadwal · {{ g.baCount }} BA</div>
+                                            </button>
+                                            <p v-if="!master.repair.groups.length" class="px-3 py-6 text-center text-xs text-slate-400">Tidak ada kegiatan.</p>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="master.repair.workspace" class="min-w-0">
+                                        <div class="rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                                            <div class="text-sm font-bold text-slate-800">{{ master.repair.workspace.bagian }} · {{ master.repair.workspace.blok || '-' }}</div>
+                                            <div class="text-xs text-slate-500">{{ master.repair.workspace.namaKegiatan }}</div>
+                                        </div>
+
+                                        <div class="mt-3 ba-repair-inner">
+                                            <div class="rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-100">
+                                                <div class="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">BA Pelaksanaan</div>
+                                                <div class="ba-repair-scroll-sm space-y-1">
+                                                    <button v-for="b in master.repair.workspace.ba" :key="b.baId" type="button" class="w-full rounded-xl px-3 py-2 text-left" :class="master.repair.baId === b.baId ? 'bg-white shadow-sm ring-1 ring-brand-100' : 'hover:bg-white/70'" @click="selectBaRepairBa(b.baId)">
+                                                        <div class="flex items-center justify-between gap-2">
+                                                            <span class="truncate font-mono text-[11px] font-bold text-slate-700">{{ b.baId }}</span>
+                                                            <span class="shrink-0 text-[10px] text-slate-400">{{ b.peserta.length }}P</span>
+                                                        </div>
+                                                        <div class="mt-0.5 truncate text-[11px] text-slate-500">{{ b.label || 'Tanpa label' }}</div>
+                                                        <div class="text-[10px] text-slate-400">{{ b.tanggal }} {{ b.jam }} · {{ b.jadwalIds.length }} sesi</div>
+                                                    </button>
+                                                    <p v-if="!master.repair.workspace.ba.length" class="px-3 py-6 text-center text-xs text-slate-400">Belum ada BA.</p>
+                                                </div>
+                                            </div>
+
+                                            <div v-if="baRepairSelectedBa" class="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                                                <div class="ba-repair-head">
+                                                    <div class="min-w-0">
+                                                        <div class="font-mono text-xs font-bold text-slate-800">{{ baRepairSelectedBa.baId }}</div>
+                                                        <div class="mt-0.5 text-[11px] text-slate-500">{{ baRepairSelectedBa.tanggal }} {{ baRepairSelectedBa.jam }} · {{ baRepairSelectedBa.dosen || 'Dosen belum diisi' }}</div>
+                                                    </div>
+                                                    <a v-if="baRepairSelectedBa.fileUrl" :href="safeUrl(baRepairSelectedBa.fileUrl)" target="_blank" rel="noopener" class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap"><i class="bi bi-file-earmark-pdf"></i> Buka hardcopy</a>
+                                                    <span v-else class="text-[11px] text-amber-600">Berkas BA belum ada.</span>
+                                                </div>
+
+                                                <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                                                    <div>
+                                                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sesi jadwal</div>
+                                                        <div class="mt-2 ba-repair-sesi-list space-y-1">
+                                                            <label v-for="j in master.repair.workspace.jadwal" :key="j.jadwalId" class="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50">
+                                                                <input type="checkbox" class="mt-0.5" :checked="master.repair.jadwalIds.indexOf(j.jadwalId) !== -1" @change="toggleBaRepairJadwal(j.jadwalId)" />
+                                                                <span class="min-w-0 text-[11px] text-slate-600">
+                                                                    <span class="font-semibold text-slate-700">{{ j.tanggal }} {{ j.jam }}</span>
+                                                                    <span class="block truncate">{{ j.dosen || '-' }} · {{ j.peserta.length }} peserta</span>
+                                                                    <span v-if="j.baIds.length && j.baIds.indexOf(baRepairSelectedBa.baId) === -1" class="block text-amber-600">Tertaut ke {{ j.baIds.join(', ') }}</span>
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Jadwal tujuan pemindahan</div>
+                                                        <select v-model="master.repair.targetJadwalId" class="input mt-2 w-full text-xs">
+                                                            <option value="">Tanpa pindah jadwal</option>
+                                                            <option v-for="j in master.repair.workspace.jadwal" :key="j.jadwalId" :value="j.jadwalId">{{ j.tanggal }} {{ j.jam }} · {{ j.dosen || '-' }}</option>
+                                                        </select>
+                                                        <label class="mt-3 flex items-start gap-2 text-[11px] text-slate-600">
+                                                            <input v-model="master.repair.move" type="checkbox" class="mt-0.5" />
+                                                            <span>Pindahkan peserta dari jadwal asal ke jadwal tujuan.</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-4">
+                                                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Peserta BA ({{ baRepairSelectedBa.peserta.length }})</div>
+                                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                                        <span v-for="x in baRepairSelectedBa.peserta" :key="x.idPengajuan || x.npm" class="chip bg-slate-100 text-slate-600">{{ x.npm }} · {{ x.namaLengkap }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-5 border-t border-slate-100 pt-5">
+                                                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tambah peserta dari pengajuan/jadwal lain</div>
+                                                    <div class="mt-2">
+                                                        <input v-model="master.repair.candidateQ" type="text" class="input w-full text-xs" placeholder="Cari NPM atau nama..." />
+                                                    </div>
+                                                    <div class="mt-2 ba-repair-candidate-list space-y-1">
+                                                        <label v-for="c in baRepairCandidates" :key="c.idPengajuan" class="ba-repair-candidate flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50" :class="{ 'is-blocked': c.baIds.length }">
+                                                            <input type="checkbox" class="mt-0.5" :disabled="c.baIds.length > 0" :checked="master.repair.addIds.indexOf(c.idPengajuan) !== -1" @change="toggleBaRepairPeserta(c.idPengajuan)" />
+                                                            <span class="min-w-0 text-[11px] text-slate-600">
+                                                                <span class="font-semibold text-slate-700">{{ c.npm }} · {{ c.namaLengkap }}</span>
+                                                                <span class="ml-1 text-slate-400">{{ c.status }}</span>
+                                                                <span v-if="c.sourceJadwal.length" class="block text-slate-500">Jadwal asal: {{ baRepairJadwalList(c.sourceJadwal) }}</span>
+                                                                <span v-else class="block text-emerald-600">Belum punya jadwal</span>
+                                                                <span v-if="c.baIds.length" class="block text-amber-600">Sudah tercatat di {{ c.baIds.join(', ') }}</span>
+                                                            </span>
+                                                        </label>
+                                                        <p v-if="!baRepairCandidates.length" class="px-2 py-4 text-center text-[11px] text-slate-400">Tidak ada kandidat peserta.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-[11px] text-slate-600 ring-1 ring-slate-100">
+                                                    {{ baRepairSummary }}
+                                                </div>
+                                                <div class="mt-3 flex items-center justify-end gap-2">
+                                                    <button class="btn-soft !px-4 !py-2 text-xs" :disabled="master.repair.saving" @click="resetBaRepairForm">Reset</button>
+                                                    <button class="btn-primary !px-4 !py-2 text-xs" :disabled="master.repair.saving" @click="saveBaRepair">
+                                                        <i v-if="!master.repair.saving" class="bi bi-save"></i>
+                                                        {{ master.repair.saving ? 'Menyimpan...' : 'Simpan Perbaikan' }}
+                                                    </button>
+                                                </div>
+                                                <p v-if="master.repair.result" class="mt-2 text-[11px] font-semibold text-emerald-600">{{ master.repair.result }}</p>
+                                            </div>
+                                            <div v-else class="rounded-2xl bg-slate-50 px-4 py-12 text-center text-xs text-slate-400 ring-1 ring-slate-100">Pilih BA untuk mulai memperbaiki.</div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="rounded-2xl bg-slate-50 px-4 py-16 text-center text-xs text-slate-400 ring-1 ring-slate-100">Pilih kegiatan di sebelah kiri.</div>
                                 </div>
                             </div>
 
@@ -3608,6 +3766,7 @@
                         rename: { open: false, row: null, newValue: '', impact: null, baRegen: 0, conflicts: null, loading: false, saving: false, error: '' },
                         audit: { open: false, loading: false, data: null, error: '' },
                         uploads: { rows: [], loading: false, loaded: false, q: '', filter: '', reset: { open: false, row: null, note: '', saving: false } },
+                        repair: { groups: [], bagianOptions: [], loading: false, loaded: false, q: '', bagian: '', key: '', workspace: null, baId: '', targetJadwalId: '', jadwalIds: [], addIds: [], move: true, candidateQ: '', saving: false, result: null },
                         cards: [
                             { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'mahasiswa', icon: 'bi-mortarboard' },
                             { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], table: 'master_kegiatan', icon: 'bi-clipboard-check' },
@@ -3619,7 +3778,8 @@
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
                             { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B). Tersimpan sebagai hash; ketik password baru untuk mengganti.', cols: ['Password', 'Nama'], table: 'admin', icon: 'bi-shield-lock' },
                             { key: 'downloadDatabase', title: 'Download Database', short: 'Download Database', desc: 'File Excel siap pakai: header ramah, baris judul dibekukan, filter aktif, angka sebagai angka.', icon: 'bi-download', settings: true, download: true },
-                            { key: 'kelolaUnggahan', title: 'Kelola Unggahan', short: 'Kelola Unggahan', desc: 'Pantau dan reset berkas ACC INHAL & Bukti Bayar agar mahasiswa dapat mengunggah ulang.', icon: 'bi-cloud-arrow-up', settings: true }
+                            { key: 'kelolaUnggahan', title: 'Kelola Unggahan', short: 'Kelola Unggahan', desc: 'Pantau dan reset berkas ACC INHAL & Bukti Bayar agar mahasiswa dapat mengunggah ulang.', icon: 'bi-cloud-arrow-up', settings: true },
+                            { key: 'editJadwalBa', title: 'Edit Jadwal/BA', short: 'Edit Jadwal/BA', desc: 'Perbaiki peserta dan sesi BA Pelaksanaan dengan memilih peserta dari pengajuan atau jadwal lain.', icon: 'bi-tools', settings: true }
                         ]
                     }
                 };
@@ -4113,6 +4273,47 @@
                         }
                         return true;
                     });
+                },
+                baRepairSelectedBa() {
+                    const r = this.master.repair;
+                    const ws = r.workspace;
+                    if (!ws || !r.baId) return null;
+                    return (ws.ba || []).find(b => b.baId === r.baId) || null;
+                },
+                baRepairCandidates() {
+                    const r = this.master.repair;
+                    const ws = r.workspace;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ws || !ba) return [];
+                    const inBa = {};
+                    for (const x of ba.peserta || []) inBa[String(x.idPengajuan || '')] = true;
+                    const q = String(r.candidateQ || '').toLowerCase().trim();
+                    return (ws.kandidat || []).filter(c => {
+                        if (inBa[String(c.idPengajuan || '')]) return false;
+                        if (!q) return true;
+                        return (String(c.npm || '') + ' ' + String(c.namaLengkap || '')).toLowerCase().indexOf(q) !== -1;
+                    });
+                },
+                baRepairSummary() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba) return '';
+                    const added = (r.addIds || []).length;
+                    const candidates = (r.workspace && r.workspace.kandidat) || [];
+                    let moved = 0;
+                    if (r.move) {
+                        for (const id of r.addIds || []) {
+                            const c = candidates.find(x => x.idPengajuan === id);
+                            if (c && (c.sourceJadwal || []).length) moved += 1;
+                        }
+                    }
+                    const linked = (r.jadwalIds || []).filter(id => (ba.jadwalIds || []).indexOf(id) === -1).length;
+                    if (added && moved && !r.targetJadwalId) return 'Pilih jadwal tujuan agar ' + moved + ' peserta bisa dipindahkan dari jadwal asal.';
+                    const parts = [];
+                    if (added) parts.push(added + ' peserta ditambahkan');
+                    if (moved) parts.push(moved + ' dipindahkan');
+                    if (linked) parts.push(linked + ' sesi baru ditautkan');
+                    return parts.length ? 'Akan disimpan: ' + parts.join(', ') + '.' : 'Tidak ada perubahan. Pilih peserta atau sesi jadwal.';
                 },
                 anyModalOpen() {
                     return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.master.rename.open || this.master.audit.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open || this.sec.open);
@@ -6745,6 +6946,7 @@
                     this.master.tab = key;
                     this.master.search = '';
                     if (key === 'kelolaUnggahan' && !this.master.uploads.loaded) this.loadUploadMonitor();
+                    if (key === 'editJadwalBa' && !this.master.repair.loaded) this.loadBaRepair();
                 },
                 async loadUploadMonitor() {
                     this.master.uploads.loading = true;
@@ -6756,6 +6958,129 @@
                         this.notify('Gagal memuat data unggahan: ' + e, false);
                     } finally {
                         this.master.uploads.loading = false;
+                    }
+                },
+                async loadBaRepair(force) {
+                    const r = this.master.repair;
+                    if (r.loading) return;
+                    if (force) r.loaded = false;
+                    r.loading = true;
+                    try {
+                        const res = await this.run('getBaRepairData', { bagian: r.bagian, q: r.q, key: r.key }) || {};
+                        r.groups = res.groups || [];
+                        r.bagianOptions = res.bagianOptions || [];
+                        r.workspace = res.workspace || null;
+                        r.loaded = true;
+                        if (r.workspace) {
+                            const keep = r.baId;
+                            const found = (r.workspace.ba || []).find(b => b.baId === keep) || (r.workspace.ba || [])[0];
+                            if (found) this.selectBaRepairBa(found.baId);
+                            else this.resetBaRepairForm();
+                        } else {
+                            this.resetBaRepairForm();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal memuat data jadwal/BA: ' + e, false);
+                    } finally {
+                        r.loading = false;
+                    }
+                },
+                reloadBaRepairGroups() {
+                    const r = this.master.repair;
+                    r.key = '';
+                    r.workspace = null;
+                    this.resetBaRepairForm();
+                    this.loadBaRepair(true);
+                },
+                selectBaRepairGroup(key) {
+                    const r = this.master.repair;
+                    r.key = key;
+                    r.workspace = null;
+                    this.resetBaRepairForm();
+                    this.loadBaRepair(true);
+                },
+                selectBaRepairBa(baId) {
+                    const r = this.master.repair;
+                    const ba = (r.workspace && r.workspace.ba || []).find(b => b.baId === baId);
+                    if (!ba) return;
+                    r.baId = baId;
+                    r.jadwalIds = (ba.jadwalIds || []).slice();
+                    r.targetJadwalId = r.jadwalIds[0] || '';
+                    r.addIds = [];
+                    r.candidateQ = '';
+                    r.result = null;
+                },
+                resetBaRepairForm() {
+                    const r = this.master.repair;
+                    r.baId = '';
+                    r.jadwalIds = [];
+                    r.targetJadwalId = '';
+                    r.addIds = [];
+                    r.candidateQ = '';
+                    r.result = null;
+                },
+                toggleBaRepairJadwal(jadwalId) {
+                    const r = this.master.repair;
+                    const i = r.jadwalIds.indexOf(jadwalId);
+                    if (i === -1) {
+                        r.jadwalIds.push(jadwalId);
+                        if (!r.targetJadwalId) r.targetJadwalId = jadwalId;
+                    } else {
+                        r.jadwalIds.splice(i, 1);
+                        if (r.targetJadwalId === jadwalId) r.targetJadwalId = '';
+                    }
+                },
+                toggleBaRepairPeserta(idPengajuan) {
+                    const r = this.master.repair;
+                    const i = r.addIds.indexOf(idPengajuan);
+                    if (i === -1) r.addIds.push(idPengajuan);
+                    else r.addIds.splice(i, 1);
+                },
+                baRepairJadwalList(list) {
+                    return (list || []).map(j => [j.tanggal, j.jam].filter(Boolean).join(' ')).join('; ');
+                },
+                async saveBaRepair() {
+                    const r = this.master.repair;
+                    if (!r.baId) {
+                        this.notify('Pilih BA yang akan diperbaiki.', false);
+                        return;
+                    }
+                    const ba = this.baRepairSelectedBa;
+                    if (r.addIds.length && r.move && !r.targetJadwalId) {
+                        const candidates = (r.workspace && r.workspace.kandidat) || [];
+                        const hasSource = r.addIds.some(id => {
+                            const c = candidates.find(x => x.idPengajuan === id);
+                            return !!(c && (c.sourceJadwal || []).length);
+                        });
+                        if (hasSource) {
+                            this.notify('Pilih jadwal tujuan agar peserta bisa dipindahkan dari jadwal asal.', false);
+                            return;
+                        }
+                    }
+                    r.saving = true;
+                    try {
+                        const res = await this.run('applyBaRepair', {
+                            baId: r.baId,
+                            addPesertaIds: r.addIds,
+                            targetJadwalId: r.targetJadwalId,
+                            jadwalIds: r.jadwalIds,
+                            moveFromJadwal: r.move
+                        }) || {};
+                        if (!res.success) {
+                            this.notify(res.message || 'Gagal menyimpan perbaikan BA.', false);
+                            return;
+                        }
+                        const keep = r.baId;
+                        this.notify(res.message || 'BA diperbarui.');
+                        await this.loadBaRepair(true);
+                        if (r.workspace && (r.workspace.ba || []).some(b => b.baId === keep)) {
+                            this.selectBaRepairBa(keep);
+                            r.result = res.message || 'BA diperbarui.';
+                        }
+                    } catch (e) {
+                        this.notify('Gagal menyimpan perbaikan BA: ' + e, false);
+                    } finally {
+                        r.saving = false;
                     }
                 },
                 openUploadDetail(id) {

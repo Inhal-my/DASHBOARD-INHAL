@@ -123,7 +123,7 @@ export async function validateBaPesertaStatus(db, peserta) {
   return blocked;
 }
 
-async function validateBaPesertaKegiatan(db, peserta, bagian, blok, namaKegiatan) {
+export async function validateBaPesertaKegiatan(db, peserta, bagian, blok, namaKegiatan) {
   const key = kegiatanKey(bagian, str(blok), str(namaKegiatan));
   const pengajuan = (await db.prepare('SELECT id_pengajuan, blok FROM pengajuan').all()).results || [];
   const pMap = {};

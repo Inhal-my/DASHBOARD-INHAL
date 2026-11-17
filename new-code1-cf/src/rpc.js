@@ -26,6 +26,8 @@ import {
   updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
 } from './write/beritaAcara.js';
 import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan } from './write/jadwal.js';
+import { getBaRepairData } from './read/baRepair.js';
+import { applyBaRepair } from './write/baRepair.js';
 import { verifyPembayaran, correctPembayaran } from './write/pembayaran.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
@@ -104,6 +106,8 @@ const HANDLERS = {
   saveJadwalPelaksanaan: (db, args, ctx) => saveJadwalPelaksanaan(db, args[0], args[1], ctx),
   updateJadwalPelaksanaan: (db, args, ctx) => updateJadwalPelaksanaan(db, args[0], args[1], args[2], ctx),
   cancelJadwalPelaksanaan: (db, args, ctx) => cancelJadwalPelaksanaan(db, args[0], args[1], ctx),
+  getBaRepairData: (db, args, ctx) => getBaRepairData(db, args[0], ctx),
+  applyBaRepair: (db, args, ctx) => applyBaRepair(db, args[0], ctx),
   lengkapiBeritaAcaraBagian: (db, args, ctx) => lengkapiBeritaAcaraBagian(db, args[0], args[1], args[2], ctx),
   updateBeritaAcaraBagian: (db, args, ctx) => updateBeritaAcaraBagian(db, args[0], args[1], ctx),
   updateBeritaAcaraAdmin: (db, args, ctx) => updateBeritaAcaraAdmin(db, args[0], args[1], ctx),
