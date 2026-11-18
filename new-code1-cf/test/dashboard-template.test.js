@@ -516,6 +516,32 @@ describe('dashboard ubah status ke ACC', () => {
   });
 });
 
+describe('dashboard gratis oleh verifikator', () => {
+  it('menyediakan checkbox Gratis di panel keputusan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('v-model="detail.gratis"');
+    expect(html).toContain('@change="onGratisToggle"');
+    expect(html).toContain('Langsung ACC, biaya Rp 0, dan email final dikirim tanpa validasi pembayaran.');
+  });
+  it('mengunci status ACC dan mengirim flag gratis ke RPC', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("this.detail.status = 'ACC';");
+    expect(html).toContain('v-if="canVerify && !detail.gratis"');
+    expect(html).toContain("this.detail.gratis = false;");
+    expect(html).toContain("gratis ? 'ACC' : status");
+    expect(html).toContain("'', gratis");
+  });
+  it('tetap menampilkan periksa pembayaran untuk baris gratis', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain("if (ps === 'gratis') return true;");
+  });
+  it('menampilkan label Gratis untuk biaya nol', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('formatBiaya(num)');
+    expect(html).toContain("return n <= 0 ? 'Gratis' : this.formatRupiah(n);");
+  });
+});
+
 describe('dashboard unggah bukti bayar oleh admin', () => {
   it('menyediakan kartu unggah bukti bayar di detail pengajuan', async () => {
     const html = await loadDashboardHtml();
@@ -542,6 +568,7 @@ describe('dashboard biaya override per pengajuan', () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('v-model="detail.iForm.biaya"');
     expect(html).toContain('Default (Master Biaya)');
+    expect(html).toContain('Gratis (Rp 0)');
     expect(html).toContain('v-for="b in biayaOptions"');
   });
   it('mengisi dari BiayaOverride dan mengirim field biaya saat simpan', async () => {

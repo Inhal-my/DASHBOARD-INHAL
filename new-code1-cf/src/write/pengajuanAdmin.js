@@ -223,10 +223,10 @@ export async function deleteDetailKegiatan(db, idPengajuan, index, ctx) {
   return { success: true, message: 'Detail kegiatan dihapus.' };
 }
 
-export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan, actorEmail, ctx) {
+export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan, actorEmail, ctx, gratis) {
   const session = await requireAdmin(db, ctx.token, ctx.session);
   const id = str(idPengajuan);
-  const status = str(newStatus);
+  let status = str(newStatus);
   if (STATUS_VALID.indexOf(status) === -1) {
     return { success: false, message: 'Status tidak valid: ' + status };
   }
@@ -235,12 +235,35 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   const existing = await db.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Pengajuan tidak ditemukan.' };
 
+  const prevStatus = str(existing.status);
+  const gratisFlag = gratis === true || gratis === 1 || str(gratis).toLowerCase() === 'true';
+  if (gratisFlag) {
+    if (!isVerifikator(session)) {
+      await writeAuditLog(db, {
+        actor: actorName(ctx),
+        action: 'DENY',
+        target: 'Pengajuan',
+        detail: JSON.stringify({ idPengajuan: id, dari: prevStatus, ke: 'ACC', gratis: true }),
+        alasan: VERIFIKATOR_DENIED
+      });
+      return { success: false, message: VERIFIKATOR_DENIED };
+    }
+    if (status === 'Ditolak' || status === 'Dibatalkan') {
+      return { success: false, message: 'Status Gratis tidak dapat digabung dengan ' + status + '.' };
+    }
+    if (str(existing.status_pembayaran) === 'valid') {
+      return { success: false, message: 'Pembayaran sudah valid; status gratis tidak dapat ditetapkan.' };
+    }
+    if (prevStatus === 'Ditolak' || prevStatus === 'Dibatalkan') {
+      return { success: false, message: 'Pengajuan sudah ' + prevStatus + '. Ubah ke Menunggu terlebih dahulu sebelum menetapkan gratis.' };
+    }
+    status = 'ACC';
+  }
+
   const catatanVal = str(catatan);
   if ((status === 'Ditolak' || status === 'Dibatalkan') && !catatanVal) {
     return { success: false, message: 'Catatan wajib diisi untuk status ' + status + '.' };
   }
-
-  const prevStatus = str(existing.status);
   // Keputusan baru (ACC/Ditolak/Dibatalkan) dan meninggalkan status keputusan
   // menuju Menunggu hanya boleh dilakukan verifikator. Admin lain tetap bisa
   // memperbarui catatan tanpa mengubah status.
@@ -258,7 +281,7 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     });
     return { success: false, message: VERIFIKATOR_DENIED };
   }
-  if (status === 'ACC' && changesStatus) {
+  if (status === 'ACC' && changesStatus && !gratisFlag) {
     const allowManualAcc = await isManualAccEnabled(db);
     if (!allowManualAcc) {
       return { success: false, message: 'ACC manual dinonaktifkan. Setujui pengajuan lalu validasi pembayaran; aktifkan ACC manual di Master Data bila perlu.' };
@@ -269,7 +292,13 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   let settledAtApproval = false;
   let gratisAtApproval = false;
   const paymentStatus = str(existing.status_pembayaran);
-  if ((status === 'Disetujui' || status === 'ACC') && changesStatus) {
+  if (gratisFlag) {
+    effectiveStatus = 'ACC';
+    settledAtApproval = true;
+    gratisAtApproval = true;
+    const biayaRes = await upsertBiayaCheckData(db, id, '0', existing);
+    if (!biayaRes.success) return biayaRes;
+  } else if ((status === 'Disetujui' || status === 'ACC') && changesStatus) {
     const tagihan = await resolveTagihan(db, existing);
     const paymentSettled = paymentStatus === 'valid' || paymentStatus === 'gratis';
     const gratis = !paymentSettled && tagihan <= 0;
@@ -282,7 +311,8 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
       gratisAtApproval = gratis;
     }
   }
-  const autoFinal = changesStatus && effectiveStatus === 'ACC' && settledAtApproval;
+  const autoFinal = effectiveStatus === 'ACC' && settledAtApproval
+    && (gratisFlag ? !str(existing.link_final) : changesStatus);
   let nomorSurat = str(existing.nomor_surat);
   const sets = ['status = ?1', 'updated_at = ?2'];
   const vals = [effectiveStatus, ts];
@@ -298,16 +328,17 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
     vals.push(nomorSurat);
   }
   const actor = str(actorEmail) || str(session && session.nama) || 'Admin';
+  const historyNote = gratisFlag ? (catatanVal || 'Gratis') : catatanVal;
   const updateSql = 'UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1)
     + (claimNumber ? " AND (nomor_surat IS NULL OR nomor_surat = '')" : '');
   const historyStmt = claimNumber
     ? db.prepare(
       'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) ' +
       'SELECT ?1, ?2, ?3, ?4, ?5 WHERE EXISTS (SELECT 1 FROM pengajuan WHERE id_pengajuan = ?2 AND nomor_surat = ?6)'
-    ).bind(ts, id, effectiveStatus, catatanVal, actor, nomorSurat)
+    ).bind(ts, id, effectiveStatus, historyNote, actor, nomorSurat)
     : db.prepare(
       'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
-    ).bind(ts, id, effectiveStatus, catatanVal, actor);
+    ).bind(ts, id, effectiveStatus, historyNote, actor);
   const syncStatusStmts = [
     db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(effectiveStatus, id),
     db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind(effectiveStatus, id),
@@ -325,6 +356,16 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
         message: 'Pengajuan ini sudah diproses admin lain (nomor surat sudah terbit).'
       };
     }
+  }
+
+  if (gratisFlag) {
+    await writeAuditLog(db, {
+      actor,
+      action: 'GRATIS',
+      target: 'Pengajuan',
+      detail: JSON.stringify({ idPengajuan: id, dari: prevStatus, ke: 'ACC', biaya: 0 }),
+      alasan: catatanVal
+    });
   }
 
   let notification = null;
@@ -361,7 +402,9 @@ export async function updatePengajuanStatus(db, idPengajuan, newStatus, catatan,
   }
 
   let baseMessage = 'Status diperbarui menjadi ' + effectiveStatus + '.';
-  if (effectiveStatus !== status) {
+  if (gratisFlag) {
+    baseMessage = 'Pengajuan ditandai gratis: status ACC dan biaya Rp 0.';
+  } else if (effectiveStatus !== status) {
     baseMessage = gratisAtApproval
       ? 'Pengajuan gratis: status langsung menjadi ACC.'
       : 'Pembayaran sudah valid: status langsung menjadi ACC.';

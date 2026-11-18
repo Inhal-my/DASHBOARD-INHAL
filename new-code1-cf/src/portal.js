@@ -48,6 +48,10 @@ export async function uploadBuktiFiles(db, payload, env) {
     return { success: false, message: 'Unggah bukti bayar hanya tersedia setelah pengajuan Disetujui.' };
   }
 
+  if (str(existing.status_pembayaran) === 'gratis') {
+    return { success: false, message: 'Pengajuan ini gratis, tidak perlu mengunggah bukti bayar.' };
+  }
+
   if (str(existing.status_pembayaran) === 'valid') {
     return { success: false, message: 'Pembayaran sudah valid. Hubungi admin Keuangan untuk koreksi buka kembali.' };
   }
@@ -157,6 +161,7 @@ export async function getStudentPortalData(db, npm) {
       tanggalKegiatan: tanggalKegiatan,
       status: p.status || 'Menunggu',
       reason: p.catatan_admin || '',
+      gratis: str(p.status_pembayaran) === 'gratis',
       hasUpload: hasUpload,
       linkFinal: String(p.status || '').trim() === 'ACC' ? (p.link_final || '') : '',
       uploadResetAt: str(p.upload_reset_at),

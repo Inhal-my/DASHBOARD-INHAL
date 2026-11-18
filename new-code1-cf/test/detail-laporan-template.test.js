@@ -166,6 +166,12 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain("label: 'Papan'");
     expect(html).toContain("label: 'Ringkasan'");
   });
+  it('menampilkan label Gratis untuk tagihan nol', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('function fmtBiaya(num)');
+    expect(html).toContain("return n <= 0 ? 'Gratis' : fmtRupiah(n);");
+    expect(html).toContain('{{ fmtBiaya(it.biaya) }}');
+  });
   it('agregasi pembayaran per pengajuan dan status verifikasi', async () => {
     const html = await loadHtml();
     expect(html).toContain('pembayaranItemsAll()');
@@ -462,7 +468,7 @@ describe('detail laporan komponen ExpandedDetail', () => {
   it('menyediakan safeUrl pada methods agar href aman tanpa error runtime', async () => {
     const html = await loadHtml();
     expect(html).toContain('function safeUrl(v) {');
-    expect(html).toContain('methods: { fmtTanggal, fmtRupiah, safeUrl }');
+    expect(html).toContain('methods: { fmtTanggal, fmtRupiah, fmtBiaya, safeUrl }');
   });
 });
 

@@ -310,6 +310,89 @@ describe('pengajuan admin status and delete', () => {
     expect(hist.results.map((r) => r.status)).toEqual(['ACC']);
   });
 
+  it('menetapkan gratis: ACC, biaya 0, status gratis, dan surat final', async () => {
+    await seedPengajuan();
+    await seedDetail();
+    await seedBiayaOverride('250000');
+    const calls = stubBridge((body) => body.action === 'sendFinalEmail'
+      ? { success: true, pdfUrl: 'https://drive.google.com/file/d/FINALGRATIS0001/view', studentEmailSent: true, bagianEmailSent: false }
+      : { success: true, sent: true });
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx, true);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe('ACC');
+    expect(res.message).toContain('gratis');
+    expect(calls.map((c) => c.action)).toContain('sendFinalEmail');
+    const row = await env.DB.prepare('SELECT * FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('ACC');
+    expect(row.status_pembayaran).toBe('gratis');
+    expect(row.link_final).toContain('FINALGRATIS0001');
+    const biaya = await env.DB.prepare(
+      "SELECT biaya FROM check_data WHERE id_pengajuan = 'INHAL-1' AND detail = 'BIAYA-OVERRIDE'"
+    ).first();
+    expect(biaya.biaya).toBe('0');
+    const hist = await env.DB.prepare('SELECT * FROM status_history WHERE id_pengajuan = ?1').bind('INHAL-1').all();
+    expect(hist.results.map((r) => r.status)).toEqual(['ACC']);
+    expect(hist.results[0].catatan).toBe('Gratis');
+    const audit = await env.DB.prepare("SELECT * FROM audit_log WHERE target = 'Pengajuan' AND aksi = 'GRATIS'").all();
+    expect(audit.results).toHaveLength(1);
+  });
+
+  it('gratis pada ACC lama tanpa surat final tetap mengirim email', async () => {
+    await seedPengajuan({ status: 'ACC' });
+    const calls = stubBridge((body) => body.action === 'sendFinalEmail'
+      ? { success: true, pdfUrl: 'https://drive.google.com/file/d/FINALGRATIS0002/view', studentEmailSent: true, bagianEmailSent: false }
+      : { success: true, sent: true });
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx, true);
+    expect(res.success).toBe(true);
+    expect(calls.map((c) => c.action)).toContain('sendFinalEmail');
+    const row = await env.DB.prepare('SELECT status, status_pembayaran, link_final FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('ACC');
+    expect(row.status_pembayaran).toBe('gratis');
+    expect(row.link_final).toContain('FINALGRATIS0002');
+  });
+
+  it('menolak gratis dari admin non-verifikator', async () => {
+    await seedPengajuan();
+    const ctx = await otherAdminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx, true);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/verifikator/i);
+    const row = await env.DB.prepare('SELECT status FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('Menunggu');
+  });
+
+  it('menolak gratis bila pembayaran sudah valid', async () => {
+    await seedPengajuan();
+    await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'valid' WHERE id_pengajuan = 'INHAL-1'").run();
+    const ctx = await adminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx, true);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('sudah valid');
+  });
+
+  it('gratis pada pengajuan Manual tidak mengirim email', async () => {
+    await seedPengajuan({ sumber: 'Manual' });
+    const calls = stubBridge(() => ({ success: true, sent: true }));
+    const ctx = await adminCtxWithDrive();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx, true);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe('ACC');
+    expect(calls).toHaveLength(0);
+    const row = await env.DB.prepare('SELECT status, status_pembayaran FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
+    expect(row.status).toBe('ACC');
+    expect(row.status_pembayaran).toBe('gratis');
+  });
+
+  it('menolak gratis dari status Ditolak', async () => {
+    await seedPengajuan({ status: 'Ditolak' });
+    const ctx = await adminCtx();
+    const res = await updatePengajuanStatus(env.DB, 'INHAL-1', 'ACC', '', '', ctx, true);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('Ditolak');
+  });
+
   it('keeps the existing nomor surat on a repeated ACC', async () => {
     await seedPengajuan();
     await seedManualAcc();

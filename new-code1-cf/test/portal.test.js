@@ -28,6 +28,7 @@ describe('getStudentPortalData', () => {
     expect(h.tanggalKegiatan).toBe('2026-09-20');
     expect(h.status).toBe('Diterima');
     expect(h.hasUpload).toBe(false);
+    expect(h.gratis).toBe(false);
     expect(h.linkFinal).toBe('');
   });
 
@@ -63,6 +64,17 @@ describe('getStudentPortalData', () => {
     const data = await getStudentPortalData(env.DB, '2201010001');
     expect(data.history.find((x) => x.idPengajuan === 'INHAL-f').linkFinal).toBe('https://drive/final.pdf');
     expect(data.history.find((x) => x.idPengajuan === 'INHAL-g').linkFinal).toBe('');
+  });
+
+  it('menandai pengajuan gratis dan menyediakan link final ACC', async () => {
+    await env.DB.prepare(
+      "INSERT INTO pengajuan (timestamp,id_pengajuan,npm,nama_lengkap,status,status_pembayaran,link_final) VALUES ('2026-09-10T08:00:00','INHAL-gr','2201010001','Aisyah Putri','ACC','gratis','https://drive/final-gratis.pdf')"
+    ).run();
+    const data = await getStudentPortalData(env.DB, '2201010001');
+    const h = data.history.find((x) => x.idPengajuan === 'INHAL-gr');
+    expect(h.gratis).toBe(true);
+    expect(h.hasUpload).toBe(false);
+    expect(h.linkFinal).toBe('https://drive/final-gratis.pdf');
   });
 
   it('exposes upload reset info for the portal banner', async () => {

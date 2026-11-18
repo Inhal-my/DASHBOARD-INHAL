@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import {
-  norm, baginaKey, parseCurrency, formatRupiah, getMasterOptions,
+  norm, baginaKey, parseCurrency, formatRupiah, formatBiaya, getMasterOptions,
   resolveBagian12, baginaHasAccess, getBagianBaStatuses, kegiatanKey,
   resolveBiayaForPengajuan, effectiveDetailFor, filterKkdSgdDetailOptions
 } from '../src/read/common.js';
@@ -26,6 +26,11 @@ describe('common helpers', () => {
   });
   it('formatRupiah uses dot grouping', () => {
     expect(formatRupiah(300000)).toBe('Rp 300.000');
+  });
+  it('formatBiaya menampilkan Gratis untuk nilai nol', () => {
+    expect(formatBiaya(0)).toBe('Gratis');
+    expect(formatBiaya('0')).toBe('Gratis');
+    expect(formatBiaya(250000)).toBe('Rp 250.000');
   });
   it('getMasterOptions returns unique category values', async () => {
     const blok = await getMasterOptions(env.DB, 'Blok');

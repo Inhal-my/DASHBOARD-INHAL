@@ -2451,7 +2451,7 @@
                                                 <div v-if="it.detail" class="text-[11px] text-slate-400">{{ it.detail }}</div>
                                             </td>
                                             <td class="whitespace-nowrap px-3 py-3 text-center text-slate-500">{{ it.blok }}</td>
-                                            <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-700">{{ fmtRupiah(it.biaya) }}</td>
+                                            <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-700">{{ fmtBiaya(it.biaya) }}</td>
                                             <td class="whitespace-nowrap px-3 py-3 text-left text-slate-500">
                                                 <div v-if="it.waktuUploadBukti" class="text-xs">{{ fmtTanggalWaktu(it.waktuUploadBukti) }}</div>
                                                 <div v-else class="text-xs text-slate-300">{{ it.linkBukti ? 'Tidak tercatat' : '-' }}</div>
@@ -2477,7 +2477,7 @@
                                         <span class="font-semibold text-slate-800">{{ it.nama }}</span>
                                         <span :class="bayarBadgeCls(it.statusPembayaran)">{{ bayarLabel(it.statusPembayaran) }}</span>
                                     </div>
-                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ it.npm }}</b><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Blok</span><b>{{ it.blok }}</b><span>Tagihan</span><b class="text-brand-700">{{ fmtRupiah(it.biaya) }}</b><span>Diunggah</span><b>{{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : (it.linkBukti ? 'Tidak tercatat' : '-') }}</b></div>
+                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ it.npm }}</b><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Blok</span><b>{{ it.blok }}</b><span>Tagihan</span><b class="text-brand-700">{{ fmtBiaya(it.biaya) }}</b><span>Diunggah</span><b>{{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : (it.linkBukti ? 'Tidak tercatat' : '-') }}</b></div>
                                     <div class="actions">
                                         <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                         <button type="button" class="btn-soft" @click.stop="openPeriksa(it)"><i class="bi bi-search"></i> Periksa</button>
@@ -2508,7 +2508,7 @@
                                     </div>
                                     <div class="text-right">
                                         <div class="text-xs text-slate-400">Tagihan</div>
-                                        <div class="font-semibold text-slate-700">{{ fmtRupiah(it.biaya) }}</div>
+                                        <div class="font-semibold text-slate-700">{{ fmtBiaya(it.biaya) }}</div>
                                     </div>
                                     <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                     <button type="button" class="btn-soft !py-1.5 text-xs" @click="openPeriksa(it)"><i class="bi bi-search"></i> Periksa</button>
@@ -2536,7 +2536,7 @@
                                         <div class="mt-1 text-[11px] text-slate-500">{{ it.jenis }} <span v-if="it.detail">- {{ it.detail }}</span></div>
                                         <div class="text-[11px] text-slate-400">Diunggah: {{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : 'Tidak tercatat' }}</div>
                                         <div class="mt-1 flex items-center justify-between gap-1">
-                                            <span class="text-[11px] font-semibold text-slate-700">{{ fmtRupiah(it.biaya) }}</span>
+                                            <span class="text-[11px] font-semibold text-slate-700">{{ fmtBiaya(it.biaya) }}</span>
                                             <span v-if="it.linkBukti" class="text-[10px] font-semibold text-teal-600">Bukti ada</span>
                                             <span v-else class="text-[10px] text-slate-300">Tanpa bukti</span>
                                         </div>
@@ -2583,7 +2583,7 @@
                                             <tr v-for="it in pagerRows('bayarSelisih', pembayaranSelisih)" :key="'s-' + it.id" class="border-t border-slate-50">
                                                 <td class="px-3 py-3"><div class="font-semibold text-slate-800">{{ it.nama }}</div><div class="font-mono text-[11px] text-slate-400">{{ it.npm }}</div></td>
                                                 <td class="px-3 py-3 text-slate-600">{{ it.jenis }}<div v-if="it.detail" class="text-[11px] text-slate-400">{{ it.detail }}</div></td>
-                                                <td class="whitespace-nowrap px-3 py-3 text-right text-slate-600">{{ fmtRupiah(it.biaya) }}</td>
+                                                <td class="whitespace-nowrap px-3 py-3 text-right text-slate-600">{{ fmtBiaya(it.biaya) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-800">{{ fmtRupiah(it.nominal) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-right font-semibold" :class="it.nominal < it.biaya ? 'text-amber-600' : 'text-violet-600'">{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-center"><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></td>
@@ -2594,7 +2594,7 @@
                                 <div class="in-cards">
                                     <article v-for="it in pagerRows('bayarSelisih', pembayaranSelisih)" :key="'sm-' + it.id" class="in-mcard">
                                         <div class="row1"><span class="font-semibold text-slate-800">{{ it.nama }}</span><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></div>
-                                        <div class="kv"><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Tagihan</span><b>{{ fmtRupiah(it.biaya) }}</b><span>Dibayar</span><b>{{ fmtRupiah(it.nominal) }}</b><span>Selisih</span><b>{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</b></div>
+                                        <div class="kv"><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Tagihan</span><b>{{ fmtBiaya(it.biaya) }}</b><span>Dibayar</span><b>{{ fmtRupiah(it.nominal) }}</b><span>Selisih</span><b>{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</b></div>
                                     </article>
                                     <p v-if="!pembayaranSelisih.length" class="py-8 text-center text-sm text-slate-400">Tidak ada selisih nominal.</p>
                                 </div>
@@ -2617,7 +2617,7 @@
                                 </div>
                                 <div class="space-y-4 px-5 py-4">
                                     <div class="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs md:grid-cols-4">
-                                        <div><div class="text-slate-400">Tagihan</div><div class="mt-0.5 font-semibold text-slate-800">{{ fmtRupiah(periksa.item.biaya) }}</div></div>
+                                        <div><div class="text-slate-400">Tagihan</div><div class="mt-0.5 font-semibold text-slate-800">{{ fmtBiaya(periksa.item.biaya) }}</div></div>
                                         <div><div class="text-slate-400">Status</div><div class="mt-0.5"><span :class="bayarBadgeCls(periksa.item.statusPembayaran)">{{ bayarLabel(periksa.item.statusPembayaran) }}</span></div></div>
                                         <div><div class="text-slate-400">Blok</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.blok }}</div></div>
                                         <div><div class="text-slate-400">Revisi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.revision }}</div></div>
@@ -3018,6 +3018,10 @@
         function fmtRupiah(num) {
             return AppCommon.formatRupiah(num);
         }
+        function fmtBiaya(num) {
+            const n = Number(num) || 0;
+            return n <= 0 ? 'Gratis' : fmtRupiah(n);
+        }
         function fmtTanggal(v) {
             return AppCommon.formatTanggal(v);
         }
@@ -3232,7 +3236,7 @@
 
         const ExpandedDetail = {
             props: ['r'],
-            methods: { fmtTanggal, fmtRupiah, safeUrl },
+            methods: { fmtTanggal, fmtRupiah, fmtBiaya, safeUrl },
             template: `
                 <div>
                     <div class="grid gap-x-6 gap-y-3 sm:grid-cols-3">
@@ -6914,6 +6918,7 @@
         });
 
         app.config.globalProperties.fmtRupiah = fmtRupiah;
+        app.config.globalProperties.fmtBiaya = fmtBiaya;
         app.config.globalProperties.fmtTanggal = fmtTanggal;
         app.config.globalProperties.fmtTanggalWaktu = fmtTanggalWaktu;
         app.config.globalProperties.statusBadgeCls = statusBadgeCls;

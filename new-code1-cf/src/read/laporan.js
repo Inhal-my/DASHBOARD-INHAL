@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { toClientRow } from './columns.js';
-import { formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, buildDetailRowsByPengajuan, resolveBagian12, kegiatanKey } from './common.js';
+import { formatRupiah, formatBiaya, getMasterOptions, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan, buildDetailRowsByPengajuan, resolveBagian12, kegiatanKey } from './common.js';
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
@@ -151,7 +151,7 @@ export async function getLaporanBootstrap(db, ctx) {
     const blok = String(row.Blok || '-').trim();
     perBlok[blok] = (perBlok[blok] || 0) + 1;
     row.Biaya = resolveBiayaForPengajuan(row, biayaMap, overrideMap, rawDetailsById[id]);
-    row['Biaya Rupiah'] = formatRupiah(row.Biaya);
+    row['Biaya Rupiah'] = formatBiaya(row.Biaya);
     // Link final hanya berlaku selama status ACC.
     if (status !== 'ACC') row['Link Final'] = '';
     row['Masuk BA'] = baPengajuanIds.has(id);

@@ -3,7 +3,7 @@ import { getAccSettings } from '../settings.js';
 import { toClientRow, toClientRows } from './columns.js';
 import { saveDriveFile } from '../drive.js';
 import {
-  norm, parseCurrency, formatRupiah, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
+  norm, parseCurrency, formatRupiah, formatBiaya, getMasterOptions, getBiayaMap, getBiayaOverrideMap,
   resolveBiayaForPengajuan, buildDetailRowsByPengajuan,
   normBagianAggregateWithLabs, resolveBagian12, getBagianOptions12,
   getBagianBaSettings, pushUnique, kegiatanKey, normKegiatan
@@ -30,7 +30,7 @@ function buildPengajuanClientRows(rows, biayaMap, overrideMap, detailsById) {
     if (String(copy.Status || '').trim() !== 'ACC') copy['Link Final'] = '';
     const id = String(r.id_pengajuan || '').trim();
     copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap, (detailsById || {})[id]);
-    copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
+    copy['Biaya Rupiah'] = formatBiaya(copy.Biaya);
     copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
     copy['Email Final Diizinkan'] = paymentGatePassed(r);
     return copy;
@@ -258,7 +258,7 @@ export async function getPengajuanWithDetails(db, idPengajuan, ctx) {
   copy.Biaya = resolveBiayaForPengajuan(copy, biayaMap, overrideMap, details);
   const id = String(p.id_pengajuan || '').trim();
   copy.BiayaOverride = (overrideMap[id] !== undefined) ? String(overrideMap[id]) : '';
-  copy['Biaya Rupiah'] = formatRupiah(copy.Biaya);
+  copy['Biaya Rupiah'] = formatBiaya(copy.Biaya);
   copy['Email Final Diizinkan'] = paymentGatePassed(p);
   copy.ba = await loadPengajuanBa(db, id);
   copy.BaCatatanCount = copy.ba.filter((b) => b.catatan).length;

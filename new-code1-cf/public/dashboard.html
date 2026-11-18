@@ -2526,7 +2526,7 @@
                                             <div><div class="label">Jenis Kegiatan</div><div class="value">{{ detail.p['Jenis Kegiatan'] }}</div></div>
                                             <div><div class="label">Tanggal Pelaksanaan</div><div class="value">{{ detail.p['Tanggal Pelaksanaan'] ? formatTanggalWaktu(detail.p['Tanggal Pelaksanaan']) : '—' }}</div></div>
                                             <div><div class="label">Tanggal Daftar</div><div class="value">{{ formatTanggal(detail.p.Timestamp) }}</div></div>
-                                            <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatRupiah(detail.p.Biaya) }}</div></div>
+                                            <div><div class="label">Biaya</div><div class="value font-semibold text-brand-700">{{ detail.p['Biaya Rupiah'] || formatBiaya(detail.p.Biaya) }}</div></div>
                                             <div><div class="label">Nomor Surat</div><div class="value">{{ detail.p['Nomor Surat'] || '—' }}</div></div>
                                             <div style="grid-column:1/-1"><div class="label">Keterangan</div><div class="value">{{ detail.p.Keterangan || '—' }}</div></div>
                                         </div>
@@ -2538,7 +2538,7 @@
                                             <div><label class="label">Blok</label><input v-model="detail.iForm.blok" class="input"></div>
                                             <div><label class="label">Jenis Kegiatan</label><input v-model="detail.iForm.jenisKegiatan" class="input"></div>
                                             <div><label class="label">Tanggal Pelaksanaan</label><input v-model="detail.iForm.tanggalPelaksanaan" type="datetime-local" class="input"></div>
-                                            <div><label class="label">Biaya</label><select v-model="detail.iForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-for="b in biayaOptions" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
+                                            <div><label class="label">Biaya</label><select v-model="detail.iForm.biaya" class="input"><option value="">Default (Master Biaya)</option><option v-if="detail.iForm.biaya === '0'" value="0">Gratis (Rp 0)</option><option v-for="b in biayaOptions" :key="b" :value="String(b)">{{ formatRupiah(b) }}</option></select></div>
                                             <div class="flex items-end gap-2" style="grid-column:1/-1">
                                                 <button class="btn-primary" @click="saveIndukFields()"><i class="bi bi-save"></i>Simpan</button>
                                                 <button class="btn-soft" @click="cancelEditInduk()">Batal</button>
@@ -2701,20 +2701,27 @@
                                     <div class="pd-card-head"><h4><i class="bi bi-check2-circle text-brand-600"></i> Perbarui Status</h4></div>
                                     <div class="pd-card-body">
                                         <div class="pd-statuspick">
-                                            <button type="button" data-s="Menunggu" :class="{ on: detail.status==='Menunggu' }" @click="detail.status='Menunggu'"><div class="ic"><i class="bi bi-hourglass-split"></i></div><div><div class="t">Menunggu</div><div class="s">tahan untuk ditinjau ulang</div></div></button>
-                                            <button v-if="canVerify" type="button" data-s="Disetujui" :class="{ on: detail.status==='Disetujui' }" @click="detail.status='Disetujui'"><div class="ic"><i class="bi bi-check2-circle"></i></div><div><div class="t">Setujui</div><div class="s">email persetujuan otomatis</div></div></button>
-                                            <button v-if="canVerify && master.accSettings.allowManualAcc" type="button" data-s="ACC" :class="{ on: detail.status==='ACC' }" @click="detail.status='ACC'"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="t">Jadikan ACC</div><div class="s">berkas dinyatakan lengkap</div></div></button>
-                                            <button v-if="canVerify" type="button" data-s="Ditolak" :class="{ on: detail.status==='Ditolak' }" @click="detail.status='Ditolak'"><div class="ic"><i class="bi bi-x-lg"></i></div><div><div class="t">Tolak</div><div class="s">perlu catatan alasan</div></div></button>
-                                            <button v-if="canVerify" type="button" data-s="Dibatalkan" :class="{ on: detail.status==='Dibatalkan' }" @click="detail.status='Dibatalkan'"><div class="ic"><i class="bi bi-slash-circle"></i></div><div><div class="t">Batalkan</div><div class="s">oleh admin/mahasiswa</div></div></button>
+                                            <button type="button" data-s="Menunggu" :class="{ on: detail.status==='Menunggu', 'opacity-50 cursor-not-allowed': detail.gratis }" :disabled="detail.gratis" @click="detail.status='Menunggu'"><div class="ic"><i class="bi bi-hourglass-split"></i></div><div><div class="t">Menunggu</div><div class="s">tahan untuk ditinjau ulang</div></div></button>
+                                            <button v-if="canVerify" type="button" data-s="Disetujui" :class="{ on: detail.status==='Disetujui', 'opacity-50 cursor-not-allowed': detail.gratis }" :disabled="detail.gratis" @click="detail.status='Disetujui'"><div class="ic"><i class="bi bi-check2-circle"></i></div><div><div class="t">Setujui</div><div class="s">email persetujuan otomatis</div></div></button>
+                                            <button v-if="canVerify && (master.accSettings.allowManualAcc || detail.gratis)" type="button" data-s="ACC" :class="{ on: detail.status==='ACC', 'opacity-50 cursor-not-allowed': detail.gratis }" :disabled="detail.gratis" @click="detail.status='ACC'"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="t">Jadikan ACC</div><div class="s">berkas dinyatakan lengkap</div></div></button>
+                                            <button v-if="canVerify" type="button" data-s="Ditolak" :class="{ on: detail.status==='Ditolak', 'opacity-50 cursor-not-allowed': detail.gratis }" :disabled="detail.gratis" @click="detail.status='Ditolak'"><div class="ic"><i class="bi bi-x-lg"></i></div><div><div class="t">Tolak</div><div class="s">perlu catatan alasan</div></div></button>
+                                            <button v-if="canVerify" type="button" data-s="Dibatalkan" :class="{ on: detail.status==='Dibatalkan', 'opacity-50 cursor-not-allowed': detail.gratis }" :disabled="detail.gratis" @click="detail.status='Dibatalkan'"><div class="ic"><i class="bi bi-slash-circle"></i></div><div><div class="t">Batalkan</div><div class="s">oleh admin/mahasiswa</div></div></button>
                                         </div>
                                         <div class="mt-4">
                                             <label class="label">Catatan <span class="text-rose-400" v-if="detail.status==='Ditolak' || detail.status==='Dibatalkan'">(wajib)</span></label>
                                             <textarea v-model="detail.catatan" class="input" rows="3" placeholder="Catatan keputusan..."></textarea>
                                         </div>
-                                        <div class="mt-3 flex flex-wrap gap-2">
+                                        <div class="mt-3 flex flex-wrap items-center gap-3">
                                             <button class="btn-primary" :disabled="loading" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
+                                            <label v-if="canVerify" class="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition" :class="detail.gratis ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:text-emerald-700'">
+                                                <input type="checkbox" v-model="detail.gratis" class="h-4 w-4 accent-emerald-600" @change="onGratisToggle">
+                                                Gratis
+                                            </label>
                                         </div>
-                                        <div class="mt-4 border-t border-slate-100 pt-3" v-if="canVerify">
+                                        <div v-if="canVerify && detail.gratis" class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                            <i class="bi bi-info-circle"></i> Langsung ACC, biaya Rp 0, dan email final dikirim tanpa validasi pembayaran.
+                                        </div>
+                                        <div class="mt-4 border-t border-slate-100 pt-3" v-if="canVerify && !detail.gratis">
                                             <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Aksi cepat</div>
                                             <div class="mt-2 flex flex-wrap gap-2">
                                                 <button class="btn-soft" :disabled="loading" @click="quickStatus('Disetujui')"><i class="bi bi-check2-circle"></i>Setujui</button>
@@ -3290,7 +3297,7 @@
                 </div>
                 <div class="pm-body">
                     <div class="pm-summary">
-                        <div><div class="pm-k">Tagihan</div><div class="pm-v">{{ formatRupiah(periksa.item.biaya) }}</div></div>
+                        <div><div class="pm-k">Tagihan</div><div class="pm-v">{{ formatBiaya(periksa.item.biaya) }}</div></div>
                         <div><div class="pm-k">Status</div><div class="mt-0.5"><span :class="bayarBadgeCls(periksa.item.statusPembayaran)">{{ bayarLabel(periksa.item.statusPembayaran) }}</span></div></div>
                         <div><div class="pm-k">Blok</div><div class="pm-v">{{ periksa.item.blok }}</div></div>
                         <div><div class="pm-k">Revisi</div><div class="pm-v">{{ periksa.item.revision }}</div></div>
@@ -3753,7 +3760,7 @@
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
                     masterBiaya: [],
-                     detail: { open: false, step: 0, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                     detail: { open: false, step: 0, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', gratis: false, gratisPrevStatus: 'Menunggu', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', page: 1, perPage: 10, expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
                     kb: { open: false, loading: false, data: null, pick: false, addPicks: [], kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     expandedBa: {},
@@ -4436,7 +4443,7 @@
                     const status = String(r.Status || '').trim();
                     if (status !== 'Disetujui' && status !== 'ACC') return false;
                     const ps = this.paymentStatusOf(r);
-                    if (ps === 'gratis') return false;
+                    if (ps === 'gratis') return true;
                     return !!(String(r['Link Bukti Bayar'] || '').trim() || ps === 'valid');
                 },
                 paymentItemFromRow(r) {
@@ -4979,6 +4986,10 @@
                 },
                 formatRupiah(num) {
                     return AppCommon.formatRupiah(num);
+                },
+                formatBiaya(num) {
+                    const n = Number(num) || 0;
+                    return n <= 0 ? 'Gratis' : this.formatRupiah(n);
                 },
                 formatTanggal(v) {
                     return AppCommon.formatTanggal(v);
@@ -5630,6 +5641,8 @@
                     this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
                     this.detail.status = p.Status || 'Menunggu';
                     this.detail.catatan = p['Catatan Admin'] || '';
+                    this.detail.gratis = false;
+                    this.detail.gratisPrevStatus = this.detail.status;
                     this.detail.buktiFile = null;
                     this.detail.buktiUploading = false;
                     this.detail.buktiError = '';
@@ -6305,9 +6318,18 @@
                     this.baSheet.level = 'kegiatan';
                     this.baSheet.q = '';
                 },
+                onGratisToggle() {
+                    if (this.detail.gratis) {
+                        this.detail.gratisPrevStatus = this.detail.status;
+                        this.detail.status = 'ACC';
+                    } else if (this.detail.status === 'ACC') {
+                        this.detail.status = this.detail.gratisPrevStatus || 'Menunggu';
+                    }
+                },
                 async updateStatus() {
                     const status = this.detail.status;
                     const catatan = this.detail.catatan.trim();
+                    const gratis = !!this.detail.gratis && this.canVerify;
                     const decision = status === 'Disetujui' || status === 'ACC' || status === 'Ditolak' || status === 'Dibatalkan';
                     const prev = this.detail.p.Status || 'Menunggu';
                     const leavesDecision = status === 'Menunggu' && (prev === 'Disetujui' || prev === 'ACC' || prev === 'Ditolak' || prev === 'Dibatalkan');
@@ -6319,9 +6341,27 @@
                         this.notify('Catatan wajib diisi untuk status ' + status + '.', false);
                         return;
                     }
+                    if (gratis) {
+                        const ok = await this.askConfirm({
+                            title: 'Tetapkan Pengajuan Gratis',
+                            message: 'Tetapkan pengajuan ini sebagai gratis?',
+                            details: [
+                                'Status langsung menjadi ACC.',
+                                'Biaya pengajuan diubah menjadi Rp 0.',
+                                this.isManual(this.detail.p)
+                                    ? 'Pengajuan manual: notifikasi email dinonaktifkan.'
+                                    : 'Surat final dikirim otomatis ke mahasiswa dan Bagian.',
+                                'Tidak melalui proses validasi pembayaran admin.'
+                            ],
+                            icon: 'bi-patch-check',
+                            tone: 'success',
+                            confirmLabel: 'Tetapkan Gratis'
+                        });
+                        if (!ok) return;
+                    }
                     this.loading = true;
                     try {
-                        const res = await this.run('updatePengajuanStatus', this.detail.p['ID Pengajuan'], status, catatan, '');
+                        const res = await this.run('updatePengajuanStatus', this.detail.p['ID Pengajuan'], gratis ? 'ACC' : status, catatan, '', gratis);
                         this.notify((res && res.message) || 'Status diperbarui.');
                         if (res && res.success) {
                             this.detail.open = false;
@@ -6334,6 +6374,7 @@
                     }
                 },
                 async quickStatus(status) {
+                    this.detail.gratis = false;
                     this.detail.status = status;
                     if (status === 'Ditolak') {
                         const alasan = await this.askInput({

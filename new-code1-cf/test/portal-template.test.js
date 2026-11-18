@@ -58,4 +58,10 @@ describe('guard template portal', () => {
     expect(html).toContain("return 'Baris praktikum identik tidak boleh diulang.'");
     expect(html).toContain('formData.detailUjian = this.regUjian.detail;');
   });
+
+  it('menyembunyikan unggah bukti dan menampilkan info gratis untuk pengajuan gratis', async () => {
+    const html = await loadPortalHtml();
+    expect(html).toContain("detailItem.statusCode === 'approved') && detailItem.gratis");
+    expect(html).toContain('Pengajuan ini gratis (Rp 0). Tidak perlu unggah bukti bayar.');
+  });
 });
