@@ -156,7 +156,9 @@ CREATE TABLE berita_acara (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, bagian TEXT, blok TEXT,
   nama_kegiatan TEXT, tanggal_pelaksanaan TEXT, jam TEXT, dosen TEXT, jumlah_peserta TEXT,
   file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT, label TEXT DEFAULT '',
-  jadwal_id TEXT DEFAULT ''
+  jadwal_id TEXT DEFAULT '',
+  archived_at TEXT DEFAULT '', archived_by TEXT DEFAULT '', archive_reason TEXT DEFAULT '',
+  merged_into TEXT DEFAULT '', updated_at TEXT DEFAULT '', revision INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE berita_acara_peserta (
   id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, ba_id TEXT, id_pengajuan TEXT, npm TEXT,
@@ -229,6 +231,7 @@ CREATE TABLE log_data (
 );
 CREATE INDEX idx_ba_ba_id ON berita_acara(ba_id);
 CREATE INDEX idx_ba_kegiatan_key ON berita_acara(kegiatan_key);
+CREATE INDEX idx_ba_archived ON berita_acara(archived_at);
 CREATE INDEX idx_ba_admin_kegiatan_key ON berita_acara_admin(kegiatan_key);
 CREATE INDEX idx_ba_admin_berkas_ba_id ON berita_acara_admin_berkas(ba_id);
 CREATE INDEX idx_ba_admin_berkas_pengajuan_active ON berita_acara_admin_berkas(id_pengajuan, active);
