@@ -247,11 +247,11 @@ describe('dashboard template', () => {
     }
   });
 
-  it('permukaan pengajuan memakai primitif in-*', async () => {
+  it('permukaan pengajuan memakai primitif ringkas', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('in-chip is-active');
+    expect(html).toContain('ctl-chip is-active');
     expect(html).toContain('in-badge acc');
-    expect(html).toContain('class="in-tbl"');
+    expect(html).toContain('class="in-tbl in-tbl-compact"');
   });
 
   it('permukaan statistik, heat, dan master memakai primitif in-*', async () => {
@@ -398,7 +398,11 @@ describe('dashboard responsive shell', () => {
   it('memakai app shell dengan sidebar yang bisa dilipat', async () => {
     const html = await loadDashboardHtml();
     expect(html).toContain('class="app-shell font-sans text-ink antialiased"');
-    expect(html).toContain(":class=\"sidebarCollapsed ? 'sidebar-collapsed' : ''\"");
+    expect(html).toContain("el.classList.toggle('sidebar-collapsed'");
+    expect(html).toContain("el.classList.toggle('sidebar-hovered'");
+    expect(html).toContain('this.applyShellClasses();');
+    expect(html).toContain('@mouseenter="sidebarHovered = true"');
+    expect(html).toContain('.app-shell.sidebar-hovered');
     expect(html).toContain('sidebar-toggle');
     expect(html).toContain('sidebarCollapsed = !sidebarCollapsed');
     expect(html).toContain('sidebar-aside');
@@ -426,21 +430,30 @@ describe('dashboard responsive shell', () => {
     expect(m[0]).toContain('Buat Berita Acara');
   });
 
-  it('topbar menampilkan pencarian dan notifikasi menunggu', async () => {
+  it('topbar ringkas tanpa pencarian dan aksi dipindah ke header halaman', async () => {
     const html = await loadDashboardHtml();
-    expect(html).toContain('topbar-search');
-    expect(html).toContain('@keyup.enter="runTopbarSearch()"');
-    expect(html).toContain('topbar-bell');
+    expect(html).not.toContain('topbar-search');
+    expect(html).not.toContain('class="topbar-bell"');
+    expect(html).toContain('pg-bell');
+    expect(html).toContain('pg-actions-sep');
     expect(html).toContain('@click="goMenunggu()"');
-    expect(html).toContain('menungguCount');
-    expect(html).toContain('runTopbarSearch()');
+    expect(html).toContain('@keyup.enter="applyFilter()"');
     expect(html).toContain('goMenunggu()');
+  });
+
+  it('menyediakan paginasi daftar pengajuan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('pagedPengajuan');
+    expect(html).toContain('pageNumbers');
+    expect(html).toContain('class="tbl-foot"');
+    expect(html).toContain('pageStart');
+    expect(html).toContain('pageEnd');
   });
 
   it('mendefinisikan CSS shell responsif', async () => {
     const html = await loadDashboardHtml();
     const selectors = cssSelectors(html);
-    for (const sel of ['.app-shell', '.sidebar-aside', '.main-wrap', '.content-wrap', '.sidebar-toggle', '.bottom-nav', '.bnav-btn', '.fab-btn', '.sheet-panel', '.sheet-item', '.topbar-search', '.topbar-bell', '.stat-trend']) {
+    for (const sel of ['.app-shell', '.sidebar-aside', '.main-wrap', '.content-wrap', '.sidebar-toggle', '.bottom-nav', '.bnav-btn', '.fab-btn', '.sheet-panel', '.sheet-item', '.pg-bell', '.tbl-foot', '.pg-btn', '.stat-trend']) {
       expect(selectors.has(sel)).toBe(true);
     }
   });

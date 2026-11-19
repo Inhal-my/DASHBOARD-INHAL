@@ -191,44 +191,44 @@
             .ba-desktop { display: block; }
         }
         .pd-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.45); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
-        .pd-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 51; width: 600px; max-width: 100%; background: #f7f8fc; display: flex; flex-direction: column; transform: translateX(105%); transition: transform .26s cubic-bezier(.22,1,.36,1); box-shadow: var(--shadow-lift); }
+        .pd-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 51; width: 700px; max-width: 100%; background: #f7f8fc; display: flex; flex-direction: column; transform: translateX(105%); transition: transform .26s cubic-bezier(.22,1,.36,1); box-shadow: var(--shadow-lift); }
         .pd-drawer.open { transform: translateX(0); }
-        .pd-head { flex: 0 0 auto; background: #fff; border-bottom: 1px solid var(--line); padding: 16px 20px 0; }
-        .pd-head-top { display: flex; align-items: flex-start; gap: 12px; }
-        .pd-avatar { width: 46px; height: 46px; border-radius: 999px; display: grid; place-items: center; flex: 0 0 auto; color: #fff; font-weight: 800; font-size: 15px; }
+        .pd-head { flex: 0 0 auto; background: #fff; border-bottom: 1px solid var(--line); padding: 13px 18px 0; }
+        .pd-head-top { display: flex; align-items: flex-start; gap: 11px; }
+        .pd-avatar { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: 0 0 auto; color: #fff; font-weight: 800; font-size: 13px; }
         .pd-id { min-width: 0; flex: 1; }
-        .pd-id h3 { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink-900); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .pd-id .meta { font-size: 12px; color: var(--ink-400); margin-top: 2px; }
-        .pd-close { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--ink-400); flex: 0 0 auto; }
+        .pd-id h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink-900); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .pd-id .meta { font-size: 11px; color: var(--ink-400); margin-top: 2px; }
+        .pd-close { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-400); flex: 0 0 auto; }
         .pd-close:hover { background: #f1f5f9; color: var(--ink-700); }
-        .pd-steps { display: flex; gap: 6px; margin: 16px 0 0; }
-        .pd-step { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 8px 13px; border-bottom: 2.5px solid transparent; color: var(--ink-400); font-size: 12.5px; font-weight: 700; transition: .15s; cursor: pointer; }
-        .pd-step .n { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; font-size: 11px; font-weight: 800; background: #e2e8f0; color: var(--ink-500); }
+        .pd-steps { display: flex; gap: 6px; margin: 12px 0 0; }
+        .pd-step { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 6px 10px; border-bottom: 2.5px solid transparent; color: var(--ink-400); font-size: 11.5px; font-weight: 700; transition: .15s; cursor: pointer; }
+        .pd-step .n { width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; font-size: 10px; font-weight: 800; background: #e2e8f0; color: var(--ink-500); }
         .pd-step.done { color: var(--emerald); }
         .pd-step.done .n { background: var(--emerald-soft); color: var(--emerald); }
         .pd-step.active { color: var(--brand); border-bottom-color: var(--brand); }
         .pd-step.active .n { background: var(--brand); color: #fff; }
-        .pd-body { flex: 1; overflow-y: auto; padding: 20px; }
-        .pd-foot { flex: 0 0 auto; background: #fff; border-top: 1px solid var(--line); padding: 13px 20px; display: flex; align-items: center; gap: 10px; }
+        .pd-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+        .pd-foot { flex: 0 0 auto; background: #fff; border-top: 1px solid var(--line); padding: 11px 16px; display: flex; align-items: center; gap: 10px; }
         .pd-foot .spacer { flex: 1; }
-        .pd-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-soft); margin-bottom: 16px; }
+        .pd-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-soft); margin-bottom: 11px; }
         .pd-card:last-child { margin-bottom: 0; }
-        .pd-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
-        .pd-card-head h4 { margin: 0; font-size: 13.5px; font-weight: 800; color: var(--ink-900); display: flex; align-items: center; gap: 8px; }
-        .pd-card-body { padding: 16px; }
-        .pd-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
-        .pd-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px 18px; }
-        .pd-keg { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fcfcfe; margin-bottom: 9px; }
+        .pd-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 13px; border-bottom: 1px solid var(--line); }
+        .pd-card-head h4 { margin: 0; font-size: 12.5px; font-weight: 800; color: var(--ink-900); display: flex; align-items: center; gap: 8px; }
+        .pd-card-body { padding: 13px; }
+        .pd-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+        .pd-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 11px 16px; }
+        .pd-keg { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: #fcfcfe; margin-bottom: 7px; }
         .pd-keg:last-child { margin-bottom: 0; }
-        .pd-keg .t { font-size: 13.5px; font-weight: 700; color: var(--ink-900); }
-        .pd-keg .d { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
-        .pd-keg .m { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; font-size: 11px; color: var(--ink-400); }
+        .pd-keg .t { font-size: 12.5px; font-weight: 700; color: var(--ink-900); }
+        .pd-keg .d { font-size: 11.5px; color: var(--ink-500); margin-top: 2px; }
+        .pd-keg .m { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 10.5px; color: var(--ink-400); }
         .pd-mini-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-400); flex: 0 0 auto; }
         .pd-mini-ic:hover { background: #f1f5f9; color: var(--ink-700); }
         .pd-mini-ic.danger:hover { background: var(--rose-soft); color: var(--rose); }
-        .pd-doc-row { display: flex; align-items: center; gap: 13px; padding: 14px; border: 1px solid var(--line); border-radius: 13px; margin-bottom: 11px; background: #fff; }
+        .pd-doc-row { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 11px; margin-bottom: 8px; background: #fff; }
         .pd-doc-row:last-child { margin-bottom: 0; }
-        .pd-doc-ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 18px; flex: 0 0 auto; }
+        .pd-doc-ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-size: 14px; flex: 0 0 auto; }
         .pd-doc-ic.surat { background: var(--brand-soft); color: var(--brand); }
         .pd-doc-ic.acc { background: var(--emerald-soft); color: var(--emerald); }
         .pd-doc-ic.bukti { background: #fff7ed; color: #ea580c; }
@@ -243,10 +243,10 @@
         .pd-upzone .hint { font-size: 11px; color: var(--ink-400); margin-top: 5px; }
         .pd-upzone .row { display: flex; gap: 8px; justify-content: center; margin-top: 11px; flex-wrap: wrap; }
         .pd-statuspick { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .pd-statuspick button { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: #fff; text-align: left; transition: .15s; }
-        .pd-statuspick button .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; }
-        .pd-statuspick button .t { font-size: 13px; font-weight: 800; color: var(--ink-900); }
-        .pd-statuspick button .s { font-size: 11px; color: var(--ink-400); }
+        .pd-statuspick button { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; text-align: left; transition: .15s; }
+        .pd-statuspick button .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 14px; }
+        .pd-statuspick button .t { font-size: 12px; font-weight: 800; color: var(--ink-900); }
+        .pd-statuspick button .s { font-size: 10.5px; color: var(--ink-400); }
         .pd-statuspick button.on { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
         .pd-statuspick button[data-s="Menunggu"] .ic { background: var(--amber-soft); color: var(--amber); }
         .pd-statuspick button[data-s="Disetujui"] .ic { background: var(--sky-soft); color: var(--sky); }
@@ -265,11 +265,12 @@
         .pd-scan-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
         .pd-scan-item { position: relative; overflow: hidden; border-radius: 8px; box-shadow: inset 0 0 0 1px #e2e8f0; }
         @media (max-width: 768px) {
-            .pd-drawer { top: auto; height: 94vh; width: 100%; border-radius: 20px 20px 0 0; transform: translateY(105%); }
+            .pd-drawer { top: auto; height: 88vh; width: 100%; border-radius: 20px 20px 0 0; transform: translateY(105%); }
             .pd-drawer.open { transform: translateY(0); }
             .pd-head { padding-top: 10px; }
             .pd-head::before { content: ""; display: block; width: 42px; height: 4px; border-radius: 999px; background: #cbd5e1; margin: 0 auto 12px; }
-            .pd-grid2, .pd-grid3 { grid-template-columns: 1fr; }
+            .pd-grid2 { grid-template-columns: 1fr; }
+            .pd-grid3 { grid-template-columns: 1fr 1fr; }
             .pd-statuspick { grid-template-columns: 1fr; }
             .pd-step .lbl { display: none; }
             .pd-step { gap: 0; }
@@ -385,6 +386,8 @@
 }
         .app-shell{ --sidebar-w: 268px; }
         .app-shell.sidebar-collapsed { --sidebar-w: 84px; }
+        @media (min-width: 1024px) { .app-shell.sidebar-hovered { --sidebar-w: 268px; } }
+        @media (max-width: 1023px) { .app-shell, .app-shell.sidebar-collapsed { --sidebar-w: 268px; } }
         .sidebar-aside { width: var(--sidebar-w); transition: width .22s ease, transform .3s ease; }
         .main-wrap { transition: margin-left .22s ease; }
         @media (min-width: 1024px) {
@@ -403,12 +406,8 @@
         .app-shell.sidebar-collapsed .sidebar-toggle i { transform: rotate(180deg); }
         .content-wrap { width: 100%; max-width: none; margin-left: auto; margin-right: auto; }
         @media (max-width: 1023px) { .content-wrap { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); } }
-        .topbar-search { display: none; align-items: center; gap: .5rem; width: 300px; border-radius: .75rem; background: #fff; border: 1px solid #e2e8f0; padding: .5rem .875rem; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
-        .topbar-search i { color: #94a3b8; }
-        .topbar-search input { border: 0; outline: 0; background: transparent; font-size: .8125rem; width: 100%; color: #0f172a; }
-        @media (min-width: 1024px) { .topbar-search { display: flex; } }
-        .topbar-bell { position: relative; display: flex; height: 2.5rem; width: 2.5rem; align-items: center; justify-content: center; border-radius: .75rem; background: #fff; border: 1px solid #e2e8f0; color: #64748b; }
-        .topbar-bell .count { position: absolute; top: -.4rem; right: -.4rem; min-width: 1.1rem; height: 1.1rem; padding: 0 .3rem; border-radius: 9999px; background: #ef4444; color: #fff; font-size: .62rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+        .mini-btn .count { position: absolute; top: -.4rem; right: -.4rem; min-width: 1.1rem; height: 1.1rem; padding: 0 .3rem; border-radius: 9999px; background: #ef4444; color: #fff; font-size: .62rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+        .pg-bell { position: relative; }
         .stat-trend { display: inline-flex; align-items: center; gap: .1rem; font-size: .65rem; font-weight: 700; }
         .stat-trend.up { color: #059669; }
         .stat-trend.down { color: #e11d48; }
@@ -456,6 +455,55 @@
         .in-chip:hover { border-color:#cbd5e1; color:var(--ink-700); }
         .in-chip.is-active { background:#0f172a; color:#fff; border-color:#0f172a; }
         .in-chip .dot { display:inline-block; width:7px; height:7px; border-radius:9999px; margin-right:6px; vertical-align:1px; }
+        /* ===== Header ringkas + control bar (tab Pengajuan) ===== */
+        .pg-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+        .pg-head h1 { margin:0; font-size:17px; font-weight:800; letter-spacing:-.015em; color:var(--ink-900); line-height:1.15; }
+        .pg-head .sub { margin:2px 0 0; font-size:11.5px; color:var(--ink-400); font-weight:500; line-height:1.3; }
+        .pg-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .pg-actions-sep { width:1px; height:18px; background:#e2e8f0; margin:0 3px; }
+        .topbar-crumb { display:none; }
+        @media (min-width:1024px) { .topbar-crumb { display:flex; } }
+        .mini-btn { display:inline-flex; align-items:center; gap:5px; height:29px; padding:0 9px; border-radius:8px; background:#fff; color:#475569; font-size:11.5px; font-weight:600; box-shadow:inset 0 0 0 1px #e2e8f0; transition:background .15s ease; }
+        .mini-btn:hover { background:#f1f5f9; }
+        .mini-btn i { font-size:12px; }
+        .ctl-bar { margin-top:9px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:7px 9px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 22px -20px rgba(15,23,42,.25); }
+        .ctl-chips { display:flex; align-items:center; gap:5px; flex:1 1 320px; min-width:0; overflow-x:auto; padding-bottom:1px; scrollbar-width:none; }
+        .ctl-chips::-webkit-scrollbar { display:none; }
+        .ctl-chip { display:inline-flex; align-items:center; gap:5px; height:26px; padding:0 9px; border-radius:9999px; background:#fff; border:1px solid #e6eaf2; color:var(--ink-500); font-size:11px; font-weight:700; white-space:nowrap; transition:.15s; flex:0 0 auto; }
+        .ctl-chip:hover { border-color:#cbd5e1; color:var(--ink-700); }
+        .ctl-chip.is-active { background:#0f172a; color:#fff; border-color:#0f172a; }
+        .ctl-chip .dot { display:inline-block; width:6px; height:6px; border-radius:9999px; }
+        .ctl-filters { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+        @media (min-width:640px) { .ctl-filters { flex-wrap:nowrap; } .ctl-search { min-width:110px; } .ctl-sel { min-width:0; } }
+        .ctl-search { position:relative; flex:1 1 170px; min-width:140px; }
+        .ctl-search i { position:absolute; left:9px; top:50%; transform:translateY(-50%); font-size:11.5px; color:var(--ink-400); }
+        .ctl-search input { width:100%; height:30px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; padding:0 9px 0 27px; font-size:11.5px; color:var(--ink-900); outline:none; font-family:inherit; }
+        .ctl-search input:focus { border-color:#a5b4fc; box-shadow:0 0 0 3px rgba(99,102,241,.14); }
+        .ctl-sel { height:30px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:var(--ink-700); font-size:11.5px; font-weight:500; padding:0 9px; outline:none; font-family:inherit; flex:0 1 auto; max-width:180px; }
+        .btn-apply { display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px; border-radius:8px; border:0; background:var(--brand); color:#fff; font-size:11.5px; font-weight:700; transition:background .15s ease; flex:0 0 auto; }
+        .btn-apply:hover { background:var(--brand-700); }
+        .ctl-bulk { margin-left:auto; display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:9999px; background:var(--brand); color:#fff; font-size:11px; font-weight:700; flex:0 0 auto; }
+        .in-tbl-compact thead th { padding:8px 12px; font-size:10px; }
+        .in-tbl-compact tbody td { padding:8px 12px; font-size:12.5px; }
+        .in-tbl-compact .in-avatar { width:30px; height:30px; font-size:11px; }
+        .in-tbl-compact .in-celluser { gap:9px; }
+        .in-tbl-compact .in-docdot { width:24px; height:24px; font-size:11px; }
+        /* ===== Layout daftar penuh + paginasi ===== */
+        .main-wrap.is-list { height:100vh; height:100dvh; overflow:hidden; display:flex; flex-direction:column; }
+        .main-wrap.is-list .content-wrap { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+        .tab-pengajuan { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+        .list-card { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+        .list-card .master-table-scroll { max-height:none; flex:1 1 auto; min-height:0; overflow:auto; }
+        .list-card .in-tbl thead th { position:sticky; top:0; z-index:1; background:#f8fafc; }
+        .list-card .in-cards { flex:1 1 auto; min-height:0; overflow-y:auto; }
+        .tbl-foot { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:9px 12px; border-top:1px solid var(--line); background:#fff; }
+        .tbl-foot .info { font-size:11.5px; color:var(--ink-400); font-weight:600; }
+        .pg-nav { display:flex; align-items:center; gap:4px; }
+        .pg-size { height:28px; border-radius:7px; border:1px solid #e2e8f0; background:#fff; font-size:11.5px; font-weight:600; color:var(--ink-700); padding:0 6px; outline:none; font-family:inherit; }
+        .pg-btn { min-width:28px; height:28px; padding:0 7px; border-radius:7px; background:#fff; box-shadow:inset 0 0 0 1px #e2e8f0; font-size:11.5px; font-weight:700; color:var(--ink-500); display:inline-flex; align-items:center; justify-content:center; transition:.15s; }
+        .pg-btn:hover:not(:disabled) { background:#f1f5f9; }
+        .pg-btn.is-active { background:var(--brand); color:#fff; box-shadow:none; }
+        .pg-btn:disabled { opacity:.4; cursor:default; }
         .in-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:9999px; font-size:11px; font-weight:800; white-space:nowrap; }
         .in-badge.wait { background:var(--amber-soft); color:var(--amber); }
         .in-badge.recv { background:var(--sky-soft); color:var(--sky); }
@@ -530,11 +578,12 @@
         .in-cards { display:none; flex-direction:column; gap:12px; padding:12px; }
         @media (max-width:1023px){ .in-cards { display:flex; } }
         @media (max-width:1023px){ .in-desktop-only { display:none; } }
-        .in-mcard { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
-        .in-mcard .row1 { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-        .in-mcard .kv { display:grid; grid-template-columns:92px 1fr; gap:4px 10px; font-size:12.5px; color:var(--ink-500); }
-        .in-mcard .kv b { color:var(--ink-700); font-weight:600; }
-        .in-mcard .actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        .in-mcard { background:#fff; border:1px solid var(--line); border-radius:12px; padding:11px 12px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+        .in-mcard .row1 { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+        .in-mcard .kv { display:grid; grid-template-columns:56px minmax(0,1fr) 48px minmax(0,1fr); gap:3px 8px; font-size:11.5px; color:var(--ink-500); }
+        .in-mcard .kv b { color:var(--ink-700); font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .in-mcard .actions { display:flex; gap:6px; margin-top:9px; flex-wrap:wrap; }
+        .in-mcard .actions .btn-soft { padding:6px 9px; font-size:11.5px; border-radius:9px; }
         .keg-text { display:block; max-width:16rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .in-proc { display:flex; gap:10px; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow-soft); margin-bottom:18px; }
         .in-proc .p { display:flex; align-items:center; gap:10px; flex:1; min-width:220px; }
@@ -683,7 +732,7 @@
     <script src="/dosen-picker.js" defer></script>
 </head>
 <body>
-    <div id="app" v-cloak class="app-shell font-sans text-ink antialiased" :class="sidebarCollapsed ? 'sidebar-collapsed' : ''">
+    <div id="app" v-cloak class="app-shell font-sans text-ink antialiased">
 
         <!-- ============ LOADING OVERLAY ============ -->
         <transition name="fade">
@@ -784,7 +833,8 @@
 
         <!-- ============ SIDEBAR ============ -->
         <aside v-if="loggedIn" class="bg-sidebar sidebar-aside fixed inset-y-0 left-0 z-50 flex flex-col lg:translate-x-0"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            @mouseenter="sidebarHovered = true" @mouseleave="sidebarHovered = false">
             <button type="button" class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed" aria-label="Lipat atau bentangkan sidebar" title="Lipat / bentangkan sidebar">
                 <i class="bi bi-chevron-double-left"></i>
             </button>
@@ -840,93 +890,74 @@
         </aside>
 
         <!-- ============ MAIN ============ -->
-        <main v-if="loggedIn" class="main-wrap min-h-screen">
-            <header class="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-slate-100 bg-white/80 px-4 backdrop-blur md:px-8">
+        <main v-if="loggedIn" class="main-wrap min-h-screen" :class="tab==='pengajuan' ? 'is-list' : ''">
+            <header class="sticky top-0 z-30 flex h-12 items-center justify-between gap-3 border-b border-slate-100 bg-white/80 px-4 backdrop-blur md:px-6">
                 <div class="flex items-center gap-3">
                     <button class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" @click="sidebarOpen = !sidebarOpen" aria-label="Buka menu">
                         <i class="bi bi-list text-xl"></i>
                     </button>
-                    <div>
-                        <div class="text-[15px] font-bold text-slate-900">{{ pageTitle }}</div>
-                        <div class="text-[11px] text-slate-400">Dashboard Admin INHAL</div>
+                    <div class="topbar-crumb items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+                        <span>Dashboard</span>
+                        <i class="bi bi-chevron-right text-[9px]"></i>
+                        <b class="font-bold text-slate-900">{{ pageTitle }}</b>
                     </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <label class="topbar-search">
-                        <i class="bi bi-search"></i>
-                        <input v-model="filters.search" placeholder="Cari NPM / nama..." @keyup.enter="runTopbarSearch()">
-                    </label>
-                    <button type="button" class="topbar-bell" @click="goMenunggu()" :title="menungguCount + ' pengajuan menunggu'" aria-label="Notifikasi pengajuan menunggu">
-                        <i class="bi bi-bell text-lg"></i>
-                        <span v-if="menungguCount" class="count">{{ menungguCount }}</span>
-                    </button>
-                    <a :href="'/detail-laporan'" target="_blank" rel="noopener noreferrer" class="btn-soft" title="Laporan Detail"><i class="bi bi-file-earmark-text"></i><span class="hidden md:inline">Laporan Detail</span></a>
-                    <a :href="appUrl" class="btn-soft" title="Beranda"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
-                    <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50" title="Keluar"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
                 </div>
             </header>
 
             <div class="content-wrap p-4 md:p-6 lg:p-8">
 
                 <!-- ============ TAB: PENGAJUAN ============ -->
-                <section v-if="tab==='pengajuan'">
-                    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <section v-if="tab==='pengajuan'" class="tab-pengajuan">
+                    <div class="pg-head">
                         <div>
-                            <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Verifikasi Pengajuan</h1>
-                            <p class="mt-0.5 text-sm text-slate-500">Periksa dan tentukan pengajuan diterima, ditolak, atau ACC.</p>
+                            <h1>Verifikasi Pengajuan</h1>
+                            <p class="sub">Periksa dan tentukan pengajuan diterima, ditolak, atau ACC.</p>
                         </div>
-                        <div class="flex flex-wrap gap-2">
-                            <button class="btn-soft" @click="openDetailReport()"><i class="bi bi-file-earmark-text"></i>Laporan Detail</button>
-                            <button class="btn-soft" @click="exportCsv()"><i class="bi bi-download"></i>Rekap (CSV)</button>
-                            <button class="btn-soft" @click="runDiagnostic()"><i class="bi bi-bug"></i>Diagnostik</button>
+                        <div class="pg-actions">
+                            <button class="mini-btn" @click="openDetailReport()"><i class="bi bi-file-earmark-text"></i><span class="hidden sm:inline">Laporan Detail</span></button>
+                            <button class="mini-btn" @click="exportCsv()"><i class="bi bi-download"></i><span class="hidden sm:inline">Rekap (CSV)</span></button>
+                            <button class="mini-btn" @click="runDiagnostic()"><i class="bi bi-bug"></i><span class="hidden sm:inline">Diagnostik</span></button>
+                            <span class="pg-actions-sep" aria-hidden="true"></span>
+                            <button type="button" class="mini-btn pg-bell" @click="goMenunggu()" :title="menungguCount + ' pengajuan menunggu'" aria-label="Notifikasi pengajuan menunggu">
+                                <i class="bi bi-bell text-[13px]"></i>
+                                <span v-if="menungguCount" class="count">{{ menungguCount }}</span>
+                            </button>
+                            <a :href="appUrl" class="mini-btn" title="Beranda"><i class="bi bi-house"></i><span class="hidden sm:inline">Beranda</span></a>
+                            <button class="mini-btn text-rose-500 hover:bg-rose-50" title="Keluar" @click="logout()"><i class="bi bi-box-arrow-right"></i><span class="hidden sm:inline">Keluar</span></button>
                         </div>
                     </div>
 
-                    <!-- status chips -->
-                    <div class="mb-4 flex flex-wrap items-center gap-2">
-                        <button v-for="c in statusChips" :key="c.key" @click="setStatusChip(c.key)"
-                                :class="filters.status===c.key ? 'in-chip is-active' : 'in-chip'"
-                                class="transition">
-                            <span class="dot" :style="{background:c.dot}"></span>{{ c.label }}
-                            <span class="opacity-70">{{ c.count }}</span>
-                        </button>
-                        <button v-if="selectedIds.length" class="ml-auto inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-brand-700 transition" @click="bulkFinalEmail()">
-                            <i class="bi bi-envelope-paper"></i> Kirim Email Final ({{ selectedIds.length }} terpilih)
-                        </button>
-                    </div>
-
-                    <!-- filter bar -->
-                    <div class="mb-4 dash-card">
-                        <div class="in-toolbar">
-                        <div class="grid w-full gap-3 md:grid-cols-12">
-                            <div class="md:col-span-4">
-                                <div class="relative">
-                                    <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                    <input v-model="filters.search" class="input pl-10" placeholder="Cari NPM / nama..." @keyup.enter="applyFilter()">
-                                </div>
-                            </div>
-                            <div class="md:col-span-3">
-                                <select v-model="filters.jenis" class="input">
-                                    <option value="">Semua Jenis Kegiatan</option>
-                                    <option>Ujian</option><option>SGD</option><option>KKD</option><option>Praktikum</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-3">
-                                <select v-model="filters.blok" class="input">
-                                    <option value="">Semua Blok</option>
-                                    <option v-for="b in blokOptions" :key="b" :value="b">{{ b }}</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-2 flex gap-2">
-                                <button class="btn-primary flex-1" @click="applyFilter()"><i class="bi bi-funnel"></i><span class="hidden sm:inline">Terapkan</span></button>
-                            </div>
-
+                    <!-- control bar: chip status + filter -->
+                    <div class="ctl-bar">
+                        <div class="ctl-chips">
+                            <button v-for="c in statusChips" :key="c.key" @click="setStatusChip(c.key)"
+                                    :class="filters.status===c.key ? 'ctl-chip is-active' : 'ctl-chip'">
+                                <span class="dot" :style="{background:c.dot}"></span>{{ c.label }}
+                                <span class="opacity-70">{{ c.count }}</span>
+                            </button>
+                            <button v-if="selectedIds.length" class="ctl-bulk" @click="bulkFinalEmail()">
+                                <i class="bi bi-envelope-paper"></i> Kirim Email Final ({{ selectedIds.length }} terpilih)
+                            </button>
                         </div>
+                        <div class="ctl-filters">
+                            <div class="ctl-search">
+                                <i class="bi bi-search"></i>
+                                <input v-model="filters.search" placeholder="Cari NPM / nama..." @keyup.enter="applyFilter()">
+                            </div>
+                            <select v-model="filters.jenis" class="ctl-sel">
+                                <option value="">Semua Jenis Kegiatan</option>
+                                <option>Ujian</option><option>SGD</option><option>KKD</option><option>Praktikum</option>
+                            </select>
+                            <select v-model="filters.blok" class="ctl-sel">
+                                <option value="">Semua Blok</option>
+                                <option v-for="b in blokOptions" :key="b" :value="b">{{ b }}</option>
+                            </select>
+                            <button class="btn-apply" @click="applyFilter()"><i class="bi bi-funnel"></i><span class="hidden sm:inline">Terapkan</span></button>
                         </div>
                     </div>
 
                     <!-- tabel pengajuan -->
-                    <div class="overflow-hidden dash-card">
+                    <div class="overflow-hidden dash-card list-card" style="margin-top:9px">
                         <div v-if="sectionLoading.pengajuan" class="flex items-center justify-center gap-3 py-12 text-slate-400">
                             <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -938,7 +969,7 @@
                             <i class="bi bi-inbox mb-2 block text-3xl text-slate-300"></i> Belum ada data.
                         </div>
                         <div v-else class="master-table-scroll overflow-x-auto in-desktop-only">
-                            <table class="in-tbl">
+                            <table class="in-tbl in-tbl-compact">
                                 <thead>
                                     <tr>
                                         <th class="w-10 px-4 py-3"><input type="checkbox" class="check" :checked="allChecked" @change="toggleAll"></th>
@@ -951,7 +982,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="r in pengajuanRows" :key="r['ID Pengajuan']"
+                                    <tr v-for="r in pagedPengajuan" :key="r['ID Pengajuan']"
                                         class="cursor-pointer transition hover:bg-slate-50/80"
                                         :class="r['ID Pengajuan']===manualHighlightId ? 'bg-brand-50/70 ring-2 ring-inset ring-brand-400' : ''"
                                         @click="openDetail(r['ID Pengajuan'])">
@@ -988,7 +1019,7 @@
                             </table>
                         </div>
                         <div class="in-cards">
-                            <div v-for="r in pengajuanRows" :key="'m-'+r['ID Pengajuan']" class="in-mcard cursor-pointer" @click="openDetail(r['ID Pengajuan'])">
+                            <div v-for="r in pagedPengajuan" :key="'m-'+r['ID Pengajuan']" class="in-mcard cursor-pointer" @click="openDetail(r['ID Pengajuan'])">
                                 <div class="row1">
                                     <div class="flex items-center gap-2 min-w-0">
                                         <input type="checkbox" class="check shrink-0" v-model="r.checked" @click.stop>
@@ -1003,6 +1034,19 @@
                                     <a v-if="r['Link Final']" :href="safeUrl(r['Link Final'])" target="_blank" rel="noopener noreferrer" class="in-docdot on surat" title="Berkas Final" @click.stop><i class="bi bi-file-earmark-text"></i></a>
                                 </div>
                                 <div class="actions"><button class="btn-soft" @click.stop="openDetail(r['ID Pengajuan'])"><i class="bi bi-eye"></i> Detail</button><button v-if="canCheckPayment(r)" class="btn-soft pm-open-btn" @click.stop="openPeriksaPayment(r)"><i class="bi bi-cash-coin"></i> Periksa Pembayaran</button><button class="btn-soft text-rose-500 hover:bg-rose-50" @click.stop="deletePengajuanRow(r)" title="Hapus pengajuan"><i class="bi bi-trash"></i> Hapus</button></div>
+                            </div>
+                        </div>
+                        <div v-if="!sectionLoading.pengajuan && pengajuanRows.length" class="tbl-foot">
+                            <div class="info">Menampilkan {{ pageStart }}–{{ pageEnd }} dari {{ pengajuanRows.length }} pengajuan</div>
+                            <div class="pg-nav">
+                                <select v-model.number="pageSize" class="pg-size" @change="setPage(1)" aria-label="Baris per halaman">
+                                    <option :value="10">10 / hal</option>
+                                    <option :value="25">25 / hal</option>
+                                    <option :value="50">50 / hal</option>
+                                </select>
+                                <button type="button" class="pg-btn" :disabled="page<=1" @click="setPage(page-1)" aria-label="Halaman sebelumnya"><i class="bi bi-chevron-left"></i></button>
+                                <button v-for="p in pageNumbers" :key="'pg-'+p" type="button" class="pg-btn" :class="{ 'is-active': p===page }" @click="setPage(p)">{{ p }}</button>
+                                <button type="button" class="pg-btn" :disabled="page>=pageCount" @click="setPage(page+1)" aria-label="Halaman berikutnya"><i class="bi bi-chevron-right"></i></button>
                             </div>
                         </div>
                     </div>
@@ -3717,8 +3761,11 @@
                     sectionLoading: { pengajuan: false, stats: false, bagian: false, master: false, riwayat: false },
                     loaded: { pengajuan: false, stats: false, bagian: false, master: false, riwayat: false },
                     tab: 'pengajuan',
+                    page: 1,
+                    pageSize: 10,
                     sidebarOpen: false,
-                    sidebarCollapsed: false,
+                    sidebarCollapsed: true,
+                    sidebarHovered: false,
                     mobileMenuOpen: false,
                     appUrl: APP_URL,
                     userEmail: USER_EMAIL,
@@ -3855,6 +3902,28 @@
                 },
                 menungguCount() {
                     return (this.stats.perStatus || {})['Menunggu'] || 0;
+                },
+                pageCount() {
+                    const size = Math.max(1, Number(this.pageSize) || 10);
+                    return Math.max(1, Math.ceil(this.pengajuanRows.length / size));
+                },
+                pagedPengajuan() {
+                    const size = Math.max(1, Number(this.pageSize) || 10);
+                    const start = (this.page - 1) * size;
+                    return this.pengajuanRows.slice(start, start + size);
+                },
+                pageStart() {
+                    if (!this.pengajuanRows.length) return 0;
+                    return (this.page - 1) * (Math.max(1, Number(this.pageSize) || 10)) + 1;
+                },
+                pageEnd() {
+                    return Math.min(this.pengajuanRows.length, this.page * (Math.max(1, Number(this.pageSize) || 10)));
+                },
+                pageNumbers() {
+                    const total = this.pageCount;
+                    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+                    const start = Math.max(1, Math.min(this.page - 2, total - 4));
+                    return Array.from({ length: 5 }, (_, i) => start + i);
                 },
                 detailBaPendukung() {
                     const p = this.detail && this.detail.p;
@@ -4393,9 +4462,21 @@
                 },
                 'bagianPageInfo.pages'(pages) {
                     if (this.bagian.page > pages) this.bagian.page = pages;
+                },
+                pageSize() {
+                    this.page = 1;
+                },
+                pageCount(pages) {
+                    if (this.page > pages) this.page = pages;
                 }
             },
             methods: {
+                applyShellClasses() {
+                    const el = document.getElementById('app');
+                    if (!el) return;
+                    el.classList.toggle('sidebar-collapsed', !!(this.sidebarCollapsed && !this.sidebarHovered));
+                    el.classList.toggle('sidebar-hovered', !!this.sidebarHovered);
+                },
                 safeUrl(v) {
                     return AppCommon.safeUrl(v);
                 },
@@ -5509,7 +5590,12 @@
 
                 // ---------- pengajuan ----------
                 async applyFilter() {
+                    this.page = 1;
                     await this.loadPengajuan();
+                },
+                setPage(p) {
+                    const total = Math.max(1, this.pageCount);
+                    this.page = Math.min(Math.max(1, Number(p) || 1), total);
                 },
                 setStatusChip(key) {
                     this.filters.status = key;
@@ -7663,7 +7749,12 @@
                     }
                 }
             },
+            watch: {
+                sidebarCollapsed() { this.applyShellClasses(); },
+                sidebarHovered() { this.applyShellClasses(); }
+            },
             mounted() {
+                this.applyShellClasses();
                 this.session = readSession();
                 this.tab = this.hashTab();
                 this._onHashchange = () => {
