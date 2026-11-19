@@ -27,7 +27,7 @@ import {
 } from './write/beritaAcara.js';
 import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan } from './write/jadwal.js';
 import { getBaRepairData } from './read/baRepair.js';
-import { applyBaRepair } from './write/baRepair.js';
+import { applyBaRepair, createJadwalFromBa } from './write/baRepair.js';
 import { archiveBeritaAcara, mergeBeritaAcara, restoreBeritaAcara } from './write/baArchive.js';
 import { verifyPembayaran, correctPembayaran } from './write/pembayaran.js';
 import {
@@ -109,6 +109,7 @@ const HANDLERS = {
   cancelJadwalPelaksanaan: (db, args, ctx) => cancelJadwalPelaksanaan(db, args[0], args[1], ctx),
   getBaRepairData: (db, args, ctx) => getBaRepairData(db, args[0], ctx),
   applyBaRepair: (db, args, ctx) => applyBaRepair(db, args[0], ctx),
+  createJadwalFromBa: (db, args, ctx) => createJadwalFromBa(db, args[0], ctx),
   archiveBeritaAcara: (db, args, ctx) => archiveBeritaAcara(db, args[0], ctx),
   mergeBeritaAcara: (db, args, ctx) => mergeBeritaAcara(db, args[0], ctx),
   restoreBeritaAcara: (db, args, ctx) => restoreBeritaAcara(db, args[0], ctx),

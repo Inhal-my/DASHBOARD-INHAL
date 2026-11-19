@@ -48,8 +48,8 @@ export async function nextJadwalId(db) {
   return prefix + String(n).padStart(4, '0');
 }
 
-function buildDosenStmts(db, jadwalId, list, ts) {
-  const stmts = [db.prepare('DELETE FROM jadwal_dosen WHERE jadwal_id = ?1').bind(jadwalId)];
+function buildDosenInsertStmts(db, jadwalId, list, ts) {
+  const stmts = [];
   (list || []).forEach((nama, index) => {
     stmts.push(
       db.prepare(
@@ -60,8 +60,11 @@ function buildDosenStmts(db, jadwalId, list, ts) {
   return stmts;
 }
 
-function buildInsertStmts(db, jadwalId, payload, meta) {
-  const ts = nowIso();
+function buildDosenStmts(db, jadwalId, list, ts) {
+  return [db.prepare('DELETE FROM jadwal_dosen WHERE jadwal_id = ?1').bind(jadwalId), ...buildDosenInsertStmts(db, jadwalId, list, ts)];
+}
+
+function buildJadwalRows(db, jadwalId, payload, meta, dosenBuilder, ts) {
   const dosenList = normalizeDosenList(payload.dosenList, payload.dosen);
   const stmts = [
     db.prepare(
@@ -69,7 +72,7 @@ function buildInsertStmts(db, jadwalId, payload, meta) {
       'VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,1,?11,?1)'
     ).bind(ts, jadwalId, meta.bagian, str(payload.blok), str(payload.namaKegiatan), meta.kegiatanKey,
       str(payload.tanggal), str(payload.jam), dosenList[0] || '', str(payload.catatan), meta.createdBy),
-    ...buildDosenStmts(db, jadwalId, dosenList, ts)
+    ...dosenBuilder(db, jadwalId, dosenList, ts)
   ];
   for (const p of payload.__peserta) {
     stmts.push(
@@ -80,6 +83,14 @@ function buildInsertStmts(db, jadwalId, payload, meta) {
     );
   }
   return stmts;
+}
+
+function buildInsertStmts(db, jadwalId, payload, meta) {
+  return buildJadwalRows(db, jadwalId, payload, meta, buildDosenStmts, nowIso());
+}
+
+export function buildJadwalInsertStmts(db, jadwalId, payload, meta) {
+  return buildJadwalRows(db, jadwalId, payload, meta, buildDosenInsertStmts, nowIso());
 }
 
 async function validatePayload(db, peserta, allowedMsg) {
@@ -94,7 +105,7 @@ async function validatePayload(db, peserta, allowedMsg) {
   return { ok: true };
 }
 
-async function hasDuplicateJadwal(db, meta, peserta) {
+export async function hasDuplicateJadwal(db, meta, peserta) {
   const { results } = await db.prepare(
     'SELECT j.jadwal_id, p.id_pengajuan, p.npm FROM jadwal_pelaksanaan j ' +
     'JOIN jadwal_peserta p ON p.jadwal_id = j.jadwal_id ' +

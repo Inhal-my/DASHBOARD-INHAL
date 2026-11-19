@@ -172,6 +172,24 @@ describe('BA Pelaksanaan multi-sesi', () => {
     expect(await sesiRows(created.baId)).toEqual([]);
   });
 
+  it('menolak pengosongan sesi BA yang sudah memiliki sesi', async () => {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const admin = await adminCtx();
+    const a = await makeJadwal(ctx, '2026-09-20', '09:00', 'dr. Andi', [pesertaOf(...AISYAH)]);
+
+    const created = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', jadwalIds: [a], peserta: [pesertaOf(...AISYAH)]
+    }, 'SGD', ctx);
+    expect(created.success).toBe(true);
+
+    const upd = await updateBeritaAcaraBagian(env.DB, created.baId, { jadwalIds: [] }, admin);
+    expect(upd.success).toBe(false);
+    expect(upd.message).toContain('minimal satu sesi');
+    expect((await sesiRows(created.baId)).map((r) => r.jadwal_id)).toEqual([a]);
+  });
+
   it('mengunci jadwal yang tertaut sebagai sesi non-pertama', async () => {
     await seedPengajuan();
     const ctx = await bagianCtx();

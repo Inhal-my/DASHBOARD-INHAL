@@ -2081,6 +2081,35 @@
                                                 <div v-if="!baRepairSelectedBa.archived" class="mt-4 grid gap-4 lg:grid-cols-2">
                                                     <div>
                                                         <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sesi jadwal</div>
+                                                        <div v-if="baRepairCreateEligible && !master.repair.createOpen" class="mt-2">
+                                                            <button type="button" class="btn-soft !px-3 !py-1.5 text-xs" :disabled="!baRepairCanCreate || master.repair.creating" @click="openCreateJadwalFromBa">
+                                                                <i class="bi bi-plus-circle"></i> Buat jadwal dari BA
+                                                            </button>
+                                                            <p v-if="baRepairCreateBlockedReason" class="mt-1 text-[10px] font-semibold text-amber-600">{{ baRepairCreateBlockedReason }}</p>
+                                                        </div>
+                                                        <div v-if="master.repair.createOpen" class="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+                                                            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Jadwal baru dari BA</div>
+                                                            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                                                <label class="block text-[10px] font-semibold text-slate-500">Tanggal
+                                                                    <input type="date" v-model="master.repair.createTanggal" class="input mt-1 w-full text-xs" />
+                                                                </label>
+                                                                <label class="block text-[10px] font-semibold text-slate-500">Jam
+                                                                    <input type="time" v-model="master.repair.createJam" class="input mt-1 w-full text-xs" />
+                                                                </label>
+                                                            </div>
+                                                            <label class="mt-2 block text-[10px] font-semibold text-slate-500">Dosen (satu per baris)
+                                                                <textarea v-model="master.repair.createDosen" rows="2" class="input mt-1 w-full text-xs" placeholder="dr. Nama, M.Kes"></textarea>
+                                                            </label>
+                                                            <p class="mt-1 text-[10px] text-slate-400">Peserta mengikuti data BA tersimpan ({{ baRepairSelectedBa.peserta.length }} orang).</p>
+                                                            <p v-if="master.repair.createError" class="mt-1 text-[10px] font-semibold text-rose-600">{{ master.repair.createError }}</p>
+                                                            <div class="mt-2 flex items-center justify-end gap-2">
+                                                                <button type="button" class="btn-soft !px-3 !py-1.5 text-xs" :disabled="master.repair.creating" @click="cancelCreateJadwalFromBa">Batal</button>
+                                                                <button type="button" class="btn-primary !px-3 !py-1.5 text-xs" :disabled="master.repair.creating" @click="submitCreateJadwalFromBa">
+                                                                    <i v-if="!master.repair.creating" class="bi bi-plus-circle"></i>
+                                                                    {{ master.repair.creating ? 'Membuat...' : 'Buat & Tautkan' }}
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                         <div class="mt-2 ba-repair-sesi-list space-y-1">
                                                             <label v-for="j in master.repair.workspace.jadwal" :key="j.jadwalId" class="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50">
                                                                 <input type="checkbox" class="mt-0.5" :checked="master.repair.jadwalIds.indexOf(j.jadwalId) !== -1" @change="toggleBaRepairJadwal(j.jadwalId)" />
@@ -2947,6 +2976,14 @@
                                             <div class="text-[11px] text-slate-500">BA tanpa peserta</div>
                                         </div>
                                         <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.baSesiYatim }}</div>
+                                            <div class="text-[11px] text-slate-500">Sesi BA yatim</div>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                            <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.baSesiUrutanGanda }}</div>
+                                            <div class="text-[11px] text-slate-500">Urutan sesi ganda</div>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
                                             <div class="text-lg font-extrabold text-slate-900">{{ master.audit.data.dataQuality.totals.jadwalDuplikat }}</div>
                                             <div class="text-[11px] text-slate-500">Jadwal duplikat</div>
                                         </div>
@@ -2959,7 +2996,7 @@
                                             <div class="text-[11px] text-slate-500">Peserta BA nonaktif</div>
                                         </div>
                                     </div>
-                                    <div v-if="!master.audit.data.dataQuality.totals.mahasiswaBlokKosong && !master.audit.data.dataQuality.totals.baOrphan && !master.audit.data.dataQuality.totals.jadwalDuplikat && !master.audit.data.dataQuality.totals.baNeedsRegen && !master.audit.data.dataQuality.totals.baPesertaNonaktif" class="rounded-xl bg-emerald-50 px-3 py-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                                    <div v-if="!master.audit.data.dataQuality.totals.mahasiswaBlokKosong && !master.audit.data.dataQuality.totals.baOrphan && !master.audit.data.dataQuality.totals.baSesiYatim && !master.audit.data.dataQuality.totals.baSesiUrutanGanda && !master.audit.data.dataQuality.totals.jadwalDuplikat && !master.audit.data.dataQuality.totals.baNeedsRegen && !master.audit.data.dataQuality.totals.baPesertaNonaktif" class="rounded-xl bg-emerald-50 px-3 py-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
                                         <i class="bi bi-check2-circle"></i> Tidak ada temuan kualitas data transaksi.
                                     </div>
                                     <div v-if="master.audit.data.dataQuality.baAdminOrphan.samples.length || master.audit.data.dataQuality.baBagianOrphan.samples.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
@@ -2968,6 +3005,24 @@
                                             <div v-for="b in master.audit.data.dataQuality.baAdminOrphan.samples.concat(master.audit.data.dataQuality.baBagianOrphan.samples)" :key="b.ba_id" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
                                                 <span class="font-semibold text-slate-700">{{ b.ba_id }} · {{ b.nama_kegiatan }}</span>
                                                 <span class="text-slate-500">{{ b.bagian }} / {{ b.blok }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="master.audit.data.dataQuality.baSesiYatim.samples.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sesi BA tanpa induk</div>
+                                        <div class="space-y-1">
+                                            <div v-for="s in master.audit.data.dataQuality.baSesiYatim.samples" :key="s.ba_id + s.jadwal_id" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                                <span class="font-semibold text-slate-700">{{ s.ba_id }}</span>
+                                                <span class="text-slate-500">{{ s.jadwal_id }} · urutan {{ s.urutan }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="master.audit.data.dataQuality.baSesiUrutanGanda.groups.length" class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                        <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Urutan sesi ganda</div>
+                                        <div class="space-y-1">
+                                            <div v-for="g in master.audit.data.dataQuality.baSesiUrutanGanda.groups.slice(0, 10)" :key="g.ba_id + g.urutan" class="flex items-center justify-between rounded-lg bg-white px-3 py-1.5 text-xs ring-1 ring-slate-100">
+                                                <span class="font-semibold text-slate-700">{{ g.ba_id }}</span>
+                                                <span class="text-slate-500">urutan {{ g.urutan }} · {{ g.n }} sesi</span>
                                             </div>
                                         </div>
                                     </div>
@@ -3862,7 +3917,7 @@
                         rename: { open: false, row: null, newValue: '', impact: null, baRegen: 0, conflicts: null, loading: false, saving: false, error: '' },
                         audit: { open: false, loading: false, data: null, error: '' },
                         uploads: { rows: [], loading: false, loaded: false, q: '', filter: '', reset: { open: false, row: null, note: '', saving: false } },
-                        repair: { groups: [], bagianOptions: [], loading: false, loaded: false, q: '', bagian: '', key: '', workspace: null, baId: '', targetJadwalId: '', jadwalIds: [], addIds: [], removeIds: [], move: true, candidateQ: '', includeArchived: false, actionMode: '', mergeTargetId: '', reason: '', confirmBaId: '', hardcopyAck: false, saving: false, result: null },
+                        repair: { groups: [], bagianOptions: [], loading: false, loaded: false, q: '', bagian: '', key: '', workspace: null, baId: '', targetJadwalId: '', jadwalIds: [], addIds: [], removeIds: [], move: true, candidateQ: '', includeArchived: false, actionMode: '', mergeTargetId: '', reason: '', confirmBaId: '', hardcopyAck: false, saving: false, result: null, createOpen: false, createTanggal: '', createJam: '', createDosen: '', creating: false, createError: '' },
                         cards: [
                             { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'mahasiswa', icon: 'bi-mortarboard' },
                             { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], table: 'master_kegiatan', icon: 'bi-clipboard-check' },
@@ -4439,6 +4494,24 @@
                     if (moved) parts.push(moved + ' dipindahkan');
                     if (linked) parts.push(linked + ' sesi baru ditautkan');
                     return parts.length ? 'Akan disimpan: ' + parts.join(', ') + '.' : 'Tidak ada perubahan. Pilih peserta atau sesi jadwal.';
+                },
+                baRepairCreateEligible() {
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) return false;
+                    return !(ba.jadwalIds || []).length;
+                },
+                baRepairCanCreate() {
+                    if (!this.baRepairCreateEligible) return false;
+                    const r = this.master.repair;
+                    return !(r.addIds || []).length && !(r.removeIds || []).length;
+                },
+                baRepairCreateBlockedReason() {
+                    if (!this.baRepairCreateEligible) return '';
+                    const r = this.master.repair;
+                    if ((r.addIds || []).length || (r.removeIds || []).length) {
+                        return 'Simpan perubahan peserta dulu sebelum membuat jadwal.';
+                    }
+                    return '';
                 },
                 anyModalOpen() {
                     return !!(this.detail.open || this.kb.open || this.master.rowModal.open || this.master.rename.open || this.master.audit.open || this.bab.ba.confirm || this.dialog.open || this.master.uploads.reset.open || this.kelola.open || this.riwayat.open || this.sec.open);
@@ -7191,6 +7264,11 @@
                     r.confirmBaId = '';
                     r.hardcopyAck = false;
                     r.result = null;
+                    r.createOpen = false;
+                    r.createTanggal = '';
+                    r.createJam = '';
+                    r.createDosen = '';
+                    r.createError = '';
                 },
                 resetBaRepairForm() {
                     const r = this.master.repair;
@@ -7206,6 +7284,72 @@
                     r.confirmBaId = '';
                     r.hardcopyAck = false;
                     r.result = null;
+                    r.createOpen = false;
+                    r.createTanggal = '';
+                    r.createJam = '';
+                    r.createDosen = '';
+                    r.createError = '';
+                },
+                openCreateJadwalFromBa() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) return;
+                    if ((ba.jadwalIds || []).length) {
+                        this.notify('BA sudah memiliki sesi jadwal.', false);
+                        return;
+                    }
+                    r.createOpen = true;
+                    r.createTanggal = ba.tanggal || '';
+                    r.createJam = ba.jam || '';
+                    const list = Array.isArray(ba.dosenList) && ba.dosenList.length ? ba.dosenList : (ba.dosen ? [ba.dosen] : []);
+                    r.createDosen = list.join('\n');
+                    r.createError = '';
+                },
+                cancelCreateJadwalFromBa() {
+                    const r = this.master.repair;
+                    r.createOpen = false;
+                    r.createError = '';
+                },
+                async submitCreateJadwalFromBa() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba) return;
+                    const dosenList = String(r.createDosen || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    if (!String(r.createJam || '').trim()) {
+                        r.createError = 'Jam pelaksanaan wajib diisi.';
+                        return;
+                    }
+                    if (!dosenList.length) {
+                        r.createError = 'Minimal satu dosen wajib diisi.';
+                        return;
+                    }
+                    r.creating = true;
+                    r.createError = '';
+                    try {
+                        const res = await this.run('createJadwalFromBa', {
+                            baId: ba.baId,
+                            tanggal: r.createTanggal,
+                            jam: r.createJam,
+                            dosenList: dosenList,
+                            expectedRevision: ba.revision
+                        }) || {};
+                        if (!res.success) {
+                            r.createError = res.message || 'Gagal membuat jadwal.';
+                            return;
+                        }
+                        const keep = ba.baId;
+                        this.notify(res.message || 'Jadwal dibuat dan ditautkan ke BA.');
+                        r.createOpen = false;
+                        await this.loadBaRepair(true);
+                        if (r.workspace && (r.workspace.ba || []).some(b => b.baId === keep)) {
+                            this.selectBaRepairBa(keep);
+                            r.result = res.message || 'Jadwal dibuat.';
+                        }
+                    } catch (e) {
+                        r.createError = 'Gagal membuat jadwal: ' + e;
+                    } finally {
+                        r.creating = false;
+                    }
                 },
                 toggleBaRepairJadwal(jadwalId) {
                     const r = this.master.repair;

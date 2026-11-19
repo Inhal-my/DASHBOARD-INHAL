@@ -56,6 +56,7 @@ describe('ba repair', () => {
     expect(res.workspace.jadwal).toHaveLength(2);
     expect(res.workspace.ba[0].baId).toBe(data.baId);
     expect(res.workspace.ba[0].jadwalIds).toContain(data.j1);
+    expect(res.workspace.ba[0].dosenList).toEqual(['dr. Andi']);
     const budi = res.workspace.kandidat.find((x) => x.idPengajuan === 'INHAL-2');
     expect(budi).toBeTruthy();
     expect(budi.sourceJadwal.map((j) => j.jadwalId)).toEqual([data.j2]);
@@ -134,5 +135,22 @@ describe('ba repair', () => {
       targetJadwalId: data.j1,
       jadwalIds: [data.j1]
     }, ctx)).rejects.toThrow();
+  });
+
+  it('memberi urutan lanjutan saat menautkan sesi baru ke BA yang sudah punya sesi', async () => {
+    const data = await setup();
+    const ctx = await adminCtx();
+    const res = await applyBaRepair(env.DB, {
+      baId: data.baId,
+      jadwalIds: [data.j2]
+    }, ctx);
+    expect(res.success).toBe(true);
+    const rows = await env.DB.prepare(
+      'SELECT jadwal_id, urutan FROM berita_acara_sesi WHERE ba_id = ?1 ORDER BY urutan'
+    ).bind(data.baId).all();
+    expect(rows.results).toEqual([
+      { jadwal_id: data.j1, urutan: 1 },
+      { jadwal_id: data.j2, urutan: 2 }
+    ]);
   });
 });

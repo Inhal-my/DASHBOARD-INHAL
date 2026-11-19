@@ -1,11 +1,19 @@
 import { requireAdmin } from '../session.js';
-import { kegiatanKey } from '../read/common.js';
+import { kegiatanKey, getMasterOptions } from '../read/common.js';
 import { writeAuditLog } from '../audit.js';
 import { validateBaPesertaKegiatan, validateBaPesertaStatus } from './beritaAcara.js';
+import { nextJadwalId, buildJadwalInsertStmts, hasDuplicateJadwal } from './jadwal.js';
+import { normalizeDosenList, validateDosenAgainstMaster, dosenMasterErrorMessage } from '../dosen.js';
+import { validateJadwalInput } from '../validation.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
   return String(v).replace(/\u00a0/g, ' ').trim();
+}
+
+function dateOnly(v) {
+  const s = str(v);
+  return s ? s.split('T')[0].split(' ')[0] : '';
 }
 
 function nowIso() {
@@ -77,7 +85,7 @@ export async function applyBaRepair(db, payload, ctx) {
     if (!jadwalById[id]) return { success: false, message: 'Jadwal ' + id + ' tidak ditemukan atau bukan bagian dari kegiatan BA.' };
   }
 
-  const allSesi = (await db.prepare('SELECT ba_id, jadwal_id FROM berita_acara_sesi').all()).results || [];
+  const allSesi = (await db.prepare('SELECT ba_id, jadwal_id, urutan FROM berita_acara_sesi').all()).results || [];
   const baLinkRows = (await db.prepare(
     'SELECT ba_id, jadwal_id, kegiatan_key, bagian, blok, nama_kegiatan FROM berita_acara ' +
     "WHERE COALESCE(archived_at, '') = ''"
@@ -160,16 +168,20 @@ export async function applyBaRepair(db, payload, ctx) {
   const ts = nowIso();
   const stmts = [];
   const linkedSet = {};
+  let maxUrutan = 0;
   for (const r of allSesi) {
-    if (str(r.ba_id) === baId) linkedSet[str(r.jadwal_id)] = true;
+    if (str(r.ba_id) !== baId) continue;
+    linkedSet[str(r.jadwal_id)] = true;
+    maxUrutan = Math.max(maxUrutan, Number(r.urutan) || 0);
   }
   let newLinks = 0;
   for (const id of linkJadwalIds) {
     if (linkedSet[id]) continue;
     newLinks += 1;
+    maxUrutan += 1;
     stmts.push(
       db.prepare('INSERT INTO berita_acara_sesi (timestamp, ba_id, jadwal_id, urutan) VALUES (?1, ?2, ?3, ?4)')
-        .bind(ts, baId, id, linkJadwalIds.indexOf(id) + 1)
+        .bind(ts, baId, id, maxUrutan)
     );
   }
   if (linkJadwalIds.length) {
@@ -276,5 +288,124 @@ export async function applyBaRepair(db, payload, ctx) {
     removed: removed.length,
     moved: uniq(moved).length,
     linked: newLinks
+  };
+}
+
+export async function createJadwalFromBa(db, payload, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const p = payload || {};
+  const baId = str(p.baId);
+  if (!baId) return { success: false, message: 'BA ID wajib diisi.' };
+
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(baId).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum membuat jadwal.' };
+  if (p.expectedRevision !== undefined && p.expectedRevision !== null && p.expectedRevision !== ''
+    && Number(p.expectedRevision) !== (Number(existing.revision) || 0)) {
+    return { success: false, message: 'Data BA sudah berubah. Muat ulang lalu ulangi.' };
+  }
+
+  const linked = await db.prepare('SELECT jadwal_id FROM berita_acara_sesi WHERE ba_id = ?1 LIMIT 1').bind(baId).first();
+  if (linked || str(existing.jadwal_id)) {
+    return { success: false, message: 'BA ini sudah memiliki sesi jadwal.' };
+  }
+
+  const tanggal = dateOnly(p.tanggal !== undefined && str(p.tanggal) ? p.tanggal : existing.tanggal_pelaksanaan);
+  const jam = str(p.jam);
+  if (!jam) return { success: false, message: 'Jam pelaksanaan wajib diisi.' };
+
+  const baDosenRows = (await db.prepare('SELECT nama FROM ba_dosen WHERE ba_id = ?1 ORDER BY urutan, id').bind(baId).all()).results || [];
+  const existingDosen = normalizeDosenList(baDosenRows.map((r) => r.nama), existing.dosen);
+  let dosenInput = p.dosenList;
+  if (dosenInput === undefined || dosenInput === null || dosenInput === '') {
+    if (Array.isArray(p.dosen)) dosenInput = p.dosen;
+    else if (str(p.dosen)) dosenInput = str(p.dosen).split(/\r?\n/);
+    else dosenInput = existingDosen;
+  }
+  const dosenList = normalizeDosenList(dosenInput);
+  if (!dosenList.length) return { success: false, message: 'Minimal satu dosen wajib diisi.' };
+
+  const master = await getMasterOptions(db, 'Dosen');
+  const dosenCheck = validateDosenAgainstMaster(dosenList, master, existingDosen);
+  if (dosenCheck.invalid.length) return { success: false, message: dosenMasterErrorMessage(dosenCheck.invalid) };
+  const finalDosen = dosenCheck.list;
+
+  const pesertaRows = (await db.prepare(
+    'SELECT id_pengajuan, npm, nama_lengkap, blok, status_pengajuan FROM berita_acara_peserta WHERE ba_id = ?1 ORDER BY id'
+  ).bind(baId).all()).results || [];
+  const peserta = pesertaRows.map((r) => ({
+    idPengajuan: str(r.id_pengajuan),
+    npm: str(r.npm),
+    namaLengkap: str(r.nama_lengkap),
+    blok: str(r.blok),
+    statusPengajuan: str(r.status_pengajuan)
+  })).filter((x) => x.idPengajuan || x.npm || x.namaLengkap);
+  if (!peserta.length) {
+    return { success: false, message: 'BA belum memiliki peserta; tambahkan peserta lewat panel BA terlebih dahulu.' };
+  }
+
+  const blocked = await validateBaPesertaStatus(db, peserta);
+  if (blocked.length) {
+    return { success: false, message: 'Peserta BA belum memenuhi status yang diizinkan: ' + blocked.join(', ') + '. Perbaiki di panel BA terlebih dahulu.' };
+  }
+
+  const bagian = str(existing.bagian);
+  const blok = str(existing.blok);
+  const namaKegiatan = str(existing.nama_kegiatan);
+  const input = validateJadwalInput({
+    bagian, blok, namaKegiatan, dosen: finalDosen[0] || '', dosenList: finalDosen,
+    catatan: str(existing.catatan), jam, tanggal, peserta
+  });
+  if (!input.ok) return { success: false, message: input.message };
+
+  const key = str(existing.kegiatan_key) || kegiatanKey(bagian, blok, namaKegiatan);
+  const dup = await hasDuplicateJadwal(db, { kegiatanKey: key, tanggal, jam }, peserta);
+  if (dup) return { success: false, message: 'Jadwal untuk kegiatan, tanggal, jam, dan peserta ini sudah ada.' };
+
+  const jadwalId = await nextJadwalId(db);
+  const ts = nowIso();
+  const maxRow = await db.prepare('SELECT COALESCE(MAX(urutan), 0) AS m FROM berita_acara_sesi WHERE ba_id = ?1').bind(baId).first();
+  const urutan = (Number(maxRow && maxRow.m) || 0) + 1;
+
+  const stmts = [
+    ...buildJadwalInsertStmts(db, jadwalId, {
+      blok, namaKegiatan, tanggal, jam,
+      dosen: finalDosen[0] || '',
+      dosenList: finalDosen,
+      catatan: str(existing.catatan),
+      __peserta: peserta
+    }, {
+      bagian, kegiatanKey: key,
+      createdBy: str(ctx.session && ctx.session.nama) || 'Admin'
+    }),
+    db.prepare('INSERT INTO berita_acara_sesi (timestamp, ba_id, jadwal_id, urutan) VALUES (?1, ?2, ?3, ?4)')
+      .bind(ts, baId, jadwalId, urutan),
+    db.prepare(
+      'UPDATE berita_acara SET tanggal_pelaksanaan = ?1, jam = ?2, ' +
+      "jadwal_id = CASE WHEN COALESCE(jadwal_id, '') = '' THEN ?3 ELSE jadwal_id END, " +
+      'revision = revision + 1, updated_at = ?4 WHERE ba_id = ?5'
+    ).bind(tanggal, jam, jadwalId, ts, baId)
+  ];
+  await db.batch(stmts);
+
+  try {
+    await writeAuditLog(db, {
+      actor: str(ctx.session && ctx.session.nama) || 'Admin',
+      action: 'BA_UPDATE',
+      target: baId,
+      detail: JSON.stringify({
+        jenis: 'Pelaksanaan', createJadwalFromBa: true, jadwalId: jadwalId,
+        tanggal: tanggal, jam: jam, dosenList: finalDosen, jumlahPeserta: peserta.length
+      }),
+      alasan: 'Membuat jadwal dari BA dan menautkan sesi'
+    });
+  } catch {
+  }
+
+  return {
+    success: true,
+    jadwalId: jadwalId,
+    revision: (Number(existing.revision) || 0) + 1,
+    message: 'Jadwal ' + jadwalId + ' dibuat dan ditautkan ke BA ' + baId + '.'
   };
 }

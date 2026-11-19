@@ -69,6 +69,7 @@ export async function getBaRepairData(db, payload, ctx) {
   const activeBaIdSet = {};
   for (const b of activeBaRows) activeBaIdSet[str(b.ba_id)] = true;
   const baPesertaRows = (await db.prepare('SELECT * FROM berita_acara_peserta').all()).results || [];
+  const baDosenRows = (await db.prepare('SELECT * FROM ba_dosen ORDER BY ba_id, urutan, id').all()).results || [];
   const baSesiRows = (await db.prepare('SELECT * FROM berita_acara_sesi').all()).results || [];
   const pengajuanRows = (await db.prepare('SELECT * FROM pengajuan').all()).results || [];
   const detailRows = (await db.prepare('SELECT * FROM detail_kegiatan').all()).results || [];
@@ -128,12 +129,23 @@ export async function getBaRepairData(db, payload, ctx) {
       updatedAt: str(b.updated_at),
       revision: Number(b.revision) || 0,
       archived: !!str(b.archived_at),
+      dosenList: [],
       peserta: [],
       jadwalIds: []
     };
     if (!baByKey[key]) baByKey[key] = [];
     baByKey[key].push(row);
     baById[row.baId] = row;
+  }
+
+  for (const d of baDosenRows) {
+    const b = baById[str(d.ba_id)];
+    const nama = str(d.nama);
+    if (b && nama && b.dosenList.indexOf(nama) === -1) b.dosenList.push(nama);
+  }
+  for (const key of Object.keys(baById)) {
+    const b = baById[key];
+    if (!b.dosenList.length && b.dosen) b.dosenList.push(b.dosen);
   }
 
   for (const r of baPesertaRows) {

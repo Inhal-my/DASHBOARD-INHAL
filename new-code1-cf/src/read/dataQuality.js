@@ -82,6 +82,21 @@ export async function auditDataQuality(db) {
     'SELECT COUNT(*) AS n FROM berita_acara_admin_peserta WHERE active = 0'
   ).first();
 
+  const baSesiYatim = await db.prepare(
+    'SELECT COUNT(*) AS n FROM berita_acara_sesi s WHERE NOT EXISTS (' +
+    'SELECT 1 FROM berita_acara b WHERE b.ba_id = s.ba_id)'
+  ).first();
+  const baSesiYatimSamples = (await db.prepare(
+    'SELECT s.ba_id, s.jadwal_id, s.urutan FROM berita_acara_sesi s WHERE NOT EXISTS (' +
+    'SELECT 1 FROM berita_acara b WHERE b.ba_id = s.ba_id) ORDER BY s.ba_id, s.jadwal_id LIMIT 10'
+  ).all()).results || [];
+
+  const baSesiUrutanRows = (await db.prepare(
+    'SELECT ba_id, urutan, COUNT(*) AS n FROM berita_acara_sesi ' +
+    'GROUP BY ba_id, urutan HAVING COUNT(*) > 1 ORDER BY ba_id, urutan'
+  ).all()).results || [];
+  const baSesiUrutanGanda = baSesiUrutanRows.reduce((sum, r) => sum + (countOf(r) - 1), 0);
+
   return {
     mahasiswaBlokKosong: {
       count: countOf(mahasiswaBlank),
@@ -106,12 +121,22 @@ export async function auditDataQuality(db) {
     baPesertaNonaktif: {
       count: countOf(baPesertaNonaktif)
     },
+    baSesiYatim: {
+      count: countOf(baSesiYatim),
+      samples: baSesiYatimSamples
+    },
+    baSesiUrutanGanda: {
+      count: baSesiUrutanGanda,
+      groups: baSesiUrutanRows
+    },
     totals: {
       mahasiswaBlokKosong: countOf(mahasiswaBlank),
       baOrphan: countOf(baAdminOrphan) + countOf(baBagianOrphan),
       jadwalDuplikat: jadwalDuplikatRows,
       baNeedsRegen: countOf(baNeedsRegen),
-      baPesertaNonaktif: countOf(baPesertaNonaktif)
+      baPesertaNonaktif: countOf(baPesertaNonaktif),
+      baSesiYatim: countOf(baSesiYatim),
+      baSesiUrutanGanda: baSesiUrutanGanda
     }
   };
 }

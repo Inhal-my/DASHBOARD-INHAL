@@ -836,8 +836,15 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   let sesi = await loadBaSesiRows(db, id);
   let remapSesi = false;
   if (p.jadwalIds !== undefined || p.jadwalId !== undefined) {
+    const requestedSesi = normalizeJadwalIds(p);
+    if (!requestedSesi.length && sesi.length) {
+      return {
+        success: false,
+        message: 'BA Pelaksanaan wajib memiliki minimal satu sesi. Hapus BA jika ingin membatalkan seluruh pelaksanaan.'
+      };
+    }
     const resolvedSesi = await resolveBaSesi(db, {
-      jadwalIds: normalizeJadwalIds(p),
+      jadwalIds: requestedSesi,
       kegiatanKey: str(existing.kegiatan_key) || kegiatanKey(existing.bagian, existing.blok, existing.nama_kegiatan),
       tanggal: tanggal,
       excludeBaId: id
