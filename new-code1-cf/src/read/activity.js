@@ -264,6 +264,13 @@ export function normalizeAudit(row) {
   }
 
   if (action === 'VERIFY') {
+    if (detail && detail.gratis) {
+      extra.meta = { kesesuaian: 'gratis', sumberBiaya: str(detail.sumberBiaya) };
+      extra.sebelum = { status: 'menunggu' };
+      extra.sesudah = { status: 'gratis', nominal: null };
+      return baseEvent(row, 'audit_log', 'VerifyBayar', 'Pembayaran', idPengajuan,
+        'Menandai pembayaran sebagai Gratis', extra);
+    }
     const nominal = detail ? Number(detail.nominal) || 0 : 0;
     const kesesuaian = detail ? str(detail.kesesuaian) : '';
     extra.meta = detail ? { nominal: nominal, kesesuaian: kesesuaian, tanggalBayar: detail.tanggal } : {};

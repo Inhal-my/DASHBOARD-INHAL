@@ -111,9 +111,10 @@ describe('detail-laporan template', () => {
     }
   });
 
-  it('tab switcher & primitif in-* dipakai di markup', async () => {
+  it('navigasi mode di sidebar & primitif in-* dipakai di markup', async () => {
     const html = await loadHtml();
-    expect(html).toContain('in-tab is-active');
+    expect(html).toContain('v-for="m in modes"');
+    expect(html).toContain("laporanMode === m.key ? 'bg-white/10 text-white'");
     expect(html).toContain('class="in-tbl"');
     expect(html).toContain('class="in-statrow');
   });
@@ -226,7 +227,7 @@ describe('detail laporan tab pembayaran', () => {
     const html = await loadHtml();
     expect(html).toContain("'Diunggah': it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : '',");
     expect(html).toContain("'Status Pembayaran': this.bayarLabel(it.statusPembayaran)");
-    expect(html).toContain("'Nominal Dibayar': it.nominal || 0");
+    expect(html).toContain("'Nominal Dibayar': it.statusPembayaran === 'gratis' ? 'Gratis' : (it.nominal || 0)");
     expect(html).toContain("'Kesesuaian': this.bayarKesesuaianLabel(it.kesesuaian)");
     expect(html).not.toContain("'Final/BA'");
     expect(html).toContain("'Link ACC INHAL': it.linkAcc");
@@ -287,12 +288,17 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('buka_kembali');
     expect(html).toContain('Koreksi administratif');
   });
-  it('panel Periksa memakai Kesesuaian tiga pilihan dan tanggal read-only', async () => {
+  it('panel Periksa memakai Kesesuaian empat pilihan dan tanggal read-only', async () => {
     const html = await loadHtml();
     expect(html).toContain('<select v-model="periksa.form.kesesuaian" class="in-input" @change="onKesesuaianChange">');
     expect(html).toContain('<option value="pas">Pas</option>');
     expect(html).toContain('<option value="kurang">Kurang</option>');
     expect(html).toContain('<option value="lebih">Lebih</option>');
+    expect(html).toContain('<option value="gratis" :disabled="(Number(periksa.item.biaya) || 0) > 0">Gratis</option>');
+    expect(html).toContain('Alasan Gratis wajib diisi minimal 5 karakter.');
+    expect(html).toContain('Tandai pembayaran ini sebagai Gratis? Tindakan ini tidak dapat dikoreksi.');
+    expect(html).toContain("if (status === 'gratis') return 'in-badge gratis';");
+    expect(html).toContain("if (value === 'gratis') return 'Gratis';");
     expect(html).not.toContain('onNominalInput');
     expect(html).toContain('Tanggal Daftar');
     expect(html).toContain('Tanggal Upload Bukti Bayar');
@@ -410,6 +416,15 @@ describe('detail laporan kejelasan tampilan', () => {
       expect(block).toContain(s);
     }
   });
+  it('filter bar desktop ringkas dan dapat dilipat', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('filterCollapsed: true');
+    const desktopStart = html.indexOf('class="filter-desktop');
+    const desktop = html.slice(desktopStart, html.indexOf('filter-mobile-bar', desktopStart));
+    expect(desktop).toContain('@click="filterCollapsed = !filterCollapsed"');
+    expect(desktop).toContain('v-show="!filterCollapsed"');
+    expect(desktop).toContain('id="filter-desktop-panel"');
+  });
 });
 
 describe('detail laporan filter mobile (bottom sheet ala dashboard)', () => {
@@ -523,10 +538,17 @@ describe('detail laporan app shell (ala dashboard)', () => {
 describe('detail laporan shell interaktif', () => {
   it('menyediakan state dan aksi shell', async () => {
     const html = await loadHtml();
-    expect(html).toContain('sidebarCollapsed: false');
+    expect(html).toContain("sidebarCollapsed: typeof window !== 'undefined' && window.innerWidth >= 1024");
     expect(html).toContain('sidebarOpen: false');
     expect(html).toContain('mobileMenuOpen: false');
     expect(html).toContain('this.sidebarCollapsed = !this.sidebarCollapsed');
+  });
+
+  it('memasang kelas collapse pada shell di dalam #app', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('<div id="app" v-cloak>');
+    expect(html).not.toContain('<div id="app" v-cloak class=');
+    expect(html).toContain('class="app-shell font-sans text-ink antialiased"');
   });
 });
 

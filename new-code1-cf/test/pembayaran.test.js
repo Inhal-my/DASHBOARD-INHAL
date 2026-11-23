@@ -185,6 +185,71 @@ describe('verifyPembayaran', () => {
     const p = await env.DB.prepare("SELECT status_pembayaran FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
     expect(p.status_pembayaran).toBe('menunggu');
   });
+
+  it('menandai Gratis untuk tagihan nol yang terdaftar', async () => {
+    await seedPengajuan({ linkBukti: '' });
+    await env.DB.prepare("UPDATE check_data SET biaya = '0' WHERE id_pengajuan = 'INHAL-1'").run();
+    const res = await verifyPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      kesesuaian: 'gratis',
+      catatan: 'Kegiatan gratis, tagihan nol.',
+      expectedRevision: 0
+    }, await adminCtx());
+    expect(res).toMatchObject({ success: true, status: 'gratis', revision: 1 });
+
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status_pembayaran).toBe('gratis');
+    expect(p.kesesuaian_pembayaran).toBe('gratis');
+    expect(p.nominal_dibayar).toBeNull();
+    expect(p.tanggal_bayar).toBe('');
+    expect(p.metode_bayar).toBe('');
+    expect(p.verified_by).toBe('Rani');
+    expect(p.payment_revision).toBe(1);
+
+    const rev = await env.DB.prepare("SELECT * FROM pembayaran_revisi WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(rev).toMatchObject({ mode: 'gratis', status_baru: 'gratis', kesesuaian_baru: 'gratis', nominal_baru: null });
+  });
+
+  it('menolak Gratis bila tagihan lebih dari nol', async () => {
+    await seedPengajuan();
+    const res = await verifyPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      kesesuaian: 'gratis',
+      catatan: 'Coba gratis.',
+      expectedRevision: 0
+    }, await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/tagihan nol/i);
+  });
+
+  it('menolak Gratis bila biaya tidak ditemukan', async () => {
+    await seedPengajuan({ linkBukti: '' });
+    await env.DB.prepare("DELETE FROM check_data WHERE id_pengajuan = 'INHAL-1'").run();
+    await env.DB.prepare(
+      "INSERT INTO detail_kegiatan (timestamp,id_pengajuan,jenis_kegiatan,pilihan,detail,tanggal_pelaksanaan) VALUES ('2026-10-01T08:00:00','INHAL-1','SGD','SGD 1','Tidak Ada','2026-10-02')"
+    ).run();
+    const res = await verifyPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      kesesuaian: 'gratis',
+      catatan: 'Biaya tidak ditemukan.',
+      expectedRevision: 0
+    }, await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/belum diatur/i);
+  });
+
+  it('mewajibkan alasan saat menandai Gratis', async () => {
+    await seedPengajuan({ linkBukti: '' });
+    await env.DB.prepare("UPDATE check_data SET biaya = '0' WHERE id_pengajuan = 'INHAL-1'").run();
+    const res = await verifyPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      kesesuaian: 'gratis',
+      catatan: '',
+      expectedRevision: 0
+    }, await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/alasan gratis/i);
+  });
 });
 
 describe('correctPembayaran', () => {
@@ -300,5 +365,25 @@ describe('correctPembayaran', () => {
     }, ctx);
     expect(res.success).toBe(false);
     expect(res.message).toMatch(/ACC/);
+  });
+
+  it('menolak koreksi pembayaran Gratis', async () => {
+    await seedPengajuan({ linkBukti: '' });
+    await env.DB.prepare("UPDATE check_data SET biaya = '0' WHERE id_pengajuan = 'INHAL-1'").run();
+    const ctx = await adminCtx();
+    await verifyPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      kesesuaian: 'gratis',
+      catatan: 'Kegiatan gratis, tagihan nol.',
+      expectedRevision: 0
+    }, ctx);
+    const res = await correctPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1',
+      mode: 'buka_kembali',
+      alasan: 'Coba buka kembali',
+      expectedRevision: 1
+    }, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/gratis tidak dapat dikoreksi/i);
   });
 });

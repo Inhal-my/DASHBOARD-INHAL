@@ -141,11 +141,12 @@ export function buildDetailRowsByPengajuan(detailRows) {
   return map;
 }
 
-export function resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap, detailRows) {
+export function resolveBiayaStatusForPengajuan(pengajuan, biayaMap, overrideMap, detailRows) {
   const id = String((pengajuan && pengajuan['ID Pengajuan']) || '').trim();
   overrideMap = overrideMap || {};
-  if (id && overrideMap[id] !== undefined && overrideMap[id] !== null && String(overrideMap[id]).trim() !== '') {
-    return overrideMap[id];
+  if (id && Object.prototype.hasOwnProperty.call(overrideMap, id) &&
+    overrideMap[id] !== undefined && overrideMap[id] !== null && String(overrideMap[id]).trim() !== '') {
+    return { amount: overrideMap[id], found: true, source: 'override' };
   }
   biayaMap = biayaMap || {};
   // Kunci biaya adalah nama Detail (Inhal/Remediasi/Praktikum/PostTest).
@@ -155,17 +156,22 @@ export function resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap, detai
   const target = norm(detail);
   if (target) {
     for (const k of Object.keys(biayaMap)) {
-      if (norm(k) === target) return biayaMap[k];
+      if (norm(k) === target) return { amount: biayaMap[k], found: true, source: 'detail' };
     }
-    return 0;
+    return { amount: 0, found: false, source: 'detail' };
   }
   // Cadangan hanya saat Detail benar-benar kosong (mis. data lama).
   if (norm(jenis)) {
     for (const k of Object.keys(biayaMap)) {
-      if (norm(k) === norm(jenis)) return biayaMap[k];
+      if (norm(k) === norm(jenis)) return { amount: biayaMap[k], found: true, source: 'jenis' };
     }
+    return { amount: 0, found: false, source: 'jenis' };
   }
-  return 0;
+  return { amount: 0, found: false, source: '' };
+}
+
+export function resolveBiayaForPengajuan(pengajuan, biayaMap, overrideMap, detailRows) {
+  return resolveBiayaStatusForPengajuan(pengajuan, biayaMap, overrideMap, detailRows).amount;
 }
 
 export function resolveBagianFor(masterBagianRows, jenis, pilihan, detail) {

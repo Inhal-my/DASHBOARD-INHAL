@@ -1,6 +1,6 @@
 import { requireAdmin } from '../session.js';
 import { writeAuditLog } from '../audit.js';
-import { formatRupiah, getBiayaMap, getBiayaOverrideMap, resolveBiayaForPengajuan } from '../read/common.js';
+import { formatRupiah, getBiayaMap, getBiayaOverrideMap, resolveBiayaStatusForPengajuan } from '../read/common.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -48,10 +48,10 @@ function kesesuaianLabel(value) {
   return '-';
 }
 
-async function resolveTagihan(db, row) {
+async function resolveTagihanStatus(db, row) {
   const [biayaMap, overrideMap] = await Promise.all([getBiayaMap(db), getBiayaOverrideMap(db)]);
   const details = (await db.prepare('SELECT * FROM detail_kegiatan WHERE id_pengajuan = ?1').bind(str(row.id_pengajuan)).all()).results || [];
-  return resolveBiayaForPengajuan({
+  return resolveBiayaStatusForPengajuan({
     'ID Pengajuan': row.id_pengajuan,
     'Jenis Kegiatan': row.jenis_kegiatan
   }, biayaMap, overrideMap, details);
@@ -94,17 +94,67 @@ export async function verifyPembayaran(db, payload, ctx) {
     return { success: false, message: 'Pembayaran hanya dapat diverifikasi untuk pengajuan berstatus ACC.' };
   }
   if (status(row) === 'valid') return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi.' };
-  if (status(row) === 'gratis') return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
-  if (!str(row.link_bukti_bayar)) return { success: false, message: 'Belum ada bukti bayar untuk diverifikasi.' };
+  if (status(row) === 'gratis') return { success: false, message: 'Pembayaran sudah ditandai Gratis.' };
   if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 
-  const tagihan = await resolveTagihan(db, row);
+  const tagihanInfo = await resolveTagihanStatus(db, row);
+  const tagihan = Number(tagihanInfo.amount) || 0;
+  const requested = str(p.kesesuaian).toLowerCase();
+
+  if (requested === 'gratis') {
+    if (!tagihanInfo.found) {
+      return { success: false, message: 'Biaya pengajuan belum diatur. Gratis hanya untuk tagihan nol yang terdaftar.' };
+    }
+    if (tagihan > 0) {
+      return { success: false, message: 'Gratis hanya untuk tagihan nol. Tagihan saat ini ' + formatRupiah(tagihan) + '.' };
+    }
+    const catatan = str(p.catatan);
+    if (catatan.length < 5) return { success: false, message: 'Alasan Gratis wajib diisi minimal 5 karakter.' };
+
+    const actor = actorName({ session });
+    const ts = nowIso();
+    const revision = revisionOf(row) + 1;
+
+    const update = db.prepare(
+      'UPDATE pengajuan SET status_pembayaran = \'gratis\', kesesuaian_pembayaran = \'gratis\', nominal_dibayar = NULL, ' +
+      'tanggal_bayar = \'\', metode_bayar = \'\', catatan_verifikasi = ?1, verified_at = ?2, verified_by = ?3, ' +
+      'payment_revision = ?4, updated_at = ?5 WHERE id_pengajuan = ?6 AND payment_revision = ?7'
+    ).bind(catatan, ts, actor, revision, ts, id, revisionOf(row));
+
+    const rev = revisionInsert(db, {
+      idPengajuan: id, revision, mode: 'gratis',
+      statusLama: status(row), statusBaru: 'gratis',
+      kesesuaianLama: str(row.kesesuaian_pembayaran), kesesuaianBaru: 'gratis',
+      nominalLama: row.nominal_dibayar === null || row.nominal_dibayar === undefined ? null : toAmount(row.nominal_dibayar),
+      nominalBaru: null,
+      tanggalLama: str(row.tanggal_bayar), tanggalBaru: '',
+      metodeLama: str(row.metode_bayar), metodeBaru: '',
+      alasan: '', catatan, actor, createdAt: ts,
+      before: { status: status(row), kesesuaian: str(row.kesesuaian_pembayaran), nominal: row.nominal_dibayar || null },
+      after: { status: 'gratis', kesesuaian: 'gratis', nominal: null }
+    });
+
+    const results = await db.batch([update, rev]);
+    const changed = results && results[0] && results[0].meta && results[0].meta.changes;
+    if (changed === 0) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
+
+    await writeAuditLog(db, {
+      actor, action: 'VERIFY', target: 'Pembayaran',
+      detail: JSON.stringify({ idPengajuan: id, gratis: true, kesesuaian: 'gratis', sumberBiaya: tagihanInfo.source }),
+      alasan: ''
+    });
+    return { success: true, status: 'gratis', revision, message: 'Pembayaran ditandai Gratis.' };
+  }
+
+  if (!str(row.link_bukti_bayar)) return { success: false, message: 'Belum ada bukti bayar untuk diverifikasi.' };
+  if (tagihan <= 0) {
+    return { success: false, message: tagihanInfo.found ? 'Tagihan nol. Pilih Gratis.' : 'Biaya pengajuan belum diatur.' };
+  }
   const nominal = toAmount(p.nominal);
-  if (tagihan <= 0) return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
   if (nominal <= 0) return { success: false, message: 'Nominal diterima harus lebih dari nol.' };
 
   const cocok = expectedKesesuaian(nominal, tagihan);
-  const kesesuaian = str(p.kesesuaian).toLowerCase() || cocok;
+  const kesesuaian = requested || cocok;
   if (kesesuaian !== cocok) {
     return {
       success: false,
@@ -162,6 +212,7 @@ export async function correctPembayaran(db, payload, ctx) {
   if (pengajuanStatus(row) !== 'ACC') {
     return { success: false, message: 'Pembayaran hanya dapat dikoreksi untuk pengajuan berstatus ACC.' };
   }
+  if (status(row) === 'gratis') return { success: false, message: 'Pembayaran gratis tidak dapat dikoreksi.' };
   if (status(row) !== 'valid') return { success: false, message: 'Hanya pembayaran valid yang bisa dikoreksi.' };
   if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 

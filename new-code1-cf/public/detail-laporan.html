@@ -84,10 +84,10 @@
     <style>
         .bg-sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%); }
         .app-shell{ --sidebar-w: 268px; }
-        .app-shell.sidebar-collapsed { --sidebar-w: 84px; }
         .sidebar-aside { width: var(--sidebar-w); transition: width .22s ease, transform .3s ease; }
         .main-wrap { transition: margin-left .22s ease; }
         @media (min-width: 1024px) {
+            .app-shell.sidebar-collapsed { --sidebar-w: 84px; }
             .main-wrap { margin-left: var(--sidebar-w); }
             .app-shell.sidebar-collapsed .sb-hide { display: none !important; }
             .app-shell.sidebar-collapsed .sb-brand { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
@@ -175,6 +175,7 @@
         .in-badge.acc { background:var(--emerald-soft); color:var(--emerald); }
         .in-badge.rej { background:var(--rose-soft); color:var(--rose); }
         .in-badge.cancel { background:#f1f5f9; color:#64748b; }
+        .in-badge.gratis { background:#eef2ff; color:#4338ca; }
         .in-tbl { width:100%; border-collapse:collapse; }
         .in-tbl thead th { text-align:left; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-400); padding:12px 14px; background:#f8fafc; border-bottom:1px solid var(--line); white-space:nowrap; }
         .in-tbl tbody td { padding:12px 14px; border-bottom:1px solid #f1f5f9; font-size:13px; color:var(--ink-700); vertical-align:middle; }
@@ -242,10 +243,6 @@
         .bgd-readlist .k { flex:0 0 112px; font-size:11.5px; font-weight:800; color:#334155; }
         .bgd-readlist b { color:#0f172a; }
         @media (max-width:1023px) { .bgd-panel { grid-template-columns:1fr; } .bgd-side { order:-1; } }
-        .in-tabsw { display:flex; gap:.5rem; overflow-x:auto; border-bottom:1px solid var(--line); }
-        .in-tab { display:flex; flex:1 1 0%; align-items:center; justify-content:center; gap:.5rem; white-space:nowrap; padding:.7rem 1rem; border-bottom:2.5px solid transparent; color:var(--ink-400); font-size:.8125rem; font-weight:700; transition:.15s ease; }
-        .in-tab:hover { color:var(--ink-700); }
-        .in-tab.is-active { color:var(--brand); border-bottom-color:var(--brand); }
         .in-seg { display:inline-flex; gap:2px; padding:3px; border-radius:11px; background:#f1f5f9; }
         .in-seg-btn { display:inline-flex; align-items:center; gap:6px; padding:.45rem .8rem; border-radius:9px; font-size:.75rem; font-weight:700; color:var(--ink-400); white-space:nowrap; transition:.15s ease; }
         .in-seg-btn:hover { color:var(--ink-700); }
@@ -338,11 +335,6 @@
         .pb-3 { padding-bottom:.75rem; }
         .pt-2 { padding-top:.5rem; }
         /* ===== Mode halaman laporan (Ringkas / Analitis / Cetak) ===== */
-        .mode-head { align-items:center; margin-bottom:14px; }
-        .mode-tabs { display:flex; gap:4px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:4px; box-shadow:var(--shadow-soft); overflow-x:auto; }
-        .mode-tab { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:8px 14px; border-radius:9px; font-size:12px; font-weight:800; color:var(--ink-500); white-space:nowrap; transition:.15s ease; }
-        .mode-tab:hover { background:#f8fafc; color:var(--ink-700); }
-        .mode-tab.is-active { background:#0f172a; color:#fff; }
         .ringkas-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
         .ringkas-kpi { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:15px; box-shadow:var(--shadow-soft); }
         .ringkas-kpi .top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -407,9 +399,6 @@
             .ringkas-grid { grid-template-columns:1fr; }
         }
         @media (max-width:640px){
-            .mode-head { align-items:flex-start; }
-            .mode-tabs { width:100%; }
-            .mode-tab { flex:1 1 0; padding:8px 6px; font-size:11.5px; }
             .ringkas-kpi .num { font-size:21px; }
             .ringkas-kpi .num.money { font-size:16px; }
             .recent-row { grid-template-columns:minmax(0,1fr) auto; gap:8px 10px; padding:11px 14px; }
@@ -425,8 +414,8 @@
         @media print {
             @page { size:A4; margin:14mm; }
             body { background:#fff !important; }
-            .sidebar-aside, .main-wrap > header, .filter-desktop, .filter-mobile-bar, .mode-head,
-            .in-tabsw, .bottom-nav, .fab-btn, .no-print, .sheet-overlay, .sheet-panel { display:none !important; }
+            .sidebar-aside, .main-wrap > header, .filter-desktop, .filter-mobile-bar,
+            .bottom-nav, .fab-btn, .no-print, .sheet-overlay, .sheet-panel { display:none !important; }
             .main-wrap, .content-wrap { background:#fff !important; padding:0 !important; margin:0 !important; min-height:0 !important; }
             .print-sheet { display:block !important; border:0; border-radius:0; box-shadow:none; max-width:none; margin:0; padding:0; overflow:visible; }
             .print-sheet .ps-table { min-width:0; }
@@ -435,7 +424,8 @@
     </style>
 </head>
 <body>
-    <div id="app" v-cloak class="app-shell font-sans text-ink antialiased"
+    <div id="app" v-cloak>
+    <div class="app-shell font-sans text-ink antialiased"
         :class="sidebarCollapsed ? 'sidebar-collapsed' : ''">
 
         <!-- login -->
@@ -583,6 +573,20 @@
                 </nav>
             </div>
 
+            <div class="sb-list mt-4 border-t border-white/10 px-3 pt-4">
+                <div class="sb-hide px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Mode Laporan</div>
+                <div class="sb-grid grid grid-cols-1 gap-1">
+                    <button v-for="m in modes" :key="'mode-' + m.key" type="button" @click="switchLaporanMode(m.key)"
+                        :aria-pressed="laporanMode === m.key ? 'true' : 'false'"
+                        :title="m.label"
+                        :class="laporanMode === m.key ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+                        class="sb-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition">
+                        <i :class="m.icon" class="w-5 shrink-0 text-base"></i>
+                        <span class="sb-hide flex-1 text-left">{{ m.label }}</span>
+                    </button>
+                </div>
+            </div>
+
             <div class="sb-foot mt-auto border-t border-white/10 p-4">
                 <div class="sb-user flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
                     <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300">
@@ -632,28 +636,6 @@
             </header>
 
             <div class="content-wrap p-4 md:p-6 lg:p-8">
-
-            <!-- mode halaman -->
-            <div class="in-pageintro mode-head">
-                <div>
-                    <h2>{{ modeTitle }}</h2>
-                    <p>{{ modeSubtitle }}</p>
-                </div>
-                <div class="mode-tabs" role="tablist" aria-label="Halaman laporan">
-                    <button type="button" role="tab" :aria-selected="laporanMode === 'ringkas' ? 'true' : 'false'"
-                        :class="laporanMode === 'ringkas' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('ringkas')">
-                        <i class="bi bi-list-ul"></i>Ringkas
-                    </button>
-                    <button type="button" role="tab" :aria-selected="laporanMode === 'analitis' ? 'true' : 'false'"
-                        :class="laporanMode === 'analitis' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('analitis')">
-                        <i class="bi bi-bar-chart-line"></i>Analitis
-                    </button>
-                    <button type="button" role="tab" :aria-selected="laporanMode === 'cetak' ? 'true' : 'false'"
-                        :class="laporanMode === 'cetak' ? 'mode-tab is-active' : 'mode-tab'" @click="switchLaporanMode('cetak')">
-                        <i class="bi bi-printer"></i>Cetak
-                    </button>
-                </div>
-            </div>
 
             <!-- ===================== HALAMAN: RINGKAS ===================== -->
             <section v-if="laporanMode === 'ringkas'" class="space-y-5">
@@ -774,10 +756,29 @@
                 </template>
             </section>
 
-            <!-- filter bar desktop (glassmorphism) -->
+            <!-- filter bar desktop (ringkas + panel collapsible) -->
             <div class="filter-desktop sticky top-16 z-30 mb-5 lap-card" v-show="showGlobalFilters">
-                <div class="in-toolbar">
-                <div class="grid w-full gap-3 md:grid-cols-12">
+                <div class="in-toolbar" style="flex-wrap:nowrap;">
+                    <div class="relative min-w-0 flex-1">
+                        <i class="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" style="font-size:13px;"></i>
+                        <input v-model="filters.search" class="in-input pl-10" placeholder="Cari NPM / nama / kegiatan...">
+                    </div>
+                    <button type="button" class="btn-soft shrink-0 !py-2" :aria-expanded="filterCollapsed ? 'false' : 'true'" aria-controls="filter-desktop-panel" @click="filterCollapsed = !filterCollapsed">
+                        <i class="bi bi-funnel"></i>
+                        <span>Filter</span>
+                        <span v-if="activeFilterCount" class="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">{{ activeFilterCount }}</span>
+                        <i class="bi" :class="filterCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+                    </button>
+                    <button type="button" class="btn-soft shrink-0 !py-2" title="Reset filter" @click="resetGlobalFilters()">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span class="hidden md:inline">Reset</span>
+                    </button>
+                    <button type="button" class="btn-primary shrink-0 !py-2" :disabled="exporting" @click="exportExcel()">
+                        <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
+                        <span>{{ exporting ? 'Menyiapkan...' : 'Export' }}</span>
+                    </button>
+                </div>
+                <div v-show="!filterCollapsed" id="filter-desktop-panel" class="grid gap-3 p-3 md:grid-cols-12" style="border-top:1px solid var(--line);">
                     <div class="md:col-span-3">
                         <label class="label">Dari Tanggal</label>
                         <input type="date" v-model="filters.from" class="in-input">
@@ -807,22 +808,6 @@
                             <option v-for="j in jenisOptions" :key="j" :value="j">{{ j }}</option>
                         </select>
                     </div>
-                    <div class="md:col-span-6">
-                        <label class="label">Cari</label>
-                        <input v-model="filters.search" class="in-input" placeholder="Cari NPM / nama / kegiatan...">
-                    </div>
-                    <div class="flex items-end md:col-span-2">
-                        <button type="button" class="btn-soft w-full" @click="resetGlobalFilters()">
-                            <i class="bi bi-arrow-counterclockwise"></i> Reset
-                        </button>
-                    </div>
-                    <div class="flex items-end md:col-span-4">
-                        <button class="btn-primary w-full" :disabled="exporting" @click="exportExcel()">
-                            <i :class="exporting ? 'bi-hourglass-split' : 'bi-file-earmark-excel'"></i>
-                            {{ exporting ? 'Menyiapkan...' : 'Export .xlsx' }}
-                        </button>
-                    </div>
-                </div>
                 </div>
             </div>
 
@@ -896,12 +881,6 @@
 
             <!-- tab switcher -->
             <div v-if="laporanMode === 'analitis'">
-            <div class="in-tabsw mb-6">
-                <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
-                    :class="activeTab === t.key ? 'in-tab is-active' : 'in-tab'">
-                    <i :class="t.icon"></i>{{ t.label }}
-                </button>
-            </div>
 
             <!-- tab contents -->
             <transition name="fade" mode="out-in">
@@ -2266,7 +2245,7 @@
                                                 <div v-if="it.detail" class="text-[11px] text-slate-400">{{ it.detail }}</div>
                                             </td>
                                             <td class="whitespace-nowrap px-3 py-3 text-center text-slate-500">{{ it.blok }}</td>
-                                            <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-700">{{ fmtRupiah(it.biaya) }}</td>
+                                            <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-700">{{ bayarTagihanLabel(it) }}</td>
                                             <td class="whitespace-nowrap px-3 py-3 text-left text-slate-500">
                                                 <div v-if="it.waktuUploadBukti" class="text-xs">{{ fmtTanggalWaktu(it.waktuUploadBukti) }}</div>
                                                 <div v-else class="text-xs text-slate-300">{{ it.linkBukti ? 'Tidak tercatat' : '-' }}</div>
@@ -2292,7 +2271,7 @@
                                         <span class="font-semibold text-slate-800">{{ it.nama }}</span>
                                         <span :class="bayarBadgeCls(it.statusPembayaran)">{{ bayarLabel(it.statusPembayaran) }}</span>
                                     </div>
-                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ it.npm }}</b><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Blok</span><b>{{ it.blok }}</b><span>Tagihan</span><b class="text-brand-700">{{ fmtRupiah(it.biaya) }}</b><span>Diunggah</span><b>{{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : (it.linkBukti ? 'Tidak tercatat' : '-') }}</b></div>
+                                    <div class="kv"><span>NPM</span><b class="font-mono">{{ it.npm }}</b><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Blok</span><b>{{ it.blok }}</b><span>Tagihan</span><b class="text-brand-700">{{ bayarTagihanLabel(it) }}</b><span>Diunggah</span><b>{{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : (it.linkBukti ? 'Tidak tercatat' : '-') }}</b></div>
                                     <div class="actions">
                                         <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                         <button type="button" class="btn-soft" @click.stop="openPeriksa(it)"><i class="bi bi-search"></i> Periksa</button>
@@ -2323,7 +2302,7 @@
                                     </div>
                                     <div class="text-right">
                                         <div class="text-xs text-slate-400">Tagihan</div>
-                                        <div class="font-semibold text-slate-700">{{ fmtRupiah(it.biaya) }}</div>
+                                        <div class="font-semibold text-slate-700">{{ bayarTagihanLabel(it) }}</div>
                                     </div>
                                     <a v-if="it.linkBukti" :href="safeUrl(it.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, it.linkBukti)" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-cash-coin"></i> Bukti</a>
                                     <button type="button" class="btn-soft !py-1.5 text-xs" @click="openPeriksa(it)"><i class="bi bi-search"></i> Periksa</button>
@@ -2351,7 +2330,7 @@
                                         <div class="mt-1 text-[11px] text-slate-500">{{ it.jenis }} <span v-if="it.detail">- {{ it.detail }}</span></div>
                                         <div class="text-[11px] text-slate-400">Diunggah: {{ it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : 'Tidak tercatat' }}</div>
                                         <div class="mt-1 flex items-center justify-between gap-1">
-                                            <span class="text-[11px] font-semibold text-slate-700">{{ fmtRupiah(it.biaya) }}</span>
+                                            <span class="text-[11px] font-semibold text-slate-700">{{ bayarTagihanLabel(it) }}</span>
                                             <span v-if="it.linkBukti" class="text-[10px] font-semibold text-teal-600">Bukti ada</span>
                                             <span v-else class="text-[10px] text-slate-300">Tanpa bukti</span>
                                         </div>
@@ -2398,8 +2377,8 @@
                                             <tr v-for="it in pagerRows('bayarSelisih', pembayaranSelisih)" :key="'s-' + it.id" class="border-t border-slate-50">
                                                 <td class="px-3 py-3"><div class="font-semibold text-slate-800">{{ it.nama }}</div><div class="font-mono text-[11px] text-slate-400">{{ it.npm }}</div></td>
                                                 <td class="px-3 py-3 text-slate-600">{{ it.jenis }}<div v-if="it.detail" class="text-[11px] text-slate-400">{{ it.detail }}</div></td>
-                                                <td class="whitespace-nowrap px-3 py-3 text-right text-slate-600">{{ fmtRupiah(it.biaya) }}</td>
-                                                <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-800">{{ fmtRupiah(it.nominal) }}</td>
+                                                <td class="whitespace-nowrap px-3 py-3 text-right text-slate-600">{{ bayarTagihanLabel(it) }}</td>
+                                                <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-800">{{ bayarNominalLabel(it) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-right font-semibold" :class="it.nominal < it.biaya ? 'text-amber-600' : 'text-violet-600'">{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</td>
                                                 <td class="whitespace-nowrap px-3 py-3 text-center"><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></td>
                                             </tr>
@@ -2409,7 +2388,7 @@
                                 <div class="in-cards">
                                     <article v-for="it in pagerRows('bayarSelisih', pembayaranSelisih)" :key="'sm-' + it.id" class="in-mcard">
                                         <div class="row1"><span class="font-semibold text-slate-800">{{ it.nama }}</span><span :class="bayarBadgeCls(it.statusPembayaran)">{{ it.kesesuaian === 'kurang' ? 'Kurang' : 'Lebih' }}</span></div>
-                                        <div class="kv"><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Tagihan</span><b>{{ fmtRupiah(it.biaya) }}</b><span>Dibayar</span><b>{{ fmtRupiah(it.nominal) }}</b><span>Selisih</span><b>{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</b></div>
+                                        <div class="kv"><span>Kegiatan</span><b>{{ it.jenis }}</b><span>Tagihan</span><b>{{ bayarTagihanLabel(it) }}</b><span>Dibayar</span><b>{{ bayarNominalLabel(it) }}</b><span>Selisih</span><b>{{ it.nominal < it.biaya ? '-' : '+' }}{{ fmtRupiah(Math.abs(it.nominal - it.biaya)) }}</b></div>
                                     </article>
                                     <p v-if="!pembayaranSelisih.length" class="py-8 text-center text-sm text-slate-400">Tidak ada selisih nominal.</p>
                                 </div>
@@ -2432,7 +2411,7 @@
                                 </div>
                                 <div class="space-y-4 px-5 py-4">
                                     <div class="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs md:grid-cols-4">
-                                        <div><div class="text-slate-400">Tagihan</div><div class="mt-0.5 font-semibold text-slate-800">{{ fmtRupiah(periksa.item.biaya) }}</div></div>
+                                        <div><div class="text-slate-400">Tagihan</div><div class="mt-0.5 font-semibold text-slate-800">{{ bayarTagihanLabel(periksa.item) }}</div></div>
                                         <div><div class="text-slate-400">Status</div><div class="mt-0.5"><span :class="bayarBadgeCls(periksa.item.statusPembayaran)">{{ bayarLabel(periksa.item.statusPembayaran) }}</span></div></div>
                                         <div><div class="text-slate-400">Blok</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.blok }}</div></div>
                                         <div><div class="text-slate-400">Revisi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.revision }}</div></div>
@@ -2441,12 +2420,13 @@
                                     <div class="rounded-xl border border-slate-100 p-3">
                                         <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Bukti Bayar</div>
                                         <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, periksa.item.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-box-arrow-up-right"></i> Buka Bukti Bayar</a>
+                                        <span v-else-if="periksa.item.statusPembayaran === 'gratis' || periksa.form.kesesuaian === 'gratis'" class="text-sm text-slate-400">Gratis tidak memerlukan bukti bayar. Catatan Verifikasi menjadi bukti/alasan.</span>
                                         <span v-else class="text-sm text-slate-400">Belum ada bukti bayar.</span>
                                     </div>
 
                                     <div v-if="periksa.mode === 'view' && periksa.item.statusPembayaran === 'valid'" class="space-y-3">
                                         <div class="grid grid-cols-1 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-xs sm:grid-cols-2">
-                                            <div><div class="text-slate-400">Nominal Diterima</div><div class="mt-0.5 text-base font-bold text-slate-800">{{ fmtRupiah(periksa.item.nominal) }}</div></div>
+                                            <div><div class="text-slate-400">Nominal Diterima</div><div class="mt-0.5 text-base font-bold text-slate-800">{{ bayarNominalLabel(periksa.item) }}</div></div>
                                             <div><div class="text-slate-400">Kesesuaian</div><div class="mt-0.5 font-semibold" :class="periksa.item.kesesuaian === 'kurang' ? 'text-amber-700' : (periksa.item.kesesuaian === 'lebih' ? 'text-violet-700' : 'text-emerald-700')">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
                                             <div><div class="text-slate-400">Tanggal Daftar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.tanggalDaftar ? fmtTanggalWaktu(periksa.item.tanggalDaftar) : '-' }}</div></div>
                                             <div><div class="text-slate-400">Tanggal Upload Bukti Bayar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksaUploadLabel(periksa.item) }}</div></div>
@@ -2463,10 +2443,13 @@
                                     </div>
 
                                     <div v-else-if="periksa.mode === 'view'" class="space-y-3">
-                                        <div v-if="periksa.item.statusPembayaran === 'gratis'" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Pembayaran gratis, tidak perlu diverifikasi.</div>
+                                        <div v-if="periksa.item.statusPembayaran === 'gratis'" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">
+                                            Pembayaran gratis, tidak perlu diverifikasi.
+                                            <div v-if="periksa.item.catatanVerifikasi" class="mt-2 text-xs text-slate-600">Catatan: {{ periksa.item.catatanVerifikasi }}</div>
+                                        </div>
                                         <template v-else>
                                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                                <div>
+                                                <div v-if="periksa.form.kesesuaian !== 'gratis'">
                                                     <label class="label">Nominal Diterima <span class="text-rose-500">*</span></label>
                                                     <input v-model="periksa.form.nominal" type="number" min="0" class="in-input" :class="periksaKesesuaianInfo.cocok ? '' : 'is-error'">
                                                 </div>
@@ -2476,10 +2459,14 @@
                                                         <option value="pas">Pas</option>
                                                         <option value="kurang">Kurang</option>
                                                         <option value="lebih">Lebih</option>
+                                                        <option value="gratis" :disabled="(Number(periksa.item.biaya) || 0) > 0">Gratis</option>
                                                     </select>
                                                 </div>
                                                 <div class="rounded-lg px-3 py-2 text-[11px] sm:col-span-2" :class="periksaKesesuaianInfo.cocok ? 'bg-slate-50 text-slate-500' : 'bg-rose-50 text-rose-600'">
                                                     <i class="bi bi-info-circle"></i> {{ periksaKesesuaianInfo.teks }}
+                                                </div>
+                                                <div v-if="periksa.form.kesesuaian === 'gratis'" class="rounded-lg bg-indigo-50 px-3 py-2 text-[11px] text-indigo-700 sm:col-span-2">
+                                                    <i class="bi bi-gift"></i> Tagihan nol. Tidak ada nominal, tanggal bayar, atau metode yang perlu diisi.
                                                 </div>
                                                 <div>
                                                     <label class="label">Tanggal Daftar</label>
@@ -2491,11 +2478,11 @@
                                                     <div class="in-input bg-slate-50 text-slate-600">{{ periksaUploadLabel(periksa.item) }}</div>
                                                     <div class="mt-1 text-[10px] text-slate-400">Tanggal sistem — tidak dapat diubah</div>
                                                 </div>
-                                                <div>
+                                                <div v-if="periksa.form.kesesuaian !== 'gratis'">
                                                     <label class="label">Tanggal Bayar <span class="text-rose-500">*</span></label>
                                                     <input v-model="periksa.form.tanggal" type="date" class="in-input">
                                                 </div>
-                                                <div>
+                                                <div v-if="periksa.form.kesesuaian !== 'gratis'">
                                                     <label class="label">Metode</label>
                                                     <input v-model="periksa.form.metode" type="text" class="in-input" placeholder="Transfer, tunai, ...">
                                                 </div>
@@ -2505,8 +2492,9 @@
                                                 <span v-if="periksa.item.uploadResetNote"> Catatan: {{ periksa.item.uploadResetNote }}</span>
                                             </div>
                                             <div>
-                                                <label class="label">Catatan Verifikasi</label>
-                                                <textarea v-model="periksa.form.catatan" rows="2" class="in-input" placeholder="Opsional"></textarea>
+                                                <label class="label">Catatan Verifikasi <span v-if="periksa.form.kesesuaian === 'gratis'" class="text-rose-500">*</span></label>
+                                                <textarea v-model="periksa.form.catatan" rows="2" class="in-input" :placeholder="periksa.form.kesesuaian === 'gratis' ? 'Wajib: alasan Gratis minimal 5 karakter' : 'Opsional'"></textarea>
+                                                <div v-if="periksa.form.kesesuaian === 'gratis'" class="mt-1 text-[10px] text-slate-400">Catatan ini menjadi bukti/alasan Gratis.</div>
                                             </div>
                                             <div class="flex flex-wrap justify-end gap-2">
                                                 <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
@@ -2796,11 +2784,18 @@
                     <span class="flex-1 text-left">{{ n.label }}</span>
                 </button>
                 <div class="sheet-divider"></div>
+                <div class="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Mode Laporan</div>
+                <button v-for="m in modes" :key="'mm-' + m.key" type="button" class="sheet-item" :class="laporanMode===m.key ? 'active' : ''" @click="switchLaporanMode(m.key)">
+                    <i :class="m.icon"></i>
+                    <span class="flex-1 text-left">{{ m.label }}</span>
+                </button>
+                <div class="sheet-divider"></div>
                 <a :href="'/dashboard'" class="sheet-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
                 <a :href="appUrl" class="sheet-item"><i class="bi bi-house"></i> Beranda</a>
                 <button type="button" class="sheet-item danger" @click="logout()"><i class="bi bi-box-arrow-right"></i> Keluar</button>
             </div>
         </transition>
+    </div>
     </div>
 
     <script src="/gs-shim.js"></script>
@@ -3180,10 +3175,11 @@
                     activeTab: 'rekap',
                     laporanMode: 'ringkas',
                     cetak: { jenis: 'lengkap', kop: true, ttd: true },
-                    sidebarCollapsed: false,
+                    sidebarCollapsed: typeof window !== 'undefined' && window.innerWidth >= 1024,
                     sidebarOpen: false,
                     mobileMenuOpen: false,
                     filterSheetOpen: false,
+                    filterCollapsed: true,
                     tabs: [
                         { key: 'rekap', label: 'Rekap Keseluruhan', icon: 'bi-pie-chart-fill' },
                         { key: 'dosen', label: 'Laporan Dosen', icon: 'bi-person-video3' },
@@ -3191,6 +3187,11 @@
                         { key: 'ba', label: 'Berita Acara', icon: 'bi-file-earmark-text' },
                         { key: 'jadwal', label: 'Jadwal vs Realisasi', icon: 'bi-calendar2-check' },
                         { key: 'bayar', label: 'Data Pembayaran', icon: 'bi-cash-coin' }
+                    ],
+                    modes: [
+                        { key: 'ringkas', label: 'Ringkas', icon: 'bi-list-ul' },
+                        { key: 'analitis', label: 'Analitis', icon: 'bi-bar-chart-line' },
+                        { key: 'cetak', label: 'Cetak', icon: 'bi-printer' }
                     ],
                     summary: {},
                     rows: [],
@@ -3290,13 +3291,6 @@
                 },
                 modeTitle() {
                     return { ringkas: 'Ringkasan Laporan', analitis: 'Analisis Laporan', cetak: 'Cetak Laporan' }[this.laporanMode] || 'Laporan';
-                },
-                modeSubtitle() {
-                    return {
-                        ringkas: 'Gambaran umum laporan pada periode dan filter yang sedang aktif.',
-                        analitis: 'Irisan data, matriks dosen/bagian, berita acara, jadwal, dan pembayaran.',
-                        cetak: 'Susun dokumen laporan formal siap cetak dari data yang sama.'
-                    }[this.laporanMode] || '';
                 },
                 ringkasKegiatanAll() {
                     return this.bagianKegiatanAll.map(k => {
@@ -3589,7 +3583,7 @@
                         const biaya = Number(p.Biaya) || 0;
                         const linkBukti = String(p['Link Bukti Bayar'] || '').trim();
                         let statusPembayaran = String(p['Status Pembayaran'] || '').trim();
-                        if (!statusPembayaran) statusPembayaran = biaya <= 0 ? 'gratis' : (linkBukti ? 'menunggu' : 'belum');
+                        if (!statusPembayaran) statusPembayaran = biaya > 0 && linkBukti ? 'menunggu' : 'belum';
                         const detail = (r.details || []).map(d => {
                             const pilihan = String(d.Pilihan || '').trim();
                             const isi = String(d.Detail || '').trim();
@@ -4549,10 +4543,22 @@
                     const form = this.periksa.form || {};
                     const tagihan = it ? Number(it.biaya) || 0 : 0;
                     const nominal = Number(form.nominal) || 0;
+                    if (form.kesesuaian === 'gratis') {
+                        const cocok = tagihan <= 0;
+                        return {
+                            tagihan, nominal: 0, selisih: 0, target: 'gratis', targetLabel: 'Gratis', cocok, gratis: true,
+                            teks: cocok
+                                ? 'Tagihan nol. Pembayaran akan ditandai Gratis; alasan wajib diisi di Catatan Verifikasi.'
+                                : 'Gratis hanya untuk tagihan nol. Tagihan saat ini ' + this.fmtRupiah(tagihan) + '.'
+                        };
+                    }
                     const target = this.hitungKesesuaian(nominal, tagihan);
                     const targetLabel = this.bayarKesesuaianLabel(target);
                     const selisih = Math.abs(nominal - tagihan);
                     const cocok = !!form.kesesuaian && form.kesesuaian === target;
+                    if (tagihan <= 0) {
+                        return { tagihan, nominal, selisih, target, targetLabel, cocok: false, gratis: false, teks: 'Tagihan nol. Pilih Gratis.' };
+                    }
                     let teks;
                     if (!nominal) {
                         teks = 'Tagihan ' + this.fmtRupiah(tagihan) + '. Isi nominal diterima lalu pilih kesesuaian.';
@@ -4566,7 +4572,7 @@
                             ? ' Pilihan Kesesuaian harus ' + targetLabel + '.'
                             : ' Pilih kesesuaian ' + targetLabel + '.';
                     }
-                    return { tagihan, nominal, selisih, target, targetLabel, cocok, teks };
+                    return { tagihan, nominal, selisih, target, targetLabel, cocok, gratis: false, teks };
                 },
             },
             watch: {
@@ -4639,6 +4645,8 @@
                 switchLaporanMode(mode) {
                     if (['ringkas', 'analitis', 'cetak'].indexOf(mode) === -1) return;
                     this.laporanMode = mode;
+                    this.mobileMenuOpen = false;
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) this.sidebarOpen = false;
                     try {
                         const url = new URL(window.location.href);
                         if (mode === 'ringkas') url.searchParams.delete('mode');
@@ -4726,16 +4734,28 @@
                     if (status === 'gratis') return 'Gratis';
                     return 'Belum Bayar';
                 },
+                bayarTagihanLabel(it) {
+                    if (!it) return '-';
+                    if (it.statusPembayaran === 'gratis') return 'Gratis';
+                    return this.fmtRupiah(it.biaya);
+                },
+                bayarNominalLabel(it) {
+                    if (!it) return '-';
+                    if (it.statusPembayaran === 'gratis') return 'Gratis';
+                    return this.fmtRupiah(it.nominal);
+                },
                 bayarBadgeCls(status) {
                     if (status === 'valid') return 'in-badge acc';
                     if (status === 'menunggu') return 'in-badge wait';
                     if (status === 'belum') return 'in-badge cancel';
+                    if (status === 'gratis') return 'in-badge gratis';
                     return 'in-badge';
                 },
                 bayarKesesuaianLabel(value) {
                     if (value === 'pas') return 'Pas';
                     if (value === 'kurang') return 'Kurang';
                     if (value === 'lebih') return 'Lebih';
+                    if (value === 'gratis') return 'Gratis';
                     return '-';
                 },
                 bayarModeLabel(mode) {
@@ -4795,9 +4815,16 @@
                 onKesesuaianChange() {
                     const it = this.periksa.item;
                     if (!it) return;
-                    if (this.periksa.form.kesesuaian === 'pas') {
+                    const form = this.periksa.form;
+                    if (form.kesesuaian === 'gratis') {
+                        form.nominal = '';
+                        form.tanggal = '';
+                        form.metode = '';
+                        return;
+                    }
+                    if (form.kesesuaian === 'pas') {
                         const tagihan = Number(it.biaya) || 0;
-                        if (tagihan > 0) this.periksa.form.nominal = String(tagihan);
+                        if (tagihan > 0) form.nominal = String(tagihan);
                     }
                 },
                 periksaUploadLabel(it) {
@@ -4837,7 +4864,7 @@
                         nominal: nominal ? String(nominal) : '',
                         tanggal: it.tanggalBayar || this.bayarToday(),
                         metode: it.metode || '',
-                        kesesuaian: it.kesesuaian || this.hitungKesesuaian(nominal, it.biaya) || 'pas',
+                        kesesuaian: it.kesesuaian || (Number(it.biaya) === 0 ? 'gratis' : this.hitungKesesuaian(nominal, it.biaya) || 'pas'),
                         catatan: it.catatanVerifikasi || ''
                     };
                     this.koreksi = {
@@ -4863,11 +4890,47 @@
                 async submitValid() {
                     const it = this.periksa.item;
                     if (!it) return;
+                    const form = this.periksa.form;
+                    if (form.kesesuaian === 'gratis') {
+                        if ((Number(it.biaya) || 0) > 0) {
+                            this.showToast('bi-x-circle', 'Gratis hanya untuk tagihan nol.');
+                            return;
+                        }
+                        const catatan = String(form.catatan || '').trim();
+                        if (catatan.length < 5) {
+                            this.showToast('bi-x-circle', 'Alasan Gratis wajib diisi minimal 5 karakter.');
+                            return;
+                        }
+                        if (!confirm('Tandai pembayaran ini sebagai Gratis? Tindakan ini tidak dapat dikoreksi.')) return;
+                        this.periksa.saving = true;
+                        try {
+                            const res = await this.run('verifyPembayaran', {
+                                idPengajuan: it.id,
+                                kesesuaian: 'gratis',
+                                catatan: catatan,
+                                expectedRevision: it.revision
+                            });
+                            if (!res || !res.success) {
+                                this.showToast('bi-x-circle', (res && res.message) || 'Gagal menandai pembayaran Gratis.');
+                                return;
+                            }
+                            this.showToast('bi-check-circle', (res && res.message) || 'Pembayaran ditandai Gratis.');
+                            await this.loadData();
+                            const fresh = this.pembayaranItemsAll.find(x => x.id === it.id);
+                            if (fresh) this.periksa.item = fresh;
+                            this.periksa.mode = 'view';
+                        } catch (e) {
+                            this.showToast('bi-x-circle', 'Gagal: ' + (e || 'Terjadi kesalahan.'));
+                        } finally {
+                            this.periksa.saving = false;
+                        }
+                        return;
+                    }
                     if (!it.linkBukti) {
                         this.showToast('bi-x-circle', 'Belum ada bukti bayar untuk diverifikasi.');
                         return;
                     }
-                    const nominal = Number(this.periksa.form.nominal);
+                    const nominal = Number(form.nominal);
                     if (!(nominal > 0)) {
                         this.showToast('bi-x-circle', 'Nominal diterima harus lebih dari nol.');
                         return;
@@ -5679,6 +5742,9 @@
 
                             const detailPesertaRows = [];
                             this.bagianDetailRows.forEach(r => r.peserta.forEach(p => {
+                                const row = this.rowForUnitPeserta(p);
+                                const peng = row ? row.pengajuan : null;
+                                const gratis = !!(peng && String(peng['Status Pembayaran'] || '').trim() === 'gratis');
                                 detailPesertaRows.push({
                                     'Bagian': r.bagian,
                                     'Blok': r.blok,
@@ -5687,7 +5753,7 @@
                                     'NPM': p.npm || '',
                                     'Nama': p.namaLengkap || '',
                                     'Status': p.status || '',
-                                    'Biaya': this.biayaForNpm(String(p.npm || '').trim(), r.blok),
+                                    'Biaya': gratis ? 'Gratis' : this.biayaForNpm(String(p.npm || '').trim(), r.blok),
                                     'Link Bukti Bayar': p.linkBukti || ''
                                 });
                             }));
@@ -5707,11 +5773,11 @@
                                 'Detail Kegiatan': it.detail || '',
                                 'Blok': it.blok,
                                 'Status Pengajuan': it.status,
-                                'Tagihan': it.biaya,
+                                'Tagihan': it.statusPembayaran === 'gratis' ? 'Gratis' : it.biaya,
                                 'Diunggah': it.waktuUploadBukti ? fmtTanggalWaktu(it.waktuUploadBukti) : '',
                                 'Status Pembayaran': this.bayarLabel(it.statusPembayaran),
                                 'Kesesuaian': this.bayarKesesuaianLabel(it.kesesuaian),
-                                'Nominal Dibayar': it.nominal || 0,
+                                'Nominal Dibayar': it.statusPembayaran === 'gratis' ? 'Gratis' : (it.nominal || 0),
                                 'Tanggal Bayar': it.tanggalBayar || '',
                                 'Metode': it.metode || '',
                                 'Catatan Verifikasi': it.catatanVerifikasi || '',
@@ -6029,6 +6095,7 @@
                                 (r.peserta || []).forEach(p => {
                                     const row = this.rowForUnitPeserta(p);
                                     const peng = row ? row.pengajuan : null;
+                                    const gratis = !!(peng && String(peng['Status Pembayaran'] || '').trim() === 'gratis');
                                     const npm = String(p.npm || '').trim();
                                     rowsByKey[bk].push({
                                         'Tanggal Daftar/Tanggal Pengajuan': peng ? fmtTanggalWaktu(peng.Timestamp || '') : '',
@@ -6037,13 +6104,13 @@
                                         'Blok': String((peng && peng.Blok) || r.blok || '').trim(),
                                         'Kegiatan': String((peng && peng['Jenis Kegiatan']) || '').trim() || r.bagian || '',
                                         'Detail Kegiatan': detailTextFor(row, r.nama),
-                                        'Biaya/Tagihan': this.biayaForNpm(npm, r.blok),
-                                        'Kesesuaian': peng ? this.bayarKesesuaianLabel(String(peng['Kesesuaian Pembayaran'] || '').trim()) : '-',
+                                        'Biaya/Tagihan': gratis ? 'Gratis' : this.biayaForNpm(npm, r.blok),
+                                        'Kesesuaian': gratis ? 'Gratis' : (peng ? this.bayarKesesuaianLabel(String(peng['Kesesuaian Pembayaran'] || '').trim()) : '-'),
                                         'Dosen': String((peng && peng.Dosen) || this.resolveDosenForNpm(npm, r.blok) || (r.dosenList || []).join(', ') || '').trim(),
                                         'Tanggal Pelaksanaan': r.tanggal ? fmtTanggalWaktu(r.tanggal) : '',
                                         'Link Bukti Bayar': String(p.linkBukti || '').trim(),
                                         'Link BA Pelaksanaan': baLinks,
-                                        'Total Pembayaran (Nominal dibayar)': peng ? (Number(peng['Nominal Dibayar']) || 0) : 0,
+                                        'Total Pembayaran (Nominal dibayar)': gratis ? 'Gratis' : (peng ? (Number(peng['Nominal Dibayar']) || 0) : 0),
                                         'Keterangan (dari portal)': String((peng && peng.Keterangan) || '').trim()
                                     });
                                 });

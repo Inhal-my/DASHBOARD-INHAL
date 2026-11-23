@@ -3,7 +3,7 @@ import { env } from 'cloudflare:test';
 import {
   norm, baginaKey, parseCurrency, formatRupiah, getMasterOptions,
   resolveBagian12, baginaHasAccess, getBagianBaStatuses, kegiatanKey,
-  resolveBiayaForPengajuan, effectiveDetailFor, filterKkdSgdDetailOptions
+  resolveBiayaForPengajuan, resolveBiayaStatusForPengajuan, effectiveDetailFor, filterKkdSgdDetailOptions
 } from '../src/read/common.js';
 
 describe('common helpers', () => {
@@ -72,6 +72,20 @@ describe('biaya berdasarkan Detail', () => {
     const p = { 'ID Pengajuan': 'X', 'Jenis Kegiatan': 'KKD' };
     expect(resolveBiayaForPengajuan(p, biaya, { X: 100000 }, [{ Detail: 'Inhal' }])).toBe(100000);
     expect(resolveBiayaForPengajuan(p, { 'Gratis KKD': 0 }, {}, [])).toBe(0);
+  });
+
+  it('membedakan biaya nol terdaftar dari biaya tidak ditemukan', () => {
+    const p = { 'ID Pengajuan': 'X', 'Jenis Kegiatan': 'KKD' };
+    expect(resolveBiayaStatusForPengajuan(p, { Inhal: 0 }, {}, [{ Detail: 'Inhal' }]))
+      .toEqual({ amount: 0, found: true, source: 'detail' });
+    expect(resolveBiayaStatusForPengajuan(p, { Inhal: 250000 }, {}, [{ Detail: 'Remediasi' }]))
+      .toEqual({ amount: 0, found: false, source: 'detail' });
+    expect(resolveBiayaStatusForPengajuan({ 'ID Pengajuan': 'X', 'Jenis Kegiatan': 'Seminar' }, { Seminar: 0 }, {}, []))
+      .toEqual({ amount: 0, found: true, source: 'jenis' });
+    expect(resolveBiayaStatusForPengajuan({ 'ID Pengajuan': 'X', 'Jenis Kegiatan': 'Seminar' }, { Inhal: 0 }, {}, []))
+      .toEqual({ amount: 0, found: false, source: 'jenis' });
+    expect(resolveBiayaStatusForPengajuan(p, { Inhal: 250000 }, { X: 0 }, [{ Detail: 'Inhal' }]))
+      .toEqual({ amount: 0, found: true, source: 'override' });
   });
 
   it('menyembunyikan Remediasi dari opsi Detail KKD/SGD', () => {
