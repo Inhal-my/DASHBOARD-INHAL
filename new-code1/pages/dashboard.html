@@ -1579,6 +1579,201 @@
                                     </table>
                                 </div>
                             </div>
+                            <div v-else-if="activeMasterCard.key === 'editJadwalBa'" class="p-5">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">Edit Jadwal/BA</h4>
+                                        <p class="mt-0.5 text-xs text-slate-500">Pilih kegiatan, lalu tambahkan peserta dari pengajuan atau jadwal lain ke BA yang benar. Satu BA tertaut ke satu sesi jadwal.</p>
+                                    </div>
+                                    <button class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap" :disabled="master.repair.loading" @click="loadBaRepair(true)">
+                                        <i class="bi bi-arrow-clockwise"></i> Muat ulang
+                                    </button>
+                                </div>
+
+                                <div class="mt-4 grid gap-2 md:grid-cols-[180px_minmax(0,1fr)_auto]">
+                                    <select v-model="master.repair.bagian" class="input" @change="reloadBaRepairGroups">
+                                        <option value="">Semua bagian</option>
+                                        <option v-for="b in master.repair.bagianOptions" :key="b" :value="b">{{ b }}</option>
+                                    </select>
+                                    <input v-model="master.repair.q" type="text" class="input" placeholder="Cari kegiatan atau blok..." @keyup.enter="reloadBaRepairGroups" />
+                                    <button class="btn-primary !px-4 !py-2 text-xs" :disabled="master.repair.loading" @click="reloadBaRepairGroups"><i class="bi bi-search"></i> Cari</button>
+                                    <label class="flex items-center gap-2 text-[11px] text-slate-600 md:col-span-3">
+                                        <input v-model="master.repair.includeArchived" type="checkbox" class="mt-0.5" @change="reloadBaRepairGroups" />
+                                        Tampilkan BA arsip
+                                    </label>
+                                </div>
+
+                                <div v-if="master.repair.loading" class="mt-6 rounded-xl bg-slate-50 px-4 py-8 text-center text-xs text-slate-400">Memuat kegiatan...</div>
+                                <div v-else class="mt-4 grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+                                    <div class="rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-100">
+                                        <div class="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Kegiatan</div>
+                                        <div class="space-y-1" style="max-height: 560px; overflow-y: auto;">
+                                            <button v-for="g in master.repair.groups" :key="g.key" type="button" class="w-full rounded-xl px-3 py-2 text-left" :class="master.repair.key === g.key ? 'bg-white shadow-sm ring-1 ring-brand-100' : 'hover:bg-white/70'" @click="selectBaRepairGroup(g.key)">
+                                                <div class="truncate text-xs font-bold text-slate-700">{{ g.namaKegiatan || '-' }}</div>
+                                                <div class="mt-0.5 truncate text-[11px] text-slate-500">{{ g.bagian }} · {{ g.blok || '-' }}</div>
+                                                <div class="mt-1 text-[10px] text-slate-400">{{ g.jadwalCount }} jadwal · {{ g.baCount }} BA<span v-if="g.archivedCount"> · {{ g.archivedCount }} arsip</span></div>
+                                            </button>
+                                            <p v-if="!master.repair.groups.length" class="px-3 py-6 text-center text-xs text-slate-400">Tidak ada kegiatan.</p>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="master.repair.workspace" class="min-w-0">
+                                        <div class="rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                                            <div class="text-sm font-bold text-slate-800">{{ master.repair.workspace.bagian }} · {{ master.repair.workspace.blok || '-' }}</div>
+                                            <div class="text-xs text-slate-500">{{ master.repair.workspace.namaKegiatan }}</div>
+                                        </div>
+
+                                        <div class="mt-3 grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
+                                            <div class="rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-100">
+                                                <div class="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">BA Pelaksanaan</div>
+                                                <div class="space-y-1" style="max-height: 520px; overflow-y: auto;">
+                                                    <button v-for="b in master.repair.workspace.ba" :key="b.baId" type="button" class="w-full rounded-xl px-3 py-2 text-left" :class="master.repair.baId === b.baId ? 'bg-white shadow-sm ring-1 ring-brand-100' : 'hover:bg-white/70'" @click="selectBaRepairBa(b.baId)">
+                                                        <div class="flex items-center justify-between gap-2">
+                                                            <span class="truncate font-mono text-[11px] font-bold text-slate-700">{{ b.baId }}</span>
+                                                            <span class="flex shrink-0 items-center gap-1 text-[10px] text-slate-400"><span v-if="b.archived" class="chip bg-amber-50 text-[9px] font-semibold text-amber-700">Arsip</span>{{ b.peserta.length }}P</span>
+                                                        </div>
+                                                        <div class="mt-0.5 truncate text-[11px] text-slate-500">{{ b.label || 'Tanpa label' }}</div>
+                                                        <div class="text-[10px] text-slate-400">{{ b.tanggal }} {{ b.jam }} · {{ b.jadwalIds.length }} sesi</div>
+                                                    </button>
+                                                    <p v-if="!master.repair.workspace.ba.length" class="px-3 py-6 text-center text-xs text-slate-400">Belum ada BA.</p>
+                                                </div>
+                                            </div>
+
+                                            <div v-if="baRepairSelectedBa" class="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                    <div class="min-w-0">
+                                                        <div class="font-mono text-xs font-bold text-slate-800">{{ baRepairSelectedBa.baId }}</div>
+                                                        <div class="mt-0.5 text-[11px] text-slate-500">{{ baRepairSelectedBa.tanggal }} {{ baRepairSelectedBa.jam }} · {{ baRepairSelectedBa.dosen || 'Dosen belum diisi' }}</div>
+                                                    </div>
+                                                    <a v-if="baRepairSelectedBa.fileUrl" :href="safeUrl(baRepairSelectedBa.fileUrl)" target="_blank" rel="noopener" class="btn-soft !px-3 !py-1.5 text-xs whitespace-nowrap"><i class="bi bi-file-earmark-pdf"></i> Buka hardcopy</a>
+                                                    <span v-else class="text-[11px] text-amber-600">Berkas BA belum ada.</span>
+                                                </div>
+
+                                                <div v-if="baRepairSelectedBa.archived" class="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-[11px] text-amber-800 ring-1 ring-amber-100">
+                                                    <div><span class="font-semibold">Diarsipkan</span> {{ baRepairSelectedBa.archivedAt }}<span v-if="baRepairSelectedBa.archivedBy"> oleh {{ baRepairSelectedBa.archivedBy }}</span></div>
+                                                    <div v-if="baRepairSelectedBa.archiveReason" class="mt-1">Alasan: {{ baRepairSelectedBa.archiveReason }}</div>
+                                                    <div v-if="baRepairSelectedBa.mergedInto" class="mt-1">Digabungkan ke {{ baRepairSelectedBa.mergedInto }}.</div>
+                                                    <button class="btn-soft mt-2 !px-3 !py-1.5 text-xs" :disabled="master.repair.saving" @click="restoreSelectedBa"><i class="bi bi-arrow-counterclockwise"></i> Pulihkan BA</button>
+                                                </div>
+
+                                                <div v-if="!baRepairSelectedBa.archived" class="mt-4 grid gap-4 lg:grid-cols-2">
+                                                    <div>
+                                                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sesi jadwal BA</div>
+                                                        <div v-if="baRepairCreateEligible && !master.repair.createOpen" class="mt-2">
+                                                            <button type="button" class="btn-soft !px-3 !py-1.5 text-xs" :disabled="!baRepairCanCreate || master.repair.creating" @click="openCreateJadwalFromBa">
+                                                                <i class="bi bi-plus-circle"></i> Buat jadwal dari BA
+                                                            </button>
+                                                            <p v-if="baRepairCreateBlockedReason" class="mt-1 text-[10px] font-semibold text-amber-600">{{ baRepairCreateBlockedReason }}</p>
+                                                        </div>
+                                                        <div v-if="master.repair.createOpen" class="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+                                                            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Jadwal baru dari BA</div>
+                                                            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                                                <label class="block text-[10px] font-semibold text-slate-500">Tanggal
+                                                                    <input type="date" v-model="master.repair.createTanggal" class="input mt-1 w-full text-xs" />
+                                                                </label>
+                                                                <label class="block text-[10px] font-semibold text-slate-500">Jam
+                                                                    <input type="time" v-model="master.repair.createJam" class="input mt-1 w-full text-xs" />
+                                                                </label>
+                                                            </div>
+                                                            <label class="mt-2 block text-[10px] font-semibold text-slate-500">Dosen (satu per baris)
+                                                                <textarea v-model="master.repair.createDosen" rows="2" class="input mt-1 w-full text-xs" placeholder="dr. Nama, M.Kes"></textarea>
+                                                            </label>
+                                                            <p class="mt-1 text-[10px] text-slate-400">Peserta mengikuti data BA tersimpan ({{ baRepairSelectedBa.peserta.length }} orang).</p>
+                                                            <p v-if="master.repair.createError" class="mt-1 text-[10px] font-semibold text-rose-600">{{ master.repair.createError }}</p>
+                                                            <div class="mt-2 flex items-center justify-end gap-2">
+                                                                <button type="button" class="btn-soft !px-3 !py-1.5 text-xs" :disabled="master.repair.creating" @click="cancelCreateJadwalFromBa">Batal</button>
+                                                                <button type="button" class="btn-primary !px-3 !py-1.5 text-xs" :disabled="master.repair.creating" @click="submitCreateJadwalFromBa">
+                                                                    <i v-if="!master.repair.creating" class="bi bi-plus-circle"></i>
+                                                                    {{ master.repair.creating ? 'Membuat...' : 'Buat & Tautkan' }}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <select v-model="master.repair.targetJadwalId" class="input mt-2 w-full text-xs" @change="master.repair.createOpen = false">
+                                                            <option value="">Tanpa sesi jadwal</option>
+                                                            <option v-for="j in master.repair.workspace.jadwal" :key="j.jadwalId" :value="j.jadwalId">{{ j.tanggal }} {{ j.jam }} · {{ j.dosen || '-' }}{{ j.baIds.length && j.baIds.indexOf(baRepairSelectedBa.baId) === -1 ? ' (tertaut ke ' + j.baIds.join(', ') + ')' : '' }}</option>
+                                                        </select>
+                                                        <label class="mt-3 flex items-start gap-2 text-[11px] text-slate-600">
+                                                            <input v-model="master.repair.move" type="checkbox" class="mt-0.5" />
+                                                            <span>Pindahkan peserta yang ditambahkan dari jadwal asal ke sesi ini.</span>
+                                                        </label>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Peserta BA ({{ baRepairSelectedBa.peserta.length }})</div>
+                                                        <div class="mt-2 flex flex-wrap gap-1.5">
+                                                            <span v-for="x in baRepairSelectedBa.peserta" :key="x.idPengajuan || x.npm" class="chip bg-slate-100 text-slate-600" :class="{ 'bg-rose-50 text-rose-700 line-through': master.repair.removeIds.indexOf(x.idPengajuan) !== -1 }">
+                                                                {{ x.npm }} · {{ x.namaLengkap }}
+                                                                <button v-if="!baRepairSelectedBa.archived && x.idPengajuan" type="button" class="ml-1 text-rose-500 hover:text-rose-700" title="Keluarkan dari BA" @click="toggleBaRepairRemove(x.idPengajuan)"><i class="bi bi-x-circle"></i></button>
+                                                            </span>
+                                                        </div>
+                                                        <p v-if="master.repair.removeIds.length" class="mt-1 text-[10px] font-semibold text-rose-600">{{ master.repair.removeIds.length }} peserta akan dikeluarkan saat disimpan.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div v-if="!baRepairSelectedBa.archived" class="mt-5 border-t border-slate-100 pt-5">
+                                                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tambah peserta dari pengajuan/jadwal lain</div>
+                                                    <div class="mt-2">
+                                                        <input v-model="master.repair.candidateQ" type="text" class="input w-full text-xs" placeholder="Cari NPM atau nama..." />
+                                                    </div>
+                                                    <div class="mt-2 space-y-1" style="max-height: 16rem; overflow-y: auto;">
+                                                        <label v-for="c in baRepairCandidates" :key="c.idPengajuan" class="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50" :class="{ 'opacity-60': c.baIds.length }">
+                                                            <input type="checkbox" class="mt-0.5" :disabled="c.baIds.length > 0" :checked="master.repair.addIds.indexOf(c.idPengajuan) !== -1" @change="toggleBaRepairPeserta(c.idPengajuan)" />
+                                                            <span class="min-w-0 text-[11px] text-slate-600">
+                                                                <span class="font-semibold text-slate-700">{{ c.npm }} · {{ c.namaLengkap }}</span>
+                                                                <span class="ml-1 text-slate-400">{{ c.status }}</span>
+                                                                <span v-if="c.sourceJadwal.length" class="block text-slate-500">Jadwal asal: {{ baRepairJadwalList(c.sourceJadwal) }}</span>
+                                                                <span v-else class="block text-emerald-600">Belum punya jadwal</span>
+                                                                <span v-if="c.baIds.length" class="block text-amber-600">Sudah tercatat di {{ c.baIds.join(', ') }}</span>
+                                                            </span>
+                                                        </label>
+                                                        <p v-if="!baRepairCandidates.length" class="px-2 py-4 text-center text-[11px] text-slate-400">Tidak ada kandidat peserta.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-[11px] text-slate-600 ring-1 ring-slate-100">
+                                                    {{ baRepairSummary }}
+                                                </div>
+                                                <div v-if="!baRepairSelectedBa.archived" class="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tindakan BA</div>
+                                                        <div class="flex flex-wrap gap-2">
+                                                            <button class="btn-soft !px-3 !py-1.5 text-xs" :disabled="master.repair.saving" @click="openBaRepairAction('archive')"><i class="bi bi-archive"></i> Arsipkan BA</button>
+                                                            <button class="btn-soft !px-3 !py-1.5 text-xs" :disabled="master.repair.saving || !baRepairMergeTargets.length" @click="openBaRepairAction('merge')"><i class="bi bi-intersect"></i> Gabungkan BA</button>
+                                                        </div>
+                                                    </div>
+                                                    <div v-if="master.repair.actionMode" class="mt-3 space-y-2">
+                                                        <select v-if="master.repair.actionMode === 'merge'" v-model="master.repair.mergeTargetId" class="input w-full text-xs">
+                                                            <option value="">Pilih BA tujuan...</option>
+                                                            <option v-for="b in baRepairMergeTargets" :key="b.baId" :value="b.baId">{{ b.baId }} · {{ b.tanggal }} {{ b.jam }} · {{ b.peserta.length }} peserta</option>
+                                                        </select>
+                                                        <textarea v-model="master.repair.reason" class="input w-full text-xs" rows="2" placeholder="Alasan minimal 10 karakter"></textarea>
+                                                        <input v-model="master.repair.confirmBaId" type="text" class="input w-full text-xs" :placeholder="'Ketik ' + baRepairSelectedBa.baId + ' untuk konfirmasi'" />
+                                                        <label class="flex items-start gap-2 text-[11px] text-slate-600">
+                                                            <input v-model="master.repair.hardcopyAck" type="checkbox" class="mt-0.5" />
+                                                            <span>Saya sudah memeriksa hardcopy/PDF dan memahami tindakan ini tidak menghapus berkas.</span>
+                                                        </label>
+                                                        <div class="flex items-center justify-end gap-2">
+                                                            <button class="btn-soft !px-3 !py-1.5 text-xs" :disabled="master.repair.saving" @click="master.repair.actionMode = ''">Batal</button>
+                                                            <button class="btn-primary !px-3 !py-1.5 text-xs" :disabled="master.repair.saving" @click="submitBaRepairAction">
+                                                                {{ master.repair.actionMode === 'merge' ? 'Gabungkan' : 'Arsipkan' }}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div v-if="!baRepairSelectedBa.archived" class="mt-3 flex items-center justify-end gap-2">
+                                                    <button class="btn-soft !px-4 !py-2 text-xs" :disabled="master.repair.saving" @click="resetBaRepairForm">Reset</button>
+                                                    <button class="btn-primary !px-4 !py-2 text-xs" :disabled="master.repair.saving" @click="saveBaRepair">
+                                                        <i v-if="!master.repair.saving" class="bi bi-save"></i>
+                                                        {{ master.repair.saving ? 'Menyimpan...' : 'Simpan Perbaikan' }}
+                                                    </button>
+                                                </div>
+                                                <p v-if="master.repair.result" class="mt-2 text-[11px] font-semibold text-emerald-600">{{ master.repair.result }}</p>
+                                            </div>
+                                            <div v-else class="rounded-2xl bg-slate-50 px-4 py-12 text-center text-xs text-slate-400 ring-1 ring-slate-100">Pilih BA untuk mulai memperbaiki.</div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="rounded-2xl bg-slate-50 px-4 py-16 text-center text-xs text-slate-400 ring-1 ring-slate-100">Pilih kegiatan di sebelah kiri.</div>
+                                </div>
+                            </div>
                             <div v-if="activeMasterCard.key === 'bagianSettings'" class="p-6">
                                 <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-100">
                                     <div class="flex items-start gap-3">
@@ -2634,6 +2829,7 @@
                         searchTimer: null,
                         rowModal: { open: false, table: '', cardKey: '', title: '', cols: [], disabled: [], mode: 'insert', fields: {}, original: null, originalId: 0 },
                         uploads: { loading: false, loaded: false, rows: [], q: '', filter: '', reset: { open: false, row: null, note: '', saving: false } },
+                        repair: { groups: [], bagianOptions: [], loading: false, loaded: false, q: '', bagian: '', key: '', workspace: null, baId: '', targetJadwalId: '', addIds: [], removeIds: [], move: true, candidateQ: '', includeArchived: false, actionMode: '', mergeTargetId: '', reason: '', confirmBaId: '', hardcopyAck: false, saving: false, result: null, createOpen: false, createTanggal: '', createJam: '', createDosen: '', creating: false, createError: '' },
                         cards: [
                             { key: 'mahasiswa', title: 'Mahasiswa', short: 'Mahasiswa', desc: 'Data mahasiswa (NPM, nama, email, blok, keterangan). Impor massal lewat CSV kolom NPM + Nama Lengkap.', cols: ['NPM', 'Nama Lengkap', 'Email', 'Blok', 'Keterangan'], table: 'Mahasiswa', icon: 'bi-mortarboard' },
                             { key: 'masterKegiatan', title: 'Master Kegiatan', short: 'Kegiatan', desc: 'Referensi kategori & nilai kegiatan (Blok, Ujian, SGD, KKD, Lab, Dosen).', cols: ['Kategori', 'Nilai'], table: 'MasterKegiatan', icon: 'bi-clipboard-check' },
@@ -2643,6 +2839,7 @@
                             { key: 'bagianStaff', title: 'Bagian Staff', short: 'Staf', desc: 'Akun akses Panel Bagian: kolom Pass (D) adalah password login bagian.', cols: ['Email', 'Kategori', 'Nama', 'Pass'], table: 'BagianStaff', icon: 'bi-people' },
                             { key: 'bagianSettings', title: 'Pengaturan Bagian', short: 'Pengaturan', desc: 'Aturan Berita Acara untuk Panel Bagian: status peserta yang boleh dibuat BA.', icon: 'bi-file-earmark-check', settings: true },
                             { key: 'kelolaUnggahan', title: 'Kelola Unggahan', short: 'Kelola Unggahan', desc: 'Pantau dan reset berkas ACC INHAL & Bukti Bayar agar mahasiswa dapat mengunggah ulang.', icon: 'bi-cloud-arrow-up', settings: true },
+                            { key: 'editJadwalBa', title: 'Edit Jadwal/BA', short: 'Edit Jadwal/BA', desc: 'Perbaiki peserta dan sesi BA Pelaksanaan dengan memilih peserta dari pengajuan atau jadwal lain.', icon: 'bi-tools', settings: true },
                             { key: 'admin', title: 'Admin', short: 'Admin', desc: 'Password login dashboard (kolom A) + nama tampilan (kolom B).', cols: ['Password', 'Nama'], table: 'Admin', icon: 'bi-shield-lock' }
                         ]
                     }
@@ -2976,6 +3173,73 @@
                 },
                 anyModalOpen() {
                     return !!(this.detail.open || this.ba.modal || this.master.rowModal.open || this.master.uploads.reset.open || this.bab.ba.confirm || this.dialog.open);
+                },
+                baRepairSelectedBa() {
+                    const r = this.master.repair;
+                    const ws = r.workspace;
+                    if (!ws || !r.baId) return null;
+                    return (ws.ba || []).find(b => b.baId === r.baId) || null;
+                },
+                baRepairMergeTargets() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) return [];
+                    return ((r.workspace && r.workspace.activeBa) || []).filter(b => b.baId !== ba.baId);
+                },
+                baRepairCandidates() {
+                    const r = this.master.repair;
+                    const ws = r.workspace;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ws || !ba) return [];
+                    const inBa = {};
+                    for (const x of ba.peserta || []) inBa[String(x.idPengajuan || '')] = true;
+                    const q = String(r.candidateQ || '').toLowerCase().trim();
+                    return (ws.kandidat || []).filter(c => {
+                        if (inBa[String(c.idPengajuan || '')]) return false;
+                        if (!q) return true;
+                        return (String(c.npm || '') + ' ' + String(c.namaLengkap || '')).toLowerCase().indexOf(q) !== -1;
+                    });
+                },
+                baRepairSummary() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba) return '';
+                    const added = (r.addIds || []).length;
+                    const candidates = (r.workspace && r.workspace.kandidat) || [];
+                    let moved = 0;
+                    if (r.move) {
+                        for (const id of r.addIds || []) {
+                            const c = candidates.find(x => x.idPengajuan === id);
+                            if (c && (c.sourceJadwal || []).length) moved += 1;
+                        }
+                    }
+                    const currentLink = (ba.jadwalIds || [])[0] || '';
+                    const linked = r.targetJadwalId && r.targetJadwalId !== currentLink ? 1 : 0;
+                    if (added && moved && !r.targetJadwalId) return 'Pilih sesi jadwal agar ' + moved + ' peserta bisa dipindahkan dari jadwal asal.';
+                    const parts = [];
+                    if (added) parts.push(added + ' peserta ditambahkan');
+                    if ((r.removeIds || []).length) parts.push((r.removeIds || []).length + ' peserta dikeluarkan');
+                    if (moved) parts.push(moved + ' dipindahkan');
+                    if (linked) parts.push('sesi jadwal BA diperbarui');
+                    return parts.length ? 'Akan disimpan: ' + parts.join(', ') + '.' : 'Tidak ada perubahan. Pilih peserta atau sesi jadwal.';
+                },
+                baRepairCreateEligible() {
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) return false;
+                    return !(ba.jadwalIds || []).length;
+                },
+                baRepairCanCreate() {
+                    if (!this.baRepairCreateEligible) return false;
+                    const r = this.master.repair;
+                    return !(r.addIds || []).length && !(r.removeIds || []).length;
+                },
+                baRepairCreateBlockedReason() {
+                    if (!this.baRepairCreateEligible) return '';
+                    const r = this.master.repair;
+                    if ((r.addIds || []).length || (r.removeIds || []).length) {
+                        return 'Simpan perubahan peserta dulu sebelum membuat jadwal.';
+                    }
+                    return '';
                 }
             },
             watch: {
@@ -3642,6 +3906,7 @@
                     this.master.page = 1;
                     if (key === 'mahasiswa' && changed) this.loadMahasiswaPage(1);
                     if (key === 'kelolaUnggahan' && !this.master.uploads.loaded) this.loadUploadMonitor();
+                    if (key === 'editJadwalBa' && !this.master.repair.loaded) this.loadBaRepair();
                 },
                 async loadUploadMonitor() {
                     const u = this.master.uploads;
@@ -3655,6 +3920,324 @@
                         this.notify('Gagal memuat data unggahan: ' + e, false);
                     } finally {
                         u.loading = false;
+                    }
+                },
+                async loadBaRepair(force) {
+                    const r = this.master.repair;
+                    if (r.loading) return;
+                    if (force) r.loaded = false;
+                    r.loading = true;
+                    try {
+                        const res = await this.run('getBaRepairData', { bagian: r.bagian, q: r.q, key: r.key, includeArchived: r.includeArchived }) || {};
+                        if (res && res.ok === false) throw new Error(res.message || 'Gagal memuat data jadwal/BA.');
+                        r.groups = res.groups || [];
+                        r.bagianOptions = res.bagianOptions || [];
+                        r.workspace = res.workspace || null;
+                        r.loaded = true;
+                        if (r.workspace) {
+                            const keep = r.baId;
+                            const found = (r.workspace.ba || []).find(b => b.baId === keep) || (r.workspace.ba || [])[0];
+                            if (found) this.selectBaRepairBa(found.baId);
+                            else this.resetBaRepairForm();
+                        } else {
+                            this.resetBaRepairForm();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal memuat data jadwal/BA: ' + e, false);
+                    } finally {
+                        r.loading = false;
+                    }
+                },
+                reloadBaRepairGroups() {
+                    const r = this.master.repair;
+                    r.key = '';
+                    r.workspace = null;
+                    this.resetBaRepairForm();
+                    this.loadBaRepair(true);
+                },
+                selectBaRepairGroup(key) {
+                    const r = this.master.repair;
+                    r.key = key;
+                    r.workspace = null;
+                    this.resetBaRepairForm();
+                    this.loadBaRepair(true);
+                },
+                selectBaRepairBa(baId) {
+                    const r = this.master.repair;
+                    const ba = (r.workspace && r.workspace.ba || []).find(b => b.baId === baId);
+                    if (!ba) return;
+                    r.baId = baId;
+                    r.targetJadwalId = (ba.jadwalIds || [])[0] || '';
+                    r.addIds = [];
+                    r.removeIds = [];
+                    r.candidateQ = '';
+                    r.actionMode = '';
+                    r.mergeTargetId = '';
+                    r.reason = '';
+                    r.confirmBaId = '';
+                    r.hardcopyAck = false;
+                    r.result = null;
+                    r.createOpen = false;
+                    r.createTanggal = '';
+                    r.createJam = '';
+                    r.createDosen = '';
+                    r.createError = '';
+                },
+                resetBaRepairForm() {
+                    const r = this.master.repair;
+                    r.baId = '';
+                    r.targetJadwalId = '';
+                    r.addIds = [];
+                    r.removeIds = [];
+                    r.candidateQ = '';
+                    r.actionMode = '';
+                    r.mergeTargetId = '';
+                    r.reason = '';
+                    r.confirmBaId = '';
+                    r.hardcopyAck = false;
+                    r.result = null;
+                    r.createOpen = false;
+                    r.createTanggal = '';
+                    r.createJam = '';
+                    r.createDosen = '';
+                    r.createError = '';
+                },
+                openCreateJadwalFromBa() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) return;
+                    if ((ba.jadwalIds || []).length) {
+                        this.notify('BA sudah memiliki sesi jadwal.', false);
+                        return;
+                    }
+                    r.createOpen = true;
+                    r.createTanggal = ba.tanggal || '';
+                    r.createJam = ba.jam || '';
+                    const list = Array.isArray(ba.dosenList) && ba.dosenList.length ? ba.dosenList : (ba.dosen ? [ba.dosen] : []);
+                    r.createDosen = list.join('\n');
+                    r.createError = '';
+                },
+                cancelCreateJadwalFromBa() {
+                    const r = this.master.repair;
+                    r.createOpen = false;
+                    r.createError = '';
+                },
+                async submitCreateJadwalFromBa() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba) return;
+                    const dosenList = String(r.createDosen || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    if (!String(r.createJam || '').trim()) {
+                        r.createError = 'Jam pelaksanaan wajib diisi.';
+                        return;
+                    }
+                    if (!dosenList.length) {
+                        r.createError = 'Minimal satu dosen wajib diisi.';
+                        return;
+                    }
+                    r.creating = true;
+                    r.createError = '';
+                    try {
+                        const res = await this.run('createJadwalFromBa', {
+                            baId: ba.baId,
+                            tanggal: r.createTanggal,
+                            jam: r.createJam,
+                            dosenList: dosenList,
+                            expectedRevision: ba.revision
+                        }) || {};
+                        if (!res.success) {
+                            r.createError = res.message || 'Gagal membuat jadwal.';
+                            return;
+                        }
+                        const keep = ba.baId;
+                        this.notify(res.message || 'Jadwal dibuat dan ditautkan ke BA.');
+                        r.createOpen = false;
+                        await this.loadBaRepair(true);
+                        if (r.workspace && (r.workspace.ba || []).some(b => b.baId === keep)) {
+                            this.selectBaRepairBa(keep);
+                            r.result = res.message || 'Jadwal dibuat.';
+                        }
+                    } catch (e) {
+                        r.createError = 'Gagal membuat jadwal: ' + e;
+                    } finally {
+                        r.creating = false;
+                    }
+                },
+                toggleBaRepairPeserta(idPengajuan) {
+                    const r = this.master.repair;
+                    const i = r.addIds.indexOf(idPengajuan);
+                    if (i === -1) r.addIds.push(idPengajuan);
+                    else r.addIds.splice(i, 1);
+                },
+                toggleBaRepairRemove(idPengajuan) {
+                    const r = this.master.repair;
+                    if (!idPengajuan) return;
+                    const i = r.removeIds.indexOf(idPengajuan);
+                    if (i === -1) r.removeIds.push(idPengajuan);
+                    else r.removeIds.splice(i, 1);
+                },
+                openBaRepairAction(mode) {
+                    const r = this.master.repair;
+                    r.actionMode = r.actionMode === mode ? '' : mode;
+                    r.mergeTargetId = '';
+                    r.reason = '';
+                    r.confirmBaId = '';
+                    r.hardcopyAck = false;
+                },
+                async submitBaRepairAction() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) return;
+                    if (String(r.reason || '').trim().length < 10) {
+                        this.notify('Alasan minimal 10 karakter.', false);
+                        return;
+                    }
+                    if (String(r.confirmBaId || '').trim() !== ba.baId) {
+                        this.notify('Ketik ulang BA ID dengan benar untuk konfirmasi.', false);
+                        return;
+                    }
+                    if (!r.hardcopyAck) {
+                        this.notify('Centang konfirmasi hardcopy terlebih dahulu.', false);
+                        return;
+                    }
+                    if (r.actionMode === 'merge' && !r.mergeTargetId) {
+                        this.notify('Pilih BA tujuan penggabungan.', false);
+                        return;
+                    }
+                    r.saving = true;
+                    try {
+                        const target = (this.baRepairMergeTargets.find(b => b.baId === r.mergeTargetId) || {});
+                        const res = r.actionMode === 'merge'
+                            ? await this.run('mergeBeritaAcara', {
+                                sourceBaId: ba.baId,
+                                targetBaId: r.mergeTargetId,
+                                reason: r.reason,
+                                expectedSourceRevision: ba.revision,
+                                expectedTargetRevision: target.revision,
+                                hardcopyAck: true
+                            })
+                            : await this.run('archiveBeritaAcara', {
+                                baId: ba.baId,
+                                reason: r.reason,
+                                expectedRevision: ba.revision,
+                                hardcopyAck: true
+                            });
+                        const out = res || {};
+                        if (!out.success) {
+                            this.notify(out.message || 'Gagal memproses BA.', false);
+                            return;
+                        }
+                        this.notify(out.message || 'BA diperbarui.');
+                        const keep = ba.baId;
+                        r.includeArchived = true;
+                        await this.loadBaRepair(true);
+                        if (r.workspace && (r.workspace.ba || []).some(b => b.baId === keep)) {
+                            this.selectBaRepairBa(keep);
+                            r.result = out.message || 'BA diperbarui.';
+                        }
+                        if (this.baArchive.open) await this.loadBaArchive();
+                    } catch (e) {
+                        this.notify('Gagal memproses BA: ' + e, false);
+                    } finally {
+                        r.saving = false;
+                    }
+                },
+                async restoreSelectedBa() {
+                    const r = this.master.repair;
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || !ba.archived) return;
+                    const ok = await this.askConfirm({
+                        title: 'Pulihkan Berita Acara',
+                        message: 'Pulihkan BA ' + ba.baId + '? Periksa kembali tautan sesi jadwalnya.',
+                        tone: 'primary',
+                        icon: 'bi-arrow-counterclockwise',
+                        confirmLabel: 'Pulihkan'
+                    });
+                    if (!ok) return;
+                    r.saving = true;
+                    try {
+                        const res = await this.run('restoreBeritaAcara', {
+                            baId: ba.baId,
+                            expectedRevision: ba.revision
+                        }) || {};
+                        if (!res.success) {
+                            this.notify(res.message || 'Gagal memulihkan BA.', false);
+                            return;
+                        }
+                        this.notify(res.message || 'BA dipulihkan.');
+                        const keep = ba.baId;
+                        await this.loadBaRepair(true);
+                        if (r.workspace && (r.workspace.ba || []).some(b => b.baId === keep)) {
+                            this.selectBaRepairBa(keep);
+                            r.result = res.message || 'BA dipulihkan.';
+                        }
+                        if (this.baArchive.open) await this.loadBaArchive();
+                    } catch (e) {
+                        this.notify('Gagal memulihkan BA: ' + e, false);
+                    } finally {
+                        r.saving = false;
+                    }
+                },
+                baRepairJadwalList(list) {
+                    return (list || []).map(j => [j.tanggal, j.jam].filter(Boolean).join(' ')).join('; ');
+                },
+                async saveBaRepair() {
+                    const r = this.master.repair;
+                    if (!r.baId) {
+                        this.notify('Pilih BA yang akan diperbaiki.', false);
+                        return;
+                    }
+                    const ba = this.baRepairSelectedBa;
+                    if (!ba || ba.archived) {
+                        this.notify('BA arsip harus dipulihkan sebelum diubah.', false);
+                        return;
+                    }
+                    if (r.removeIds.length) {
+                        const ok = await this.askConfirm({
+                            title: 'Keluarkan Peserta',
+                            message: 'Keluarkan ' + r.removeIds.length + ' peserta dari BA ' + ba.baId + '?',
+                            tone: 'warning',
+                            icon: 'bi-person-dash',
+                            confirmLabel: 'Keluarkan'
+                        });
+                        if (!ok) return;
+                    }
+                    if (r.addIds.length && r.move && !r.targetJadwalId) {
+                        const candidates = (r.workspace && r.workspace.kandidat) || [];
+                        const hasSource = r.addIds.some(id => {
+                            const c = candidates.find(x => x.idPengajuan === id);
+                            return !!(c && (c.sourceJadwal || []).length);
+                        });
+                        if (hasSource) {
+                            this.notify('Pilih sesi jadwal agar peserta bisa dipindahkan dari jadwal asal.', false);
+                            return;
+                        }
+                    }
+                    r.saving = true;
+                    try {
+                        const res = await this.run('applyBaRepair', {
+                            baId: r.baId,
+                            addPesertaIds: r.addIds,
+                            removePesertaIds: r.removeIds,
+                            expectedRevision: ba.revision,
+                            targetJadwalId: r.targetJadwalId,
+                            moveFromJadwal: r.move
+                        }) || {};
+                        if (!res.success) {
+                            this.notify(res.message || 'Gagal menyimpan perbaikan BA.', false);
+                            return;
+                        }
+                        const keep = r.baId;
+                        this.notify(res.message || 'BA diperbarui.');
+                        await this.loadBaRepair(true);
+                        if (r.workspace && (r.workspace.ba || []).some(b => b.baId === keep)) {
+                            this.selectBaRepairBa(keep);
+                            r.result = res.message || 'BA diperbarui.';
+                        }
+                    } catch (e) {
+                        this.notify('Gagal menyimpan perbaikan BA: ' + e, false);
+                    } finally {
+                        r.saving = false;
                     }
                 },
                 uploadStatusOf(r) {
