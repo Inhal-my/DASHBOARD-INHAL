@@ -1645,6 +1645,7 @@ function _computeJadwalList(bagianFilter, kategori) {
     let baRows = [];
     try { baRows = getAllRowsCached('BeritaAcara'); } catch (e) {}
     baRows.forEach(function(b) {
+        if (_baIsArchived(b)) return;
         const jid = String(b['Jadwal ID'] || '').trim();
         const bid = String(b['BA ID'] || '').trim();
         if (jid && bid && !baByJadwal[jid]) baByJadwal[jid] = bid;
@@ -1703,6 +1704,7 @@ function _validateJadwalPeserta(peserta) {
 
 function _jadwalHasBa(jadwalId) {
     return getAllRows('BeritaAcara').some(function(r) {
+        if (_baIsArchived(r)) return false;
         return String(r['Jadwal ID'] || '').trim() === String(jadwalId || '').trim();
     });
 }
@@ -1945,7 +1947,7 @@ function _getBaPesertaMapAdmin() {
 
 function _computeBaList(bagianFilter, kategori) {
     const rows = getAllRowsCached('BeritaAcara').filter(function(r) {
-        return _baSumber(r) === 'Bagian';
+        return _baSumber(r) === 'Bagian' && !_baIsArchived(r);
     });
     const filter = _normBaginaKey(bagianFilter);
     const kat = _normBaginaKey(kategori);
@@ -2186,6 +2188,7 @@ function _computeDashboardStats(pengajuan, details, ba, biayaMap, overrideMap) {
     });
     ba.forEach(function(b) {
         if (_baSumber(b) !== 'Bagian') return;
+        if (_baIsArchived(b)) return;
         const bagian = _normBagianAggregateWithLabs(b.Bagian, labs);
         perBagian[bagian] = (perBagian[bagian] || 0) + parseInt(b['Jumlah Peserta'], 10) || 0;
     });
@@ -2244,6 +2247,7 @@ function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
 function getDashboardBootstrap() {
     requireAuthorized(arguments[arguments.length - 1]);
     _ensurePaymentGateMigration();
+    _ensureBaArchiveMigration();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const ba = getAllRowsCached('BeritaAcara');
@@ -2364,7 +2368,7 @@ function getLaporanBootstrap() {
         return String(b.Timestamp || '').localeCompare(String(a.Timestamp || ''));
     });
     const beritaAcara = sortedBa.filter(function(r) {
-        return _baSumber(r) === 'Bagian';
+        return _baSumber(r) === 'Bagian' && !_baIsArchived(r);
     }).map(function(r) {
         const c = _clientRow(r);
         c.peserta = baPesertaMap[String(r['BA ID'] || '').trim()] || [];
@@ -2757,7 +2761,9 @@ function _buildBagianAggregation() {
     });
 
     function collectBa(sheetName, pesertaMap, sumber) {
-        return _getRowsCachedOptional(sheetName).map(function(r) {
+        return _getRowsCachedOptional(sheetName).filter(function(r) {
+            return sumber !== 'Bagian' || !_baIsArchived(r);
+        }).map(function(r) {
             const c = _clientRow(r);
             const baId = String(c['BA ID'] || '').trim();
             return {
@@ -2774,6 +2780,12 @@ function _buildBagianAggregation() {
                 fileName: String(c['File Name'] || '').trim(),
                 catatan: String(c.Catatan || '').trim(),
                 timestamp: String(c.Timestamp || '').trim(),
+                revision: _baRevisionOf(r),
+                archived: _baIsArchived(r),
+                archivedAt: String(c['Archived At'] || '').trim(),
+                archivedBy: String(c['Archived By'] || '').trim(),
+                archiveReason: String(c['Archive Reason'] || '').trim(),
+                mergedInto: String(c['Merged Into'] || '').trim(),
                 peserta: pesertaMap[baId] || []
             };
         });
@@ -2847,6 +2859,7 @@ function _buildBagianAggregation() {
 
 function getBaTabData() {
     requireAuthorized(arguments[arguments.length - 1]);
+    _ensureBaArchiveMigration();
     const bagian = _buildBagianAggregation();
     const adminBa = _buildBeritaAcaraAdminList();
     return { bagian: bagian, adminBa: adminBa, labs: bagian.labs || [] };
@@ -2910,6 +2923,292 @@ function deleteBeritaAcaraBagian(baId) {
             } catch (e) { }
         }
         return { success: true, message: 'Berita acara berhasil dihapus.' };
+    });
+}
+
+// ---------- Integritas BA: arsip, gabung, pulihkan ----------
+function _baIsArchived(r) {
+    return String((r && r['Archived At']) || '').trim() !== '';
+}
+
+function _baRevisionOf(r) {
+    const n = Number((r && r.Revision) || 0);
+    return isFinite(n) ? Math.trunc(n) : 0;
+}
+
+function _baRowKey(r) {
+    const explicit = String((r && r['Kegiatan Key']) || '').trim();
+    if (explicit) return explicit;
+    return _kegiatanKey(r && r.Bagian, r && r.Blok, r && r['Nama Kegiatan']);
+}
+
+function _baWriteColumns(baId, patch) {
+    const sheet = getGlobalSpreadsheet().getSheetByName('BeritaAcara');
+    if (!sheet) return false;
+    const headers = getHeadersFromSheet(sheet);
+    const idx = headers.indexOf('BA ID');
+    if (idx < 0) return false;
+    const rowIndex = findRowByColumnValue(sheet, idx + 1, baId);
+    if (rowIndex < 2) return false;
+    const existing = rowToObject(headers, sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0]);
+    const merged = Object.assign({}, existing, patch || {});
+    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([objectToRow(headers, merged)]);
+    invalidateSheetCache('BeritaAcara');
+    return true;
+}
+
+function _baRevisionOk(row, expected) {
+    if (expected === undefined || expected === null || expected === '') return true;
+    return Number(expected) === _baRevisionOf(row);
+}
+
+function _ensureBaArchiveMigration() {
+    try {
+        if (_getConfigValue('BA_ARCHIVE_MIGRATED', '') === '1') return;
+        const ss = getGlobalSpreadsheet();
+        ensureSheetWithHeaders(ss, 'BeritaAcara', SCHEMAS.BeritaAcara);
+        const sheet = ss.getSheetByName('BeritaAcara');
+        const headers = getHeadersFromSheet(sheet);
+        const revIdx = headers.indexOf('Revision');
+        const lastRow = sheet.getLastRow();
+        if (sheet && lastRow > 1 && revIdx !== -1) {
+            const range = sheet.getRange(2, revIdx + 1, lastRow - 1, 1);
+            const revs = range.getValues();
+            let needWrite = false;
+            for (let i = 0; i < revs.length; i++) {
+                if (String(revs[i][0] === null || revs[i][0] === undefined ? '' : revs[i][0]).trim() === '') {
+                    revs[i][0] = 0;
+                    needWrite = true;
+                }
+            }
+            if (needWrite) range.setValues(revs);
+        }
+        invalidateSheetCache('BeritaAcara');
+        _setConfigValue('BA_ARCHIVE_MIGRATED', '1');
+    } catch (e) {
+        console.error('Gagal menjalankan migrasi arsip BA: ' + (e && e.message ? e.message : e));
+    }
+}
+
+function archiveBeritaAcara(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const p = payload || {};
+        const baId = String(p.baId || '').trim();
+        if (!baId) return { success: false, message: 'BA ID wajib diisi.' };
+        const existing = getRowByKey('BeritaAcara', 'BA ID', baId);
+        if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        if (_baIsArchived(existing)) return { success: false, message: 'BA sudah berada di arsip.' };
+        const reason = String(p.reason || '').trim();
+        if (reason.length < 10) return { success: false, message: 'Alasan arsip minimal 10 karakter.' };
+        if (p.hardcopyAck !== true) return { success: false, message: 'Centang konfirmasi hardcopy sebelum mengarsipkan BA.' };
+        if (!_baRevisionOk(existing, p.expectedRevision)) {
+            return { success: false, message: 'Data BA sudah berubah. Muat ulang lalu ulangi.' };
+        }
+        const ts = _paymentNowIso();
+        const revision = _baRevisionOf(existing) + 1;
+        _baWriteColumns(baId, {
+            'Archived At': ts,
+            'Archived By': getActorName(),
+            'Archive Reason': reason,
+            'Merged Into': '',
+            'Updated At': ts,
+            'Revision': revision
+        });
+        writeAuditLog({
+            actor: getActorName(), action: 'BA_ARCHIVE', target: baId,
+            detail: JSON.stringify({ alasan: reason, revision: revision, hardcopyAck: true }),
+            alasan: reason
+        });
+        return {
+            success: true,
+            message: 'BA ' + baId + ' diarsipkan. Hardcopy tetap tersimpan.',
+            revision: revision
+        };
+    });
+}
+
+function mergeBeritaAcara(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const p = payload || {};
+        const sourceId = String(p.sourceBaId || '').trim();
+        const targetId = String(p.targetBaId || '').trim();
+        if (!sourceId || !targetId) return { success: false, message: 'BA sumber dan BA tujuan wajib dipilih.' };
+        if (sourceId === targetId) return { success: false, message: 'BA sumber dan BA tujuan tidak boleh sama.' };
+        const source = getRowByKey('BeritaAcara', 'BA ID', sourceId);
+        const target = getRowByKey('BeritaAcara', 'BA ID', targetId);
+        if (!source) return { success: false, message: 'BA sumber tidak ditemukan.' };
+        if (!target) return { success: false, message: 'BA tujuan tidak ditemukan.' };
+        if (_baIsArchived(source)) return { success: false, message: 'BA sumber sudah berada di arsip.' };
+        if (_baIsArchived(target)) return { success: false, message: 'BA tujuan berada di arsip dan tidak bisa menerima peserta.' };
+        if (_baRowKey(source) !== _baRowKey(target)) {
+            return { success: false, message: 'Penggabungan hanya boleh untuk BA dengan kegiatan yang sama.' };
+        }
+        const reason = String(p.reason || '').trim();
+        if (reason.length < 10) return { success: false, message: 'Alasan penggabungan minimal 10 karakter.' };
+        if (p.hardcopyAck !== true) return { success: false, message: 'Centang konfirmasi hardcopy sebelum menggabungkan BA.' };
+        if (!_baRevisionOk(source, p.expectedSourceRevision)) {
+            return { success: false, message: 'Data BA sumber sudah berubah. Muat ulang lalu ulangi.' };
+        }
+        if (!_baRevisionOk(target, p.expectedTargetRevision)) {
+            return { success: false, message: 'Data BA tujuan sudah berubah. Muat ulang lalu ulangi.' };
+        }
+
+        const sourcePeserta = getAllRows('BeritaAcaraPeserta').filter(function(r) {
+            return String(r['BA ID'] || '').trim() === sourceId;
+        });
+        const targetIds = {};
+        let targetCountBefore = 0;
+        getAllRows('BeritaAcaraPeserta').forEach(function(r) {
+            if (String(r['BA ID'] || '').trim() !== targetId) return;
+            targetCountBefore += 1;
+            const pid = String(r['ID Pengajuan'] || '').trim();
+            if (pid) targetIds[pid] = true;
+        });
+        let moved = 0;
+        sourcePeserta.forEach(function(r) {
+            const pid = String(r['ID Pengajuan'] || '').trim();
+            if (!pid || targetIds[pid]) return;
+            targetIds[pid] = true;
+            moved += 1;
+            appendRowSafe('BeritaAcaraPeserta', {
+                Timestamp: new Date(),
+                'BA ID': targetId,
+                'NPM': String(r.NPM || '').trim(),
+                'Nama Lengkap': String(r['Nama Lengkap'] || '').trim(),
+                'Blok': String(r.Blok || '').trim(),
+                'Bagian': String(target.Bagian || '').trim(),
+                'Status Pengajuan': String(r['Status Pengajuan'] || '').trim(),
+                'ID Pengajuan': pid
+            });
+        });
+
+        const ts = _paymentNowIso();
+        const targetPatch = { 'Updated At': ts, 'Revision': _baRevisionOf(target) + 1 };
+        if (moved) targetPatch['Jumlah Peserta'] = targetCountBefore + moved;
+        _baWriteColumns(targetId, targetPatch);
+        _baWriteColumns(sourceId, {
+            'Archived At': ts,
+            'Archived By': getActorName(),
+            'Archive Reason': reason,
+            'Merged Into': targetId,
+            'Updated At': ts,
+            'Revision': _baRevisionOf(source) + 1
+        });
+        invalidateSheetCache('BeritaAcaraPeserta');
+
+        const skipped = sourcePeserta.length - moved;
+        writeAuditLog({
+            actor: getActorName(), action: 'BA_MERGE', target: sourceId,
+            detail: JSON.stringify({ alasan: reason, targetBaId: targetId, moved: moved, skipped: skipped, hardcopyAck: true }),
+            alasan: reason
+        });
+        return {
+            success: true,
+            message: 'BA ' + sourceId + ' digabungkan ke ' + targetId + ': ' + moved + ' peserta dipindahkan, ' + skipped + ' sudah ada.',
+            moved: moved, skipped: skipped, targetBaId: targetId
+        };
+    });
+}
+
+function restoreBeritaAcara(payload) {
+    requireAuthorized(arguments[arguments.length - 1]);
+    return _lockMutate(function() {
+        const p = payload || {};
+        const baId = String(p.baId || '').trim();
+        if (!baId) return { success: false, message: 'BA ID wajib diisi.' };
+        const existing = getRowByKey('BeritaAcara', 'BA ID', baId);
+        if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+        if (!_baIsArchived(existing)) {
+            return { success: true, message: 'BA tidak berada di arsip.', revision: _baRevisionOf(existing) };
+        }
+        if (!_baRevisionOk(existing, p.expectedRevision)) {
+            return { success: false, message: 'Data BA sudah berubah. Muat ulang lalu ulangi.' };
+        }
+
+        const key = _baRowKey(existing);
+        const all = getAllRows('BeritaAcara');
+        const activeKeyById = {};
+        all.forEach(function(r) {
+            if (_baIsArchived(r)) return;
+            activeKeyById[String(r['BA ID'] || '').trim()] = _baRowKey(r);
+        });
+
+        const sourceIds = {};
+        getAllRows('BeritaAcaraPeserta').forEach(function(r) {
+            if (String(r['BA ID'] || '').trim() !== baId) return;
+            const pid = String(r['ID Pengajuan'] || '').trim();
+            if (pid) sourceIds[pid] = true;
+        });
+        const conflicts = [];
+        if (Object.keys(sourceIds).length) {
+            getAllRows('BeritaAcaraPeserta').forEach(function(r) {
+                const otherBa = String(r['BA ID'] || '').trim();
+                const pid = String(r['ID Pengajuan'] || '').trim();
+                if (!pid || !sourceIds[pid] || otherBa === baId) return;
+                if (activeKeyById[otherBa] === key) conflicts.push('peserta ' + pid);
+            });
+        }
+
+        const sourceJadwal = {};
+        const legacyJadwal = String(existing['Jadwal ID'] || '').trim();
+        if (legacyJadwal) sourceJadwal[legacyJadwal] = true;
+        if (Object.keys(sourceJadwal).length) {
+            all.forEach(function(r) {
+                if (_baIsArchived(r)) return;
+                if (String(r['BA ID'] || '').trim() === baId) return;
+                const jid = String(r['Jadwal ID'] || '').trim();
+                if (jid && sourceJadwal[jid]) conflicts.push('sesi ' + jid);
+            });
+        }
+
+        const uniq = [];
+        conflicts.forEach(function(c) { if (uniq.indexOf(c) === -1) uniq.push(c); });
+        if (uniq.length) {
+            return {
+                success: false,
+                message: 'BA tidak bisa dipulihkan karena bentrok: ' + uniq.slice(0, 5).join(', ') +
+                    (uniq.length > 5 ? ', dan lainnya' : '') + '. Lepaskan dulu dari BA aktif.'
+            };
+        }
+
+        const revision = _baRevisionOf(existing) + 1;
+        _baWriteColumns(baId, {
+            'Archived At': '',
+            'Archived By': '',
+            'Archive Reason': '',
+            'Merged Into': '',
+            'Updated At': _paymentNowIso(),
+            'Revision': revision
+        });
+        writeAuditLog({
+            actor: getActorName(), action: 'BA_RESTORE', target: baId,
+            detail: JSON.stringify({ revision: revision, mergedInto: String(existing['Merged Into'] || '') }),
+            alasan: 'BA_RESTORE'
+        });
+        return {
+            success: true,
+            message: 'BA ' + baId + ' dipulihkan. Periksa kembali tautan sesi jadwalnya.',
+            revision: revision
+        };
+    });
+}
+
+function getBaArchiveList() {
+    requireAuthorized(arguments[arguments.length - 1]);
+    const pesertaMap = _getBaPesertaMap();
+    const rows = getAllRowsCached('BeritaAcara').filter(function(r) {
+        return _baSumber(r) === 'Bagian' && _baIsArchived(r);
+    });
+    rows.sort(function(a, b) {
+        return String(b['Archived At'] || '').localeCompare(String(a['Archived At'] || ''));
+    });
+    return rows.map(function(r) {
+        const c = _clientRow(r);
+        c.peserta = pesertaMap[String(r['BA ID'] || '').trim()] || [];
+        c.revision = _baRevisionOf(r);
+        return c;
     });
 }
 

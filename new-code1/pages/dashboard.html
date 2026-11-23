@@ -822,6 +822,33 @@
                         </div>
                     </div>
 
+                    <div class="mb-4 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-100">
+                        <button class="flex w-full items-center justify-between p-4 text-left" @click="toggleBaArchive()">
+                            <div>
+                                <div class="text-sm font-bold text-slate-900">BA Terarsip</div>
+                                <div class="text-[11px] text-slate-400">{{ baArchive.rows.length }} berita acara diarsipkan</div>
+                            </div>
+                            <i class="bi" :class="baArchive.open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                        </button>
+                        <div v-if="baArchive.open" class="border-t border-slate-100">
+                            <div v-if="baArchive.loading" class="px-4 py-6 text-center text-sm text-slate-400">Memuat arsip...</div>
+                            <div v-else-if="!baArchive.rows.length" class="px-4 py-6 text-center text-sm text-slate-400">Tidak ada BA terarsip.</div>
+                            <div v-else class="divide-y divide-slate-50">
+                                <div v-for="a in baArchive.rows" :key="a['BA ID']" class="p-4">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="font-mono text-xs font-bold text-slate-700">{{ a['BA ID'] }}</span>
+                                        <span class="chip bg-amber-50 text-[10px] font-semibold text-amber-700">Arsip</span>
+                                        <span v-if="a['Merged Into']" class="chip bg-slate-100 text-[10px] text-slate-600">Digabung ke {{ a['Merged Into'] }}</span>
+                                        <button class="btn-soft ml-auto !px-3 !py-1.5 text-xs" :disabled="baArchive.busy" @click="restoreBa(a['BA ID'])"><i class="bi bi-arrow-counterclockwise"></i> Pulihkan</button>
+                                    </div>
+                                    <div class="mt-1 text-sm font-bold text-slate-900">{{ a.Blok }} · {{ a['Nama Kegiatan'] }}</div>
+                                    <div class="mt-1 text-[11px] text-slate-400">Diarsipkan {{ formatTanggalWaktu(a['Archived At']) }}<span v-if="a['Archived By']"> oleh {{ a['Archived By'] }}</span></div>
+                                    <div v-if="a['Archive Reason']" class="mt-1 text-xs text-slate-500">Alasan: {{ a['Archive Reason'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div v-if="sectionLoading.bagian" class="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white py-12 text-slate-400 shadow-soft ring-1 ring-slate-100">
                         <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -988,7 +1015,7 @@
                                                         <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
                                                         <div v-for="(b, bi) in unitPelaksanaanBa(r)" :key="'a'+bi" class="flex items-center gap-1.5">
                                                             <button class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click="b.sumber === 'Bagian' ? openKelolaBa(b.baId, b.sumber) : openBaManage(b.baId)"><i class="bi bi-pencil text-[11px]"></i></button>
-                                                            <button v-if="b.sumber === 'Bagian'" class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-[11px]"></i></button>
+                                                            <button v-if="b.sumber === 'Bagian'" class="flex h-5 w-5 items-center justify-center rounded text-slate-300 transition hover:bg-amber-50 hover:text-amber-600" title="Arsipkan BA" @click="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-archive text-[11px]"></i></button>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -1015,7 +1042,7 @@
                                                                     <span class="text-slate-400">{{ formatTanggal(b.timestamp) }}</span>
                                                                     <button class="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200" @click="toggleBaExpand(b.sumber + '|' + b.baId)">Mahasiswa ({{ (b.peserta || []).length }})</button>
                                                                     <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-600" title="Kelola BA" @click.stop="b.sumber === 'Bagian' ? openKelolaBa(b.baId, b.sumber) : openBaManage(b.baId)"><i class="bi bi-pencil text-xs"></i></button>
-                                                                    <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-xs"></i></button>
+                                                                    <button class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" :title="b.sumber === 'Bagian' ? 'Arsipkan BA' : 'Hapus BA'" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="text-xs" :class="b.sumber === 'Bagian' ? 'bi bi-archive' : 'bi bi-trash'"></i></button>
                                                                 </div>
                                                                 <div v-if="b.catatan" class="mt-1 text-slate-500">{{ b.catatan }}</div>
                                                                 <div v-if="expandedBa[b.sumber + '|' + b.baId]" class="mt-2 space-y-1 border-t border-dashed border-slate-100">
@@ -1066,7 +1093,7 @@
                                         </div>
                                     </div>
                                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                                        <template v-for="(b, bi) in r.ba" :key="'d'+bi"><button class="flex h-6 w-6 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="bi bi-trash text-xs"></i></button></template>
+                                        <template v-for="(b, bi) in r.ba" :key="'d'+bi"><button class="flex h-6 w-6 items-center justify-center rounded text-slate-300 transition hover:bg-rose-50 hover:text-rose-500" :title="b.sumber === 'Bagian' ? 'Arsipkan BA' : 'Hapus BA'" @click.stop="deleteBaRecord(b.baId, b.sumber)"><i class="text-xs" :class="b.sumber === 'Bagian' ? 'bi bi-archive' : 'bi bi-trash'"></i></button></template>
                                         <button v-if="!r.__orphan && !unitHasPendukung(r)" class="btn-primary !px-2 !py-1 text-[11px]" @click="openBaUpload()">Unggah Pendukung</button>
                                         <button v-else-if="!r.__orphan && unitPelaksanaanEligible(r) && !unitHasPelaksanaan(r)" class="btn-emerald !px-2 !py-1 text-[11px]" @click="openPelaksanaanPanel(r)">Unggah Pelaksanaan</button>
                                     </div>
@@ -1340,7 +1367,7 @@
                                                 <a v-if="r['File URL']" :href="safeUrl(r['File URL'])" target="_blank" rel="noopener noreferrer" class="link font-mono" @pointerenter="onBuktiEnter($event, r['File URL'], 'BA Pelaksanaan')" @pointerleave="onBuktiLeave" @click="closeBuktiPreview()">{{ r['BA ID'] }}</a><span v-else class="font-mono">{{ r['BA ID'] }}</span>
                                                 <span>·</span>
                                                 <span>{{ formatTanggal(r.Timestamp) }}</span>
-                                                <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500" title="Hapus BA" @click.stop="deleteBaRecord(r['BA ID'], 'Bagian')"><i class="bi bi-trash text-xs"></i></button>
+                                                <button class="ml-auto flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-amber-50 hover:text-amber-600" title="Arsipkan BA" @click.stop="deleteBaRecord(r['BA ID'], 'Bagian')"><i class="bi bi-archive text-xs"></i></button>
                                             </div>
                                             <div class="mt-1 text-sm font-bold text-slate-900">{{ r.Blok }} · {{ r['Nama Kegiatan'] }}</div>
                                             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -2138,6 +2165,31 @@
                         <p class="mt-1 text-[11px] text-amber-600">Mengubah peserta tidak mengubah isi file PDF.</p>
                     </div>
                 </div>
+                <div v-if="kelola.sumber !== 'Admin'" class="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tindakan BA</div>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="btn-soft !px-3 !py-1.5 text-xs" :disabled="kelola.busy" @click="openKelolaAction('archive')"><i class="bi bi-archive"></i> Arsipkan</button>
+                            <button class="btn-soft !px-3 !py-1.5 text-xs" :disabled="kelola.busy || !kelola.mergeTargets.length" @click="openKelolaAction('merge')"><i class="bi bi-intersect"></i> Gabungkan</button>
+                        </div>
+                    </div>
+                    <div v-if="kelola.actionMode" class="mt-3 space-y-2">
+                        <select v-if="kelola.actionMode === 'merge'" v-model="kelola.mergeTargetId" class="input text-xs">
+                            <option value="">Pilih BA tujuan...</option>
+                            <option v-for="b in kelola.mergeTargets" :key="b.baId" :value="b.baId">{{ b.baId }} · {{ formatTanggal(b.tanggal) }} {{ b.jam || '' }} · {{ (b.peserta || []).length }} peserta</option>
+                        </select>
+                        <textarea v-model="kelola.reason" rows="2" class="input text-xs" placeholder="Alasan minimal 10 karakter"></textarea>
+                        <input v-model="kelola.confirmBaId" class="input text-xs" :placeholder="'Ketik ' + kelola.baId + ' untuk konfirmasi'">
+                        <label class="flex items-start gap-2 text-[11px] text-slate-600">
+                            <input v-model="kelola.hardcopyAck" type="checkbox" class="mt-0.5">
+                            <span>Saya sudah memeriksa hardcopy/PDF dan memahami tindakan ini tidak menghapus berkas.</span>
+                        </label>
+                        <div class="flex items-center justify-end gap-2">
+                            <button class="btn-soft !px-3 !py-1.5 text-xs" :disabled="kelola.busy" @click="kelola.actionMode = ''">Batal</button>
+                            <button class="btn-primary !px-3 !py-1.5 text-xs" :disabled="kelola.busy" @click="submitKelolaAction">{{ kelola.actionMode === 'merge' ? 'Gabungkan' : 'Arsipkan' }}</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="mt-5 flex justify-end gap-2">
                     <button class="btn-soft" @click="kelola.open = false">Batal</button>
                     <button class="btn-primary" :disabled="loading || (kelola.sumber !== 'Admin' && kelola.pesertaOpsi.length > 0 && !kelola.pesertaIds.length)" @click="submitKelolaBa">Simpan</button>
@@ -2551,7 +2603,8 @@
                     bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], page: 1 },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
-                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [] },
+                    kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [], revision: 0, mergeTargets: [], actionMode: '', mergeTargetId: '', reason: '', confirmBaId: '', hardcopyAck: false, busy: false },
+                    baArchive: { open: false, loading: false, busy: false, rows: [] },
                     baManage: { open: false, loading: false, busy: false, baId: '', data: { ba: null, peserta: [], candidates: [] }, edit: { tanggal: '', jam: '', catatan: '' }, upload: { mode: '', idPengajuan: '' } },
                     dosenPick: { open: false },
                     riwayat: { open: false, unit: null },
@@ -4209,10 +4262,13 @@
                     const opsi = ((unit && unit.peserta) || []).slice();
                     const npmSet = new Set((found.peserta || []).map((p) => p.npm));
                     const pesertaIds = opsi.filter((p) => npmSet.has(p.npm)).map((p) => p.idPengajuan);
+                    const mergeTargets = ((unit && unit.ba) || []).filter((b) => b.sumber === 'Bagian' && b.baId !== baId);
                     this.kelola = {
                         open: true, baId: baId, sumber: sumber || found.sumber || 'Bagian',
                         tanggal: found.tanggal || '', jam: found.jam || '', dosen: found.dosen || '', catatan: found.catatan || '',
-                        pesertaIds: pesertaIds, pesertaOpsi: opsi
+                        pesertaIds: pesertaIds, pesertaOpsi: opsi,
+                        revision: found.revision || 0, mergeTargets: mergeTargets,
+                        actionMode: '', mergeTargetId: '', reason: '', confirmBaId: '', hardcopyAck: false, busy: false
                     };
                 },
                 async submitKelolaBa() {
@@ -4232,6 +4288,140 @@
                         this.notify('Gagal: ' + e, false);
                     } finally {
                         this.loading = false;
+                    }
+                },
+                openKelolaAction(mode) {
+                    const k = this.kelola;
+                    k.actionMode = k.actionMode === mode ? '' : mode;
+                    k.mergeTargetId = '';
+                    k.reason = '';
+                    k.confirmBaId = '';
+                    k.hardcopyAck = false;
+                },
+                async submitKelolaAction() {
+                    const k = this.kelola;
+                    if (k.sumber === 'Admin') return;
+                    if (String(k.reason || '').trim().length < 10) { this.notify('Alasan minimal 10 karakter.', false); return; }
+                    if (String(k.confirmBaId || '').trim() !== k.baId) { this.notify('Ketik ulang BA ID dengan benar untuk konfirmasi.', false); return; }
+                    if (!k.hardcopyAck) { this.notify('Centang konfirmasi hardcopy terlebih dahulu.', false); return; }
+                    if (k.actionMode === 'merge' && !k.mergeTargetId) { this.notify('Pilih BA tujuan penggabungan.', false); return; }
+                    k.busy = true;
+                    try {
+                        const target = (k.mergeTargets || []).find((b) => b.baId === k.mergeTargetId) || {};
+                        const res = k.actionMode === 'merge'
+                            ? await this.run('mergeBeritaAcara', {
+                                sourceBaId: k.baId,
+                                targetBaId: k.mergeTargetId,
+                                reason: k.reason,
+                                expectedSourceRevision: k.revision,
+                                expectedTargetRevision: target.revision,
+                                hardcopyAck: true
+                            })
+                            : await this.run('archiveBeritaAcara', {
+                                baId: k.baId,
+                                reason: k.reason,
+                                expectedRevision: k.revision,
+                                hardcopyAck: true
+                            });
+                        this.notify((res && res.message) || 'Selesai.', !!(res && res.success));
+                        if (res && res.success) {
+                            k.open = false;
+                            await this.loadBagian();
+                            if (this.baArchive.open) await this.loadBaArchive();
+                            if (this.bab.token) await this.babLoadBaList();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        k.busy = false;
+                    }
+                },
+                baRevisionLookup(baId) {
+                    for (const u of (this.bagian.units || [])) {
+                        const hit = (u.ba || []).find((b) => b.baId === baId);
+                        if (hit) return hit.revision || 0;
+                    }
+                    return undefined;
+                },
+                async archiveBaRecord(baId) {
+                    const reason = await this.askInput({
+                        title: 'Arsipkan Berita Acara',
+                        message: 'BA ' + baId + ' akan disembunyikan dari daftar aktif. Berkas dan hardcopy tetap tersimpan dan dapat dipulihkan dari BA Terarsip.',
+                        label: 'Alasan arsip (minimal 10 karakter)',
+                        required: true,
+                        tone: 'warning',
+                        confirmLabel: 'Lanjut'
+                    });
+                    if (reason === null) return;
+                    if (String(reason || '').trim().length < 10) { this.notify('Alasan minimal 10 karakter.', false); return; }
+                    const ack = await this.askConfirm({
+                        title: 'Konfirmasi Arsip',
+                        message: 'Pastikan hardcopy/PDF BA sudah diperiksa. Tindakan ini tidak menghapus berkas.',
+                        tone: 'warning',
+                        icon: 'bi-archive',
+                        confirmLabel: 'Arsipkan'
+                    });
+                    if (!ack) return;
+                    this.loading = true;
+                    try {
+                        const res = await this.run('archiveBeritaAcara', {
+                            baId: baId,
+                            reason: reason,
+                            expectedRevision: this.baRevisionLookup(baId),
+                            hardcopyAck: true
+                        });
+                        this.notify((res && res.message) || 'Selesai.', !!(res && res.success));
+                        if (res && res.success) {
+                            await this.loadBagian();
+                            if (this.baArchive.open) await this.loadBaArchive();
+                            if (this.bab.token) await this.babLoadBaList();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async toggleBaArchive() {
+                    this.baArchive.open = !this.baArchive.open;
+                    if (this.baArchive.open) await this.loadBaArchive();
+                },
+                async loadBaArchive() {
+                    this.baArchive.loading = true;
+                    try {
+                        this.baArchive.rows = (await this.run('getBaArchiveList')) || [];
+                    } catch (e) {
+                        this.baArchive.rows = [];
+                        this.notify('Gagal memuat arsip BA: ' + e, false);
+                    } finally {
+                        this.baArchive.loading = false;
+                    }
+                },
+                async restoreBa(baId) {
+                    const ok = await this.askConfirm({
+                        title: 'Pulihkan Berita Acara',
+                        message: 'Kembalikan BA ' + baId + ' ke daftar aktif? Periksa kembali tautan sesi jadwalnya setelah dipulihkan.',
+                        tone: 'primary',
+                        icon: 'bi-arrow-counterclockwise',
+                        confirmLabel: 'Pulihkan'
+                    });
+                    if (!ok) return;
+                    this.baArchive.busy = true;
+                    try {
+                        const row = (this.baArchive.rows || []).find((a) => String(a['BA ID'] || '').trim() === baId) || {};
+                        const res = await this.run('restoreBeritaAcara', {
+                            baId: baId,
+                            expectedRevision: row.revision
+                        });
+                        this.notify((res && res.message) || 'Selesai.', !!(res && res.success));
+                        if (res && res.success) {
+                            await this.loadBaArchive();
+                            await this.loadBagian();
+                        }
+                    } catch (e) {
+                        this.notify('Gagal: ' + e, false);
+                    } finally {
+                        this.baArchive.busy = false;
                     }
                 },
                 async openBaManage(baId) {
@@ -4850,6 +5040,10 @@
                 },
                 async deleteBaRecord(baId, sumber) {
                     const isAdminBa = String(sumber || '').trim().toLowerCase() !== 'bagian';
+                    if (!isAdminBa) {
+                        await this.archiveBaRecord(baId);
+                        return;
+                    }
                     const ok = await this.askConfirm({
                         title: 'Hapus Berita Acara',
                         message: 'Hapus BA ' + baId + ' beserta peserta dan file terkait? Tindakan ini tidak dapat dibatalkan.',
@@ -4860,7 +5054,7 @@
                     if (!ok) return;
                     this.loading = true;
                     try {
-                        const res = await this.run(isAdminBa ? 'deleteBeritaAcaraAdmin' : 'deleteBeritaAcaraBagian', baId);
+                        const res = await this.run('deleteBeritaAcaraAdmin', baId);
                         this.notify((res && res.message) || 'Selesai.');
                         await this.loadBagian();
                         if (this.bab.token) await this.babLoadBaList();

@@ -156,7 +156,13 @@ const SCHEMAS = {
         'Dosen',
         'Jadwal ID',
         'Label',
-        'Kegiatan Key'
+        'Kegiatan Key',
+        'Archived At',
+        'Archived By',
+        'Archive Reason',
+        'Merged Into',
+        'Updated At',
+        'Revision'
     ],
     BeritaAcaraPeserta: [
         'Timestamp',
