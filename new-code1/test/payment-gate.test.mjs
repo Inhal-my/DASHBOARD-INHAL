@@ -26,7 +26,7 @@ describe('status Disetujui dan payment gate GAS', () => {
   });
 
   it('promosi otomatis Disetujui menjadi ACC saat pembayaran lunas/gratis', () => {
-    assert.match(business, /newStatus === STATUS\.DISETUJUI && \(paymentSettled \|\| gratis\)/);
+    assert.match(business, /newStatus === STATUS\.DISETUJUI && \(paymentSettled \|\| autoGratis\)/);
     assert.match(business, /effectiveStatus = STATUS\.ACC/);
     assert.match(business, /update\['Status Pembayaran'\] = 'gratis'/);
   });
@@ -57,7 +57,7 @@ describe('status Disetujui dan payment gate GAS', () => {
 
 describe('dashboard status Disetujui dan ACC manual', () => {
   it('dropdown status punya opsi Disetujui', () => {
-    assert.match(dashboard, /<select v-model="detail\.status" class="input">[\s\S]*<option>Disetujui<\/option>[\s\S]*<option>ACC<\/option>[\s\S]*<\/select>/);
+    assert.match(dashboard, /<select v-model="detail\.status"[^>]*>[\s\S]*<option>Disetujui<\/option>[\s\S]*<option>ACC<\/option>[\s\S]*<\/select>/);
   });
 
   it('tombol cepat Setujui tersedia', () => {

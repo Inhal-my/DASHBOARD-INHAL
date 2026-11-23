@@ -1807,7 +1807,7 @@
                                 <div class="grid gap-3 sm:grid-cols-3">
                                     <div class="sm:col-span-1">
                                         <label class="label">Status</label>
-                                        <select v-model="detail.status" class="input">
+                                        <select v-model="detail.status" class="input" :disabled="detail.gratis">
                                             <option>Menunggu</option>
                                             <option>Disetujui</option>
                                             <option>ACC</option>
@@ -1820,13 +1820,20 @@
                                         <input v-model="detail.catatan" class="input" placeholder="Catatan keputusan...">
                                     </div>
                                 </div>
-                                <p class="mt-2 text-[11px] leading-relaxed text-slate-500"><i class="bi bi-info-circle"></i> Alur: setujui pengajuan, mahasiswa mengunggah bukti bayar, lalu validasi pembayaran (status otomatis ACC). ACC manual hanya tersedia bila diaktifkan di Master Data.</p>
-                                <div class="mt-3 flex flex-wrap gap-2">
+                                <p class="mt-2 text-[11px] leading-relaxed text-slate-500"><i class="bi bi-info-circle"></i> Alur: setujui pengajuan, mahasiswa mengunggah bukti bayar, lalu validasi pembayaran (status otomatis ACC). ACC manual hanya tersedia bila diaktifkan di Master Data. Centang "Gratis" untuk menetapkan biaya Rp 0 dan langsung ACC tanpa validasi pembayaran.</p>
+                                <div class="mt-3 flex flex-wrap items-center gap-2">
                                     <button class="btn-primary" @click="updateStatus()"><i class="bi bi-check2-circle"></i>Perbarui Status</button>
-                                    <button class="btn-soft" @click="quickStatus('Disetujui')"><i class="bi bi-check2"></i>Setujui</button>
-                                    <button class="btn-soft" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
-                                    <button class="btn-soft" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
-                                    <button class="btn-danger" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
+                                    <button class="btn-soft" :disabled="detail.gratis" @click="quickStatus('Disetujui')"><i class="bi bi-check2"></i>Setujui</button>
+                                    <button class="btn-soft" :disabled="detail.gratis" @click="quickStatus('ACC')"><i class="bi bi-patch-check"></i>Jadikan ACC</button>
+                                    <button class="btn-soft" :disabled="detail.gratis" @click="quickStatus('Ditolak')"><i class="bi bi-hand-thumbs-down"></i>Tolak</button>
+                                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition" :class="detail.gratis ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:text-emerald-700'">
+                                        <input type="checkbox" v-model="detail.gratis" class="h-4 w-4 accent-emerald-600" @change="onGratisToggle">
+                                        Gratis
+                                    </label>
+                                    <button class="btn-danger sm:ml-auto" @click="deletePengajuan()"><i class="bi bi-trash"></i>Hapus</button>
+                                </div>
+                                <div v-if="detail.gratis" class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                    <i class="bi bi-info-circle"></i> Langsung ACC, biaya Rp 0, dan surat final dikirim tanpa validasi pembayaran.
                                 </div>
                             </div>
 
@@ -2540,7 +2547,7 @@
                     detailMap: {},
                     filters: { search: '', jenis: '', blok: '', status: '' },
                     dosenOptions: [],
-                    detail: { open: false, loading: false, step: 0, p: null, baList: [], status: 'Menunggu', catatan: '', editInduk: false, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
+                    detail: { open: false, loading: false, step: 0, p: null, baList: [], status: 'Menunggu', catatan: '', gratis: false, gratisPrevStatus: 'Menunggu', editInduk: false, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
                     bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], page: 1 },
                     ba: { rows: [], all: [], fBlok: '', fBagian: '', modal: false, loadingOptions: false, opts: { blok: [], details: [], labs: [] }, form: { blok: '', detailKey: '', jenis: '', pilihan: '', detail: '', bagian: '', nama: '', tanggal: '', jam: '', catatan: '', file: null, scanItems: [], scanBusy: false, scanSeq: 0 } },
                     expandedBa: {},
@@ -3798,6 +3805,8 @@
                     this.detail.dEdit = { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' };
                     this.detail.status = p.Status || 'Menunggu';
                     this.detail.catatan = p['Catatan Admin'] || '';
+                    this.detail.gratis = false;
+                    this.detail.gratisPrevStatus = this.detail.status;
                     this.detail.suratFile = null;
                     this.detail.suratName = '';
                     this.detail.suratUploading = false;
@@ -3950,13 +3959,29 @@
                 async updateStatus() {
                     const status = this.detail.status;
                     const catatan = this.detail.catatan.trim();
-                    if ((status === 'Ditolak' || status === 'Dibatalkan') && !catatan) {
+                    const gratis = !!this.detail.gratis;
+                    if (!gratis && (status === 'Ditolak' || status === 'Dibatalkan') && !catatan) {
                         this.notify('Catatan wajib diisi saat menolak atau membatalkan pengajuan.', false);
                         return;
                     }
+                    if (gratis) {
+                        const ok = await this.askConfirm({
+                            title: 'Tetapkan Pengajuan Gratis',
+                            message: 'Tetapkan pengajuan ini sebagai gratis?',
+                            details: [
+                                'Status langsung menjadi ACC.',
+                                'Biaya pengajuan diubah menjadi Rp 0.',
+                                'Surat final dikirim otomatis ke mahasiswa dan Bagian.',
+                                'Tidak melalui proses validasi pembayaran admin.'
+                            ],
+                            icon: 'bi-patch-check',
+                            confirmLabel: 'Tetapkan Gratis'
+                        });
+                        if (!ok) return;
+                    }
                     this.loading = true;
                     try {
-                        const res = await this.run('updatePengajuanStatus', this.detail.p['ID Pengajuan'], status, catatan, '');
+                        const res = await this.run('updatePengajuanStatus', this.detail.p['ID Pengajuan'], gratis ? 'ACC' : status, catatan, '', gratis);
                         this.notify((res && res.message) || 'Status diperbarui.');
                         if (res && res.success) {
                             this.detail.open = false;
@@ -3969,6 +3994,7 @@
                     }
                 },
                 async quickStatus(status) {
+                    this.detail.gratis = false;
                     this.detail.status = status;
                     if (status === 'Ditolak') {
                         const alasan = prompt('Alasan penolakan (wajib):');
@@ -3992,6 +4018,14 @@
                         this.detail.catatan = '';
                     }
                     await this.updateStatus();
+                },
+                onGratisToggle() {
+                    if (this.detail.gratis) {
+                        this.detail.gratisPrevStatus = this.detail.status;
+                        this.detail.status = 'ACC';
+                    } else if (this.detail.status === 'ACC') {
+                        this.detail.status = this.detail.gratisPrevStatus || 'Menunggu';
+                    }
                 },
                 onSuratFile(e) {
                     const f = e.target.files && e.target.files.length ? e.target.files[0] : null;

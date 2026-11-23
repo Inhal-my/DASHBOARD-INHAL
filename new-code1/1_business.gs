@@ -365,7 +365,7 @@ function checkDuplicatePengajuan(formData) {
     }
 }
 
-function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
+function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail, gratis) {
     const lock = LockService.getScriptLock();
     lock.waitLock(30000);
     try {
@@ -384,6 +384,19 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
         }
 
         const prevStatus = String(existing.Status || '').trim();
+        const gratisFlag = gratis === true || gratis === 1 || String(gratis || '').toLowerCase() === 'true';
+        if (gratisFlag) {
+            if (newStatus === STATUS.DITOLAK || newStatus === STATUS.DIBATALKAN) {
+                return { success: false, message: 'Status Gratis tidak dapat digabung dengan ' + newStatus + '.' };
+            }
+            if (_paymentStr(existing['Status Pembayaran']) === 'valid') {
+                return { success: false, message: 'Pembayaran sudah valid; status gratis tidak dapat ditetapkan.' };
+            }
+            if (prevStatus === STATUS.DITOLAK || prevStatus === STATUS.DIBATALKAN) {
+                return { success: false, message: 'Pengajuan sudah ' + prevStatus + '. Ubah ke Menunggu terlebih dahulu sebelum menetapkan gratis.' };
+            }
+            newStatus = STATUS.ACC;
+        }
         const catatanVal = String(catatan || '').trim();
         if ((newStatus === STATUS.DITOLAK || newStatus === STATUS.DIBATALKAN) && !catatanVal) {
             return { success: false, message: 'Catatan wajib diisi untuk status ' + newStatus + '.' };
@@ -393,9 +406,9 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
         const paymentStatus = _paymentStr(existing['Status Pembayaran']);
         const paymentSettled = paymentStatus === 'valid' || paymentStatus === 'gratis';
         const tagihan = _paymentTagihan(existing);
-        const gratis = !paymentSettled && tagihan <= 0;
+        const autoGratis = !paymentSettled && tagihan <= 0;
 
-        if (newStatus === STATUS.ACC && changesStatus && !_paymentSettled(existing)) {
+        if (!gratisFlag && newStatus === STATUS.ACC && changesStatus && !_paymentSettled(existing)) {
             if (!_isManualAccEnabled()) {
                 return {
                     success: false,
@@ -406,9 +419,13 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
 
         let effectiveStatus = newStatus;
         let markGratis = false;
-        if (newStatus === STATUS.DISETUJUI && (paymentSettled || gratis)) {
+        if (gratisFlag) {
             effectiveStatus = STATUS.ACC;
-            markGratis = gratis;
+            markGratis = true;
+            _upsertBiayaCheckData(idPengajuan, '0', existing);
+        } else if (newStatus === STATUS.DISETUJUI && (paymentSettled || autoGratis)) {
+            effectiveStatus = STATUS.ACC;
+            markGratis = autoGratis;
         }
 
         const update = {
@@ -425,16 +442,37 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
         }
 
         upsertRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan, update);
+        const historyNote = catatanVal || (gratisFlag ? 'Gratis' : (markGratis ? 'Gratis otomatis (biaya Rp 0).' : ''));
         appendRowSafe('StatusHistory', {
             Timestamp: new Date(),
             'ID Pengajuan': idPengajuan,
             'Status': effectiveStatus,
-            'Catatan': catatanVal || (markGratis ? 'Gratis otomatis (biaya Rp 0).' : ''),
+            'Catatan': historyNote,
             'Actor Email': actorEmail || getActorName()
         });
 
+        if (gratisFlag) {
+            writeAuditLog({
+                actor: actorEmail || getActorName(),
+                action: 'GRATIS',
+                target: 'Pengajuan',
+                detail: JSON.stringify({ idPengajuan: idPengajuan, dari: prevStatus, ke: STATUS.ACC, biaya: 0 }),
+                alasan: catatanVal
+            });
+        }
+
         let notification = null;
-        if (changesStatus && (effectiveStatus === STATUS.ACC || effectiveStatus === STATUS.DITOLAK)) {
+        const autoFinal = markGratis && effectiveStatus === STATUS.ACC && !_paymentStr(existing['Link Final']);
+        if (autoFinal) {
+            try {
+                const final = _sendFinalPdfEmails(idPengajuan);
+                notification = final.ok
+                    ? { ok: true, kind: 'final', pdfUrl: final.pdfUrl }
+                    : { ok: false, kind: 'final', error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.' };
+            } catch (e) {
+                notification = { ok: false, kind: 'final', error: (e && e.message) ? e.message : String(e) };
+            }
+        } else if (!markGratis && changesStatus && (effectiveStatus === STATUS.ACC || effectiveStatus === STATUS.DITOLAK)) {
             try {
                 notification = _processStatusNotification(idPengajuan, effectiveStatus);
             } catch (e) {
@@ -442,15 +480,25 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
             }
         }
 
-        const baseMessage = 'Status diperbarui menjadi ' + effectiveStatus + '.';
+        let baseMessage = 'Status diperbarui menjadi ' + effectiveStatus + '.';
+        if (gratisFlag) {
+            baseMessage = 'Pengajuan ditandai gratis: status ACC dan biaya Rp 0.';
+        } else if (effectiveStatus !== newStatus) {
+            baseMessage = markGratis
+                ? 'Pengajuan gratis: status langsung menjadi ACC.'
+                : 'Pembayaran sudah valid: status langsung menjadi ACC.';
+        }
         if (notification) {
+            const suffix = notification.kind === 'final'
+                ? (notification.ok ? ' Surat ACC final terkirim.' : ' Pengiriman surat ACC final gagal: ' + notification.error)
+                : (notification.ok ? ' Email notifikasi terkirim.' : ' Email notifikasi gagal: ' + notification.error);
             return {
                 success: true,
                 idPengajuan: idPengajuan,
                 status: effectiveStatus,
                 nomorSurat: nomorSurat,
                 notification: notification,
-                message: baseMessage + (notification.ok ? ' Email notifikasi terkirim.' : ' Email notifikasi gagal: ' + notification.error)
+                message: baseMessage + suffix
             };
         }
         return { success: true, idPengajuan: idPengajuan, status: effectiveStatus, nomorSurat: nomorSurat, message: baseMessage };
@@ -736,6 +784,9 @@ function uploadBuktiFiles(payload) {
         if (!existing) {
             return { success: false, message: 'Pengajuan tidak ditemukan.' };
         }
+        if (_paymentStatus(existing) === 'gratis') {
+            return { success: false, message: 'Pengajuan ini gratis, tidak perlu mengunggah bukti bayar.' };
+        }
 
         if (payload && payload.buktiFile && payload.buktiFile.data) {
             if (getBuktiMode() === 'strict') {
@@ -1003,6 +1054,7 @@ function getStudentPortalData(npm) {
                 status: p.Status || 'Menunggu',
                 reason: p['Catatan Admin'] || '',
                 hasUpload: hasUpload,
+                gratis: _paymentStatus(p) === 'gratis',
                 linkFinal: p['Link Final'] || '',
                 uploadTimestamp: hasUpload ? (_clientDate(p.UpdatedAt) || 'Uploaded') : '',
                 jadwal: jadwalByPengajuan[id] || null

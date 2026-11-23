@@ -104,7 +104,7 @@ describe('dashboard input manual', () => {
 
 describe('dashboard opsi status ACC', () => {
   it('dropdown status punya opsi ACC', () => {
-    assert.match(html, /<select v-model="detail\.status" class="input">[\s\S]*<option>ACC<\/option>[\s\S]*<\/select>/);
+    assert.match(html, /<select v-model="detail\.status"[^>]*>[\s\S]*<option>ACC<\/option>[\s\S]*<\/select>/);
   });
   it('tombol cepat Jadikan ACC', () => {
     assert.match(html, /quickStatus\('ACC'\)/);
