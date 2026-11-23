@@ -383,14 +383,43 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
             return { success: false, message: 'Pengajuan tidak ditemukan.' };
         }
 
+        const prevStatus = String(existing.Status || '').trim();
+        const catatanVal = String(catatan || '').trim();
+        if ((newStatus === STATUS.DITOLAK || newStatus === STATUS.DIBATALKAN) && !catatanVal) {
+            return { success: false, message: 'Catatan wajib diisi untuk status ' + newStatus + '.' };
+        }
+
+        const changesStatus = newStatus !== prevStatus;
+        const paymentStatus = _paymentStr(existing['Status Pembayaran']);
+        const paymentSettled = paymentStatus === 'valid' || paymentStatus === 'gratis';
+        const tagihan = _paymentTagihan(existing);
+        const gratis = !paymentSettled && tagihan <= 0;
+
+        if (newStatus === STATUS.ACC && changesStatus && !_paymentSettled(existing)) {
+            if (!_isManualAccEnabled()) {
+                return {
+                    success: false,
+                    message: 'ACC manual dinonaktifkan. Setujui pengajuan lalu validasi pembayaran; aktifkan ACC manual di Master Data bila perlu.'
+                };
+            }
+        }
+
+        let effectiveStatus = newStatus;
+        let markGratis = false;
+        if (newStatus === STATUS.DISETUJUI && (paymentSettled || gratis)) {
+            effectiveStatus = STATUS.ACC;
+            markGratis = gratis;
+        }
+
         const update = {
-            'Status': newStatus,
+            'Status': effectiveStatus,
             'UpdatedAt': new Date()
         };
-        if (catatan !== undefined && String(catatan || '').trim() !== '') update['Catatan Admin'] = String(catatan).trim();
+        if (catatanVal !== '') update['Catatan Admin'] = catatanVal;
+        if (markGratis) update['Status Pembayaran'] = 'gratis';
 
         let nomorSurat = String(existing['Nomor Surat'] || '').trim();
-        if (newStatus === STATUS.ACC && !nomorSurat) {
+        if ((effectiveStatus === STATUS.ACC || effectiveStatus === STATUS.DISETUJUI) && !nomorSurat) {
             nomorSurat = getNextSuratNumberYearly('INHAL');
             update['Nomor Surat'] = nomorSurat;
         }
@@ -399,31 +428,32 @@ function updatePengajuanStatus(idPengajuan, newStatus, catatan, actorEmail) {
         appendRowSafe('StatusHistory', {
             Timestamp: new Date(),
             'ID Pengajuan': idPengajuan,
-            'Status': newStatus,
-            'Catatan': catatan || '',
+            'Status': effectiveStatus,
+            'Catatan': catatanVal || (markGratis ? 'Gratis otomatis (biaya Rp 0).' : ''),
             'Actor Email': actorEmail || getActorName()
         });
 
         let notification = null;
-        if (newStatus === STATUS.ACC || newStatus === STATUS.DITOLAK) {
+        if (changesStatus && (effectiveStatus === STATUS.ACC || effectiveStatus === STATUS.DITOLAK)) {
             try {
-                notification = _processStatusNotification(idPengajuan, newStatus);
+                notification = _processStatusNotification(idPengajuan, effectiveStatus);
             } catch (e) {
                 notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
             }
         }
 
-        const baseMessage = 'Status diperbarui menjadi ' + newStatus + '.';
+        const baseMessage = 'Status diperbarui menjadi ' + effectiveStatus + '.';
         if (notification) {
             return {
                 success: true,
                 idPengajuan: idPengajuan,
+                status: effectiveStatus,
                 nomorSurat: nomorSurat,
                 notification: notification,
                 message: baseMessage + (notification.ok ? ' Email notifikasi terkirim.' : ' Email notifikasi gagal: ' + notification.error)
             };
         }
-        return { success: true, idPengajuan: idPengajuan, nomorSurat: nomorSurat, message: baseMessage };
+        return { success: true, idPengajuan: idPengajuan, status: effectiveStatus, nomorSurat: nomorSurat, message: baseMessage };
     } catch (e) {
         return { success: false, message: e.message };
     } finally {
@@ -1154,6 +1184,10 @@ function _setConfigValue(key, value) {
         }
     }
     sheet.appendRow([key, String(value)]);
+}
+
+function _isManualAccEnabled() {
+    return _getConfigValue('allow_manual_acc', '0') === '1';
 }
 
 function _getBagianBaStatuses() {
@@ -2157,6 +2191,7 @@ function _buildPengajuanClientRows(rows, biayaMap, overrideMap) {
 
 function getDashboardBootstrap() {
     requireAuthorized(arguments[arguments.length - 1]);
+    _ensurePaymentGateMigration();
     const pengajuan = getAllRowsCached('Pengajuan');
     const details = getAllRowsCached('DetailKegiatan');
     const ba = getAllRowsCached('BeritaAcara');
@@ -2240,6 +2275,7 @@ function getLaporanBootstrap() {
     let totalPendaftar = 0;
     let totalDitolak = 0;
     let totalMenunggu = 0;
+    let totalDisetujui = 0;
     let totalAcc = 0;
     let totalBiaya = 0;
     const perJenis = {};
@@ -2252,6 +2288,7 @@ function getLaporanBootstrap() {
         totalPendaftar++;
         if (status === 'Ditolak') totalDitolak++;
         if (status === 'Menunggu') totalMenunggu++;
+        if (status === STATUS.DISETUJUI) totalDisetujui++;
         if (status === 'ACC') totalAcc++;
         perStatus[status || 'Lainnya'] = (perStatus[status || 'Lainnya'] || 0) + 1;
         const jenis = String(p['Jenis Kegiatan'] || 'Lainnya').trim();
@@ -2358,6 +2395,7 @@ function getLaporanBootstrap() {
             totalPendaftar: totalPendaftar,
             totalDitolak: totalDitolak,
             totalMenunggu: totalMenunggu,
+            totalDisetujui: totalDisetujui,
             totalAcc: totalAcc,
             totalBiaya: totalBiaya,
             perJenis: perJenis,
@@ -3859,6 +3897,18 @@ function _sendFinalPdfEmails(idPengajuan) {
     const pengajuan = prepared.pengajuan;
     const pdfBlob = prepared.pdfBlob;
 
+    if (String(pengajuan.Status || '').trim() !== STATUS.ACC) {
+        return {
+            ok: false,
+            pdfUrl: '',
+            studentEmailSent: false,
+            bagianEmailSent: false,
+            bagianEmail: '',
+            bagianName: '',
+            notes: ['Pengajuan belum berstatus ACC. Setujui lalu validasi pembayaran terlebih dahulu.']
+        };
+    }
+
     const accInhal = String(pengajuan['Link ACC INHAL'] || '').trim();
     if (!accInhal) {
         return {
@@ -3870,20 +3920,6 @@ function _sendFinalPdfEmails(idPengajuan) {
             bagianName: '',
             notes: ['Berkas ACC INHAL belum diunggah. Upload ACC INHAL terlebih dahulu sebelum mengirim PDF final.']
         };
-    }
-
-    if (String(pengajuan.Status || '').trim() !== STATUS.ACC) {
-        upsertRowByKey('Pengajuan', 'ID Pengajuan', idPengajuan, {
-            'Status': STATUS.ACC,
-            'UpdatedAt': new Date()
-        });
-        appendRowSafe('StatusHistory', {
-            Timestamp: new Date(),
-            'ID Pengajuan': idPengajuan,
-            'Status': STATUS.ACC,
-            'Catatan': '',
-            'Actor Email': getActorName()
-        });
     }
 
     let pdfUrl = '';
@@ -5018,6 +5054,76 @@ function _paymentTagihan(row) {
     return _resolveBiayaForPengajuan(row, _getBiayaMap(), _getBiayaOverrideMap());
 }
 
+function _paymentSettled(row) {
+    const current = _paymentStatus(row);
+    if (current === 'valid' || current === 'gratis') return true;
+    return _paymentTagihan(row) <= 0;
+}
+
+function _paymentGatePassed(row) {
+    if (!row) return false;
+    if (String(row.Status || '').trim() !== STATUS.ACC) return false;
+    if (Number(row['Payment Gate Exempt'] || 0) === 1) return true;
+    if (_paymentSettled(row)) return true;
+    return !!_paymentStr(row['Link Final']);
+}
+
+function migratePaymentGateExempt() {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+        const ss = getGlobalSpreadsheet();
+        ensureSheetWithHeaders(ss, 'Pengajuan', SCHEMAS.Pengajuan);
+        try {
+            applyDropdownValidation(ss, 'Pengajuan', 'Status', Object.values(STATUS));
+        } catch (e) {
+            console.warn('Gagal memperbarui validasi status: ' + (e && e.message ? e.message : e));
+        }
+        const rows = getAllRows('Pengajuan');
+        let changed = 0;
+        rows.forEach(function(row) {
+            const id = String(row['ID Pengajuan'] || '').trim();
+            if (!id) return;
+            if (String(row.Status || '').trim() !== STATUS.ACC) return;
+            if (Number(row['Payment Gate Exempt'] || 0) === 1) return;
+            if (_paymentSettled(row)) return;
+            if (_paymentStr(row['Link Final'])) return;
+            upsertRowByKey('Pengajuan', 'ID Pengajuan', id, {
+                'Payment Gate Exempt': 1,
+                'UpdatedAt': new Date()
+            });
+            appendRowSafe('StatusHistory', {
+                Timestamp: new Date(),
+                'ID Pengajuan': id,
+                'Status': STATUS.ACC,
+                'Catatan': 'Migrasi: pengecualian payment gate untuk ACC lama',
+                'Actor Email': 'migration'
+            });
+            changed++;
+        });
+        if (_getConfigValue('allow_manual_acc', '') === '') {
+            _setConfigValue('allow_manual_acc', '0');
+        }
+        _setConfigValue('PAYMENT_GATE_MIGRATED', '1');
+        console.log('migratePaymentGateExempt selesai: ' + changed + ' pengajuan diperbarui.');
+        return { success: true, changed: changed };
+    } catch (e) {
+        console.error('migratePaymentGateExempt gagal: ' + (e && e.message ? e.message : e));
+        return { success: false, message: (e && e.message) ? e.message : String(e) };
+    } finally {
+        lock.releaseLock();
+    }
+}
+
+function _ensurePaymentGateMigration() {
+    try {
+        if (_getConfigValue('PAYMENT_GATE_MIGRATED', '') === '1') return;
+        migratePaymentGateExempt();
+    } catch (e) {
+        console.error('Gagal menjalankan migrasi payment gate: ' + (e && e.message ? e.message : e));
+    }
+}
+
 function verifyPembayaran(payload) {
     requireAuthorized(arguments[arguments.length - 1]);
     const lock = LockService.getScriptLock();
@@ -5028,6 +5134,10 @@ function verifyPembayaran(payload) {
         if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
         const row = getRowByKey('Pengajuan', 'ID Pengajuan', id);
         if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+        const prevPengajuanStatus = String(row.Status || '').trim();
+        if (prevPengajuanStatus !== STATUS.DISETUJUI && prevPengajuanStatus !== STATUS.ACC) {
+            return { success: false, message: 'Pembayaran hanya dapat diverifikasi untuk pengajuan berstatus Disetujui atau ACC.' };
+        }
         const currentStatus = _paymentStatus(row);
         if (currentStatus === 'valid') return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi.' };
         if (currentStatus === 'gratis') return { success: false, message: 'Pembayaran gratis tidak perlu diverifikasi.' };
@@ -5054,6 +5164,7 @@ function verifyPembayaran(payload) {
         const revision = _paymentRevisionOf(row) + 1;
 
         _setPengajuanColumns(id, {
+            'Status': STATUS.ACC,
             'Status Pembayaran': 'valid',
             'Kesesuaian Pembayaran': kesesuaian,
             'Nominal Dibayar': nominal,
@@ -5066,6 +5177,15 @@ function verifyPembayaran(payload) {
             UpdatedAt: new Date()
         });
         invalidateSheetCache('Pengajuan');
+        if (prevPengajuanStatus !== STATUS.ACC) {
+            appendRowSafe('StatusHistory', {
+                Timestamp: new Date(),
+                'ID Pengajuan': id,
+                'Status': STATUS.ACC,
+                'Catatan': 'Pembayaran divalidasi',
+                'Actor Email': actor
+            });
+        }
         _appendPembayaranRevisi({
             idPengajuan: id, revision: revision, mode: 'verifikasi',
             statusLama: currentStatus, statusBaru: 'valid',
@@ -5083,7 +5203,27 @@ function verifyPembayaran(payload) {
             detail: JSON.stringify({ idPengajuan: id, nominal: nominal, kesesuaian: kesesuaian, tanggal: tanggal }),
             alasan: ''
         });
-        return { success: true, status: 'valid', revision: revision, message: 'Pembayaran divalidasi.' };
+
+        let notification = null;
+        if (!_paymentStr(row['Link Final'])) {
+            try {
+                const final = _sendFinalPdfEmails(id);
+                notification = final.ok
+                    ? { ok: true, pdfUrl: final.pdfUrl }
+                    : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.' };
+            } catch (e) {
+                notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
+            }
+        }
+
+        let message = 'Pembayaran divalidasi. Status pengajuan menjadi ACC.';
+        if (notification) {
+            message += notification.ok
+                ? ' Surat final dikirim ke mahasiswa dan Bagian.'
+                : ' Pengiriman surat final gagal: ' + notification.error;
+        }
+
+        return { success: true, status: 'valid', pengajuanStatus: STATUS.ACC, revision: revision, notification: notification, message: message };
     } catch (e) {
         return { success: false, message: (e && e.message) ? e.message : String(e) };
     } finally {
@@ -5124,13 +5264,14 @@ function correctPembayaran(payload) {
         const ts = _paymentNowIso();
         const revision = _paymentRevisionOf(row) + 1;
         const nextStatus = mode === 'buka_kembali' ? 'menunggu' : 'valid';
+        const nextPengajuanStatus = mode === 'buka_kembali' ? STATUS.DISETUJUI : '';
         const tanggal = mode === 'administratif' && p.tanggal !== undefined ? _paymentStr(p.tanggal) : _paymentStr(row['Tanggal Bayar']);
         const metode = mode === 'administratif' && p.metode !== undefined ? _paymentStr(p.metode) : _paymentStr(row['Metode Bayar']);
         const catatan = mode === 'administratif' && p.catatan !== undefined ? _paymentStr(p.catatan) : _paymentStr(row['Catatan Verifikasi']);
         const verifiedAt = mode === 'buka_kembali' ? '' : _paymentStr(row['Verified At']);
         const verifiedBy = mode === 'buka_kembali' ? '' : _paymentStr(row['Verified By']);
 
-        _setPengajuanColumns(id, {
+        const paymentColumns = {
             'Status Pembayaran': nextStatus,
             'Tanggal Bayar': tanggal,
             'Metode Bayar': metode,
@@ -5139,8 +5280,19 @@ function correctPembayaran(payload) {
             'Verified By': verifiedBy,
             'Payment Revision': revision,
             UpdatedAt: new Date()
-        });
+        };
+        if (nextPengajuanStatus) paymentColumns['Status'] = nextPengajuanStatus;
+        _setPengajuanColumns(id, paymentColumns);
         invalidateSheetCache('Pengajuan');
+        if (nextPengajuanStatus) {
+            appendRowSafe('StatusHistory', {
+                Timestamp: new Date(),
+                'ID Pengajuan': id,
+                'Status': nextPengajuanStatus,
+                'Catatan': 'Pembayaran dibuka kembali',
+                'Actor Email': actor
+            });
+        }
         _appendPembayaranRevisi({
             idPengajuan: id, revision: revision, mode: mode,
             statusLama: 'valid', statusBaru: nextStatus,
@@ -5159,8 +5311,8 @@ function correctPembayaran(payload) {
             alasan: alasan
         });
         return {
-            success: true, status: nextStatus, revision: revision,
-            message: mode === 'buka_kembali' ? 'Pembayaran dikembalikan ke antrean.' : 'Koreksi administratif disimpan.'
+            success: true, status: nextStatus, pengajuanStatus: nextPengajuanStatus, revision: revision,
+            message: mode === 'buka_kembali' ? 'Pembayaran dikembalikan ke antrean. Status pengajuan menjadi Disetujui.' : 'Koreksi administratif disimpan.'
         };
     } catch (e) {
         return { success: false, message: (e && e.message) ? e.message : String(e) };

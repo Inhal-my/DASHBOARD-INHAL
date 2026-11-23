@@ -7,8 +7,9 @@ const TEMPLATE_ACC_FINAL = 'template-acc-final';
 
 const STATUS = {
     MENUNGGU: 'Menunggu',
-    DITOLAK: 'Ditolak',
+    DISETUJUI: 'Disetujui',
     ACC: 'ACC',
+    DITOLAK: 'Ditolak',
     DIBATALKAN: 'Dibatalkan'
 };
 
@@ -59,7 +60,8 @@ const SCHEMAS = {
         'Payment Revision',
         'Upload Reset At',
         'Upload Reset By',
-        'Upload Reset Note'
+        'Upload Reset Note',
+        'Payment Gate Exempt'
     ],
     DetailKegiatan: [
         'Timestamp',
