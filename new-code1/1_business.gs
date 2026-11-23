@@ -1463,6 +1463,25 @@ function _validateBaPesertaStatus(peserta) {
     return blocked;
 }
 
+function _jadwalScheduledIdsForKegiatan(kegiatanKey) {
+    const key = String(kegiatanKey || '').trim();
+    if (!key) return {};
+    const jadwalIds = {};
+    getAllRows('JadwalPelaksanaan').forEach(function(j) {
+        const active = String(j.Active === false ? '0' : (j.Active === '' || j.Active == null ? '1' : j.Active)).trim();
+        if (active === '0') return;
+        const k = String(j['Kegiatan Key'] || '').trim() || _kegiatanKey(j.Bagian, j.Blok, j['Nama Kegiatan']);
+        if (k === key) jadwalIds[String(j['Jadwal ID'] || '').trim()] = true;
+    });
+    const ids = {};
+    getAllRows('JadwalPeserta').forEach(function(r) {
+        if (!jadwalIds[String(r['Jadwal ID'] || '').trim()]) return;
+        const pid = String(r['ID Pengajuan'] || '').trim();
+        if (pid) ids[pid] = true;
+    });
+    return ids;
+}
+
 function uploadBeritaAcaraBagian(payload, kategori) {
     try {
         requireBaginaSession(kategori, payload && payload.bagian, arguments[arguments.length - 1]);
@@ -1543,7 +1562,46 @@ function uploadBeritaAcaraBagian(payload, kategori) {
             });
         });
 
-        return { success: true, baId: baId, message: 'Berita acara berhasil diunggah.' };
+        const autoFlag = payload && (payload.autoJadwalkanBelumDijadwalkan === true || payload.autoJadwalkanBelumDijadwalkan === 'true');
+        let autoScheduled = 0;
+        if (jadwalId && autoFlag) {
+            const kegiatanKey = _kegiatanKey(
+                String((payload && payload.bagian) || kategori || '').trim(),
+                String((payload && payload.blok) || '').trim(),
+                String((payload && payload.namaKegiatan) || '').trim()
+            );
+            const scheduled = _jadwalScheduledIdsForKegiatan(kegiatanKey);
+            const already = {};
+            getAllRows('JadwalPeserta').forEach(function(r) {
+                if (String(r['Jadwal ID'] || '').trim() !== jadwalId) return;
+                const pid = String(r['ID Pengajuan'] || '').trim();
+                if (pid) already[pid] = true;
+            });
+            peserta.forEach(function(p) {
+                const pid = String(p.idPengajuan || '').trim();
+                if (!pid || scheduled[pid] || already[pid]) return;
+                already[pid] = true;
+                appendRowSafe('JadwalPeserta', {
+                    Timestamp: new Date(),
+                    'Jadwal ID': jadwalId,
+                    'ID Pengajuan': pid,
+                    'NPM': p.npm,
+                    'Nama Lengkap': p.namaLengkap,
+                    'Blok': p.blok,
+                    'Status Pengajuan': p.statusPengajuan
+                });
+                autoScheduled += 1;
+            });
+        }
+
+        return {
+            success: true,
+            baId: baId,
+            autoScheduled: autoScheduled,
+            message: autoScheduled
+                ? 'Berita acara berhasil diunggah. ' + autoScheduled + ' peserta otomatis dijadwalkan.'
+                : 'Berita acara berhasil diunggah.'
+        };
     } catch (e) {
         return { success: false, message: e.message };
     }
