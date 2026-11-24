@@ -246,3 +246,36 @@ describe('auto-jadwal peserta belum dijadwalkan', () => {
     expect(html).toContain('applySessionToggleWithRelease');
   });
 });
+
+describe('penghematan rows read (Level 0A)', () => {
+  it('memakai interval polling 5 menit dan konstanta TTL/idle', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('const CACHE_TTL_MS = 5 * 60 * 1000;');
+    expect(html).toContain('const POLL_INTERVAL_MS = 5 * 60 * 1000;');
+    expect(html).toContain('const IDLE_STOP_MS = 30 * 60 * 1000;');
+    expect(html).toContain('setInterval(() => this.silentRefresh(), POLL_INTERVAL_MS)');
+    expect(html).not.toContain('setInterval(() => this.silentRefresh(), 30000)');
+  });
+
+  it('menghentikan polling saat tab tersembunyi dan melewati fetch bila cache masih segar', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain("document.addEventListener('visibilitychange', this.visibilityHandler)");
+    expect(html).toContain('if (document.hidden) {');
+    expect(html).toContain('if (this.cacheFresh()) return;');
+    expect(html).toContain('if (Date.now() - this.lastActivityAt > IDLE_STOP_MS)');
+  });
+
+  it('menyimpan dan membaca cap waktu cache untuk perbandingan TTL', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('cacheTs: 0');
+    expect(html).toContain('this.cacheTs = Date.now();');
+    expect(html).toContain('this.cacheTs = Number(cached.ts) || 0;');
+    expect(html).toContain('cacheFresh() {');
+  });
+
+  it('melepas listener polling saat komponen dibongkar', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('this.stopPolling();\n                this.unbindLifecycle();');
+    expect(html).toContain("document.removeEventListener('visibilitychange', this.visibilityHandler)");
+  });
+});

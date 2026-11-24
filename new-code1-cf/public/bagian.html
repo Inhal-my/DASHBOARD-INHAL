@@ -1417,6 +1417,12 @@
         const NOTIF_MAX_READ = 400;
         const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
         const BULAN_SINGKAT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        // Level 0A: hemat rows read D1 dengan memperpanjang interval polling,
+        // menghentikannya saat tab tidak terlihat/tidak aktif, dan memakai
+        // cache lokal selama masih segar.
+        const CACHE_TTL_MS = 5 * 60 * 1000;
+        const POLL_INTERVAL_MS = 5 * 60 * 1000;
+        const IDLE_STOP_MS = 30 * 60 * 1000;
 
         function notifKey(n, i) {
             const id = String((n && n.idPengajuan) || '').trim();
@@ -1515,6 +1521,10 @@
                     toast: { show: false, type: 'info', message: '' },
                     toastTimer: null,
                     pollTimer: null,
+                    cacheTs: 0,
+                    lastActivityAt: Date.now(),
+                    visibilityHandler: null,
+                    activityHandler: null,
                     notifikasiList: [],
                     notifReadKeys: {},
                     isMobile: false,
@@ -2213,8 +2223,10 @@
                             this.baPendukungList = cached.baPendukungList || [];
                             this.jadwalList = cached.jadwalList || [];
                             this.notifikasiList = cached.notifikasiList || [];
+                            this.cacheTs = Number(cached.ts) || 0;
                         }
                         this.loggedIn = true;
+                        this.lastActivityAt = Date.now();
                         this.startPolling();
                         try {
                             const res = await this._fetchBootstrap();
@@ -2296,7 +2308,44 @@
                             notifikasiList: this.notifikasiList,
                             ts: Date.now()
                         }));
+                        this.cacheTs = Date.now();
                     } catch (e) {}
+                },
+                cacheFresh() {
+                    return this.cacheTs > 0 && (Date.now() - this.cacheTs) < CACHE_TTL_MS;
+                },
+                bindLifecycle() {
+                    if (this.visibilityHandler) return;
+                    this.visibilityHandler = () => {
+                        if (!this.loggedIn) return;
+                        if (document.hidden) {
+                            this.stopPolling();
+                            return;
+                        }
+                        this.lastActivityAt = Date.now();
+                        this.startPolling();
+                        if (!this.cacheFresh()) this.silentRefresh();
+                    };
+                    this.activityHandler = () => {
+                        this.lastActivityAt = Date.now();
+                        if (this.loggedIn && !document.hidden && !this.pollTimer) this.startPolling();
+                    };
+                    document.addEventListener('visibilitychange', this.visibilityHandler);
+                    window.addEventListener('pointerdown', this.activityHandler, { passive: true });
+                    window.addEventListener('keydown', this.activityHandler);
+                    window.addEventListener('scroll', this.activityHandler, { passive: true });
+                },
+                unbindLifecycle() {
+                    if (this.visibilityHandler) {
+                        document.removeEventListener('visibilitychange', this.visibilityHandler);
+                        this.visibilityHandler = null;
+                    }
+                    if (this.activityHandler) {
+                        window.removeEventListener('pointerdown', this.activityHandler);
+                        window.removeEventListener('keydown', this.activityHandler);
+                        window.removeEventListener('scroll', this.activityHandler);
+                        this.activityHandler = null;
+                    }
                 },
                 async loadData() {
                     this.loading = true;
@@ -2311,7 +2360,8 @@
                 },
                 startPolling() {
                     this.stopPolling();
-                    this.pollTimer = setInterval(() => this.silentRefresh(), 30000);
+                    if (!this.loggedIn) return;
+                    this.pollTimer = setInterval(() => this.silentRefresh(), POLL_INTERVAL_MS);
                 },
                 stopPolling() {
                     if (this.pollTimer) {
@@ -2321,6 +2371,9 @@
                 },
                 async silentRefresh() {
                     if (!this.loggedIn) { this.stopPolling(); return; }
+                    if (document.hidden) { this.stopPolling(); return; }
+                    if (this.cacheFresh()) return;
+                    if (Date.now() - this.lastActivityAt > IDLE_STOP_MS) { this.stopPolling(); return; }
                     if (this.loading || this.ba.open || this.jadwal.open || this.ba.lengkapi || this.formDirty) return;
                     try {
                         const res = await this._fetchBootstrap();
@@ -3105,14 +3158,19 @@
                     this.ba = { open: false, mode: 'manual', kegiatanKey: null, jadwalId: '', jadwalIds: [], jadwalInfo: null, jadwalPeserta: [], tanggal: '', jam: '', dosen: '', dosenList: [''], label: '', catatan: '', file: null, fileName: '', selected: {}, includePendukung: false, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0, lengkapi: null };
                     this.notifikasiList = [];
                     this.notif = { open: false, tab: 'semua' };
+                    this.cacheTs = 0;
+                    this.lastActivityAt = Date.now();
                 }
             },
             beforeUnmount() {
+                this.stopPolling();
+                this.unbindLifecycle();
                 window.removeEventListener('resize', this._onNotifViewport);
                 document.removeEventListener('keydown', this._onNotifKey);
                 document.removeEventListener('click', this._onNotifOutside, true);
             },
             mounted() {
+                this.bindLifecycle();
                 this.notifReadKeys = loadNotifRead();
                 this.syncNotifViewport();
                 this._onNotifViewport = this.syncNotifViewport.bind(this);
@@ -3137,8 +3195,11 @@
                         this.rows = cached.rows || [];
                         this.baList = cached.baList || [];
                         this.baPendukungList = cached.baPendukungList || [];
+                        this.jadwalList = cached.jadwalList || [];
                         this.notifikasiList = cached.notifikasiList || [];
+                        this.cacheTs = Number(cached.ts) || 0;
                     }
+                    this.lastActivityAt = Date.now();
                     this.startPolling();
                     this._fetchBootstrap().then(res => {
                         this.applyBootstrap(res);
