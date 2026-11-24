@@ -12,7 +12,7 @@ import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds } from './baSesi.js';
 import { paymentGatePassed } from '../paymentGate.js';
-import { loadBaDosenMap, dosenListFor } from './dosen.js';
+import { loadBaDosenMap, loadJadwalDosenMap, baDosenListFor } from './dosen.js';
 import { logError } from '../obs/log.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -205,6 +205,7 @@ async function loadPengajuanBa(db, idPengajuan) {
   ];
   const sesiMap = await loadBaSesiMap(db);
   const dosenMap = await loadBaDosenMap(db);
+  const jadwalDosenMap = await loadJadwalDosenMap(db);
   const out = [];
   for (const src of sources) {
     const members = (await db.prepare(`SELECT * FROM ${src.pesertaTable} WHERE ${src.where}`).bind(id).all()).results || [];
@@ -222,7 +223,8 @@ async function loadPengajuanBa(db, idPengajuan) {
       // admin tahu berapa mahasiswa yang tercakup dalam satu BA.
       const total = await db.prepare(`SELECT COUNT(*) AS n FROM ${src.pesertaTable} WHERE ba_id = ?1${src.memberFilter}`).bind(baId).first();
       const jumlah = Number((total && total.n) || 0);
-      const dosenList = dosenListFor(dosenMap, baId, c.Dosen);
+      const jadwalIds = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
+      const dosenList = baDosenListFor(dosenMap, jadwalDosenMap, baId, jadwalIds, c.Dosen);
       out.push({
         baId: baId,
         sumber: src.sumber,
@@ -270,6 +272,7 @@ export async function getBagianAggregation(db, ctx) {
   const all = async (table) => (await db.prepare(`SELECT * FROM ${table}`).all()).results || [];
   const sesiMap = await loadBaSesiMap(db);
   const dosenMap = await loadBaDosenMap(db);
+  const jadwalDosenMap = await loadJadwalDosenMap(db);
   const pengajuan = await all('pengajuan');
   const details = await all('detail_kegiatan');
   const labs = await getMasterOptions(db, 'Lab');
@@ -327,7 +330,7 @@ export async function getBagianAggregation(db, ctx) {
       const c = toClientRow(table, r);
       const baId = String(c['BA ID'] || '').trim();
       const jadwalIds = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
-      const dosenList = dosenListFor(dosenMap, baId, c.Dosen);
+      const dosenList = baDosenListFor(dosenMap, jadwalDosenMap, baId, jadwalIds, c.Dosen);
       const rec = {
         baId, sumber,
         bagian: String(c.Bagian || '').trim(),

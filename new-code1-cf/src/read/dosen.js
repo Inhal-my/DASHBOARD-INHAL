@@ -42,3 +42,20 @@ export function dosenListFor(map, id, fallback) {
   if (list.length) return list;
   return normalizeDosenList(fallback);
 }
+
+// Daftar dosen BA: utamakan dosen dari jadwal yang tertaut agar relasi
+// ba_dosen yang sudah tidak relevan tidak lagi muncul di laporan. Bila BA
+// belum punya jadwal, pakai relasi ba_dosen lalu kolom teks BA.
+export function baDosenListFor(baDosenMap, jadwalDosenMap, baId, jadwalIds, fallback) {
+  const list = [];
+  const ids = Array.isArray(jadwalIds) ? jadwalIds : [];
+  for (const jid of ids) {
+    const names = (jadwalDosenMap && jadwalDosenMap[str(jid)]) || [];
+    for (const nama of names) {
+      const value = str(nama);
+      if (value && list.indexOf(value) === -1) list.push(value);
+    }
+  }
+  if (list.length) return list;
+  return dosenListFor(baDosenMap, baId, fallback);
+}

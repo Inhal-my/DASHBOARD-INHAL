@@ -4,7 +4,7 @@ import { formatRupiah, formatBiaya, getMasterOptions, getBiayaMap, getBiayaOverr
 import { computeUnitProgress } from './kegiatan.js';
 import { buildBaPelaksanaanAudit } from './baAudit.js';
 import { loadBaSesiMap, baJadwalIds, baIdByJadwal as buildBaIdByJadwal } from './baSesi.js';
-import { loadBaDosenMap, loadJadwalDosenMap, dosenListFor } from './dosen.js';
+import { loadBaDosenMap, loadJadwalDosenMap, dosenListFor, baDosenListFor } from './dosen.js';
 import { paymentGatePassed } from '../paymentGate.js';
 
 function baSumber(r) {
@@ -168,7 +168,7 @@ export async function getLaporanBootstrap(db, ctx) {
     c.peserta = pesertaMap[baId] || [];
     c.jadwalIds = baJadwalIds(sesiMap, r.ba_id, r.jadwal_id);
     c.jumlahSesi = c.jadwalIds.length;
-    const list = dosenListFor(baDosenMap, baId, c.Dosen);
+    const list = baDosenListFor(baDosenMap, jadwalDosenMap, baId, c.jadwalIds, c.Dosen);
     c.DosenList = list;
     if (list.length) c.Dosen = list[0];
     return c;
@@ -201,7 +201,7 @@ export async function getLaporanBootstrap(db, ctx) {
       c.peserta = pesertaMap[baId] || [];
       c.jadwalIds = baJadwalIds(sesiMap, r.ba_id, r.jadwal_id);
       c.jumlahSesi = c.jadwalIds.length;
-      const list = dosenListFor(baDosenMap, baId, c.Dosen);
+      const list = baDosenListFor(baDosenMap, jadwalDosenMap, baId, c.jadwalIds, c.Dosen);
       c.DosenList = list;
       if (list.length) c.Dosen = list[0];
       return c;

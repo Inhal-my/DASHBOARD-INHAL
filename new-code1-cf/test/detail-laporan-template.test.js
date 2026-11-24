@@ -663,7 +663,8 @@ describe('detail laporan tab dosen (mockup)', () => {
     expect(html).toContain('dosenViewBlokOptions');
     expect(html).toContain('dosenViewKegiatanOptions');
     expect(html).toContain('dosenViewDetails');
-    expect(html).toContain('Rencana global: {{ dosenReport.totals.rencanaGlobal }}');
+    expect(html).toContain('dosenViewBaRows');
+    expect(html).toContain('Rencana global: {{ dosenReport.totals.baRencanaGlobal }}');
     expect(html).not.toContain('{{ b.value }} BA');
   });
 
@@ -705,8 +706,8 @@ describe('detail laporan tab dosen (mockup)', () => {
 
   it('daftar ID BA dapat diklik untuk memeriksa dan mengoreksi data', async () => {
     const html = await loadHtml();
-    expect(html).toContain('dosenBaRowsForDetail(d)');
-    expect(html).toContain('@click="openKelolaBaById(b.baId)"');
+    expect(html).toContain('dosenViewBaRows');
+    expect(html).toContain('@click="openKelolaBaById(d.baId)"');
     expect(html).toContain('@click="openKelolaBaById(q.baId)"');
     expect(html).toContain('openKelolaBaById(baId) {');
     expect(html).toContain('this.openKelolaBa(id, sumber || undefined);');

@@ -2,7 +2,7 @@ import { getSession, requireBagianSession, AUTH_ERROR } from '../session.js';
 import { toClientRow } from './columns.js';
 import { computeJadwalList } from './jadwal.js';
 import { loadBaSesiMap, baJadwalIds } from './baSesi.js';
-import { loadBaDosenMap, dosenListFor } from './dosen.js';
+import { loadBaDosenMap, loadJadwalDosenMap, baDosenListFor } from './dosen.js';
 import {
   baginaKey, getMasterOptions, getBagianBaSettings, baginaHasAccess,
   getBagianAliasMap, resolveBagian12, kegiatanKey
@@ -176,13 +176,14 @@ async function computeBaList(db, bagianFilter, kategori) {
   const pesertaMap = await getBaPesertaMap(db);
   const sesiMap = await loadBaSesiMap(db);
   const dosenMap = await loadBaDosenMap(db);
+  const jadwalDosenMap = await loadJadwalDosenMap(db);
   const sanitized = rows.map((c) => {
     const copy = Object.assign({}, c);
     const baId = String(c['BA ID'] || '').trim();
     copy.peserta = pesertaMap[baId] || [];
     copy.sesi = baJadwalIds(sesiMap, baId, c['Jadwal ID']);
     copy.jumlahSesi = copy.sesi.length;
-    const dosenList = dosenListFor(dosenMap, baId, c.Dosen);
+    const dosenList = baDosenListFor(dosenMap, jadwalDosenMap, baId, copy.sesi, c.Dosen);
     copy.DosenList = dosenList;
     if (dosenList.length) copy.Dosen = dosenList[0];
     copy.selesai = !!(String(c.Dosen || '').trim() && String(c['Tanggal Pelaksanaan'] || '').trim()

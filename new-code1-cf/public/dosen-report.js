@@ -188,6 +188,8 @@
           jam: b.jam,
           sesiCount: b.sesiCount,
           pesertaCount: b.peserta.length,
+          peserta: b.peserta.map(function (p) { return str(p && p.npm); }).filter(Boolean),
+          hasJadwal: b.jadwalIds.length > 0 && b.flags.indexOf('Tanpa tautan sesi') === -1,
           status: b.status,
           flags: b.flags.slice(),
           fileUrl: b.fileUrl
@@ -325,6 +327,16 @@
           || String(a.jam).localeCompare(String(b.jam))
           || String(a.id).localeCompare(String(b.id));
       });
+      const baSeen = {};
+      const baUnique = [];
+      d.baRows.forEach(function (b) {
+        const id = b.baId || (b.kegiatanKey + '|' + b.tanggal + '|' + b.jam);
+        if (baSeen[id]) return;
+        baSeen[id] = 1;
+        baUnique.push(b);
+      });
+      const baSesi = baUnique.length;
+      const baRencana = baUnique.filter(function (b) { return b.hasJadwal; }).length;
       return {
         key: key,
         label: d.label,
@@ -336,6 +348,9 @@
         jadwalRows: d.jadwalRows,
         totalRealisasi: d.totalRealisasi,
         totalRencana: d.totalRencana,
+        baSesi: baSesi,
+        baRencana: baRencana,
+        baSelisih: baSesi - baRencana,
         selisih: d.totalRealisasi - d.totalRencana,
         detailCount: details.length,
         baCount: Object.keys(d.baIds).length,
@@ -367,6 +382,7 @@
       });
     });
 
+    const baRencanaGlobal = normBa.filter(function (b) { return b.jadwalIds.length > 0; }).length;
     return {
       cols: cols,
       rows: rows,
@@ -395,6 +411,9 @@
         pesertaUnik: Object.keys(visPeserta).length,
         sesiRealisasi: rows.reduce(function (t, r) { return t + r.totalRealisasi; }, 0),
         rencanaTabel: rows.reduce(function (t, r) { return t + r.totalRencana; }, 0),
+        baSesi: rows.reduce(function (t, r) { return t + r.baSesi; }, 0),
+        baRencana: rows.reduce(function (t, r) { return t + r.baRencana; }, 0),
+        baRencanaGlobal: baRencanaGlobal,
         rencanaGlobal: rencanaGlobal
       },
       quality: quality

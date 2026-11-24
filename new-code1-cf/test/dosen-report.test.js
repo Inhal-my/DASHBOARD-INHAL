@@ -83,6 +83,58 @@ describe('buildDosenReport', () => {
     expect(data.quality.some((q) => q.type === 'tanpa-sesi' && q.baId === 'BA-2')).toBe(true);
   });
 
+  it('menyediakan hitungan per BA Pelaksanaan terpisah dari hitungan sesi lama', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [
+        ba({ id: 'BA-1', sesiCount: 4 }),
+        ba({ id: 'BA-2', sesiCount: 0, jadwalIds: [], tanggal: '2026-09-21' })
+      ],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    const row = data.rows[0];
+    expect(row.baCount).toBe(2);
+    expect(row.baSesi).toBe(2);
+    expect(row.baRencana).toBe(1);
+    expect(row.baSelisih).toBe(1);
+    expect(data.totals.baSesi).toBe(2);
+    expect(data.totals.baRencana).toBe(1);
+    expect(data.totals.baRencanaGlobal).toBe(1);
+  });
+
+  it('satu kegiatan dengan dua BA tetap satu kegiatan tetapi dua baris BA', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [
+        ba({ id: 'BA-1', tanggal: '2026-11-16', jam: '12:00' }),
+        ba({ id: 'BA-2', tanggal: '2026-11-16', jam: '16:00', peserta: [{ npm: '002' }, { npm: '003' }] })
+      ],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    const row = data.rows[0];
+    expect(row.detailCount).toBe(1);
+    expect(row.baCount).toBe(2);
+    expect(row.baRows.map((b) => b.baId)).toEqual(['BA-1', 'BA-2']);
+    expect(row.baRows[1].peserta).toEqual(['002', '003']);
+    expect(row.baSesi).toBe(2);
+  });
+
+  it('menandai BA tanpa jadwal sebagai rencana 0 pada baris BA', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [ba({ id: 'BA-1', jadwalIds: [] })],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    expect(data.rows[0].baRows[0].hasJadwal).toBe(false);
+    expect(data.rows[0].baRencana).toBe(0);
+  });
+
   it('membedakan rencana dosen tampil dan rencana global', async () => {
     const { buildDosenReport } = await loadReport();
     const data = buildDosenReport({

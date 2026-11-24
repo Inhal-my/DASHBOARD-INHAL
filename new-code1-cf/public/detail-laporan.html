@@ -1366,14 +1366,14 @@
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                                 <span class="lap-chip">{{ dosenReport.totals.dosen }} dosen</span>
-                                <span class="lap-chip">{{ dosenReport.totals.detailUnik }} detail kegiatan</span>
+                                <span class="lap-chip">{{ dosenReport.totals.detailUnik }} kegiatan</span>
                                 <span class="lap-chip">{{ dosenReport.totals.baUnik }}/{{ dosenReport.totals.baTotal }} BA berdosen</span>
                                 <span v-if="dosenReport.totals.baTanpaDosen" class="lap-chip text-rose-600">{{ dosenReport.totals.baTanpaDosen }} BA tanpa dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.baDosen }} BA-dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.pesertaUnik }} peserta unik</span>
-                                <span class="lap-chip">{{ dosenReport.totals.sesiRealisasi }} sesi realisasi</span>
-                                <span class="lap-chip">Rencana dosen tampil: {{ dosenReport.totals.rencanaTabel }}</span>
-                                <span class="lap-chip">Rencana global: {{ dosenReport.totals.rencanaGlobal }}</span>
+                                <span class="lap-chip">{{ dosenReport.totals.baSesi }} sesi realisasi</span>
+                                <span class="lap-chip">Rencana dosen tampil: {{ dosenReport.totals.baRencana }}</span>
+                                <span class="lap-chip">Rencana global: {{ dosenReport.totals.baRencanaGlobal }}</span>
                             </div>
                         </div>
 
@@ -1397,7 +1397,7 @@
                                                 <span class="block truncate text-xs font-semibold text-slate-700">{{ row.label }}</span>
                                                 <span class="block text-[10px] text-slate-400">{{ row.detailCount }} kegiatan · {{ row.pesertaUnik }} peserta</span>
                                             </span>
-                                            <span class="shrink-0 rounded-lg bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">{{ row.totalRealisasi }}/{{ row.totalRencana }}</span>
+                                            <span class="shrink-0 rounded-lg bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">{{ row.baSesi }}/{{ row.baRencana }}</span>
                                         </button>
                                         <div v-if="!dosenReport.rows.length" class="px-3 py-10 text-center text-xs text-slate-400">Tidak ada dosen pada filter ini.</div>
                                     </div>
@@ -1414,7 +1414,7 @@
                                                 <span class="in-avatar shrink-0" :style="{background: vwAvatarColor(dosenSelectedRow.label)}">{{ vwInitials(dosenSelectedRow.label) }}</span>
                                                 <div class="min-w-0 flex-1">
                                                     <div class="truncate text-sm font-bold text-slate-800">{{ dosenSelectedRow.label }}</div>
-                                                    <div class="text-xs text-slate-400">{{ dosenSelectedRow.detailCount }} detail kegiatan · {{ dosenSelectedRow.baCount }} BA · {{ dosenSelectedRow.pesertaUnik }} peserta unik</div>
+                                                    <div class="text-xs text-slate-400">{{ dosenSelectedRow.detailCount }} kegiatan · {{ dosenSelectedRow.baCount }} BA Pelaksanaan · {{ dosenSelectedRow.pesertaUnik }} peserta unik</div>
                                                 </div>
                                                 <span v-if="dosenSelectedRow.variantCount > 1" class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{{ dosenSelectedRow.variantCount }} varian nama</span>
                                                 <span v-if="dosenSelectedRow.nearDuplicate" class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700" :title="'Kemungkinan varian dari ' + dosenSelectedRow.nearDuplicate">varian?</span>
@@ -1440,9 +1440,14 @@
                                         <div class="p-4">
                                             <div class="dosen-statgrid">
                                                 <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                    <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">BA Pelaksanaan</div>
+                                                    <div class="text-lg font-extrabold text-slate-800">{{ dosenViewStats.ba }}</div>
+                                                    <div class="text-[10px] text-slate-400">satu baris satu BA</div>
+                                                </div>
+                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
                                                     <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Kegiatan</div>
                                                     <div class="text-lg font-extrabold text-slate-800">{{ dosenViewStats.kegiatan }}</div>
-                                                    <div class="text-[10px] text-slate-400">pada filter aktif</div>
+                                                    <div class="text-[10px] text-slate-400">induk kegiatan unik</div>
                                                 </div>
                                                 <div class="rounded-xl bg-slate-50 px-3 py-2">
                                                     <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Peserta unik</div>
@@ -1454,47 +1459,41 @@
                                                     <div class="text-lg font-extrabold text-slate-800">{{ dosenViewStats.sesi }}/{{ dosenViewStats.rencana }}</div>
                                                     <div class="text-[10px] text-slate-400">realisasi / rencana</div>
                                                 </div>
-                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
-                                                    <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Tanpa BA</div>
-                                                    <div class="text-lg font-extrabold" :class="dosenViewStats.tanpaBa ? 'text-rose-600' : 'text-slate-800'">{{ dosenViewStats.tanpaBa }}</div>
-                                                    <div class="text-[10px] text-slate-400">kegiatan perlu tindak lanjut</div>
-                                                </div>
                                             </div>
 
                                             <div class="mt-4 overflow-x-auto">
                                                 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                                                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Kegiatan &amp; BA</h3>
-                                                    <span class="text-[11px] text-slate-400">Klik ID BA untuk memeriksa / mengoreksi data.</span>
+                                                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">BA Pelaksanaan</h3>
+                                                    <span class="text-[11px] text-slate-400">Satu baris = satu BA (maks 5 peserta). Klik ID BA untuk memeriksa / mengoreksi data.</span>
                                                 </div>
                                                 <table class="bgd-ptab">
                                                     <thead>
-                                                        <tr><th>Kegiatan</th><th>Blok</th><th>Tanggal</th><th class="c">Sesi</th><th class="c">Peserta</th><th>Status BA</th><th>BA</th></tr>
+                                                        <tr><th>Kegiatan</th><th>Blok</th><th>Tanggal</th><th>Jam</th><th class="c">Sesi</th><th class="c">Peserta</th><th>Status BA</th><th>BA</th></tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr v-for="d in dosenViewDetails" :key="d.key">
+                                                        <tr v-for="d in dosenViewBaRows" :key="d.key">
                                                             <td>
                                                                 <div class="font-semibold text-slate-800">{{ d.label }}</div>
                                                                 <div class="text-[10px] text-slate-400">{{ d.jenis || '-' }} · {{ d.bagian }}</div>
                                                             </td>
                                                             <td>{{ d.blok || '-' }}</td>
-                                                            <td>{{ dosenDetailTanggal(d) }}</td>
+                                                            <td>{{ d.tanggalFmt }}</td>
+                                                            <td>{{ d.jam || '-' }}</td>
                                                             <td class="c">{{ d.realisasi }}/{{ d.rencana }}</td>
-                                                            <td class="c">{{ d.pesertaUnik }}</td>
-                                                            <td><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="dosenStatusCls(dosenDetailStatus(d))">{{ dosenDetailStatus(d) }}</span></td>
+                                                            <td class="c" :class="d.pesertaUnik > 5 ? 'font-bold text-rose-600' : ''">{{ d.pesertaUnik }}</td>
+                                                            <td><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="dosenStatusCls(d.status)">{{ d.status }}</span></td>
                                                             <td>
-                                                                <div class="flex flex-wrap gap-1">
-                                                                    <button v-for="b in dosenBaRowsForDetail(d)" :key="b.baId" type="button"
-                                                                        class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-brand-700 hover:bg-slate-100"
-                                                                        :title="'Periksa / edit ' + b.baId" @click="openKelolaBaById(b.baId)">
-                                                                        <i class="bi bi-pencil-square"></i>{{ b.baId }}
-                                                                    </button>
-                                                                    <span v-if="!dosenBaRowsForDetail(d).length" class="text-[11px] text-slate-300">Belum ada BA</span>
-                                                                </div>
+                                                                <button v-if="d.baId" type="button"
+                                                                    class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-brand-700 hover:bg-slate-100"
+                                                                    :title="'Periksa / edit ' + d.baId" @click="openKelolaBaById(d.baId)">
+                                                                    <i class="bi bi-pencil-square"></i>{{ d.baId }}
+                                                                </button>
+                                                                <span v-else class="text-[11px] text-slate-300">Belum ada BA</span>
                                                             </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
-                                                <div v-if="!dosenViewDetails.length" class="py-8 text-center text-xs text-slate-400">Tidak ada kegiatan pada filter ini.</div>
+                                                <div v-if="!dosenViewBaRows.length" class="py-8 text-center text-xs text-slate-400">Tidak ada BA pada filter ini.</div>
                                             </div>
 
                                             <div class="mt-4 overflow-x-auto">
@@ -4548,25 +4547,61 @@
                         return true;
                     });
                 },
+                dosenViewBaRows() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const blok = String(this.dosenView.blok || '').trim();
+                    const key = String(this.dosenView.kegiatanKey || '').trim();
+                    const seen = {};
+                    const out = [];
+                    (row.baRows || []).forEach(b => {
+                        if (blok && String(b.blok || '').trim() !== blok) return;
+                        if (key && String(b.kegiatanKey || '').trim() !== key) return;
+                        const baId = String(b.baId || '').trim();
+                        if (baId && seen[baId]) return;
+                        if (baId) seen[baId] = 1;
+                        out.push({
+                            key: baId || (String(b.kegiatanKey || '') + '|' + String(b.tanggal || '') + '|' + String(b.jam || '')),
+                            baId: baId,
+                            kegiatanKey: String(b.kegiatanKey || ''),
+                            bagian: String(b.bagian || ''),
+                            blok: String(b.blok || ''),
+                            jenis: String(b.jenis || ''),
+                            label: String(b.label || ''),
+                            tanggalIso: String(b.tanggal || ''),
+                            tanggalFmt: b.tanggal ? this.fmtTanggal(b.tanggal) : '-',
+                            jam: String(b.jam || ''),
+                            realisasi: 1,
+                            rencana: b.hasJadwal ? 1 : 0,
+                            peserta: Array.isArray(b.peserta) ? b.peserta : [],
+                            pesertaUnik: Number(b.pesertaCount) || (Array.isArray(b.peserta) ? b.peserta.length : 0),
+                            status: String(b.status || 'Lengkap'),
+                            baIds: baId ? [baId] : []
+                        });
+                    });
+                    return out.sort((a, b) => String(a.tanggalIso).localeCompare(String(b.tanggalIso))
+                        || String(a.jam).localeCompare(String(b.jam))
+                        || String(a.baId).localeCompare(String(b.baId)));
+                },
                 dosenViewStats() {
-                    const details = this.dosenViewDetails;
+                    const rows = this.dosenViewBaRows;
                     const peserta = {};
+                    const kegiatan = {};
                     let sesi = 0;
                     let rencana = 0;
-                    let tanpaBa = 0;
-                    details.forEach(d => {
+                    rows.forEach(d => {
                         d.peserta.forEach(npm => { if (npm) peserta[npm] = 1; });
+                        kegiatan[d.kegiatanKey] = 1;
                         sesi += Number(d.realisasi) || 0;
                         rencana += Number(d.rencana) || 0;
-                        if (!d.baCount) tanpaBa += 1;
                     });
-                    return { kegiatan: details.length, peserta: Object.keys(peserta).length, sesi: sesi, rencana: rencana, tanpaBa: tanpaBa };
+                    return { ba: rows.length, kegiatan: Object.keys(kegiatan).length, peserta: Object.keys(peserta).length, sesi: sesi, rencana: rencana };
                 },
                 dosenViewPesertaRows() {
                     const row = this.dosenSelectedRow;
                     if (!row) return [];
                     const allowed = {};
-                    this.dosenViewDetails.forEach(d => d.baIds.forEach(id => { allowed[id] = 1; }));
+                    this.dosenViewBaRows.forEach(d => d.baIds.forEach(id => { allowed[id] = 1; }));
                     const out = [];
                     const seen = {};
                     this.dosenReportBaList.forEach(b => {
@@ -4583,7 +4618,7 @@
                                 kegiatan: String(b.label || '').trim() || '-',
                                 blok: String(b.blok || '').trim(),
                                 tanggal: b.tanggal ? this.fmtTanggal(b.tanggal) : '-',
-                                sesi: Number(b.sesiCount) || 1,
+                                sesi: 1,
                                 status: String(b.status || 'Lengkap').trim() || 'Lengkap',
                                 kegiatanKey: String(b.kegiatanKey || '')
                             });
@@ -5691,11 +5726,6 @@
                     if (j && j.tanggal) return this.fmtTanggal(j.tanggal);
                     return '-';
                 },
-                dosenBaRowsForDetail(d) {
-                    const row = this.dosenSelectedRow;
-                    if (!row || !d) return [];
-                    return row.baRows.filter(b => b.kegiatanKey === d.key && b.baId);
-                },
                 openKelolaBaById(baId) {
                     const id = String(baId || '').trim();
                     if (!id) return;
@@ -6290,9 +6320,9 @@
                                     const c = r.counts[this.normBagian(b)] || { realisasi: 0, rencana: 0 };
                                     row[b] = c.realisasi + '/' + c.rencana;
                                 });
-                                row['Total Realisasi'] = r.totalRealisasi;
-                                row['Total Rencana'] = r.totalRencana;
-                                row['Selisih'] = r.selisih;
+                                row['Total Realisasi'] = r.baSesi;
+                                row['Total Rencana'] = r.baRencana;
+                                row['Selisih'] = r.baSelisih;
                                 return row;
                             });
                             const dosenTotalRow = { Dosen: 'Total' };
@@ -6300,9 +6330,9 @@
                                 const c = this.dosenColTotal(b);
                                 dosenTotalRow[b] = c.realisasi + '/' + c.rencana;
                             });
-                            dosenTotalRow['Total Realisasi'] = dosenReport.totals.sesiRealisasi;
-                            dosenTotalRow['Total Rencana'] = dosenReport.totals.rencanaTabel;
-                            dosenTotalRow['Selisih'] = dosenReport.totals.sesiRealisasi - dosenReport.totals.rencanaTabel;
+                            dosenTotalRow['Total Realisasi'] = dosenReport.totals.baSesi;
+                            dosenTotalRow['Total Rencana'] = dosenReport.totals.baRencana;
+                            dosenTotalRow['Selisih'] = dosenReport.totals.baSesi - dosenReport.totals.baRencana;
                             dosenRows.push(dosenTotalRow);
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Rekap Dosen');
                             const dosenTanpaRows = this.dosenTanpaBaRows(dosenReport);
@@ -6420,9 +6450,9 @@
                                     const c = r.counts[this.normBagian(b)] || { realisasi: 0, rencana: 0 };
                                     row[b] = c.realisasi + '/' + c.rencana;
                                 });
-                                row['Total Realisasi'] = r.totalRealisasi;
-                                row['Total Rencana'] = r.totalRencana;
-                                row['Selisih'] = r.selisih;
+                                row['Total Realisasi'] = r.baSesi;
+                                row['Total Rencana'] = r.baRencana;
+                                row['Selisih'] = r.baSelisih;
                                 row['Detail Kegiatan'] = r.detailCount;
                                 row['Peserta Unik'] = r.pesertaUnik;
                                 row['Varian Nama'] = r.variantCount > 1 ? r.variantCount : '';
@@ -6433,9 +6463,9 @@
                                 const c = this.dosenColTotal(b);
                                 rekapTotal[b] = c.realisasi + '/' + c.rencana;
                             });
-                            rekapTotal['Total Realisasi'] = report.totals.sesiRealisasi;
-                            rekapTotal['Total Rencana'] = report.totals.rencanaTabel;
-                            rekapTotal['Selisih'] = report.totals.sesiRealisasi - report.totals.rencanaTabel;
+                            rekapTotal['Total Realisasi'] = report.totals.baSesi;
+                            rekapTotal['Total Rencana'] = report.totals.baRencana;
+                            rekapTotal['Selisih'] = report.totals.baSesi - report.totals.baRencana;
                             rekapTotal['Detail Kegiatan'] = report.totals.detailUnik;
                             rekapTotal['Peserta Unik'] = report.totals.pesertaUnik;
                             rekapTotal['Varian Nama'] = '';
