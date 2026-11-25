@@ -834,7 +834,7 @@
                         <i class="bi bi-search"></i>
                         <input v-model="filters.search" placeholder="Cari NPM / nama..." @keyup.enter="loadData()">
                     </label>
-                    <button type="button" class="btn-soft" @click="loadData()" title="Muat ulang data" aria-label="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
+                    <button type="button" class="btn-soft" @click="loadData(true)" title="Muat ulang data" aria-label="Muat ulang data"><i class="bi bi-arrow-clockwise"></i></button>
                     <a :href="'/dashboard'" class="btn-soft" title="Dashboard"><i class="bi bi-speedometer2"></i><span class="hidden md:inline">Dashboard</span></a>
                     <a :href="appUrl" class="btn-soft" title="Beranda"><i class="bi bi-house"></i><span class="hidden md:inline">Beranda</span></a>
                     <button @click="logout()" class="btn-soft text-rose-500 hover:bg-rose-50" title="Keluar"><i class="bi bi-box-arrow-right"></i><span class="hidden md:inline">Keluar</span></button>
@@ -3005,13 +3005,53 @@
             } catch (e) { return null; }
         }
         function saveSession(s) {
+            clearBootstrapCache();
             try { localStorage.setItem(SESSION_STORE_KEY, JSON.stringify(s)); } catch (e) {}
         }
         function clearSession() {
+            clearBootstrapCache();
             try { localStorage.removeItem(SESSION_STORE_KEY); } catch (e) {}
         }
         function isAuthError(msg) {
             return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
+        }
+
+        const BOOTSTRAP_CACHE_TTL_MS = 10 * 60 * 1000;
+        const BOOTSTRAP_CACHE_MAX_BYTES = 2 * 1024 * 1024;
+        const BOOTSTRAP_CACHE_PREFIXES = ['inhal_dashboard_bootstrap_v1_', 'inhal_laporan_bootstrap_v1_'];
+        const READ_ONLY_RPCS = new Set(['getLaporanBootstrap', 'mfaStatus']);
+
+        function bootstrapCacheKey(token) {
+            return 'inhal_laporan_bootstrap_v1_' + String(token || '');
+        }
+        function readBootstrapCache(token) {
+            if (!token) return null;
+            try {
+                const raw = localStorage.getItem(bootstrapCacheKey(token));
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed.ts !== 'number' || !parsed.data) return null;
+                return parsed;
+            } catch (e) { return null; }
+        }
+        function writeBootstrapCache(token, data) {
+            if (!token || !data) return;
+            try {
+                const json = JSON.stringify({ ts: Date.now(), data: data });
+                const size = (typeof Blob !== 'undefined') ? new Blob([json]).size : json.length * 2;
+                if (size > BOOTSTRAP_CACHE_MAX_BYTES) return;
+                localStorage.setItem(bootstrapCacheKey(token), json);
+            } catch (e) {}
+        }
+        function clearBootstrapCache() {
+            try {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && BOOTSTRAP_CACHE_PREFIXES.some((p) => key.indexOf(p) === 0)) keys.push(key);
+                }
+                keys.forEach((key) => localStorage.removeItem(key));
+            } catch (e) {}
         }
 
         function fmtRupiah(num) {
@@ -5029,7 +5069,10 @@
                     if (this.session && this.session.token) args.push(this.session.token);
                     return new Promise((resolve, reject) => {
                         google.script.run
-                            .withSuccessHandler(r => resolve(r))
+                            .withSuccessHandler(r => {
+                                if (!READ_ONLY_RPCS.has(fn)) clearBootstrapCache();
+                                resolve(r);
+                            })
                             .withFailureHandler(e => {
                                 const msg = (e && e.message) ? e.message : String(e);
                                 if (isAuthError(msg)) {
@@ -5254,7 +5297,7 @@
                             return;
                         }
                         this.showToast('bi-check-circle', (res && res.message) || 'Pembayaran divalidasi.');
-                        await this.loadData();
+                        await this.loadData(true);
                         const fresh = this.pembayaranItemsAll.find(x => x.id === it.id);
                         if (fresh) this.periksa.item = fresh;
                         this.periksa.mode = 'view';
@@ -5291,7 +5334,7 @@
                             return;
                         }
                         this.showToast('bi-check-circle', (res && res.message) || 'Koreksi disimpan.');
-                        await this.loadData();
+                        await this.loadData(true);
                         const fresh = this.pembayaranItemsAll.find(x => x.id === it.id);
                         if (fresh) this.periksa.item = fresh;
                         this.periksa.mode = 'view';
@@ -5841,7 +5884,7 @@
                     r.saving = false;
                     if (changed) {
                         this.rapikanDosen.open = false;
-                        await this.loadData();
+                        await this.loadData(true);
                     }
                     if (changed && failed.length) {
                         this.showToast('bi-exclamation-triangle', changed + ' BA dirapikan, ' + failed.length + ' BA gagal.');
@@ -6093,7 +6136,7 @@
                     try {
                         const res = await this.run('deletePengajuanAdmin', id, reason);
                         this.showToast('bi-check-circle', (res && res.message) || 'Pengajuan dihapus.');
-                        await this.loadData();
+                        await this.loadData(true);
                     } catch (e) {
                         this.showToast('bi-x-circle', 'Gagal: ' + e);
                     }
@@ -6103,7 +6146,7 @@
                     try {
                         const res = await this.run('deleteBeritaAcaraBagian', baId);
                         this.showToast('bi-check-circle', (res && res.message) || 'BA dihapus.');
-                        await this.loadData();
+                        await this.loadData(true);
                     } catch (e) {
                         this.showToast('bi-x-circle', 'Gagal: ' + e);
                     }
@@ -6113,7 +6156,7 @@
                     try {
                         const res = await this.run('deleteBeritaAcaraAdmin', baId);
                         this.showToast('bi-check-circle', (res && res.message) || 'BA dihapus.');
-                        await this.loadData();
+                        await this.loadData(true);
                     } catch (e) {
                         this.showToast('bi-x-circle', 'Gagal: ' + e);
                     }
@@ -6226,7 +6269,7 @@
                         this.showToast('bi-check-circle', (res && res.message) || 'BA diperbarui.');
                         if (res && res.success) {
                             k.open = false;
-                            await this.loadData();
+                            await this.loadData(true);
                         }
                     } catch (e) {
                         this.showToast('bi-x-circle', 'Gagal: ' + e);
@@ -6242,41 +6285,70 @@
                     if (this.toastTimer) clearTimeout(this.toastTimer);
                     this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3200);
                 },
-                async loadData() {
-                    this.loading = true;
+                applyLaporan(data) {
+                    data = data || {};
+                    this.summary = data.summary || {};
+                    this.rows = data.rows || [];
+                    this.beritaAcara = data.beritaAcara || [];
+                    this.kegiatan = data.kegiatan || [];
+                    this.dosen = data.dosen || [];
+                    this.dosenOptions = data.dosenOptions || this.dosen;
+                    this.blok = data.blok || [];
+                    this.jadwal = data.jadwal || [];
+                    this.pembayaranRevisi = data.pembayaranRevisi || [];
+                    this.uploadBukti = data.uploadBukti || [];
+                    this.bagian = data.bagian || { categories: [], labs: [] };
+                    this.expanded = {};
+                    this.dosenSelectedKey = '';
+                    this.dosenView = { blok: '', kegiatanKey: '' };
+                    this.animateNumbers();
+                    this.animateCharts();
+                },
+                resetLaporan() {
+                    this.summary = {};
+                    this.rows = [];
+                    this.beritaAcara = [];
+                    this.kegiatan = [];
+                    this.dosen = [];
+                    this.blok = [];
+                    this.jadwal = [];
+                    this.pembayaranRevisi = [];
+                    this.uploadBukti = [];
+                    this.bagian = { categories: [], labs: [] };
+                },
+                async loadData(opts) {
+                    const force = opts === true || !!(opts && opts.force);
+                    const token = this.session && this.session.token;
+                    const cached = (!force && token) ? readBootstrapCache(token) : null;
                     const t0 = performance.now();
+                    if (cached) {
+                        this.applyLaporan(cached.data);
+                        this.loadTimeMs = 0;
+                        if ((Date.now() - cached.ts) < BOOTSTRAP_CACHE_TTL_MS) {
+                            try {
+                                await this.run('mfaStatus');
+                                this.loading = false;
+                                return;
+                            } catch (e) {
+                                if (!this.session) return;
+                            }
+                        }
+                    }
+                    this.loading = !cached;
                     console.time('getLaporanBootstrap');
                     try {
                         const data = await this.run('getLaporanBootstrap');
-                        this.summary = data.summary || {};
-                        this.rows = data.rows || [];
-                        this.beritaAcara = data.beritaAcara || [];
-                        this.kegiatan = data.kegiatan || [];
-                        this.dosen = data.dosen || [];
-                        this.dosenOptions = data.dosenOptions || this.dosen;
-                        this.blok = data.blok || [];
-                        this.jadwal = data.jadwal || [];
-                        this.pembayaranRevisi = data.pembayaranRevisi || [];
-                        this.uploadBukti = data.uploadBukti || [];
-                        this.bagian = data.bagian || { categories: [], labs: [] };
-                        this.expanded = {};
-                        this.dosenSelectedKey = '';
-                        this.dosenView = { blok: '', kegiatanKey: '' };
-                        this.animateNumbers();
-                        this.animateCharts();
+                        this.applyLaporan(data);
+                        if (this.session && this.session.token === token) writeBootstrapCache(token, data);
                         this.loadTimeMs = Math.round(performance.now() - t0);
                     } catch (e) {
-                        this.summary = {};
-                        this.rows = [];
-                        this.beritaAcara = [];
-                        this.kegiatan = [];
-                        this.dosen = [];
-                        this.blok = [];
-                        this.jadwal = [];
-                        this.pembayaranRevisi = [];
-                        this.uploadBukti = [];
-                        this.bagian = { categories: [], labs: [] };
-                        this.showToast('bi-x-circle', 'Gagal memuat data: ' + (e || 'Terjadi kesalahan.'));
+                        if (!this.session) return;
+                        if (cached) {
+                            this.showToast('bi-exclamation-triangle', 'Gagal memperbarui data. Menampilkan salinan tersimpan.');
+                        } else {
+                            this.resetLaporan();
+                            this.showToast('bi-x-circle', 'Gagal memuat data: ' + (e || 'Terjadi kesalahan.'));
+                        }
                     } finally {
                         this.loading = false;
                         console.timeEnd('getLaporanBootstrap');

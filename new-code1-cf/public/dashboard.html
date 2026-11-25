@@ -3797,13 +3797,60 @@
             } catch (e) { return null; }
         }
         function saveSession(s) {
+            clearBootstrapCache();
             try { localStorage.setItem(SESSION_STORE_KEY, JSON.stringify(s)); } catch (e) {}
         }
         function clearSession() {
+            clearBootstrapCache();
             try { localStorage.removeItem(SESSION_STORE_KEY); } catch (e) {}
         }
         function isAuthError(msg) {
             return !!msg && String(msg).indexOf('Sesi tidak valid') !== -1;
+        }
+
+        const BOOTSTRAP_CACHE_TTL_MS = 10 * 60 * 1000;
+        const BOOTSTRAP_CACHE_MAX_BYTES = 2 * 1024 * 1024;
+        const BOOTSTRAP_CACHE_PREFIXES = ['inhal_dashboard_bootstrap_v1_', 'inhal_laporan_bootstrap_v1_'];
+        const READ_ONLY_RPCS = new Set([
+            'getDashboardBootstrap', 'getDashboardStats', 'getPengajuanList',
+            'getBagianAggregation', 'getMasterDataMonitor', 'getActivityLog',
+            'getRegistrationOptions', 'getMahasiswaByNpm', 'getPengajuanWithDetails',
+            'baAdminGet', 'getUploadMonitor', 'getBaRepairData', 'getBagianBaSettings',
+            'mfaStatus', 'diagnosticData', 'previewMasterRename', 'auditMasterIntegrity'
+        ]);
+        const BAB_READ_ONLY_RPCS = new Set(['getBagianBootstrap', 'getBeritaAcaraList']);
+
+        function bootstrapCacheKey(token) {
+            return 'inhal_dashboard_bootstrap_v1_' + String(token || '');
+        }
+        function readBootstrapCache(token) {
+            if (!token) return null;
+            try {
+                const raw = localStorage.getItem(bootstrapCacheKey(token));
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed.ts !== 'number' || !parsed.data) return null;
+                return parsed;
+            } catch (e) { return null; }
+        }
+        function writeBootstrapCache(token, data) {
+            if (!token || !data) return;
+            try {
+                const json = JSON.stringify({ ts: Date.now(), data: data });
+                const size = (typeof Blob !== 'undefined') ? new Blob([json]).size : json.length * 2;
+                if (size > BOOTSTRAP_CACHE_MAX_BYTES) return;
+                localStorage.setItem(bootstrapCacheKey(token), json);
+            } catch (e) {}
+        }
+        function clearBootstrapCache() {
+            try {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && BOOTSTRAP_CACHE_PREFIXES.some((p) => key.indexOf(p) === 0)) keys.push(key);
+                }
+                keys.forEach((key) => localStorage.removeItem(key));
+            } catch (e) {}
         }
 
         const TAB_KEYS = ['pengajuan', 'manual', 'stats', 'ba', 'master', 'riwayat'];
@@ -4759,7 +4806,10 @@
                     if (this.session && this.session.token) args.push(this.session.token);
                     return new Promise((resolve, reject) => {
                         google.script.run
-                            .withSuccessHandler(r => resolve(r))
+                            .withSuccessHandler(r => {
+                                if (!READ_ONLY_RPCS.has(fn)) clearBootstrapCache();
+                                resolve(r);
+                            })
                             .withFailureHandler(e => {
                                 const msg = (e && e.message) ? e.message : String(e);
                                 if (isAuthError(msg)) {
@@ -4775,7 +4825,10 @@
                     if (this.bab && this.bab.token) args.push(this.bab.token);
                     return new Promise((resolve, reject) => {
                         google.script.run
-                            .withSuccessHandler(r => resolve(r))
+                            .withSuccessHandler(r => {
+                                if (!BAB_READ_ONLY_RPCS.has(fn)) clearBootstrapCache();
+                                resolve(r);
+                            })
                             .withFailureHandler(e => {
                                 const msg = (e && e.message) ? e.message : String(e);
                                 if (isAuthError(msg)) {
@@ -5334,22 +5387,49 @@
                 },
 
                 // ---------- loaders ----------
-                async bootstrap() {
-                    this.sectionLoading.pengajuan = true;
-                    this.sectionLoading.stats = true;
+                applyBootstrap(b) {
+                    if (!b) return;
+                    this.stats = b.stats || this.stats;
+                    this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
+                    this.detailMap = b.detailMap || {};
+                    this.baPendukungIds = b.baPendukungIds || [];
+                    this.baPendukungByPengajuan = b.baPendukungByPengajuan || {};
+                    this.masterBiaya = b.masterBiaya || [];
+                    this.dosenOptions = b.dosen || this.dosenOptions;
+                    this.loaded.pengajuan = true;
+                    this.loaded.stats = true;
+                },
+                async bootstrap(opts) {
+                    const force = !!(opts && opts.force);
+                    const token = this.session && this.session.token;
+                    const cached = (!force && token) ? readBootstrapCache(token) : null;
+                    if (cached) this.applyBootstrap(cached.data);
+                    if (cached && (Date.now() - cached.ts) < BOOTSTRAP_CACHE_TTL_MS) {
+                        try {
+                            await this.run('mfaStatus');
+                            this.sectionLoading.pengajuan = false;
+                            this.sectionLoading.stats = false;
+                            return;
+                        } catch (e) {
+                            if (!this.session) return;
+                        }
+                    }
+                    const quiet = !!cached;
+                    if (!quiet) {
+                        this.sectionLoading.pengajuan = true;
+                        this.sectionLoading.stats = true;
+                    }
                     try {
                         const b = await this.run('getDashboardBootstrap');
-                        this.stats = b.stats || this.stats;
-                        this.pengajuanRows = (b.pengajuan || []).map(r => Object.assign({}, r, { checked: false }));
-                        this.detailMap = b.detailMap || {};
-                        this.baPendukungIds = b.baPendukungIds || [];
-                        this.baPendukungByPengajuan = b.baPendukungByPengajuan || {};
-                        this.masterBiaya = b.masterBiaya || [];
-                        this.dosenOptions = b.dosen || this.dosenOptions;
-                        this.loaded.pengajuan = true;
-                        this.loaded.stats = true;
+                        if (b) {
+                            this.applyBootstrap(b);
+                            if (this.session && this.session.token === token) writeBootstrapCache(token, b);
+                        }
                     } catch (e) {
-                        this.notify('Gagal memuat dashboard: ' + e, false);
+                        if (!this.session) return;
+                        this.notify(quiet
+                            ? 'Gagal memperbarui data. Menampilkan salinan tersimpan.'
+                            : 'Gagal memuat dashboard: ' + e, false);
                     } finally {
                         this.sectionLoading.pengajuan = false;
                         this.sectionLoading.stats = false;
@@ -6090,6 +6170,8 @@
                         if (b) {
                             this.baPendukungIds = b.baPendukungIds || [];
                             this.baPendukungByPengajuan = b.baPendukungByPengajuan || {};
+                            const token = this.session && this.session.token;
+                            if (token) writeBootstrapCache(token, b);
                         }
                     } catch (e) {}
                 },

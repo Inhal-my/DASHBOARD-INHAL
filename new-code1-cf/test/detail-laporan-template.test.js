@@ -781,3 +781,30 @@ describe('detail laporan tiga halaman (ringkas / analitis / cetak)', () => {
     expect(html).toContain('window.print');
   });
 });
+
+describe('detail-laporan cache bootstrap (Level 0B)', () => {
+  it('menyimpan cache getLaporanBootstrap per token dengan TTL dan batas ukuran', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('const BOOTSTRAP_CACHE_TTL_MS = 10 * 60 * 1000');
+    expect(html).toContain('const BOOTSTRAP_CACHE_MAX_BYTES = 2 * 1024 * 1024');
+    expect(html).toContain("return 'inhal_laporan_bootstrap_v1_' + String(token || '');");
+    expect(html).toContain('function readBootstrapCache(token)');
+    expect(html).toContain('function writeBootstrapCache(token, data)');
+    expect(html).toContain("const size = (typeof Blob !== 'undefined')");
+  });
+
+  it('memakai cache saat mount dan memvalidasi sesi lewat mfaStatus', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('const cached = (!force && token) ? readBootstrapCache(token) : null');
+    expect(html).toContain("await this.run('mfaStatus')");
+    expect(html).toContain('if (cached) {');
+    expect(html).toContain('this.applyLaporan(cached.data);');
+  });
+
+  it('tombol muat ulang memaksa fetch dan aksi tulis memakai loadData(true)', async () => {
+    const html = await loadHtml();
+    expect(html).toContain('@click="loadData(true)"');
+    expect(html).toContain('await this.loadData(true);');
+    expect(html).toContain('if (!READ_ONLY_RPCS.has(fn)) clearBootstrapCache();');
+  });
+});

@@ -773,3 +773,29 @@ describe('dashboard edit jadwal/BA', () => {
     expect(html).toContain('Saya sudah memeriksa hardcopy/PDF');
   });
 });
+
+describe('dashboard cache bootstrap (Level 0B)', () => {
+  it('menyimpan cache bootstrap per token dengan TTL dan batas ukuran', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('const BOOTSTRAP_CACHE_TTL_MS = 10 * 60 * 1000');
+    expect(html).toContain('const BOOTSTRAP_CACHE_MAX_BYTES = 2 * 1024 * 1024');
+    expect(html).toContain("return 'inhal_dashboard_bootstrap_v1_' + String(token || '');");
+    expect(html).toContain('function readBootstrapCache(token)');
+    expect(html).toContain('function writeBootstrapCache(token, data)');
+    expect(html).toContain("const size = (typeof Blob !== 'undefined')");
+  });
+
+  it('memakai cache saat mount dan memvalidasi sesi lewat mfaStatus', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('const cached = (!force && token) ? readBootstrapCache(token) : null');
+    expect(html).toContain("await this.run('mfaStatus')");
+    expect(html).toContain('if (cached) this.applyBootstrap(cached.data);');
+  });
+
+  it('membersihkan cache saat login, logout, dan aksi tulis', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('if (!READ_ONLY_RPCS.has(fn)) clearBootstrapCache();');
+    expect(html).toContain('if (!BAB_READ_ONLY_RPCS.has(fn)) clearBootstrapCache();');
+    expect(html).toContain("'getDashboardBootstrap', 'getDashboardStats'");
+  });
+});
