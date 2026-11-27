@@ -293,6 +293,7 @@
         .pm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }
         .pm-hint { grid-column: 1 / -1; border-radius: 10px; padding: 8px 12px; font-size: 11px; background: #f8fafc; color: #64748b; }
         .pm-hint.bad { background: #fff1f2; color: #e11d48; }
+        .pm-hint.free { background: #ecfdf5; color: #047857; }
         .pm-warn { border-radius: 10px; border: 1px solid #fde68a; background: #fffbeb; padding: 10px 12px; font-size: 12px; color: #92400e; }
         .pm-info { border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc; padding: 10px 12px; font-size: 12px; color: #475569; }
         .pm-valid { border-color: #a7f3d0; background: #f0fdf4; }
@@ -3456,10 +3457,10 @@
                         <div v-if="periksa.item.statusPembayaran === 'menunggu'" class="pm-warn mt-3"><i class="bi bi-info-circle"></i> Periksa nominal dan tanggal pada bukti sebelum menekan Valid.</div>
                     </section>
 
-                    <section v-if="periksa.item.statusPembayaran === 'valid'" class="pm-card pm-valid">
+                    <section v-if="periksa.item.statusPembayaran === 'valid' || periksa.item.statusPembayaran === 'gratis'" class="pm-card pm-valid">
                         <div class="pm-eyebrow">Hasil Verifikasi</div>
                         <div class="pm-grid mt-2">
-                            <div><div class="pm-k">Nominal Masuk</div><div class="pm-v">{{ formatRupiah(periksa.item.nominal) }}</div></div>
+                            <div><div class="pm-k">Nominal Masuk</div><div class="pm-v">{{ formatBiaya(periksa.item.nominal) }}</div></div>
                             <div><div class="pm-k">Kesesuaian</div><div class="pm-v">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
                             <div><div class="pm-k">Tanggal Bayar</div><div class="pm-v">{{ periksa.item.tanggalBayar ? formatTanggal(periksa.item.tanggalBayar) : '-' }}</div></div>
                             <div><div class="pm-k">Metode</div><div class="pm-v">{{ periksa.item.metode || '-' }}</div></div>
@@ -3467,18 +3468,19 @@
                             <div><div class="pm-k">Waktu Verifikasi</div><div class="pm-v">{{ periksa.item.verifiedAt ? formatTanggalWaktu(periksa.item.verifiedAt) : '-' }}</div></div>
                         </div>
                         <div v-if="periksa.item.catatanVerifikasi" class="pm-info mt-3"><div class="pm-k">Catatan</div><div class="mt-1">{{ periksa.item.catatanVerifikasi }}</div></div>
+                        <div v-if="periksa.item.statusPembayaran === 'gratis'" class="pm-info mt-3"><i class="bi bi-gift mr-1"></i> Pembayaran gratis. Status ACC final dan surat final dikirim otomatis.</div>
                         <div class="pm-actions">
+                            <button v-if="periksa.item.statusPembayaran === 'gratis'" type="button" class="btn-soft text-rose-600" :disabled="periksa.saving" @click="batalGratis">Batalkan Gratis</button>
                             <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
                         </div>
                     </section>
 
                     <section v-else class="pm-card">
-                        <div v-if="periksa.item.statusPembayaran === 'gratis'" class="pm-info">Pembayaran gratis, tidak perlu diverifikasi.</div>
-                        <template v-else>
+                        <template>
                             <div class="pm-grid">
                                 <div>
-                                    <label class="label">Nominal Masuk <span class="text-rose-500">*</span></label>
-                                    <input v-model="periksa.form.nominal" type="number" min="0" class="input" :class="periksaKesesuaianInfo.cocok ? '' : 'is-error'">
+                                    <label class="label">Nominal Masuk <span v-if="periksa.form.kesesuaian !== 'gratis'" class="text-rose-500">*</span></label>
+                                    <input v-model="periksa.form.nominal" type="number" min="0" class="input" :class="periksaKesesuaianInfo.cocok ? '' : 'is-error'" :disabled="periksa.form.kesesuaian === 'gratis'">
                                 </div>
                                 <div>
                                     <label class="label">Kesesuaian <span class="text-rose-500">*</span></label>
@@ -3486,9 +3488,10 @@
                                         <option value="pas">Pas</option>
                                         <option value="kurang">Kurang</option>
                                         <option value="lebih">Lebih</option>
+                                        <option value="gratis">Gratis (bebaskan biaya)</option>
                                     </select>
                                 </div>
-                                <div class="pm-hint" :class="periksaKesesuaianInfo.cocok ? '' : 'bad'"><i class="bi bi-info-circle"></i> {{ periksaKesesuaianInfo.teks }}</div>
+                                <div class="pm-hint" :class="periksa.form.kesesuaian === 'gratis' ? 'free' : (periksaKesesuaianInfo.cocok ? '' : 'bad')"><i class="bi bi-info-circle"></i> {{ periksaKesesuaianInfo.teks }}</div>
                                 <div>
                                     <label class="label">Tanggal Daftar</label>
                                     <div class="input bg-slate-50 text-slate-600">{{ periksa.item.tanggalDaftar ? formatTanggalWaktu(periksa.item.tanggalDaftar) : '-' }}</div>
@@ -3497,11 +3500,11 @@
                                     <label class="label">Tanggal Upload Bukti</label>
                                     <div class="input bg-slate-50 text-slate-600">{{ periksaUploadLabel(periksa.item) }}</div>
                                 </div>
-                                <div>
+                                <div v-if="periksa.form.kesesuaian !== 'gratis'">
                                     <label class="label">Tanggal Bayar <span class="text-rose-500">*</span></label>
                                     <input v-model="periksa.form.tanggal" type="date" class="input">
                                 </div>
-                                <div>
+                                <div v-if="periksa.form.kesesuaian !== 'gratis'">
                                     <label class="label">Metode</label>
                                     <input v-model="periksa.form.metode" type="text" class="input" placeholder="Transfer, tunai, ...">
                                 </div>
@@ -4092,6 +4095,9 @@
                     const it = this.periksa.item;
                     const form = this.periksa.form || {};
                     const tagihan = it ? Number(it.biaya) || 0 : 0;
+                    if (form.kesesuaian === 'gratis') {
+                        return { tagihan, nominal: 0, selisih: tagihan, target: 'gratis', targetLabel: 'Gratis', cocok: true, teks: 'Biaya dibebaskan (Rp 0). Status pengajuan menjadi ACC dan surat final (email + PDF) dikirim ke mahasiswa dan Bagian.' };
+                    }
                     const nominal = Number(form.nominal) || 0;
                     const target = this.hitungKesesuaian(nominal, tagihan);
                     const targetLabel = this.bayarKesesuaianLabel(target);
@@ -4802,6 +4808,7 @@
                     if (value === 'pas') return 'Pas';
                     if (value === 'kurang') return 'Kurang';
                     if (value === 'lebih') return 'Lebih';
+                    if (value === 'gratis') return 'Gratis';
                     return '-';
                 },
                 periksaUploadLabel(it) {
@@ -4825,6 +4832,10 @@
                 onKesesuaianChange() {
                     const it = this.periksa.item;
                     if (!it) return;
+                    if (this.periksa.form.kesesuaian === 'gratis') {
+                        this.periksa.form.nominal = '0';
+                        return;
+                    }
                     if (this.periksa.form.kesesuaian === 'pas') {
                         const tagihan = Number(it.biaya) || 0;
                         if (tagihan > 0) this.periksa.form.nominal = String(tagihan);
@@ -4854,6 +4865,10 @@
                 async submitValid() {
                     const it = this.periksa.item;
                     if (!it) return;
+                    if (this.periksa.form.kesesuaian === 'gratis') {
+                        await this.submitGratis();
+                        return;
+                    }
                     if (!it.linkBukti) {
                         this.notify('Belum ada bukti bayar untuk diverifikasi.', false);
                         return;
@@ -4892,6 +4907,69 @@
                             return;
                         }
                         this.notify(res.message || 'Pembayaran divalidasi.', !res.notification || res.notification.ok);
+                        this.closePeriksa();
+                        await this.loadPengajuan();
+                        await this.loadStats();
+                    } catch (e) {
+                        this.notify('Gagal: ' + (e || 'Terjadi kesalahan.'), false);
+                    } finally {
+                        this.periksa.saving = false;
+                    }
+                },
+                async submitGratis() {
+                    const it = this.periksa.item;
+                    if (!it) return;
+                    this.periksa.saving = true;
+                    try {
+                        const res = await this.run('gratiskanPembayaran', {
+                            idPengajuan: it.id,
+                            catatan: this.periksa.form.catatan,
+                            expectedRevision: it.revision
+                        });
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal menetapkan gratis.', false);
+                            return;
+                        }
+                        this.notify(res.message || 'Pengajuan ditetapkan gratis.', !res.notification || res.notification.ok);
+                        this.closePeriksa();
+                        await this.loadPengajuan();
+                        await this.loadStats();
+                    } catch (e) {
+                        this.notify('Gagal: ' + (e || 'Terjadi kesalahan.'), false);
+                    } finally {
+                        this.periksa.saving = false;
+                    }
+                },
+                async batalGratis() {
+                    const it = this.periksa.item;
+                    if (!it) return;
+                    const ok = await this.askConfirm({
+                        title: 'Batalkan Gratis',
+                        message: 'Batalkan status gratis pengajuan ini?',
+                        details: [
+                            'Biaya dikembalikan ke MasterBiaya.',
+                            'Status pengajuan kembali ke Disetujui.',
+                            'Status pembayaran kembali menjadi Menunggu/Belum Bayar.',
+                            'Link ACC final yang sudah ada akan dikosongkan.'
+                        ],
+                        icon: 'bi-arrow-counterclockwise',
+                        tone: 'danger',
+                        confirmLabel: 'Batalkan Gratis'
+                    });
+                    if (!ok) return;
+                    this.periksa.saving = true;
+                    try {
+                        const res = await this.run('correctPembayaran', {
+                            idPengajuan: it.id,
+                            mode: 'batal_gratis',
+                            alasan: 'Batalkan gratis oleh admin',
+                            expectedRevision: it.revision
+                        });
+                        if (!res || !res.success) {
+                            this.notify((res && res.message) || 'Gagal membatalkan gratis.', false);
+                            return;
+                        }
+                        this.notify(res.message || 'Status gratis dibatalkan.');
                         this.closePeriksa();
                         await this.loadPengajuan();
                         await this.loadStats();

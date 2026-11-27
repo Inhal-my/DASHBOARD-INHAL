@@ -737,6 +737,15 @@ describe('dashboard periksa pembayaran', () => {
     expect(html).toContain('await this.loadPengajuan();');
   });
 
+  it('menyediakan opsi Gratis, gratiskanPembayaran, dan Batalkan Gratis', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('<option value="gratis">Gratis (bebaskan biaya)</option>');
+    expect(html).toContain("this.run('gratiskanPembayaran'");
+    expect(html).toContain("this.run('correctPembayaran'");
+    expect(html).toContain("mode: 'batal_gratis'");
+    expect(html).toContain('Batalkan status gratis');
+  });
+
   it('mendefinisikan CSS kunci modal pembayaran', async () => {
     const html = await loadDashboardHtml();
     const selectors = cssSelectors(html);
