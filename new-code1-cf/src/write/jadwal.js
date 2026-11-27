@@ -4,10 +4,26 @@ import { kegiatanKey, getBagianBaStatuses, getMasterOptions } from '../read/comm
 import { validateBaPesertaStatus } from './beritaAcara.js';
 import { validateJadwalInput } from '../validation.js';
 import { normalizeDosenList, dosenKey, validateDosenAgainstMaster, dosenMasterErrorMessage } from '../dosen.js';
+import { ruleForKategori, checkMultiJadwal } from './baRules.js';
+import { writeAuditLog } from '../audit.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
   return String(v).replace(/\u00a0/g, ' ').trim();
+}
+
+async function auditRule(db, ctx, action, target, detail) {
+  try {
+    await writeAuditLog(db, {
+      actor: str(ctx && ctx.session && ctx.session.nama) || 'Sistem',
+      action: action,
+      target: str(target),
+      detail: JSON.stringify(detail || {}),
+      alasan: str(detail && detail.alasan)
+    });
+  } catch {
+    // Audit bersifat best-effort.
+  }
 }
 
 function nowIso() {
@@ -139,6 +155,14 @@ export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
   const dup = await hasDuplicateJadwal(db, { kegiatanKey: key, tanggal: p.tanggal, jam: p.jam }, peserta);
   if (dup) return { success: false, message: 'Jadwal untuk kegiatan, tanggal, jam, dan peserta ini sudah ada.' };
 
+  const rule = await ruleForKategori(db, kategori);
+  const multi = await checkMultiJadwal(db, {
+    rule, kegiatanKey: key, tanggal: p.tanggal, payload: p, label: str(kategori)
+  });
+  if (!multi.ok) {
+    return { success: false, message: multi.message, rule: multi.rule, allowOverride: multi.allowOverride };
+  }
+
   const dosenList = normalizeDosenList(p.dosenList, p.dosen);
   const dosenCheck = await checkDosenMaster(db, dosenList, []);
   if (!dosenCheck.ok) return { success: false, message: dosenCheck.message };
@@ -152,7 +176,16 @@ export async function saveJadwalPelaksanaan(db, payload, kategori, ctx) {
     kegiatanKey: key,
     createdBy: str(ctx.session && ctx.session.nama)
   }));
-  return { success: true, jadwalId: jadwalId, message: 'Jadwal pelaksanaan berhasil disimpan.' };
+  if (multi.override) {
+    await auditRule(db, ctx, 'BA_RULE_OVERRIDE', jadwalId, {
+      rule: multi.override, kategori: str(kategori), kegiatanKey: key,
+      tanggal: str(p.tanggal), alasan: multi.alasan, via: 'jadwal'
+    });
+  }
+  return {
+    success: true, jadwalId: jadwalId, message: 'Jadwal pelaksanaan berhasil disimpan.',
+    overrideApplied: multi.override ? [multi.override] : undefined
+  };
 }
 
 async function findActiveJadwal(db, jadwalId) {
@@ -198,6 +231,14 @@ export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, c
 
   const ts = nowIso();
   const bagian = str(p.bagian) || str(existing.bagian) || str(kategori);
+  const key = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
+  const rule = await ruleForKategori(db, kategori);
+  const multi = await checkMultiJadwal(db, {
+    rule, kegiatanKey: key, tanggal: p.tanggal, excludeJadwalId: id, payload: p, label: str(kategori)
+  });
+  if (!multi.ok) {
+    return { success: false, message: multi.message, rule: multi.rule, allowOverride: multi.allowOverride };
+  }
   const currentDosen = await loadJadwalDosenList(db, id);
   const dosenInput = normalizeDosenList(p.dosenList, p.dosen !== undefined ? p.dosen : existing.dosen);
   const dosenCheck = await checkDosenMaster(db, dosenInput, currentDosen);
@@ -206,7 +247,7 @@ export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, c
   await db.batch([
     db.prepare(
       'UPDATE jadwal_pelaksanaan SET bagian=?1, blok=?2, nama_kegiatan=?3, kegiatan_key=?4, tanggal=?5, jam=?6, dosen=?7, catatan=?8, updated_at=?9 WHERE jadwal_id=?10'
-    ).bind(bagian, str(p.blok), str(p.namaKegiatan), kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan)),
+    ).bind(bagian, str(p.blok), str(p.namaKegiatan), key,
       str(p.tanggal), str(p.jam), dosenList[0] || '', str(p.catatan), ts, id),
     ...buildDosenStmts(db, id, dosenList, ts),
     db.prepare('DELETE FROM jadwal_peserta WHERE jadwal_id=?1').bind(id),
@@ -214,7 +255,16 @@ export async function updateJadwalPelaksanaan(db, jadwalId, payload, kategori, c
       'INSERT INTO jadwal_peserta (timestamp, jadwal_id, id_pengajuan, npm, nama_lengkap, blok, status_pengajuan) VALUES (?1,?2,?3,?4,?5,?6,?7)'
     ).bind(ts, id, pp.idPengajuan, pp.npm, pp.namaLengkap, pp.blok, pp.statusPengajuan))
   ]);
-  return { success: true, message: 'Jadwal pelaksanaan diperbarui.' };
+  if (multi.override) {
+    await auditRule(db, ctx, 'BA_RULE_OVERRIDE', id, {
+      rule: multi.override, kategori: str(kategori), kegiatanKey: key,
+      tanggal: str(p.tanggal), alasan: multi.alasan, via: 'jadwal-update'
+    });
+  }
+  return {
+    success: true, message: 'Jadwal pelaksanaan diperbarui.',
+    overrideApplied: multi.override ? [multi.override] : undefined
+  };
 }
 
 export async function cancelJadwalPelaksanaan(db, jadwalId, kategori, ctx) {

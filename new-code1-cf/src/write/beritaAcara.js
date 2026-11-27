@@ -5,6 +5,10 @@ import { saveDriveFile, trashDriveFile, parseDriveFileId } from '../drive.js';
 import { validateBaCreateInput, validateBaUpdateInput } from '../validation.js';
 import { normalizeDosenList, dosenKey, validateDosenAgainstMaster, dosenMasterErrorMessage } from '../dosen.js';
 import { writeAuditLog } from '../audit.js';
+import {
+  ruleForKategori, kategoriFromBagian, applyPerPesertaRule,
+  checkMultiSesi, checkMultiBa, loadPengajuanStatusMap
+} from './baRules.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -34,6 +38,20 @@ async function auditBa(db, ctx, action, baId, detail) {
     });
   } catch {
     // Audit BA bersifat best-effort; kegagalan sudah dicatat oleh writeAuditLog.
+  }
+}
+
+async function auditRule(db, ctx, action, target, detail) {
+  try {
+    await writeAuditLog(db, {
+      actor: str(ctx && ctx.session && ctx.session.nama) || 'Sistem',
+      action: action,
+      target: str(target),
+      detail: JSON.stringify(detail || {}),
+      alasan: str(detail && detail.alasan)
+    });
+  } catch {
+    // Audit bersifat best-effort.
   }
 }
 
@@ -107,11 +125,9 @@ async function resolveBaPesertaFromDetail(db, payload) {
   return out;
 }
 
-export async function validateBaPesertaStatus(db, peserta) {
+export async function validateBaPesertaStatus(db, peserta, statusMap) {
   const allowed = await getBagianBaStatuses(db);
-  const { results } = await db.prepare('SELECT id_pengajuan, status FROM pengajuan').all();
-  const map = {};
-  for (const r of results || []) map[str(r.id_pengajuan)] = str(r.status);
+  const map = statusMap || await loadPengajuanStatusMap(db);
   const blocked = [];
   for (const p of peserta) {
     const pid = str(p.idPengajuan);
@@ -319,6 +335,12 @@ async function resolveBaSesi(db, options) {
       ok: false,
       message: 'Tanggal BA harus sama dengan tanggal sesi paling awal (' + sesiLabel(sesi.slice(0, 1)) + ').'
     };
+  }
+  if (sesi.length > 1 && options.kategori) {
+    const rule = await ruleForKategori(db, options.kategori);
+    const check = checkMultiSesi(rule, sesi, options.overridePayload, str(options.kategori));
+    if (!check.ok) return check;
+    if (check.override) return { ok: true, sesi: sesi, override: check.override, alasan: check.alasan };
   }
   return { ok: true, sesi: sesi };
 }
@@ -704,9 +726,21 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
   if (!input.ok) return { success: false, message: input.message };
   const bagian = str(p.bagian) || str(kategori);
 
-  const peserta = normalizeBaPeserta(p);
+  let peserta = normalizeBaPeserta(p);
   if (!peserta.length) {
     return { success: false, message: 'Upload dibatalkan: tidak ada peserta pada berita acara ini. Pilih minimal satu peserta.' };
+  }
+
+  const rule = await ruleForKategori(db, kategori);
+  const statusMap = await loadPengajuanStatusMap(db);
+  const per = applyPerPesertaRule(rule, peserta, statusMap, str(kategori));
+  if (!per.ok) {
+    return { success: false, message: per.message, rule: per.rule, allowOverride: per.allowOverride };
+  }
+  const deferred = per.deferred || [];
+  peserta = per.peserta;
+  if (!peserta.length) {
+    return { success: false, message: 'Upload dibatalkan: tidak ada peserta final (ACC) pada berita acara ini.' };
   }
 
   const invalidPeserta = await validateBaPesertaKegiatan(db, peserta, bagian, p.blok, p.namaKegiatan);
@@ -717,22 +751,34 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     };
   }
 
-  const blocked = await validateBaPesertaStatus(db, peserta);
-  if (blocked.length) {
-    const allowed = await getBagianBaStatuses(db);
-    return {
-      success: false,
-      message: 'Upload dibatalkan: peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '. Muat ulang data terlebih dahulu.'
-    };
+  if (per.mode === 'bebas') {
+    const blocked = await validateBaPesertaStatus(db, peserta, statusMap);
+    if (blocked.length) {
+      const allowed = await getBagianBaStatuses(db);
+      return {
+        success: false,
+        message: 'Upload dibatalkan: peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '. Muat ulang data terlebih dahulu.'
+      };
+    }
   }
 
   const baKey = kegiatanKey(bagian, str(p.blok), str(p.namaKegiatan));
+  const multiBa = await checkMultiBa(db, {
+    rule, kegiatanKey: baKey, tanggal: p.tanggalPelaksanaan, payload: p, label: str(kategori)
+  });
+  if (!multiBa.ok) {
+    return { success: false, message: multiBa.message, rule: multiBa.rule, allowOverride: multiBa.allowOverride };
+  }
   const sesiResult = await resolveBaSesi(db, {
     jadwalIds: normalizeJadwalIds(p),
     kegiatanKey: baKey,
-    tanggal: p.tanggalPelaksanaan
+    tanggal: p.tanggalPelaksanaan,
+    kategori: kategori,
+    overridePayload: p
   });
-  if (!sesiResult.ok) return { success: false, message: sesiResult.message };
+  if (!sesiResult.ok) {
+    return { success: false, message: sesiResult.message, rule: sesiResult.rule, allowOverride: sesiResult.allowOverride };
+  }
   const sesi = sesiResult.sesi;
 
   const autoJadwal = await planAutoJadwalPeserta(db, peserta, sesi, baKey, p);
@@ -785,15 +831,31 @@ export async function saveBeritaAcaraBagian(db, payload, kategori, ctx) {
     ...buildBaDosenStmts(db, baId, dosenList),
     ...syncStmts
   ]);
+  const overrideApplied = [];
+  for (const x of [multiBa, sesiResult]) if (x && x.override) overrideApplied.push(x.override);
   await auditBa(db, ctx, 'BA_CREATE', baId, {
     jenis: 'Pelaksanaan', bagian: bagian, jumlahPeserta: peserta.length,
     jumlahSesi: sesi.length, jadwalIds: sesi.map((jd) => str(jd.jadwal_id)),
-    autoScheduled: autoJadwal.count, autoJadwalId: autoJadwal.targetJadwalId
+    autoScheduled: autoJadwal.count, autoJadwalId: autoJadwal.targetJadwalId,
+    deferred: deferred.map((d) => ({ npm: d.npm, nama: d.namaLengkap, status: d.statusPengajuan })),
+    overrideApplied: overrideApplied
   });
+  for (const x of [multiBa, sesiResult]) {
+    if (x && x.override) {
+      await auditRule(db, ctx, 'BA_RULE_OVERRIDE', baId, {
+        rule: x.override, kategori: str(kategori), kegiatanKey: baKey,
+        tanggal: str(p.tanggalPelaksanaan), alasan: x.alasan, via: 'ba'
+      });
+    }
+  }
 
   return {
     success: true, baId: baId, jumlahSesi: sesi.length,
     autoScheduled: autoJadwal.count,
+    deferred: deferred.length
+      ? deferred.map((d) => ({ npm: d.npm, namaLengkap: d.namaLengkap, statusPengajuan: d.statusPengajuan }))
+      : undefined,
+    overrideApplied: overrideApplied.length ? overrideApplied : undefined,
     message: autoJadwal.count
       ? 'Berita acara berhasil diunggah. ' + autoJadwal.count + ' peserta otomatis dijadwalkan.'
       : 'Berita acara berhasil diunggah.'
@@ -807,6 +869,7 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
   if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
   if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diubah.' };
+  const kategori = kategoriFromBagian(existing.bagian, await getMasterOptions(db, 'Lab'));
 
   const p = payload || {};
   const input = validateBaUpdateInput(p);
@@ -835,6 +898,7 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
 
   let sesi = await loadBaSesiRows(db, id);
   let remapSesi = false;
+  let sesiOverride = null;
   if (p.jadwalIds !== undefined || p.jadwalId !== undefined) {
     const requestedSesi = normalizeJadwalIds(p);
     if (!requestedSesi.length && sesi.length) {
@@ -847,15 +911,23 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
       jadwalIds: requestedSesi,
       kegiatanKey: str(existing.kegiatan_key) || kegiatanKey(existing.bagian, existing.blok, existing.nama_kegiatan),
       tanggal: tanggal,
-      excludeBaId: id
+      excludeBaId: id,
+      kategori: kategori,
+      overridePayload: p
     });
-    if (!resolvedSesi.ok) return { success: false, message: resolvedSesi.message };
+    if (!resolvedSesi.ok) {
+      return { success: false, message: resolvedSesi.message, rule: resolvedSesi.rule, allowOverride: resolvedSesi.allowOverride };
+    }
     sesi = resolvedSesi.sesi;
     remapSesi = true;
+    sesiOverride = resolvedSesi.override || null;
   }
 
   let pesertaIds = null;
   let pesertaBaru = [];
+  let deferredPeserta = [];
+  const overrideApplied = [];
+  if (sesiOverride) overrideApplied.push(sesiOverride);
   if (p.pesertaIds !== undefined) {
     if (!Array.isArray(p.pesertaIds)) return { success: false, message: 'Daftar peserta tidak valid.' };
     pesertaIds = Array.from(new Set(p.pesertaIds.map(str).filter(Boolean)));
@@ -870,10 +942,23 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
     if (problems.length) {
       return { success: false, message: 'Peserta tidak sesuai dengan kegiatan BA — ' + problems.join(', ') + '.' };
     }
-    const blocked = await validateBaPesertaStatus(db, pesertaBaru);
-    if (blocked.length) {
-      const allowed = await getBagianBaStatuses(db);
-      return { success: false, message: 'Peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '.' };
+    const rule = await ruleForKategori(db, kategori);
+    const statusMap = await loadPengajuanStatusMap(db);
+    const per = applyPerPesertaRule(rule, pesertaBaru, statusMap, str(kategori));
+    if (!per.ok) {
+      return { success: false, message: per.message, rule: per.rule, allowOverride: per.allowOverride };
+    }
+    deferredPeserta = per.deferred || [];
+    pesertaBaru = per.peserta;
+    if (!pesertaBaru.length) {
+      return { success: false, message: 'Peserta BA tidak boleh kosong. Sertakan minimal satu peserta final (ACC).' };
+    }
+    if (per.mode === 'bebas') {
+      const blocked = await validateBaPesertaStatus(db, pesertaBaru, statusMap);
+      if (blocked.length) {
+        const allowed = await getBagianBaStatuses(db);
+        return { success: false, message: 'Peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '.' };
+      }
     }
   }
 
@@ -893,7 +978,7 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   }
 
   if (pesertaIds) {
-    const baruSet = new Set(pesertaIds);
+    const baruSet = new Set(pesertaBaru.map((x) => str(x.idPengajuan)));
     const removed = currentIds.filter((pid) => !baruSet.has(pid));
     const ts = nowIso();
     stmts.push(db.prepare('DELETE FROM berita_acara_peserta WHERE ba_id = ?1').bind(id));
@@ -905,7 +990,7 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
         ).bind(ts, id, peserta.idPengajuan, peserta.npm, peserta.namaLengkap, peserta.blok, existing.bagian, peserta.statusPengajuan)
       );
     }
-    stmts.push(db.prepare('UPDATE berita_acara SET jumlah_peserta = ?1 WHERE ba_id = ?2').bind(pesertaIds.length, id));
+    stmts.push(db.prepare('UPDATE berita_acara SET jumlah_peserta = ?1 WHERE ba_id = ?2').bind(pesertaBaru.length, id));
     stmts.push(...await buildRestorePengajuanStmts(db, removed, id));
     stmts.push(...await buildSesiSyncStmts(db, pesertaBaru, sesi, { dosen: dosen, tanggal: tanggal, jam: jam }));
   } else {
@@ -913,15 +998,29 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
   }
 
   await db.batch(stmts);
+  const jumlahPeserta = pesertaIds ? pesertaBaru.length : currentIds.length;
   await auditBa(db, ctx, 'BA_UPDATE', id, {
     jenis: 'Pelaksanaan',
-    jumlahPeserta: pesertaIds ? pesertaIds.length : currentIds.length,
-    jumlahSesi: sesi.length
+    jumlahPeserta: jumlahPeserta,
+    jumlahSesi: sesi.length,
+    deferred: deferredPeserta.map((d) => ({ npm: d.npm, nama: d.namaLengkap, status: d.statusPengajuan })),
+    overrideApplied: overrideApplied
   });
+  for (const x of overrideApplied) {
+    await auditRule(db, ctx, 'BA_RULE_OVERRIDE', id, {
+      rule: x, kategori: kategori,
+      kegiatanKey: str(existing.kegiatan_key) || kegiatanKey(existing.bagian, existing.blok, existing.nama_kegiatan),
+      tanggal: tanggal, alasan: p.override && p.override[x], via: 'ba'
+    });
+  }
   return {
     success: true,
     message: 'Berita acara diperbarui.',
-    jumlahPeserta: pesertaIds ? pesertaIds.length : currentIds.length
+    jumlahPeserta: jumlahPeserta,
+    deferred: deferredPeserta.length
+      ? deferredPeserta.map((d) => ({ npm: d.npm, namaLengkap: d.namaLengkap, statusPengajuan: d.statusPengajuan }))
+      : undefined,
+    overrideApplied: overrideApplied.length ? overrideApplied : undefined
   };
 }
 
@@ -960,6 +1059,7 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
   // tetap konsisten dengan kegiatan (bagian|blok|nama kegiatan) dan status final.
   const gantiPeserta = p.peserta !== undefined || p.pesertaIds !== undefined;
   let pesertaBaru = null;
+  let deferredPeserta = [];
   if (gantiPeserta) {
     pesertaBaru = await resolveBaPesertaInput(db, p);
     if (!pesertaBaru.length) {
@@ -974,13 +1074,29 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
         message: 'Perubahan dibatalkan: peserta tidak sesuai dengan kegiatan BA — ' + invalid.join(', ') + '. Muat ulang data terlebih dahulu.'
       };
     }
-    const blocked = await validateBaPesertaStatus(db, pesertaBaru);
-    if (blocked.length) {
-      const allowed = await getBagianBaStatuses(db);
+    const rule = await ruleForKategori(db, kategori);
+    const statusMap = await loadPengajuanStatusMap(db);
+    const per = applyPerPesertaRule(rule, pesertaBaru, statusMap, str(kategori));
+    if (!per.ok) {
+      return { success: false, message: per.message, rule: per.rule, allowOverride: per.allowOverride };
+    }
+    deferredPeserta = per.deferred || [];
+    pesertaBaru = per.peserta;
+    if (!pesertaBaru.length) {
       return {
         success: false,
-        message: 'Perubahan dibatalkan: peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '. Muat ulang data terlebih dahulu.'
+        message: 'Perubahan dibatalkan: tidak ada peserta final (ACC) pada berita acara ini. Muat ulang data terlebih dahulu.'
       };
+    }
+    if (per.mode === 'bebas') {
+      const blocked = await validateBaPesertaStatus(db, pesertaBaru, statusMap);
+      if (blocked.length) {
+        const allowed = await getBagianBaStatuses(db);
+        return {
+          success: false,
+          message: 'Perubahan dibatalkan: peserta belum berstatus ' + allowed.join(' / ') + ' — ' + blocked.join(', ') + '. Muat ulang data terlebih dahulu.'
+        };
+      }
     }
   }
 
@@ -1035,12 +1151,16 @@ export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx
 
   await auditBa(db, ctx, 'BA_UPDATE', id, {
     jenis: 'Pelaksanaan', lengkapi: true, jumlahSesi: sesi.length,
-    jumlahPeserta: finalPeserta.length, gantiPeserta: !!pesertaBaru, gantiFile: gantiFile
+    jumlahPeserta: finalPeserta.length, gantiPeserta: !!pesertaBaru, gantiFile: gantiFile,
+    deferred: deferredPeserta.map((d) => ({ npm: d.npm, nama: d.namaLengkap, status: d.statusPengajuan }))
   });
   return {
     success: true,
     message: 'Berita acara dilengkapi.',
     jumlahPeserta: finalPeserta.length,
-    gantiFile: gantiFile
+    gantiFile: gantiFile,
+    deferred: deferredPeserta.length
+      ? deferredPeserta.map((d) => ({ npm: d.npm, namaLengkap: d.namaLengkap, statusPengajuan: d.statusPengajuan }))
+      : undefined
   };
 }

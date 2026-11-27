@@ -3,7 +3,8 @@ import { env } from 'cloudflare:test';
 import {
   norm, baginaKey, parseCurrency, formatRupiah, formatBiaya, getMasterOptions,
   resolveBagian12, baginaHasAccess, getBagianBaStatuses, kegiatanKey,
-  resolveBiayaForPengajuan, effectiveDetailFor, filterKkdSgdDetailOptions
+  resolveBiayaForPengajuan, effectiveDetailFor, filterKkdSgdDetailOptions,
+  getBaRules, getBaRuleFor, validateBaRules
 } from '../src/read/common.js';
 
 describe('common helpers', () => {
@@ -83,3 +84,55 @@ describe('biaya berdasarkan Detail', () => {
     expect(filterKkdSgdDetailOptions(['Inhal', 'Remediasi'])).toEqual(['Inhal']);
   });
 });
+
+describe('aturan BA per kategori', () => {
+  const longgar = () => ({ multiJadwal: 'longgar', multiSesi: 'longgar', multiBa: 'longgar', perPeserta: 'longgar' });
+
+  it('default semua bebas (inert)', async () => {
+    const rules = await getBaRules(env.DB);
+    expect(rules.SGD).toEqual(bebas());
+    expect(rules.Ujian).toEqual(bebas());
+    expect(rules.KKD).toEqual(bebas());
+    expect(rules.Praktikum).toEqual(bebas());
+  });
+
+  it('kategori KKD/Praktikum dapat diatur (default bebas)', () => {
+    const rules = { KKD: longgar(), Praktikum: longgar() };
+    expect(getBaRuleFor(rules, 'KKD')).toEqual(longgar());
+    expect(getBaRuleFor(rules, 'Praktikum')).toEqual(longgar());
+    expect(getBaRuleFor({}, 'KKD')).toEqual(bebas());
+    expect(getBaRuleFor({}, 'Praktikum')).toEqual(bebas());
+  });
+
+  it('getBaRuleFor memakai aturan per kategori yang tersimpan', () => {
+    expect(getBaRuleFor({ SGD: longgar() }, 'SGD')).toEqual(longgar());
+    expect(getBaRuleFor({ Ujian: longgar() }, 'ujian')).toEqual(longgar());
+    expect(getBaRuleFor({ KKD: longgar() }, 'kkd')).toEqual(longgar());
+    expect(getBaRuleFor({ Praktikum: longgar() }, 'praktikum')).toEqual(longgar());
+  });
+
+  it('validateBaRules menolak mode tak dikenal', () => {
+    const bad = validateBaRules({ SGD: { multiJadwal: 'longgar', multiSesi: 'ngawur' } });
+    expect(bad.ok).toBe(false);
+    expect(bad.message).toContain('ngawur');
+  });
+
+  it('validateBaRules menolak kombinasi buntu', () => {
+    const bad = validateBaRules({ SGD: { multiJadwal: 'longgar', multiSesi: 'ketat', multiBa: 'ketat' } });
+    expect(bad.ok).toBe(false);
+    expect(bad.message.toLowerCase()).toContain('multi-jadwal');
+  });
+
+  it('validateBaRules menerima kombinasi valid dan melengkapi default', () => {
+    const ok = validateBaRules({ Ujian: { multiJadwal: 'ketat' } });
+    expect(ok.ok).toBe(true);
+    expect(ok.rules.Ujian).toEqual({ ...bebas(), multiJadwal: 'ketat' });
+    expect(ok.rules.SGD).toEqual(bebas());
+    expect(ok.rules.KKD).toEqual(bebas());
+    expect(ok.rules.Praktikum).toEqual(bebas());
+  });
+});
+
+function bebas() {
+  return { multiJadwal: 'bebas', multiSesi: 'bebas', multiBa: 'bebas', perPeserta: 'bebas' };
+}

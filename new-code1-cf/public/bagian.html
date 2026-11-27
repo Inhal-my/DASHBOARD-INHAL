@@ -1483,7 +1483,7 @@
                     appUrl: APP_URL,
                     userEmail: USER_EMAIL,
                     config: { labOptions: [], dosenOptions: [] },
-                    baConfig: { statuses: ['ACC'], finalOnly: true },
+                    baConfig: { statuses: ['ACC'], rules: null },
                     kategori: '',
                     subBagian: '',
                     namaBagian: '',
@@ -1536,7 +1536,7 @@
                     const B = window.BagianState;
                     return B.buildAllGroups(this.rows, {
                         statuses: this.baConfig.statuses || ['ACC'],
-                        finalOnly: this.baConfig.finalOnly !== false,
+                        rules: this.baConfig.rules || null,
                         requirePembayaran: true
                     });
                 },
@@ -1744,7 +1744,7 @@
                 kegiatanGroups() {
                     return window.BagianState.buildKegiatanGroups(this.rows, {
                         statuses: this.baConfig.statuses || ['ACC'],
-                        finalOnly: this.baConfig.finalOnly !== false,
+                        rules: this.baConfig.rules || null,
                         requirePembayaran: true
                     });
                 },
@@ -2281,7 +2281,7 @@
                 loadBaConfig() {
                     this.run('getBaginaConfig')
                         .then(c => {
-                            this.baConfig = (c && c.ba) || { statuses: ['ACC'], finalOnly: true };
+                            this.baConfig = (c && c.ba) || { statuses: ['ACC'], rules: null };
                         })
                         .catch(() => {});
                 },

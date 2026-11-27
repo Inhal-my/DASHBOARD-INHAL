@@ -1,7 +1,7 @@
 import { requireAdmin } from '../session.js';
 import { setAccSettings } from '../settings.js';
 import { hashPassword, isHashed } from '../password.js';
-import { kegiatanKey } from '../read/common.js';
+import { kegiatanKey, validateBaRules } from '../read/common.js';
 import { writeAuditLog } from '../audit.js';
 import { BLOK_REF_TABLES, KEGIATAN_KEY_TABLES } from '../masterRefs.js';
 
@@ -189,9 +189,16 @@ export async function saveBagianBaSettings(db, payload, ctx) {
     return { success: false, message: 'Pilih minimal satu status peserta untuk Berita Acara.' };
   }
   const finalOnly = payload && payload.finalOnly !== undefined ? !!payload.finalOnly : true;
+  let rules = null;
+  if (payload && payload.rules !== undefined) {
+    const parsed = validateBaRules(payload.rules);
+    if (!parsed.ok) return { success: false, message: parsed.message };
+    rules = parsed.rules;
+  }
   await upsertConfig(db, 'BAGIAN_BA_STATUSES', statuses.join(','));
   await upsertConfig(db, 'BAGIAN_BA_FINAL_ONLY', finalOnly ? 'true' : 'false');
-  return { success: true, message: 'Pengaturan Berita Acara Bagian diperbarui.' };
+  if (rules) await upsertConfig(db, 'BA_RULES', JSON.stringify(rules));
+  return { success: true, message: 'Pengaturan Berita Acara Bagian diperbarui.', rules: rules || undefined };
 }
 
 export async function saveMahasiswa(db, payload, ctx) {

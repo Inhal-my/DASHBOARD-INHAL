@@ -52,7 +52,7 @@ async function findOverrideBiayaRows(db, idPengajuan) {
   return results || [];
 }
 
-async function upsertBiayaCheckData(db, idPengajuan, biaya, pengajuan) {
+export async function upsertBiayaCheckData(db, idPengajuan, biaya, pengajuan) {
   const id = str(idPengajuan);
   if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
   const matches = await findOverrideBiayaRows(db, id);

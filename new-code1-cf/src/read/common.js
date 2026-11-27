@@ -272,6 +272,108 @@ export async function getBagianBaFinalOnly(db) {
   return (await configValue(db, 'BAGIAN_BA_FINAL_ONLY', 'true')) !== 'false';
 }
 
+export const BA_RULE_MODES = ['bebas', 'longgar', 'ketat'];
+export const BA_RULE_KEYS = ['multiJadwal', 'multiSesi', 'multiBa', 'perPeserta'];
+export const BA_RULE_CATEGORIES = ['SGD', 'Ujian', 'KKD', 'Praktikum'];
+
+function bebasRule() {
+  return { multiJadwal: 'bebas', multiSesi: 'bebas', multiBa: 'bebas', perPeserta: 'bebas' };
+}
+
+// Default sengaja "bebas" agar deploy tidak mengubah perilaku. Admin
+// mengaktifkan Longgar/Ketat lewat Master Data. KKD/Praktikum ikut dapat
+// diatur, tetapi tetap Bebas sampai admin mengubahnya.
+export const DEFAULT_BA_RULES = {
+  SGD: bebasRule(), Ujian: bebasRule(), KKD: bebasRule(), Praktikum: bebasRule()
+};
+
+const BA_RULE_CATEGORY_BY_KEY = {
+  sgd: 'SGD', ujian: 'Ujian', kkd: 'KKD', praktikum: 'Praktikum'
+};
+
+function byLowerKey(raw) {
+  const out = {};
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    for (const k of Object.keys(raw)) out[String(k).toLowerCase()] = raw[k];
+  }
+  return out;
+}
+
+// Pembacaan: mode tak dikenal / data rusak jatuh ke default (bebas).
+export function normalizeBaRules(raw) {
+  const src = byLowerKey(raw);
+  const rules = {};
+  for (const cat of BA_RULE_CATEGORIES) {
+    const found = src[cat.toLowerCase()] || {};
+    const rule = {};
+    for (const key of BA_RULE_KEYS) {
+      const v = String(found[key] === undefined || found[key] === null ? '' : found[key]).trim().toLowerCase();
+      rule[key] = BA_RULE_MODES.indexOf(v) !== -1 ? v : DEFAULT_BA_RULES[cat][key];
+    }
+    rules[cat] = rule;
+  }
+  return rules;
+}
+
+// Konsistensi: bila multi-jadwal tidak Ketat, jangan biarkan multi-sesi DAN
+// multi-BA sama-sama Ketat (jadwal tambahan tidak akan pernah bisa di-BA-kan).
+export function baRulesConsistencyError(rule) {
+  if (rule.multiJadwal !== 'ketat' && rule.multiSesi === 'ketat' && rule.multiBa === 'ketat') {
+    return 'jika multi-jadwal dilonggarkan, minimal salah satu dari BA multi-sesi atau multi-BA harus dilonggarkan juga.';
+  }
+  return '';
+}
+
+// Penyimpanan: mode wajib dikenal, lalu dicek konsistensinya.
+export function validateBaRules(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ok: false, message: 'Format aturan BA tidak valid.' };
+  }
+  const src = byLowerKey(raw);
+  const rules = {};
+  for (const cat of BA_RULE_CATEGORIES) {
+    const found = src[cat.toLowerCase()] || {};
+    const rule = {};
+    for (const key of BA_RULE_KEYS) {
+      const v = found[key];
+      if (v === undefined || v === null || String(v).trim() === '') {
+        rule[key] = DEFAULT_BA_RULES[cat][key];
+        continue;
+      }
+      const mode = String(v).trim().toLowerCase();
+      if (BA_RULE_MODES.indexOf(mode) === -1) {
+        return { ok: false, message: 'Mode aturan ' + cat + ' ' + key + ' tidak dikenal: ' + v };
+      }
+      rule[key] = mode;
+    }
+    const err = baRulesConsistencyError(rule);
+    if (err) return { ok: false, message: cat + ': ' + err };
+    rules[cat] = rule;
+  }
+  return { ok: true, rules };
+}
+
+export async function getBaRules(db) {
+  const raw = await configValue(db, 'BA_RULES', '');
+  if (!raw) return normalizeBaRules({});
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+  return normalizeBaRules(parsed || {});
+}
+
+// Kategori tak dikenal jatuh ke Bebas. KKD/Praktikum ikut memakai aturan
+// tersimpan (default Bebas).
+export function getBaRuleFor(rules, kategori) {
+  const cat = BA_RULE_CATEGORY_BY_KEY[norm(kategori)];
+  if (!cat) return bebasRule();
+  const normalized = normalizeBaRules(rules);
+  return { ...normalized[cat] };
+}
+
 export async function getBagianBaSettings(db) {
-  return { statuses: await getBagianBaStatuses(db), finalOnly: await getBagianBaFinalOnly(db) };
+  return {
+    statuses: await getBagianBaStatuses(db),
+    finalOnly: await getBagianBaFinalOnly(db),
+    rules: await getBaRules(db)
+  };
 }

@@ -146,15 +146,18 @@ describe('portal upload bukti-only', () => {
     expect(row.status_pembayaran).toBe('menunggu');
   });
 
-  it('menolak unggah bukti saat pengajuan gratis', async () => {
+  it('mengizinkan unggah bukti saat gratis dan status tetap gratis', async () => {
     await seedPengajuan('ACC');
     await env.DB.prepare("UPDATE pengajuan SET status_pembayaran = 'gratis' WHERE id_pengajuan = 'INHAL-1'").run();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ success: true, url: 'https://drive.google.com/file/d/GRATISBUKTI000000000000000000000/view' }),
+      { status: 200 }
+    )));
     const res = await uploadBuktiFiles(env.DB, { idPengajuan: 'INHAL-1', npm: '2201010001', buktiFile }, driveEnv);
-    expect(res.success).toBe(false);
-    expect(res.message).toMatch(/gratis/i);
+    expect(res.success).toBe(true);
     const row = await env.DB.prepare('SELECT status_pembayaran, link_bukti_bayar FROM pengajuan WHERE id_pengajuan = ?1').bind('INHAL-1').first();
     expect(row.status_pembayaran).toBe('gratis');
-    expect(row.link_bukti_bayar || '').toBe('');
+    expect(row.link_bukti_bayar).toContain('GRATISBUKTI000000000000000000000');
   });
 
   it('menolak unggah saat status pembayaran sudah valid', async () => {

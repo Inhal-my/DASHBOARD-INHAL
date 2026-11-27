@@ -3,6 +3,7 @@ import { writeAuditLog } from '../audit.js';
 import { sendFinalPdfEmails } from './email.js';
 import { formatRupiah } from '../read/common.js';
 import { resolveTagihan } from '../tagihan.js';
+import { upsertBiayaCheckData } from './pengajuanAdmin.js';
 
 function str(v) {
   if (v === undefined || v === null) return '';
@@ -176,6 +177,97 @@ export async function verifyPembayaran(db, payload, ctx) {
   return { success: true, status: 'valid', pengajuanStatus: 'ACC', revision, message, notification };
 }
 
+export async function gratiskanPembayaran(db, payload, ctx) {
+  const session = await requireAdmin(db, ctx && ctx.token, ctx && ctx.session);
+  const p = payload || {};
+  const id = str(p.idPengajuan);
+  if (!id) return { success: false, message: 'ID Pengajuan tidak tersedia.' };
+
+  const row = await loadRow(db, id);
+  if (!row) return { success: false, message: 'Pengajuan tidak ditemukan.' };
+  const prevPengajuanStatus = pengajuanStatus(row);
+  if (prevPengajuanStatus !== 'Disetujui' && prevPengajuanStatus !== 'ACC') {
+    return { success: false, message: 'Gratis hanya dapat ditetapkan untuk pengajuan berstatus Disetujui atau ACC.' };
+  }
+  if (status(row) === 'valid') {
+    return { success: false, message: 'Pembayaran sudah valid. Gunakan koreksi bila perlu membebaskan biaya.' };
+  }
+  if (status(row) === 'gratis') {
+    return { success: false, message: 'Pembayaran sudah ditandai gratis.' };
+  }
+  if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
+
+  const catatan = str(p.catatan) || str(row.catatan_verifikasi);
+  const actor = actorName({ session });
+  const ts = nowIso();
+  const revision = revisionOf(row) + 1;
+
+  const biayaRes = await upsertBiayaCheckData(db, id, '0', row);
+  if (!biayaRes.success) return biayaRes;
+
+  const update = db.prepare(
+    'UPDATE pengajuan SET status = \'ACC\', status_pembayaran = \'gratis\', kesesuaian_pembayaran = \'gratis\', ' +
+    'nominal_dibayar = 0, catatan_verifikasi = ?1, verified_at = ?2, verified_by = ?3, ' +
+    'payment_revision = ?4, updated_at = ?5 WHERE id_pengajuan = ?6 AND payment_revision = ?7 ' +
+    "AND status_pembayaran != 'gratis' AND status_pembayaran != 'valid'"
+  ).bind(catatan, ts, actor, revision, ts, id, revisionOf(row));
+
+  const rev = revisionInsert(db, {
+    idPengajuan: id, revision, mode: 'gratis',
+    statusLama: status(row), statusBaru: 'gratis',
+    kesesuaianLama: str(row.kesesuaian_pembayaran), kesesuaianBaru: 'gratis',
+    nominalLama: row.nominal_dibayar === null || row.nominal_dibayar === undefined ? null : toAmount(row.nominal_dibayar),
+    nominalBaru: 0,
+    tanggalLama: str(row.tanggal_bayar), tanggalBaru: str(row.tanggal_bayar),
+    metodeLama: str(row.metode_bayar), metodeBaru: str(row.metode_bayar),
+    alasan: '', catatan, actor, createdAt: ts,
+    before: { status: status(row), kesesuaian: str(row.kesesuaian_pembayaran), nominal: row.nominal_dibayar || null },
+    after: { status: 'gratis', kesesuaian: 'gratis', nominal: 0 }
+  });
+
+  const statements = [update, rev];
+  if (prevPengajuanStatus !== 'ACC') {
+    statements.push(db.prepare(
+      'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
+    ).bind(ts, id, 'ACC', 'Pembayaran gratis', actor));
+    statements.push(
+      db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('ACC', id),
+      db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('ACC', id),
+      db.prepare('UPDATE jadwal_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('ACC', id)
+    );
+  }
+  const results = await db.batch(statements);
+  const changed = results && results[0] && results[0].meta && results[0].meta.changes;
+  if (changed === 0) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
+
+  await writeAuditLog(db, {
+    actor, action: 'GRATIS', target: 'Pembayaran',
+    detail: JSON.stringify({ idPengajuan: id, kesesuaian: 'gratis', nominal: 0 }),
+    alasan: catatan
+  });
+
+  let notification = null;
+  if (!str(row.link_final) && str(row.sumber) !== 'Manual') {
+    try {
+      const final = await sendFinalPdfEmails(db, id, ctx && ctx.env, actor);
+      notification = final.ok
+        ? { ok: true, pdfUrl: final.pdfUrl }
+        : { ok: false, error: (final.notes && final.notes.join(' ')) || 'Gagal mengirim email final.' };
+    } catch (e) {
+      notification = { ok: false, error: (e && e.message) ? e.message : String(e) };
+    }
+  }
+
+  let message = 'Pengajuan ditandai gratis: status ACC dan biaya Rp 0.';
+  if (notification) {
+    message += notification.ok
+      ? ' Surat final dikirim ke mahasiswa dan Bagian.'
+      : ' Pengiriman surat final gagal: ' + notification.error;
+  }
+
+  return { success: true, status: 'gratis', pengajuanStatus: 'ACC', revision, message, notification };
+}
+
 export async function correctPembayaran(db, payload, ctx) {
   const session = await requireAdmin(db, ctx && ctx.token, ctx && ctx.session);
   const p = payload || {};
@@ -187,11 +279,18 @@ export async function correctPembayaran(db, payload, ctx) {
   if (pengajuanStatus(row) !== 'ACC') {
     return { success: false, message: 'Pembayaran hanya dapat dikoreksi untuk pengajuan berstatus ACC.' };
   }
-  if (status(row) !== 'valid') return { success: false, message: 'Hanya pembayaran valid yang bisa dikoreksi.' };
+  const currentPayment = status(row);
+  const isGratis = currentPayment === 'gratis';
+  if (!isGratis && currentPayment !== 'valid') {
+    return { success: false, message: 'Hanya pembayaran valid atau gratis yang bisa dikoreksi.' };
+  }
   if (!sameRevision(p.expectedRevision, row)) return { success: false, message: 'Data sudah diubah admin lain. Muat ulang.' };
 
   const mode = str(p.mode);
-  if (mode !== 'administratif' && mode !== 'buka_kembali') return { success: false, message: 'Jenis koreksi tidak dikenal.' };
+  const allowedModes = isGratis ? ['batal_gratis'] : ['administratif', 'buka_kembali'];
+  if (allowedModes.indexOf(mode) === -1) {
+    return { success: false, message: isGratis ? 'Gunakan Batalkan Gratis untuk membatalkan status gratis.' : 'Jenis koreksi tidak dikenal.' };
+  }
   const alasan = str(p.alasan);
   if (alasan.length < 5) return { success: false, message: 'Alasan koreksi wajib diisi minimal 5 karakter.' };
 
@@ -219,53 +318,69 @@ export async function correctPembayaran(db, payload, ctx) {
   const actor = actorName({ session });
   const ts = nowIso();
   const revision = revisionOf(row) + 1;
-  const nextStatus = mode === 'buka_kembali' ? 'menunggu' : 'valid';
-  const nextPengajuanStatus = mode === 'buka_kembali' ? 'Disetujui' : 'ACC';
-  const tanggal = mode === 'administratif' && p.tanggal !== undefined ? str(p.tanggal) : str(row.tanggal_bayar);
-  const metode = mode === 'administratif' && p.metode !== undefined ? str(p.metode) : str(row.metode_bayar);
+
+  if (isGratis) {
+    const cleared = await upsertBiayaCheckData(db, id, '', row);
+    if (!cleared.success) return cleared;
+  }
+
+  const nextStatus = isGratis
+    ? (str(row.link_bukti_bayar) ? 'menunggu' : 'belum')
+    : (mode === 'buka_kembali' ? 'menunggu' : 'valid');
+  const nextPengajuanStatus = (mode === 'buka_kembali' || mode === 'batal_gratis') ? 'Disetujui' : 'ACC';
+  const nextKesesuaian = isGratis ? '' : str(row.kesesuaian_pembayaran);
+  const nextNominal = isGratis
+    ? null
+    : (row.nominal_dibayar === null || row.nominal_dibayar === undefined ? null : toAmount(row.nominal_dibayar));
+  const isRevert = mode === 'buka_kembali' || mode === 'batal_gratis';
+  const tanggal = mode === 'administratif' && p.tanggal !== undefined ? str(p.tanggal) : (isGratis ? '' : str(row.tanggal_bayar));
+  const metode = mode === 'administratif' && p.metode !== undefined ? str(p.metode) : (isGratis ? '' : str(row.metode_bayar));
   const catatan = mode === 'administratif' && p.catatan !== undefined ? str(p.catatan) : str(row.catatan_verifikasi);
-  const verifiedAt = mode === 'buka_kembali' ? '' : str(row.verified_at);
-  const verifiedBy = mode === 'buka_kembali' ? '' : str(row.verified_by);
+  const verifiedAt = isRevert ? '' : str(row.verified_at);
+  const verifiedBy = isRevert ? '' : str(row.verified_by);
 
   const sets = [];
   const vals = [];
   const setVal = (col, val) => { sets.push(col + ' = ?' + (vals.length + 1)); vals.push(val); };
   setVal('status_pembayaran', nextStatus);
+  setVal('kesesuaian_pembayaran', nextKesesuaian);
+  setVal('nominal_dibayar', nextNominal);
   setVal('tanggal_bayar', tanggal);
   setVal('metode_bayar', metode);
   setVal('catatan_verifikasi', catatan);
   setVal('verified_at', verifiedAt);
   setVal('verified_by', verifiedBy);
-  if (mode === 'buka_kembali') {
+  if (isRevert) {
     setVal('status', 'Disetujui');
     setVal('link_final', '');
   }
   setVal('payment_revision', revision);
   setVal('updated_at', ts);
 
+  const expectedPayment = isGratis ? 'gratis' : 'valid';
   const update = db.prepare(
     'UPDATE pengajuan SET ' + sets.join(', ') + ' WHERE id_pengajuan = ?' + (vals.length + 1) +
-    ' AND payment_revision = ?' + (vals.length + 2) + " AND status_pembayaran = 'valid'"
+    ' AND payment_revision = ?' + (vals.length + 2) + " AND status_pembayaran = '" + expectedPayment + "'"
   ).bind(...vals, id, revisionOf(row));
 
   const rev = revisionInsert(db, {
     idPengajuan: id, revision, mode,
-    statusLama: 'valid', statusBaru: nextStatus,
-    kesesuaianLama: str(row.kesesuaian_pembayaran), kesesuaianBaru: str(row.kesesuaian_pembayaran),
+    statusLama: currentPayment, statusBaru: nextStatus,
+    kesesuaianLama: str(row.kesesuaian_pembayaran), kesesuaianBaru: nextKesesuaian,
     nominalLama: row.nominal_dibayar === null || row.nominal_dibayar === undefined ? null : toAmount(row.nominal_dibayar),
-    nominalBaru: row.nominal_dibayar === null || row.nominal_dibayar === undefined ? null : toAmount(row.nominal_dibayar),
+    nominalBaru: nextNominal,
     tanggalLama: str(row.tanggal_bayar), tanggalBaru: tanggal,
     metodeLama: str(row.metode_bayar), metodeBaru: metode,
     alasan, catatan, actor, createdAt: ts,
-    before: { status: 'valid', tanggal: str(row.tanggal_bayar), metode: str(row.metode_bayar), catatan: str(row.catatan_verifikasi) },
-    after: { status: nextStatus, tanggal, metode, catatan }
+    before: { status: currentPayment, kesesuaian: str(row.kesesuaian_pembayaran), tanggal: str(row.tanggal_bayar), metode: str(row.metode_bayar), catatan: str(row.catatan_verifikasi) },
+    after: { status: nextStatus, kesesuaian: nextKesesuaian, tanggal, metode, catatan }
   });
 
   const statements = [update, rev];
-  if (mode === 'buka_kembali') {
+  if (isRevert) {
     statements.push(db.prepare(
       'INSERT INTO status_history (timestamp, id_pengajuan, status, catatan, actor_email) VALUES (?1, ?2, ?3, ?4, ?5)'
-    ).bind(ts, id, 'Disetujui', 'Pembayaran dibuka kembali', actor));
+    ).bind(ts, id, 'Disetujui', mode === 'batal_gratis' ? 'Gratis dibatalkan' : 'Pembayaran dibuka kembali', actor));
     statements.push(
       db.prepare('UPDATE berita_acara_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('Disetujui', id),
       db.prepare('UPDATE berita_acara_admin_peserta SET status_pengajuan = ?1 WHERE id_pengajuan = ?2').bind('Disetujui', id),
@@ -281,11 +396,15 @@ export async function correctPembayaran(db, payload, ctx) {
     detail: JSON.stringify({ idPengajuan: id, mode, statusBaru: nextStatus, pengajuanStatus: nextPengajuanStatus }),
     alasan
   });
+  let message;
+  if (mode === 'batal_gratis') message = 'Gratis dibatalkan. Status pengajuan kembali Disetujui dan biaya kembali ke MasterBiaya.';
+  else if (mode === 'buka_kembali') message = 'Pembayaran dikembalikan ke antrean. Status pengajuan menjadi Disetujui.';
+  else message = 'Koreksi administratif disimpan.';
   return {
     success: true,
     status: nextStatus,
     pengajuanStatus: nextPengajuanStatus,
     revision,
-    message: mode === 'buka_kembali' ? 'Pembayaran dikembalikan ke antrean. Status pengajuan menjadi Disetujui.' : 'Koreksi administratif disimpan.'
+    message
   };
 }

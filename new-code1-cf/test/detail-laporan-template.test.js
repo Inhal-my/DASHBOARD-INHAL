@@ -293,12 +293,16 @@ describe('detail laporan tab pembayaran', () => {
     expect(html).toContain('buka_kembali');
     expect(html).toContain('Koreksi administratif');
   });
-  it('panel Periksa memakai Kesesuaian tiga pilihan dan tanggal read-only', async () => {
+  it('panel Periksa memakai Kesesuaian empat pilihan dan tanggal read-only', async () => {
     const html = await loadHtml();
     expect(html).toContain('<select v-model="periksa.form.kesesuaian" class="in-input" @change="onKesesuaianChange">');
     expect(html).toContain('<option value="pas">Pas</option>');
     expect(html).toContain('<option value="kurang">Kurang</option>');
     expect(html).toContain('<option value="lebih">Lebih</option>');
+    expect(html).toContain('<option value="gratis">Gratis (bebaskan biaya)</option>');
+    expect(html).toContain("run('gratiskanPembayaran'");
+    expect(html).toContain("run('correctPembayaran'");
+    expect(html).toContain('batal_gratis');
     expect(html).not.toContain('onNominalInput');
     expect(html).toContain('Tanggal Daftar');
     expect(html).toContain('Tanggal Upload Bukti Bayar');

@@ -2257,18 +2257,6 @@
                                     </div>
 
                                     <div class="mt-5">
-                                        <div class="flex items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1 ring-slate-100">
-                                            <div class="min-w-0">
-                                                <div class="text-sm font-semibold text-slate-800">Hanya kegiatan final</div>
-                                                <div class="text-xs text-slate-500">Sembunyikan kegiatan yang masih memiliki peserta berstatus Menunggu.</div>
-                                            </div>
-                                            <button type="button" class="ba-toggle shrink-0" :class="{ on: master.baSettings.finalOnly }" @click="master.baSettings.finalOnly = !master.baSettings.finalOnly" aria-label="Toggle hanya kegiatan final">
-                                                <span class="ba-toggle-knob"></span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-5">
                                         <div class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Status Peserta yang Boleh di-BA-kan</div>
                                         <div class="grid grid-cols-2 gap-2">
                                             <label v-for="s in baStatusOptions" :key="s.value"
@@ -2280,7 +2268,66 @@
                                                 <span class="text-sm font-medium" :class="master.baSettings.statuses.includes(s.value) ? 'text-slate-800' : 'text-slate-500'">{{ s.label }}</span>
                                             </label>
                                         </div>
-                                        <p class="mt-2 text-[11px] text-slate-400">Peserta dengan status lain otomatis dikecualikan dari daftar kelompok kegiatan di Panel Bagian.</p>
+                                        <p class="mt-2 text-[11px] text-slate-400">Status ini dipakai saat aturan Per-peserta = Bebas. Pada Longgar/Ketat hanya peserta ACC yang masuk BA.</p>
+                                    </div>
+
+                                    <div class="mt-5">
+                                        <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Aturan Multi-Sesi per Kategori</div>
+                                        <p class="mb-3 text-[11px] text-slate-400">Semua kategori dapat diatur. KKD &amp; Praktikum default Bebas.</p>
+                                        <div class="overflow-hidden rounded-xl ring-1 ring-slate-100">
+                                            <table class="w-full text-left text-xs">
+                                                <thead class="bg-slate-50 text-slate-500">
+                                                    <tr>
+                                                        <th class="px-3 py-2 font-semibold">Kegiatan</th>
+                                                        <th v-for="c in baRuleColumns" :key="c.key" class="px-2 py-2 text-center font-semibold" :title="c.hint">{{ c.label }}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="k in baRuleKategori" :key="k" class="border-t border-slate-100">
+                                                        <td class="px-3 py-2 font-semibold text-slate-700">{{ k }}</td>
+                                                        <td v-for="c in baRuleColumns" :key="c.key" class="px-2 py-2">
+                                                            <select class="w-full rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-xs font-medium text-slate-700 focus:border-brand-400 focus:outline-none" :value="baRuleValue(k, c.key)" @change="setBaRule(k, c.key, $event.target.value)">
+                                                                <option value="bebas">Bebas</option>
+                                                                <option value="longgar">Longgar</option>
+                                                                <option value="ketat">Ketat</option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <p class="mt-2 text-[11px] text-slate-400">Bebas: tanpa batas. Longgar: aman otomatis, kelainan wajib konfirmasi alasan. Ketat: wajib satu (tidak boleh dipecah).</p>
+                                    </div>
+
+                                    <div class="mt-5">
+                                        <div class="mb-2 flex items-center justify-between">
+                                            <div class="text-xs font-bold uppercase tracking-wide text-slate-400">Pratinjau Peserta</div>
+                                            <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Simulasi</span>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                                            <div class="flex flex-wrap gap-1.5">
+                                                <button v-for="k in baRuleKategori" :key="'pv-' + k" type="button"
+                                                    class="rounded-lg px-2.5 py-1 text-xs font-semibold transition"
+                                                    :class="baPreviewKat === k ? 'bg-white text-brand-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'"
+                                                    @click="baPreviewKat = k">{{ k }}</button>
+                                            </div>
+                                            <div class="mt-3 flex items-center justify-between text-[11px]">
+                                                <span class="text-slate-500">Aturan Per-peserta</span>
+                                                <span class="rounded-md px-2 py-0.5 font-bold" :class="baPreviewModeClass">{{ baPreviewModeLabel }}</span>
+                                            </div>
+                                            <div class="mt-2 divide-y divide-slate-100">
+                                                <div v-for="p in baPreviewPeserta" :key="p.nama" class="flex items-center gap-2 py-1.5" :class="{ 'opacity-40': !p.include }">
+                                                    <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white" :style="{ background: p.color }">{{ p.initial }}</span>
+                                                    <span class="min-w-0 flex-1">
+                                                        <span class="block truncate text-xs font-semibold text-slate-700" :class="{ 'line-through': !p.include }">{{ p.nama }}</span>
+                                                        <span class="text-[10px] text-slate-400">{{ p.npm }}</span>
+                                                    </span>
+                                                    <span class="rounded px-1.5 py-0.5 text-[9px] font-bold" :class="baPreviewStatusClass(p.status)">{{ p.status }}</span>
+                                                </div>
+                                            </div>
+                                            <p class="mt-2 text-[11px] leading-snug text-slate-500">{{ baPreviewNote }}</p>
+                                            <p class="mt-1 text-[10px] text-slate-400">Contoh simulasi untuk melihat efek aturan. Data nyata tampil saat membuat BA di Panel Bagian.</p>
+                                        </div>
                                     </div>
 
                                     <button class="btn-primary mt-6 w-full" :disabled="master.saving" @click="saveBaSettings">
@@ -3884,6 +3931,7 @@
                     stats: { total: 0, totalBiaya: 0, perStatus: {}, trend: {}, perJenis: {}, perBlok: {}, perBagian: {} },
                     diagnostic: '',
                     pengajuanRows: [],
+                    baPreviewKat: 'SGD',
                     manualHighlightId: '',
                     manual: {
                         loadedOptions: false,
@@ -3948,12 +3996,12 @@
                         baList: [],
                         jadwalList: [],
                         fBlok: '',
-                        baSettings: { statuses: ['ACC'], finalOnly: true },
+                        baSettings: { statuses: ['ACC'], rules: null },
                         ba: { open: false, kegiatanKey: null, label: '', tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false, scanItems: [], scanBusy: false, scanSeq: 0 }
                     },
                     master: {
                         data: {},
-                        baSettings: { statuses: ['ACC'], finalOnly: true },
+                        baSettings: { statuses: ['ACC'], rules: null },
                         accSettings: { allowManualAcc: false },
                         saving: false,
                         downloading: false,
@@ -4123,21 +4171,21 @@
                 babKegiatanGroups() {
                     const map = {};
                     const statuses = (this.bab.baSettings && this.bab.baSettings.statuses) || ['ACC'];
-                    const finalOnly = !(this.bab.baSettings && this.bab.baSettings.finalOnly === false);
                     (this.bab.rows || []).forEach(r => {
                         if (r.baMember) return;
                         const key = [r.jenis, r.pilihan, r.detail, r.tanggal, r.blok].join('|');
                         if (!map[key]) {
-                            map[key] = { key: key, jenis: r.jenis, pilihan: r.pilihan, detail: r.detail, tanggal: r.tanggal, blok: r.blok, label: 'Blok ' + r.blok + ' · ' + r.pilihan + (r.detail ? ' - ' + r.detail : ''), peserta: [], statusCounts: {}, blocked: false };
+                            map[key] = { key: key, jenis: r.jenis, pilihan: r.pilihan, detail: r.detail, tanggal: r.tanggal, blok: r.blok, label: 'Blok ' + r.blok + ' · ' + r.pilihan + (r.detail ? ' - ' + r.detail : ''), peserta: [], statusCounts: {} };
                         }
                         const g = map[key];
                         g.statusCounts[r.status] = (g.statusCounts[r.status] || 0) + 1;
-                        if (statuses.indexOf(r.status) !== -1) {
+                        const mode = this.babPerPesertaMode(r.jenis);
+                        const allowed = mode === 'bebas' ? statuses.indexOf(r.status) !== -1 : r.status === 'ACC';
+                        if (allowed) {
                             g.peserta.push({ idPengajuan: r.idPengajuan, npm: r.npm, namaLengkap: r.namaLengkap, blok: r.blok, statusPengajuan: r.status });
                         }
-                        if (finalOnly && r.status === 'Menunggu') g.blocked = true;
                     });
-                    const out = Object.values(map).filter(g => !g.blocked && g.peserta.length > 0);
+                    const out = Object.values(map).filter(g => g.peserta.length > 0);
                     out.forEach(g => { g.statusOrder = Object.keys(g.statusCounts); });
                     return out;
                 },
@@ -4446,6 +4494,58 @@
                         { value: 'Ditolak', label: 'Ditolak' },
                         { value: 'Dibatalkan', label: 'Dibatalkan' }
                     ];
+                },
+                baRuleColumns() {
+                    return [
+                        { key: 'multiJadwal', label: 'Multi Jadwal', hint: 'Boleh lebih dari satu jadwal pelaksanaan untuk kegiatan yang sama.' },
+                        { key: 'multiSesi', label: 'Multi Sesi', hint: 'Boleh menggabungkan beberapa sesi jadwal dalam satu Berita Acara.' },
+                        { key: 'multiBa', label: 'Multi BA', hint: 'Boleh lebih dari satu Berita Acara untuk kegiatan yang sama.' },
+                        { key: 'perPeserta', label: 'Per Peserta', hint: 'Peserta wajib berstatus ACC untuk masuk Berita Acara.' }
+                    ];
+                },
+                baRuleKategori() {
+                    return ['SGD', 'Ujian', 'KKD', 'Praktikum'];
+                },
+                baPreviewMode() {
+                    const row = (this.master.baSettings.rules || {})[this.baPreviewKat] || {};
+                    return row.perPeserta || 'bebas';
+                },
+                baPreviewModeLabel() {
+                    const mode = this.baPreviewMode;
+                    return mode.charAt(0).toUpperCase() + mode.slice(1);
+                },
+                baPreviewModeClass() {
+                    const mode = this.baPreviewMode;
+                    if (mode === 'ketat') return 'bg-rose-50 text-rose-600';
+                    if (mode === 'longgar') return 'bg-amber-50 text-amber-700';
+                    return 'bg-slate-100 text-slate-500';
+                },
+                baPreviewPeserta() {
+                    const mode = this.baPreviewMode;
+                    const statuses = this.master.baSettings.statuses || ['ACC'];
+                    const sample = [
+                        { nama: 'Peserta A', npm: '0000000001', status: 'ACC', color: '#6366f1' },
+                        { nama: 'Peserta B', npm: '0000000002', status: 'ACC', color: '#0ea5e9' },
+                        { nama: 'Peserta C', npm: '0000000003', status: 'Menunggu', color: '#f59e0b' },
+                        { nama: 'Peserta D', npm: '0000000004', status: 'Ditolak', color: '#fb7185' }
+                    ];
+                    return sample.map((p) => Object.assign({}, p, {
+                        include: mode === 'bebas' ? statuses.indexOf(p.status) !== -1 : p.status === 'ACC',
+                        initial: p.nama.slice(-1)
+                    }));
+                },
+                baPreviewNote() {
+                    const mode = this.baPreviewMode;
+                    const list = this.baPreviewPeserta || [];
+                    const inc = list.filter((p) => p.include).length;
+                    if (mode === 'longgar') {
+                        return 'Longgar: peserta non-ACC dikeluarkan otomatis, BA tetap dibuat dari peserta ACC. ' + inc + ' peserta masuk, ' + (list.length - inc) + ' ditunda.';
+                    }
+                    if (mode === 'ketat') {
+                        return 'Ketat: seluruh peserta BA wajib ACC. Bila ada non-ACC pada pilihan, unggahan ditolak. ' + inc + ' peserta lolos.';
+                    }
+                    const statuses = (this.master.baSettings.statuses || ['ACC']).join(' / ');
+                    return 'Bebas: peserta mengikuti filter status (' + statuses + '). ' + inc + ' dari ' + list.length + ' peserta masuk BA.';
                 },
                 activeMasterCard() {
                     return this.master.cards.find(c => c.key === this.master.tab) || this.master.cards[0];
@@ -4876,8 +4976,15 @@
                 },
                 babEnd() {
                     if (this.bab.token) this.runAsBab('logoutSession', this.bab.token).catch(() => {});
-                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], jadwalList: [], fBlok: '', baSettings: { statuses: ['ACC'], finalOnly: true }, ba: { open: false, kegiatanKey: null, label: '', tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
+                    Object.assign(this.bab, { kategori: '', subBagian: '', token: null, nama: '', active: false, rows: [], baList: [], jadwalList: [], fBlok: '', baSettings: { statuses: ['ACC'], rules: null }, ba: { open: false, kegiatanKey: null, label: '', tanggal: '', catatan: '', file: null, fileName: '', selected: {}, confirm: false } });
                     this.notify('Sesi bagian diakhiri.');
+                },
+                babPerPesertaMode(jenis) {
+                    const rules = (this.bab.baSettings && this.bab.baSettings.rules) || {};
+                    const k = String(jenis == null ? '' : jenis).trim().toLowerCase();
+                    const cat = k === 'sgd' ? 'SGD' : (k === 'ujian' ? 'Ujian' : (k === 'kkd' ? 'KKD' : (k === 'praktikum' ? 'Praktikum' : '')));
+                    if (!cat) return 'bebas';
+                    return (rules[cat] && rules[cat].perPeserta) || 'bebas';
                 },
                 async babLoad() {
                     if (!this.bab.token) return;
@@ -4887,7 +4994,7 @@
                             this.run('getBagianBaSettings'),
                             this.runAsBab('getBagianBootstrap', this.bab.kategori, this.bab.subBagian)
                         ]);
-                        if (bs) this.bab.baSettings = Object.assign({ statuses: ['ACC'], finalOnly: true }, bs);
+                        if (bs) this.bab.baSettings = { statuses: bs.statuses || ['ACC'], rules: this.normalizeBaRules(bs.rules) };
                         if (!boot || !boot.ok) { this.notify((boot && boot.message) || 'Gagal memuat data bagian.', false); return; }
                         this.bab.rows = boot.rows || [];
                         this.bab.baList = boot.baList || [];
@@ -5491,7 +5598,7 @@
                     try {
                         const d = await this.run('getMasterDataMonitor') || {};
                         this.master.data = d;
-                        this.master.baSettings = Object.assign({ statuses: ['ACC'], finalOnly: true }, d.bagianSettings || {});
+                        this.master.baSettings = { statuses: (d.bagianSettings && d.bagianSettings.statuses) || ['ACC'], rules: this.normalizeBaRules(d.bagianSettings && d.bagianSettings.rules) };
                         this.master.accSettings = Object.assign({ allowManualAcc: false }, d.accSettings || {});
                         const mb = (d.masterBiaya || []).map(r => ({ Kegiatan: String((r && (r.Kegiatan || r.kegiatan)) || '').trim(), Biaya: parseInt(String((r && (r.Biaya || r.biaya)) || '').replace(/[^0-9]/g, ''), 10) || 0 })).filter(o => o.Kegiatan && o.Biaya > 0);
                         mb.sort((a, b) => a.Biaya - b.Biaya);
@@ -6640,6 +6747,7 @@
                                 'Status berubah menjadi Disetujui.',
                                 'Nomor surat terbit otomatis bila belum ada.',
                                 'Email persetujuan dikirim otomatis ke mahasiswa.',
+                                'Catatan akan disertakan pada email.',
                                 'Mahasiswa dapat mengunggah bukti pembayaran melalui portal.',
                                 'Status menjadi ACC setelah pembayaran divalidasi.'
                             ],
@@ -6647,7 +6755,6 @@
                             confirmLabel: 'Setujui'
                         });
                         if (!ok) return;
-                        this.detail.catatan = '';
                     } else if (status === 'ACC') {
                         const ok = await this.askConfirm({
                             title: 'Jadikan ACC',
@@ -6661,7 +6768,6 @@
                             confirmLabel: 'Jadikan ACC'
                         });
                         if (!ok) return;
-                        this.detail.catatan = '';
                     } else {
                         this.detail.catatan = '';
                     }
@@ -7945,6 +8051,33 @@
                     if (i !== -1) arr.splice(i, 1);
                     else arr.push(v);
                 },
+                baRuleValue(k, key) {
+                    const rules = this.master.baSettings.rules || {};
+                    const row = rules[k] || {};
+                    return row[key] || 'bebas';
+                },
+                setBaRule(k, key, val) {
+                    const bebas = { multiJadwal: 'bebas', multiSesi: 'bebas', multiBa: 'bebas', perPeserta: 'bebas' };
+                    const rules = this.master.baSettings.rules || (this.master.baSettings.rules = {});
+                    rules[k] = Object.assign({}, bebas, rules[k]);
+                    rules[k][key] = val;
+                    this.master.baSettings.rules = Object.assign({}, rules);
+                },
+                baPreviewStatusClass(st) {
+                    if (st === 'ACC') return 'bg-emerald-50 text-emerald-600';
+                    if (st === 'Menunggu') return 'bg-amber-50 text-amber-700';
+                    return 'bg-rose-50 text-rose-600';
+                },
+                normalizeBaRules(src) {
+                    const bebas = () => ({ multiJadwal: 'bebas', multiSesi: 'bebas', multiBa: 'bebas', perPeserta: 'bebas' });
+                    const s = src || {};
+                    return {
+                        SGD: Object.assign(bebas(), s.SGD),
+                        Ujian: Object.assign(bebas(), s.Ujian),
+                        KKD: Object.assign(bebas(), s.KKD),
+                        Praktikum: Object.assign(bebas(), s.Praktikum)
+                    };
+                },
                 async saveAccSettings() {
                     this.master.saving = true;
                     try {
@@ -7964,7 +8097,7 @@
                     try {
                         const res = await this.run('saveBagianBaSettings', {
                             statuses: this.master.baSettings.statuses,
-                            finalOnly: this.master.baSettings.finalOnly
+                            rules: this.normalizeBaRules(this.master.baSettings.rules)
                         });
                         this.notify((res && res.message) || 'Disimpan.', !!(res && res.success));
                         if (res && res.success) await this.loadMaster();

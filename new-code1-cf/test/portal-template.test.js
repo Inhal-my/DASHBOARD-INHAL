@@ -59,9 +59,12 @@ describe('guard template portal', () => {
     expect(html).toContain('formData.detailUjian = this.regUjian.detail;');
   });
 
-  it('menyembunyikan unggah bukti dan menampilkan info gratis untuk pengajuan gratis', async () => {
+  it('menampilkan unggah bukti opsional untuk pengajuan gratis', async () => {
     const html = await loadPortalHtml();
-    expect(html).toContain("detailItem.statusCode === 'approved') && detailItem.gratis");
-    expect(html).toContain('Pengajuan ini gratis (Rp 0). Tidak perlu unggah bukti bayar.');
+    expect(html).toContain("detailItem.gratis && !detailItem.hasUpload");
+    expect(html).toContain('Upload Bukti (opsional)');
+    expect(html).toContain('Bukti bayar bersifat opsional');
+    expect(html).toContain('Bukti bayar tersimpan (opsional). Tidak perlu verifikasi.');
+    expect(html).not.toContain('Tidak perlu unggah bukti bayar.');
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
-import { verifyPembayaran, correctPembayaran } from '../src/write/pembayaran.js';
+import { verifyPembayaran, correctPembayaran, gratiskanPembayaran } from '../src/write/pembayaran.js';
 import { getLaporanBootstrap } from '../src/read/laporan.js';
 
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -377,5 +377,103 @@ describe('correctPembayaran', () => {
     }, ctx);
     expect(res.success).toBe(false);
     expect(res.message).toMatch(/ACC/);
+  });
+});
+
+describe('gratiskanPembayaran', () => {
+  it('requires admin', async () => {
+    await seedPengajuan();
+    await expect(gratiskanPembayaran(env.DB, { idPengajuan: 'INHAL-1', expectedRevision: 0 }, {})).rejects.toThrow();
+  });
+
+  it('menetapkan gratis: ACC, biaya Rp 0, dan mengirim surat final', async () => {
+    await seedPengajuan();
+    const calls = stubBridge(() => ({
+      success: true,
+      pdfUrl: 'https://drive.google.com/file/d/GRATIS123456789/view',
+      studentEmailSent: true,
+      bagianEmailSent: true
+    }));
+    const res = await gratiskanPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1', catatan: 'Dibebaskan biaya', expectedRevision: 0
+    }, await adminCtxWithDrive());
+    expect(res).toMatchObject({ success: true, status: 'gratis', pengajuanStatus: 'ACC', revision: 1 });
+    expect(calls[0].action).toBe('sendFinalEmail');
+
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status).toBe('ACC');
+    expect(p.status_pembayaran).toBe('gratis');
+    expect(p.kesesuaian_pembayaran).toBe('gratis');
+    expect(p.nominal_dibayar).toBe(0);
+    expect(p.catatan_verifikasi).toBe('Dibebaskan biaya');
+    expect(p.link_final).toContain('GRATIS123456789');
+
+    const override = await env.DB.prepare("SELECT biaya FROM check_data WHERE id_pengajuan = 'INHAL-1' AND detail = 'BIAYA-OVERRIDE'").first();
+    expect(String(override && override.biaya)).toBe('0');
+
+    const rev = await env.DB.prepare("SELECT * FROM pembayaran_revisi WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(rev).toMatchObject({ mode: 'gratis', status_lama: 'menunggu', status_baru: 'gratis', kesesuaian_baru: 'gratis', nominal_baru: 0, actor: 'Rani' });
+  });
+
+  it('menolak gratis bila pembayaran sudah valid', async () => {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    await verifyPembayaran(env.DB, verifyPayload(), ctx);
+    const res = await gratiskanPembayaran(env.DB, { idPengajuan: 'INHAL-1', expectedRevision: 1 }, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/valid/i);
+  });
+
+  it('menolak gratis saat revision sudah berubah', async () => {
+    await seedPengajuan();
+    const res = await gratiskanPembayaran(env.DB, { idPengajuan: 'INHAL-1', expectedRevision: 9 }, await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/diubah/i);
+  });
+
+  it('menolak gratis untuk pengajuan yang belum Disetujui/ACC', async () => {
+    await seedPengajuan({ status: 'Menunggu' });
+    const res = await gratiskanPembayaran(env.DB, { idPengajuan: 'INHAL-1', expectedRevision: 0 }, await adminCtx());
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/Disetujui atau ACC/);
+  });
+});
+
+describe('correctPembayaran batalkan gratis', () => {
+  async function gratis() {
+    await seedPengajuan();
+    const ctx = await adminCtx();
+    await gratiskanPembayaran(env.DB, { idPengajuan: 'INHAL-1', expectedRevision: 0 }, ctx);
+    return ctx;
+  }
+
+  it('mengembalikan biaya ke MasterBiaya dan status ke Disetujui', async () => {
+    const ctx = await gratis();
+    const res = await correctPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1', mode: 'batal_gratis', alasan: 'Salah menandai gratis', expectedRevision: 1
+    }, ctx);
+    expect(res).toMatchObject({ success: true, status: 'menunggu', pengajuanStatus: 'Disetujui', revision: 2 });
+
+    const p = await env.DB.prepare("SELECT * FROM pengajuan WHERE id_pengajuan = 'INHAL-1'").first();
+    expect(p.status).toBe('Disetujui');
+    expect(p.status_pembayaran).toBe('menunggu');
+    expect(p.kesesuaian_pembayaran).toBe('');
+    expect(p.nominal_dibayar).toBeNull();
+    expect(p.link_final).toBe('');
+
+    const override = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_data WHERE id_pengajuan = 'INHAL-1' AND detail = 'BIAYA-OVERRIDE'").first();
+    expect(Number(override.n)).toBe(0);
+
+    const rev = await env.DB.prepare("SELECT * FROM pembayaran_revisi WHERE id_pengajuan = 'INHAL-1' AND revision = 2").first();
+    expect(rev).toMatchObject({ mode: 'batal_gratis', status_lama: 'gratis', status_baru: 'menunggu' });
+  });
+
+  it('menolak mode administratif untuk pembayaran gratis', async () => {
+    const ctx = await gratis();
+    const res = await correctPembayaran(env.DB, {
+      idPengajuan: 'INHAL-1', mode: 'administratif', metode: 'X', alasan: 'Salah metode', expectedRevision: 1
+    }, ctx);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/Batalkan Gratis/i);
   });
 });

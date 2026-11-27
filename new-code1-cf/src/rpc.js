@@ -29,7 +29,7 @@ import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan
 import { getBaRepairData } from './read/baRepair.js';
 import { applyBaRepair, createJadwalFromBa } from './write/baRepair.js';
 import { archiveBeritaAcara, mergeBeritaAcara, restoreBeritaAcara } from './write/baArchive.js';
-import { verifyPembayaran, correctPembayaran } from './write/pembayaran.js';
+import { verifyPembayaran, correctPembayaran, gratiskanPembayaran } from './write/pembayaran.js';
 import {
   updatePengajuanFields, updateDetailKegiatan, deleteDetailKegiatan,
   updatePengajuanStatus, deletePengajuanAdmin, updateCheckDataPartial, resetUploadBukti, uploadBuktiAdmin
@@ -93,6 +93,7 @@ const HANDLERS = {
   deleteDetailKegiatan: (db, args, ctx) => deleteDetailKegiatan(db, args[0], args[1], ctx),
   updatePengajuanStatus: (db, args, ctx) => updatePengajuanStatus(db, args[0], args[1], args[2], args[3], ctx, args[4]),
   verifyPembayaran: (db, args, ctx) => verifyPembayaran(db, args[0], ctx),
+  gratiskanPembayaran: (db, args, ctx) => gratiskanPembayaran(db, args[0], ctx),
   correctPembayaran: (db, args, ctx) => correctPembayaran(db, args[0], ctx),
   deletePengajuanAdmin: (db, args, ctx) => deletePengajuanAdmin(db, args[0], args[1], ctx),
   sendFinalEmail: (db, args, ctx) => sendFinalEmail(db, args[0], ctx),

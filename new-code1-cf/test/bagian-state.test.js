@@ -528,3 +528,61 @@ describe('bagian-state kalender helpers', () => {
     expect(S.filterKalenderEntries(entries, { query: 'kkd b' }).map((e) => e.JadwalID)).toEqual(['y2']);
   });
 });
+
+describe('aturan per-peserta per kategori', () => {
+  const baseRows = [
+    { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-10-20', blok: '1', status: 'ACC', idPengajuan: 'p1', npm: '001', namaLengkap: 'Ani', baMember: false },
+    { jenis: 'SGD', pilihan: 'Neurologi', detail: 'A', tanggal: '2026-10-20', blok: '1', status: 'Menunggu', idPengajuan: 'p2', npm: '002', namaLengkap: 'Budi', baMember: false },
+    { jenis: 'KKD', pilihan: 'Farmasi', detail: '', tanggal: '2026-10-21', blok: '2', status: 'Menunggu', idPengajuan: 'p3', npm: '003', namaLengkap: 'Cici', baMember: false }
+  ];
+
+  it('Bebas mengikuti filter status', async () => {
+    const S = await loadState();
+    const g = S.buildKegiatanGroups(baseRows, {
+      statuses: ['ACC', 'Menunggu'],
+      rules: { SGD: { perPeserta: 'bebas' }, Ujian: { perPeserta: 'bebas' } }
+    });
+    expect(g.find((x) => x.jenis === 'SGD').peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+    expect(g.find((x) => x.jenis === 'KKD').peserta.map((p) => p.idPengajuan)).toEqual(['p3']);
+  });
+
+  it('Longgar dan Ketat hanya memasukkan peserta ACC', async () => {
+    const S = await loadState();
+    const longgar = S.buildKegiatanGroups(baseRows, {
+      statuses: ['ACC', 'Menunggu'],
+      rules: { SGD: { perPeserta: 'longgar' } }
+    });
+    expect(longgar.find((x) => x.jenis === 'SGD').peserta.map((p) => p.idPengajuan)).toEqual(['p1']);
+
+    const ketat = S.buildKegiatanGroups(baseRows, {
+      statuses: ['ACC', 'Menunggu'],
+      rules: { SGD: { perPeserta: 'ketat' } }
+    });
+    expect(ketat.find((x) => x.jenis === 'SGD').peserta.map((p) => p.idPengajuan)).toEqual(['p1']);
+    // KKD tidak terpengaruh aturan SGD dan tetap mengikuti filter status.
+    expect(ketat.find((x) => x.jenis === 'KKD').peserta.map((p) => p.idPengajuan)).toEqual(['p3']);
+  });
+
+  it('tanpa rules tetap berperilaku Bebas', async () => {
+    const S = await loadState();
+    const g = S.buildKegiatanGroups(baseRows, { statuses: ['Menunggu'], rules: null });
+    expect(g.map((x) => x.jenis).sort()).toEqual(['KKD', 'SGD']);
+    expect(g.find((x) => x.jenis === 'SGD').peserta.map((p) => p.idPengajuan)).toEqual(['p2']);
+  });
+
+  it('aturan KKD/Praktikum dapat diatur per kategori', async () => {
+    const S = await loadState();
+    const rows = baseRows.concat([
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: '', tanggal: '2026-10-22', blok: '3', status: 'ACC', idPengajuan: 'p4', npm: '004', namaLengkap: 'Dodi', baMember: false },
+      { jenis: 'Praktikum', pilihan: 'Parasitologi', detail: '', tanggal: '2026-10-22', blok: '3', status: 'Menunggu', idPengajuan: 'p5', npm: '005', namaLengkap: 'Eka', baMember: false },
+      { jenis: 'KKD', pilihan: 'Farmasi', detail: '', tanggal: '2026-10-21', blok: '2', status: 'ACC', idPengajuan: 'p6', npm: '006', namaLengkap: 'Fani', baMember: false }
+    ]);
+    const g = S.buildKegiatanGroups(rows, {
+      statuses: ['ACC', 'Menunggu'],
+      rules: { KKD: { perPeserta: 'ketat' }, Praktikum: { perPeserta: 'longgar' } }
+    });
+    expect(g.find((x) => x.jenis === 'KKD').peserta.map((p) => p.idPengajuan)).toEqual(['p6']);
+    expect(g.find((x) => x.jenis === 'Praktikum').peserta.map((p) => p.idPengajuan)).toEqual(['p4']);
+    expect(g.find((x) => x.jenis === 'SGD').peserta.map((p) => p.idPengajuan)).toEqual(['p1', 'p2']);
+  });
+});

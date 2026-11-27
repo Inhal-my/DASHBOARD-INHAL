@@ -527,6 +527,21 @@ describe('dashboard ubah status ke ACC', () => {
     expect(acc).toBeGreaterThan(-1);
     expect(tolak).toBeGreaterThan(acc);
   });
+  it('aksi cepat Setujui dan ACC tidak mengosongkan catatan', async () => {
+    const html = await loadDashboardHtml();
+    const setuju = html.indexOf("} else if (status === 'Disetujui') {");
+    const acc = html.indexOf("} else if (status === 'ACC') {", setuju);
+    const lain = html.indexOf('} else {', acc);
+    expect(setuju).toBeGreaterThan(-1);
+    expect(acc).toBeGreaterThan(setuju);
+    expect(lain).toBeGreaterThan(acc);
+    expect(html.slice(setuju, acc)).not.toContain("this.detail.catatan = ''");
+    expect(html.slice(acc, lain)).not.toContain("this.detail.catatan = ''");
+  });
+  it('menjelaskan catatan disertakan pada email persetujuan', async () => {
+    const html = await loadDashboardHtml();
+    expect(html).toContain('Catatan akan disertakan pada email.');
+  });
 });
 
 describe('dashboard gratis oleh verifikator', () => {

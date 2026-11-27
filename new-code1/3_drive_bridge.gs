@@ -40,6 +40,13 @@ function _driveBridgeStr(v) {
     return String(v === undefined || v === null ? '' : v).trim();
 }
 
+function _driveBridgeEscapeHtml(v) {
+    return String(v === undefined || v === null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function _driveBridgeIdOf(data, body) {
     const id = _driveBridgeStr((data && data.IDPengajuan) || body.idPengajuan);
     return id || 'unknown';
@@ -57,6 +64,12 @@ function _driveBridgeSendApproval(data) {
     const detail = _driveBridgeStr(data.DetailKegiatan);
     const tanggal = _driveBridgeStr(data.TanggalKegiatan);
     const portalUrl = _driveBridgeStr(data.PortalUrl) || 'https://inhal-form.prodi.workers.dev/portal';
+    const catatan = _driveBridgeStr(data['Catatan Admin']) || _driveBridgeStr(data.Catatan);
+    const catatanLines = catatan
+        ? catatan.split(/\r?\n/).map(function(part, i) {
+            return (i === 0 ? 'Catatan: ' : '') + part;
+        })
+        : [];
 
     const subject = 'Pengajuan INHAL Disetujui - ' + (nomorSurat || nama);
     const lines = [
@@ -68,6 +81,7 @@ function _driveBridgeSendApproval(data) {
         'Detail Kegiatan: ' + detail,
         'Tanggal Kegiatan: ' + tanggal,
         'Status: Disetujui',
+        ...catatanLines,
         '',
         'Untuk melanjutkan, silakan lakukan pembayaran sesuai informasi biaya yang diberikan oleh Bagian, lalu unggah bukti pembayaran melalui portal:',
         portalUrl,
@@ -82,7 +96,7 @@ function _driveBridgeSendApproval(data) {
         if (line === portalUrl) {
             return '<p><a href="' + portalUrl + '" target="_blank">' + portalUrl + '</a></p>';
         }
-        return '<p>' + line + '</p>';
+        return '<p>' + _driveBridgeEscapeHtml(line) + '</p>';
     }).join('');
     MailApp.sendEmail(recipient, subject, plainBody, { htmlBody: htmlLines });
     return true;

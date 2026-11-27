@@ -1,0 +1,10 @@
+-- Penanda migrasi: kolom `updated_at` dan `revision` pada `berita_acara`
+-- sudah diterapkan manual di produksi pada 2026-11-19, dan sekarang juga
+-- dibuat oleh migrasi `2026-11-17-ba-arsip-gabung.sql` di repo ini.
+--
+-- File ini sengaja hanya berisi komentar, tanpa ALTER TABLE, agar:
+-- 1. D1 produksi menganggap nama migrasi ini sudah diterapkan.
+-- 2. Instalasi baru mencatat nama migrasi yang sama tanpa gagal
+--    "duplicate column name".
+--
+-- Jangan menambahkan ALTER TABLE di sini.

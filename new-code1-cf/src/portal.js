@@ -48,10 +48,6 @@ export async function uploadBuktiFiles(db, payload, env) {
     return { success: false, message: 'Unggah bukti bayar hanya tersedia setelah pengajuan Disetujui.' };
   }
 
-  if (str(existing.status_pembayaran) === 'gratis') {
-    return { success: false, message: 'Pengajuan ini gratis, tidak perlu mengunggah bukti bayar.' };
-  }
-
   if (str(existing.status_pembayaran) === 'valid') {
     return { success: false, message: 'Pembayaran sudah valid. Hubungi admin Keuangan untuk koreksi buka kembali.' };
   }

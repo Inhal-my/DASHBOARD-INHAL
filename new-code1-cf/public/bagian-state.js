@@ -380,10 +380,28 @@
     return { includePendukung: !!include, selected: out };
   }
 
+  function kategoriOf(jenis) {
+    var k = String(jenis == null ? '' : jenis).trim().toLowerCase();
+    if (k === 'sgd') return 'SGD';
+    if (k === 'ujian') return 'Ujian';
+    if (k === 'kkd') return 'KKD';
+    if (k === 'praktikum') return 'Praktikum';
+    return '';
+  }
+
+  // (d) Per-peserta per kategori: Bebas = ikut filter status, Longgar/Ketat =
+  // hanya ACC yang boleh masuk (non-ACC otomatis dikecualikan).
+  function perPesertaMode(rules, jenis) {
+    var cat = kategoriOf(jenis);
+    if (!cat) return 'bebas';
+    var r = rules && rules[cat];
+    return (r && r.perPeserta) || 'bebas';
+  }
+
   function groupRows(rows, options, pendingOnly) {
     var opts = options || {};
     var statuses = opts.statuses || ['ACC'];
-    var finalOnly = opts.finalOnly !== false;
+    var rules = opts.rules || null;
     var requirePembayaran = opts.requirePembayaran === true;
     var map = {};
     (rows || []).forEach(function (r) {
@@ -407,8 +425,7 @@
           peserta: [],
           statusCounts: {},
           npmCounts: {},
-          adaNpmGanda: false,
-          blocked: false
+          adaNpmGanda: false
         };
       }
       var tgl = dateOnly(r.tanggal);
@@ -417,7 +434,9 @@
       if (npmKey) g.npmCounts[npmKey] = (g.npmCounts[npmKey] || 0) + 1;
       if (pendingOnly && r.baMember) return;
       g.statusCounts[r.status] = (g.statusCounts[r.status] || 0) + 1;
-      if (statuses.indexOf(r.status) !== -1 && (!requirePembayaran || r.eligiblePembayaran !== false)) {
+      var mode = perPesertaMode(rules, r.jenis);
+      var statusAllowed = mode === 'bebas' ? statuses.indexOf(r.status) !== -1 : r.status === 'ACC';
+      if (statusAllowed && (!requirePembayaran || r.eligiblePembayaran !== false)) {
         g.peserta.push({
           idPengajuan: r.idPengajuan,
           npm: r.npm,
@@ -428,10 +447,9 @@
           npmGanda: false
         });
       }
-      if (finalOnly && r.status === 'Menunggu') g.blocked = true;
     });
     return Object.keys(map).map(function (k) { return map[k]; })
-      .filter(function (g) { return !g.blocked && g.peserta.length > 0; })
+      .filter(function (g) { return g.peserta.length > 0; })
       .map(function (g) {
         g.tanggalList.sort();
         g.tanggal = g.tanggalList[0] || '';

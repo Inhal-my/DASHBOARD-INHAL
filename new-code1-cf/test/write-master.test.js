@@ -3,6 +3,7 @@ import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { verifyPassword, isHashed, hashPassword } from '../src/password.js';
 import { getMasterDataMonitor } from '../src/read/dashboard.js';
+import { getBagianBaSettings } from '../src/read/common.js';
 import {
   saveMasterKegiatan, saveMasterBagian, saveMasterBiaya, saveConfig,
   saveBagianStaff, saveAdminList, saveBagianBaSettings, saveAccSettings
@@ -170,5 +171,33 @@ describe('master write handlers', () => {
     expect(row.value).toBe('ACC,Menunggu');
     const finalRow = await env.DB.prepare("SELECT value FROM config WHERE key = 'BAGIAN_BA_FINAL_ONLY'").first();
     expect(finalRow.value).toBe('false');
+  });
+
+  it('menyimpan aturan BA per kategori dan menolak nilai tidak valid', async () => {
+    const ctx = await adminCtx();
+    const longgar = { multiJadwal: 'longgar', multiSesi: 'longgar', multiBa: 'longgar', perPeserta: 'longgar' };
+    const ok = await saveBagianBaSettings(env.DB, { statuses: ['ACC'], finalOnly: true, rules: { SGD: longgar, KKD: longgar } }, ctx);
+    expect(ok.success).toBe(true);
+    expect(ok.rules.SGD).toEqual(longgar);
+    expect(ok.rules.KKD).toEqual(longgar);
+    expect(ok.rules.Ujian).toEqual({
+      multiJadwal: 'bebas', multiSesi: 'bebas', multiBa: 'bebas', perPeserta: 'bebas'
+    });
+    expect(ok.rules.Praktikum).toEqual({
+      multiJadwal: 'bebas', multiSesi: 'bebas', multiBa: 'bebas', perPeserta: 'bebas'
+    });
+
+    const settings = await getBagianBaSettings(env.DB);
+    expect(settings.rules.SGD).toEqual(longgar);
+    expect(settings.rules.KKD).toEqual(longgar);
+
+    const badMode = await saveBagianBaSettings(env.DB, { statuses: ['ACC'], rules: { SGD: { multiJadwal: 'ngawur' } } }, ctx);
+    expect(badMode.success).toBe(false);
+
+    const buntu = await saveBagianBaSettings(env.DB, {
+      statuses: ['ACC'],
+      rules: { SGD: { multiJadwal: 'longgar', multiSesi: 'ketat', multiBa: 'ketat' } }
+    }, ctx);
+    expect(buntu.success).toBe(false);
   });
 });
