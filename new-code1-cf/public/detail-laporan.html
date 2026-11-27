@@ -497,6 +497,94 @@
 .text-sky-700 { color: #0369a1; }
 .ring-sky-600\/20 { --tw-ring-color: rgba(2, 132, 199, .2); }
     </style>
+    <style>
+        /* Modal Periksa Pembayaran (redesign v2) */
+        .pm2-panel { width: 100%; max-width: 680px; height: 100%; background: #fff; display: flex; flex-direction: column; box-shadow: 0 40px 90px -40px rgba(15,23,42,.5); }
+        .pm2-head { flex: 0 0 auto; display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px 16px; border-bottom: 1px solid #f1f5f9; background: #fff; }
+        .pm2-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: #94a3b8; }
+        .pm2-name { margin: 4px 0 0; font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: #0f172a; }
+        .pm2-meta { margin-top: 3px; font-size: 12px; color: #64748b; }
+        .pm2-meta .dot { color: #cbd5e1; margin: 0 6px; }
+        .pm2-close { margin-left: auto; width: 36px; height: 36px; border: 1px solid #e9edf5; background: #fff; border-radius: 11px; color: #64748b; display: grid; place-items: center; font-size: 15px; flex: 0 0 auto; }
+        .pm2-close:hover { background: #f8fafc; }
+        .pm2-body { flex: 1 1 auto; overflow-y: auto; padding: 18px 22px 26px; background: #fff; }
+        .pm2-statgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: #f8fafc; border: 1px solid #eef2f8; border-radius: 16px; padding: 12px; }
+        .pm2-stat .k { font-size: 9.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #94a3b8; }
+        .pm2-stat .v { margin-top: 4px; font-size: 13px; font-weight: 800; color: #1e293b; }
+        .pm2-stat .v.gratis { color: #059669; }
+        .pm2-buktilink { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: #4f46e5; text-decoration: none; }
+        .pm2-buktilink .bi { font-size: 11px; }
+        .pm2-section { margin-top: 14px; }
+        .pm2-sec-title { display: flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px; }
+        .pm2-sec-title .bi { font-size: 12px; color: #818cf8; }
+        .pm2-label { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; margin-bottom: 7px; }
+        .pm2-label .req, .pm2-reqline .req { color: #e11d48; }
+        .pm2-seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; background: #f1f5f9; border: 1px solid #e9eef6; border-radius: 14px; padding: 5px; }
+        .pm2-seg button { border: 0; background: transparent; font-family: inherit; font-size: 12.5px; font-weight: 800; color: #64748b; padding: 10px 6px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .14s ease; }
+        .pm2-seg button .bi { font-size: 14px; }
+        .pm2-seg button:hover { color: #4338ca; }
+        .pm2-seg button.on { background: #fff; color: #372f8f; box-shadow: 0 4px 12px -6px rgba(15,23,42,.28), inset 0 0 0 1px #e5e7f5; }
+        .pm2-seg button.on.free { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; box-shadow: 0 4px 12px -6px rgba(5,150,105,.4), inset 0 0 0 1px #a7f3d0; }
+        .pm2-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .pm2-mt { margin-top: 12px; }
+        .pm2-field { display: flex; flex-direction: column; gap: 5px; }
+        .pm2-input { width: 100%; border: 1px solid #e9edf5; background: #fff; border-radius: 12px; padding: 11px 12px; font-family: inherit; font-size: 13px; color: #0f172a; outline: none; transition: all .15s ease; }
+        .pm2-input:focus { border-color: #a5b4fc; box-shadow: 0 0 0 3px rgba(99,102,241,.14); }
+        .pm2-input:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #eef2f8; }
+        .pm2-readout { display: flex; align-items: center; justify-content: space-between; border: 1px solid #eef2f8; background: #f8fafc; border-radius: 12px; padding: 11px 12px; }
+        .pm2-readout .k { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; }
+        .pm2-readout .v { font-size: 14px; font-weight: 800; color: #1e293b; font-variant-numeric: tabular-nums; }
+        .pm2-helper { display: flex; gap: 9px; align-items: flex-start; border-radius: 13px; padding: 12px 13px; font-size: 12px; line-height: 1.5; margin-top: 12px; }
+        .pm2-helper .bi { font-size: 15px; flex: 0 0 auto; margin-top: 1px; }
+        .pm2-helper.pas { background: #ecfdf5; color: #065f46; box-shadow: inset 0 0 0 1px #a7f3d0; }
+        .pm2-helper.kurang { background: #fffbeb; color: #92400e; box-shadow: inset 0 0 0 1px #fde68a; }
+        .pm2-helper.lebih { background: #f5f3ff; color: #5b21b6; box-shadow: inset 0 0 0 1px #ddd6fe; }
+        .pm2-helper.gratis { background: linear-gradient(135deg, #ecfdf5, #f0fdfa); color: #065f46; box-shadow: inset 0 0 0 1px #a7f3d0; }
+        .pm2-helper.bad { background: #fff1f2; color: #9f1239; box-shadow: inset 0 0 0 1px #fecdd3; }
+        .pm2-note { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 10.5px; font-weight: 700; color: #94a3b8; }
+        .pm2-note .bi { font-size: 11px; }
+        .pm2-foot { display: flex; gap: 10px; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
+        .pm2-foot .hint { margin-right: auto; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+        .pm2-btn { border: 0; border-radius: 12px; padding: 11px 16px; font-family: inherit; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; transition: all .15s ease; }
+        .pm2-btn.ghost { background: #fff; color: #475569; box-shadow: inset 0 0 0 1px #e9edf5; }
+        .pm2-btn.ghost:hover { background: #f8fafc; }
+        .pm2-btn.primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; box-shadow: 0 12px 26px -14px rgba(79,70,229,.9); }
+        .pm2-btn.primary:hover { transform: translateY(-1px); }
+        .pm2-btn.danger { background: linear-gradient(135deg, #fb7185, #e11d48); color: #fff; box-shadow: 0 12px 26px -14px rgba(225,29,72,.9); }
+        .pm2-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .pm2-btn .bi { font-size: 14px; }
+        .pm2-result { border-radius: 16px; padding: 16px; border: 1px solid #a7f3d0; }
+        .pm2-result.valid { background: linear-gradient(135deg, #ecfdf5, #f0fdfa); }
+        .pm2-result.free { background: linear-gradient(135deg, #ecfdf5, #eff6ff); }
+        .pm2-result-head { display: flex; align-items: center; gap: 11px; }
+        .pm2-result-ic { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; font-size: 19px; color: #fff; flex: 0 0 auto; }
+        .pm2-result-ic.ok { background: linear-gradient(135deg, #34d399, #059669); }
+        .pm2-result-ic.gift { background: linear-gradient(135deg, #34d399, #0ea5e9); }
+        .pm2-result h3 { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: -.01em; color: #064e3b; }
+        .pm2-result .sub { margin-top: 2px; font-size: 12px; color: #047857; }
+        .pm2-kv { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; margin-top: 15px; }
+        .pm2-kv .k { font-size: 10px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #5b8f7f; }
+        .pm2-kv .v { margin-top: 3px; font-size: 13px; font-weight: 700; color: #064e3b; font-variant-numeric: tabular-nums; }
+        .pm2-catatan { margin-top: 14px; background: rgba(255,255,255,.7); border: 1px solid #a7f3d0; border-radius: 12px; padding: 11px 12px; }
+        .pm2-catatan .k { font-size: 10px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #5b8f7f; }
+        .pm2-catatan .v { margin-top: 3px; font-size: 12.5px; color: #065f46; }
+        .pm2-catatan.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .pm2-warn { display: flex; gap: 10px; align-items: flex-start; background: #fffbeb; border: 1px solid #fde68a; border-radius: 13px; padding: 12px 13px; font-size: 12px; line-height: 1.55; color: #92400e; margin-top: 12px; }
+        .pm2-warn .bi { font-size: 16px; flex: 0 0 auto; margin-top: 1px; }
+        .pm2-opt { display: flex; gap: 11px; align-items: flex-start; border: 1.5px solid #e9edf5; background: #fff; border-radius: 14px; padding: 13px; cursor: pointer; }
+        .pm2-opt.sel { border-color: #4f46e5; background: #eef2ff; }
+        .pm2-opt .radio { width: 17px; height: 17px; border-radius: 50%; border: 2px solid #cbd5e1; display: grid; place-items: center; flex: 0 0 auto; margin-top: 1px; }
+        .pm2-opt.sel .radio { border-color: #e11d48; }
+        .pm2-opt.sel .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #e11d48; }
+        .pm2-opt .t { font-size: 13px; font-weight: 800; color: #1e293b; }
+        .pm2-opt .s { margin-top: 3px; font-size: 11.5px; color: #64748b; line-height: 1.5; }
+        .pm2-reqline { font-size: 10.5px; color: #94a3b8; margin-top: 5px; }
+        @media (max-width: 640px) {
+            .pm2-statgrid { grid-template-columns: repeat(2, 1fr); }
+            .pm2-grid2 { grid-template-columns: 1fr; }
+            .pm2-seg { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
 </head>
 <body>
     <div id="app" v-cloak class="app-shell font-sans text-ink antialiased"
@@ -2605,146 +2693,174 @@
                         </template>
 
                         <div v-if="periksa.open && periksa.item" class="fixed inset-0 z-50 flex justify-end bg-slate-900/40" @click.self="closePeriksa">
-                            <aside class="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl">
-                                <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-5 py-4">
-                                    <div>
-                                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Periksa Pembayaran</div>
-                                        <div class="text-lg font-bold text-slate-800">{{ periksa.item.nama }}</div>
-                                        <div class="text-xs text-slate-500">{{ periksa.item.npm }} <span class="text-slate-300">|</span> {{ periksa.item.jenis }}<span v-if="periksa.item.detail"> - {{ periksa.item.detail }}</span></div>
+                            <aside class="pm2-panel" role="dialog" aria-modal="true">
+                                <div class="pm2-head">
+                                    <div class="min-w-0">
+                                        <div class="pm2-eyebrow">Periksa Pembayaran</div>
+                                        <div class="pm2-name">{{ periksa.item.nama }}</div>
+                                        <div class="pm2-meta">{{ periksa.item.npm }}<span class="dot">·</span>{{ periksa.item.jenis }}<span v-if="periksa.item.detail"> · {{ periksa.item.detail }}</span></div>
                                     </div>
-                                    <button type="button" class="btn-soft !p-2" aria-label="Tutup" @click="closePeriksa"><i class="bi bi-x-lg"></i></button>
+                                    <button type="button" class="pm2-close" aria-label="Tutup" @click="closePeriksa"><i class="bi bi-x-lg"></i></button>
                                 </div>
-                                <div class="space-y-4 px-5 py-4">
-                                    <div class="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs md:grid-cols-4">
-                                        <div><div class="text-slate-400">Tagihan</div><div class="mt-0.5 font-semibold text-slate-800">{{ fmtBiaya(periksa.item.biaya) }}</div></div>
-                                        <div><div class="text-slate-400">Status</div><div class="mt-0.5"><span :class="bayarBadgeCls(periksa.item.statusPembayaran)">{{ bayarLabel(periksa.item.statusPembayaran) }}</span></div></div>
-                                        <div><div class="text-slate-400">Blok</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.blok }}</div></div>
-                                        <div><div class="text-slate-400">Revisi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.revision }}</div></div>
+                                <div class="pm2-body">
+                                    <div class="pm2-statgrid">
+                                        <div class="pm2-stat"><div class="k">Tagihan</div><div class="v" :class="{ gratis: (Number(periksa.item.biaya) || 0) <= 0 }">{{ fmtBiaya(periksa.item.biaya) }}</div></div>
+                                        <div class="pm2-stat"><div class="k">Status</div><div class="v"><span :class="bayarBadgeCls(periksa.item.statusPembayaran)">{{ bayarLabel(periksa.item.statusPembayaran) }}</span></div></div>
+                                        <div class="pm2-stat"><div class="k">Blok</div><div class="v">{{ periksa.item.blok }}</div></div>
+                                        <div class="pm2-stat"><div class="k">Revisi</div><div class="v">{{ periksa.item.revision }}</div></div>
+                                        <div class="pm2-stat"><div class="k">Bukti</div><div class="v"><a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="pm2-buktilink" @pointerenter="onBuktiEnter($event, periksa.item.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()">Lihat <i class="bi bi-eye"></i></a><span v-else class="text-slate-400">-</span></div></div>
                                     </div>
 
-                                    <div class="rounded-xl border border-slate-100 p-3">
-                                        <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Bukti Bayar</div>
-                                        <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="btn-bukti" @pointerenter="onBuktiEnter($event, periksa.item.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()"><i class="bi bi-box-arrow-up-right"></i> Buka Bukti Bayar</a>
-                                        <span v-else class="text-sm text-slate-400">Belum ada bukti bayar.</span>
-                                    </div>
-
-                                    <div v-if="periksa.mode === 'view' && (periksa.item.statusPembayaran === 'valid' || periksa.item.statusPembayaran === 'gratis')" class="space-y-3">
-                                        <div class="grid grid-cols-1 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-xs sm:grid-cols-2">
-                                            <div><div class="text-slate-400">Nominal Diterima</div><div class="mt-0.5 text-base font-bold text-slate-800">{{ fmtBiaya(periksa.item.nominal) }}</div></div>
-                                            <div><div class="text-slate-400">Kesesuaian</div><div class="mt-0.5 font-semibold" :class="periksa.item.kesesuaian === 'kurang' ? 'text-amber-700' : (periksa.item.kesesuaian === 'lebih' ? 'text-violet-700' : 'text-emerald-700')">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
-                                            <div><div class="text-slate-400">Tanggal Daftar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.tanggalDaftar ? fmtTanggalWaktu(periksa.item.tanggalDaftar) : '-' }}</div></div>
-                                            <div><div class="text-slate-400">Tanggal Upload Bukti Bayar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksaUploadLabel(periksa.item) }}</div></div>
-                                            <div><div class="text-slate-400">Tanggal Bayar</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.tanggalBayar ? fmtTanggal(periksa.item.tanggalBayar) : '-' }}</div></div>
-                                            <div><div class="text-slate-400">Metode</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.metode || '-' }}</div></div>
-                                            <div><div class="text-slate-400">Diverifikasi Oleh</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.verifiedBy || '-' }}</div></div>
-                                            <div><div class="text-slate-400">Waktu Verifikasi</div><div class="mt-0.5 font-semibold text-slate-800">{{ periksa.item.verifiedAt ? fmtTanggalWaktu(periksa.item.verifiedAt) : '-' }}</div></div>
+                                    <div v-if="periksa.mode === 'view' && periksa.item.statusPembayaran === 'valid'" class="pm2-section">
+                                        <div class="pm2-result valid">
+                                            <div class="pm2-result-head">
+                                                <div class="pm2-result-ic ok"><i class="bi bi-patch-check-fill"></i></div>
+                                                <div>
+                                                    <h3>Pembayaran Valid</h3>
+                                                    <div class="sub">Status pengajuan menjadi ACC · surat final terkirim</div>
+                                                </div>
+                                            </div>
+                                            <div class="pm2-kv">
+                                                <div><div class="k">Nominal Diterima</div><div class="v">{{ fmtBiaya(periksa.item.nominal) }}</div></div>
+                                                <div><div class="k">Kesesuaian</div><div class="v">{{ bayarKesesuaianLabel(periksa.item.kesesuaian) }}</div></div>
+                                                <div><div class="k">Tanggal Bayar</div><div class="v">{{ periksa.item.tanggalBayar ? fmtTanggal(periksa.item.tanggalBayar) : '-' }}</div></div>
+                                                <div><div class="k">Metode</div><div class="v">{{ periksa.item.metode || '-' }}</div></div>
+                                                <div><div class="k">Diverifikasi Oleh</div><div class="v">{{ periksa.item.verifiedBy || '-' }}</div></div>
+                                                <div><div class="k">Waktu Verifikasi</div><div class="v">{{ periksa.item.verifiedAt ? fmtTanggalWaktu(periksa.item.verifiedAt) : '-' }}</div></div>
+                                            </div>
+                                            <div v-if="periksa.item.catatanVerifikasi" class="pm2-catatan"><div class="k">Catatan Verifikasi (internal)</div><div class="v">{{ periksa.item.catatanVerifikasi }}</div></div>
                                         </div>
-                                        <div v-if="periksa.item.catatanVerifikasi" class="rounded-xl bg-slate-50 p-3 text-xs"><div class="text-slate-400">Catatan</div><div class="mt-1 text-slate-700">{{ periksa.item.catatanVerifikasi }}</div></div>
-                                        <div class="flex flex-wrap justify-end gap-2">
-                                            <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
-                                            <button type="button" class="btn-primary" @click="openKoreksi"><i class="bi bi-pencil-square"></i> Koreksi</button>
-                                        </div>
-                                    </div>
-
-                                    <div v-else-if="periksa.mode === 'view'" class="space-y-3">
-                                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <div>
-                                                <label class="label">Nominal Diterima <span v-if="periksa.form.kesesuaian !== 'gratis'" class="text-rose-500">*</span></label>
-                                                <input v-model="periksa.form.nominal" type="number" min="0" class="in-input" :class="periksaKesesuaianInfo.cocok ? '' : 'is-error'" :disabled="periksa.form.kesesuaian === 'gratis'">
-                                            </div>
-                                            <div>
-                                                <label class="label">Kesesuaian <span class="text-rose-500">*</span></label>
-                                                <select v-model="periksa.form.kesesuaian" class="in-input" @change="onKesesuaianChange">
-                                                    <option value="pas">Pas</option>
-                                                    <option value="kurang">Kurang</option>
-                                                    <option value="lebih">Lebih</option>
-                                                    <option value="gratis">Gratis (bebaskan biaya)</option>
-                                                </select>
-                                            </div>
-                                            <div class="rounded-lg px-3 py-2 text-[11px] sm:col-span-2" :class="periksa.form.kesesuaian === 'gratis' ? 'bg-emerald-50 text-emerald-700' : (periksaKesesuaianInfo.cocok ? 'bg-slate-50 text-slate-500' : 'bg-rose-50 text-rose-600')">
-                                                <i class="bi" :class="periksa.form.kesesuaian === 'gratis' ? 'bi-gift' : 'bi-info-circle'"></i> {{ periksaKesesuaianInfo.teks }}
-                                            </div>
-                                            <div>
-                                                <label class="label">Tanggal Daftar</label>
-                                                <div class="in-input bg-slate-50 text-slate-600">{{ periksa.item.tanggalDaftar ? fmtTanggalWaktu(periksa.item.tanggalDaftar) : '-' }}</div>
-                                                <div class="mt-1 text-[10px] text-slate-400">Tanggal sistem — tidak dapat diubah</div>
-                                            </div>
-                                            <div>
-                                                <label class="label">Tanggal Upload Bukti Bayar</label>
-                                                <div class="in-input bg-slate-50 text-slate-600">{{ periksaUploadLabel(periksa.item) }}</div>
-                                                <div class="mt-1 text-[10px] text-slate-400">Tanggal sistem — tidak dapat diubah</div>
-                                            </div>
-                                            <div v-if="periksa.form.kesesuaian !== 'gratis'">
-                                                <label class="label">Tanggal Bayar <span class="text-rose-500">*</span></label>
-                                                <input v-model="periksa.form.tanggal" type="date" class="in-input">
-                                            </div>
-                                            <div v-if="periksa.form.kesesuaian !== 'gratis'">
-                                                <label class="label">Metode</label>
-                                                <input v-model="periksa.form.metode" type="text" class="in-input" placeholder="Transfer, tunai, ...">
-                                            </div>
-                                        </div>
-                                        <div v-if="periksa.item.uploadResetAt" class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                                            <i class="bi bi-arrow-counterclockwise"></i> Berkas direset {{ fmtTanggalWaktu(periksa.item.uploadResetAt) }} oleh {{ periksa.item.uploadResetBy || 'Admin' }}.
-                                            <span v-if="periksa.item.uploadResetNote"> Catatan: {{ periksa.item.uploadResetNote }}</span>
-                                        </div>
-                                        <div>
-                                            <label class="label">Catatan Verifikasi</label>
-                                            <textarea v-model="periksa.form.catatan" rows="2" class="in-input" placeholder="Opsional"></textarea>
-                                        </div>
-                                        <div class="flex flex-wrap justify-end gap-2">
-                                            <button type="button" class="btn-soft" @click="closePeriksa">Tutup</button>
-                                            <button type="button" class="btn-primary" :disabled="periksa.saving" @click="submitValid">
-                                                <i class="bi bi-check2-circle"></i> {{ periksa.saving ? 'Menyimpan...' : 'Valid' }}
-                                            </button>
+                                        <div class="pm2-foot">
+                                            <div class="hint"></div>
+                                            <button type="button" class="pm2-btn ghost" @click="closePeriksa">Tutup</button>
+                                            <button type="button" class="pm2-btn primary" @click="openKoreksi"><i class="bi bi-pencil-square"></i> Koreksi</button>
                                         </div>
                                     </div>
 
-                                    <div v-else class="space-y-3">
-                                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Koreksi tidak mengirim email. Semua admin Keuangan boleh melakukan koreksi.</div>
-                                        <div v-if="periksa.item.statusPembayaran !== 'gratis'" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            <label class="cursor-pointer rounded-xl border p-3 text-xs" :class="koreksi.mode === 'administratif' ? 'border-brand-400 bg-brand-50' : 'border-slate-200'">
-                                                <input v-model="koreksi.mode" type="radio" value="administratif" class="mr-1">
-                                                <span class="font-semibold text-slate-800">Koreksi administratif</span>
-                                                <div class="mt-1 text-slate-500">Ubah tanggal, metode, atau catatan. Status tetap Valid.</div>
-                                            </label>
-                                            <label class="cursor-pointer rounded-xl border p-3 text-xs" :class="koreksi.mode === 'buka_kembali' ? 'border-brand-400 bg-brand-50' : 'border-slate-200'">
-                                                <input v-model="koreksi.mode" type="radio" value="buka_kembali" class="mr-1">
-                                                <span class="font-semibold text-slate-800">Buka kembali</span>
-                                                <div class="mt-1 text-slate-500">Kembalikan ke antrean verifikasi. Status menjadi Menunggu.</div>
-                                            </label>
-                                        </div>
-                                        <div v-else class="rounded-xl border border-brand-200 bg-brand-50 p-3 text-xs text-brand-800">
-                                            <div class="font-semibold"><i class="bi bi-gift"></i> Batalkan Gratis</div>
-                                            <div class="mt-1">Biaya dikembalikan ke MasterBiaya, status pengajuan kembali ke Disetujui, dan PDF ACC final dikosongkan. Mahasiswa dapat mengunggah bukti dan pembayaran diverifikasi ulang.</div>
-                                        </div>
-                                        <div v-if="koreksi.mode === 'administratif'" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <div>
-                                                <label class="label">Tanggal Bayar</label>
-                                                <input v-model="koreksi.tanggal" type="date" class="in-input">
+                                    <div v-else-if="periksa.mode === 'view' && periksa.item.statusPembayaran === 'gratis'" class="pm2-section">
+                                        <div class="pm2-result free">
+                                            <div class="pm2-result-head">
+                                                <div class="pm2-result-ic gift"><i class="bi bi-gift-fill"></i></div>
+                                                <div>
+                                                    <h3>Pembayaran Gratis</h3>
+                                                    <div class="sub">Tagihan dijadikan Rp 0 · status ACC · surat final dikirim otomatis</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label class="label">Metode</label>
-                                                <input v-model="koreksi.metode" type="text" class="in-input">
+                                            <div class="pm2-kv">
+                                                <div><div class="k">Tagihan</div><div class="v" style="color:#059669">Gratis (Rp 0)</div></div>
+                                                <div><div class="k">Nominal Dibayar</div><div class="v">{{ fmtBiaya(periksa.item.nominal) }}</div></div>
+                                                <div><div class="k">Status Pengajuan</div><div class="v">ACC</div></div>
+                                                <div><div class="k">Surat Final</div><div class="v"><a v-if="periksa.item.linkAcc" :href="safeUrl(periksa.item.linkAcc)" target="_blank" rel="noopener noreferrer" class="underline">Tersedia</a><span v-else>Terkirim (PDF)</span></div></div>
+                                                <div><div class="k">Ditetapkan Oleh</div><div class="v">{{ periksa.item.verifiedBy || '-' }}</div></div>
+                                                <div><div class="k">Waktu</div><div class="v">{{ periksa.item.verifiedAt ? fmtTanggalWaktu(periksa.item.verifiedAt) : '-' }}</div></div>
+                                            </div>
+                                            <div v-if="periksa.item.catatanVerifikasi" class="pm2-catatan"><div class="k">Catatan Verifikasi (internal)</div><div class="v">{{ periksa.item.catatanVerifikasi }}</div></div>
+                                            <div class="pm2-catatan row">
+                                                <div><div class="k">Bukti Bayar</div><div class="v">Opsional — boleh diunggah bila diperlukan</div></div>
+                                                <a v-if="periksa.item.linkBukti" :href="safeUrl(periksa.item.linkBukti)" target="_blank" rel="noopener noreferrer" class="pm2-buktilink" style="white-space:nowrap" @pointerenter="onBuktiEnter($event, periksa.item.linkBukti, 'Bukti Bayar')" @pointerleave="onBuktiLeave" @click.stop="closeBuktiPreview()">Lihat <i class="bi bi-eye"></i></a>
+                                                <span v-else class="text-slate-400">-</span>
                                             </div>
                                         </div>
-                                        <div v-if="koreksi.mode === 'administratif'">
-                                            <label class="label">Catatan Verifikasi</label>
-                                            <textarea v-model="koreksi.catatan" rows="2" class="in-input"></textarea>
-                                        </div>
-                                        <div>
-                                            <label class="label">Alasan Koreksi <span class="text-rose-500">*</span></label>
-                                            <textarea v-model="koreksi.alasan" rows="3" class="in-input" placeholder="Wajib diisi minimal 5 karakter"></textarea>
-                                        </div>
-                                        <div class="flex flex-wrap justify-end gap-2">
-                                            <button type="button" class="btn-soft" @click="periksa.mode = 'view'">Batal</button>
-                                            <button type="button" class="btn-primary" :disabled="koreksi.saving" @click="submitKoreksi">
-                                                <i class="bi bi-save"></i> {{ koreksi.saving ? 'Menyimpan...' : 'Simpan Koreksi' }}
-                                            </button>
+                                        <div class="pm2-foot">
+                                            <div class="hint"><i class="bi bi-lock"></i> Gratis tidak dapat diubah lewat validasi biasa</div>
+                                            <button type="button" class="pm2-btn ghost" @click="closePeriksa">Tutup</button>
+                                            <button type="button" class="pm2-btn primary" @click="openKoreksi"><i class="bi bi-pencil-square"></i> Koreksi</button>
                                         </div>
                                     </div>
 
-                                    <div v-if="periksa.item.statusPembayaran !== 'gratis'" class="rounded-xl border border-slate-100 p-3">
-                                        <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Alur Berkas</div>
+                                    <div v-else-if="periksa.mode === 'view'" class="pm2-section">
+                                        <div class="pm2-sec-title"><i class="bi bi-shield-check"></i> Pemeriksaan Pembayaran</div>
+                                        <div class="pm2-label">Kesesuaian <span class="req">*</span></div>
+                                        <div class="pm2-seg">
+                                            <button type="button" :class="{ on: periksa.form.kesesuaian === 'pas' }" @click="pilihKesesuaian('pas')"><i class="bi bi-equals"></i> Pas</button>
+                                            <button type="button" :class="{ on: periksa.form.kesesuaian === 'kurang' }" @click="pilihKesesuaian('kurang')"><i class="bi bi-arrow-down"></i> Kurang</button>
+                                            <button type="button" :class="{ on: periksa.form.kesesuaian === 'lebih' }" @click="pilihKesesuaian('lebih')"><i class="bi bi-arrow-up"></i> Lebih</button>
+                                            <button type="button" :class="{ on: periksa.form.kesesuaian === 'gratis', free: periksa.form.kesesuaian === 'gratis' }" @click="pilihKesesuaian('gratis')"><i class="bi bi-gift"></i> Gratis</button>
+                                        </div>
+                                        <div class="pm2-grid2 pm2-mt">
+                                            <div class="pm2-field">
+                                                <div class="pm2-label">Nominal Diterima <span v-if="periksa.form.kesesuaian !== 'gratis'" class="req">*</span></div>
+                                                <input v-model="periksa.form.nominal" type="number" min="0" class="pm2-input" :disabled="periksa.form.kesesuaian === 'gratis'">
+                                            </div>
+                                            <div class="pm2-field">
+                                                <div class="pm2-label">Tagihan</div>
+                                                <div class="pm2-readout"><span class="k">Total</span><span class="v">{{ fmtRupiah(periksa.item.biaya) }}</span></div>
+                                            </div>
+                                            <div v-if="periksa.form.kesesuaian !== 'gratis'" class="pm2-field">
+                                                <div class="pm2-label">Tanggal Bayar <span class="req">*</span></div>
+                                                <input v-model="periksa.form.tanggal" type="date" class="pm2-input">
+                                            </div>
+                                            <div v-if="periksa.form.kesesuaian !== 'gratis'" class="pm2-field">
+                                                <div class="pm2-label">Metode</div>
+                                                <input v-model="periksa.form.metode" type="text" class="pm2-input" placeholder="Transfer, tunai, ...">
+                                            </div>
+                                        </div>
+                                        <div class="pm2-helper" :class="periksaHelperClass"><i class="bi" :class="periksaHelperIcon"></i><div>{{ periksaKesesuaianInfo.teks }}</div></div>
+                                        <div class="pm2-field pm2-mt">
+                                            <div class="pm2-label">Catatan Verifikasi</div>
+                                            <textarea v-model="periksa.form.catatan" rows="2" class="pm2-input" placeholder="Opsional — catatan internal pemeriksaan"></textarea>
+                                            <div class="pm2-note"><i class="bi bi-lock"></i> Internal. Tidak dikirim ke mahasiswa (PDF memakai Catatan Admin).</div>
+                                        </div>
+                                        <div v-if="periksa.item.uploadResetAt" class="pm2-warn">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                            <div>Berkas direset {{ fmtTanggalWaktu(periksa.item.uploadResetAt) }} oleh {{ periksa.item.uploadResetBy || 'Admin' }}.<span v-if="periksa.item.uploadResetNote"> Catatan: {{ periksa.item.uploadResetNote }}</span></div>
+                                        </div>
+                                        <div class="pm2-foot">
+                                            <div class="hint"><i class="bi bi-info-circle"></i> Tombol tetap "Valid" sebagai penanda sudah diperiksa</div>
+                                            <button type="button" class="pm2-btn ghost" @click="closePeriksa">Tutup</button>
+                                            <button type="button" class="pm2-btn primary" :disabled="periksa.saving" @click="submitValid"><i class="bi bi-check2-circle"></i>{{ periksa.saving ? ' Menyimpan...' : ' Valid' }}</button>
+                                        </div>
+                                    </div>
+
+                                    <div v-else class="pm2-section">
+                                        <div class="pm2-sec-title"><i class="bi bi-arrow-counterclockwise"></i> {{ periksa.item.statusPembayaran === 'gratis' ? 'Koreksi Pembayaran Gratis' : 'Koreksi Pembayaran' }}</div>
+                                        <div class="pm2-warn"><i class="bi bi-exclamation-triangle"></i><div>Koreksi <b>tidak mengirim email</b>. Semua admin Keuangan boleh melakukan koreksi.</div></div>
+                                        <div v-if="periksa.item.statusPembayaran === 'gratis'" class="pm2-opt sel pm2-mt" style="cursor:default">
+                                            <div class="radio"></div>
+                                            <div><div class="t">Batalkan Gratis</div><div class="s">Biaya kembali ke MasterBiaya, status pengajuan menjadi Disetujui, dan tautan PDF final dikosongkan agar bisa diterbitkan ulang setelah pembayaran divalidasi.</div></div>
+                                        </div>
+                                        <template v-else>
+                                            <div class="pm2-grid2 pm2-mt">
+                                                <label class="pm2-opt" :class="{ sel: koreksi.mode === 'administratif' }">
+                                                    <input v-model="koreksi.mode" type="radio" value="administratif" class="hidden">
+                                                    <div class="radio"></div>
+                                                    <div><div class="t">Koreksi administratif</div><div class="s">Ubah tanggal, metode, atau catatan. Status tetap Valid.</div></div>
+                                                </label>
+                                                <label class="pm2-opt" :class="{ sel: koreksi.mode === 'buka_kembali' }">
+                                                    <input v-model="koreksi.mode" type="radio" value="buka_kembali" class="hidden">
+                                                    <div class="radio"></div>
+                                                    <div><div class="t">Buka kembali</div><div class="s">Kembalikan ke antrean verifikasi. Status menjadi Disetujui.</div></div>
+                                                </label>
+                                            </div>
+                                            <div v-if="koreksi.mode === 'administratif'" class="pm2-grid2 pm2-mt">
+                                                <div class="pm2-field">
+                                                    <div class="pm2-label">Tanggal Bayar</div>
+                                                    <input v-model="koreksi.tanggal" type="date" class="pm2-input">
+                                                </div>
+                                                <div class="pm2-field">
+                                                    <div class="pm2-label">Metode</div>
+                                                    <input v-model="koreksi.metode" type="text" class="pm2-input">
+                                                </div>
+                                            </div>
+                                            <div v-if="koreksi.mode === 'administratif'" class="pm2-field pm2-mt">
+                                                <div class="pm2-label">Catatan Verifikasi</div>
+                                                <textarea v-model="koreksi.catatan" rows="2" class="pm2-input"></textarea>
+                                            </div>
+                                        </template>
+                                        <div class="pm2-field pm2-mt">
+                                            <div class="pm2-label">Alasan Koreksi <span class="req">*</span></div>
+                                            <textarea v-model="koreksi.alasan" rows="3" class="pm2-input" placeholder="Wajib diisi minimal 5 karakter"></textarea>
+                                            <div class="pm2-reqline"><span class="req">*</span> Wajib — tercatat di riwayat verifikasi &amp; audit.</div>
+                                        </div>
+                                        <div class="pm2-foot">
+                                            <div class="hint"></div>
+                                            <button type="button" class="pm2-btn ghost" @click="periksa.mode = 'view'">Batal</button>
+                                            <button type="button" class="pm2-btn danger" :disabled="koreksi.saving" @click="submitKoreksi"><i class="bi bi-arrow-counterclockwise"></i>{{ periksa.item.statusPembayaran === 'gratis' ? ' Batalkan Gratis' : ' Simpan Koreksi' }}</button>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="periksa.item.statusPembayaran !== 'gratis'" class="pm2-section">
+                                        <div class="pm2-sec-title"><i class="bi bi-diagram-3"></i> Alur Berkas</div>
                                         <div class="space-y-2 text-xs">
                                             <div v-for="step in periksaTimeline(periksa.item)" :key="'step-' + step.label" class="flex items-start gap-2">
                                                 <i class="bi text-slate-300" :class="step.icon"></i>
@@ -2756,8 +2872,8 @@
                                         </div>
                                     </div>
 
-                                    <div class="rounded-xl border border-slate-100 p-3">
-                                        <div class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Riwayat Verifikasi & Koreksi</div>
+                                    <div class="pm2-section">
+                                        <div class="pm2-sec-title"><i class="bi bi-clock-history"></i> Riwayat Verifikasi & Koreksi</div>
                                         <div v-if="!bayarRevisiFor(periksa.item).length" class="text-xs text-slate-400">Belum ada riwayat.</div>
                                         <div v-for="rev in bayarRevisiFor(periksa.item)" :key="'rev-' + rev.id" class="border-t border-slate-100 py-2 first:border-0 first:pt-0 text-xs">
                                             <div class="flex flex-wrap items-center gap-1.5">
@@ -4963,6 +5079,22 @@
                     }
                     return { tagihan, nominal, selisih, target, targetLabel, cocok, teks };
                 },
+                periksaHelperClass() {
+                    const form = this.periksa.form || {};
+                    if (form.kesesuaian === 'gratis') return 'gratis';
+                    const info = this.periksaKesesuaianInfo;
+                    if (info.cocok) return 'pas';
+                    if (info.target === 'kurang') return 'kurang';
+                    if (info.target === 'lebih') return 'lebih';
+                    return 'bad';
+                },
+                periksaHelperIcon() {
+                    const cls = this.periksaHelperClass;
+                    if (cls === 'gratis') return 'bi-gift';
+                    if (cls === 'pas') return 'bi-check-circle';
+                    if (cls === 'bad') return 'bi-exclamation-circle';
+                    return 'bi-info-circle';
+                },
             },
             watch: {
                 'filters.blok': function () {
@@ -5195,6 +5327,11 @@
                     const t = Number(tagihan) || 0;
                     if (n === t) return 'pas';
                     return n < t ? 'kurang' : 'lebih';
+                },
+                pilihKesesuaian(value) {
+                    if (!this.periksa.form) return;
+                    this.periksa.form.kesesuaian = value;
+                    this.onKesesuaianChange();
                 },
                 onKesesuaianChange() {
                     const it = this.periksa.item;
