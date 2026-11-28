@@ -316,6 +316,7 @@
         .ba-repair-inner { display: grid; gap: .75rem; }
         .ba-repair-scroll { max-height: 560px; overflow-y: auto; }
         .ba-repair-scroll-sm { max-height: 520px; overflow-y: auto; }
+        .ba-audit-scroll { max-height: 58vh; overflow: auto; }
         .ba-repair-sesi-list { max-height: 14rem; overflow-y: auto; }
         .ba-repair-candidate-list { max-height: 16rem; overflow-y: auto; }
         .ba-repair-candidate.is-blocked { opacity: .6; }
@@ -1643,9 +1644,9 @@
                                 <span v-if="bagianAuditSummary.jadwalBelum" class="rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700">{{ bagianAuditSummary.jadwalBelum }} jadwal belum terealisasi</span>
                             </div>
                             <div v-if="!bagianAuditRows.length" class="px-4 py-8 text-center text-sm text-slate-400">Belum ada data untuk diperiksa.</div>
-                            <div v-else class="overflow-x-auto">
+                            <div v-else id="ba-audit-list" class="ba-audit-scroll">
                                 <table class="dash-table w-full border-collapse text-sm">
-                                    <thead>
+                                    <thead class="sticky top-0 z-10 bg-white shadow-sm">
                                         <tr class="border-b border-slate-100 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
                                             <th class="p-3">Kegiatan</th>
                                             <th class="p-3 text-center">Sesi</th>
@@ -1658,7 +1659,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="a in bagianAuditRows" :key="'aud-' + a.key">
+                                        <template v-for="a in bagianAuditPagedRows" :key="'aud-' + a.key">
                                             <tr class="border-b border-slate-50">
                                                 <td class="p-3"><div class="text-sm font-semibold text-slate-800">{{ a.label }}</div><div class="text-[10px] text-slate-400">{{ a.bagian }} / {{ a.blok || '-' }}</div></td>
                                                 <td class="p-3 text-center font-semibold text-slate-700">{{ a.baAudit.jumlahSesi }}</td>
@@ -1692,6 +1693,22 @@
                                         </template>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div v-if="bagianAuditRows.length" class="ba-pager-bar flex">
+                                <span>Menampilkan {{ bagianAuditPageInfo.start }}–{{ bagianAuditPageInfo.end }} dari {{ bagianAuditPageInfo.n }} kegiatan</span>
+                                <div class="ml-auto flex flex-wrap items-center gap-2">
+                                    <select class="ba-pager-size" :value="bagian.auditPerPage" aria-label="Jumlah baris per halaman" @change="bagianAuditSetPerPage($event.target.value)">
+                                        <option :value="10">10 / halaman</option>
+                                        <option :value="25">25 / halaman</option>
+                                        <option :value="50">50 / halaman</option>
+                                        <option :value="100">100 / halaman</option>
+                                    </select>
+                                    <div class="ba-pager">
+                                        <button :disabled="bagianAuditPageInfo.page <= 1" title="Halaman sebelumnya" @click="bagianAuditSetPage(bagianAuditPageInfo.page - 1)">‹</button>
+                                        <span class="font-bold text-slate-600">{{ bagianAuditPageInfo.page }}/{{ bagianAuditPageInfo.pages }}</span>
+                                        <button :disabled="bagianAuditPageInfo.page >= bagianAuditPageInfo.pages" title="Halaman berikutnya" @click="bagianAuditSetPage(bagianAuditPageInfo.page + 1)">›</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -3961,7 +3978,7 @@
                     dosenOptions: [],
                     masterBiaya: [],
                      detail: { open: false, step: 0, loading: false, p: null, suratFile: null, suratName: '', suratUploading: false, suratError: '', buktiFile: null, buktiUploading: false, buktiError: '', scanItems: [], scanBusy: false, scanSeq: 0, status: 'Menunggu', catatan: '', gratis: false, gratisPrevStatus: 'Menunggu', editInduk: false, iForm: { email: '', noHp: '', blok: '', jenisKegiatan: '', tanggalPelaksanaan: '', biaya: '' }, editDetailIndex: -1, dEdit: { jenisKegiatan: '', pilihan: '', detail: '', tanggalPelaksanaan: '' } },
-                    bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', page: 1, perPage: 10, expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
+                    bagian: { units: [], orphanBa: [], baAudit: { summary: {} }, fBagian: '', fBlok: '', chip: 'semua', q: '', sortKey: 'tanggal', sortDir: 'desc', page: 1, perPage: 10, auditPage: 1, auditPerPage: 10, expanded: {}, auditExpanded: {}, options: [], labs: [], bloks: [], heatMetric: 'pelaksanaan' },
                     kb: { open: false, loading: false, data: null, pick: false, addPicks: [], kind: '', targetPid: '', uploadItems: [], uploadBusy: false, uploadSeq: 0, loadSeq: 0, lastId: '' },
                     expandedBa: {},
                     kelola: { open: false, baId: '', sumber: 'Bagian', tanggal: '', jam: '', dosen: '', dosenList: [''], catatan: '', pesertaIds: [], pesertaOpsi: [] },
@@ -4286,6 +4303,25 @@
                 },
                 bagianAuditRows() {
                     return this.bagianTableRows.filter(r => !r.__orphan && r.baAudit);
+                },
+                bagianAuditPageInfo() {
+                    const n = this.bagianAuditRows.length;
+                    const perPage = Math.max(1, Number(this.bagian.auditPerPage) || 10);
+                    const pages = Math.max(1, Math.ceil(n / perPage));
+                    const page = Math.min(Math.max(1, Number(this.bagian.auditPage) || 1), pages);
+                    return {
+                        n,
+                        perPage,
+                        pages,
+                        page,
+                        start: n ? (page - 1) * perPage + 1 : 0,
+                        end: Math.min(page * perPage, n)
+                    };
+                },
+                bagianAuditPagedRows() {
+                    const info = this.bagianAuditPageInfo;
+                    const from = (info.page - 1) * info.perPage;
+                    return this.bagianAuditRows.slice(from, from + info.perPage);
                 },
                 bagianAuditSummary() {
                     const out = { kegiatan: 0, totalSesi: 0, multiSesi: 0, sesiEkstra: 0, sesiDraft: 0, kemungkinanDuplikat: 0, jadwalBelum: 0 };
@@ -4688,6 +4724,12 @@
                 },
                 'bagianPageInfo.pages'(pages) {
                     if (this.bagian.page > pages) this.bagian.page = pages;
+                },
+                'bagian.auditPerPage'() {
+                    this.bagian.auditPage = 1;
+                },
+                'bagianAuditPageInfo.pages'(pages) {
+                    if (this.bagian.auditPage > pages) this.bagian.auditPage = pages;
                 },
                 pageSize() {
                     this.page = 1;
@@ -7147,6 +7189,19 @@
                     const n = Number(v);
                     this.bagian.perPage = [10, 25, 50, 100].indexOf(n) !== -1 ? n : 10;
                     this.bagian.page = 1;
+                },
+                bagianAuditSetPage(p) {
+                    const info = this.bagianAuditPageInfo;
+                    this.bagian.auditPage = Math.min(Math.max(1, Number(p) || 1), info.pages);
+                    this.$nextTick(() => {
+                        const el = document.getElementById('ba-audit-list');
+                        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                },
+                bagianAuditSetPerPage(v) {
+                    const n = Number(v);
+                    this.bagian.auditPerPage = [10, 25, 50, 100].indexOf(n) !== -1 ? n : 10;
+                    this.bagian.auditPage = 1;
                 },
                 tanggalSesiInfo(r) {
                     const planned = [];
