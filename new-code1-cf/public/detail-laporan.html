@@ -1794,11 +1794,11 @@
                                 <div class="lap-card-sub mb-2">Alur perbaikan khusus admin</div>
                                 <ul class="bgc-readlist">
                                     <li><span class="k">1. Buka menu</span><span>Klik <b>Menu Perbaikan</b> pada kotak Pemeriksaan Data Dosen, lalu pilih temuan yang ingin ditindak.</span></li>
-                                    <li><span class="k">2. Tanpa dosen</span><span>Pilih <b>Isi Dosen</b> &rarr; pilih dosen (maksimal 5) &rarr; <b>Simpan</b>. BA langsung masuk rekapitulasi dosen.</span></li>
+                                    <li><span class="k">2. Tanpa dosen</span><span>Bila BA belum punya sesi, pilih <b>Isi Dosen</b> &rarr; pilih dosen (maksimal 5) &rarr; <b>Simpan</b>. Bila BA sudah punya sesi jadwal, gunakan <b>Atur Dosen Sesi</b> agar realisasi per sesi ikut terhitung.</span></li>
                                     <li><span class="k">3. Sesi tanpa dosen</span><span>Pilih <b>Atur Dosen Sesi</b> &rarr; isi dosen tiap sesi (maksimal 5) &rarr; <b>Simpan &amp; Sinkronkan</b>. Dosen ditulis ke <span style="font-family:monospace">jadwal_dosen</span>, lalu digabung ke <span style="font-family:monospace">ba_dosen</span>.</span></li>
                                     <li><span class="k">4. Tanpa tautan sesi</span><span>Pilih <b>Tautkan Sesi</b> &rarr; centang satu atau beberapa Sesi Jadwal &rarr; <b>Simpan</b>. Tanggal dan jam mengikuti sesi paling awal.</span></li>
                                     <li><span class="k">5. Tanpa jadwal</span><span>Pilih <b>Buat Jadwal</b>, isi tanggal, jam, dan dosen &rarr; <b>Buat Jadwal &amp; Tautkan</b>. Atau pilih <b>Legacy</b> bila BA lama memang tanpa jadwal.</span></li>
-                                    <li><span class="k">6. Draft</span><span>Pilih <b>Lengkapi BA</b>, periksa tanggal, dosen, peserta, dan berkas sampai status BA menjadi <b>Lengkap</b>.</span></li>
+                                    <li><span class="k">6. Draft</span><span>Pilih <b>Lengkapi BA</b> &rarr; periksa tanggal, jam, dosen, dan peserta. Berkas BA diunggah di halaman Upload; bila berkas belum ada, status tetap <b>Draft</b>.</span></li>
                                     <li><span class="k">7. Varian nama</span><span>Pilih <b>Rapikan Nama</b>, tentukan ejaan baku, lalu terapkan ke semua BA terkait sekaligus.</span></li>
                                     <li><span class="k">8. Legacy</span><span>Isi alasan dan centang pernyataan. Penanda butuh alasan, tercatat di audit log, dan bisa dibatalkan dari tabel BA (tombol <b>Batalkan</b>).</span></li>
                                 </ul>
@@ -2028,7 +2028,7 @@
                                 <ul class="bgc-readlist">
                                     <li><span class="k">Buka menu</span><span>Klik <b>Menu Perbaikan</b>, lalu pilih jenis temuan. Setiap temuan menunjukkan kegiatan dan BA yang perlu ditindak.</span></li>
                                     <li><span class="k">Tanpa BA PEL</span><span>Klik <b>Buat BA PEL</b> &rarr; buat BA dari Jadwal di halaman Bagian. Tanpa BA PEL, kegiatan tidak dihitung.</span></li>
-                                    <li><span class="k">BA PEL draft</span><span>Klik <b>Lengkapi BA</b> &rarr; periksa tanggal, dosen, peserta, dan berkas sampai statusnya <b>Lengkap</b>.</span></li>
+                                    <li><span class="k">BA PEL draft</span><span>Klik <b>Lengkapi BA</b> &rarr; periksa tanggal, jam, dosen, dan peserta. Berkas BA diunggah di halaman Upload; bila berkas belum ada, status tetap <b>Draft</b>.</span></li>
                                     <li><span class="k">Sesi jadwal</span><span>Klik <b>Periksa Sesi</b> &rarr; centang sesi yang benar. Tanggal BA harus sama dengan sesi paling awal; sesi yang sudah dipakai BA lain tidak dapat dipilih.</span></li>
                                     <li><span class="k">BA PEN kosong</span><span>Klik <b>Buat BA PEN</b> &rarr; buat BA Pendukung di halaman Bagian bila kegiatan memerlukannya.</span></li>
                                     <li><span class="k">Peserta kurang</span><span>Klik <b>Kelola Peserta</b> &rarr; centang peserta ACC yang belum masuk ke BA PEL.</span></li>
@@ -6240,13 +6240,23 @@
                 },
                 perbaikanActionLabel(q) {
                     const type = q && q.type;
-                    if (type === 'tanpa-dosen') return 'Isi Dosen';
+                    if (type === 'tanpa-dosen') return this.baSesiIds(q.baId).length ? 'Atur Dosen Sesi' : 'Isi Dosen';
                     if (type === 'sesi-tanpa-dosen') return 'Atur Dosen Sesi';
                     if (type === 'tanpa-sesi') return 'Tautkan Sesi';
                     if (type === 'draft') return 'Lengkapi BA';
                     if (type === 'tanpa-jadwal') return 'Buat Jadwal';
                     if (type === 'varian') return 'Rapikan Nama';
                     return 'Periksa BA';
+                },
+                baSesiIds(baId) {
+                    const id = String(baId || '').trim();
+                    if (!id) return [];
+                    const known = this.dosenReportBaList.find(b => String(b.id || '').trim() === id) || null;
+                    const flat = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === id) || null;
+                    const raw = Array.isArray(known && known.sesi)
+                        ? known.sesi
+                        : (Array.isArray(flat && flat.sesi) ? flat.sesi : []);
+                    return raw.map(s => String((s && s.jadwalId) || '').trim()).filter(Boolean);
                 },
                 openPerbaikanDosen() {
                     if (!this.loggedIn) return;
@@ -6258,6 +6268,10 @@
                     this.perbaikanDosen.open = false;
                     if (q.type === 'sesi-tanpa-dosen') {
                         this.openAturDosenSesi(q.baId, q.jadwalId);
+                        return;
+                    }
+                    if (q.type === 'tanpa-dosen' && this.baSesiIds(q.baId).length) {
+                        this.openAturDosenSesi(q.baId);
                         return;
                     }
                     this.openKelolaBaById(q.baId);
@@ -6274,6 +6288,10 @@
                     }
                     if (q.type === 'sesi-tanpa-dosen') {
                         this.openAturDosenSesi(q.baId, q.jadwalId);
+                        return;
+                    }
+                    if (q.type === 'tanpa-dosen' && q.baId && this.baSesiIds(q.baId).length) {
+                        this.openAturDosenSesi(q.baId);
                         return;
                     }
                     if (q.baId) this.openKelolaBaById(q.baId);
