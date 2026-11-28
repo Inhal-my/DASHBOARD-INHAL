@@ -434,7 +434,7 @@ describe('detail laporan filter mobile (bottom sheet ala dashboard)', () => {
   });
   it('kartu filter desktop hanya tampil di layar besar', async () => {
     const html = await loadHtml();
-    expect(html).toContain('filter-desktop sticky top-16');
+    expect(html).toContain('class="filter-desktop z-30 mb-4 lap-card"');
     const selectors = cssSelectors(html);
     for (const sel of ['.filter-desktop', '.filter-mobile-bar', '.sheet-overlay', '.sheet-panel', '.sheet-handle']) {
       expect(selectors.has(sel)).toBe(true);
@@ -541,7 +541,7 @@ describe('detail laporan app shell (ala dashboard)', () => {
 describe('detail laporan shell interaktif', () => {
   it('menyediakan state dan aksi shell', async () => {
     const html = await loadHtml();
-    expect(html).toContain('sidebarCollapsed: false');
+    expect(html).toContain('sidebarCollapsed: true');
     expect(html).toContain('sidebarOpen: false');
     expect(html).toContain('mobileMenuOpen: false');
     expect(html).toContain('this.sidebarCollapsed = !this.sidebarCollapsed');
@@ -568,7 +568,10 @@ describe('detail laporan memakai app shell', () => {
   it('merender sidebar, topbar, dan bottom-nav', async () => {
     const html = await loadHtml();
     expect(html).toContain('class="app-shell font-sans text-ink antialiased"');
-    expect(html).toContain(":class=\"sidebarCollapsed ? 'sidebar-collapsed' : ''\"");
+    expect(html).toContain('@mouseenter="sidebarHovered = true"');
+    expect(html).toContain('applyShellClasses()');
+    expect(html).toContain("el.classList.toggle('sidebar-collapsed'");
+    expect(html).toContain("el.classList.toggle('sidebar-hovered'");
     expect(html).toContain('sidebar-aside');
     expect(html).toContain('main-wrap');
     expect(html).toContain('content-wrap');
