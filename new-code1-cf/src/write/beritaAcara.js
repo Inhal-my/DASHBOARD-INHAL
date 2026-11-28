@@ -977,6 +977,13 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
     );
   }
 
+  // Sesi jadwal sudah ada -> penanda legacy otomatis dibatalkan.
+  if (sesi.length && Number(existing.legacy_sesi) === 1) {
+    stmts.push(db.prepare(
+      "UPDATE berita_acara SET legacy_sesi = 0, legacy_reason = '', legacy_at = '', legacy_by = '' WHERE ba_id = ?1"
+    ).bind(id));
+  }
+
   if (pesertaIds) {
     const baruSet = new Set(pesertaBaru.map((x) => str(x.idPengajuan)));
     const removed = currentIds.filter((pid) => !baruSet.has(pid));
@@ -1022,6 +1029,223 @@ export async function updateBeritaAcaraBagian(db, baId, payload, ctx) {
       : undefined,
     overrideApplied: overrideApplied.length ? overrideApplied : undefined
   };
+}
+
+// Atur dosen per sesi untuk satu BA. Sumber utama jadwal_dosen; ba_dosen dan
+// kolom teks dosen disinkronkan sebagai gabungan unik agar laporan konsisten.
+export async function setBaDosenSesi(db, baId, payload, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diubah.' };
+
+  const p = payload || {};
+  const rows = Array.isArray(p.sessions) ? p.sessions : [];
+  const linked = await loadBaSesiRows(db, id);
+  const linkedIds = linked.map((r) => str(r.jadwal_id)).filter(Boolean);
+  if (!linkedIds.length) {
+    return { success: false, message: 'BA belum memiliki sesi jadwal. Tautkan sesi terlebih dahulu.' };
+  }
+  const linkedSet = new Set(linkedIds);
+  const inputByJadwal = {};
+  for (const row of rows) {
+    const jid = str(row && row.jadwalId);
+    if (!jid || !linkedSet.has(jid)) {
+      return { success: false, message: 'Sesi tidak tertaut ke BA ini: ' + (jid || '-') + '.' };
+    }
+    const list = normalizeDosenList(row && row.dosenList, row && row.dosen);
+    const current = await loadJadwalDosenList(db, [jid]);
+    const check = await checkBaDosenMaster(db, list, current);
+    if (!check.ok) return { success: false, message: check.message };
+    inputByJadwal[jid] = check.list;
+  }
+  for (const jid of linkedIds) {
+    if (!inputByJadwal[jid]) {
+      return { success: false, message: 'Daftar sesi tidak lengkap: ' + jid + '.' };
+    }
+  }
+
+  const ts = nowIso();
+  const stmts = [];
+  const union = [];
+  const seen = new Set();
+  for (const jid of linkedIds) {
+    const list = inputByJadwal[jid] || [];
+    stmts.push(db.prepare('DELETE FROM jadwal_dosen WHERE jadwal_id = ?1').bind(jid));
+    list.forEach((nama, index) => {
+      stmts.push(
+        db.prepare(
+          'INSERT INTO jadwal_dosen (timestamp, jadwal_id, nama, nama_key, urutan) VALUES (?1,?2,?3,?4,?5)'
+        ).bind(ts, jid, nama, dosenKey(nama), index + 1)
+      );
+      const key = dosenKey(nama);
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        union.push(nama);
+      }
+    });
+    stmts.push(
+      db.prepare('UPDATE jadwal_pelaksanaan SET dosen = ?1, updated_at = ?2 WHERE jadwal_id = ?3')
+        .bind(list[0] || '', ts, jid)
+    );
+  }
+  stmts.push(...buildBaDosenStmts(db, id, union, ts));
+  stmts.push(db.prepare('UPDATE berita_acara SET dosen = ?1 WHERE ba_id = ?2').bind(union[0] || '', id));
+  await db.batch(stmts);
+
+  await auditBa(db, ctx, 'BA_DOSEN_SESI_UPDATE', id, {
+    jenis: 'Pelaksanaan',
+    jumlahSesi: linkedIds.length,
+    sesi: linkedIds.map((jid) => ({ jadwalId: jid, dosenList: inputByJadwal[jid] || [] }))
+  });
+  return {
+    success: true,
+    message: 'Dosen per sesi berhasil disimpan.',
+    jumlahSesi: linkedIds.length,
+    dosenList: union
+  };
+}
+
+// Tandai/batalkan legacy: BA lama yang sah tanpa jadwal sesi. BA tetap dihitung
+// 1 sesi (virtual) dan datanya tidak dihapus, tetapi temuan "tanpa sesi" dan
+// "tanpa jadwal" diabaikan. Penandaan butuh alasan dan dicatat di audit log.
+export async function setBaLegacy(db, baId, payload, ctx) {
+  const admin = await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diubah.' };
+
+  const p = payload || {};
+  const legacy = !!p.legacy;
+  const reason = str(p.reason);
+  const ts = nowIso();
+  const actor = str(ctx && ctx.session && ctx.session.nama) || str(admin && admin.nama) || 'Sistem';
+
+  if (legacy) {
+    if (!reason) return { success: false, message: 'Alasan wajib diisi untuk menandai legacy.' };
+    if (reason.length > 500) return { success: false, message: 'Alasan maksimal 500 karakter.' };
+    const linked = await loadBaSesiRows(db, id);
+    if (linked.length) {
+      return { success: false, message: 'BA ini sudah memiliki sesi jadwal; penanda legacy tidak diperlukan.' };
+    }
+    await db.prepare(
+      'UPDATE berita_acara SET legacy_sesi = 1, legacy_reason = ?1, legacy_at = ?2, legacy_by = ?3 WHERE ba_id = ?4'
+    ).bind(reason, ts, actor, id).run();
+    await writeAuditLog(db, {
+      actor,
+      action: 'BA_LEGACY_SET',
+      target: id,
+      detail: JSON.stringify({ legacy: true, reason }),
+      alasan: reason
+    });
+    return { success: true, message: 'BA ditandai legacy. Temuan tanpa sesi/jadwal diabaikan.', legacy: true };
+  }
+
+  await db.prepare(
+    "UPDATE berita_acara SET legacy_sesi = 0, legacy_reason = '', legacy_at = '', legacy_by = '' WHERE ba_id = ?1"
+  ).bind(id).run();
+  await writeAuditLog(db, {
+    actor,
+    action: 'BA_LEGACY_UNSET',
+    target: id,
+    detail: JSON.stringify({ legacy: false }),
+    alasan: ''
+  });
+  return { success: true, message: 'Penanda legacy dibatalkan.', legacy: false };
+}
+
+// Seragamkan ejaan dosen pada satu BA. Untuk BA yang sudah punya sesi, nama
+// baku juga ditulis ke jadwal_dosen (sumber utama laporan), lalu digabung ke
+// ba_dosen dan berita_acara.dosen. BA tanpa sesi cukup ba_dosen + kolom teks.
+export async function renameBaDosen(db, baId, payload, ctx) {
+  await requireAdmin(db, ctx.token, ctx.session);
+  const id = str(baId);
+  if (!id) return { success: false, message: 'BA ID wajib diisi.' };
+  const existing = await db.prepare('SELECT * FROM berita_acara WHERE ba_id = ?1').bind(id).first();
+  if (!existing) return { success: false, message: 'Berita acara tidak ditemukan.' };
+  if (str(existing.archived_at)) return { success: false, message: 'BA ini berada di arsip. Pulihkan dulu sebelum diubah.' };
+
+  const p = payload || {};
+  const canonical = str(p.canonical);
+  const variants = normalizeDosenList(p.variants);
+  if (!canonical) return { success: false, message: 'Nama baku wajib dipilih.' };
+  if (!variants.length) return { success: false, message: 'Daftar ejaan varian wajib diisi.' };
+  const variantKeys = {};
+  variants.forEach((nama) => { const key = dosenKey(nama); if (key) variantKeys[key] = 1; });
+  variantKeys[dosenKey(canonical)] = 1;
+
+  const replaceList = (list) => {
+    const out = [];
+    const seen = {};
+    for (const nama of normalizeDosenList(list)) {
+      const value = variantKeys[dosenKey(nama)] ? canonical : str(nama);
+      const key = dosenKey(value);
+      if (!key || seen[key]) continue;
+      seen[key] = 1;
+      out.push(value);
+    }
+    return out;
+  };
+
+  const sessionRows = (await db.prepare('SELECT jadwal_id FROM berita_acara_sesi WHERE ba_id = ?1 ORDER BY urutan, id').bind(id).all()).results || [];
+  const jadwalIds = sessionRows.map((r) => str(r.jadwal_id)).filter(Boolean);
+  const ts = nowIso();
+  const stmts = [];
+  const before = [];
+  const union = [];
+  const seenUnion = {};
+
+  if (jadwalIds.length) {
+    const currentUnion = await loadJadwalDosenList(db, jadwalIds);
+    for (const jid of jadwalIds) {
+      const rows = (await db.prepare('SELECT nama FROM jadwal_dosen WHERE jadwal_id = ?1 ORDER BY urutan, id').bind(jid).all()).results || [];
+      const current = normalizeDosenList(rows.map((r) => r.nama));
+      const next = replaceList(current);
+      before.push({ jadwalId: jid, dosenList: current });
+      const check = await checkBaDosenMaster(db, next, currentUnion);
+      if (!check.ok) return { success: false, message: check.message };
+      stmts.push(db.prepare('DELETE FROM jadwal_dosen WHERE jadwal_id = ?1').bind(jid));
+      check.list.forEach((nama, index) => {
+        stmts.push(db.prepare(
+          'INSERT INTO jadwal_dosen (timestamp, jadwal_id, nama, nama_key, urutan) VALUES (?1,?2,?3,?4,?5)'
+        ).bind(ts, jid, nama, dosenKey(nama), index + 1));
+        const key = dosenKey(nama);
+        if (key && !seenUnion[key]) { seenUnion[key] = 1; union.push(nama); }
+      });
+      stmts.push(db.prepare('UPDATE jadwal_pelaksanaan SET dosen = ?1, updated_at = ?2 WHERE jadwal_id = ?3')
+        .bind(check.list[0] || '', ts, jid));
+    }
+    if (!union.length) return { success: false, message: 'Daftar dosen sesi kosong setelah perapian.' };
+    stmts.push(...buildBaDosenStmts(db, id, union, ts));
+    stmts.push(db.prepare('UPDATE berita_acara SET dosen = ?1 WHERE ba_id = ?2').bind(union[0] || '', id));
+  } else {
+    const current = await loadBaDosenList(db, id, existing.dosen);
+    const next = replaceList(current);
+    if (!next.length) return { success: false, message: 'Daftar dosen BA kosong setelah perapian.' };
+    const check = await checkBaDosenMaster(db, next, current);
+    if (!check.ok) return { success: false, message: check.message };
+    before.push({ jadwalId: '', dosenList: current });
+    stmts.push(...buildBaDosenStmts(db, id, check.list, ts));
+    stmts.push(db.prepare('UPDATE berita_acara SET dosen = ?1 WHERE ba_id = ?2').bind(check.list[0] || '', id));
+    check.list.forEach((nama) => {
+      const key = dosenKey(nama);
+      if (key && !seenUnion[key]) { seenUnion[key] = 1; union.push(nama); }
+    });
+  }
+
+  await db.batch(stmts);
+  await writeAuditLog(db, {
+    actor: str(ctx && ctx.session && ctx.session.nama) || 'Sistem',
+    action: 'BA_DOSEN_RENAME',
+    target: id,
+    detail: JSON.stringify({ canonical, variants, before, after: union }),
+    alasan: ''
+  });
+  return { success: true, message: 'Varian nama dosen dirapikan.', dosenList: union };
 }
 
 export async function lengkapiBeritaAcaraBagian(db, baId, payload, kategori, ctx) {

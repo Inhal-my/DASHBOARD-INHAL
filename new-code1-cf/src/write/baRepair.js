@@ -383,6 +383,7 @@ export async function createJadwalFromBa(db, payload, ctx) {
     db.prepare(
       'UPDATE berita_acara SET tanggal_pelaksanaan = ?1, jam = ?2, ' +
       "jadwal_id = CASE WHEN COALESCE(jadwal_id, '') = '' THEN ?3 ELSE jadwal_id END, " +
+      'legacy_sesi = 0, legacy_reason = \'\', legacy_at = \'\', legacy_by = \'\', ' +
       'revision = revision + 1, updated_at = ?4 WHERE ba_id = ?5'
     ).bind(tanggal, jam, jadwalId, ts, baId)
   ];

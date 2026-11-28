@@ -80,7 +80,8 @@
           totalRealisasi: 0,
           totalRencana: 0,
           baRows: [],
-          jadwalRows: []
+          jadwalRows: [],
+          sesiRows: []
         };
       }
       dosenMap[key].names[str(nama).replace(/\s+/g, ' ')] = 1;
@@ -99,8 +100,22 @@
         if (s && flags.indexOf(s) === -1) flags.push(s);
       });
       const status = str(b.status) || 'Lengkap';
+      const legacy = !!b.legacy;
       if (status === 'Draft' && flags.indexOf('Draft') === -1) flags.push('Draft');
-      if (!jadwalIds.length && flags.indexOf('Tanpa tautan sesi') === -1) flags.push('Tanpa tautan sesi');
+      if (!jadwalIds.length && !legacy && flags.indexOf('Tanpa tautan sesi') === -1) flags.push('Tanpa tautan sesi');
+      const rawSesi = Array.isArray(b.sesi) ? b.sesi : [];
+      const sesi = rawSesi.map(function (s) {
+        const virtual = !!(s && s.virtual);
+        return {
+          jadwalId: str(s && s.jadwalId),
+          tanggal: str(s && s.tanggal),
+          jam: str(s && s.jam),
+          dosenList: dosenOf(s && s.dosenList),
+          virtual: virtual,
+          active: !!(s && s.active) && !virtual,
+          source: str(s && s.source) || (virtual ? 'ba' : 'jadwal')
+        };
+      }).filter(function (s) { return s.virtual || s.jadwalId; });
       return {
         id: str(b.id),
         key: key,
@@ -114,9 +129,11 @@
         sesiCount: Math.max(1, Number(b.sesiCount) || 0),
         status: status,
         flags: flags,
+        legacy: legacy,
         peserta: Array.isArray(b.peserta) ? b.peserta : [],
         jadwalIds: jadwalIds,
         dosenList: dosenOf(b.dosenList),
+        sesi: sesi,
         fileUrl: str(b.fileUrl)
       };
     });
@@ -140,7 +157,7 @@
           label: b.label
         };
       }
-      if (!jadwalKeys[b.key] && b.flags.indexOf('Tanpa jadwal') === -1) b.flags.push('Tanpa jadwal');
+      if (!jadwalKeys[b.key] && !b.legacy && b.flags.indexOf('Tanpa jadwal') === -1) b.flags.push('Tanpa jadwal');
     });
 
     normBa.forEach(function (b) {
@@ -149,6 +166,18 @@
       if (!b.dosenList.length) {
         quality.push({ type: 'tanpa-dosen', baId: b.id, baIds: baIds, dosen: '', label: b.label, message: 'BA Pelaksanaan belum memiliki dosen; tidak masuk rekapitulasi dosen.' });
       }
+      b.sesi.forEach(function (s, si) {
+        if (s.virtual || s.dosenList.length) return;
+        quality.push({
+          type: 'sesi-tanpa-dosen',
+          baId: b.id,
+          baIds: baIds,
+          jadwalId: s.jadwalId,
+          dosen: dosenText,
+          label: b.label,
+          message: 'Sesi ' + (si + 1) + (s.tanggal ? (' (' + s.tanggal + (s.jam ? ' ' + s.jam : '') + ')') : '') + ' pada BA ' + (b.id || b.label) + ' belum memiliki dosen; tidak dihitung ke dosen mana pun.'
+        });
+      });
       if (b.flags.indexOf('Tanpa tautan sesi') !== -1) {
         quality.push({ type: 'tanpa-sesi', baId: b.id, baIds: baIds, dosen: dosenText, label: b.label, message: 'BA tanpa tautan sesi; dihitung 1 sesi.' });
       }
@@ -160,14 +189,32 @@
       }
     });
 
+    // Opsi A: realisasi = jumlah sesi tempat dosen terdaftar di jadwal_dosen.
+    // BA tanpa sesi memakai satu sesi virtual dari daftar dosen BA.
     normBa.forEach(function (b) {
-      b.dosenList.forEach(function (d) {
-        const row = register(d.nama);
+      const sesiList = b.sesi.length ? b.sesi : null;
+      const perDosen = {};
+      if (sesiList) {
+        sesiList.forEach(function (s, si) {
+          s.dosenList.forEach(function (d) {
+            if (!perDosen[d.key]) perDosen[d.key] = { nama: d.nama, sesi: [] };
+            perDosen[d.key].sesi.push({ sesi: s, urutan: si + 1 });
+          });
+        });
+      } else {
+        b.dosenList.forEach(function (d) {
+          perDosen[d.key] = { nama: d.nama, sesi: [] };
+        });
+      }
+      Object.keys(perDosen).forEach(function (dosenId) {
+        const entry = perDosen[dosenId];
+        const row = register(entry.nama);
         if (!row.rows[b.key]) {
           row.rows[b.key] = { realisasi: 0, rencana: 0, baIds: {}, peserta: {}, statuses: {}, flags: {} };
         }
         const cell = row.rows[b.key];
-        cell.realisasi += b.sesiCount;
+        const tambah = sesiList ? entry.sesi.length : b.sesiCount;
+        cell.realisasi += tambah;
         if (b.id) cell.baIds[b.id] = 1;
         b.peserta.forEach(function (p) {
           const npm = str(p && p.npm);
@@ -175,8 +222,44 @@
         });
         cell.statuses[b.status] = 1;
         b.flags.forEach(function (f) { cell.flags[f] = 1; });
-        row.totalRealisasi += b.sesiCount;
+        row.totalRealisasi += tambah;
         if (b.id) row.baIds[b.id] = 1;
+        const diajar = {};
+        entry.sesi.forEach(function (item) { diajar[item.urutan] = 1; });
+        const sesiRencana = sesiList
+          ? entry.sesi.filter(function (item) { return item.sesi.active; }).length
+          : (b.flags.indexOf('Tanpa jadwal') === -1 ? b.sesiCount : 0);
+        const sesiDetail = b.sesi.map(function (s, si) {
+          return {
+            jadwalId: s.jadwalId,
+            urutan: si + 1,
+            tanggal: s.tanggal || b.tanggal,
+            jam: s.jam || b.jam,
+            virtual: s.virtual,
+            active: s.active,
+            source: s.source,
+            diajar: !!diajar[si + 1],
+            dosenList: s.dosenList.map(function (x) { return x.nama; })
+          };
+        });
+        entry.sesi.forEach(function (item) {
+          const s = item.sesi;
+          row.sesiRows.push({
+            baId: b.id,
+            kegiatanKey: b.key,
+            bagian: b.bagian,
+            blok: b.blok,
+            jenis: b.jenis,
+            label: b.label,
+            urutan: item.urutan,
+            jadwalId: s.jadwalId,
+            tanggal: s.tanggal || b.tanggal,
+            jam: s.jam || b.jam,
+            virtual: s.virtual,
+            source: s.source,
+            pesertaCount: b.peserta.length
+          });
+        });
         row.baRows.push({
           baId: b.id,
           kegiatanKey: b.key,
@@ -187,10 +270,14 @@
           tanggal: b.tanggal,
           jam: b.jam,
           sesiCount: b.sesiCount,
+          realisasi: tambah,
+          rencana: sesiRencana,
+          sesi: sesiDetail,
           pesertaCount: b.peserta.length,
           peserta: b.peserta.map(function (p) { return str(p && p.npm); }).filter(Boolean),
           hasJadwal: b.jadwalIds.length > 0 && b.flags.indexOf('Tanpa tautan sesi') === -1,
           status: b.status,
+          legacy: !!b.legacy,
           flags: b.flags.slice(),
           fileUrl: b.fileUrl
         });
@@ -346,6 +433,7 @@
         details: details,
         baRows: d.baRows,
         jadwalRows: d.jadwalRows,
+        sesiRows: d.sesiRows,
         totalRealisasi: d.totalRealisasi,
         totalRencana: d.totalRencana,
         baSesi: baSesi,

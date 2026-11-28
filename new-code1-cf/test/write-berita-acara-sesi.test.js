@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:test';
 import { createSession } from '../src/session.js';
 import { saveJadwalPelaksanaan, cancelJadwalPelaksanaan } from '../src/write/jadwal.js';
-import { saveBeritaAcaraBagian, updateBeritaAcaraBagian, deleteBeritaAcaraBagian } from '../src/write/beritaAcara.js';
+import { saveBeritaAcaraBagian, updateBeritaAcaraBagian, deleteBeritaAcaraBagian, setBaDosenSesi, setBaLegacy, renameBaDosen } from '../src/write/beritaAcara.js';
 
 async function bagianCtx(kategoris = ['SGD']) {
   return { token: await createSession(env.DB, { role: 'bagian', nama: 'Bagian', kategoris }), env: {} };
@@ -292,5 +292,163 @@ describe('BA Pelaksanaan multi-sesi', () => {
     expect(res.message).toContain('Pilih minimal satu sesi');
     const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM berita_acara').first();
     expect(Number(count.n)).toBe(0);
+  });
+});
+
+describe('Atur dosen per sesi', () => {
+  async function makeBaMultiSesi() {
+    await seedPengajuan();
+    const ctx = await bagianCtx();
+    const a = await makeJadwal(ctx, '2026-09-20', '09:00', 'dr. Andi', [pesertaOf(...AISYAH)]);
+    const b = await makeJadwal(ctx, '2026-09-21', '13:00', 'dr. Budi', [pesertaOf(...BUDI)]);
+    const created = await saveBeritaAcaraBagian(env.DB, {
+      bagian: 'SGD', blok: 'A', namaKegiatan: 'SGD 1', tanggalPelaksanaan: '2026-09-20',
+      catatan: '', jadwalIds: [a, b], peserta: [pesertaOf(...AISYAH), pesertaOf(...BUDI)]
+    }, 'SGD', ctx);
+    expect(created.success).toBe(true);
+    return { created, a, b };
+  }
+
+  it('menyimpan dosen per sesi dan menyinkronkan ba_dosen', async () => {
+    const { created, a, b } = await makeBaMultiSesi();
+    const admin = await adminCtx();
+    const res = await setBaDosenSesi(env.DB, created.baId, {
+      sessions: [
+        { jadwalId: a, dosenList: ['dr. Andi', 'dr. Budi'] },
+        { jadwalId: b, dosenList: [] }
+      ]
+    }, admin);
+    expect(res.success).toBe(true);
+    expect(res.dosenList).toEqual(['dr. Andi', 'dr. Budi']);
+
+    const jdA = await env.DB.prepare('SELECT nama FROM jadwal_dosen WHERE jadwal_id = ?1 ORDER BY urutan').bind(a).all();
+    expect((jdA.results || []).map((r) => r.nama)).toEqual(['dr. Andi', 'dr. Budi']);
+    const jdB = await env.DB.prepare('SELECT nama FROM jadwal_dosen WHERE jadwal_id = ?1').bind(b).all();
+    expect(jdB.results).toEqual([]);
+    const baDosen = await env.DB.prepare('SELECT nama FROM ba_dosen WHERE ba_id = ?1 ORDER BY urutan').bind(created.baId).all();
+    expect((baDosen.results || []).map((r) => r.nama)).toEqual(['dr. Andi', 'dr. Budi']);
+    const ba = await env.DB.prepare('SELECT dosen FROM berita_acara WHERE ba_id = ?1').bind(created.baId).first();
+    expect(ba.dosen).toBe('dr. Andi');
+  });
+
+  it('menolak sesi yang tidak tertaut dan daftar sesi yang tidak lengkap', async () => {
+    const { created, a } = await makeBaMultiSesi();
+    const admin = await adminCtx();
+    const asing = await setBaDosenSesi(env.DB, created.baId, {
+      sessions: [{ jadwalId: 'JDW-2026-9999', dosenList: ['dr. Andi'] }]
+    }, admin);
+    expect(asing.success).toBe(false);
+    expect(asing.message).toContain('tidak tertaut');
+
+    const kurang = await setBaDosenSesi(env.DB, created.baId, {
+      sessions: [{ jadwalId: a, dosenList: ['dr. Andi'] }]
+    }, admin);
+    expect(kurang.success).toBe(false);
+    expect(kurang.message).toContain('tidak lengkap');
+  });
+
+  it('menolak dosen di luar master', async () => {
+    const { created, a, b } = await makeBaMultiSesi();
+    const admin = await adminCtx();
+    const res = await setBaDosenSesi(env.DB, created.baId, {
+      sessions: [
+        { jadwalId: a, dosenList: ['dr. Tidak Ada'] },
+        { jadwalId: b, dosenList: [] }
+      ]
+    }, admin);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('master');
+  });
+});
+
+describe('Tandai legacy', () => {
+  async function seedBa(baId) {
+    await env.DB.prepare(
+      "INSERT INTO berita_acara (timestamp, ba_id, bagian, blok, nama_kegiatan, tanggal_pelaksanaan, jam, dosen, jumlah_peserta, sumber, kegiatan_key) " +
+      "VALUES ('2026-09-10T08:00:00', ?1, 'SGD', 'A', 'SGD 1', '2026-09-20', '08:00', 'dr. Budi', '1', 'Bagian', 'sgd|a|sgd 1')"
+    ).bind(baId).run();
+  }
+
+  it('menandai legacy dengan alasan dan mencatat audit', async () => {
+    await seedBa('BA-PEL-LEGACY');
+    const admin = await adminCtx();
+    const res = await setBaLegacy(env.DB, 'BA-PEL-LEGACY', { legacy: true, reason: 'BA lama tanpa jadwal resmi' }, admin);
+    expect(res.success).toBe(true);
+    expect(res.legacy).toBe(true);
+
+    const row = await env.DB.prepare('SELECT legacy_sesi, legacy_reason, legacy_at, legacy_by FROM berita_acara WHERE ba_id = ?1').bind('BA-PEL-LEGACY').first();
+    expect(Number(row.legacy_sesi)).toBe(1);
+    expect(row.legacy_reason).toBe('BA lama tanpa jadwal resmi');
+    expect(row.legacy_at).toBeTruthy();
+    expect(row.legacy_by).toBe('Admin');
+
+    const audit = await env.DB.prepare("SELECT aksi, alasan FROM audit_log WHERE target = ?1 AND aksi = 'BA_LEGACY_SET'").bind('BA-PEL-LEGACY').first();
+    expect(audit.alasan).toBe('BA lama tanpa jadwal resmi');
+  });
+
+  it('menolak legacy tanpa alasan', async () => {
+    await seedBa('BA-PEL-LEGACY2');
+    const admin = await adminCtx();
+    const res = await setBaLegacy(env.DB, 'BA-PEL-LEGACY2', { legacy: true, reason: '   ' }, admin);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('Alasan');
+  });
+
+  it('menolak legacy bila BA sudah punya sesi', async () => {
+    await seedBa('BA-PEL-LEGACY3');
+    await env.DB.prepare(
+      "INSERT INTO jadwal_pelaksanaan (timestamp, jadwal_id, bagian, blok, nama_kegiatan, kegiatan_key, tanggal, jam, dosen, active) " +
+      "VALUES ('2026-09-10T08:00:00','JDW-2026-0001','SGD','A','SGD 1','sgd|a|sgd 1','2026-09-20','08:00','dr. Budi',1)"
+    ).run();
+    await env.DB.prepare("INSERT INTO berita_acara_sesi (timestamp, ba_id, jadwal_id, urutan) VALUES ('2026-09-10T08:00:00','BA-PEL-LEGACY3','JDW-2026-0001',1)").run();
+    const admin = await adminCtx();
+    const res = await setBaLegacy(env.DB, 'BA-PEL-LEGACY3', { legacy: true, reason: 'coba' }, admin);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('sudah memiliki sesi');
+  });
+
+  it('membatalkan penanda legacy dan mengosongkan alasan', async () => {
+    await seedBa('BA-PEL-LEGACY4');
+    const admin = await adminCtx();
+    const set = await setBaLegacy(env.DB, 'BA-PEL-LEGACY4', { legacy: true, reason: 'BA lama' }, admin);
+    expect(set.success).toBe(true);
+    const unset = await setBaLegacy(env.DB, 'BA-PEL-LEGACY4', { legacy: false }, admin);
+    expect(unset.success).toBe(true);
+    const row = await env.DB.prepare('SELECT legacy_sesi, legacy_reason FROM berita_acara WHERE ba_id = ?1').bind('BA-PEL-LEGACY4').first();
+    expect(Number(row.legacy_sesi)).toBe(0);
+    expect(row.legacy_reason).toBe('');
+  });
+});
+
+describe('Rapikan varian dosen', () => {
+  async function seedBaWithJadwal(baId, dosenBa, dosenJadwal) {
+    await env.DB.prepare(
+      "INSERT INTO berita_acara (timestamp, ba_id, bagian, blok, nama_kegiatan, tanggal_pelaksanaan, jam, dosen, jumlah_peserta, sumber, kegiatan_key, jadwal_id) " +
+      "VALUES ('2026-09-10T08:00:00', ?1, 'SGD', 'A', 'SGD 1', '2026-09-20', '08:00', ?2, '1', 'Bagian', 'sgd|a|sgd 1', 'JDW-2026-1001')"
+    ).bind(baId, dosenBa).run();
+    await env.DB.prepare(
+      "INSERT INTO jadwal_pelaksanaan (timestamp, jadwal_id, bagian, blok, nama_kegiatan, kegiatan_key, tanggal, jam, dosen, active) " +
+      "VALUES ('2026-09-10T08:00:00','JDW-2026-1001','SGD','A','SGD 1','sgd|a|sgd 1','2026-09-20','08:00',?1,1)"
+    ).bind(dosenJadwal).run();
+    await env.DB.prepare("INSERT INTO berita_acara_sesi (timestamp, ba_id, jadwal_id, urutan) VALUES ('2026-09-10T08:00:00',?1,'JDW-2026-1001',1)").bind(baId).run();
+    await env.DB.prepare("INSERT INTO jadwal_dosen (timestamp, jadwal_id, nama, nama_key, urutan) VALUES ('2026-09-10T08:00:00','JDW-2026-1001',?1,?2,1)").bind(dosenJadwal, dosenJadwal.toLowerCase().replace(/[^a-z0-9]/g, '')).run();
+    await env.DB.prepare("INSERT INTO ba_dosen (timestamp, ba_id, nama, nama_key, urutan) VALUES ('2026-09-10T08:00:00',?1,?2,?3,1)").bind(baId, dosenBa, dosenBa.toLowerCase().replace(/[^a-z0-9]/g, '')).run();
+  }
+
+  it('menulis nama baku ke jadwal_dosen dan ba_dosen untuk BA bersesi', async () => {
+    await seedBaWithJadwal('BA-PEL-RENAME', 'dr.Budi', 'dr.Budi');
+    const admin = await adminCtx();
+    const res = await renameBaDosen(env.DB, 'BA-PEL-RENAME', { canonical: 'dr. Budi', variants: ['dr.Budi'] }, admin);
+    expect(res.success).toBe(true);
+    expect(res.dosenList).toEqual(['dr. Budi']);
+
+    const jd = await env.DB.prepare("SELECT nama FROM jadwal_dosen WHERE jadwal_id = 'JDW-2026-1001' ORDER BY urutan").all();
+    expect((jd.results || []).map((r) => r.nama)).toEqual(['dr. Budi']);
+    const bd = await env.DB.prepare("SELECT nama FROM ba_dosen WHERE ba_id = 'BA-PEL-RENAME' ORDER BY urutan").all();
+    expect((bd.results || []).map((r) => r.nama)).toEqual(['dr. Budi']);
+    const ba = await env.DB.prepare("SELECT dosen FROM berita_acara WHERE ba_id = 'BA-PEL-RENAME'").first();
+    expect(ba.dosen).toBe('dr. Budi');
+    const jp = await env.DB.prepare("SELECT dosen FROM jadwal_pelaksanaan WHERE jadwal_id = 'JDW-2026-1001'").first();
+    expect(jp.dosen).toBe('dr. Budi');
   });
 });

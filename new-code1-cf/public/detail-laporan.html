@@ -699,6 +699,113 @@
                 </div>
             </div>
         </div>
+        <!-- atur dosen per sesi (admin) -->
+        <div v-if="loggedIn && dosenSesi.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="!dosenSesi.saving && (dosenSesi.open = false)">
+            <div class="modal-scroll w-full max-w-lg rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="dosenSesiTitle">
+                <div class="mb-1 flex items-center gap-2">
+                    <h3 id="dosenSesiTitle" class="text-sm font-bold text-slate-900">Atur Dosen Sesi — {{ dosenSesi.baId }}</h3>
+                    <button type="button" class="ml-auto text-slate-400 hover:text-slate-600" :disabled="dosenSesi.saving" aria-label="Tutup atur dosen sesi" @click="dosenSesi.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <p class="mb-3 text-[11px] text-slate-400">Tanggal/jam BA mengikuti sesi paling awal. Dosen per sesi maksimal 5. Perubahan menjadi sumber utama laporan.</p>
+                <div class="space-y-3">
+                    <div v-for="(s, si) in dosenSesi.sessions" :key="'ds-' + s.jadwalId" class="rounded-xl border border-slate-200 p-3">
+                        <div class="mb-2 flex flex-wrap items-center gap-2">
+                            <span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-700">S{{ s.urutan }}</span>
+                            <span class="text-xs text-slate-600">{{ s.tanggal ? fmtTanggal(s.tanggal) : '-' }} &middot; {{ s.jam || '-' }}</span>
+                            <span v-if="!s.active" class="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">tidak aktif</span>
+                            <span class="ml-auto font-mono text-[10px] text-slate-400">{{ s.jadwalId }}</span>
+                        </div>
+                        <div v-for="(d, di) in s.dosenList" :key="'dsd-' + s.jadwalId + '-' + di" class="mb-2 flex items-center gap-2">
+                            <dosen-picker v-model="s.dosenList[di]" :options="dosenOptions" :placeholder="'Pilih dosen ' + (di + 1)" class="flex-1"></dosen-picker>
+                            <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600" title="Hapus dosen" :disabled="dosenSesi.saving" @click="removeDosenSesiRow(si, di)"><i class="bi bi-dash-lg"></i></button>
+                        </div>
+                        <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="dosenSesi.saving || s.dosenList.length >= 5" @click="addDosenSesiRow(si)"><i class="bi bi-plus-lg"></i> Tambah dosen</button>
+                    </div>
+                </div>
+                <div v-if="dosenSesi.message" class="mt-2 text-[11px] font-semibold text-rose-600">{{ dosenSesi.message }}</div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" class="btn-soft" :disabled="dosenSesi.saving" @click="dosenSesi.open = false">Batal</button>
+                    <button type="button" class="btn-primary" :disabled="dosenSesi.saving" @click="submitDosenSesi">
+                        <i :class="dosenSesi.saving ? 'bi bi-arrow-repeat animate-spin' : 'bi bi-check2-circle'"></i>
+                        {{ dosenSesi.saving ? 'Menyimpan...' : 'Simpan & Sinkronkan' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- modal tandai / batalkan legacy -->
+        <div v-if="loggedIn && legacyBa.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="!legacyBa.saving && (legacyBa.open = false)">
+            <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="legacyBaTitle">
+                <div class="mb-1 flex items-center gap-2">
+                    <h3 id="legacyBaTitle" class="text-sm font-bold text-slate-900">{{ legacyBa.unset ? 'Batalkan Legacy' : 'Tandai Legacy' }} — {{ legacyBa.baId }}</h3>
+                    <button type="button" class="ml-auto text-slate-400 hover:text-slate-600" :disabled="legacyBa.saving" aria-label="Tutup legacy" @click="legacyBa.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <template v-if="!legacyBa.unset">
+                    <div class="mb-3 rounded-xl bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
+                        <b>BA tetap ada dan tetap dihitung 1 sesi.</b> Temuan tanpa sesi/jadwal untuk BA ini tidak lagi muncul karena statusnya disengaja (legacy).
+                    </div>
+                    <label class="label">Alasan</label>
+                    <textarea v-model="legacyBa.reason" rows="3" class="input" placeholder="Contoh: BA lama sebelum fitur sesi; tidak ada jadwal resmi." :disabled="legacyBa.saving"></textarea>
+                    <label class="mt-2 flex items-start gap-2 text-[11px] font-semibold text-slate-600">
+                        <input type="checkbox" v-model="legacyBa.ack" class="mt-0.5" :disabled="legacyBa.saving">
+                        <span>Saya mengerti rencana dosen tidak bertambah dan temuan akan diabaikan.</span>
+                    </label>
+                </template>
+                <template v-else>
+                    <div class="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                        Batalkan penanda legacy agar BA ini kembali diperiksa. Lakukan bila jadwal sesi sudah dibuat/ditautkan.
+                    </div>
+                </template>
+                <div v-if="legacyBa.message" class="mt-2 text-[11px] font-semibold text-rose-600">{{ legacyBa.message }}</div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" class="btn-soft" :disabled="legacyBa.saving" @click="legacyBa.open = false">Batal</button>
+                    <button type="button" class="btn-primary" :disabled="legacyBa.saving" @click="submitBaLegacy">
+                        <i :class="legacyBa.saving ? 'bi bi-arrow-repeat animate-spin' : 'bi bi-check2-circle'"></i>
+                        {{ legacyBa.saving ? 'Menyimpan...' : (legacyBa.unset ? 'Batalkan Legacy' : 'Tandai Legacy') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- modal buat jadwal dari BA -->
+        <div v-if="loggedIn && buatJadwal.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="!buatJadwal.saving && (buatJadwal.open = false)">
+            <div class="modal-scroll w-full max-w-md rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="buatJadwalTitle">
+                <div class="mb-1 flex items-center gap-2">
+                    <h3 id="buatJadwalTitle" class="text-sm font-bold text-slate-900">Buat Jadwal — {{ buatJadwal.baId }}</h3>
+                    <button type="button" class="ml-auto text-slate-400 hover:text-slate-600" :disabled="buatJadwal.saving" aria-label="Tutup buat jadwal" @click="buatJadwal.open = false"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                    <b>Jadwal baru menambah rencana dosen.</b> Pastikan sesi ini nyata. Jika ragu, tandai legacy saja.
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <label class="label">Tanggal</label>
+                        <input v-model="buatJadwal.tanggal" type="date" class="input" :disabled="buatJadwal.saving">
+                    </div>
+                    <div>
+                        <label class="label">Jam</label>
+                        <input v-model="buatJadwal.jam" type="time" class="input" :disabled="buatJadwal.saving">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="mb-1 flex items-center justify-between">
+                        <label class="label !mb-0">Dosen</label>
+                        <button type="button" class="text-xs font-semibold text-brand-600 disabled:text-slate-300" :disabled="buatJadwal.saving || buatJadwal.dosenList.length >= 5" @click="addBuatJadwalDosen"><i class="bi bi-plus-lg"></i> Tambah dosen</button>
+                    </div>
+                    <div v-for="(d, di) in buatJadwal.dosenList" :key="'bj-' + di" class="mb-2 flex items-center gap-2">
+                        <dosen-picker v-model="buatJadwal.dosenList[di]" :options="dosenOptions" :placeholder="'Pilih dosen ' + (di + 1)" class="flex-1"></dosen-picker>
+                        <button type="button" class="btn-soft h-10 shrink-0 !px-3 !py-1 text-rose-600" title="Hapus dosen" :disabled="buatJadwal.saving" @click="removeBuatJadwalDosen(di)"><i class="bi bi-dash-lg"></i></button>
+                    </div>
+                </div>
+                <p class="mt-2 text-[11px] text-slate-400">Jadwal akan langsung ditautkan ke BA ini. Tanggal/jam BA mengikuti sesi yang dibuat.</p>
+                <div v-if="buatJadwal.message" class="mt-2 text-[11px] font-semibold text-rose-600">{{ buatJadwal.message }}</div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" class="btn-soft" :disabled="buatJadwal.saving" @click="buatJadwal.open = false">Batal</button>
+                    <button type="button" class="btn-primary" :disabled="buatJadwal.saving" @click="submitBuatJadwal">
+                        <i :class="buatJadwal.saving ? 'bi bi-arrow-repeat animate-spin' : 'bi bi-check2-circle'"></i>
+                        {{ buatJadwal.saving ? 'Membuat...' : 'Buat Jadwal & Tautkan' }}
+                    </button>
+                </div>
+            </div>
+        </div>
         <!-- menu perbaikan data dosen (admin) -->
         <div v-if="loggedIn && perbaikanDosen.open" class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/40 p-4" @click.self="perbaikanDosen.open = false">
             <div class="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-lift" role="dialog" aria-modal="true" aria-labelledby="perbaikanDosenTitle">
@@ -731,11 +838,14 @@
                             <button v-if="q.type === 'varian'" type="button" class="btn-soft !py-1 text-[11px]" :disabled="!q.baIds || !q.baIds.length" @click="openRapikanVarian(q)">
                                 <i class="bi bi-magic"></i> Rapikan Nama
                             </button>
-                            <a v-else-if="q.type === 'tanpa-jadwal'" href="/bagian" target="_blank" rel="noopener noreferrer" class="btn-soft !py-1 text-[11px]">
+                            <button v-else-if="q.type === 'tanpa-jadwal' && q.baId" type="button" class="btn-soft !py-1 text-[11px]" @click="openBuatJadwal(q.baId)">
                                 <i class="bi bi-calendar-plus"></i> Buat Jadwal
-                            </a>
+                            </button>
                             <button v-else-if="q.baId" type="button" class="btn-soft !py-1 text-[11px]" @click="perbaikiBaDariMenu(q)">
                                 <i class="bi bi-pencil-square"></i> {{ perbaikanActionLabel(q) }}
+                            </button>
+                            <button v-if="q.type === 'tanpa-jadwal' && q.baId" type="button" class="btn-soft !py-1 text-[11px]" @click="openBaLegacy(q.baId)">
+                                <i class="bi bi-clock-history"></i> Legacy
                             </button>
                         </div>
                     </li>
@@ -1459,7 +1569,7 @@
                                 <span v-if="dosenReport.totals.baTanpaDosen" class="lap-chip text-rose-600">{{ dosenReport.totals.baTanpaDosen }} BA tanpa dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.baDosen }} BA-dosen</span>
                                 <span class="lap-chip">{{ dosenReport.totals.pesertaUnik }} peserta unik</span>
-                                <span class="lap-chip">{{ dosenReport.totals.baSesi }} sesi realisasi</span>
+                                <span class="lap-chip">{{ dosenReport.totals.sesiRealisasi }} sesi realisasi</span>
                                 <span class="lap-chip">Rencana dosen tampil: {{ dosenReport.totals.baRencana }}</span>
                                 <span class="lap-chip">Rencana global: {{ dosenReport.totals.baRencanaGlobal }}</span>
                             </div>
@@ -1549,6 +1659,32 @@
                                                 </div>
                                             </div>
 
+                                            <div class="mt-4 grid gap-3" :class="dosenViewSesiLain.length ? 'lg:grid-cols-2' : ''">
+                                                <div class="rounded-xl border border-slate-100 p-3">
+                                                    <div class="text-xs font-bold uppercase tracking-wide text-slate-400">Sesi yang diajar ({{ dosenViewSesiDiajar.length }})</div>
+                                                    <div v-if="dosenViewSesiDiajar.length" class="mt-2 space-y-1">
+                                                        <div v-for="s in dosenViewSesiDiajar" :key="'diajar-' + s.baId + '-' + s.urutan" class="flex flex-wrap items-center gap-2 rounded-lg bg-brand-50/60 px-2.5 py-1.5 text-xs">
+                                                            <span class="rounded bg-white px-1.5 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100">S{{ s.urutan }}</span>
+                                                            <span class="text-slate-600">{{ s.tanggal ? fmtTanggal(s.tanggal) : '-' }} &middot; {{ s.jam || '-' }}</span>
+                                                            <span class="font-mono text-[10px] text-slate-400">{{ s.baId || 'Tanpa BA' }}</span>
+                                                            <span class="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold" :class="s.source === 'ba' ? 'bg-amber-50 text-amber-700' : (s.source === 'hilang' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700')">{{ s.source === 'ba' ? 'fallback BA' : (s.source === 'hilang' ? 'jadwal hilang' : 'jadwal sesi') }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div v-else class="mt-2 text-xs text-slate-400">Belum ada sesi yang diajar.</div>
+                                                </div>
+                                                <div v-if="dosenViewSesiLain.length" class="rounded-xl border border-slate-100 p-3">
+                                                    <div class="text-xs font-bold uppercase tracking-wide text-slate-400">Sesi lain di BA yang sama ({{ dosenViewSesiLain.length }})</div>
+                                                    <div class="mt-2 space-y-1">
+                                                        <div v-for="s in dosenViewSesiLain" :key="'lain-' + s.key" class="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs">
+                                                            <span class="rounded bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">S{{ s.urutan }}</span>
+                                                            <span class="text-slate-500">{{ s.tanggal ? fmtTanggal(s.tanggal) : '-' }} &middot; {{ s.jam || '-' }}</span>
+                                                            <span class="text-slate-500">{{ s.dosenText }}</span>
+                                                            <span v-if="!s.active" class="ml-auto rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">tidak aktif</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div class="mt-4 overflow-x-auto">
                                                 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                                                     <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">BA Pelaksanaan</h3>
@@ -1567,9 +1703,16 @@
                                                             <td>{{ d.blok || '-' }}</td>
                                                             <td>{{ d.tanggalFmt }}</td>
                                                             <td>{{ d.jam || '-' }}</td>
-                                                            <td class="c">{{ d.realisasi }}/{{ d.rencana }}</td>
+                                                            <td class="c">
+                                                                <div>{{ d.realisasi }}/{{ d.rencana }}</div>
+                                                                <button v-if="loggedIn && d.baId && d.sesi.length" type="button" class="mt-0.5 text-[10px] font-semibold text-brand-700 hover:underline" @click="openAturDosenSesi(d.baId)">Atur Sesi</button>
+                                                            </td>
                                                             <td class="c" :class="d.pesertaUnik > 5 ? 'font-bold text-rose-600' : ''">{{ d.pesertaUnik }}</td>
-                                                            <td><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="dosenStatusCls(d.status)">{{ d.status }}</span></td>
+                                                            <td>
+                                                                <span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="dosenStatusCls(d.status)">{{ d.status }}</span>
+                                                                <span v-if="d.legacy" class="ml-1 whitespace-nowrap rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500" title="BA legacy: dihitung 1 sesi, temuan tanpa sesi/jadwal diabaikan">Legacy</span>
+                                                                <button v-if="loggedIn && d.legacy" type="button" class="ml-1 text-[10px] font-semibold text-brand-700 hover:underline" @click="openBaLegacy(d.baId, true)">Batalkan</button>
+                                                            </td>
                                                             <td>
                                                                 <button v-if="d.baId" type="button"
                                                                     class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-brand-700 hover:bg-slate-100"
@@ -1626,6 +1769,7 @@
                                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">{{ qualityLabel(q.type) }}</span>
                                     <span class="min-w-0 flex-1">{{ q.message }}</span>
                                     <button v-if="q.baId" type="button" class="font-mono text-xs font-semibold text-brand-700 hover:underline" :title="'Periksa / edit ' + q.baId" @click="openKelolaBaById(q.baId)">{{ q.baId }}</button>
+                                    <button v-if="loggedIn && q.type === 'tanpa-jadwal'" type="button" class="btn-soft !py-1 text-[11px]" @click="openBaLegacy(q.baId)"><i class="bi bi-clock-history"></i> Legacy</button>
                                     <button v-if="loggedIn" type="button" class="btn-soft !py-1 text-[11px]" @click="perbaikiTemuanDosen(q)">{{ perbaikanActionLabel(q) }}</button>
                                 </li>
                             </ul>
@@ -1637,10 +1781,12 @@
                                 <div class="lap-card-sub mb-2">Arti kotak Pemeriksaan Data Dosen</div>
                                 <ul class="bgc-readlist">
                                     <li><span class="k">Tanpa dosen</span><span>BA Pelaksanaan belum punya dosen. BA tetap tampil, tetapi tidak masuk rekapitulasi dosen sampai dosen diisi.</span></li>
+                                    <li><span class="k">Sesi tanpa dosen</span><span>Sesi jadwal pada BA ini belum punya dosen di <span style="font-family:monospace">jadwal_dosen</span>. Sesi tidak dihitung ke dosen mana pun sampai diisi.</span></li>
                                     <li><span class="k">Tanpa tautan sesi</span><span>BA belum ditautkan ke jadwal. Sementara dihitung <b>1 sesi</b> agar realisasi tidak hilang.</span></li>
                                     <li><span class="k">Tanpa jadwal</span><span>Belum ada jadwal aktif pada detail kegiatan tersebut. Rencana sesi terbaca <b>0</b>.</span></li>
                                     <li><span class="k">Draft</span><span>BA belum lengkap (tanggal, berkas, dosen, atau peserta), tetapi tetap dihitung sebagai realisasi.</span></li>
                                     <li><span class="k">Varian nama</span><span>Nama dosen punya beberapa penulisan. Yang mirip tidak digabung otomatis agar tidak salah hitung.</span></li>
+                                    <li><span class="k">Legacy</span><span>BA lama yang sengaja tanpa jadwal. Tetap dihitung 1 sesi, tetapi temuan tanpa sesi/jadwal diabaikan. Bisa dibatalkan bila jadwalnya menyusul.</span></li>
                                 </ul>
                             </div>
                             <div class="lap-card p-4">
@@ -1649,10 +1795,12 @@
                                 <ul class="bgc-readlist">
                                     <li><span class="k">1. Buka menu</span><span>Klik <b>Menu Perbaikan</b> pada kotak Pemeriksaan Data Dosen, lalu pilih temuan yang ingin ditindak.</span></li>
                                     <li><span class="k">2. Tanpa dosen</span><span>Pilih <b>Isi Dosen</b> &rarr; pilih dosen (maksimal 5) &rarr; <b>Simpan</b>. BA langsung masuk rekapitulasi dosen.</span></li>
-                                    <li><span class="k">3. Tanpa tautan sesi</span><span>Pilih <b>Tautkan Sesi</b> &rarr; centang satu atau beberapa Sesi Jadwal &rarr; <b>Simpan</b>. Tanggal dan jam mengikuti sesi paling awal.</span></li>
-                                    <li><span class="k">4. Tanpa jadwal</span><span>Pilih <b>Buat Jadwal</b> untuk membuka halaman Bagian, buat jadwal aktif, lalu tautkan sesinya dari menu ini.</span></li>
-                                    <li><span class="k">5. Draft</span><span>Pilih <b>Lengkapi BA</b>, periksa tanggal, dosen, peserta, dan berkas sampai status BA menjadi <b>Lengkap</b>.</span></li>
-                                    <li><span class="k">6. Varian nama</span><span>Pilih <b>Rapikan Nama</b>, tentukan ejaan baku, lalu terapkan ke semua BA terkait sekaligus.</span></li>
+                                    <li><span class="k">3. Sesi tanpa dosen</span><span>Pilih <b>Atur Dosen Sesi</b> &rarr; isi dosen tiap sesi (maksimal 5) &rarr; <b>Simpan &amp; Sinkronkan</b>. Dosen ditulis ke <span style="font-family:monospace">jadwal_dosen</span>, lalu digabung ke <span style="font-family:monospace">ba_dosen</span>.</span></li>
+                                    <li><span class="k">4. Tanpa tautan sesi</span><span>Pilih <b>Tautkan Sesi</b> &rarr; centang satu atau beberapa Sesi Jadwal &rarr; <b>Simpan</b>. Tanggal dan jam mengikuti sesi paling awal.</span></li>
+                                    <li><span class="k">5. Tanpa jadwal</span><span>Pilih <b>Buat Jadwal</b>, isi tanggal, jam, dan dosen &rarr; <b>Buat Jadwal &amp; Tautkan</b>. Atau pilih <b>Legacy</b> bila BA lama memang tanpa jadwal.</span></li>
+                                    <li><span class="k">6. Draft</span><span>Pilih <b>Lengkapi BA</b>, periksa tanggal, dosen, peserta, dan berkas sampai status BA menjadi <b>Lengkap</b>.</span></li>
+                                    <li><span class="k">7. Varian nama</span><span>Pilih <b>Rapikan Nama</b>, tentukan ejaan baku, lalu terapkan ke semua BA terkait sekaligus.</span></li>
+                                    <li><span class="k">8. Legacy</span><span>Isi alasan dan centang pernyataan. Penanda butuh alasan, tercatat di audit log, dan bisa dibatalkan dari tabel BA (tombol <b>Batalkan</b>).</span></li>
                                 </ul>
                             </div>
                         </div>
@@ -3599,7 +3747,10 @@
                     barProgress: 0,
                     kelola: { open: false, baId: '', sumber: 'Bagian', kegiatanKey: '', jadwalIds: [], tanggal: '', jam: '', dosen: '', catatan: '', pesertaIds: [], pesertaOpsi: [], pesertaDirty: false },
                     perbaikanDosen: { open: false, filter: '' },
+                    dosenSesi: { open: false, saving: false, baId: '', label: '', kegiatanKey: '', tanggal: '', jam: '', sessions: [], message: '' },
                     rapikanDosen: { open: false, saving: false, names: [], baIds: [], canonical: '', message: '' },
+                    legacyBa: { open: false, saving: false, baId: '', label: '', unset: false, reason: '', ack: false, message: '' },
+                    buatJadwal: { open: false, saving: false, baId: '', label: '', tanggal: '', jam: '', dosenList: [''], message: '' },
                     perbaikanBagian: { open: false, filter: 'semua' },
                     riwayat: { open: false, unit: null },
                     toast: { show: false, icon: '', msg: '' },
@@ -4600,6 +4751,8 @@
                             flags: audit ? (audit.flags || []) : [],
                             peserta: b.peserta || [],
                             dosenList: this.baDosenList(b),
+                            legacy: Number(b.legacy_sesi) === 1,
+                            sesi: Array.isArray(b.sesi) ? b.sesi : [],
                             fileUrl: b['File URL'] || '',
                             jadwalIds: Array.isArray(b.jadwalIds) ? b.jadwalIds : []
                         };
@@ -4648,7 +4801,7 @@
                     });
                 },
                 dosenQualityTypes() {
-                    const labels = { 'tanpa-dosen': 'Tanpa dosen', 'tanpa-sesi': 'Tanpa tautan sesi', 'tanpa-jadwal': 'Tanpa jadwal', 'draft': 'Draft', 'varian': 'Varian nama' };
+                    const labels = { 'tanpa-dosen': 'Tanpa dosen', 'sesi-tanpa-dosen': 'Sesi tanpa dosen', 'tanpa-sesi': 'Tanpa tautan sesi', 'tanpa-jadwal': 'Tanpa jadwal', 'draft': 'Draft', 'varian': 'Varian nama' };
                     const counts = {};
                     (this.dosenReport.quality || []).forEach(q => { counts[q.type] = (counts[q.type] || 0) + 1; });
                     return Object.keys(labels).map(key => ({ key: key, label: labels[key], count: counts[key] || 0 })).filter(t => t.count);
@@ -4729,17 +4882,67 @@
                             tanggalIso: String(b.tanggal || ''),
                             tanggalFmt: b.tanggal ? this.fmtTanggal(b.tanggal) : '-',
                             jam: String(b.jam || ''),
-                            realisasi: 1,
-                            rencana: b.hasJadwal ? 1 : 0,
+                            realisasi: Number(b.realisasi) || 0,
+                            rencana: Number(b.rencana) || 0,
+                            sesi: Array.isArray(b.sesi) ? b.sesi : [],
                             peserta: Array.isArray(b.peserta) ? b.peserta : [],
                             pesertaUnik: Number(b.pesertaCount) || (Array.isArray(b.peserta) ? b.peserta.length : 0),
                             status: String(b.status || 'Lengkap'),
+                            legacy: !!b.legacy,
                             baIds: baId ? [baId] : []
                         });
                     });
                     return out.sort((a, b) => String(a.tanggalIso).localeCompare(String(b.tanggalIso))
                         || String(a.jam).localeCompare(String(b.jam))
                         || String(a.baId).localeCompare(String(b.baId)));
+                },
+                dosenViewSesiFilter() {
+                    return {
+                        blok: String(this.dosenView.blok || '').trim(),
+                        key: String(this.dosenView.kegiatanKey || '').trim()
+                    };
+                },
+                dosenViewSesiDiajar() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const f = this.dosenViewSesiFilter;
+                    return (row.sesiRows || []).filter(s => {
+                        if (f.blok && String(s.blok || '').trim() !== f.blok) return false;
+                        if (f.key && String(s.kegiatanKey || '').trim() !== f.key) return false;
+                        return true;
+                    }).sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal))
+                        || String(a.jam).localeCompare(String(b.jam))
+                        || String(a.baId).localeCompare(String(b.baId))
+                        || Number(a.urutan) - Number(b.urutan));
+                },
+                dosenViewSesiLain() {
+                    const row = this.dosenSelectedRow;
+                    if (!row) return [];
+                    const f = this.dosenViewSesiFilter;
+                    const out = [];
+                    (row.baRows || []).forEach(b => {
+                        if (f.blok && String(b.blok || '').trim() !== f.blok) return;
+                        if (f.key && String(b.kegiatanKey || '').trim() !== f.key) return;
+                        (b.sesi || []).forEach(s => {
+                            if (s.diajar) return;
+                            const nama = Array.isArray(s.dosenList) && s.dosenList.length ? s.dosenList.join(', ') : 'Belum ada dosen';
+                            out.push({
+                                key: String(b.baId || b.kegiatanKey) + '|' + s.urutan,
+                                baId: String(b.baId || ''),
+                                kegiatanKey: String(b.kegiatanKey || ''),
+                                urutan: s.urutan,
+                                tanggal: s.tanggal || b.tanggal || '',
+                                jam: s.jam || b.jam || '',
+                                dosenText: nama,
+                                source: s.source || 'jadwal',
+                                active: !!s.active
+                            });
+                        });
+                    });
+                    return out.sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal))
+                        || String(a.jam).localeCompare(String(b.jam))
+                        || String(a.baId).localeCompare(String(b.baId))
+                        || Number(a.urutan) - Number(b.urutan));
                 },
                 dosenViewStats() {
                     const rows = this.dosenViewBaRows;
@@ -5239,7 +5442,80 @@
                     } catch (e) {
                         this.loginError = (e && e.message) ? e.message : String(e);
                     } finally {
-                        this.loginLoading = false;
+                        d.saving = false;
+                    }
+                },
+                openBuatJadwal(baId) {
+                    if (!this.loggedIn) return;
+                    const id = String(baId || '').trim();
+                    if (!id) return;
+                    const known = this.dosenReportBaList.find(b => String(b.id || '').trim() === id) || null;
+                    const flat = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === id) || null;
+                    if (!known && !flat) {
+                        this.showToast('bi-exclamation-triangle', 'BA tidak ditemukan.');
+                        return;
+                    }
+                    const dosenList = (known ? (known.dosenList || []) : this.baDosenList(flat))
+                        .map(v => String(v || '').trim()).filter(Boolean).slice(0, 5);
+                    this.buatJadwal = {
+                        open: true,
+                        saving: false,
+                        baId: id,
+                        label: String((known && known.label) || (flat && flat['Nama Kegiatan']) || id),
+                        tanggal: String((known && known.tanggal) || (flat && flat['Tanggal Pelaksanaan']) || ''),
+                        jam: String((known && known.jam) || (flat && flat.Jam) || ''),
+                        dosenList: dosenList.length ? dosenList : [''],
+                        message: ''
+                    };
+                    this.perbaikanDosen.open = false;
+                },
+                addBuatJadwalDosen() {
+                    const d = this.buatJadwal;
+                    if (!d.open || d.dosenList.length >= 5) return;
+                    d.dosenList.push('');
+                },
+                removeBuatJadwalDosen(di) {
+                    const d = this.buatJadwal;
+                    if (!d.open) return;
+                    d.dosenList.splice(di, 1);
+                    if (!d.dosenList.length) d.dosenList.push('');
+                },
+                async submitBuatJadwal() {
+                    const d = this.buatJadwal;
+                    if (!d.open || d.saving) return;
+                    d.message = '';
+                    const dosenList = (d.dosenList || []).map(v => String(v || '').trim()).filter(Boolean);
+                    if (!String(d.jam || '').trim()) {
+                        d.message = 'Jam pelaksanaan wajib diisi.';
+                        return;
+                    }
+                    if (!dosenList.length) {
+                        d.message = 'Minimal satu dosen wajib diisi.';
+                        return;
+                    }
+                    if (dosenList.length > 5) {
+                        d.message = 'Dosen maksimal 5.';
+                        return;
+                    }
+                    d.saving = true;
+                    try {
+                        const res = await this.run('createJadwalFromBa', {
+                            baId: d.baId,
+                            tanggal: String(d.tanggal || '').trim(),
+                            jam: String(d.jam || '').trim(),
+                            dosenList: dosenList
+                        });
+                        if (!res || !res.success) {
+                            d.message = (res && res.message) || 'Gagal membuat jadwal.';
+                            return;
+                        }
+                        d.open = false;
+                        this.showToast('bi-check-circle', res.message || 'Jadwal dibuat dan ditautkan ke BA.');
+                        await this.loadData(true);
+                    } catch (e) {
+                        d.message = (e && e.message) ? e.message : String(e || 'Gagal membuat jadwal.');
+                    } finally {
+                        d.saving = false;
                     }
                 },
                 logout() {
@@ -5958,12 +6234,14 @@
                     if (type === 'tanpa-jadwal') return 'Tanpa jadwal';
                     if (type === 'draft') return 'Draft';
                     if (type === 'tanpa-dosen') return 'Tanpa dosen';
+                    if (type === 'sesi-tanpa-dosen') return 'Sesi tanpa dosen';
                     if (type === 'varian') return 'Varian nama';
                     return type;
                 },
                 perbaikanActionLabel(q) {
                     const type = q && q.type;
                     if (type === 'tanpa-dosen') return 'Isi Dosen';
+                    if (type === 'sesi-tanpa-dosen') return 'Atur Dosen Sesi';
                     if (type === 'tanpa-sesi') return 'Tautkan Sesi';
                     if (type === 'draft') return 'Lengkapi BA';
                     if (type === 'tanpa-jadwal') return 'Buat Jadwal';
@@ -5978,6 +6256,10 @@
                 perbaikiBaDariMenu(q) {
                     if (!q || !q.baId) return;
                     this.perbaikanDosen.open = false;
+                    if (q.type === 'sesi-tanpa-dosen') {
+                        this.openAturDosenSesi(q.baId, q.jadwalId);
+                        return;
+                    }
                     this.openKelolaBaById(q.baId);
                 },
                 perbaikiTemuanDosen(q) {
@@ -5987,10 +6269,144 @@
                         return;
                     }
                     if (q.type === 'tanpa-jadwal') {
-                        window.open('/bagian', '_blank', 'noopener');
+                        this.openBuatJadwal(q.baId);
+                        return;
+                    }
+                    if (q.type === 'sesi-tanpa-dosen') {
+                        this.openAturDosenSesi(q.baId, q.jadwalId);
                         return;
                     }
                     if (q.baId) this.openKelolaBaById(q.baId);
+                },
+                openAturDosenSesi(baId) {
+                    if (!this.loggedIn) return;
+                    const id = String(baId || '').trim();
+                    if (!id) return;
+                    const known = this.dosenReportBaList.find(b => String(b.id || '').trim() === id) || null;
+                    const flat = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === id) || null;
+                    if (!known && !flat) {
+                        this.showToast('bi-exclamation-triangle', 'BA tidak ditemukan.');
+                        return;
+                    }
+                    const rawSesi = Array.isArray(known && known.sesi)
+                        ? known.sesi
+                        : (Array.isArray(flat && flat.sesi) ? flat.sesi : []);
+                    const sessions = rawSesi.map((s, i) => ({
+                        jadwalId: String((s && s.jadwalId) || '').trim(),
+                        urutan: Number(s && s.urutan) || (i + 1),
+                        tanggal: String((s && s.tanggal) || '').trim(),
+                        jam: String((s && s.jam) || '').trim(),
+                        active: !!(s && s.active),
+                        source: String((s && s.source) || 'jadwal'),
+                        dosenList: (Array.isArray(s && s.dosenList) ? s.dosenList : []).map(v => String(v || '').trim()).filter(Boolean)
+                    })).filter(s => s.jadwalId);
+                    if (!sessions.length) {
+                        this.showToast('bi-exclamation-triangle', 'BA belum tertaut ke sesi jadwal. Tautkan sesi terlebih dahulu.');
+                        return;
+                    }
+                    this.dosenSesi = {
+                        open: true,
+                        saving: false,
+                        baId: id,
+                        label: String((known && known.label) || (flat && flat['Nama Kegiatan']) || id),
+                        kegiatanKey: String((known && known.kegiatanKey) || (flat && flat['Kegiatan Key']) || ''),
+                        tanggal: String((known && known.tanggal) || (flat && flat['Tanggal Pelaksanaan']) || ''),
+                        jam: String((known && known.jam) || (flat && flat.Jam) || ''),
+                        sessions: sessions,
+                        message: ''
+                    };
+                    this.perbaikanDosen.open = false;
+                },
+                addDosenSesiRow(si) {
+                    const s = this.dosenSesi.sessions[si];
+                    if (!s || s.dosenList.length >= 5) return;
+                    s.dosenList.push('');
+                },
+                removeDosenSesiRow(si, di) {
+                    const s = this.dosenSesi.sessions[si];
+                    if (!s) return;
+                    s.dosenList.splice(di, 1);
+                },
+                async submitDosenSesi() {
+                    const d = this.dosenSesi;
+                    if (!d.open || d.saving) return;
+                    d.message = '';
+                    const sessions = d.sessions.map(s => ({
+                        jadwalId: s.jadwalId,
+                        dosenList: (s.dosenList || []).map(v => String(v || '').trim()).filter(Boolean)
+                    }));
+                    for (const s of sessions) {
+                        if (s.dosenList.length > 5) {
+                            d.message = 'Dosen per sesi maksimal 5.';
+                            return;
+                        }
+                    }
+                    d.saving = true;
+                    try {
+                        const res = await this.run('setBaDosenSesi', d.baId, { sessions: sessions });
+                        if (!res || !res.success) {
+                            d.message = (res && res.message) || 'Gagal menyimpan dosen per sesi.';
+                            return;
+                        }
+                        d.open = false;
+                        this.showToast('bi-check-circle', res.message || 'Dosen per sesi disimpan.');
+                        await this.loadData(true);
+                    } catch (e) {
+                        d.message = (e && e.message) ? e.message : String(e || 'Gagal menyimpan.');
+                    } finally {
+                        d.saving = false;
+                    }
+                },
+                openBaLegacy(baId, unset) {
+                    if (!this.loggedIn) return;
+                    const id = String(baId || '').trim();
+                    if (!id) return;
+                    const known = this.dosenReportBaList.find(b => String(b.id || '').trim() === id) || null;
+                    const flat = (this.beritaAcara || []).find(b => String(b['BA ID'] || '').trim() === id) || null;
+                    if (!known && !flat) {
+                        this.showToast('bi-exclamation-triangle', 'BA tidak ditemukan.');
+                        return;
+                    }
+                    this.legacyBa = {
+                        open: true,
+                        saving: false,
+                        baId: id,
+                        label: String((known && known.label) || (flat && flat['Nama Kegiatan']) || id),
+                        unset: !!unset,
+                        reason: '',
+                        ack: false,
+                        message: ''
+                    };
+                },
+                async submitBaLegacy() {
+                    const d = this.legacyBa;
+                    if (!d.open || d.saving) return;
+                    d.message = '';
+                    if (!d.unset) {
+                        if (!String(d.reason || '').trim()) {
+                            d.message = 'Alasan wajib diisi untuk menandai legacy.';
+                            return;
+                        }
+                        if (!d.ack) {
+                            d.message = 'Centang pernyataan bahwa rencana tidak bertambah dan temuan diabaikan.';
+                            return;
+                        }
+                    }
+                    d.saving = true;
+                    try {
+                        const res = await this.run('setBaLegacy', d.baId, { legacy: !d.unset, reason: String(d.reason || '').trim() });
+                        if (!res || !res.success) {
+                            d.message = (res && res.message) || 'Gagal menyimpan penanda legacy.';
+                            return;
+                        }
+                        d.open = false;
+                        this.showToast('bi-check-circle', res.message || 'Penanda legacy disimpan.');
+                        await this.loadData(true);
+                    } catch (e) {
+                        d.message = (e && e.message) ? e.message : String(e || 'Gagal menyimpan.');
+                    } finally {
+                        d.saving = false;
+                    }
                 },
                 openRapikanVarian(q) {
                     if (!this.loggedIn) return;
@@ -6018,8 +6434,6 @@
                         r.message = 'Pilih nama baku terlebih dahulu.';
                         return;
                     }
-                    const variantKeys = {};
-                    r.names.forEach(n => { variantKeys[DosenReport.dosenKey(n)] = 1; });
                     r.saving = true;
                     r.message = '';
                     let changed = 0;
@@ -6032,22 +6446,8 @@
                             failed.push(baId);
                             continue;
                         }
-                        const next = [];
-                        const seen = {};
-                        current.forEach(nama => {
-                            const finalName = variantKeys[DosenReport.dosenKey(nama)] ? canonical : nama;
-                            const key = DosenReport.dosenKey(finalName);
-                            if (!key || seen[key]) return;
-                            seen[key] = 1;
-                            next.push(finalName);
-                        });
-                        if (!next.length) {
-                            failed.push(baId);
-                            continue;
-                        }
-                        if (next.join('|') === current.join('|')) continue;
                         try {
-                            const res = await this.run('updateBeritaAcaraBagian', baId, { dosenList: next, dosen: next[0] });
+                            const res = await this.run('renameBaDosen', baId, { canonical: canonical, variants: r.names });
                             if (res && res.success) changed += 1;
                             else failed.push(baId);
                         } catch (e) {
@@ -6565,9 +6965,9 @@
                                     const c = r.counts[this.normBagian(b)] || { realisasi: 0, rencana: 0 };
                                     row[b] = c.realisasi + '/' + c.rencana;
                                 });
-                                row['Total Realisasi'] = r.baSesi;
-                                row['Total Rencana'] = r.baRencana;
-                                row['Selisih'] = r.baSelisih;
+                                row['Total Realisasi'] = r.totalRealisasi;
+                                row['Total Rencana'] = r.totalRencana;
+                                row['Selisih'] = r.selisih;
                                 return row;
                             });
                             const dosenTotalRow = { Dosen: 'Total' };
@@ -6575,9 +6975,9 @@
                                 const c = this.dosenColTotal(b);
                                 dosenTotalRow[b] = c.realisasi + '/' + c.rencana;
                             });
-                            dosenTotalRow['Total Realisasi'] = dosenReport.totals.baSesi;
-                            dosenTotalRow['Total Rencana'] = dosenReport.totals.baRencana;
-                            dosenTotalRow['Selisih'] = dosenReport.totals.baSesi - dosenReport.totals.baRencana;
+                            dosenTotalRow['Total Realisasi'] = dosenReport.totals.sesiRealisasi;
+                            dosenTotalRow['Total Rencana'] = dosenReport.totals.rencanaTabel;
+                            dosenTotalRow['Selisih'] = dosenReport.totals.sesiRealisasi - dosenReport.totals.rencanaTabel;
                             dosenRows.push(dosenTotalRow);
                             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dosenRows), 'Rekap Dosen');
                             const dosenTanpaRows = this.dosenTanpaBaRows(dosenReport);
@@ -6695,9 +7095,9 @@
                                     const c = r.counts[this.normBagian(b)] || { realisasi: 0, rencana: 0 };
                                     row[b] = c.realisasi + '/' + c.rencana;
                                 });
-                                row['Total Realisasi'] = r.baSesi;
-                                row['Total Rencana'] = r.baRencana;
-                                row['Selisih'] = r.baSelisih;
+                                row['Total Realisasi'] = r.totalRealisasi;
+                                row['Total Rencana'] = r.totalRencana;
+                                row['Selisih'] = r.selisih;
                                 row['Detail Kegiatan'] = r.detailCount;
                                 row['Peserta Unik'] = r.pesertaUnik;
                                 row['Varian Nama'] = r.variantCount > 1 ? r.variantCount : '';
@@ -6708,9 +7108,9 @@
                                 const c = this.dosenColTotal(b);
                                 rekapTotal[b] = c.realisasi + '/' + c.rencana;
                             });
-                            rekapTotal['Total Realisasi'] = report.totals.baSesi;
-                            rekapTotal['Total Rencana'] = report.totals.baRencana;
-                            rekapTotal['Selisih'] = report.totals.baSesi - report.totals.baRencana;
+                            rekapTotal['Total Realisasi'] = report.totals.sesiRealisasi;
+                            rekapTotal['Total Rencana'] = report.totals.rencanaTabel;
+                            rekapTotal['Selisih'] = report.totals.sesiRealisasi - report.totals.rencanaTabel;
                             rekapTotal['Detail Kegiatan'] = report.totals.detailUnik;
                             rekapTotal['Peserta Unik'] = report.totals.pesertaUnik;
                             rekapTotal['Varian Nama'] = '';

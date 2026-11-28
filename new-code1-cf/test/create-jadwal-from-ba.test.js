@@ -94,6 +94,26 @@ describe('create jadwal from BA', () => {
     expect(audit.detail).toContain('createJadwalFromBa');
   });
 
+  it('membatalkan penanda legacy saat jadwal dibuat dan ditautkan', async () => {
+    const baId = await seedBa({});
+    await env.DB.prepare(
+      "UPDATE berita_acara SET legacy_sesi = 1, legacy_reason = 'BA lama', legacy_at = '2026-09-01T00:00:00', legacy_by = 'Admin' WHERE ba_id = ?1"
+    ).bind(baId).run();
+    const ctx = await adminCtx();
+    const res = await createJadwalFromBa(env.DB, {
+      baId,
+      tanggal: '2026-09-20',
+      jam: '09:30',
+      dosenList: ['dr. Andi']
+    }, ctx);
+    expect(res.success).toBe(true);
+    const ba = await env.DB.prepare('SELECT legacy_sesi, legacy_reason, legacy_at, legacy_by FROM berita_acara WHERE ba_id = ?1').bind(baId).first();
+    expect(Number(ba.legacy_sesi)).toBe(0);
+    expect(ba.legacy_reason).toBe('');
+    expect(ba.legacy_at).toBe('');
+    expect(ba.legacy_by).toBe('');
+  });
+
   it('mewajibkan jam pelaksanaan', async () => {
     const baId = await seedBa({ jam: '' });
     const ctx = await adminCtx();

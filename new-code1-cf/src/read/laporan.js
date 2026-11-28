@@ -82,6 +82,51 @@ export async function getLaporanBootstrap(db, ctx) {
   const sesiMap = await loadBaSesiMap(db);
   const baDosenMap = await loadBaDosenMap(db);
   const jadwalDosenMap = await loadJadwalDosenMap(db);
+  // Rincian per sesi untuk Opsi A: dosen diambil dari jadwal_dosen tiap sesi.
+  // Sesi yang jadwalnya sudah tidak ada tetap ditampilkan agar selisih terlihat.
+  const jadwalInfoById = {};
+  for (const r of jadwalRows) {
+    const jid = String(r.jadwal_id || '').trim();
+    if (!jid) continue;
+    jadwalInfoById[jid] = {
+      jadwalId: jid,
+      tanggal: String(r.tanggal || '').trim(),
+      jam: String(r.jam || '').trim(),
+      dosenList: dosenListFor(jadwalDosenMap, jid, r.dosen),
+      active: Number(r.active) === 1
+    };
+  }
+  // BA tanpa tautan sesi memakai satu sesi virtual dari daftar dosen BA.
+  const baSesiDetail = (c) => {
+    const ids = Array.isArray(c.jadwalIds) ? c.jadwalIds : [];
+    if (!ids.length) {
+      const list = Array.isArray(c.DosenList) && c.DosenList.length
+        ? c.DosenList.slice()
+        : (c.Dosen ? [c.Dosen] : []);
+      return [{
+        jadwalId: '',
+        tanggal: String(c['Tanggal Pelaksanaan'] || '').trim(),
+        jam: String(c.Jam || '').trim(),
+        dosenList: list,
+        virtual: true,
+        active: false,
+        source: 'ba'
+      }];
+    }
+    return ids.map((value) => {
+      const jid = String(value || '').trim();
+      const info = jadwalInfoById[jid] || null;
+      return {
+        jadwalId: jid,
+        tanggal: info ? info.tanggal : '',
+        jam: info ? info.jam : '',
+        dosenList: info ? info.dosenList.slice() : [],
+        virtual: false,
+        active: info ? info.active : false,
+        source: info ? 'jadwal' : 'hilang'
+      };
+    });
+  };
   const baIdByJadwal = buildBaIdByJadwal(ba, sesiMap);
   const jadwalList = [];
   for (const r of jadwalRows) {
@@ -171,6 +216,7 @@ export async function getLaporanBootstrap(db, ctx) {
     const list = baDosenListFor(baDosenMap, jadwalDosenMap, baId, c.jadwalIds, c.Dosen);
     c.DosenList = list;
     if (list.length) c.Dosen = list[0];
+    c.sesi = baSesiDetail(c);
     return c;
   });
 
@@ -204,6 +250,7 @@ export async function getLaporanBootstrap(db, ctx) {
       const list = baDosenListFor(baDosenMap, jadwalDosenMap, baId, c.jadwalIds, c.Dosen);
       c.DosenList = list;
       if (list.length) c.Dosen = list[0];
+      c.sesi = baSesiDetail(c);
       return c;
     });
 
@@ -264,7 +311,8 @@ export async function getLaporanBootstrap(db, ctx) {
     u.pelaksanaan = u.baPelaksanaan.map((b) => ({
       baId: b['BA ID'], tanggal: b['Tanggal Pelaksanaan'], jam: b.Jam || '', dosen: b.Dosen || '',
       dosenList: Array.isArray(b.DosenList) && b.DosenList.length ? b.DosenList : (b.Dosen ? [b.Dosen] : []),
-      jadwalIds: b.jadwalIds || [], jumlahSesi: b.jumlahSesi || 0
+      jadwalIds: b.jadwalIds || [], jumlahSesi: b.jumlahSesi || 0,
+      sesi: Array.isArray(b.sesi) ? b.sesi : []
     }));
     const dosenSet = [];
     for (const b of u.pelaksanaan) {

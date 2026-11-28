@@ -158,7 +158,8 @@ CREATE TABLE berita_acara (
   file_name TEXT, file_url TEXT, catatan TEXT, sumber TEXT, kegiatan_key TEXT, label TEXT DEFAULT '',
   jadwal_id TEXT DEFAULT '', archived_at TEXT DEFAULT '', archived_by TEXT DEFAULT '',
   archive_reason TEXT DEFAULT '', merged_into TEXT DEFAULT '', updated_at TEXT DEFAULT '',
-  revision INTEGER NOT NULL DEFAULT 0
+  revision INTEGER NOT NULL DEFAULT 0, legacy_sesi INTEGER NOT NULL DEFAULT 0,
+  legacy_reason TEXT DEFAULT '', legacy_at TEXT DEFAULT '', legacy_by TEXT DEFAULT ''
 );
 CREATE INDEX idx_ba_archived ON berita_acara(archived_at);
 CREATE TABLE berita_acara_peserta (

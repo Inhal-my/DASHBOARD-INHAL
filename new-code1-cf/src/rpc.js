@@ -23,7 +23,8 @@ import { logEvent, logError } from './obs/log.js';
 import {
   saveBeritaAcaraAdmin, deleteBeritaAcaraAdmin, saveBeritaAcaraBagian, deleteBeritaAcaraBagian,
   deleteDraftBeritaAcaraBagian,
-  updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian
+  updateBeritaAcaraBagian, updateBeritaAcaraAdmin, lengkapiBeritaAcaraBagian,
+  setBaDosenSesi, setBaLegacy, renameBaDosen
 } from './write/beritaAcara.js';
 import { saveJadwalPelaksanaan, updateJadwalPelaksanaan, cancelJadwalPelaksanaan } from './write/jadwal.js';
 import { getBaRepairData } from './read/baRepair.js';
@@ -116,6 +117,9 @@ const HANDLERS = {
   restoreBeritaAcara: (db, args, ctx) => restoreBeritaAcara(db, args[0], ctx),
   lengkapiBeritaAcaraBagian: (db, args, ctx) => lengkapiBeritaAcaraBagian(db, args[0], args[1], args[2], ctx),
   updateBeritaAcaraBagian: (db, args, ctx) => updateBeritaAcaraBagian(db, args[0], args[1], ctx),
+  setBaDosenSesi: (db, args, ctx) => setBaDosenSesi(db, args[0], args[1], ctx),
+  setBaLegacy: (db, args, ctx) => setBaLegacy(db, args[0], args[1], ctx),
+  renameBaDosen: (db, args, ctx) => renameBaDosen(db, args[0], args[1], ctx),
   updateBeritaAcaraAdmin: (db, args, ctx) => updateBeritaAcaraAdmin(db, args[0], args[1], ctx),
   getMahasiswaByNpm: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getMahasiswaByNpm(db, args[0]); },
   getDosenOptions: async (db, args, ctx) => { await requireAdmin(db, ctx.token, ctx.session); return getDosenOptions(db); },

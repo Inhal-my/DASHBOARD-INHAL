@@ -169,6 +169,138 @@ describe('buildDosenReport', () => {
     expect(data.totals.baDosen).toBe(2);
   });
 
+  it('mengatribusikan realisasi per sesi, bukan seluruh sesi BA', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [ba({
+        id: 'BA-1',
+        sesiCount: 3,
+        jadwalIds: ['J1', 'J2', 'J3'],
+        dosenList: ['dr. A', 'dr. B', 'dr. C'],
+        sesi: [
+          { jadwalId: 'J1', tanggal: '2026-09-20', jam: '08:00', dosenList: ['dr. A'], source: 'jadwal', active: true },
+          { jadwalId: 'J2', tanggal: '2026-09-20', jam: '10:00', dosenList: ['dr. B'], source: 'jadwal', active: true },
+          { jadwalId: 'J3', tanggal: '2026-09-20', jam: '13:00', dosenList: ['dr. C'], source: 'jadwal', active: true }
+        ]
+      })],
+      jadwalList: [
+        jadwal({ id: 'J1', dosenList: ['dr. A'] }),
+        jadwal({ id: 'J2', dosenList: ['dr. B'] }),
+        jadwal({ id: 'J3', dosenList: ['dr. C'] })
+      ],
+      cols: COLS,
+      q: ''
+    });
+    expect(data.rows.map((r) => [r.label, r.totalRealisasi])).toEqual([
+      ['dr. A', 1],
+      ['dr. B', 1],
+      ['dr. C', 1]
+    ]);
+    expect(data.totals.sesiRealisasi).toBe(3);
+    expect(data.rows[0].baRows[0].realisasi).toBe(1);
+    expect(data.rows[0].sesiRows).toHaveLength(1);
+    expect(data.rows[0].sesiRows[0].jadwalId).toBe('J1');
+    expect(data.rows[0].baRows[0].sesi[0].diajar).toBe(true);
+  });
+
+  it('menghitung satu sesi untuk setiap dosen pada team teaching', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [ba({
+        id: 'BA-1',
+        sesiCount: 1,
+        jadwalIds: ['J1'],
+        dosenList: ['dr. A', 'dr. B'],
+        sesi: [
+          { jadwalId: 'J1', tanggal: '2026-09-20', jam: '08:00', dosenList: ['dr. A', 'dr. B'], source: 'jadwal', active: true }
+        ]
+      })],
+      jadwalList: [jadwal({ id: 'J1', dosenList: ['dr. A', 'dr. B'] })],
+      cols: COLS,
+      q: ''
+    });
+    expect(data.rows.map((r) => [r.label, r.totalRealisasi])).toEqual([
+      ['dr. A', 1],
+      ['dr. B', 1]
+    ]);
+    expect(data.totals.sesiRealisasi).toBe(2);
+  });
+
+  it('menandai sesi tanpa dosen dan tidak menghitungnya ke dosen', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [ba({
+        id: 'BA-1',
+        sesiCount: 2,
+        jadwalIds: ['J1', 'J2'],
+        dosenList: ['dr. A'],
+        sesi: [
+          { jadwalId: 'J1', tanggal: '2026-09-20', jam: '08:00', dosenList: ['dr. A'], source: 'jadwal', active: true },
+          { jadwalId: 'J2', tanggal: '2026-09-20', jam: '10:00', dosenList: [], source: 'jadwal', active: true }
+        ]
+      })],
+      jadwalList: [
+        jadwal({ id: 'J1', dosenList: ['dr. A'] }),
+        jadwal({ id: 'J2', dosenList: [] })
+      ],
+      cols: COLS,
+      q: ''
+    });
+    expect(data.rows).toHaveLength(1);
+    expect(data.rows[0].totalRealisasi).toBe(1);
+    expect(data.totals.sesiRealisasi).toBe(1);
+    const sesiKosong = data.quality.find((q) => q.type === 'sesi-tanpa-dosen');
+    expect(sesiKosong).toBeTruthy();
+    expect(sesiKosong.baId).toBe('BA-1');
+    expect(sesiKosong.jadwalId).toBe('J2');
+  });
+
+  it('memakai satu sesi virtual untuk BA tanpa tautan sesi', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [ba({
+        id: 'BA-1',
+        sesiCount: 0,
+        jadwalIds: [],
+        dosenList: ['dr. A'],
+        sesi: [
+          { jadwalId: '', tanggal: '2026-09-20', jam: '08:00', dosenList: ['dr. A'], virtual: true, source: 'ba' }
+        ]
+      })],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    expect(data.rows[0].totalRealisasi).toBe(1);
+    expect(data.rows[0].sesiRows).toHaveLength(1);
+    expect(data.rows[0].sesiRows[0].virtual).toBe(true);
+    expect(data.rows[0].sesiRows[0].source).toBe('ba');
+  });
+
+  it('mengabaikan temuan tanpa sesi/jadwal untuk BA legacy tetapi tetap menghitung 1 sesi', async () => {
+    const { buildDosenReport } = await loadReport();
+    const data = buildDosenReport({
+      baList: [ba({
+        id: 'BA-LEGACY',
+        legacy: true,
+        sesiCount: 0,
+        jadwalIds: [],
+        dosenList: ['dr. A'],
+        sesi: [
+          { jadwalId: '', tanggal: '2026-09-20', jam: '08:00', dosenList: ['dr. A'], virtual: true, source: 'ba' }
+        ]
+      })],
+      jadwalList: [],
+      cols: COLS,
+      q: ''
+    });
+    const types = data.quality.map((q) => q.type);
+    expect(types).not.toContain('tanpa-sesi');
+    expect(types).not.toContain('tanpa-jadwal');
+    expect(data.rows[0].totalRealisasi).toBe(1);
+    expect(data.rows[0].baRows[0].legacy).toBe(true);
+  });
+
   it('memfilter baris berdasarkan nama dosen tanpa mengubah rencana global', async () => {
     const { buildDosenReport } = await loadReport();
     const data = buildDosenReport({
