@@ -62,12 +62,12 @@ describe('bagian template', () => {
     expect(errors).toEqual([]);
   });
 
-  it('shell melebar penuh dengan konten dibatasi max-w-7xl', async () => {
+  it('shell melebar penuh dengan konten mengisi viewport', async () => {
     const html = await loadBagianHtml();
     expect(html).toContain('class="flex min-h-screen w-full flex-col bg-slate-50"');
     expect(html).toContain('mx-auto flex min-h-screen w-full max-w-md flex-col');
-    expect(html).toContain('mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 sm:px-6 md:px-8');
-    expect(html).toContain('<div class="mx-auto w-full max-w-7xl">');
+    expect(html).toContain('flex h-14 w-full items-center justify-between px-4 sm:px-6 md:px-8');
+    expect(html).toContain('<div class="w-full">');
   });
 
   it('memakai shell workspace dengan bottom nav', async () => {
