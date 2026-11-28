@@ -229,6 +229,23 @@ describe('peringatan validasi form jadwal dan BA', () => {
   });
 });
 
+describe('edit BA selesai di Riwayat', () => {
+  it('menyediakan tombol Edit di samping Buka File BA dan form edit', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('Buka File BA');
+    expect(html).toContain('@click="startEditBa"');
+    expect(html).toContain('Edit Berita Acara');
+    expect(html).toContain('Simpan Perubahan');
+    expect(html).toContain('ba.editingSelesai');
+  });
+
+  it('memakai flag reopenBaId agar seleksi BA tidak tereset setelah simpan', async () => {
+    const html = await loadBagianHtml();
+    expect(html).toContain('reopenBaId');
+    expect(html).toContain('cancelEditBa');
+  });
+});
+
 describe('auto-jadwal peserta belum dijadwalkan', () => {
   it('menampilkan bagian peserta belum dijadwalkan dan mengirim flag auto-jadwal', async () => {
     const html = await loadBagianHtml();
